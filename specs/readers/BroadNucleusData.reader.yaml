@@ -1,0 +1,16 @@
+name: BroadNucleusData
+description: Read example data from the Broad institute nucleus data kaggle challenge.
+cite:
+    text: TODO
+    doi: TODO
+authors:
+    - Constantin Pape;@constantinpape
+documentation: ./broad_nucleus_data.md
+tags: ['nuclei', 'segmentation', 'kaggle', 'broad institute']
+
+dependencies: ../../env_no_pytorch.yaml
+format_version: 0.1.0
+language: python
+#framework: null
+
+source: pybio.readers.broad_nucleus_data.BroadNucleusData
