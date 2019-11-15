@@ -3,7 +3,7 @@ import re
 import sys
 from importlib import import_module
 from pathlib import Path
-from typing import Optional, Dict, Any, Type, TypeVar, List
+from typing import Optional, Dict, Any, Type, TypeVar, List, Union
 from urllib.parse import urlparse
 
 import numpy
@@ -15,28 +15,6 @@ __version__ = "0.1.0"
 
 # todo: improve cached file handling
 cache_path = Path(__file__).parent.parent.parent / "cache"
-
-
-def log_class_name_of_method_on_exception(fn):
-    def logged(self, *args, **kwargs):
-        try:
-            fn(self, *args, **kwargs)
-        except Exception:
-            logger.error("Exception in %s", self.__class__.__name__)
-            raise
-
-    return logged
-
-
-def log_class_name_of_classmethod_on_exception(fn):
-    def logged(cls, *args, **kwargs):
-        try:
-            fn(cls, *args, **kwargs)
-        except Exception:
-            logger.error("Exception in %s", cls.__name__)
-            raise
-
-    return logged
 
 
 class Spec:
@@ -53,6 +31,18 @@ class Spec:
 
         self.name: str = name
         self._rel_path = _rel_path
+
+    def type_validation(self, arg_name: str, arg: Any, type_or_types: Union[Type, List[Type]]):
+        if isinstance(type_or_types, list):
+            if not any(isinstance(arg, t) for t in type_or_types):
+                raise ValueError(
+                    f"Spec {self.name} expected '{arg_name}' to be of one of the following types: {type_or_types}, but got type {type(arg)}"
+                )
+        else:
+            if not isinstance(arg, type_or_types):
+                raise ValueError(
+                    f"Spec {self.name} expected '{arg_name}' to be of type: {type_or_types}, but got type {type(arg)}"
+                )
 
 
 SpecWithSourceType = TypeVar("SpecWithSourceType", bound="SpecWithSource")
@@ -167,11 +157,30 @@ class SpecWithSource(Spec):
     source_file_path: Optional[Path]
     source_module_name: Optional[str]
 
-    @log_class_name_of_method_on_exception
-    def __init__(self, name: str, _rel_path: Path, source: Source, kwargs: Dict[str, Any]):
+    def __init__(
+        self,
+        name: str,
+        _rel_path: Path,
+        source: Source,
+        kwargs: Dict[str, Any],
+        required_kwargs: Optional[List[str]] = None,
+        default_kwargs: Optional[Dict[str, Any]] = None,
+    ):
         """note: a SpecWithSource should not be initialized directly but instead loaded with its factory classmethod 'load'"""
         assert isinstance(source, Source), type(source)
-        assert isinstance(kwargs, dict), type(kwargs)
+        self.type_validation("kwargs", kwargs, dict)
+        required_kwargs = required_kwargs or {}
+        default_kwargs = default_kwargs or {}
+
+        for req in required_kwargs:
+            if req not in kwargs:
+                raise ValueError(f"Missing kwarg '{req}' for spec {name}")
+
+        for kw in kwargs:
+            if kw not in required_kwargs and kw not in default_kwargs:
+                raise ValueError(
+                    f"Unexpected kwarg '{kw}' for spec {name}. Required kwargs: {required_kwargs}. Optional (default) kwargs: {default_kwargs}"
+                )
 
         super().__init__(name=name, _rel_path=_rel_path)
 
@@ -180,7 +189,20 @@ class SpecWithSource(Spec):
         self._object = None
 
     @classmethod
-    @log_class_name_of_classmethod_on_exception
+    def type_validation_for_load(
+        cls, load_from: Union[str, Path], arg_name: str, arg: Any, type_or_types: Union[Type, List[Type]]
+    ):
+        msg = f"When loading {cls.__name__} from {load_from} expected '{arg_name}' "
+        if isinstance(type_or_types, list):
+            if not any(isinstance(arg, t) for t in type_or_types):
+                raise ValueError(
+                    msg + f"to be of one of the following types: {type_or_types}, but got type {type(arg)}"
+                )
+        else:
+            if not isinstance(arg, type_or_types):
+                raise ValueError(msg + f"to be of type {type_or_types}, but got type {type(arg)}")
+
+    @classmethod
     def load(
         cls: Type[SpecWithSourceType],
         spec: Optional[str] = None,
@@ -190,14 +212,14 @@ class SpecWithSource(Spec):
         rel_path: Path = Path("."),
         **spec_kwargs: Dict[str, Any],
     ) -> SpecWithSourceType:
-        assert spec is None or isinstance(spec, str), type(spec)
         if spec is not None:
             assert spec.endswith(".yaml") or spec.endswith(".yml"), spec
         assert spec is not None or source is not None, (spec, source)
-        assert source is None or isinstance(source, str), type(source)
-        assert hash is None or isinstance(hash, dict)
-        assert kwargs is None or isinstance(kwargs, dict)
         assert isinstance(rel_path, Path), type(rel_path)
+        cls.type_validation_for_load(spec or rel_path, "spec", spec, [type(None), str])
+        cls.type_validation_for_load(spec or rel_path, "source", source, [type(None), str])
+        cls.type_validation_for_load(spec or rel_path, "hash", hash, [type(None), dict])
+        cls.type_validation_for_load(spec or rel_path, "kwargs", kwargs, [type(None), dict])
 
         hash_ = hash or {}
         kwargs = kwargs or {}
@@ -226,7 +248,6 @@ class SpecWithSource(Spec):
 
 
 class CiteEntry(Spec):
-    @log_class_name_of_method_on_exception
     def __init__(self, text: str, doi: Optional[str] = None, url: Optional[str] = None):
         if doi is None and url is None:
             raise ValueError("Require `doi` or `url`")
@@ -240,8 +261,8 @@ class CiteEntry(Spec):
 
 class TensorSpec(Spec):
     def __init__(self, name: str, axes: str, data_type: str, data_range: List[float], description: str = ""):
-        assert isinstance(data_range, list), type(data_range)
-        assert isinstance(description, str), type(description)
+        self.type_validation("data_range", data_range, list)
+        self.type_validation("description", description, str)
 
         if len(data_range) != 2:
             raise ValueError(
@@ -256,14 +277,12 @@ class TensorSpec(Spec):
 
 
 class InputTensorSpec(TensorSpec):
-    @log_class_name_of_method_on_exception
     def __init__(self, shape: Dict[str, Any], **tensor_spec_kwargs):
         super().__init__(**tensor_spec_kwargs)
         self.shape = shape  # todo: check input tensor shape
 
 
 class OutputTensorSpec(TensorSpec):
-    @log_class_name_of_method_on_exception
     def __init__(self, shape: Dict[str, Any], **tensor_spec_kwargs):
         super().__init__(**tensor_spec_kwargs)
         self.shape = shape  # todo: check output tensor shape
