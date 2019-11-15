@@ -65,25 +65,27 @@ class Source:
         assert uri.query == "", uri.query
 
         self._requires_download = False
-        if uri.scheme == "" or uri.scheme == "file":
+        if uri.scheme == "file" or uri.scheme == "" and (uri.path.startswith(".") or uri.path.startswith("/")):
             assert uri.netloc == "", uri.netloc
             self.local_file_path = rel_path / uri.path if uri.path.startswith(".") else Path(uri.path)
         elif uri.scheme in ["doi", "https", "http"]:
             self._requires_download = True
             file_name = uri.path.strip("/")
             self.local_file_path = cache_path / file_name
-        else:
+        elif uri.scheme == "":
             if self.object_name:
                 # <module name>.<sub module name>#<object name>
                 self.module_name = uri.scheme
             else:
                 # <module name>.<sub module name>.<object name>
-                last_dot_idx = uri.scheme.rfind(".")
-                self.module_name = uri.scheme[:last_dot_idx]
-                self.object_name = uri.scheme[last_dot_idx + 1 :]
+                last_dot_idx = uri.path.rfind(".")
+                self.module_name = uri.path[:last_dot_idx]
+                self.object_name = uri.path[last_dot_idx + 1 :]
 
                 if not re.match("[a-zA-Z_][a-zA-Z0-9_]*", self.object_name):
-                    raise ValueError(f"invalid object name {self.object_name} extracted from source {source}")
+                    raise ValueError(f"Invalid object name {self.object_name} extracted from source {source}")
+        else:
+            raise ValueError(f"Unknown uri scheme {uri.scheme}")
 
     def download(self):
         """download and cache source from doi or url"""
@@ -124,6 +126,8 @@ class Source:
             with self.local_file_path.open("wb") as f:
                 f.write(r.content)
 
+            logger.info("downloaded %s", self.local_file_path)
+
     def get(self) -> Any:
         self.download()
         if self.local_file_path is None:
@@ -131,6 +135,21 @@ class Source:
             assert self.module_name is not None, "no local path, nor module name!?!"
             dep = import_module(self.module_name)
             return getattr(dep, self.object_name)
+        elif self.local_file_path.suffix in [".yml", ".yaml"]:
+            assert self.object_name == "", self.object_name
+            with self.local_file_path.open() as f:
+                return yaml.safe_load(f)
+        elif self.local_file_path.suffix in [".npy", ".npz"]:
+            assert self.object_name == "", self.object_name
+            return numpy.load(self.local_file_path)
+        elif self.local_file_path.suffix in [".torch", ".pt", ".pth"]:
+            import torch
+
+            state_dict = torch.load(self.local_file_path)
+            if self.object_name:
+                return state_dict[self.object_name]
+            else:
+                return state_dict
         elif self.object_name:
             # import <object_name> from local (python) file  # todo: improve
             cur_sys_path = list(sys.path)
@@ -140,15 +159,6 @@ class Source:
             dep = import_module(self.local_file_path.stem)
             sys.path = cur_sys_path
             return getattr(dep, self.object_name)
-        elif self.local_file_path.suffix in [".yml", ".yaml"]:
-            with self.local_file_path.open() as f:
-                return yaml.safe_load(f)
-        elif self.local_file_path.suffix in [".npy", ".npz"]:
-            return numpy.load(self.local_file_path)
-        elif self.local_file_path.suffix in [".torch", ".pt", ".pth"]:
-            import torch
-
-            return torch.load(self.local_file_path)
         else:
             raise NotImplementedError(f"Unknown source type {self.original_source}")
 
@@ -169,7 +179,7 @@ class SpecWithSource(Spec):
         """note: a SpecWithSource should not be initialized directly but instead loaded with its factory classmethod 'load'"""
         assert isinstance(source, Source), type(source)
         self.type_validation("kwargs", kwargs, dict)
-        required_kwargs = required_kwargs or {}
+        required_kwargs = required_kwargs or []
         default_kwargs = default_kwargs or {}
 
         for req in required_kwargs:
@@ -181,6 +191,8 @@ class SpecWithSource(Spec):
                 raise ValueError(
                     f"Unexpected kwarg '{kw}' for spec {name}. Required kwargs: {required_kwargs}. Optional (default) kwargs: {default_kwargs}"
                 )
+
+        kwargs = {**default_kwargs, **kwargs}
 
         super().__init__(name=name, _rel_path=_rel_path)
 
