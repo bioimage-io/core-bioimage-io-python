@@ -5,6 +5,7 @@ from typing import List, Dict, Any, Optional, Union
 from pybio.spec import Spec, InputTensorSpec, OutputTensorSpec, CommonSpec, SpecWithSource
 from pybio.spec.reader import ReaderSpec
 from pybio.spec.sampler import SamplerSpec
+from pybio.spec.transformation import TransformationSpec
 
 logger = logging.getLogger(__name__)
 
@@ -14,10 +15,6 @@ def resolve_path_str(path: str, rel_to_file_path: Path) -> str:
         return (rel_to_file_path / path).resolve().as_posix()
     else:
         return path
-
-
-class TransformationSpec(CommonSpec):
-    pass
 
 
 class PredictionSpec(Spec):
@@ -56,9 +53,7 @@ class TrainingSetupSpec(Spec):
         self.reader = ReaderSpec.load(rel_path=_rel_path, **reader)
         self.sampler = SamplerSpec.load(rel_path=_rel_path, **sampler)
 
-        self.preprocess = [
-            TransformationSpec.load(rel_path=_rel_path, **p) for p in preprocess
-        ]
+        self.preprocess = [TransformationSpec.load(rel_path=_rel_path, **p) for p in preprocess]
         self.loss = [TransformationSpec.load(rel_path=_rel_path, **p) for p in loss]
         self.optimizer = SpecWithSource.load(name="optimizer", **optimizer)
 
@@ -70,6 +65,7 @@ class TrainingSpec(SpecWithSource):
         self.setup = TrainingSetupSpec(_rel_path=_rel_path, **setup)
         self.dependencies = dependencies  # todo: handle dependencies
         self.description = description
+
 
 class ModelSpec(CommonSpec):
     """Language specific interpretation of a .model.yaml specification """
@@ -93,6 +89,7 @@ class ModelSpec(CommonSpec):
 
 def parse_model_spec(model_spec_path: str):
     return ModelSpec.load(model_spec_path)
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)

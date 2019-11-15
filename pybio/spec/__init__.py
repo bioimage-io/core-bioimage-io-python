@@ -230,13 +230,12 @@ class SpecWithSource(Spec):
             loaded_kwargs = spec_source.get()
             if not isinstance(loaded_kwargs, dict):
                 raise ValueError(f"Expected loaded spec to be of type dict. Loaded spec from {spec}")
-            loaded_kwargs.update(kwargs)
             if "source" in loaded_kwargs:
-                return cls.load(spec=spec, rel_path=rel_path, **spec_kwargs, **loaded_kwargs)
+                return cls.load(spec=spec, rel_path=rel_path, kwargs=kwargs, **spec_kwargs, **loaded_kwargs)
         else:
-            loaded_kwargs = {"source": Source(source=source, hash_=hash_, rel_path=rel_path), "kwargs": kwargs}
+            loaded_kwargs = {"source": Source(source=source, hash_=hash_, rel_path=rel_path)}
 
-        return cls(_rel_path=rel_path, **spec_kwargs, **loaded_kwargs)
+        return cls(_rel_path=rel_path, kwargs=kwargs, **spec_kwargs, **loaded_kwargs)
 
     @property
     def object_(self):

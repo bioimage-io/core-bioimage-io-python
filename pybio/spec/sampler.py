@@ -5,6 +5,6 @@ from pybio.spec import CommonSpec
 
 class SamplerSpec(CommonSpec):
     def __init__(self, outputs: Union[str, List[Dict[str, Any]]], **super_kwargs):
-        assert isinstance(outputs, str) or isinstance(outputs, list), type(outputs)
+        self.type_validation("outputs", outputs, [str, list])
         super().__init__(**super_kwargs)
         self.outputs = outputs
