@@ -1,8 +1,8 @@
 name: BroadNucleusData
 description: Read example data from the Broad institute nucleus data kaggle challenge.
 cite:
-    text: TODO
-    doi: TODO
+    - text: TODO
+      doi: TODO
 authors:
     - Constantin Pape;@constantinpape
 documentation: ./broad_nucleus_data.md
