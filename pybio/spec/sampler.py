@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Union
 
-from pybio.spec import CommonSpec
+from pybio.spec.common import CommonSpec
 
 
 class SamplerSpec(CommonSpec):

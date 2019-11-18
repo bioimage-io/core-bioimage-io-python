@@ -2,9 +2,11 @@ import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Union
 
-from pybio.spec import Spec, InputTensorSpec, OutputTensorSpec, CommonSpec, SpecWithSource
+from pybio.spec.spec import Spec, InputTensorSpec, OutputTensorSpec
+from pybio.spec.common import CommonSpec
 from pybio.spec.reader import ReaderSpec
 from pybio.spec.sampler import SamplerSpec
+from pybio.spec.source import SpecWithSource
 from pybio.spec.transformation import TransformationSpec
 
 logger = logging.getLogger(__name__)
@@ -27,7 +29,7 @@ class PredictionSpec(Spec):
         dependencies: Optional[str] = None,
     ):
         super().__init__(name="prediction", _rel_path=_rel_path)
-        self.weights = SpecWithSource.load(rel_path=_rel_path, name="prediction weights", **weights)
+        self.weights = SpecWithSource(name="prediction weights", _rel_path=_rel_path, **weights)
         self.preprocess = preprocess
         self.postprocess = postprocess
         if dependencies is not None:
@@ -50,12 +52,12 @@ class TrainingSetupSpec(Spec):
         assert all(isinstance(el, dict) for el in loss), [type(el) for el in loss]
 
         super().__init__(name="training setup", _rel_path=_rel_path)
-        self.reader = ReaderSpec.load(rel_path=_rel_path, **reader)
-        self.sampler = SamplerSpec.load(rel_path=_rel_path, **sampler)
+        self.reader = ReaderSpec.load(_rel_path=_rel_path, **reader)
+        self.sampler = SamplerSpec.load(_rel_path=_rel_path, **sampler)
 
-        self.preprocess = [TransformationSpec.load(rel_path=_rel_path, **p) for p in preprocess]
-        self.loss = [TransformationSpec.load(rel_path=_rel_path, **p) for p in loss]
-        self.optimizer = SpecWithSource.load(name="optimizer", **optimizer)
+        self.preprocess = [TransformationSpec.load(_rel_path=_rel_path, **p) for p in preprocess]
+        self.loss = [TransformationSpec.load(_rel_path=_rel_path, **p) for p in loss]
+        self.optimizer = SpecWithSource(name="optimizer", _rel_path=_rel_path, **optimizer)
 
 
 class TrainingSpec(SpecWithSource):
@@ -84,7 +86,7 @@ class ModelSpec(CommonSpec):
         self.outputs = [OutputTensorSpec(**el) for el in outputs]
 
         self.prediction = PredictionSpec(_rel_path=_rel_path, **prediction)
-        self.training = None if training is None else TrainingSpec.load(rel_path=_rel_path, **training)
+        self.training = None if training is None else TrainingSpec(_rel_path=_rel_path, **training)
 
 
 def parse_model_spec(model_spec_path: str):
