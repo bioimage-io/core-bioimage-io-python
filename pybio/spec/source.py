@@ -1,3 +1,4 @@
+import json
 import logging
 import numpy
 import re
@@ -36,7 +37,7 @@ class Source:
 
         uri = urlparse(source)
         if uri.scheme == "doi" or uri.netloc == "dx.doi.org":
-            uri = self.resolve_doi(uri)
+            uri = self.resolve_doi(uri.path)
 
         self.object_name = uri.fragment
         assert uri.params == "", uri.params
@@ -83,8 +84,20 @@ class Source:
         self.uri = uri
 
     @staticmethod
-    def resolve_doi(uri):
-        raise NotImplementedError
+    def resolve_doi(doi: str):
+        doi = doi.strip("/")
+
+        url = "https://doi.org/api/handles/" + doi
+        r = json.loads(requests.get(url).text)
+        response_code = r["responseCode"]
+        if response_code != 1:
+            raise RuntimeError(f"Could not resolve doi {doi} (responseCode={response_code})")
+
+        val = min(r["values"], key=lambda v: v["index"])
+
+        assert val["type"] == "URL"  # todo: handle other types
+        assert val["data"]["format"] == "string"
+        return urlparse(val["data"]["value"])
 
     def download(self) -> None:
         """download and cache source from doi or url"""
