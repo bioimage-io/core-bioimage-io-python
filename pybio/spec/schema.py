@@ -1,29 +1,18 @@
-from importlib import import_module
-from pathlib import Path
-from typing import Mapping, Any, Optional, Dict, Type
+from enum import Enum
+from typing import Mapping, Any, Optional, Dict, List
 
-import yaml
 
-from marshmallow import (
-    Schema as _Schema,
-    INCLUDE,
-    pprint,
-    ValidationError,
-    EXCLUDE,
-    post_load,
-    validates_schema,
-    validates,
-)
+from marshmallow import Schema, pprint, ValidationError, post_load, validates_schema, validates
 from pybio.spec import pybio_types, fields
 
+#
+# class Schema(_Schema):
+#     pass
+#     # class Meta:
+#     unknown = EXCLUDE
 
-class Schema(_Schema):
-    pass
-    # class Meta:
-    #     unknown = EXCLUDE
 
-
-class Cite(Schema):
+class CiteEntry(Schema):
     text = fields.Str(required=True)
     doi = fields.Str(missing=None)
     url = fields.Str(missing=None)
@@ -38,7 +27,7 @@ class MinimalYAML(Schema):
     name = fields.Str(required=True)
     format_version = fields.Str(required=True)
     description = fields.Str(required=True)
-    cite = fields.Nested(Cite, many=True)
+    cite = fields.Nested(CiteEntry, many=True, required=True)
     authors = fields.List(fields.Str(required=True))
     documentation = fields.Path(required=True)
     tags = fields.List(fields.Str(required=True))
@@ -49,9 +38,9 @@ class MinimalYAML(Schema):
     required_kwargs = fields.List(fields.Str, missing=list)
     optional_kwargs = fields.Dict(fields.Str, missing=dict)
 
-    test_input = fields.Path(required=False, allow_none=True)
-    test_output = fields.Path(required=False, allow_none=True)
-    thumbnail = fields.Path(required=False, allow_none=True)
+    test_input = fields.Path(missing=None)
+    test_output = fields.Path(missing=None)
+    thumbnail = fields.Path(missing=None)
 
 
 class BaseSpec(Schema):
@@ -61,11 +50,6 @@ class BaseSpec(Schema):
 
     spec: fields.SpecURI
     kwargs = fields.Dict(missing=dict)
-
-    @classmethod
-    def from_yaml(cls, uri_str: str, kwargs: Optional[Dict[str, Any]] = None):
-        self = cls().load({"spec": uri_str, "kwargs": kwargs or {}})
-        return self
 
     @validates_schema
     def check_kwargs(self, data, partial, many):
@@ -111,7 +95,7 @@ class OutputShape(Schema):
 
 class Tensor(Schema):
     name = fields.Str(required=True)
-    axes = fields.Axes(required=True)
+    axes = fields.Axes(missing=None)
     data_type = fields.Str(required=True)
     data_range = fields.Tuple((fields.Float(allow_nan=True), fields.Float(allow_nan=True)))
 
@@ -128,11 +112,13 @@ class OutputTensor(Tensor):
 
 class Transformation(MinimalYAML):
     dependencies = fields.Dependencies(required=True)
-    inputs = fields.Nested(InputTensor, required=True)
-    outputs = fields.Nested(OutputTensor, required=True)
+    inputs = fields.Tensors(InputTensor, valid_magic_values=[fields.MagicTensorsValue.any], required=True)
+    outputs = fields.Tensors(OutputTensor, valid_magic_values=[fields.MagicTensorsValue.same], required=True)
+
 
 class TransformationSpec(BaseSpec):
     spec = fields.SpecURI(Transformation, required=True)
+
 
 class Weights(Schema):
     source = fields.Str(required=True)
@@ -141,13 +127,13 @@ class Weights(Schema):
 
 class Prediction(Schema):
     weights = fields.Nested(Weights)
-    dependencies = fields.Dependencies()
+    dependencies = fields.Dependencies(missing=None)
     preprocess = fields.Nested(TransformationSpec, many=True, allow_none=True)
     postprocess = fields.Nested(TransformationSpec, many=True, allow_none=True)
 
 
 class Reader(MinimalYAML):
-    pass
+    dependencies = fields.Dependencies(missing=None)
 
 
 class ReaderSpec(BaseSpec):
@@ -155,7 +141,8 @@ class ReaderSpec(BaseSpec):
 
 
 class Sampler(MinimalYAML):
-    pass
+    dependencies = fields.Dependencies(missing=None)
+    outputs = fields.Tensors(OutputTensor, valid_magic_values=[fields.MagicTensorsValue.any])
 
 
 class SamplerSpec(BaseSpec):
@@ -182,6 +169,7 @@ class Training(Schema):
     required_kwargs = fields.List(fields.Str, missing=list)
     optional_kwargs = fields.Dict(fields.Str, missing=dict)
     dependencies = fields.Dependencies(required=True)
+    description = fields.Str(missing=None)
 
 
 class Model(MinimalYAML):
@@ -199,12 +187,33 @@ class ModelSpec(BaseSpec):
     spec = fields.SpecURI(Model, required=True)
 
 
+def load_model_spec(uri: str, kwargs: Dict[str, Any] = None) -> dict:
+    return ModelSpec().load({"spec": uri, "kwargs": kwargs or {}})
+
+
+def load_spec(uri: str, kwargs: Dict[str, Any] = None) -> dict:
+    data = {"spec": uri, "kwargs": kwargs or {}}
+    last_dot = uri.rfind(".")
+    second_last_dot = uri[:last_dot].rfind(".")
+    spec_suffix = uri[second_last_dot + 1 : last_dot]
+    if spec_suffix == "model":
+        return ModelSpec().load(data)
+    elif spec_suffix == "transformation":
+        return TransformationSpec().load(data)
+    elif spec_suffix == "reader":
+        return ReaderSpec().load(data)
+    elif spec_suffix == "sampler":
+        return SamplerSpec().load(data)
+    else:
+        raise ValueError(f"Invalid spec suffix: {spec_suffix}")
+
+
 if __name__ == "__main__":
     try:
-        spec = ModelSpec().load(
-            {"spec": "/repos/example-unet-configurations/models/unet-2d-nuclei-broad/UNet2DNucleiBroad.model.yaml"}
+        spec = load_model_spec(
+            "/repos/example-unet-configurations/models/unet-2d-nuclei-broad/UNet2DNucleiBroad.model.yaml"
         )
     except ValidationError as e:
-        pprint(e.normalized_messages())
+        pprint(e.normalized_messages(), width=120)
     else:
-        pprint(spec)
+        pprint(spec, width=120)
