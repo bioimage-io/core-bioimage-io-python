@@ -5,12 +5,11 @@ cite:
       doi: TODO
 authors:
     - Constantin Pape;@constantinpape
-documentation: ./broad_nucleus_data.md
+documentation: BroadNucleusData.md
 tags: ['nuclei', 'segmentation', 'kaggle', 'broad institute']
 
 dependencies: ../../env_no_pytorch.yaml
 format_version: 0.1.0
 language: python
-#framework: null
 
 source: pybio.readers.broad_nucleus_data.BroadNucleusData
