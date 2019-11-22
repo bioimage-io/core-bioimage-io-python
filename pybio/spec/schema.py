@@ -242,9 +242,9 @@ def load_spec(
 if __name__ == "__main__":
     try:
         spec = load_model_spec(
-            "/repos/example-unet-configurations/models/unet-2d-nuclei-broad/UNet2DNucleiBroad.model.yaml"
+            "https://github.com/bioimage-io/example-unet-configurations/blob/marshmallow/models/unet-2d-nuclei-broad/UNet2DNucleiBroad.model.yaml"
         )
     except ValidationError as e:
-        pprint(e.normalized_messages(), width=120)
+        pprint(e.normalized_messages(), width=280)
     else:
-        pprint(asdict(spec))
+        pprint(asdict(spec), width=280)

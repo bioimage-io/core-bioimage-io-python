@@ -1,10 +1,11 @@
-import typing
 from importlib import import_module
-
-import yaml
-
-import pathlib
 from urllib.parse import urlparse, ParseResult
+import json
+import pathlib
+import requests
+import subprocess
+import typing
+import yaml
 
 from marshmallow import ValidationError
 from marshmallow.fields import *
@@ -22,9 +23,58 @@ def resolve_local_path(path_str: str, context: dict) -> pathlib.Path:
         return local_path.resolve()
 
 
+def resolve_doi(uri: ParseResult) -> ParseResult:
+    if uri.scheme.lower() != "doi" and not uri.netloc.endswith("doi.org"):
+        return uri
+
+    doi = uri.path.strip("/")
+
+    url = "https://doi.org/api/handles/" + doi
+    r = json.loads(requests.get(url).text)
+    response_code = r["responseCode"]
+    if response_code != 1:
+        raise RuntimeError(f"Could not resolve doi {doi} (responseCode={response_code})")
+
+    val = min(r["values"], key=lambda v: v["index"])
+
+    assert val["type"] == "URL"  # todo: handle other types
+    assert val["data"]["format"] == "string"
+    return urlparse(val["data"]["value"])
+
+
 class SpecURI(Nested):
+    # todo: improve cache location
+    cache_path = pathlib.Path(__file__).parent.parent.parent / "cache"
+
     def _deserialize(self, value, attr, data, **kwargs):
-        spec_path = pathlib.Path(value)
+
+        uri = urlparse(value)
+
+        if uri.fragment:
+            raise ValidationError(f"Invalid URI: {uri}. Got URI fragment: {uri.fragment}")
+        if uri.params:
+            raise ValidationError(f"Invalid URI: {uri}. Got URI params: {uri.params}")
+        if uri.query:
+            raise ValidationError(f"Invalid URI: {uri}. Got URI query: {uri.query}")
+
+        if uri.scheme == "file" or uri.scheme == "" and (uri.path.startswith(".") or uri.path.startswith("/")):
+            if uri.netloc:
+                raise ValidationError(f"Invalid URI: {uri}")
+            spec_path = resolve_local_path(uri.path, self.context)
+        elif uri.netloc == "github.com":
+            orga, repo_name, blob, commit_id, *in_repo_path = uri.path.strip("/").split("/")
+            in_repo_path = "/".join(in_repo_path)
+            cached_repo_path = self.cache_path / orga / repo_name / commit_id
+            spec_path = cached_repo_path / in_repo_path
+            if not spec_path.exists():
+                cached_repo_path = cached_repo_path.resolve().as_posix()
+                subprocess.call(["git", "clone", f"{uri.scheme}://{uri.netloc}/{orga}/{repo_name}.git", cached_repo_path])
+                # -C <working_dir> available in git 1.8.5+
+                # https://github.com/git/git/blob/5fd09df3937f54c5cfda4f1087f5d99433cce527/Documentation/RelNotes/1.8.5.txt#L115-L116
+                subprocess.call(["git", "-C", cached_repo_path, "checkout", "--force", commit_id])
+        else:
+            raise ValueError(f"Unknown uri scheme {uri.scheme}")
+
         self.context["spec_path"] = spec_path
         with spec_path.open() as f:
             value_data = yaml.safe_load(f)
