@@ -7,9 +7,9 @@ import subprocess
 import typing
 import yaml
 
-from marshmallow import ValidationError
 from marshmallow.fields import *
 
+from pybio.exceptions import InvalidDoiException, PyBioValidationException
 from pybio.spec.pybio_types import MagicTensorsValue, MagicShapeValue
 
 
@@ -33,7 +33,7 @@ def resolve_doi(uri: ParseResult) -> ParseResult:
     r = json.loads(requests.get(url).text)
     response_code = r["responseCode"]
     if response_code != 1:
-        raise RuntimeError(f"Could not resolve doi {doi} (responseCode={response_code})")
+        raise InvalidDoiException(f"Could not resolve doi {doi} (responseCode={response_code})")
 
     val = min(r["values"], key=lambda v: v["index"])
 
@@ -51,15 +51,15 @@ class SpecURI(Nested):
         uri = urlparse(value)
 
         if uri.fragment:
-            raise ValidationError(f"Invalid URI: {uri}. Got URI fragment: {uri.fragment}")
+            raise PyBioValidationException(f"Invalid URI: {uri}. Got URI fragment: {uri.fragment}")
         if uri.params:
-            raise ValidationError(f"Invalid URI: {uri}. Got URI params: {uri.params}")
+            raise PyBioValidationException(f"Invalid URI: {uri}. Got URI params: {uri.params}")
         if uri.query:
-            raise ValidationError(f"Invalid URI: {uri}. Got URI query: {uri.query}")
+            raise PyBioValidationException(f"Invalid URI: {uri}. Got URI query: {uri.query}")
 
         if uri.scheme == "file" or uri.scheme == "" and (uri.path.startswith(".") or uri.path.startswith("/")):
             if uri.netloc:
-                raise ValidationError(f"Invalid URI: {uri}")
+                raise PyBioValidationException(f"Invalid URI: {uri}")
             spec_path = resolve_local_path(uri.path, self.context)
         elif uri.netloc == "github.com":
             orga, repo_name, blob, commit_id, *in_repo_path = uri.path.strip("/").split("/")
@@ -68,7 +68,9 @@ class SpecURI(Nested):
             spec_path = cached_repo_path / in_repo_path
             if not spec_path.exists():
                 cached_repo_path = cached_repo_path.resolve().as_posix()
-                subprocess.call(["git", "clone", f"{uri.scheme}://{uri.netloc}/{orga}/{repo_name}.git", cached_repo_path])
+                subprocess.call(
+                    ["git", "clone", f"{uri.scheme}://{uri.netloc}/{orga}/{repo_name}.git", cached_repo_path]
+                )
                 # -C <working_dir> available in git 1.8.5+
                 # https://github.com/git/git/blob/5fd09df3937f54c5cfda4f1087f5d99433cce527/Documentation/RelNotes/1.8.5.txt#L115-L116
                 subprocess.call(["git", "-C", cached_repo_path, "checkout", "--force", commit_id])
@@ -93,7 +95,7 @@ class Path(Str):
         path_str = super()._deserialize(*args, **kwargs)
         path = resolve_local_path(path_str, self.context)
         if not path.exists():
-            raise ValidationError(f"{path.as_posix()} does not exist!")
+            raise PyBioValidationException(f"{path.as_posix()} does not exist!")
         return path
 
 
@@ -112,7 +114,7 @@ class Axes(Str):
         axes_str = super()._deserialize(*args, **kwargs)
         valid_axes = "bczyx"
         if any(a not in valid_axes for a in axes_str):
-            raise ValidationError(f"Invalid axes! Valid axes are: {valid_axes}")
+            raise PyBioValidationException(f"Invalid axes! Valid axes are: {valid_axes}")
 
         return axes_str
 
@@ -137,17 +139,17 @@ class Tensors(Nested):
             try:
                 value = MagicTensorsValue(value)
             except ValueError as e:
-                raise ValidationError(str(e)) from e
+                raise PyBioValidationException(str(e)) from e
 
             if value in self.valid_magic_values:
                 return value
             else:
-                raise ValidationError(f"Invalid magic value: {value.value}")
+                raise PyBioValidationException(f"Invalid magic value: {value.value}")
 
         elif isinstance(value, list):
             return self._load(value, data, many=True)
         else:
-            raise ValidationError(f"Invalid input type: {type(value)}")
+            raise PyBioValidationException(f"Invalid input type: {type(value)}")
 
 
 class Shape(Nested):
@@ -166,19 +168,19 @@ class Shape(Nested):
             try:
                 value = MagicShapeValue(value)
             except ValueError as e:
-                raise ValidationError(str(e)) from e
+                raise PyBioValidationException(str(e)) from e
 
             if value in self.valid_magic_values:
                 return value
             else:
-                raise ValidationError(f"Invalid magic value: {value.value}")
+                raise PyBioValidationException(f"Invalid magic value: {value.value}")
 
         elif isinstance(value, list):
             if any(not isinstance(v, int) for v in value):
-                raise ValidationError("Encountered non-integers in shape")
+                raise PyBioValidationException("Encountered non-integers in shape")
 
             return tuple(value)
         elif isinstance(value, dict):
             return self._load(value, data)
         else:
-            raise ValidationError(f"Invalid input type: {type(value)}")
+            raise PyBioValidationException(f"Invalid input type: {type(value)}")
