@@ -7,7 +7,7 @@ import subprocess
 import typing
 import yaml
 
-from marshmallow.fields import *
+from marshmallow.fields import Str, Nested, List, Dict, Integer, Float, Tuple
 
 from pybio.exceptions import InvalidDoiException, PyBioValidationException
 from pybio.spec.pybio_types import MagicTensorsValue, MagicShapeValue
