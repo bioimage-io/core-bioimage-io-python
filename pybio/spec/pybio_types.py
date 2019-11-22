@@ -8,6 +8,8 @@ class MagicTensorsValue(Enum):
     any = "any"
     same = "same"
 
+class MagicShapeValue(Enum):
+    any = "any"
 
 # Types for non-nested fields
 Axes = NewType("Axes", str)
@@ -27,7 +29,7 @@ class MinimalYAML:
     format_version: str
     description: str
     cite: List[CiteEntry]
-    authors = List[str]
+    authors: List[str]
     documentation: Path
     tags: List[str]
 
@@ -66,12 +68,12 @@ class Tensor:
 
 @dataclass
 class InputTensor(Tensor):
-    shape: InputShape
+    shape: Union[Tuple[int, ...], MagicShapeValue, InputShape]
 
 
 @dataclass
 class OutputTensor(Tensor):
-    shape: OutputShape
+    shape: Union[Tuple[int, ...], MagicShapeValue, OutputShape]
 
 
 @dataclass
@@ -159,3 +161,7 @@ class Model(MinimalYAML):
     inputs: Union[MagicTensorsValue, List[InputTensor]]
     outputs: Union[MagicTensorsValue, List[OutputTensor]]
     training: Optional[Training]
+
+@dataclass
+class ModelSpec(BaseSpec):
+    pass

@@ -1,15 +1,26 @@
-from enum import Enum
-from typing import Mapping, Any, Optional, Dict, List
+from dataclasses import asdict
+from typing import Any, Dict, Union
 
+from marshmallow import Schema as _Schema, pprint, ValidationError, post_load, validates_schema, validates
 
-from marshmallow import Schema, pprint, ValidationError, post_load, validates_schema, validates
 from pybio.spec import pybio_types, fields
+from pybio.spec.pybio_types import MagicTensorsValue, MagicShapeValue
 
-#
-# class Schema(_Schema):
-#     pass
-#     # class Meta:
-#     unknown = EXCLUDE
+
+class Schema(_Schema):
+    # class Meta:
+    # unknown = EXCLUDE
+    @post_load
+    def make_object(self, data, **kwargs):
+        if not data:
+            return None
+
+        this_type = getattr(pybio_types, self.__class__.__name__)
+        try:
+            return this_type(**data)
+        except TypeError as e:
+            e.args += (f"when initializing {this_type} from {self}",)
+            raise e
 
 
 class CiteEntry(Schema):
@@ -54,32 +65,50 @@ class BaseSpec(Schema):
     @validates_schema
     def check_kwargs(self, data, partial, many):
         spec = data["spec"]
-        for k in spec["required_kwargs"]:
+        for k in spec.required_kwargs:
             if not k in data["kwargs"]:
                 raise ValidationError
 
         for k in data["kwargs"]:
-            if not (k in spec["required_kwargs"] or k in spec["optional_kwargs"]):
+            if not (k in spec.required_kwargs or k in spec.optional_kwargs):
                 raise ValidationError
 
 
 class InputShape(Schema):
-    min = fields.List(fields.Float(), required=True)
-    step = fields.List(fields.Float(), required=True)
+    # exact = fields.List(fields.Integer(), missing=None)
+    min = fields.List(fields.Integer(), required=True)
+    step = fields.List(fields.Integer(), required=True)
+
+    # @validates_schema
+    # def exact_xor_min_and_step(self, data, **kwargs):
+    #     # exact = data["exact"]
+    #     min_ = data["min"]
+    #     step = data["step"]
+    #     msg = "Specify either 'exact' or 'min' and 'step'"
+    #     if exact is None:
+    #         if min_ is None or step is None:
+    #             raise ValidationError("Missing arguments: " + msg)
+    #     else:
+    #         if min_ is not None or step is not None:
+    #             raise ValidationError("Exclusive arguments: " + msg)
 
     @validates_schema
     def matching_lengths(self, data, **kwargs):
-        len_min = len(data["min"])
-        len_step = len(data["step"])
-        if len_min != len_step:
-            raise ValidationError(f"'min' and 'step' have to have the same length! (min: {len_min}, step: {len_step})")
+        min_ = data["min"]
+        step = data["step"]
+        if min_ is None or step is None:
+            return
+
+        if len(min_) != len(step):
+            raise ValidationError(f"'min' and 'step' have to have the same length! (min: {min_}, step: {step})")
 
 
 class OutputShape(Schema):
+    # exact = fields.List(fields.Integer(), missing=None)
     reference_input = fields.Str(missing=None)
-    scale = fields.List(fields.Float())
-    offset = fields.List(fields.Integer())
-    halo = fields.List(fields.Integer())
+    scale = fields.List(fields.Float(), required=True)
+    offset = fields.List(fields.Integer(), required=True)
+    halo = fields.List(fields.Integer(), required=True)
 
     @validates_schema
     def matching_lengths(self, data, **kwargs):
@@ -103,17 +132,17 @@ class Tensor(Schema):
 
 
 class InputTensor(Tensor):
-    shape = fields.Nested(InputShape)
+    shape = fields.Shape(InputShape, valid_magic_values=[MagicShapeValue.any], required=True)
 
 
 class OutputTensor(Tensor):
-    shape = fields.Nested(OutputShape)
+    shape = fields.Shape(OutputShape, valid_magic_values=[MagicShapeValue.any], required=True)
 
 
 class Transformation(MinimalYAML):
     dependencies = fields.Dependencies(required=True)
-    inputs = fields.Tensors(InputTensor, valid_magic_values=[fields.MagicTensorsValue.any], required=True)
-    outputs = fields.Tensors(OutputTensor, valid_magic_values=[fields.MagicTensorsValue.same], required=True)
+    inputs = fields.Tensors(InputTensor, valid_magic_values=[MagicTensorsValue.any], required=True)
+    outputs = fields.Tensors(OutputTensor, valid_magic_values=[MagicTensorsValue.same], required=True)
 
 
 class TransformationSpec(BaseSpec):
@@ -187,11 +216,13 @@ class ModelSpec(BaseSpec):
     spec = fields.SpecURI(Model, required=True)
 
 
-def load_model_spec(uri: str, kwargs: Dict[str, Any] = None) -> dict:
+def load_model_spec(uri: str, kwargs: Dict[str, Any] = None) -> pybio_types.ModelSpec:
     return ModelSpec().load({"spec": uri, "kwargs": kwargs or {}})
 
 
-def load_spec(uri: str, kwargs: Dict[str, Any] = None) -> dict:
+def load_spec(
+    uri: str, kwargs: Dict[str, Any] = None
+) -> Union[pybio_types.ModelSpec, pybio_types.TransformationSpec, pybio_types.ReaderSpec, pybio_types.SamplerSpec]:
     data = {"spec": uri, "kwargs": kwargs or {}}
     last_dot = uri.rfind(".")
     second_last_dot = uri[:last_dot].rfind(".")
@@ -216,4 +247,4 @@ if __name__ == "__main__":
     except ValidationError as e:
         pprint(e.normalized_messages(), width=120)
     else:
-        pprint(spec, width=120)
+        pprint(asdict(spec))

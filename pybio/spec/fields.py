@@ -9,7 +9,7 @@ from urllib.parse import urlparse, ParseResult
 from marshmallow import ValidationError
 from marshmallow.fields import *
 
-from pybio.spec.pybio_types import MagicTensorsValue
+from pybio.spec.pybio_types import MagicTensorsValue, MagicShapeValue
 
 
 def resolve_local_path(path_str: str, context: dict) -> pathlib.Path:
@@ -87,7 +87,7 @@ class Tensors(Nested):
             try:
                 value = MagicTensorsValue(value)
             except ValueError as e:
-                raise ValidationError(str(e))
+                raise ValidationError(str(e)) from e
 
             if value in self.valid_magic_values:
                 return value
@@ -96,5 +96,39 @@ class Tensors(Nested):
 
         elif isinstance(value, list):
             return self._load(value, data, many=True)
+        else:
+            raise ValidationError(f"Invalid input type: {type(value)}")
+
+
+class Shape(Nested):
+    def __init__(self, *args, valid_magic_values: typing.List[MagicShapeValue], **kwargs):
+        super().__init__(*args, **kwargs)
+        self.valid_magic_values = valid_magic_values
+
+    def _deserialize(
+        self,
+        value: typing.Any,
+        attr: typing.Optional[str],
+        data: typing.Optional[typing.Mapping[str, typing.Any]],
+        **kwargs,
+    ):
+        if isinstance(value, str):
+            try:
+                value = MagicShapeValue(value)
+            except ValueError as e:
+                raise ValidationError(str(e)) from e
+
+            if value in self.valid_magic_values:
+                return value
+            else:
+                raise ValidationError(f"Invalid magic value: {value.value}")
+
+        elif isinstance(value, list):
+            if any(not isinstance(v, int) for v in value):
+                raise ValidationError("Encountered non-integers in shape")
+
+            return tuple(value)
+        elif isinstance(value, dict):
+            return self._load(value, data)
         else:
             raise ValidationError(f"Invalid input type: {type(value)}")
