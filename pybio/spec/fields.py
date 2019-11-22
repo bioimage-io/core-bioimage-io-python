@@ -30,7 +30,7 @@ def resolve_doi(uri: ParseResult) -> ParseResult:
     doi = uri.path.strip("/")
 
     url = "https://doi.org/api/handles/" + doi
-    r = json.loads(requests.get(url).text)
+    r = requests.get(url).json()
     response_code = r["responseCode"]
     if response_code != 1:
         raise InvalidDoiException(f"Could not resolve doi {doi} (responseCode={response_code})")
