@@ -113,9 +113,29 @@ class Tensor(Schema):
 
     shape: fields.Nested
 
+    @validates_schema
+    def axes_and_shape(self, data, **kwargs):
+        axes = data["axes"]
+        shape = data["shape"]
+        if not isinstance(shape, MagicShapeValue) and axes is None:
+            raise ValidationError("Axes may not be 'null', when shape is specified")
+
 
 class InputTensor(Tensor):
     shape = fields.Shape(InputShape, valid_magic_values=[MagicShapeValue.any], required=True)
+
+    @validates_schema
+    def zero_batch_step(self, data, **kwargs):
+        axes = data["axes"]
+        step = data["shape"].step
+        if axes is not None:
+            bidx = axes.find("b")
+            if bidx != -1 and step[bidx] != 0:
+                raise ValidationError(
+                    "Input Shape step has to be zero for batch dimension (the batch dimension can always be "
+                    "increased, but `step` should specify how to increase the minimal shape to find the largest "
+                    "single batch shape)"
+                )
 
 
 class OutputTensor(Tensor):
