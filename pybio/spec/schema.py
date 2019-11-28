@@ -8,8 +8,6 @@ from pybio.spec.pybio_types import MagicTensorsValue, MagicShapeValue
 
 
 class Schema(_Schema):
-    # class Meta:
-    # unknown = EXCLUDE
     @post_load
     def make_object(self, data, **kwargs):
         if not data:
@@ -75,22 +73,8 @@ class BaseSpec(Schema):
 
 
 class InputShape(Schema):
-    # exact = fields.List(fields.Integer(), missing=None)
     min = fields.List(fields.Integer(), required=True)
     step = fields.List(fields.Integer(), required=True)
-
-    # @validates_schema
-    # def exact_xor_min_and_step(self, data, **kwargs):
-    #     # exact = data["exact"]
-    #     min_ = data["min"]
-    #     step = data["step"]
-    #     msg = "Specify either 'exact' or 'min' and 'step'"
-    #     if exact is None:
-    #         if min_ is None or step is None:
-    #             raise ValidationError("Missing arguments: " + msg)
-    #     else:
-    #         if min_ is not None or step is not None:
-    #             raise ValidationError("Exclusive arguments: " + msg)
 
     @validates_schema
     def matching_lengths(self, data, **kwargs):
@@ -104,7 +88,6 @@ class InputShape(Schema):
 
 
 class OutputShape(Schema):
-    # exact = fields.List(fields.Integer(), missing=None)
     reference_input = fields.Str(missing=None)
     scale = fields.List(fields.Float(), required=True)
     offset = fields.List(fields.Integer(), required=True)
