@@ -20,7 +20,7 @@ def resolve_local_path(path_str: str, context: dict) -> pathlib.Path:
     elif "spec_path" in context:
         return (context["spec_path"].parent / local_path).resolve()
     else:
-        return local_path.resolve()
+        return local_path.absolute().resolve()
 
 
 def resolve_doi(uri: ParseResult) -> ParseResult:
@@ -57,7 +57,7 @@ class SpecURI(Nested):
         if uri.query:
             raise PyBioValidationException(f"Invalid URI: {uri}. Got URI query: {uri.query}")
 
-        if uri.scheme == "file" or uri.scheme == "" and (uri.path.startswith(".") or uri.path.startswith("/")):
+        if uri.scheme == "file" or uri.scheme == "":
             if uri.netloc:
                 raise PyBioValidationException(f"Invalid URI: {uri}")
             spec_path = resolve_local_path(uri.path, self.context)
