@@ -1,15 +1,17 @@
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional, Callable, Any, Dict, NewType, Tuple, Union
+from typing import List, Optional, Callable, Any, Dict, NewType, Tuple, Union, Type, NamedTuple
 
 
 class MagicTensorsValue(Enum):
     any = "any"
     same = "same"
 
+
 class MagicShapeValue(Enum):
     any = "any"
+
 
 # Types for non-nested fields
 Axes = NewType("Axes", str)
@@ -77,21 +79,29 @@ class OutputTensor(Tensor):
 
 
 @dataclass
-class Transformation(MinimalYAML):
+class WithInputs:
+    inputs: Union[MagicTensorsValue, Type[NamedTuple], List[InputTensor]]
+
+
+@dataclass
+class WithOutputs:
+    outputs: Union[MagicTensorsValue, Type[NamedTuple], List[OutputTensor]]
+
+
+@dataclass
+class Transformation(MinimalYAML, WithInputs, WithOutputs):
     dependencies: Dependencies
-    inputs: Union[MagicTensorsValue, List[InputTensor]]
-    outputs: Union[MagicTensorsValue, List[OutputTensor]]
 
 
 @dataclass
 class BaseSpec:
-    spec: Path
+    spec: MinimalYAML
     kwargs: Dict[str, Any]
 
 
 @dataclass
 class TransformationSpec(BaseSpec):
-    pass
+    spec: Transformation
 
 
 @dataclass
@@ -115,18 +125,17 @@ class Reader(MinimalYAML):
 
 @dataclass
 class ReaderSpec(BaseSpec):
-    pass
+    spec: Reader
 
 
 @dataclass
-class Sampler(MinimalYAML):
+class Sampler(MinimalYAML, WithOutputs):
     dependencies: Optional[Dependencies]
-    outputs: Union[MagicTensorsValue, List[OutputTensor]]
 
 
 @dataclass
 class SamplerSpec(BaseSpec):
-    pass
+    spec = Sampler
 
 
 @dataclass
@@ -156,12 +165,11 @@ class Training:
 
 
 @dataclass
-class Model(MinimalYAML):
+class Model(MinimalYAML, WithInputs, WithOutputs):
     prediction: Prediction
-    inputs: Union[MagicTensorsValue, List[InputTensor]]
-    outputs: Union[MagicTensorsValue, List[OutputTensor]]
     training: Optional[Training]
+
 
 @dataclass
 class ModelSpec(BaseSpec):
-    pass
+    spec: Model

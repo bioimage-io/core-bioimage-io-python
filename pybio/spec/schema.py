@@ -1,13 +1,13 @@
 from dataclasses import asdict
 from typing import Any, Dict, Union
 
-from marshmallow import Schema as _Schema, pprint, ValidationError, post_load, validates_schema, validates
+from marshmallow import Schema, pprint, ValidationError, post_load, validates_schema, validates
 
 from pybio.spec import pybio_types, fields
 from pybio.spec.pybio_types import MagicTensorsValue, MagicShapeValue
 
 
-class Schema(_Schema):
+class PyBioSchema(Schema):
     @post_load
     def make_object(self, data, **kwargs):
         if not data:
@@ -21,7 +21,7 @@ class Schema(_Schema):
             raise e
 
 
-class CiteEntry(Schema):
+class CiteEntry(PyBioSchema):
     text = fields.Str(required=True)
     doi = fields.Str(missing=None)
     url = fields.Str(missing=None)
@@ -32,7 +32,7 @@ class CiteEntry(Schema):
             raise ValidationError("doi or url needs to be specified in a citation")
 
 
-class MinimalYAML(Schema):
+class MinimalYAML(PyBioSchema):
     name = fields.Str(required=True)
     format_version = fields.Str(required=True)
     description = fields.Str(required=True)
@@ -52,7 +52,7 @@ class MinimalYAML(Schema):
     thumbnail = fields.Path(missing=None)
 
 
-class BaseSpec(Schema):
+class BaseSpec(PyBioSchema):
     def __init__(self, *args, context: dict = None, **kwargs):
         # make shallow context copy to allow for different 'spec_path' contexts
         super().__init__(*args, context=None if context is None else dict(context), **kwargs)
@@ -72,7 +72,7 @@ class BaseSpec(Schema):
                 raise ValidationError
 
 
-class InputShape(Schema):
+class InputShape(PyBioSchema):
     min = fields.List(fields.Integer(), required=True)
     step = fields.List(fields.Integer(), required=True)
 
@@ -87,7 +87,7 @@ class InputShape(Schema):
             raise ValidationError(f"'min' and 'step' have to have the same length! (min: {min_}, step: {step})")
 
 
-class OutputShape(Schema):
+class OutputShape(PyBioSchema):
     reference_input = fields.Str(missing=None)
     scale = fields.List(fields.Float(), required=True)
     offset = fields.List(fields.Integer(), required=True)
@@ -105,7 +105,7 @@ class OutputShape(Schema):
             )
 
 
-class Tensor(Schema):
+class Tensor(PyBioSchema):
     name = fields.Str(required=True)
     axes = fields.Axes(missing=None)
     data_type = fields.Str(required=True)
@@ -127,15 +127,32 @@ class InputTensor(Tensor):
     @validates_schema
     def zero_batch_step(self, data, **kwargs):
         axes = data["axes"]
-        step = data["shape"].step
-        if axes is not None:
+        shape = data["shape"]
+        if not isinstance(shape, MagicShapeValue):
+            if axes is None:
+                raise ValidationError("Axes field required when shape is specified")
+
+            assert isinstance(axes, str), type(axes)
+
             bidx = axes.find("b")
-            if bidx != -1 and step[bidx] != 0:
-                raise ValidationError(
-                    "Input Shape step has to be zero for batch dimension (the batch dimension can always be "
-                    "increased, but `step` should specify how to increase the minimal shape to find the largest "
-                    "single batch shape)"
-                )
+            if isinstance(shape, tuple):
+                # exact shape (with batch size 1)
+                if bidx != -1 and shape[bidx] != 1:
+                    raise ValidationError("Input shape has to be one in the batch dimension.")
+
+            elif isinstance(shape, pybio_types.InputShape):
+                step = shape.step
+                if bidx != -1 and shape.min[bidx] != 1:
+                    raise ValidationError("Input shape has to be one in the batch dimension.")
+
+                if bidx != -1 and step[bidx] != 0:
+                    raise ValidationError(
+                        "Input shape step has to be zero in the batch dimension (the batch dimension can always be "
+                        "increased, but `step` should specify how to increase the minimal shape to find the largest "
+                        "single batch shape)"
+                    )
+            else:
+                raise ValidationError(f"Unknown shape type {type(shape)}")
 
 
 class OutputTensor(Tensor):
@@ -152,12 +169,12 @@ class TransformationSpec(BaseSpec):
     spec = fields.SpecURI(Transformation, required=True)
 
 
-class Weights(Schema):
+class Weights(PyBioSchema):
     source = fields.Str(required=True)
     hash = fields.Dict()
 
 
-class Prediction(Schema):
+class Prediction(PyBioSchema):
     weights = fields.Nested(Weights)
     dependencies = fields.Dependencies(missing=None)
     preprocess = fields.Nested(TransformationSpec, many=True, allow_none=True)
@@ -181,13 +198,13 @@ class SamplerSpec(BaseSpec):
     spec = fields.SpecURI(Sampler)
 
 
-class Optimizer(Schema):
+class Optimizer(PyBioSchema):
     source = fields.ImportableSource(required=True)
     required_kwargs = fields.List(fields.Str, missing=list)
     optional_kwargs = fields.Dict(fields.Str, missing=dict)
 
 
-class Setup(Schema):
+class Setup(PyBioSchema):
     reader = fields.Nested(ReaderSpec, required=True)
     sampler = fields.Nested(SamplerSpec, required=True)
     preprocess = fields.Nested(TransformationSpec, many=True, allow_none=True)
@@ -195,7 +212,7 @@ class Setup(Schema):
     optimizer = fields.Nested(Optimizer, required=True)
 
 
-class Training(Schema):
+class Training(PyBioSchema):
     setup = fields.Nested(Setup)
     source = fields.ImportableSource(required=True)
     required_kwargs = fields.List(fields.Str, missing=list)
@@ -206,8 +223,8 @@ class Training(Schema):
 
 class Model(MinimalYAML):
     prediction = fields.Nested(Prediction)
-    inputs = fields.Nested(InputTensor, many=True)
-    outputs = fields.Nested(OutputTensor, many=True)
+    inputs = fields.Tensors(InputTensor, valid_magic_values=[MagicTensorsValue.any], many=True)
+    outputs = fields.Tensors(OutputTensor, valid_magic_values=[MagicTensorsValue.same], many=True)
     training = fields.Nested(Training, missing=None)
 
     @validates("outputs")
