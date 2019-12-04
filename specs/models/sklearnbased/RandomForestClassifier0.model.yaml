@@ -61,7 +61,7 @@ training:
 
     source: pybio.training.classic_fit.classic_fit
     required_kwargs: [model_spec]
-#    optional_kwargs: {n_iterations: 25}
+    optional_kwargs: {sampler_start: 0, sampler_stop: 1}
     # enable different ways of specifying the dependencies.
     # this would hold all training dependencies, e.g. as a frozen conda environment
     # or as a pom.xml

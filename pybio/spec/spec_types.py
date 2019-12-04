@@ -176,3 +176,16 @@ class Model(MinimalYAML, WithInputs, WithOutputs):
 @dataclass
 class ModelSpec(BaseSpec):
     spec: Model
+
+    def train(self, kwargs: Dict[str, Any] = None) -> Any:
+        if kwargs is None:
+            kwargs = {}
+
+        complete_kwargs = dict(self.spec.training.optional_kwargs)
+        complete_kwargs.update(kwargs)
+
+        mspec = "model_spec"
+        if mspec not in complete_kwargs and mspec in self.spec.training.required_kwargs:
+            complete_kwargs[mspec] = self
+
+        return self.spec.training.source(**complete_kwargs)
