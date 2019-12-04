@@ -3,8 +3,9 @@ from typing import Any, Dict, Union
 
 from marshmallow import Schema, pprint, ValidationError, post_load, validates_schema, validates
 
-from pybio.spec import pybio_types, fields
-from pybio.spec.pybio_types import MagicTensorsValue, MagicShapeValue
+from pybio.exceptions import PyBioValidationException
+from pybio.spec import spec_types, fields
+from pybio.spec.spec_types import MagicTensorsValue, MagicShapeValue
 
 
 class PyBioSchema(Schema):
@@ -13,7 +14,7 @@ class PyBioSchema(Schema):
         if not data:
             return None
 
-        this_type = getattr(pybio_types, self.__class__.__name__)
+        this_type = getattr(spec_types, self.__class__.__name__)
         try:
             return this_type(**data)
         except TypeError as e:
@@ -65,11 +66,11 @@ class BaseSpec(PyBioSchema):
         spec = data["spec"]
         for k in spec.required_kwargs:
             if not k in data["kwargs"]:
-                raise ValidationError
+                raise PyBioValidationException(f"Missing kwarg: {k}")
 
         for k in data["kwargs"]:
             if not (k in spec.required_kwargs or k in spec.optional_kwargs):
-                raise ValidationError
+                raise PyBioValidationException(f"Unexpected kwarg: {k}")
 
 
 class InputShape(PyBioSchema):
@@ -84,7 +85,9 @@ class InputShape(PyBioSchema):
             return
 
         if len(min_) != len(step):
-            raise ValidationError(f"'min' and 'step' have to have the same length! (min: {min_}, step: {step})")
+            raise PyBioValidationException(
+                f"'min' and 'step' have to have the same length! (min: {min_}, step: {step})"
+            )
 
 
 class OutputShape(PyBioSchema):
@@ -99,7 +102,7 @@ class OutputShape(PyBioSchema):
         len_offset = len(data["offset"])
         len_halo = len(data["halo"])
         if len_scale != len_offset or len_scale != len_halo:
-            raise ValidationError(
+            raise PyBioValidationException(
                 f"'scale', 'offset', and 'halo' have to have the same length! (scale: {len_scale}, offset:"
                 f" {len_offset}, halo: {len_halo})"
             )
@@ -118,7 +121,7 @@ class Tensor(PyBioSchema):
         axes = data["axes"]
         shape = data["shape"]
         if not isinstance(shape, MagicShapeValue) and axes is None:
-            raise ValidationError("Axes may not be 'null', when shape is specified")
+            raise PyBioValidationException("Axes may not be 'null', when shape is specified")
 
 
 class InputTensor(Tensor):
@@ -130,7 +133,7 @@ class InputTensor(Tensor):
         shape = data["shape"]
         if not isinstance(shape, MagicShapeValue):
             if axes is None:
-                raise ValidationError("Axes field required when shape is specified")
+                raise PyBioValidationException("Axes field required when shape is specified")
 
             assert isinstance(axes, str), type(axes)
 
@@ -138,21 +141,21 @@ class InputTensor(Tensor):
             if isinstance(shape, tuple):
                 # exact shape (with batch size 1)
                 if bidx != -1 and shape[bidx] != 1:
-                    raise ValidationError("Input shape has to be one in the batch dimension.")
+                    raise PyBioValidationException("Input shape has to be one in the batch dimension.")
 
-            elif isinstance(shape, pybio_types.InputShape):
+            elif isinstance(shape, spec_types.InputShape):
                 step = shape.step
                 if bidx != -1 and shape.min[bidx] != 1:
-                    raise ValidationError("Input shape has to be one in the batch dimension.")
+                    raise PyBioValidationException("Input shape has to be one in the batch dimension.")
 
                 if bidx != -1 and step[bidx] != 0:
-                    raise ValidationError(
+                    raise PyBioValidationException(
                         "Input shape step has to be zero in the batch dimension (the batch dimension can always be "
                         "increased, but `step` should specify how to increase the minimal shape to find the largest "
                         "single batch shape)"
                     )
             else:
-                raise ValidationError(f"Unknown shape type {type(shape)}")
+                raise PyBioValidationException(f"Unknown shape type {type(shape)}")
 
 
 class OutputTensor(Tensor):
@@ -208,8 +211,8 @@ class Setup(PyBioSchema):
     reader = fields.Nested(ReaderSpec, required=True)
     sampler = fields.Nested(SamplerSpec, required=True)
     preprocess = fields.Nested(TransformationSpec, many=True, allow_none=True)
-    loss = fields.Nested(TransformationSpec, many=True, required=True)
-    optimizer = fields.Nested(Optimizer, required=True)
+    loss = fields.Nested(TransformationSpec, many=True, missing=list)
+    optimizer = fields.Nested(Optimizer, missing=None)
 
 
 class Training(PyBioSchema):
@@ -236,13 +239,13 @@ class ModelSpec(BaseSpec):
     spec = fields.SpecURI(Model, required=True)
 
 
-def load_model_spec(uri: str, kwargs: Dict[str, Any] = None) -> pybio_types.ModelSpec:
+def load_model_spec(uri: str, kwargs: Dict[str, Any] = None) -> spec_types.ModelSpec:
     return ModelSpec().load({"spec": uri, "kwargs": kwargs or {}})
 
 
 def load_spec(
     uri: str, kwargs: Dict[str, Any] = None
-) -> Union[pybio_types.ModelSpec, pybio_types.TransformationSpec, pybio_types.ReaderSpec, pybio_types.SamplerSpec]:
+) -> Union[spec_types.ModelSpec, spec_types.TransformationSpec, spec_types.ReaderSpec, spec_types.SamplerSpec]:
     data = {"spec": uri, "kwargs": kwargs or {}}
     last_dot = uri.rfind(".")
     second_last_dot = uri[:last_dot].rfind(".")
@@ -264,7 +267,7 @@ if __name__ == "__main__":
         spec = load_model_spec(
             "https://github.com/bioimage-io/example-unet-configurations/blob/marshmallow/models/unet-2d-nuclei-broad/UNet2DNucleiBroad.model.yaml"
         )
-    except ValidationError as e:
+    except PyBioValidationException as e:
         pprint(e.normalized_messages(), width=280)
     else:
         pprint(asdict(spec), width=280)

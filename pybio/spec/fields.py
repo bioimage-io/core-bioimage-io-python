@@ -1,16 +1,15 @@
 from importlib import import_module
 from urllib.parse import urlparse, ParseResult
-import json
 import pathlib
 import requests
 import subprocess
 import typing
 import yaml
 
-from marshmallow.fields import Str, Nested, List, Dict, Integer, Float, Tuple
+from marshmallow.fields import Str, Nested, List, Dict, Integer, Float, Tuple  # noqa
 
 from pybio.exceptions import InvalidDoiException, PyBioValidationException
-from pybio.spec.pybio_types import MagicTensorsValue, MagicShapeValue
+from pybio.spec.spec_types import MagicTensorsValue, MagicShapeValue
 
 
 def resolve_local_path(path_str: str, context: dict) -> pathlib.Path:
@@ -57,10 +56,16 @@ class SpecURI(Nested):
         if uri.query:
             raise PyBioValidationException(f"Invalid URI: {uri}. Got URI query: {uri.query}")
 
-        if uri.scheme == "file" or uri.scheme == "":
+        if uri.scheme == "" or len(uri.scheme) == 1:  # Guess that scheme is not a scheme, but a windows path drive letter instead for uri.scheme == 1
             if uri.netloc:
-                raise PyBioValidationException(f"Invalid URI: {uri}")
-            spec_path = resolve_local_path(uri.path, self.context)
+                raise PyBioValidationException(f"Invalid Path/URI: {uri}")
+            spec_path = resolve_local_path(value, self.context)
+        elif uri.scheme == "file":
+            raise NotImplementedError
+            # things to keep in mind when implementing this:
+            # - problems with absolute paths on windows:
+            #   >>> assert Path(urlparse(WindowsPath().absolute().as_uri()).path).exists() fails
+            # - relative paths are invalid URIs
         elif uri.netloc == "github.com":
             orga, repo_name, blob, commit_id, *in_repo_path = uri.path.strip("/").split("/")
             in_repo_path = "/".join(in_repo_path)

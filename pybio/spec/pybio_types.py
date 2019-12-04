@@ -98,6 +98,9 @@ class BaseSpec:
     spec: MinimalYAML
     kwargs: Dict[str, Any]
 
+    def get_instance(self, **kwargs) -> Any:
+        return self.spec.source(**self.kwargs, **kwargs)
+
 
 @dataclass
 class TransformationSpec(BaseSpec):
