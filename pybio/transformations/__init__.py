@@ -16,8 +16,8 @@ class Transformation:
     def apply_to_array(self, array: PyBioArray) -> PyBioArray:
         raise NotImplementedError
 
-    def apply(self, tensors: List[PyBioArray]) -> List[PyBioArray]:
-        return [self.apply_to_array(t) if i in self.apply_to else t for i, t in enumerate(tensors)]
+    def apply(self, *arrays: PyBioArray) -> List[PyBioArray]:
+        return [self.apply_to_array(a) if i in self.apply_to else a for i, a in enumerate(arrays)]
 
     def dynamic_output_shape(self, input_shape: List[Tuple[int]]) -> List[Tuple[int]]:
         raise NotImplementedError

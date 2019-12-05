@@ -1,14 +1,14 @@
-from typing import Sequence, Optional
+from typing import Optional, Tuple
 
 import numpy
 
 from pybio.transformations import Transformation
 
 
-class NumpylikeTransformation(Transformation):
-    def __init__(self, apply_to: Optional[Sequence[int]] = None, **kwargs):
-        super().__init__(apply_to=apply_to)
-        self.kwargs = kwargs
+# class NumpylikeTransformation(Transformation):
+#     def __init__(self, apply_to: Optional[Sequence[int]] = None, **kwargs):
+#         super().__init__(apply_to=apply_to)
+#         self.kwargs = kwargs
 
 
 # tdo: remove commented code
@@ -24,11 +24,19 @@ class NumpylikeTransformation(Transformation):
 # __all__ = [make_numpy_like_transformation(function_name) for function_name in ["reshape", "transpose"]]
 
 
-class Reshape(NumpylikeTransformation):
+class Reshape(Transformation):
+    def __init__(self, shape: Tuple[int], **super_kwargs):
+        super().__init__(**super_kwargs)
+        self.shape = shape
+
     def apply_to_array(self, array: numpy.ndarray) -> numpy.ndarray:
-        return numpy.reshape(array, **self.kwargs)
+        return array.reshape(self.shape)
 
 
-class Transpose(NumpylikeTransformation):
+class Transpose(Transformation):
+    def __init__(self, axes: Optional[Tuple[int]] = None, **super_kwargs):
+        super().__init__(**super_kwargs)
+        self.axes = axes or []
+
     def apply_to_array(self, array: numpy.ndarray) -> numpy.ndarray:
-        return numpy.transpose(array, **self.kwargs)
+        return array.transpose(*self.axes)
