@@ -1,15 +1,28 @@
 from importlib import import_module
 from urllib.parse import urlparse, ParseResult
 import pathlib
+import sys
 import requests
 import subprocess
 import typing
 import yaml
+import contextlib
 
 from marshmallow.fields import Str, Nested, List, Dict, Integer, Float, Tuple  # noqa
 
 from pybio.spec.exceptions import InvalidDoiException, PyBioValidationException
 from pybio.spec.spec_types import MagicTensorsValue, MagicShapeValue
+
+
+@contextlib.contextmanager
+def modified_sys_path(path: typing.Union[str, pathlib.Path]):
+    # FIXME: Probably all specs containing implementation in same folder should use common prefix for this
+    # to avoid namespace pollution e.g. spec_root.unet2d.UNet2D
+    # or with something like ./unet2d.py::UNet2D
+    sys.path.insert(0, str(path))
+    yield
+    del sys.path[0]
+
 
 
 def resolve_local_path(path_str: str, context: dict) -> pathlib.Path:
@@ -115,9 +128,14 @@ class ImportableSource(Str):
     def _deserialize(self, *args, **kwargs) -> typing.Any:
         source_str: str = super()._deserialize(*args, **kwargs)
         last_dot_idx = source_str.rfind(".")
+
+        spec_dir = self.context["spec_path"].parent
         module_name = source_str[:last_dot_idx]
         object_name = source_str[last_dot_idx + 1 :]
-        dep = import_module(module_name)
+
+        with modified_sys_path(spec_dir):
+            dep = import_module(module_name)
+
         return getattr(dep, object_name)
 
 
