@@ -54,17 +54,15 @@ training:
         reader:
             spec: ../../readers/BroadNucleusData.reader.yaml
         sampler:
-            spec: https://github.com/bioimage-io/pytorch-bioimage-io/blob/ca837b91cc134004f3f61310b3f77e7d2ed8403c/specs/samplers/GrayscaleImageSampler.sampler.yaml
+            spec: ../../samplers/SequentialSamplerAlongDimension.sampler.yaml
+            kwargs: {sample_dimensions: [0, 0]}
         preprocess: null
-#        loss: []
-#        optimizer: null
 
     source: pybio.training.classic_fit.classic_fit
     required_kwargs: [model_spec]
-    optional_kwargs: {sampler_start: 0, sampler_stop: 1}
+    optional_kwargs: {start: 0, batch_size: 1}
     # enable different ways of specifying the dependencies.
     # this would hold all training dependencies, e.g. as a frozen conda environment
     # or as a pom.xml
-    dependencies: # this is a file to the dependencies
-        conda:./test_env.yaml
+    dependencies: conda:./test_env.yaml  # this is a file to the dependencies
     description: todo describe training

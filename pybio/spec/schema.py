@@ -194,7 +194,7 @@ class ReaderSpec(BaseSpec):
 
 class Sampler(MinimalYAML):
     dependencies = fields.Dependencies(missing=None)
-    outputs = fields.Tensors(OutputTensor, valid_magic_values=[fields.MagicTensorsValue.any])
+    outputs = fields.Tensors(OutputTensor, valid_magic_values=[fields.MagicTensorsValue.any], missing=None)
 
 
 class SamplerSpec(BaseSpec):
