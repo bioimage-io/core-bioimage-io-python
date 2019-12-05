@@ -44,17 +44,3 @@ def test_load_specs_from_manifest(category, spec_path, required_kwargs):
     loaded_spec = load_spec(spec_path.as_posix(), kwargs=kwargs)
 
     assert loaded_spec
-
-
-def test_load_non_existing_spec():
-    spec_path = "some/none/existing/path/to/spec.model.yaml"
-
-    with pytest.raises(FileNotFoundError):
-        load_spec(spec_path)
-
-
-def test_load_non_valid_spec_name():
-    spec_path = "some/none/existing/path/to/spec.not_valid.yaml"
-
-    with pytest.raises(ValueError):
-        load_spec(spec_path)
