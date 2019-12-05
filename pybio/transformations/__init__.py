@@ -1,12 +1,17 @@
-from typing import List, Sequence, Tuple
+from typing import List, Sequence, Tuple, Optional
 
 from pybio.array import PyBioArray
 from pybio_spec.spec_types import InputArray, OutputArray
 
 
+class ApplyToAll:
+    def __contains__(self, item):
+        return True
+
+
 class Transformation:
-    def __init__(self, apply_to: Sequence[int] = (0,)):
-        self.apply_to = apply_to
+    def __init__(self, apply_to: Optional[Sequence[int]] = None):
+        self.apply_to = ApplyToAll() if apply_to is None else apply_to
 
     def apply_to_array(self, array: PyBioArray) -> PyBioArray:
         raise NotImplementedError

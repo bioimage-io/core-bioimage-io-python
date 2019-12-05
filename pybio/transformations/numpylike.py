@@ -1,4 +1,4 @@
-from typing import Tuple, Sequence
+from typing import Sequence, Optional
 
 import numpy
 
@@ -6,9 +6,9 @@ from pybio.transformations import Transformation
 
 
 class NumpylikeTransformation(Transformation):
-    def __init__(self, apply_to: Sequence[int] = (0,), **kwargs):
-        self.kwargs = kwargs
+    def __init__(self, apply_to: Optional[Sequence[int]] = None, **kwargs):
         super().__init__(apply_to=apply_to)
+        self.kwargs = kwargs
 
 
 # tdo: remove commented code
