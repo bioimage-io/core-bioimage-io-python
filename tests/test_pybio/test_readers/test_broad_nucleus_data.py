@@ -1,9 +1,9 @@
 from pybio.readers.base import PyBioReader
-from pybio.readers.broad_nucleus_data import BroadNucleusData
+from pybio.readers.broad_nucleus_data import BroadNucleusDataBinarized
 
 
 def test_broad_nucleus():
-    reader = BroadNucleusData()
+    reader = BroadNucleusDataBinarized()
     assert isinstance(reader, PyBioReader)
     assert len(reader.shape) == 2
     one_slice_tuple = (slice(1, 4), slice(2, 4), slice(3, 4))

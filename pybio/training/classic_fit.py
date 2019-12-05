@@ -1,6 +1,4 @@
-from typing import Optional
-
-from pybio.spec.spec_types import ModelSpec
+from pybio_spec.spec_types import ModelSpec
 
 
 def classic_fit(model_spec: ModelSpec, start: int = 0, batch_size: int = 1):

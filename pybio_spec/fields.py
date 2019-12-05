@@ -8,8 +8,8 @@ import yaml
 
 from marshmallow.fields import Str, Nested, List, Dict, Integer, Float, Tuple  # noqa
 
-from pybio.exceptions import InvalidDoiException, PyBioValidationException
-from pybio.spec.spec_types import MagicTensorsValue, MagicShapeValue
+from pybio_spec.exceptions import InvalidDoiException, PyBioValidationException
+from pybio_spec.spec_types import MagicTensorsValue, MagicShapeValue
 
 
 def resolve_local_path(path_str: str, context: dict) -> pathlib.Path:
@@ -153,6 +153,10 @@ class Tensors(Nested):
 
         elif isinstance(value, list):
             return self._load(value, data, many=True)
+            # if all(isinstance(v, str) for v in value):
+            #     return namedtuple("CustomTensors", value)
+            # else:
+            #     return self._load(value, data, many=True)
         else:
             raise PyBioValidationException(f"Invalid input type: {type(value)}")
 

@@ -3,7 +3,7 @@ import yaml
 
 from pathlib import Path
 
-from pybio import load_spec
+from pybio_spec import load_spec
 
 MANIFEST_PATH = Path(__file__).parent.parent / "manifest.yaml"
 
@@ -22,12 +22,16 @@ def pytest_generate_tests(metafunc):
 @pytest.fixture
 def required_kwargs():
     kwargs = {
-        "specs/transformations/NumpyReshape.transformation.yaml": {"newshape": [-1]},
         "specs/transformations/Reshape.transformation.yaml": {"shape": [-1]},
-        "specs/models/sklearnbased/RandomForestClassifier0.model.yaml": {"c_indices": [1]},
+        "specs/models/sklearnbased/RandomForestClassifierBroadNucleusDataBinarized.model.yaml": {"c_indices": [1]},
+        "specs/samplers/SequentialSamplerAlongDimension.sampler.yaml": {"sample_dimensions": [1]},
     }
     # testing the test data...
-    assert all((MANIFEST_PATH.parent / spec_path).exists() for spec_path in kwargs)
+
+    for spec_path in kwargs:
+        if not (MANIFEST_PATH.parent / spec_path).exists():
+            raise FileNotFoundError(spec_path)
+
     return kwargs
 
 

@@ -1,3 +1,4 @@
+## Sequential Sampler Along Dimension
 example:
 ```python
 from pybio.readers.dummy import DummyReader

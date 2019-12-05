@@ -1,9 +1,9 @@
 name: Reshape
-description: applies numpy.reshape, while allowing for multiple '-1' values. In this case those axes are left unchanged
+description: applies numpy.reshape, while also allowing for '-2' values. In this case those axes are left unchanged
 cite: []
 authors:
     - Fynn Beuttenmueller
-documentation: Reshape.md
+documentation: transformations.md
 tags: [reshape]
 
 format_version: 0.1.0
@@ -14,5 +14,5 @@ dependencies: ../../env_numpy.yaml
 source: pybio.transformations.reshape.Reshape
 required_kwargs: [shape]
 
-inputs: any
-outputs: same # that's a lie! need outputs with input references, while inputs is any... todo: a lot inputs/outputs
+inputs: dynamic
+outputs: dynamic

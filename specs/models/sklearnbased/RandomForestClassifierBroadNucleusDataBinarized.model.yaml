@@ -1,11 +1,11 @@
-name: sklearnRandomForestClassifier0
+name: sklearnRandomForestClassifierBroadNucleusData
 description: Random Forest Classifier form scikit-learn
 cite:
   - text: L. Breiman, "Random Forests", Machine Learning, 45(1), 5-32, 2001
     url: https://scikit-learn.org/stable/modules/generated/sklearnbased.ensemble.RandomForestClassifier.html
 authors:
   - Fynn Beuttenmueller
-documentation: RandomForestClassifier0.md
+documentation: sklearnbased.md
 tags: [test, rf, random, forest]
 
 format_version: 0.1.0
@@ -52,7 +52,7 @@ prediction:
 training:
     setup:
         reader:
-            spec: ../../readers/BroadNucleusData.reader.yaml
+            spec: ../../readers/BroadNucleusDataBinarized.reader.yaml
         sampler:
             spec: ../../samplers/SequentialSamplerAlongDimension.sampler.yaml
             kwargs: {sample_dimensions: [0, 0]}
