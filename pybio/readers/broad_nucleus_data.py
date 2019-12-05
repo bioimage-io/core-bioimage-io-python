@@ -48,7 +48,7 @@ def load_images(files):
         if im.ndim == 3:
             im = im[..., 0]
         images.append(im)
-    print('here', max([img.min() for img in images]))
+
     return np.stack(images)
 
 
@@ -94,7 +94,8 @@ class BroadNucleusDataBinarized(PyBioReader):
         self._axes = "zyx", "zyx"  # todo: check axes
         super().__init__()
 
-
-    def __getitem__(self, index: Tuple[Tuple[slice, slice, slice], Tuple[slice, slice, slice]]) -> Tuple[numpy.ndarray, numpy.ndarray]:
+    def __getitem__(
+        self, index: Tuple[Tuple[slice, slice, slice], Tuple[slice, slice, slice]]
+    ) -> Tuple[numpy.ndarray, numpy.ndarray]:
         x, y = self.x[index[0]], self.y[index[1]]
         return x, y
