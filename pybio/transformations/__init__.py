@@ -13,11 +13,11 @@ class Transformation:
     def __init__(self, apply_to: Optional[Sequence[int]] = None):
         self.apply_to = ApplyToAll() if apply_to is None else apply_to
 
-    def apply_to_array(self, array: PyBioArray) -> PyBioArray:
+    def apply_to_one(self, array: PyBioArray) -> PyBioArray:
         raise NotImplementedError
 
     def apply(self, *arrays: PyBioArray) -> List[PyBioArray]:
-        return [self.apply_to_array(a) if i in self.apply_to else a for i, a in enumerate(arrays)]
+        return [self.apply_to_one(a) if i in self.apply_to else a for i, a in enumerate(arrays)]
 
     def dynamic_output_shape(self, input_shape: List[Tuple[int]]) -> List[Tuple[int]]:
         raise NotImplementedError

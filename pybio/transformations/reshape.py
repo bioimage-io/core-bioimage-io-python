@@ -9,7 +9,7 @@ class Reshape(Transformation):
         self.shape = shape
         super().__init__(**super_kwargs)
 
-    def apply_to_array(self, array: PyBioArray) -> PyBioArray:
+    def apply_to_one(self, array: PyBioArray) -> PyBioArray:
         if -2 in self.shape and self.shape.index(-2) >= len(array.shape):
             raise ValueError(f"transformation shape {self.shape} incompatible with array shape {array.shape}")
 

@@ -29,7 +29,7 @@ class Reshape(Transformation):
         super().__init__(**super_kwargs)
         self.shape = shape
 
-    def apply_to_array(self, array: numpy.ndarray) -> numpy.ndarray:
+    def apply_to_one(self, array: numpy.ndarray) -> numpy.ndarray:
         return array.reshape(self.shape)
 
 
@@ -38,5 +38,5 @@ class Transpose(Transformation):
         super().__init__(**super_kwargs)
         self.axes = axes or []
 
-    def apply_to_array(self, array: numpy.ndarray) -> numpy.ndarray:
+    def apply_to_one(self, array: numpy.ndarray) -> numpy.ndarray:
         return array.transpose(*self.axes)
