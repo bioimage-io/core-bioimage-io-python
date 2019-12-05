@@ -1,0 +1,68 @@
+name: sklearnRandomForestClassifier0
+description: Random Forest Classifier form scikit-learn
+cite:
+  - text: L. Breiman, "Random Forests", Machine Learning, 45(1), 5-32, 2001
+    url: https://scikit-learn.org/stable/modules/generated/sklearnbased.ensemble.RandomForestClassifier.html
+authors:
+  - Fynn Beuttenmueller
+documentation: RandomForestClassifier0.md
+tags: [test, rf, random, forest]
+
+format_version: 0.1.0
+language: python
+
+source: pybio.models.sklearnbased.RandomForestClassifier
+required_kwargs: [c_indices]
+optional_kwargs:
+  n_estimators: 10
+  criterion: gini
+  max_depth: null
+  min_samples_split: 2
+  min_samples_leaf: 1
+  min_weight_fraction_leaf: 0.0
+  max_features: auto
+  max_leaf_nodes: null
+  min_impurity_decrease: 0.0
+  min_impurity_split: 1e-7
+  bootstrap: true
+  oob_score: false
+  n_jobs: 1
+  random_state: 0
+  verbose: 0
+  warm_start: false
+  class_weight: null
+
+test_input: null # ../test_input.npy
+test_output: null # ../test_output.npy
+thumbnail: null # ./nuclei_thumbnail.png
+
+# TODO double check inputs/outputs
+inputs: any
+outputs: same  # that's a lie! need outputs with input references, while inputs is any... todo: a lot inputs/outputs
+
+prediction:
+    preprocess: null
+    weights:
+        source: todo.doi
+        hash: {md5: TODO}
+    postprocess: null
+    dependencies: conda:../env_numpy.yaml
+
+
+training:
+    setup:
+        reader:
+            spec: ../../readers/BroadNucleusData.reader.yaml
+        sampler:
+            spec: ../../samplers/SequentialSamplerAlongDimension.sampler.yaml
+            kwargs: {sample_dimensions: [0, 0]}
+        preprocess: null
+
+    source: pybio.training.classic_fit.classic_fit
+    required_kwargs: [model_spec]
+    optional_kwargs: {start: 0, batch_size: 1}
+    # enable different ways of specifying the dependencies.
+    # this would hold all training dependencies, e.g. as a frozen conda environment
+    # or as a pom.xml
+    dependencies: conda:./test_env.yaml  # this is a file to the dependencies
+    description: todo describe training

@@ -1,0 +1,15 @@
+name: SequentialSamplerAlongDimension
+description: samples volumes (provided by a reader) by batching full slices along one given dimension per volume
+cite: []
+authors:
+    - Fynn Beuttenmüller
+documentation: SequentialSamplerAlongDimension.md
+tags: [sequential, sampling, slice]
+
+dependencies: ../../env_numpy.yaml
+format_version: 0.1.0
+language: python
+
+source: pybio.samplers.sequential.SequentialSamplerAlongDimension
+required_kwargs: [sample_dimensions]
+optional_kwargs: {batch_size: 1, drop_last: true}
