@@ -1,5 +1,5 @@
-name: NumpyAsType
-description: applies numpy.astype
+name: Cast
+description: casts array(s) to a datatype
 cite: []
 authors:
     - Fynn Beuttenmueller
@@ -10,7 +10,6 @@ format_version: 0.1.0
 language: python
 
 dependencies: ../../env_numpy.yaml
-
 source: pybio.core.transformations.numpylike.AsType
 required_kwargs: [dtype]
 optional_kwargs: {apply_to: null, order: K, casting: unsafe, subok: true, copy: true}

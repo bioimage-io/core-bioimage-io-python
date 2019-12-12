@@ -1,5 +1,10 @@
 name: Reshape
-description: applies numpy.reshape, while also allowing for '-2' values. In this case those axes are left unchanged
+description: >
+    reshape array(s)
+    Target shape allows for special values:
+        '-1': max one occurrence; expands to fitting size
+        '-2': ignore axes, dimension size remains unchanged+(
+
 cite: []
 authors:
     - Fynn Beuttenmueller
@@ -13,6 +18,7 @@ dependencies: ../../env_numpy.yaml
 
 source: pybio.core.transformations.reshape.Reshape
 required_kwargs: [shape]
+optional_kwargs: {apply_to: null}
 
 inputs: dynamic
 outputs: dynamic
