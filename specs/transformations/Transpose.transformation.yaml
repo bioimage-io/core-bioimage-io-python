@@ -11,7 +11,7 @@ language: python
 
 dependencies: ../../env_numpy.yaml
 
-source: pybio.transformations.numpylike.Transpose
+source: pybio.core.transformations.numpylike.Transpose
 optional_kwargs: {axes: null}
 
 inputs: any

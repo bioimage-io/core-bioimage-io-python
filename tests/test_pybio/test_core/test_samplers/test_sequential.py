@@ -2,8 +2,8 @@ from math import ceil
 
 import pytest
 
-from pybio.readers.dummy import DummyReader
-from pybio.samplers.sequential import SequentialSamplerAlongDimension
+from pybio.core.readers.dummy import DummyReader
+from pybio.core.samplers.sequential import SequentialSamplerAlongDimension
 
 
 @pytest.fixture

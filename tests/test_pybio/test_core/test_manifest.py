@@ -3,9 +3,9 @@ import yaml
 
 from pathlib import Path
 
-from pybio_spec import load_spec
+from pybio.spec import load_spec
 
-MANIFEST_PATH = Path(__file__).parent.parent / "manifest.yaml"
+MANIFEST_PATH = Path(__file__).parent.parent.parent.parent / "manifest.yaml"
 
 
 def pytest_generate_tests(metafunc):

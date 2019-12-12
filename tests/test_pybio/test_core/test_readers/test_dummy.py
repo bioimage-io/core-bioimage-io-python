@@ -1,5 +1,5 @@
-from pybio.readers.base import PyBioReader
-from pybio.readers.dummy import DummyReader
+from pybio.core.readers.base import PyBioReader
+from pybio.core.readers.dummy import DummyReader
 
 
 def test_dummy_reader():

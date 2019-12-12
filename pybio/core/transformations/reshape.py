@@ -1,7 +1,7 @@
 from typing import Sequence, List, Tuple
 
-from pybio.array import PyBioArray
-from pybio.transformations import Transformation
+from pybio.core.array import PyBioArray
+from pybio.core.transformations import Transformation
 
 
 class Reshape(Transformation):

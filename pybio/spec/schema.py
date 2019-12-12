@@ -3,9 +3,9 @@ from typing import Any, Dict, Union
 
 from marshmallow import Schema, pprint, ValidationError, post_load, validates_schema, validates
 
-from pybio_spec.exceptions import PyBioValidationException
-from pybio_spec import spec_types, fields
-from pybio_spec.spec_types import MagicTensorsValue, MagicShapeValue
+from pybio.spec.exceptions import PyBioValidationException
+from pybio.spec import spec_types, fields
+from pybio.spec.spec_types import MagicTensorsValue, MagicShapeValue
 
 
 class PyBioSchema(Schema):

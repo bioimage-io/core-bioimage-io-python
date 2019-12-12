@@ -2,13 +2,13 @@ from pathlib import Path
 
 import numpy
 
-from pybio_spec import load_spec
+from pybio.spec import load_spec
 
 
 def test_RandomForestClassifierBroadNucleusDataBinarized():
     spec_path = (
         Path(__file__).parent
-        / "../../../specs/models/sklearnbased/RandomForestClassifierBroadNucleusDataBinarized.model.yaml"
+        / "../../../../specs/models/sklearnbased/RandomForestClassifierBroadNucleusDataBinarized.model.yaml"
     )
     loaded_spec = load_spec(spec_path.as_posix(), kwargs={"c_indices": [None]})
 

@@ -1,5 +1,5 @@
-from pybio.readers.base import PyBioReader
-from pybio.readers.broad_nucleus_data import BroadNucleusDataBinarized
+from pybio.core.readers.base import PyBioReader
+from pybio.core.readers.broad_nucleus_data import BroadNucleusDataBinarized
 
 
 def test_broad_nucleus():

@@ -1,6 +1,6 @@
 import pytest
 
-from pybio_spec import load_spec
+from pybio.spec import load_spec
 
 
 def test_load_non_existing_spec():

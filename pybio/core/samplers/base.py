@@ -2,7 +2,7 @@ from typing import Tuple, Optional, Sequence, Union
 
 import numpy
 
-from pybio.readers.base import PyBioReader
+from pybio.core.readers.base import PyBioReader
 
 
 class PyBioSampler:

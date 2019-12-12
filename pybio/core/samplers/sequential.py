@@ -3,8 +3,8 @@ from typing import Optional, Sequence, Tuple, Union
 
 import numpy
 
-from pybio.readers.base import PyBioReader
-from pybio.samplers.base import PyBioSampler
+from pybio.core.readers.base import PyBioReader
+from pybio.core.samplers.base import PyBioSampler
 
 
 class SequentialSamplerAlongDimension(PyBioSampler):

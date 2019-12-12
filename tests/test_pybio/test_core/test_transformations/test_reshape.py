@@ -1,7 +1,7 @@
 import numpy
 import pytest
 
-from pybio.transformations.reshape import Reshape
+from pybio.core.transformations.reshape import Reshape
 
 testdata = [
     ((12,), (3, 4), (12,)),

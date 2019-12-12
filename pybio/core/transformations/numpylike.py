@@ -2,7 +2,7 @@ from typing import Optional, Tuple
 
 import numpy
 
-from pybio.transformations import Transformation
+from pybio.core.transformations import Transformation
 
 
 # class NumpylikeTransformation(Transformation):

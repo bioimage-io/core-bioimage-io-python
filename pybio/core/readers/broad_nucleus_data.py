@@ -7,7 +7,7 @@ import numpy
 import numpy as np
 import imageio
 
-from pybio.readers.base import PyBioReader
+from pybio.core.readers.base import PyBioReader
 
 
 def download_data(url, data_dir, prefix):

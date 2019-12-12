@@ -8,8 +8,8 @@ import yaml
 
 from marshmallow.fields import Str, Nested, List, Dict, Integer, Float, Tuple  # noqa
 
-from pybio_spec.exceptions import InvalidDoiException, PyBioValidationException
-from pybio_spec.spec_types import MagicTensorsValue, MagicShapeValue
+from pybio.spec.exceptions import InvalidDoiException, PyBioValidationException
+from pybio.spec.spec_types import MagicTensorsValue, MagicShapeValue
 
 
 def resolve_local_path(path_str: str, context: dict) -> pathlib.Path:
