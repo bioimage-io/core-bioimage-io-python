@@ -11,9 +11,9 @@ language: python
 
 dependencies: ../../env_numpy.yaml
 
-source: pybio.transformations.numpylike.AsType
+source: pybio.core.transformations.numpylike.AsType
 required_kwargs: [dtype]
-optional_kwargs: {order: K, casting: unsafe, subok: true, copy: true}
+optional_kwargs: {apply_to: null, order: K, casting: unsafe, subok: true, copy: true}
 
 inputs: any
 outputs: dynamic
