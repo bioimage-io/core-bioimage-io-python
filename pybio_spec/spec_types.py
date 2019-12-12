@@ -107,7 +107,10 @@ class BaseSpec:
     kwargs: Dict[str, Any]
 
     def get_instance(self, **kwargs) -> Any:
-        return self.spec.source(**self.kwargs, **kwargs)
+        joined_kwargs = dict(self.spec.optional_kwargs)
+        joined_kwargs.update(self.kwargs)
+        joined_kwargs.update(kwargs)
+        return self.spec.source(**joined_kwargs)
 
 
 @dataclass
@@ -154,6 +157,11 @@ class Optimizer:
     source: Callable
     required_kwargs: List[str]
     optional_kwargs: Dict[str, Any]
+
+    def get_instance(self, parameters, **kwargs) -> Any:
+        joined_kwargs = dict(self.optional_kwargs)
+        joined_kwargs.update(kwargs)
+        return self.source(parameters, **joined_kwargs)
 
 
 @dataclass
