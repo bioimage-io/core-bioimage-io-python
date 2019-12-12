@@ -9,6 +9,7 @@ from pybio.core.samplers.base import PyBioSampler
 
 class SequentialSamplerAlongDimension(PyBioSampler):
     def __init__(self, sample_dimensions: Sequence[int], reader: PyBioReader, batch_size: int = 1, drop_last: bool = True):
+        assert len(sample_dimensions) == len(reader.shape)
         self.sample_dimensions = sample_dimensions
         # axes/shape: sample dimension is 'consumed' and a batch dimension added
         self._axes = tuple("b" + a[:sd] + a[sd + 1:] for a, sd in zip(reader.axes, sample_dimensions))

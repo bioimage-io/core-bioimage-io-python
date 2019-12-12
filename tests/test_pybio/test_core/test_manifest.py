@@ -25,6 +25,7 @@ def required_kwargs():
         "specs/transformations/Reshape.transformation.yaml": {"shape": [-1]},
         "specs/models/sklearnbased/RandomForestClassifierBroadNucleusDataBinarized.model.yaml": {"c_indices": [1]},
         "specs/samplers/SequentialSamplerAlongDimension.sampler.yaml": {"sample_dimensions": [1]},
+        "specs/transformations/AsType.transformation.yaml": {"dtype": "float32"},
     }
     # testing the test data...
 

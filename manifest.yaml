@@ -1,6 +1,7 @@
 transformations:
     - specs/transformations/Transpose.transformation.yaml
     - specs/transformations/Reshape.transformation.yaml
+    - specs/transformations/AsType.transformation.yaml
 readers:
     - specs/readers/BroadNucleusDataBinarized.reader.yaml
 samplers:

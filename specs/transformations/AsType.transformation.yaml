@@ -1,0 +1,19 @@
+name: NumpyAsType
+description: applies numpy.astype
+cite: []
+authors:
+    - Fynn Beuttenmueller
+documentation: transformations.md
+tags: [numpy, astype, cast, dtype]
+
+format_version: 0.1.0
+language: python
+
+dependencies: ../../env_numpy.yaml
+
+source: pybio.transformations.numpylike.AsType
+required_kwargs: [dtype]
+optional_kwargs: {order: K, casting: unsafe, subok: true, copy: true}
+
+inputs: any
+outputs: dynamic

@@ -40,3 +40,12 @@ class Transpose(Transformation):
 
     def apply_to_one(self, array: numpy.ndarray) -> numpy.ndarray:
         return array.transpose(*self.axes)
+
+
+class AsType(Transformation):
+    def __init__(self, dtype: str, order: str, casting: str, subok: bool, copy: bool, **super_kwargs):
+        super().__init__(**super_kwargs)
+        self.kwargs = {"dtype": dtype, "order": order, "casting": casting, "subok": subok, "copy": copy}
+
+    def apply_to_one(self, array: numpy.ndarray) -> numpy.ndarray:
+        return array.astype(**self.kwargs)
