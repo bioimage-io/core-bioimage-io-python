@@ -7,10 +7,12 @@ from typing import List, Optional, Callable, Any, Dict, NewType, Tuple, Union, T
 class MagicTensorsValue(Enum):
     any = "any"
     same = "same"
+    dynamic = "dynamic"
 
 
 class MagicShapeValue(Enum):
     any = "any"
+    dynamic = "dynamic"
 
 
 # Types for non-nested fields
@@ -51,17 +53,22 @@ class InputShape:
     min: List[float]
     step: List[float]
 
+    def __len__(self):
+        return len(self.min)
+
 
 @dataclass
 class OutputShape:
     reference_input: Optional[str]
     scale: List[float]
     offset: List[int]
-    halo: List[int]
+
+    def __len__(self):
+        return len(self.scale)
 
 
 @dataclass
-class Tensor:
+class Array:
     name: str
     axes: Optional[Axes]
     data_type: str
@@ -69,23 +76,24 @@ class Tensor:
 
 
 @dataclass
-class InputTensor(Tensor):
+class InputArray(Array):
     shape: Union[Tuple[int, ...], MagicShapeValue, InputShape]
 
 
 @dataclass
-class OutputTensor(Tensor):
+class OutputArray(Array):
     shape: Union[Tuple[int, ...], MagicShapeValue, OutputShape]
+    halo: List[int]
 
 
 @dataclass
 class WithInputs:
-    inputs: Union[MagicTensorsValue, Type[NamedTuple], List[InputTensor]]
+    inputs: Union[MagicTensorsValue, List[InputArray]]
 
 
 @dataclass
 class WithOutputs:
-    outputs: Union[MagicTensorsValue, Type[NamedTuple], List[OutputTensor]]
+    outputs: Union[MagicTensorsValue, List[OutputArray]]
 
 
 @dataclass
@@ -99,7 +107,10 @@ class BaseSpec:
     kwargs: Dict[str, Any]
 
     def get_instance(self, **kwargs) -> Any:
-        return self.spec.source(**self.kwargs, **kwargs)
+        joined_kwargs = dict(self.spec.optional_kwargs)
+        joined_kwargs.update(self.kwargs)
+        joined_kwargs.update(kwargs)
+        return self.spec.source(**joined_kwargs)
 
 
 @dataclass
@@ -122,7 +133,7 @@ class Prediction:
 
 
 @dataclass
-class Reader(MinimalYAML):
+class Reader(MinimalYAML, WithOutputs):
     dependencies: Optional[Dependencies]
 
 
@@ -146,6 +157,11 @@ class Optimizer:
     source: Callable
     required_kwargs: List[str]
     optional_kwargs: Dict[str, Any]
+
+    def get_instance(self, parameters, **kwargs) -> Any:
+        joined_kwargs = dict(self.optional_kwargs)
+        joined_kwargs.update(kwargs)
+        return self.source(parameters, **joined_kwargs)
 
 
 @dataclass

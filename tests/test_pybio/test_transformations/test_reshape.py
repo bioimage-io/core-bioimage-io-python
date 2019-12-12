@@ -19,7 +19,7 @@ testdata = [
 def test_reshape(shape, ipt_shape, out_shape):
     trf = Reshape(shape=shape)
     ipt = numpy.empty(ipt_shape)
-    out = trf([ipt])[0]
+    out = trf.apply(ipt)[0]
     assert out.shape == out_shape
 
 
@@ -36,4 +36,4 @@ def test_reshape_raises_value_error_on_call(shape, ipt_shape):
     trf = Reshape(shape=shape)
     ipt = numpy.empty(ipt_shape)
     with pytest.raises(ValueError):
-        trf([ipt])
+        trf.apply(ipt)

@@ -1,0 +1,26 @@
+name: BroadNucleusDataBinarized
+description: Read example data from the Broad institute nucleus data kaggle challenge.
+cite:
+    - text: TODO
+      doi: TODO
+authors:
+    - Constantin Pape;@constantinpape
+documentation: reader.md
+tags: ['nuclei', 'segmentation', 'kaggle', 'broad institute']
+
+dependencies: ../../env_no_pytorch.yaml
+format_version: 0.1.0
+language: python
+
+source: pybio.readers.broad_nucleus_data.BroadNucleusDataBinarized
+outputs:
+  - name: raw
+    axes: bxy
+    shape: [200, 696, 520]
+    data_type: float32
+    data_range: [131, 4095]
+  - name: label
+    axes: bxy
+    shape: [200, 696, 520]
+    data_type: bool
+    data_range: [0, 1]

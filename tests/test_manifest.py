@@ -3,7 +3,7 @@ import yaml
 
 from pathlib import Path
 
-from pybio import load_spec
+from pybio_spec import load_spec
 
 MANIFEST_PATH = Path(__file__).parent.parent / "manifest.yaml"
 
@@ -22,12 +22,16 @@ def pytest_generate_tests(metafunc):
 @pytest.fixture
 def required_kwargs():
     kwargs = {
-        "specs/transformations/NumpyReshape.transformation.yaml": {"newshape": [-1]},
         "specs/transformations/Reshape.transformation.yaml": {"shape": [-1]},
-        "specs/models/sklearnbased/RandomForestClassifier0.model.yaml": {"c_indices": [1]},
+        "specs/models/sklearnbased/RandomForestClassifierBroadNucleusDataBinarized.model.yaml": {"c_indices": [1]},
+        "specs/samplers/SequentialSamplerAlongDimension.sampler.yaml": {"sample_dimensions": [1]},
     }
     # testing the test data...
-    assert all((MANIFEST_PATH.parent / spec_path).exists() for spec_path in kwargs)
+
+    for spec_path in kwargs:
+        if not (MANIFEST_PATH.parent / spec_path).exists():
+            raise FileNotFoundError(spec_path)
+
     return kwargs
 
 
@@ -40,17 +44,3 @@ def test_load_specs_from_manifest(category, spec_path, required_kwargs):
     loaded_spec = load_spec(spec_path.as_posix(), kwargs=kwargs)
 
     assert loaded_spec
-
-
-def test_load_non_existing_spec():
-    spec_path = "some/none/existing/path/to/spec.model.yaml"
-
-    with pytest.raises(FileNotFoundError):
-        load_spec(spec_path)
-
-
-def test_load_non_valid_spec_name():
-    spec_path = "some/none/existing/path/to/spec.not_valid.yaml"
-
-    with pytest.raises(ValueError):
-        load_spec(spec_path)

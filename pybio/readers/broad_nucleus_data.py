@@ -48,10 +48,11 @@ def load_images(files):
         if im.ndim == 3:
             im = im[..., 0]
         images.append(im)
+
     return np.stack(images)
 
 
-class BroadNucleusData(PyBioReader):
+class BroadNucleusDataBinarized(PyBioReader):
     # TODO store hashes and validate
     urls = {
         "images": "https://data.broadinstitute.org/bbbc/BBBC039/images.zip",
@@ -70,15 +71,14 @@ class BroadNucleusData(PyBioReader):
         labels = load_images(label_list)
 
         # we binarize the labels
-        labels[labels > 0] = 1
-        labels = labels.astype("float32")
+        labels = labels.astype("bool")
 
         image_list = load_file_list(train_list, os.path.join(data_dir, "images"), is_tif=True)
         images = load_images(image_list).astype("float32")
 
-        crop = np.s_[:, :512, :512]
-        images = images[crop]
-        labels = labels[crop]
+        # crop = np.s_[:, :512, :512]
+        # images = images[crop]
+        # labels = labels[crop]
         assert images.shape == labels.shape
 
         return images, labels
@@ -94,7 +94,8 @@ class BroadNucleusData(PyBioReader):
         self._axes = "zyx", "zyx"  # todo: check axes
         super().__init__()
 
-
-    def __getitem__(self, index: Tuple[Tuple[slice, slice, slice], Tuple[slice, slice, slice]]) -> Tuple[numpy.ndarray, numpy.ndarray]:
+    def __getitem__(
+        self, index: Tuple[Tuple[slice, slice, slice], Tuple[slice, slice, slice]]
+    ) -> Tuple[numpy.ndarray, numpy.ndarray]:
         x, y = self.x[index[0]], self.y[index[1]]
         return x, y

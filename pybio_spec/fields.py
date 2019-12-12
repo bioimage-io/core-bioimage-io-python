@@ -8,8 +8,8 @@ import yaml
 
 from marshmallow.fields import Str, Nested, List, Dict, Integer, Float, Tuple  # noqa
 
-from pybio.exceptions import InvalidDoiException, PyBioValidationException
-from pybio.spec.spec_types import MagicTensorsValue, MagicShapeValue
+from pybio_spec.exceptions import InvalidDoiException, PyBioValidationException
+from pybio_spec.spec_types import MagicTensorsValue, MagicShapeValue
 
 
 def resolve_local_path(path_str: str, context: dict) -> pathlib.Path:
@@ -17,7 +17,8 @@ def resolve_local_path(path_str: str, context: dict) -> pathlib.Path:
     if local_path.is_absolute():
         return local_path.resolve()
     elif "spec_path" in context:
-        return (context["spec_path"].parent / local_path).resolve()
+        so_far = context["spec_path"]
+        return (so_far[-1].parent / local_path).resolve()
     else:
         return local_path.absolute().resolve()
 
@@ -82,11 +83,17 @@ class SpecURI(Nested):
         else:
             raise ValueError(f"Unknown uri scheme {uri.scheme}")
 
-        self.context["spec_path"] = spec_path
+        if "spec_path" in self.context:
+            self.context["spec_path"].append(spec_path)
+        else:
+            self.context["spec_path"] = [spec_path]
+
         with spec_path.open() as f:
             value_data = yaml.safe_load(f)
 
-        return super()._deserialize(value_data, attr, data, **kwargs)
+        loaded_spec =  super()._deserialize(value_data, attr, data, **kwargs)
+        self.context["spec_path"].pop()
+        return loaded_spec
 
 
 class URI(Str):
@@ -153,6 +160,10 @@ class Tensors(Nested):
 
         elif isinstance(value, list):
             return self._load(value, data, many=True)
+            # if all(isinstance(v, str) for v in value):
+            #     return namedtuple("CustomTensors", value)
+            # else:
+            #     return self._load(value, data, many=True)
         else:
             raise PyBioValidationException(f"Invalid input type: {type(value)}")
 

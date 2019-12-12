@@ -1,21 +1,32 @@
-from typing import List, Sequence, Callable, Any, Tuple
+from typing import List, Sequence, Tuple, Optional
 
-import numpy
+from pybio.array import PyBioArray
+from pybio_spec.spec_types import InputArray, OutputArray
+
+
+class ApplyToAll:
+    def __contains__(self, item):
+        return True
 
 
 class Transformation:
-    expected_input_axes: List[str]
-    expected_input_shapes: List[Tuple[int]]
+    def __init__(self, apply_to: Optional[Sequence[int]] = None):
+        self.apply_to = ApplyToAll() if apply_to is None else apply_to
 
-    apply_to_ndarray: Callable[[numpy.ndarray], numpy.ndarray]
+    def apply_to_one(self, array: PyBioArray) -> PyBioArray:
+        raise NotImplementedError
 
-    def __init__(self, apply_to: Sequence[int] = (0,)):
-        self.apply_to = apply_to
+    def apply(self, *arrays: PyBioArray) -> List[PyBioArray]:
+        return [self.apply_to_one(a) if i in self.apply_to else a for i, a in enumerate(arrays)]
 
-        if hasattr(self, "apply_to_ndarray"):
-            self._apply_single = self.apply_to_ndarray
-        else:
-            raise NotImplementedError
+    def dynamic_output_shape(self, input_shape: List[Tuple[int]]) -> List[Tuple[int]]:
+        raise NotImplementedError
 
-    def __call__(self, tensors: List[numpy.ndarray]):
-        return [self._apply_single(t) if i in self.apply_to else t for i, t in enumerate(tensors)]
+    def dynamic_input_shape(self, output_shpe: List[Tuple[int]]) -> List[Tuple[int]]:
+        raise NotImplementedError
+
+    def dynamic_outputs(self, inputs: List[InputArray]) -> List[OutputArray]:
+        raise NotImplementedError
+
+    def dynamic_inputs(self, outputs: List[OutputArray]) -> List[InputArray]:
+        raise NotImplementedError

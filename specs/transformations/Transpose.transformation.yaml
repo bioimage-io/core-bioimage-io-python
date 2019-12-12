@@ -3,7 +3,7 @@ description: applies numpy.transpose
 cite: []
 authors:
     - Fynn Beuttenmueller
-documentation: Numpylike.md
+documentation: transformations.md
 tags: [numpy, reshape]
 
 format_version: 0.1.0

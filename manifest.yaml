@@ -1,9 +1,7 @@
-models:
-    - specs/models/sklearnbased/RandomForestClassifier0.model.yaml
 transformations:
-    - specs/transformations/NumpyReshape.transformation.yaml
-    - specs/transformations/NumpyTranspose.transformation.yaml
+    - specs/transformations/Transpose.transformation.yaml
     - specs/transformations/Reshape.transformation.yaml
 readers:
-    - specs/readers/BroadNucleusData.reader.yaml
-samplers: []
+    - specs/readers/BroadNucleusDataBinarized.reader.yaml
+samplers:
+    - specs/samplers/SequentialSamplerAlongDimension.sampler.yaml
