@@ -23,7 +23,7 @@ optional_kwargs:
   max_features: auto
   max_leaf_nodes: null
   min_impurity_decrease: 0.0
-  min_impurity_split: 1e-7
+  min_impurity_split: 1.0e-7
   bootstrap: true
   oob_score: false
   n_jobs: 1
