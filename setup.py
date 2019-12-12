@@ -24,7 +24,11 @@ setup(
         "Programming Language :: Python :: 3.7",
     ],
     packages=find_namespace_packages(exclude=["tests"]),  # Required
-    install_requires=["marshmallow>=3.3.0", "PyYAML>=5.2"],
+    install_requires=[
+        "dataclasses; python_version<'3.7'",
+        "marshmallow>=3.3.0",
+        "PyYAML>=5.2"
+    ],
     extras_require={
         "core": ["requests", "numpy", "sklearn", "imageio"],
         "test": ["pytest", "tox"],
