@@ -11,7 +11,7 @@ tags: [test, rf, random, forest]
 format_version: 0.1.0
 language: python
 
-source: pybio.models.sklearnbased.RandomForestClassifier
+source: pybio.core.models.sklearnbased.RandomForestClassifier
 required_kwargs: [c_indices]
 optional_kwargs:
   n_estimators: 10
@@ -23,7 +23,7 @@ optional_kwargs:
   max_features: auto
   max_leaf_nodes: null
   min_impurity_decrease: 0.0
-  min_impurity_split: 1e-7
+  min_impurity_split: 1.0e-7
   bootstrap: true
   oob_score: false
   n_jobs: 1
@@ -58,7 +58,7 @@ training:
             kwargs: {sample_dimensions: [0, 0]}
         preprocess: null
 
-    source: pybio.training.classic_fit.classic_fit
+    source: pybio.core.training.classic_fit.classic_fit
     required_kwargs: [model_spec]
     optional_kwargs: {start: 0, batch_size: 1}
     # enable different ways of specifying the dependencies.

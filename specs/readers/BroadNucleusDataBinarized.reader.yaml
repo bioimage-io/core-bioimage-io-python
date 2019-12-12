@@ -12,7 +12,7 @@ dependencies: ../../env_no_pytorch.yaml
 format_version: 0.1.0
 language: python
 
-source: pybio.readers.broad_nucleus_data.BroadNucleusDataBinarized
+source: pybio.core.readers.broad_nucleus_data.BroadNucleusDataBinarized
 outputs:
   - name: raw
     axes: bxy

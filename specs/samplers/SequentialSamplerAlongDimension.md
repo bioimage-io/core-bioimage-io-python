@@ -1,8 +1,8 @@
 ## Sequential Sampler Along Dimension
 example:
 ```python
-from pybio.readers.dummy import DummyReader
-from pybio.samplers.sequential import SequentialSamplerAlongDimension
+from pybio.core.readers.dummy import DummyReader
+from pybio.core.samplers.sequential import SequentialSamplerAlongDimension
 
 reader = DummyReader()
 sampler = SequentialSamplerAlongDimension(sample_dimensions=[0, 0], reader=reader)
