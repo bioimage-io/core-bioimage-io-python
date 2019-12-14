@@ -1,17 +1,18 @@
-from importlib import import_module
+import importlib
 from urllib.parse import urlparse, ParseResult
 import pathlib
 import sys
+import uuid
 import requests
 import subprocess
 import typing
 import yaml
 import contextlib
 
-from marshmallow.fields import Str, Nested, List, Dict, Integer, Float, Tuple  # noqa
+from marshmallow.fields import Str, Nested, List, Dict, Integer, Float, Tuple, ValidationError  # noqa
 
 from pybio.spec.exceptions import InvalidDoiException, PyBioValidationException
-from pybio.spec.spec_types import MagicTensorsValue, MagicShapeValue
+from pybio.spec.spec_types import MagicTensorsValue, MagicShapeValue, Importable
 
 
 @contextlib.contextmanager
@@ -125,18 +126,44 @@ class Path(Str):
 
 
 class ImportableSource(Str):
+    @staticmethod
+    def _is_import(path):
+        return "::" not in path
+
+    @staticmethod
+    def _is_filepath(path):
+        return "::" in path
+
+    @staticmethod
+    def _import_module(path):
+        spec = importlib.util.spec_from_file_location(f"user_imports.{uuid.uuid4().hex}", path)
+        dep = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(dep)
+        return dep
+
     def _deserialize(self, *args, **kwargs) -> typing.Any:
         source_str: str = super()._deserialize(*args, **kwargs)
-        last_dot_idx = source_str.rfind(".")
+        if self._is_import(source_str):
+            last_dot_idx = source_str.rfind(".")
 
-        spec_dir = self.context["spec_path"].parent
-        module_name = source_str[:last_dot_idx]
-        object_name = source_str[last_dot_idx + 1 :]
+            module_name = source_str[:last_dot_idx]
+            object_name = source_str[last_dot_idx + 1 :]
+            return Importable.Module(module_name, object_name)
 
-        with modified_sys_path(spec_dir):
-            dep = import_module(module_name)
+        elif self._is_filepath(source_str):
+            if source_str.startswith("/"):
+                raise ValidationError("Only realative paths are allowed")
 
-        return getattr(dep, object_name)
+            parts = source_str.split("::")
+            if len(parts) != 2:
+                raise ValidationError("Incorrect filepath format, expected example.py::ClassName")
+
+            module_path, object_name = parts
+
+            spec_dir = self.context["spec_path"].parent
+            abs_path = spec_dir / pathlib.Path(module_path)
+
+            return Importable.Path(module_path, object_name)
 
 
 class Axes(Str):

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional, Callable, Any, Dict, NewType, Tuple, Union, Type, NamedTuple
+from typing import List, Optional, Any, Dict, NewType, Tuple, Union, Type, NamedTuple
 
 
 class MagicTensorsValue(Enum):
@@ -14,6 +14,21 @@ class MagicShapeValue(Enum):
     any = "any"
     dynamic = "dynamic"
 
+
+class Importable:
+    @dataclass
+    class Path:
+        filepath: str
+        callable_name: str
+
+
+    @dataclass
+    class Module:
+        module_name: str
+        callable_name: str
+
+
+Source = Union[Importable.Path, Importable.Module]
 
 # Types for non-nested fields
 Axes = NewType("Axes", str)
@@ -39,7 +54,7 @@ class MinimalYAML:
 
     language: str
     framework: Optional[str]
-    source: Callable
+    source: Source
     required_kwargs: List[str]
     optional_kwargs: Dict[str, Any]
 
@@ -106,12 +121,6 @@ class BaseSpec:
     spec: MinimalYAML
     kwargs: Dict[str, Any]
 
-    def get_instance(self, **kwargs) -> Any:
-        joined_kwargs = dict(self.spec.optional_kwargs)
-        joined_kwargs.update(self.kwargs)
-        joined_kwargs.update(kwargs)
-        return self.spec.source(**joined_kwargs)
-
 
 @dataclass
 class TransformationSpec(BaseSpec):
@@ -154,14 +163,9 @@ class SamplerSpec(BaseSpec):
 
 @dataclass
 class Optimizer:
-    source: Callable
+    source: Source
     required_kwargs: List[str]
     optional_kwargs: Dict[str, Any]
-
-    def get_instance(self, parameters, **kwargs) -> Any:
-        joined_kwargs = dict(self.optional_kwargs)
-        joined_kwargs.update(kwargs)
-        return self.source(parameters, **joined_kwargs)
 
 
 @dataclass
@@ -177,7 +181,7 @@ class Setup:
 @dataclass
 class Training:
     setup: Setup
-    source: Callable
+    source: Source
     required_kwargs: List[str]
     optional_kwargs: Dict[str, Any]
     dependencies: Dependencies
@@ -193,13 +197,3 @@ class Model(MinimalYAML, WithInputs, WithOutputs):
 @dataclass
 class ModelSpec(BaseSpec):
     spec: Model
-
-    def train(self, **kwargs) -> Any:
-        complete_kwargs = dict(self.spec.training.optional_kwargs)
-        complete_kwargs.update(kwargs)
-
-        mspec = "model_spec"
-        if mspec not in complete_kwargs and mspec in self.spec.training.required_kwargs:
-            complete_kwargs[mspec] = self
-
-        return self.spec.training.source(**complete_kwargs)
