@@ -4,6 +4,10 @@ from pathlib import Path
 from typing import List, Optional, Any, Dict, NewType, Tuple, Union, Type, NamedTuple
 
 
+class Node:
+    pass
+
+
 class MagicTensorsValue(Enum):
     any = "any"
     same = "same"
@@ -17,13 +21,13 @@ class MagicShapeValue(Enum):
 
 class Importable:
     @dataclass
-    class Path:
+    class Path(Node):
         filepath: str
         callable_name: str
 
 
     @dataclass
-    class Module:
+    class Module(Node):
         module_name: str
         callable_name: str
 
@@ -36,14 +40,14 @@ Dependencies = NewType("Dependencies", Path)
 
 # Types for schema
 @dataclass
-class CiteEntry:
+class CiteEntry(Node):
     text: str
     doi: Optional[str]
     url: Optional[str]
 
 
 @dataclass
-class MinimalYAML:
+class MinimalYAML(Node):
     name: str
     format_version: str
     description: str
@@ -64,7 +68,7 @@ class MinimalYAML:
 
 
 @dataclass
-class InputShape:
+class InputShape(Node):
     min: List[float]
     step: List[float]
 
@@ -73,7 +77,7 @@ class InputShape:
 
 
 @dataclass
-class OutputShape:
+class OutputShape(Node):
     reference_input: Optional[str]
     scale: List[float]
     offset: List[int]
@@ -83,7 +87,7 @@ class OutputShape:
 
 
 @dataclass
-class Array:
+class Array(Node):
     name: str
     axes: Optional[Axes]
     data_type: str
@@ -102,12 +106,12 @@ class OutputArray(Array):
 
 
 @dataclass
-class WithInputs:
+class WithInputs(Node):
     inputs: Union[MagicTensorsValue, List[InputArray]]
 
 
 @dataclass
-class WithOutputs:
+class WithOutputs(Node):
     outputs: Union[MagicTensorsValue, List[OutputArray]]
 
 
@@ -117,7 +121,7 @@ class Transformation(MinimalYAML, WithInputs, WithOutputs):
 
 
 @dataclass
-class BaseSpec:
+class BaseSpec(Node):
     spec: MinimalYAML
     kwargs: Dict[str, Any]
 
@@ -128,13 +132,13 @@ class TransformationSpec(BaseSpec):
 
 
 @dataclass
-class Weights:
+class Weights(Node):
     source: str
     hash: Dict[str, str]
 
 
 @dataclass
-class Prediction:
+class Prediction(Node):
     weights: Weights
     dependencies: Optional[Dependencies]
     preprocess: Optional[List[TransformationSpec]]
@@ -162,14 +166,14 @@ class SamplerSpec(BaseSpec):
 
 
 @dataclass
-class Optimizer:
+class Optimizer(Node):
     source: Source
     required_kwargs: List[str]
     optional_kwargs: Dict[str, Any]
 
 
 @dataclass
-class Setup:
+class Setup(Node):
     reader: ReaderSpec
     sampler: SamplerSpec
     preprocess: List[TransformationSpec]
@@ -179,7 +183,7 @@ class Setup:
 
 
 @dataclass
-class Training:
+class Training(Node):
     setup: Setup
     source: Source
     required_kwargs: List[str]
