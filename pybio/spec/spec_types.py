@@ -193,10 +193,7 @@ class Model(MinimalYAML, WithInputs, WithOutputs):
 class ModelSpec(BaseSpec):
     spec: Model
 
-    def train(self, kwargs: Dict[str, Any] = None) -> Any:
-        if kwargs is None:
-            kwargs = {}
-
+    def train(self, **kwargs) -> Any:
         complete_kwargs = dict(self.spec.training.optional_kwargs)
         complete_kwargs.update(kwargs)
 
