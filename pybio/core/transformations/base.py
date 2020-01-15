@@ -34,6 +34,23 @@ class Transformation:
         raise NotImplementedError
 
 
+class SynchronizedTransformation(Transformation):
+    """ Transformation for which application to all tensors is synchronized.
+    This means, some state must be known before applying it to the tensors,
+    e.g. the degree before a random rotation
+    """
+
+    def set_next_state(self):
+        raise NotImplementedError
+
+    def apply(self, *tensors):
+        # TODO the state might depend on some tensor properties (esp. shape)
+        # inferno solves this with the 'set_random_state' and 'get_random_state' construction
+        # here, we could just pass *tensors to set_next_state
+        self.set_next_state()
+        return super().apply(*tensors)
+
+
 def apply_transformations(transformations: Sequence[Transformation], *tensors: PyBioArray) -> List[PyBioArray]:
     """ Helper function to apply a list of transformations to input tensors.
     """
