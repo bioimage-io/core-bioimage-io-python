@@ -59,17 +59,6 @@ class BaseSpec(PyBioSchema):
     spec: fields.SpecURI
     kwargs = fields.Dict(missing=dict)
 
-    @validates_schema
-    def check_kwargs(self, data, partial, many):
-        spec = data["spec"]
-        for k in spec.required_kwargs:
-            if not k in data["kwargs"]:
-                raise PyBioValidationException(f"Missing kwarg: {k}")
-
-        for k in data["kwargs"]:
-            if not (k in spec.required_kwargs or k in spec.optional_kwargs):
-                raise PyBioValidationException(f"Unexpected kwarg: {k}")
-
 
 class InputShape(PyBioSchema):
     min = fields.List(fields.Integer(), required=True)
@@ -207,7 +196,7 @@ class ReaderSpec(BaseSpec):
 
 class Sampler(MinimalYAML):
     dependencies = fields.Dependencies(missing=None)
-    outputs = fields.Tensors(OutputArray, valid_magic_values=[fields.MagicTensorsValue.any], missing=None)
+    outputs = fields.Tensors(OutputArray, valid_magic_values=[MagicTensorsValue.any], missing=None)
 
 
 class SamplerSpec(BaseSpec):

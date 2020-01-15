@@ -1,8 +1,9 @@
 import pytest
 
 from dataclasses import dataclass
-from pybio.spec import utils, spec_types
+from pybio.spec import utils, spec_types, fields, schema
 from typing import Optional, Any
+from marshmallow import post_load
 
 @dataclass
 class MyNode(spec_types.Node):
@@ -40,10 +41,6 @@ class TestNodeVisitor:
         visitor.visit(tree)
 
     def test_node_transform(self, tree):
-        @dataclass
-        class Content:
-            blob: str
-
         class MyTransformer(utils.NodeTransormer):
             def visit_URL(self, node):
                 return self.Transform(Content(f"content of url {node.url}"))
@@ -52,3 +49,41 @@ class TestNodeVisitor:
         transformer = MyTransformer()
         transformer.visit(tree)
         assert isinstance(tree.left.right, Content)
+
+
+@dataclass
+class MySpec(spec_types.Node):
+    uri_a: spec_types.URI
+    uri_b: spec_types.URI
+
+
+class SubSpec(schema.Schema):
+    axes = fields.Axes()
+
+
+class Spec(schema.Schema):
+    uri_a = fields.SpecURI(SubSpec)
+    uri_b = fields.SpecURI(SubSpec)
+
+    @post_load
+    def convert(self, data, **kwargs):
+        return MySpec(**data)
+
+
+class TestTraversingSpecURI:
+
+    def test_resolve_spec(self):
+        tree = Spec().load({
+            "uri_a": "https://example.com",
+            "uri_b": "../file.yml",
+        })
+
+        class MyTransformer(utils.NodeTransormer):
+            def visit_URI(self, node):
+                res = {"axes": "xyc"}
+                return self.Transform(node.loader.load(res))
+
+        transformer = MyTransformer()
+        transformer.visit(tree)
+        assert {"axes": "xyc"} == tree.uri_a
+        assert {"axes": "xyc"} == tree.uri_b

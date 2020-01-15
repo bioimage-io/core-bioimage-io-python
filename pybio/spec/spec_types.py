@@ -201,3 +201,11 @@ class Model(MinimalYAML, WithInputs, WithOutputs):
 @dataclass
 class ModelSpec(BaseSpec):
     spec: Model
+
+
+@dataclass
+class URI:
+    loader: Type
+    scheme: str
+    netloc: str
+    path: str
