@@ -24,7 +24,7 @@ class Transformation:
     def dynamic_output_shape(self, input_shape: List[Tuple[int]]) -> List[Tuple[int]]:
         raise NotImplementedError
 
-    def dynamic_input_shape(self, output_shpe: List[Tuple[int]]) -> List[Tuple[int]]:
+    def dynamic_input_shape(self, output_shape: List[Tuple[int]]) -> List[Tuple[int]]:
         raise NotImplementedError
 
     def dynamic_outputs(self, inputs: List[InputArray]) -> List[OutputArray]:
