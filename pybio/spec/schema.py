@@ -113,7 +113,7 @@ class Array(PyBioSchema):
     def axes_and_shape(self, data, **kwargs):
         axes = data["axes"]
         shape = data["shape"]
-        if not isinstance(shape, MagicShapeValue) and axes is None:
+        if not isinstance(shape, MagicShapeValue) and shape and axes is None:
             raise PyBioValidationException("Axes may not be 'null', when shape is specified")
 
 
@@ -174,7 +174,9 @@ class Transformation(MinimalYAML):
         InputArray, valid_magic_values=[MagicTensorsValue.any, MagicTensorsValue.dynamic], required=True
     )
     outputs = fields.Tensors(
-        OutputArray, valid_magic_values=[MagicTensorsValue.same, MagicTensorsValue.dynamic], required=True
+        OutputArray,
+        valid_magic_values=[MagicTensorsValue.same, MagicTensorsValue.dynamic],
+        missing=MagicTensorsValue.same,
     )
 
 
@@ -221,8 +223,9 @@ class Optimizer(PyBioSchema):
 class Setup(PyBioSchema):
     reader = fields.Nested(ReaderSpec, required=True)
     sampler = fields.Nested(SamplerSpec, required=True)
-    preprocess = fields.Nested(TransformationSpec, many=True, allow_none=True)
-    loss = fields.Nested(TransformationSpec, many=True, missing=list)
+    preprocess = fields.Nested(TransformationSpec, many=True, missing=list)
+    postprocess = fields.Nested(TransformationSpec, many=True, missing=list)
+    losses = fields.Nested(TransformationSpec, many=True, missing=list)
     optimizer = fields.Nested(Optimizer, missing=None)
 
 

@@ -1,10 +1,10 @@
-name: NumpyReshape
-description: applies numpy.transpose
+name: Transpose
+description: transpose array(s)
 cite: []
 authors:
     - Fynn Beuttenmueller
 documentation: transformations.md
-tags: [numpy, reshape]
+tags: [numpy, transpose]
 
 format_version: 0.1.0
 language: python
@@ -12,7 +12,7 @@ language: python
 dependencies: ../../env_numpy.yaml
 
 source: pybio.core.transformations.numpylike.Transpose
-optional_kwargs: {axes: null}
+optional_kwargs: {apply_to: null, axes: null}
 
-inputs: any
-outputs: same # that's a lie! need outputs with input references, while inputs is any... todo: a lot inputs/outputs
+inputs: dynamic
+outputs: dynamic
