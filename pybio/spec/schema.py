@@ -113,7 +113,7 @@ class Array(PyBioSchema):
     def axes_and_shape(self, data, **kwargs):
         axes = data["axes"]
         shape = data["shape"]
-        if not isinstance(shape, MagicShapeValue) and axes is None:
+        if not isinstance(shape, MagicShapeValue) and shape and axes is None:
             raise PyBioValidationException("Axes may not be 'null', when shape is specified")
 
 

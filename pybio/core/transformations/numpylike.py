@@ -6,7 +6,7 @@ from pybio.core.transformations import Transformation
 
 
 class NumpylikeTransformation(Transformation):
-    def __init__(self, apply_to: Optional[Sequence[int]] = None, **kwargs):
+    def __init__(self, apply_to: Sequence[int] = (0, 1), **kwargs):
         super().__init__(apply_to=apply_to)
         self.kwargs = kwargs
 

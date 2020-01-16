@@ -1,17 +1,12 @@
-from typing import List, Sequence, Tuple, Optional
+from typing import List, Sequence, Tuple, Optional, Union
 
 from pybio.core.array import PyBioArray
 from pybio.spec.spec_types import InputArray, OutputArray
 
 
-class ApplyToAll:
-    def __contains__(self, item):
-        return True
-
-
 class Transformation:
-    def __init__(self, apply_to: Optional[Sequence[int]] = None):
-        self.apply_to = ApplyToAll() if apply_to is None else apply_to
+    def __init__(self, apply_to: Sequence[int] = (0, 1)):
+        self.apply_to = apply_to
 
     # todo: with python 3.8 add / to make array argument purely positional
     #       (might be called tensor or similar in derived classes)
