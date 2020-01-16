@@ -22,7 +22,7 @@ def pytest_generate_tests(metafunc):
 @pytest.fixture
 def required_kwargs():
     kwargs = {
-        "specs/transformations/Reshape.transformation.yaml": {"shape": [-1]},
+        "specs/transformations/Reshape.transformation.yaml": {"newshape": [-1]},
         "specs/models/sklearnbased/RandomForestClassifierBroadNucleusDataBinarized.model.yaml": {"c_indices": [1]},
         "specs/samplers/SequentialSamplerAlongDimension.sampler.yaml": {"sample_dimensions": [1]},
         "specs/transformations/Cast.transformation.yaml": {"dtype": "float32"},

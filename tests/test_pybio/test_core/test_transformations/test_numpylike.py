@@ -7,9 +7,9 @@ from pybio.core.transformations.numpylike import Reshape, Transpose
 reshape_testdata = [((12,), (3, 4), (12,)), ((-1,), (3, 4), (12,)), ((6, -1), (1, 2, 3, 4), (6, 4))]
 
 
-@pytest.mark.parametrize("shape,ipt_shape,out_shape", reshape_testdata)
-def test_reshape(shape, ipt_shape, out_shape):
-    trf = Reshape(shape=shape)
+@pytest.mark.parametrize("newshape,ipt_shape,out_shape", reshape_testdata)
+def test_reshape(newshape, ipt_shape, out_shape):
+    trf = Reshape(newshape=newshape)
     ipt = numpy.empty(ipt_shape)
     out = trf.apply(ipt)[0]
     assert out.shape == out_shape

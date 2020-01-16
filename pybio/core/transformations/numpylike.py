@@ -1,52 +1,38 @@
-from typing import Optional, Tuple
-
 import numpy
+import re
 
+from typing import Optional, Sequence
 from pybio.core.transformations import Transformation
 
 
-# class NumpylikeTransformation(Transformation):
-#     def __init__(self, apply_to: Optional[Sequence[int]] = None, **kwargs):
-#         super().__init__(apply_to=apply_to)
-#         self.kwargs = kwargs
+class NumpylikeTransformation(Transformation):
+    def __init__(self, apply_to: Optional[Sequence[int]] = None, **kwargs):
+        super().__init__(apply_to=apply_to)
+        self.kwargs = kwargs
 
 
-# tdo: remove commented code
-# def make_numpy_like_transformation(function_name: str) -> NumpylikeTransformation:
-#     numpy_func = getattr(numpy, function_name)
-#
-#     def apply_to_ndarray(self, array: numpy.ndarray) -> numpy.ndarray:
-#         return numpy_func(array, **self.kwargs)
-#
-#     return type(
-#         function_name.title().replace("_", ""), (NumpylikeTransformation,), {"apply_to_ndarray": apply_to_ndarray}
-#     )
-# __all__ = [make_numpy_like_transformation(function_name) for function_name in ["reshape", "transpose"]]
+special_numpy_name = {
+    "AsType": "astype",
+}
+def make_numpy_like_transformation(class_name: str) -> NumpylikeTransformation:
+    function_name = special_numpy_name.get(class_name, re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower())
+    numpy_func = getattr(numpy, function_name, None)
 
-class AsType(Transformation):
-    def __init__(self, dtype: str, order: str, casting: str, subok: bool, copy: bool, **super_kwargs):
-        super().__init__(**super_kwargs)
-        self.kwargs = {"dtype": dtype, "order": order, "casting": casting, "subok": subok, "copy": copy}
+    def apply_to_ndarray(self, array: numpy.ndarray) -> numpy.ndarray:
+        if numpy_func is None:
+            return getattr(array, function_name)(**self.kwargs)
+        else:
+            return numpy_func(array, **self.kwargs)
 
-    def apply_to_one(self, array: numpy.ndarray) -> numpy.ndarray:
-        return array.astype(**self.kwargs)
+    return type(class_name, (NumpylikeTransformation,), {"apply_to_one": apply_to_ndarray})
 
 
-class Reshape(Transformation):
-    def __init__(self, shape: Tuple[int], **super_kwargs):
-        super().__init__(**super_kwargs)
-        self.shape = shape
-
-    def apply_to_one(self, array: numpy.ndarray) -> numpy.ndarray:
-        return array.reshape(self.shape)
+__all__ = ["AsType", "Clip", "Reshape", "Transpose"]
 
 
-class Transpose(Transformation):
-    def __init__(self, axes: Optional[Tuple[int]] = None, **super_kwargs):
-        super().__init__(**super_kwargs)
-        self.axes = axes or []
+for name in __all__:
+    NumpyLikeClass = make_numpy_like_transformation(name)
+    assert NumpyLikeClass.__name__ == name, (NumpyLikeClass.__name__, name)
+    globals()[name] = NumpyLikeClass
 
-    def apply_to_one(self, array: numpy.ndarray) -> numpy.ndarray:
-        return array.transpose(*self.axes)
-
-
+del special_numpy_name, make_numpy_like_transformation
