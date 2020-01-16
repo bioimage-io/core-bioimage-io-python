@@ -27,7 +27,7 @@ def make_numpy_like_transformation(class_name: str) -> NumpylikeTransformation:
     return type(class_name, (NumpylikeTransformation,), {"apply_to_chosen": apply_to_ndarray})
 
 
-__all__ = ["AsType", "Clip", "Reshape", "Transpose"]
+__all__ = ["AsType", "Clip", "Transpose"]
 
 
 for name in __all__:
