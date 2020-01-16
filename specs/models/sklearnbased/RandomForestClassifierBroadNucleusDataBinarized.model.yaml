@@ -56,7 +56,6 @@ training:
         sampler:
             spec: ../../samplers/SequentialSamplerAlongDimension.sampler.yaml
             kwargs: {sample_dimensions: [0, 0]}
-        preprocess: null
 
     source: pybio.core.training.classic_fit.classic_fit
     required_kwargs: [model_spec]

@@ -15,6 +15,7 @@ framework: pytorch
 dependencies: ../../env_no_pytorch.yaml
 
 source: pybio.core.transformations.rotations.RandomAxisRotation
+optional_kwargs: {apply_to: null}
 
 inputs: any
 outputs: same

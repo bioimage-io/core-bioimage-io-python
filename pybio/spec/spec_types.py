@@ -168,8 +168,9 @@ class Optimizer:
 class Setup:
     reader: ReaderSpec
     sampler: SamplerSpec
-    preprocess: Optional[List[TransformationSpec]]
-    loss: List[TransformationSpec]
+    preprocess: List[TransformationSpec]
+    postprocess: List[TransformationSpec]
+    losses: List[TransformationSpec]
     optimizer: Optimizer
 
 

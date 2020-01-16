@@ -4,17 +4,22 @@ from pybio.core.array import PyBioArray
 from pybio.spec.spec_types import InputArray, OutputArray
 
 
+class ApplyToAll:
+    def __contains__(self, item):
+        return True
+
+
 class Transformation:
-    def __init__(self, apply_to: Sequence[int] = (0, 1)):
-        self.apply_to = apply_to
+    def __init__(self, apply_to: Optional[Sequence[int]] = None):
+        self.apply_to = ApplyToAll() if apply_to is None else apply_to
 
     # todo: with python 3.8 add / to make array argument purely positional
     #       (might be called tensor or similar in derived classes)
-    def apply_to_one(self, array: PyBioArray) -> PyBioArray:
+    def apply_to_chosen(self, array: PyBioArray) -> PyBioArray:
         raise NotImplementedError
 
     def apply(self, *arrays: PyBioArray) -> List[PyBioArray]:
-        return [self.apply_to_one(a) if i in self.apply_to else a for i, a in enumerate(arrays)]
+        return [self.apply_to_chosen(a) if i in self.apply_to else a for i, a in enumerate(arrays)]
 
     def dynamic_output_shape(self, input_shape: List[Tuple[int]]) -> List[Tuple[int]]:
         raise NotImplementedError
@@ -27,6 +32,17 @@ class Transformation:
 
     def dynamic_inputs(self, outputs: List[OutputArray]) -> List[InputArray]:
         raise NotImplementedError
+
+
+class CombinedTransformation(Transformation):
+    def apply_to_chosen(self, *arrays: PyBioArray) -> List[PyBioArray]:
+        raise NotImplementedError
+
+    def apply(self, *arrays: PyBioArray) -> List[PyBioArray]:
+        if isinstance(self.apply_to, ApplyToAll):
+            return self.apply_to_chosen(*arrays)
+        else:
+            return self.apply_to_chosen(*[arrays[i] for i in self.apply_to])
 
 
 class SynchronizedTransformation(Transformation):
