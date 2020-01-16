@@ -11,11 +11,11 @@ class NumpylikeTransformation(Transformation):
         self.kwargs = kwargs
 
 
-special_numpy_name = {
-    "AsType": "astype",
-}
+special_numpy_name = {"AsType": "astype"}
+
+
 def make_numpy_like_transformation(class_name: str) -> NumpylikeTransformation:
-    function_name = special_numpy_name.get(class_name, re.sub(r'(?<!^)(?=[A-Z])', '_', name).lower())
+    function_name = special_numpy_name.get(class_name, re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower())
     numpy_func = getattr(numpy, function_name, None)
 
     def apply_to_ndarray(self, array: numpy.ndarray) -> numpy.ndarray:
@@ -24,7 +24,7 @@ def make_numpy_like_transformation(class_name: str) -> NumpylikeTransformation:
         else:
             return numpy_func(array, **self.kwargs)
 
-    return type(class_name, (NumpylikeTransformation,), {"apply_to_one": apply_to_ndarray})
+    return type(class_name, (NumpylikeTransformation,), {"apply_to_chosen": apply_to_ndarray})
 
 
 __all__ = ["AsType", "Clip", "Reshape", "Transpose"]
