@@ -1,0 +1,20 @@
+name: RandomAxisRotation
+description: Binary cross entropy loss
+cite:
+    - text: TODO
+      doi: TODO
+authors:
+    - Constantin Pape
+documentation: transformations.md
+tags: [loss, binary cross entropy]
+
+format_version: 0.1.0
+language: python
+framework: pytorch
+
+dependencies: ../../env_no_pytorch.yaml
+
+source: pybio.core.transformations.rotations.RandomAxisRotation
+
+inputs: any
+outputs: same
