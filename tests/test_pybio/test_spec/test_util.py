@@ -46,7 +46,7 @@ class TestNodeVisitor:
         visitor.visit(tree)
 
     def test_node_transform(self, tree):
-        class MyTransformer(utils.NodeTransormer):
+        class MyTransformer(utils.NodeTransformer):
             def visit_URL(self, node):
                 return self.Transform(Content(f"content of url {node.url}"))
 
@@ -83,7 +83,7 @@ class TestTraversingSpecURI:
             "uri_b": "../file.yml",
         })
 
-        class MyTransformer(utils.NodeTransormer):
+        class MyTransformer(utils.NodeTransformer):
             def visit_URI(self, node):
                 res = {"axes": "xyc"}
                 return self.Transform(node.loader.load(res))

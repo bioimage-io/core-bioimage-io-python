@@ -32,7 +32,7 @@ class NodeVisitor:
                 self.visit(value)
 
 
-class NodeTransormer(NodeVisitor):
+class NodeTransformer(NodeVisitor):
     class Transform:
         def __init__(self, value):
             self.value = value
@@ -159,7 +159,7 @@ def resolve_doi(uri: ParseResult) -> ParseResult:
     return urlparse(val["data"]["value"])
 
 
-class URITransformer(NodeTransormer):
+class URITransformer(NodeTransformer):
     def __init__(self, root_path=None):
         self.root_path = root_path
 
