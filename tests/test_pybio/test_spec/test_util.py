@@ -19,6 +19,11 @@ def test_iter_fields():
     ] == list(utils.iter_fields(entry))
 
 
+@dataclass
+class Content:
+    data: str
+
+
 class TestNodeVisitor:
     @dataclass
     class Tree(spec_types.Node):

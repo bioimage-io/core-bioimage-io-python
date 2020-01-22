@@ -237,7 +237,7 @@ class Model(MinimalYAML):
     def validate_reference_input_names(self, data, **kwargs):
         pass  # todo validate_reference_input_names
 
-    @validates_schema
+    #@validates_schema
     def input_propagation_from_training_reader(self, data, **kwargs):
         spec: spec_types.Model = self.make_object(data, **kwargs)
         if spec.training is None:
@@ -253,25 +253,6 @@ class ModelSpec(BaseSpec):
 
 def load_model_spec(uri: str, kwargs: Dict[str, Any] = None) -> spec_types.ModelSpec:
     return ModelSpec().load({"spec": uri, "kwargs": kwargs or {}})
-
-
-def load_spec(
-    uri: str, kwargs: Dict[str, Any] = None
-) -> Union[spec_types.ModelSpec, spec_types.TransformationSpec, spec_types.ReaderSpec, spec_types.SamplerSpec]:
-    data = {"spec": uri, "kwargs": kwargs or {}}
-    last_dot = uri.rfind(".")
-    second_last_dot = uri[:last_dot].rfind(".")
-    spec_suffix = uri[second_last_dot + 1 : last_dot]
-    if spec_suffix == "model":
-        return ModelSpec().load(data)
-    elif spec_suffix == "transformation":
-        return TransformationSpec().load(data)
-    elif spec_suffix == "reader":
-        return ReaderSpec().load(data)
-    elif spec_suffix == "sampler":
-        return SamplerSpec().load(data)
-    else:
-        raise ValueError(f"Invalid spec suffix: {spec_suffix}")
 
 
 if __name__ == "__main__":

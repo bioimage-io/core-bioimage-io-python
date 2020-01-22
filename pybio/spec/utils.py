@@ -1,11 +1,14 @@
 import importlib
 import pathlib
+import yaml
 import typing
 import contextlib
 from dataclasses import fields
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Union
+from . import spec_types
+from . import schema
 
-from .spec_types import ModelSpec, Importable, Node
+from .spec_types import ModelSpec, TransformationSpec, ReaderSpec, SamplerSpec, Importable, Node
 from urllib.parse import ParseResult
 
 
@@ -64,6 +67,7 @@ def train(model: ModelSpec, kwargs: Dict[str, Any] = None) -> Any:
     if kwargs is None:
         kwargs = {}
 
+    print("HEY", model, model.spec)
     complete_kwargs = dict(model.spec.training.optional_kwargs)
     complete_kwargs.update(kwargs)
 
@@ -155,14 +159,42 @@ def resolve_doi(uri: ParseResult) -> ParseResult:
     return urlparse(val["data"]["value"])
 
 
-def foo():
-    @validates_schema
-    def check_kwargs(self, data, partial, many):
-        spec = data["spec"]
-        for k in spec.required_kwargs:
-            if not k in data["kwargs"]:
-                raise PyBioValidationException(f"Missing kwarg: {k}")
+class URITransformer(NodeTransormer):
+    def __init__(self, root_path=None):
+        self.root_path = root_path
 
-        for k in data["kwargs"]:
-            if not (k in spec.required_kwargs or k in spec.optional_kwargs):
-                raise PyBioValidationException(f"Unexpected kwarg: {k}")
+    def visit_URI(self, node):
+        path = node.path
+
+        if self.root_path:
+            path = pathlib.Path(self.root_path) / pathlib.Path(node.path)
+
+        with open(path) as f:
+            res = yaml.safe_load(f)
+        return self.Transform(node.loader.load(res))
+
+
+def load_spec(
+    uri: str, kwargs: Dict[str, Any] = None
+) -> Union[spec_types.ModelSpec, spec_types.TransformationSpec, spec_types.ReaderSpec, spec_types.SamplerSpec]:
+
+    data = {"spec": uri, "kwargs": kwargs or {}}
+    last_dot = uri.rfind(".")
+    second_last_dot = uri[:last_dot].rfind(".")
+    spec_suffix = uri[second_last_dot + 1 : last_dot]
+    if spec_suffix == "model":
+        tree = schema.ModelSpec().load(data)
+    elif spec_suffix == "transformation":
+        tree = schema.TransformationSpec().load(data)
+    elif spec_suffix == "reader":
+        tree = schema.ReaderSpec().load(data)
+    elif spec_suffix == "sampler":
+        tree = schema.SamplerSpec().load(data)
+    else:
+        raise ValueError(f"Invalid spec suffix: {spec_suffix}")
+
+    transformer = URITransformer()
+    transformer.visit(tree)
+    transformer = URITransformer(pathlib.Path(uri).parent)
+    transformer.visit(tree)
+    return tree

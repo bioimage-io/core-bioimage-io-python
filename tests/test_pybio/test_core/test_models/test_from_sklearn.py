@@ -13,7 +13,6 @@ def test_RandomForestClassifierBroadNucleusDataBinarized():
     loaded_spec = load_spec(spec_path.as_posix(), kwargs={"c_indices": [None]})
     model = utils.train(loaded_spec)
 
-    # model.train()
     ipt = [numpy.arange(24).reshape((2, 3, 4))]
     out = model(ipt)
     assert len(out) == 1

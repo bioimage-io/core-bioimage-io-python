@@ -19,10 +19,8 @@ from pybio.spec import spec_types
 
 class SpecURI(Nested):
     # todo: improve cache location
-    cache_path = pathlib.Path(__file__).parent.parent.parent / "cache"
 
     def _deserialize(self, value, attr, data, **kwargs):
-
         uri = urlparse(value)
 
         if uri.fragment:
@@ -36,7 +34,7 @@ class SpecURI(Nested):
             loader=self.schema,
             scheme=uri.scheme,
             netloc=uri.netloc,
-            path=uri.netloc
+            path=uri.path
         )
 
         # TODO: Remove stuff
@@ -51,7 +49,7 @@ class URI(Str):
 class Path(Str):
     def _deserialize(self, *args, **kwargs):
         path_str = super()._deserialize(*args, **kwargs)
-        return Path(path_str)
+        return pathlib.Path(path_str)
 
 
 class ImportableSource(Str):
