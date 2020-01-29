@@ -87,7 +87,7 @@ class ImportableSource(Str):
 
             module_path, object_name = parts
 
-            spec_dir = self.context["spec_path"].parent
+            spec_dir = pathlib.Path(self.context.get("spec_path", ".")).parent
             abs_path = spec_dir / pathlib.Path(module_path)
 
             return spec_types.Importable.Path(module_path, object_name)
