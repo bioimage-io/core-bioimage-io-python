@@ -1,7 +1,11 @@
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional, Callable, Any, Dict, NewType, Tuple, Union, Type, NamedTuple
+from typing import List, Optional, Any, Dict, NewType, Tuple, Union, Type, NamedTuple
+
+
+class Node:
+    pass
 
 
 class MagicTensorsValue(Enum):
@@ -15,20 +19,35 @@ class MagicShapeValue(Enum):
     dynamic = "dynamic"
 
 
+class Importable:
+    @dataclass
+    class Path(Node):
+        filepath: str
+        callable_name: str
+
+
+    @dataclass
+    class Module(Node):
+        module_name: str
+        callable_name: str
+
+
+Source = Union[Importable.Path, Importable.Module]
+
 # Types for non-nested fields
 Axes = NewType("Axes", str)
 Dependencies = NewType("Dependencies", Path)
 
 # Types for schema
 @dataclass
-class CiteEntry:
+class CiteEntry(Node):
     text: str
     doi: Optional[str]
     url: Optional[str]
 
 
 @dataclass
-class MinimalYAML:
+class MinimalYAML(Node):
     name: str
     format_version: str
     description: str
@@ -39,7 +58,7 @@ class MinimalYAML:
 
     language: str
     framework: Optional[str]
-    source: Callable
+    source: Source
     required_kwargs: List[str]
     optional_kwargs: Dict[str, Any]
 
@@ -49,7 +68,7 @@ class MinimalYAML:
 
 
 @dataclass
-class InputShape:
+class InputShape(Node):
     min: List[float]
     step: List[float]
 
@@ -58,7 +77,7 @@ class InputShape:
 
 
 @dataclass
-class OutputShape:
+class OutputShape(Node):
     reference_input: Optional[str]
     scale: List[float]
     offset: List[int]
@@ -68,7 +87,7 @@ class OutputShape:
 
 
 @dataclass
-class Array:
+class Array(Node):
     name: str
     axes: Optional[Axes]
     data_type: str
@@ -87,12 +106,12 @@ class OutputArray(Array):
 
 
 @dataclass
-class WithInputs:
+class WithInputs(Node):
     inputs: Union[MagicTensorsValue, List[InputArray]]
 
 
 @dataclass
-class WithOutputs:
+class WithOutputs(Node):
     outputs: Union[MagicTensorsValue, List[OutputArray]]
 
 
@@ -102,15 +121,9 @@ class Transformation(MinimalYAML, WithInputs, WithOutputs):
 
 
 @dataclass
-class BaseSpec:
+class BaseSpec(Node):
     spec: MinimalYAML
     kwargs: Dict[str, Any]
-
-    def get_instance(self, **kwargs) -> Any:
-        joined_kwargs = dict(self.spec.optional_kwargs)
-        joined_kwargs.update(self.kwargs)
-        joined_kwargs.update(kwargs)
-        return self.spec.source(**joined_kwargs)
 
 
 @dataclass
@@ -119,13 +132,13 @@ class TransformationSpec(BaseSpec):
 
 
 @dataclass
-class Weights:
+class Weights(Node):
     source: str
     hash: Dict[str, str]
 
 
 @dataclass
-class Prediction:
+class Prediction(Node):
     weights: Weights
     dependencies: Optional[Dependencies]
     preprocess: Optional[List[TransformationSpec]]
@@ -153,19 +166,14 @@ class SamplerSpec(BaseSpec):
 
 
 @dataclass
-class Optimizer:
-    source: Callable
+class Optimizer(Node):
+    source: Source
     required_kwargs: List[str]
     optional_kwargs: Dict[str, Any]
 
-    def get_instance(self, parameters, **kwargs) -> Any:
-        joined_kwargs = dict(self.optional_kwargs)
-        joined_kwargs.update(kwargs)
-        return self.source(parameters, **joined_kwargs)
-
 
 @dataclass
-class Setup:
+class Setup(Node):
     reader: ReaderSpec
     sampler: SamplerSpec
     preprocess: List[TransformationSpec]
@@ -175,9 +183,9 @@ class Setup:
 
 
 @dataclass
-class Training:
+class Training(Node):
     setup: Setup
-    source: Callable
+    source: Source
     required_kwargs: List[str]
     optional_kwargs: Dict[str, Any]
     dependencies: Dependencies
@@ -194,12 +202,10 @@ class Model(MinimalYAML, WithInputs, WithOutputs):
 class ModelSpec(BaseSpec):
     spec: Model
 
-    def train(self, **kwargs) -> Any:
-        complete_kwargs = dict(self.spec.training.optional_kwargs)
-        complete_kwargs.update(kwargs)
 
-        mspec = "model_spec"
-        if mspec not in complete_kwargs and mspec in self.spec.training.required_kwargs:
-            complete_kwargs[mspec] = self
-
-        return self.spec.training.source(**complete_kwargs)
+@dataclass
+class URI:
+    loader: Type
+    scheme: str
+    netloc: str
+    path: str
