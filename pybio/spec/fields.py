@@ -1,25 +1,16 @@
 import importlib
 from urllib.parse import urlparse, ParseResult
 import pathlib
-import sys
 import uuid
-import requests
-import subprocess
 import typing
-import yaml
-import contextlib
 
 from marshmallow.fields import Str, Nested, List, Dict, Integer, Float, Tuple, ValidationError  # noqa
 
-from pybio.spec.exceptions import InvalidDoiException, PyBioValidationException
+from pybio.spec.exceptions import PyBioValidationException
 from pybio.spec import spec_types
-#import MagicTensorsValue, MagicShapeValue, Importable, URI
-
 
 
 class SpecURI(Nested):
-    # todo: improve cache location
-
     def _deserialize(self, value, attr, data, **kwargs):
         uri = urlparse(value)
 
@@ -30,14 +21,7 @@ class SpecURI(Nested):
         if uri.query:
             raise PyBioValidationException(f"Invalid URI: {uri}. Got URI query: {uri.query}")
 
-        return spec_types.URI(
-            loader=self.schema,
-            scheme=uri.scheme,
-            netloc=uri.netloc,
-            path=uri.path
-        )
-
-        # TODO: Remove stuff
+        return spec_types.SpecURI(spec_schema=self.schema, scheme=uri.scheme, netloc=uri.netloc, path=uri.path)
 
 
 class URI(Str):

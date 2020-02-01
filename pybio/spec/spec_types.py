@@ -1,3 +1,5 @@
+import pybio
+
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
@@ -202,10 +204,16 @@ class Model(MinimalYAML, WithInputs, WithOutputs):
 class ModelSpec(BaseSpec):
     spec: Model
 
-
 @dataclass
 class URI:
-    loader: Type
     scheme: str
     netloc: str
     path: str
+
+@dataclass
+class SpecURI(URI):
+    spec_schema: "pybio.spec.schema.MinimalYAML"
+
+@dataclass
+class DataURI(URI):
+    spec_schema: "pybio.spec.schema.MinimalYAML"
