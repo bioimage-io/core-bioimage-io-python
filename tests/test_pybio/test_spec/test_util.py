@@ -1,13 +1,13 @@
 import pytest
 
 from dataclasses import dataclass
-from pybio.spec import utils, spec_types, fields, schema
+from pybio.spec import utils, node, fields, schema
 from typing import Any
 from marshmallow import post_load
 
 
 @dataclass
-class MyNode(spec_types.Node):
+class MyNode(node.Node):
     field_a: str
     field_b: int
 
@@ -24,7 +24,7 @@ class Content:
 
 class TestNodeVisitor:
     @dataclass
-    class Tree(spec_types.Node):
+    class Tree(node.Node):
         left: Any
         right: Any
 
@@ -55,9 +55,9 @@ class TestNodeVisitor:
 
 
 @dataclass
-class MySpec(spec_types.Node):
-    spec_uri_a: spec_types.SpecURI
-    spec_uri_b: spec_types.SpecURI
+class MySpec(node.Node):
+    spec_uri_a: node.SpecURI
+    spec_uri_b: node.SpecURI
 
 
 class SubSpec(schema.Schema):

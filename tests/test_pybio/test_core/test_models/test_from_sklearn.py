@@ -2,7 +2,7 @@ from pathlib import Path
 
 import numpy
 
-from pybio.spec import load_spec, utils
+from pybio.spec import utils, load_model
 
 
 def test_RandomForestClassifierBroadNucleusDataBinarized():
@@ -10,8 +10,8 @@ def test_RandomForestClassifierBroadNucleusDataBinarized():
         Path(__file__).parent
         / "../../../../specs/models/sklearnbased/RandomForestClassifierBroadNucleusDataBinarized.model.yaml"
     )
-    loaded_spec = load_spec(spec_path.as_posix(), kwargs={"c_indices": [None]})
-    model = utils.train(loaded_spec)
+    pybio_model = load_model(spec_path.as_posix(), kwargs={"c_indices": [None]})
+    model = utils.train(pybio_model)
 
     ipt = [numpy.arange(24).reshape((2, 3, 4))]
     out = model(ipt)

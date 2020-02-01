@@ -3,7 +3,7 @@ import yaml
 
 from pathlib import Path
 
-from pybio.spec import load_spec
+from pybio.spec import load_spec_and_kwargs
 
 MANIFEST_PATH = Path(__file__).parent.parent.parent.parent / "manifest.yaml"
 
@@ -42,6 +42,6 @@ def test_load_specs_from_manifest(category, spec_path, required_kwargs):
     spec_path = MANIFEST_PATH.parent / spec_path
     assert spec_path.exists()
 
-    loaded_spec = load_spec(spec_path.as_posix(), kwargs=kwargs)
+    loaded_spec = load_spec_and_kwargs(spec_path.as_posix(), kwargs=kwargs)
 
     assert loaded_spec

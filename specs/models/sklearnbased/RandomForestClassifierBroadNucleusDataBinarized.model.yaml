@@ -58,7 +58,7 @@ training:
             kwargs: {sample_dimensions: [0, 0]}
 
     source: pybio.core.training.classic_fit.classic_fit
-    required_kwargs: [model_spec]
+    required_kwargs: [pybio_model]
     optional_kwargs: {start: 0, batch_size: 1}
     # enable different ways of specifying the dependencies.
     # this would hold all training dependencies, e.g. as a frozen conda environment

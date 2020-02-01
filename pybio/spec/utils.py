@@ -5,10 +5,22 @@ import subprocess
 import yaml
 from dataclasses import fields
 from typing import Any, Dict, Optional, Union
-from . import spec_types
 from . import schema
-from .exceptions import PyBioValidationException, InvalidDoiException
-from .spec_types import Importable, Node
+from .exceptions import PyBioValidationException, InvalidDoiException, PyBioMissingKwargException
+from .node import (
+    Importable,
+    Node,
+    SpecWithKwargs,
+    ImportableFromModule,
+    ImportableFromPath,
+    WithSource,
+    Model,
+    URI,
+    SpecURI,
+    Transformation,
+    Sampler,
+    Reader,
+)
 from urllib.parse import ParseResult
 
 
@@ -30,6 +42,14 @@ class NodeVisitor:
         if isinstance(node, Node):
             for field, value in iter_fields(node):
                 self.visit(value)
+        elif isinstance(node, list):
+            [self.visit(subnode) for subnode in node]
+        elif isinstance(node, dict):
+            [self.visit(subnode) for subnode in node.values()]
+        elif isinstance(node, tuple):
+            assert not any(
+                isinstance(subnode, Node) or isinstance(subnode, list) or isinstance(subnode, dict) for subnode in node
+            )
 
 
 class NodeTransformer(NodeVisitor):
@@ -37,49 +57,56 @@ class NodeTransformer(NodeVisitor):
         def __init__(self, value):
             self.value = value
 
-    def generic_visit(self, node):
+    def generic_visit(self, node: Any):
         if isinstance(node, Node):
             for field, value in iter_fields(node):
                 op = self.visit(value)
                 if isinstance(op, self.Transform):
                     setattr(node, field, op.value)
+        else:
+            super().generic_visit(node)
 
 
 def _resolve_import(importable: Importable):
-    if isinstance(importable, Importable.Module):
+    if isinstance(importable, ImportableFromModule):
         module = importlib.import_module(importable.module_name)
         return getattr(module, importable.callable_name)
-    elif isinstance(importable, Importable.Path):
+    elif isinstance(importable, ImportableFromPath):
         raise NotImplementedError()
 
     raise NotImplementedError(f"Can't resolve import for type {type(importable)}")
 
 
-def get_instance(spec, **kwargs) -> Any:
-    joined_kwargs = dict(spec.spec.optional_kwargs)
-    joined_kwargs.update(spec.kwargs)
-    joined_kwargs.update(kwargs)
-    cls = _resolve_import(spec.spec.source)
-    return cls(**joined_kwargs)
+def get_instance(spec_node: Union[SpecWithKwargs, WithSource], **kwargs):
+    if isinstance(spec_node, SpecWithKwargs):
+        joined_spec_kwargs = dict(spec_node.kwargs)
+        joined_spec_kwargs.update(kwargs)
+        return get_instance(spec_node.spec, **joined_spec_kwargs)
+    elif isinstance(spec_node, WithSource):
+        joined_kwargs = dict(spec_node.optional_kwargs)
+        joined_kwargs.update(kwargs)
+        missing_kwargs = [req for req in spec_node.required_kwargs if req not in joined_kwargs]
+        if missing_kwargs:
+            raise PyBioMissingKwargException(
+                f"{spec_node.__class__.__name__} missing required kwargs: {missing_kwargs}\n{spec_node.__class__.__name__}={spec_node}"
+            )
+
+        cls = _resolve_import(spec_node.source)
+        return cls(**joined_kwargs)
+    else:
+        raise TypeError(spec_node)
 
 
-def train(model: spec_types.ModelSpec, kwargs: Dict[str, Any] = None) -> Any:
-    if kwargs is None:
-        kwargs = {}
+def train(model: Model, **kwargs) -> Any:
+    # resolve magic kwargs
+    available_magic_kwargs = {"pybio_model": model}
+    enchanted_kwargs = {req: available_magic_kwargs[req] for req in model.spec.training.required_kwargs}
+    enchanted_kwargs.update(kwargs)
 
-    print("HEY", model, model.spec)
-    complete_kwargs = dict(model.spec.training.optional_kwargs)
-    complete_kwargs.update(kwargs)
-
-    mspec = "model_spec"
-    if mspec not in complete_kwargs and mspec in model.spec.training.required_kwargs:
-        complete_kwargs[mspec] = model
-
-    train_cls = _resolve_import(model.spec.training.source)
-    return train_cls(**complete_kwargs)
+    return get_instance(model.spec.training, **enchanted_kwargs)
 
 
-def resolve_uri(uri_node: spec_types.URI, cache_path: pathlib.Path, root_path: Optional[pathlib.Path] = None) -> pathlib.Path:
+def resolve_uri(uri_node: URI, cache_path: pathlib.Path, root_path: Optional[pathlib.Path] = None) -> pathlib.Path:
     if (
         uri_node.scheme == "" or len(uri_node.scheme) == 1
     ):  # Guess that scheme is not a scheme, but a windows path drive letter instead for uri.scheme == 1
@@ -114,6 +141,7 @@ def resolve_uri(uri_node: spec_types.URI, cache_path: pathlib.Path, root_path: O
 
     return local_path
 
+
 def resolve_doi(uri: ParseResult) -> ParseResult:
     if uri.scheme.lower() != "doi" and not uri.netloc.endswith("doi.org"):
         return uri
@@ -138,32 +166,35 @@ class URITransformer(NodeTransformer):
         self.root_path = root_path
         self.cache_path = cache_path
 
-    def visit_SpecURI(self, node: spec_types.SpecURI):
+    def visit_SpecURI(self, node: SpecURI):
         local_path = resolve_uri(node, root_path=self.root_path, cache_path=self.cache_path)
         with local_path.open() as f:
             data = yaml.safe_load(f)
 
-        return self.Transform(node.spec_schema.load(data))
+        resolved_node = node.spec_schema.load(data)
+        self.visit(resolved_node)
+        return self.Transform(resolved_node)
 
-    def visit_URI(self, node: spec_types.URI):
+    def visit_URI(self, node: URI):
         raise NotImplementedError
 
-def load_spec(
-    uri: str, kwargs: Dict[str, Any] = None, cache_path: pathlib.Path = pathlib.Path("./cache")
-) -> Union[spec_types.ModelSpec, spec_types.TransformationSpec, spec_types.ReaderSpec, spec_types.SamplerSpec]:
+
+def load_spec_and_kwargs(
+    uri: str, kwargs: Dict[str, Any] = None, cache_path: pathlib.Path = pathlib.Path(__file__).parent / "../../../cache"
+) -> Union[Model, Transformation, Reader, Sampler]:
 
     data = {"spec": uri, "kwargs": kwargs or {}}
     last_dot = uri.rfind(".")
     second_last_dot = uri[:last_dot].rfind(".")
     spec_suffix = uri[second_last_dot + 1 : last_dot]
     if spec_suffix == "model":
-        tree = schema.ModelSpec().load(data)
+        tree = schema.Model().load(data)
     elif spec_suffix == "transformation":
-        tree = schema.TransformationSpec().load(data)
+        tree = schema.Transformation().load(data)
     elif spec_suffix == "reader":
-        tree = schema.ReaderSpec().load(data)
+        tree = schema.Reader().load(data)
     elif spec_suffix == "sampler":
-        tree = schema.SamplerSpec().load(data)
+        tree = schema.Sampler().load(data)
     else:
         raise ValueError(f"Invalid spec suffix: {spec_suffix}")
 
@@ -172,3 +203,9 @@ def load_spec(
     transformer = URITransformer(root_path=local_spec_path.parent, cache_path=cache_path)
     transformer.visit(tree)
     return tree
+
+
+def load_model(uri: str, kwargs: Dict[str, Any] = None) -> Model:
+    ret = load_spec_and_kwargs(uri=uri, kwargs=kwargs)
+    assert isinstance(ret, Model)
+    return ret
