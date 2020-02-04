@@ -12,7 +12,7 @@ def dummy_reader():
 
 
 def test_SequentialSamplerAlongDimension(dummy_reader):
-    sampler = SequentialSamplerAlongDimension(sample_dimensions=[0, 0], reader=dummy_reader)
+    sampler = SequentialSamplerAlongDimension(sample_dimensions=[0, 0], readers=[dummy_reader])
     for i, s in enumerate(sampler):
         assert s
 
@@ -22,7 +22,7 @@ def test_SequentialSamplerAlongDimension(dummy_reader):
 @pytest.mark.parametrize("batch_size", [1, 2, 3])
 def test_SequentialSamplerAlongDimension_with_batch_size_drop_last(dummy_reader, batch_size):
     sampler = SequentialSamplerAlongDimension(
-        sample_dimensions=[0, 0], reader=dummy_reader, batch_size=batch_size, drop_last=True
+        sample_dimensions=[0, 0], readers=[dummy_reader], batch_size=batch_size, drop_last=True
     )
     for i, s in enumerate(sampler):
         assert s
@@ -33,7 +33,7 @@ def test_SequentialSamplerAlongDimension_with_batch_size_drop_last(dummy_reader,
 @pytest.mark.parametrize("batch_size", [1, 2, 3])
 def test_SequentialSamplerAlongDimension_with_batch_size_dont_drop_last(dummy_reader, batch_size):
     sampler = SequentialSamplerAlongDimension(
-        sample_dimensions=[0, 0], reader=dummy_reader, batch_size=batch_size, drop_last=False
+        sample_dimensions=[0, 0], readers=[dummy_reader], batch_size=batch_size, drop_last=False
     )
     for i, s in enumerate(sampler):
         assert s
