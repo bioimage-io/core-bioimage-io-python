@@ -42,7 +42,7 @@ class BaseSpec(PyBioSchema):
     cite = fields.Nested(CiteEntry, many=True, required=True)
     authors = fields.List(fields.Str(required=True))
     documentation = fields.Path(required=True)
-    tags = fields.List(fields.Str(required=True))
+    tags = fields.List(fields.Str, required=True)
 
     language = fields.Str(required=True)
     framework = fields.Str(missing=None)
@@ -59,9 +59,10 @@ class SpecWithKwargs(PyBioSchema):
     spec: fields.SpecURI
     kwargs = fields.Dict(missing=dict)
 
+
 class InputShape(PyBioSchema):
-    min = fields.List(fields.Integer(), required=True)
-    step = fields.List(fields.Integer(), required=True)
+    min = fields.List(fields.Integer, required=True)
+    step = fields.List(fields.Integer, required=True)
 
     @validates_schema
     def matching_lengths(self, data, **kwargs):
@@ -162,9 +163,7 @@ class TransformationSpec(BaseSpec):
         InputArray, valid_magic_values=[MagicTensorsValue.any, MagicTensorsValue.dynamic], required=True
     )
     outputs = fields.Tensors(
-        OutputArray,
-        valid_magic_values=[MagicTensorsValue.same, MagicTensorsValue.dynamic],
-        missing=MagicTensorsValue.same,
+        OutputArray, valid_magic_values=[MagicTensorsValue.same, MagicTensorsValue.dynamic], required=True
     )
 
 
@@ -186,7 +185,7 @@ class Prediction(PyBioSchema):
 
 class ReaderSpec(BaseSpec):
     dependencies = fields.Dependencies(missing=None)
-    outputs = fields.Tensors(OutputArray, valid_magic_values=[], required=True)
+    outputs = fields.Tensors(OutputArray, valid_magic_values=[MagicTensorsValue.dynamic], required=True)
 
 
 class Reader(SpecWithKwargs):
@@ -209,7 +208,7 @@ class Optimizer(PyBioSchema):
 
 
 class Setup(PyBioSchema):
-    reader = fields.Nested(Reader, required=True)
+    readers = fields.List(fields.Nested(Reader, required=True), required=True)
     sampler = fields.Nested(Sampler, required=True)
     preprocess = fields.Nested(Transformation, many=True, missing=list)
     postprocess = fields.Nested(Transformation, many=True, missing=list)
@@ -229,14 +228,14 @@ class Training(PyBioSchema):
 class ModelSpec(BaseSpec):
     prediction = fields.Nested(Prediction)
     inputs = fields.Tensors(InputArray, valid_magic_values=[MagicTensorsValue.any], many=True)
-    outputs = fields.Tensors(OutputArray, valid_magic_values=[MagicTensorsValue.same], many=True)
+    outputs = fields.Tensors(OutputArray, valid_magic_values=[MagicTensorsValue.same, MagicTensorsValue.dynamic], many=True)
     training = fields.Nested(Training, missing=None)
 
     @validates("outputs")
     def validate_reference_input_names(self, data, **kwargs):
         pass  # todo validate_reference_input_names
 
-    #@validates_schema
+    # @validates_schema
     def input_propagation_from_training_reader(self, data, **kwargs):
         spec: node.ModelSpec = self.make_object(data, **kwargs)
         if spec.training is None:

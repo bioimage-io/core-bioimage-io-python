@@ -180,7 +180,7 @@ class Optimizer(Node, WithSource):
 
 @dataclass
 class Setup(Node):
-    reader: Reader
+    readers: List[Reader]
     sampler: Sampler
     preprocess: List[Transformation]
     postprocess: List[Transformation]

@@ -1,18 +1,20 @@
 import os
 import zipfile
+from pathlib import Path
 from typing import Tuple
 from urllib.request import urlretrieve
 
 import numpy
 import numpy as np
 import imageio
+import yaml
 
 from pybio.core.readers.base import PyBioReader
 
 
-def download_data(url, data_dir, prefix):
-    os.makedirs(data_dir, exist_ok=True)
-    tmp = os.path.join(data_dir, "tmp.zip")
+def download_data(url, data_dir: Path, prefix: str):
+    data_dir.mkdir(parents=True, exist_ok=True)
+    tmp = str(data_dir / "tmp.zip")
 
     # retrieve url
     urlretrieve(url, tmp)
@@ -25,15 +27,14 @@ def download_data(url, data_dir, prefix):
     os.remove(tmp)
 
 
-def load_file_list(file_list, data_folder, is_tif=False):
+def load_file_list(file_list, data_path: Path, is_tif=False):
     files = []
     with open(file_list, "r") as f:
         for ll in f:
-            path = os.path.join(data_folder, ll).strip("\n")
+            path = data_path / ll.strip("\n")
             if is_tif:
-                path, _ = os.path.splitext(path)
-                path += ".tif"
-            assert os.path.exists(path), path
+                path = path.with_suffix(".tif")
+            assert path.exists(), path
             files.append(path)
     files.sort()
     return files
@@ -60,20 +61,21 @@ class BroadNucleusDataBinarized(PyBioReader):
         "metadata": "https://data.broadinstitute.org/bbbc/BBBC039/metadata.zip",
     }
 
-    def get_data(self, data_dir):
+    def get_data(self, data_dir: Path, subset: str):
+        assert subset in ["training", "validation", "test"]
         for prefix, url in self.urls.items():
-            if not os.path.exists(os.path.join(data_dir, prefix)):
+            if not (data_dir / prefix).exists():
                 print("Downloading", prefix, "...")
                 download_data(url, data_dir, prefix + "/")
 
-        train_list = os.path.join(data_dir, "metadata", "training.txt")
-        label_list = load_file_list(train_list, os.path.join(data_dir, "masks"))
+        train_list = data_dir / "metadata" / f"{subset}.txt"
+        label_list = load_file_list(train_list, data_dir / "masks")
         labels = load_images(label_list)
 
         # we binarize the labels
         labels = labels.astype("bool")
 
-        image_list = load_file_list(train_list, os.path.join(data_dir, "images"), is_tif=True)
+        image_list = load_file_list(train_list, data_dir / "images", is_tif=True)
         images = load_images(image_list).astype("float32")
 
         # crop = np.s_[:, :512, :512]
@@ -83,16 +85,21 @@ class BroadNucleusDataBinarized(PyBioReader):
 
         return images, labels
 
-    def __init__(self, data_dir="./tmp"):
-        self.x, self.y = self.get_data(data_dir)
+    def __init__(
+        self,
+        data_dir: Path = Path(__file__).parent / "../../../cache/BroadNucleusDataBinarized",
+        subset: str = "training",
+    ):
+        self.x, self.y = self.get_data(data_dir, subset)
         if len(self.x) != len(self.y):
             raise RuntimeError("Invalid data")
 
         assert len(self.x.shape) == 3
         assert len(self.y.shape) == 3
-        self._shape = self.x.shape, self.y.shape
-        self._axes = "zyx", "zyx"  # todo: check axes
-        super().__init__()
+
+        super().__init__(output=Path(__file__).parent / "../../../specs/readers/BroadNucleusDataBinarized.reader.yaml")
+        assert self.shape == (self.x.shape, self.y.shape), (self.shape, self.x.shape, self.y.shape)
+        assert self.axes == ("zxy", "zxy"), self.axes
 
     def __getitem__(
         self, index: Tuple[Tuple[slice, slice, slice], Tuple[slice, slice, slice]]

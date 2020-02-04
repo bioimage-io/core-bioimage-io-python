@@ -8,7 +8,7 @@ from pybio.spec import utils, load_model
 def test_RandomForestClassifierBroadNucleusDataBinarized():
     spec_path = (
         Path(__file__).parent
-        / "../../../../specs/models/sklearnbased/RandomForestClassifierBroadNucleusDataBinarized.model.yaml"
+        / "../../../specs/models/sklearnbased/RandomForestClassifierBroadNucleusDataBinarized.model.yaml"
     )
     pybio_model = load_model(spec_path.as_posix(), kwargs={"c_indices": [None]})
     model = utils.train(pybio_model)

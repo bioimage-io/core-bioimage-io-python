@@ -1,0 +1,19 @@
+name: SimpleConcatenatedReader
+description: >
+  Concatenates a list of readers along the specified dimension for each tensor.
+  The concatenated readers need to be sufficiently similar.
+cite:
+    - text: TODO
+      doi: TODO
+authors:
+    - Fynn Beuttenmüller;@fynnbe
+documentation: reader.md
+tags: [concat, simple, meta reader]
+
+dependencies: ../../env_no_pytorch.yaml
+format_version: 0.1.0
+language: python
+
+source: pybio.core.readers.concat.SimpleConcatenatedReader
+required_kwargs: [readers, dims]
+outputs: dynamic

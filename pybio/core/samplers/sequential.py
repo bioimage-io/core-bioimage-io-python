@@ -4,15 +4,24 @@ from typing import Optional, Sequence, Tuple, Union
 import numpy
 
 from pybio.core.readers.base import PyBioReader
+from pybio.core.readers.concat import SimpleConcatenatedReader
 from pybio.core.samplers.base import PyBioSampler
 
 
 class SequentialSamplerAlongDimension(PyBioSampler):
-    def __init__(self, sample_dimensions: Sequence[int], reader: PyBioReader, batch_size: int = 1, drop_last: bool = True):
+    def __init__(
+        self,
+        readers: Sequence[PyBioReader],
+        sample_dimensions: Sequence[int],
+        batch_size: int = 1,
+        drop_last: bool = True,
+    ):
+        # first dimension to sample along is also used to concatenate readers (ideally all sample dimensions would be
+        reader = SimpleConcatenatedReader(readers, dims=sample_dimensions)
         assert len(sample_dimensions) == len(reader.shape)
         self.sample_dimensions = sample_dimensions
         # axes/shape: sample dimension is 'consumed' and a batch dimension added
-        self._axes = tuple("b" + a[:sd] + a[sd + 1:] for a, sd in zip(reader.axes, sample_dimensions))
+        self._axes = tuple("b" + a[:sd] + a[sd + 1 :] for a, sd in zip(reader.axes, sample_dimensions))
         shape = [list(s) for s in reader.shape]
         for s, sd in zip(shape, sample_dimensions):
             sd_len = s.pop(sd)
