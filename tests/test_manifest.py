@@ -55,6 +55,6 @@ def test_load_specs_from_manifest(category, spec_path, required_kwargs):
     spec_path = MANIFEST_PATH.parent / spec_path
     assert spec_path.exists()
 
-    loaded_spec = load_spec_and_kwargs(spec_path.as_posix(), kwargs=kwargs)
+    loaded_spec = load_spec_and_kwargs(str(spec_path), kwargs=kwargs)
     instance = utils.get_instance(loaded_spec)
     assert instance

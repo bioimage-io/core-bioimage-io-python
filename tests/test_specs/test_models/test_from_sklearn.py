@@ -10,7 +10,7 @@ def test_RandomForestClassifierBroadNucleusDataBinarized():
         Path(__file__).parent
         / "../../../specs/models/sklearnbased/RandomForestClassifierBroadNucleusDataBinarized.model.yaml"
     )
-    pybio_model = load_model(spec_path.as_posix(), kwargs={"c_indices": [None]})
+    pybio_model = load_model(str(spec_path), kwargs={"c_indices": [None]})
     model = utils.train(pybio_model)
 
     ipt = [numpy.arange(24).reshape((2, 3, 4))]

@@ -142,7 +142,7 @@ def resolve_uri(uri_node: URI, cache_path: pathlib.Path, root_path: Optional[pat
         cached_repo_path = cache_path / orga / repo_name / commit_id
         local_path = cached_repo_path / in_repo_path
         if not local_path.exists():
-            cached_repo_path = cached_repo_path.resolve().as_posix()
+            cached_repo_path = str(cached_repo_path.resolve())
             subprocess.call(
                 ["git", "clone", f"{uri_node.scheme}://{uri_node.netloc}/{orga}/{repo_name}.git", cached_repo_path]
             )
@@ -210,6 +210,9 @@ def load_spec_and_kwargs(
     root_path: pathlib.Path = pathlib.Path("."),
     cache_path: pathlib.Path = pathlib.Path(__file__).parent / "../../../cache",
 ) -> Union[Model, Transformation, Reader, Sampler]:
+    cache_path = cache_path.resolve()
+    root_path = root_path.resolve()
+    assert root_path.exists(), root_path
 
     data = {"spec": str(root_path / uri), "kwargs": kwargs or {}}
     last_dot = uri.rfind(".")
