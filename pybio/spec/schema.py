@@ -1,11 +1,10 @@
 from dataclasses import asdict
-from typing import Any, Dict, Union
 
-from marshmallow import Schema, pprint, ValidationError, post_load, validates_schema, validates
+from marshmallow import Schema, ValidationError, post_load, pprint, validates, validates_schema
 
+from pybio.spec import fields, node
 from pybio.spec.exceptions import PyBioValidationException
-from pybio.spec import node, fields
-from pybio.spec.node import MagicTensorsValue, MagicShapeValue
+from pybio.spec.node import MagicShapeValue, MagicTensorsValue
 
 
 class PyBioSchema(Schema):
@@ -15,8 +14,6 @@ class PyBioSchema(Schema):
             return None
 
         this_type = getattr(node, self.__class__.__name__)
-        if issubclass(this_type, node.ReaderSpec):
-            pass
         try:
             return this_type(**data)
         except TypeError as e:
@@ -79,8 +76,8 @@ class InputShape(PyBioSchema):
 
 class OutputShape(PyBioSchema):
     reference_input = fields.Str(missing=None)
-    scale = fields.List(fields.Float(), required=True)
-    offset = fields.List(fields.Integer(), required=True)
+    scale = fields.List(fields.Float, required=True)
+    offset = fields.List(fields.Integer, required=True)
 
     @validates_schema
     def matching_lengths(self, data, **kwargs):
@@ -141,7 +138,7 @@ class InputArray(Array):
 
 
 class OutputArray(Array):
-    shape = fields.Shape(OutputShape, valid_magic_values=[MagicShapeValue.any], required=True)
+    shape = fields.Shape(OutputShape, valid_magic_values=[MagicShapeValue.dynamic], required=True)
     halo = fields.List(fields.Integer(), missing=None)
 
     @validates_schema
@@ -194,7 +191,7 @@ class Reader(SpecWithKwargs):
 
 class SamplerSpec(BaseSpec):
     dependencies = fields.Dependencies(missing=None)
-    outputs = fields.Tensors(OutputArray, valid_magic_values=[MagicTensorsValue.any], missing=None)
+    outputs = fields.Tensors(OutputArray, valid_magic_values=[MagicTensorsValue.dynamic], missing=None)
 
 
 class Sampler(SpecWithKwargs):
@@ -228,7 +225,9 @@ class Training(PyBioSchema):
 class ModelSpec(BaseSpec):
     prediction = fields.Nested(Prediction)
     inputs = fields.Tensors(InputArray, valid_magic_values=[MagicTensorsValue.any], many=True)
-    outputs = fields.Tensors(OutputArray, valid_magic_values=[MagicTensorsValue.same, MagicTensorsValue.dynamic], many=True)
+    outputs = fields.Tensors(
+        OutputArray, valid_magic_values=[MagicTensorsValue.same, MagicTensorsValue.dynamic], many=True
+    )
     training = fields.Nested(Training, missing=None)
 
     @validates("outputs")
