@@ -16,12 +16,12 @@ source: pybio.core.readers.broad_nucleus_data.BroadNucleusDataBinarized
 optional_kwargs: {subset: training}  # todo: dynamic shape and data range? validation and test subsets...
 outputs:
   - name: raw
-    axes: zxy
-    shape: [100, 520, 696]
+    axes: bxy
+    shape: dynamic
     data_type: float32
-    data_range: [131, 4095]
+    data_range: [0, inf]
   - name: label
-    axes: zxy
-    shape: [100, 520, 696]
+    axes: bxy
+    shape: dynamic
     data_type: bool
     data_range: [0, 1]

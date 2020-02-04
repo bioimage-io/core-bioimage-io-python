@@ -1,27 +1,28 @@
 import importlib
 import pathlib
 import subprocess
-
-import yaml
 from dataclasses import fields
 from typing import Any, Dict, Optional, Union
+from urllib.parse import ParseResult
+
+import yaml
+
 from . import schema
-from .exceptions import PyBioValidationException, InvalidDoiException, PyBioMissingKwargException
+from .exceptions import InvalidDoiException, PyBioMissingKwargException, PyBioValidationException
 from .node import (
     Importable,
-    Node,
-    SpecWithKwargs,
     ImportableFromModule,
     ImportableFromPath,
-    WithSource,
     Model,
-    URI,
-    SpecURI,
-    Transformation,
-    Sampler,
+    Node,
     Reader,
+    Sampler,
+    SpecURI,
+    SpecWithKwargs,
+    Transformation,
+    URI,
+    WithSource,
 )
-from urllib.parse import ParseResult
 
 
 def iter_fields(node: Node):
@@ -43,13 +44,19 @@ class NodeVisitor:
             for field, value in iter_fields(node):
                 self.visit(value)
         elif isinstance(node, list):
-            [self.visit(subnode) for subnode in node]
+            self.visit_list(node)
         elif isinstance(node, dict):
-            [self.visit(subnode) for subnode in node.values()]
+            self.visit_dict(node)
         elif isinstance(node, tuple):
             assert not any(
                 isinstance(subnode, Node) or isinstance(subnode, list) or isinstance(subnode, dict) for subnode in node
             )
+
+    def visit_list(self, node: list):
+        [self.visit(subnode) for subnode in node]
+
+    def visit_dict(self, node: dict):
+        [self.visit(subnode) for subnode in node.values()]
 
 
 class NodeTransformer(NodeVisitor):
@@ -177,6 +184,14 @@ class URITransformer(NodeTransformer):
 
     def visit_URI(self, node: URI):
         raise NotImplementedError
+
+    def visit_dict(self, node: dict):
+        if "spec" in node:
+            resolved_node = load_spec_and_kwargs(**node)
+            self.visit(resolved_node)
+            return self.Transform(resolved_node)
+        else:
+            super().visit_dict(node)
 
 
 def load_spec_and_kwargs(

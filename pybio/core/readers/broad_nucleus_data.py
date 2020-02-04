@@ -4,10 +4,9 @@ from pathlib import Path
 from typing import Tuple
 from urllib.request import urlretrieve
 
+import imageio
 import numpy
 import numpy as np
-import imageio
-import yaml
 
 from pybio.core.readers.base import PyBioReader
 
@@ -89,6 +88,7 @@ class BroadNucleusDataBinarized(PyBioReader):
         self,
         data_dir: Path = Path(__file__).parent / "../../../cache/BroadNucleusDataBinarized",
         subset: str = "training",
+        **super_kwargs,
     ):
         self.x, self.y = self.get_data(data_dir, subset)
         if len(self.x) != len(self.y):
@@ -97,12 +97,15 @@ class BroadNucleusDataBinarized(PyBioReader):
         assert len(self.x.shape) == 3
         assert len(self.y.shape) == 3
 
-        super().__init__(output=Path(__file__).parent / "../../../specs/readers/BroadNucleusDataBinarized.reader.yaml")
-        assert self.shape == (self.x.shape, self.y.shape), (self.shape, self.x.shape, self.y.shape)
-        assert self.axes == ("zxy", "zxy"), self.axes
+        super().__init__(
+            output=Path(__file__).parent / "../../../specs/readers/BroadNucleusDataBinarized.reader.yaml",
+            dynamic_shape=(self.x.shape, self.y.shape),
+            **super_kwargs
+        )
+        assert self.axes == ("bxy", "bxy"), self.axes
 
     def __getitem__(
         self, index: Tuple[Tuple[slice, slice, slice], Tuple[slice, slice, slice]]
     ) -> Tuple[numpy.ndarray, numpy.ndarray]:
         x, y = self.x[index[0]], self.y[index[1]]
-        return x, y
+        return self.apply_transformations(x, y)
