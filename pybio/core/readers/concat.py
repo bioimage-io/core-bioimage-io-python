@@ -45,7 +45,7 @@ class SimpleConcatenatedReader(PyBioReader):
         concat_shape = [list(s) for s in first_shape]
         self.cumsums = []
         for i, (s, d) in enumerate(zip(first_shape, dims)):
-            self.cumsums.append(numpy.cumsum(r.shape[i][d] for r in readers))
+            self.cumsums.append(numpy.cumsum([r.shape[i][d] for r in readers]))
             concat_shape[i][d] += sum(r.shape[i][d] for r in readers[1:])
             assert all(s[:d] == r.shape[i][:d] for r in readers[1:])
             assert all(s[d + 1 :] == r.shape[i][d + 1 :] for r in readers[1:])
@@ -83,8 +83,9 @@ class SimpleConcatenatedReader(PyBioReader):
         reader_start = 0
         this_rois = [list(roi) for roi in rois]
         parts = []
-        for r, (reader, reader_stop) in enumerate(zip(self.readers, self.cumsums)):
+        for r, reader in enumerate(self.readers):
             for t, d in enumerate(self.dims):
+                reader_stop = self.cumsums[t][r]
                 slice_start = rois[t][d].start or 0
                 slice_stop = rois[t][d].stop or reader_stop + reader_start
                 this_roi_min = max(0, slice_start - reader_start)
@@ -93,4 +94,4 @@ class SimpleConcatenatedReader(PyBioReader):
 
             parts.append(reader[tuple(tuple(this_roi) for this_roi in this_rois)])
 
-        return [numpy.concatenate((p[i] for p in parts), axis=d) for i, d in enumerate(self.dims)]
+        return [numpy.concatenate([p[i] for p in parts], axis=d) for i, d in enumerate(self.dims)]

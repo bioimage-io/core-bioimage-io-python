@@ -1,8 +1,9 @@
+import dataclasses
 import importlib
 import pathlib
 import subprocess
 from dataclasses import fields
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, TypeVar
 from urllib.parse import ParseResult
 
 import yaml
@@ -36,7 +37,7 @@ class NodeVisitor:
 
         visitor = getattr(self, method, self.generic_visit)
 
-        return visitor(node)
+        visitor(node)
 
     def generic_visit(self, node):
         """Called if no explicit visitor function exists for a node."""
@@ -44,34 +45,39 @@ class NodeVisitor:
             for field, value in iter_fields(node):
                 self.visit(value)
         elif isinstance(node, list):
-            self.visit_list(node)
+            [self.visit(subnode) for subnode in node]
         elif isinstance(node, dict):
-            self.visit_dict(node)
+            [self.visit(subnode) for subnode in node.values()]
         elif isinstance(node, tuple):
             assert not any(
                 isinstance(subnode, Node) or isinstance(subnode, list) or isinstance(subnode, dict) for subnode in node
             )
 
-    def visit_list(self, node: list):
-        [self.visit(subnode) for subnode in node]
 
-    def visit_dict(self, node: dict):
-        [self.visit(subnode) for subnode in node.values()]
+T = TypeVar("T")
 
 
-class NodeTransformer(NodeVisitor):
-    class Transform:
-        def __init__(self, value):
-            self.value = value
+class NodeTransformer:
+    def transform(self, node: T) -> T:
+        method = "transform_" + node.__class__.__name__
 
-    def generic_visit(self, node: Any):
+        transformer = getattr(self, method, self.generic_transformer)
+
+        return transformer(node)
+
+    def generic_transformer(self, node: T) -> T:
         if isinstance(node, Node):
-            for field, value in iter_fields(node):
-                op = self.visit(value)
-                if isinstance(op, self.Transform):
-                    setattr(node, field, op.value)
+            return dataclasses.replace(
+                node, **{field.name: self.transform(getattr(node, field.name)) for field in fields(node)}
+            )
         else:
-            super().generic_visit(node)
+            return node
+
+    def transform_list(self, node: list) -> list:
+        return [self.transform(subnode) for subnode in node]
+
+    def transform_dict(self, node: dict) -> dict:
+        return {key: self.transform(subnode) for key, subnode in node.items()}
 
 
 def _resolve_import(importable: Importable):
@@ -173,32 +179,39 @@ class URITransformer(NodeTransformer):
         self.root_path = root_path
         self.cache_path = cache_path
 
-    def visit_SpecURI(self, node: SpecURI):
+    def transform_SpecURI(self, node: SpecURI):
         local_path = resolve_uri(node, root_path=self.root_path, cache_path=self.cache_path)
         with local_path.open() as f:
             data = yaml.safe_load(f)
 
         resolved_node = node.spec_schema.load(data)
-        self.visit(resolved_node)
-        return self.Transform(resolved_node)
+        return self.transform(resolved_node)
 
-    def visit_URI(self, node: URI):
+    def transform_URI(self, node: URI):
         raise NotImplementedError
 
-    def visit_dict(self, node: dict):
+    def transform_dict(self, node: dict):
         if "spec" in node:
-            resolved_node = load_spec_and_kwargs(**node)
-            self.visit(resolved_node)
-            return self.Transform(resolved_node)
+            resolved_node = load_spec_and_kwargs(
+                uri=node.pop("spec"),
+                kwargs=node.pop("kwargs", None),
+                root_path=self.root_path,
+                cache_path=self.cache_path,
+            )
+            assert not node
+            return self.transform(resolved_node)
         else:
-            super().visit_dict(node)
+            return super().transform_dict(node)
 
 
 def load_spec_and_kwargs(
-    uri: str, kwargs: Dict[str, Any] = None, cache_path: pathlib.Path = pathlib.Path(__file__).parent / "../../../cache"
+    uri: str,
+    kwargs: Dict[str, Any] = None,
+    root_path: pathlib.Path = pathlib.Path("."),
+    cache_path: pathlib.Path = pathlib.Path(__file__).parent / "../../../cache",
 ) -> Union[Model, Transformation, Reader, Sampler]:
 
-    data = {"spec": uri, "kwargs": kwargs or {}}
+    data = {"spec": str(root_path / uri), "kwargs": kwargs or {}}
     last_dot = uri.rfind(".")
     second_last_dot = uri[:last_dot].rfind(".")
     spec_suffix = uri[second_last_dot + 1 : last_dot]
@@ -213,11 +226,10 @@ def load_spec_and_kwargs(
     else:
         raise ValueError(f"Invalid spec suffix: {spec_suffix}")
 
-    local_spec_path = resolve_uri(uri_node=tree.spec, cache_path=cache_path)
+    local_spec_path = resolve_uri(uri_node=tree.spec, root_path=root_path, cache_path=cache_path)
 
     transformer = URITransformer(root_path=local_spec_path.parent, cache_path=cache_path)
-    transformer.visit(tree)
-    return tree
+    return transformer.transform(tree)
 
 
 def load_model(uri: str, kwargs: Dict[str, Any] = None) -> Model:

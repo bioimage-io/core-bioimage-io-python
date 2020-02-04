@@ -111,7 +111,7 @@ class InputArray(Array):
 @dataclass
 class OutputArray(Array):
     shape: Union[Tuple[int, ...], MagicShapeValue, OutputShape]
-    halo: List[int]
+    halo: Tuple[int]
 
 
 @dataclass
@@ -177,6 +177,7 @@ class Sampler(SpecWithKwargs):
 @dataclass
 class Optimizer(Node, WithSource):
     pass
+
 
 @dataclass
 class Setup(Node):
