@@ -45,13 +45,13 @@ class TestNodeVisitor:
 
     def test_node_transform(self, tree):
         class MyTransformer(utils.NodeTransformer):
-            def visit_URL(self, node):
-                return self.Transform(Content(f"content of url {node.url}"))
+            def transform_URL(self, node):
+                return Content(f"content of url {node.url}")
 
         assert isinstance(tree.left.right, self.URL)
         transformer = MyTransformer()
-        transformer.visit(tree)
-        assert isinstance(tree.left.right, Content)
+        transformed_tree = transformer.transform(tree)
+        assert isinstance(transformed_tree.left.right, Content)
 
 
 @dataclass
@@ -78,11 +78,11 @@ class TestTraversingSpecURI:
         tree = Spec().load({"spec_uri_a": "https://example.com", "spec_uri_b": "../file.yml"})
 
         class MyTransformer(utils.NodeTransformer):
-            def visit_SpecURI(self, node):
+            def transform_SpecURI(self, node):
                 res = {"axes": "xyc"}
-                return self.Transform(node.spec_schema.load(res))
+                return node.spec_schema.load(res)
 
         transformer = MyTransformer()
-        transformer.visit(tree)
-        assert {"axes": "xyc"} == tree.spec_uri_a
-        assert {"axes": "xyc"} == tree.spec_uri_b
+        transformed_tree = transformer.transform(tree)
+        assert {"axes": "xyc"} == transformed_tree.spec_uri_a
+        assert {"axes": "xyc"} == transformed_tree.spec_uri_b
