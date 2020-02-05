@@ -100,7 +100,7 @@ class BroadNucleusDataBinarized(PyBioReader):
         super().__init__(
             output=Path(__file__).parent / "../../../specs/readers/BroadNucleusDataBinarized.reader.yaml",
             dynamic_shape=(self.x.shape, self.y.shape),
-            **super_kwargs
+            **super_kwargs,
         )
         assert self.axes == ("bxy", "bxy"), self.axes
 

@@ -4,6 +4,7 @@ from marshmallow import ValidationError
 class PyBioException(Exception):
     pass
 
+
 class PyBioMissingKwargException(PyBioException, TypeError):
     pass
 
