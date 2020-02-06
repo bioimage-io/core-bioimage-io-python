@@ -1,9 +1,9 @@
-import pybio
-
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional, Any, Dict, NewType, Tuple, Union, Type, NamedTuple
+from typing import Any, Dict, List, NewType, Optional, Tuple, Union
+
+import pybio
 
 
 @dataclass
@@ -34,21 +34,16 @@ class ImportableModule(Node):
     callable_name: str
 
 
-Source = Union[ImportableModule, ImportablePath]
+ImportableSource = Union[ImportableModule, ImportablePath]
 
 
 @dataclass
-class WithSource:
-    source: Source
+class WithImportableSource:
+    source: ImportableSource
     required_kwargs: List[str]
     optional_kwargs: Dict[str, Any]
 
 
-# Types for non-nested fields
-Axes = NewType("Axes", str)
-Dependencies = NewType("Dependencies", Path)
-
-# Types for schema
 @dataclass
 class CiteEntry(Node):
     text: str
@@ -57,7 +52,7 @@ class CiteEntry(Node):
 
 
 @dataclass
-class BaseSpec(Node, WithSource):
+class BaseSpec(Node, WithImportableSource):
     name: str
     format_version: str
     description: str
@@ -91,6 +86,9 @@ class OutputShape(Node):
 
     def __len__(self):
         return len(self.scale)
+
+
+Axes = NewType("Axes", str)
 
 
 @dataclass
@@ -128,6 +126,9 @@ class SpecWithKwargs(Node):
     kwargs: Dict[str, Any]
 
 
+Dependencies = NewType("Dependencies", Path)
+
+
 @dataclass
 class TransformationSpec(BaseSpec, WithInputs, WithOutputs):
     dependencies: Dependencies
@@ -139,9 +140,21 @@ class Transformation(SpecWithKwargs):
 
 
 @dataclass
-class Weights(Node):
-    source: str
+class URI:
+    scheme: str
+    netloc: str
+    path: str
+
+
+@dataclass
+class WithFileSource:
+    source: URI
     hash: Dict[str, str]
+
+
+@dataclass
+class Weights(Node, WithFileSource):
+    pass
 
 
 @dataclass
@@ -173,7 +186,7 @@ class Sampler(SpecWithKwargs):
 
 
 @dataclass
-class Optimizer(Node, WithSource):
+class Optimizer(Node, WithImportableSource):
     pass
 
 
@@ -188,7 +201,7 @@ class Setup(Node):
 
 
 @dataclass
-class Training(Node, WithSource):
+class Training(Node, WithImportableSource):
     setup: Setup
     dependencies: Dependencies
     description: Optional[str]
@@ -206,17 +219,5 @@ class Model(SpecWithKwargs):
 
 
 @dataclass
-class URI:
-    scheme: str
-    netloc: str
-    path: str
-
-
-@dataclass
 class SpecURI(URI):
-    spec_schema: "pybio.spec.schema.BaseSpec"
-
-
-@dataclass
-class DataURI(URI):
     spec_schema: "pybio.spec.schema.BaseSpec"

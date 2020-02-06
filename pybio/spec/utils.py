@@ -3,7 +3,7 @@ import importlib
 import pathlib
 import subprocess
 from dataclasses import fields
-from typing import Any, Dict, Optional, Union, TypeVar
+from typing import Any, Dict, Optional, TypeVar, Union
 from urllib.parse import ParseResult
 
 import yaml
@@ -11,19 +11,19 @@ import yaml
 from . import schema
 from .exceptions import InvalidDoiException, PyBioMissingKwargException, PyBioValidationException
 from .node import (
-    Source,
     ImportableModule,
     ImportablePath,
+    ImportableSource,
     Model,
     Node,
     Reader,
+    ReaderSpec,
     Sampler,
     SpecURI,
     SpecWithKwargs,
     Transformation,
     URI,
-    WithSource,
-    ReaderSpec,
+    WithImportableSource,
 )
 
 
@@ -81,7 +81,7 @@ class NodeTransformer:
         return {key: self.transform(subnode) for key, subnode in node.items()}
 
 
-def _resolve_import(importable: Source):
+def _resolve_import(importable: ImportableSource):
     if isinstance(importable, ImportableModule):
         module = importlib.import_module(importable.module_name)
         return getattr(module, importable.callable_name)
@@ -91,17 +91,16 @@ def _resolve_import(importable: Source):
     raise NotImplementedError(f"Can't resolve import for type {type(importable)}")
 
 
-def get_instance(node: Union[SpecWithKwargs, WithSource, Reader], **kwargs):
+def get_instance(node: Union[SpecWithKwargs, WithImportableSource], **kwargs):
     if isinstance(node, SpecWithKwargs):
         joined_spec_kwargs = dict(node.kwargs)
         joined_spec_kwargs.update(kwargs)
         return get_instance(node.spec, **joined_spec_kwargs)
-    elif isinstance(node, WithSource):
+    elif isinstance(node, WithImportableSource):
         joined_kwargs = dict(node.optional_kwargs)
         joined_kwargs.update(kwargs)
         if isinstance(node, ReaderSpec):
-            if "outputs" in joined_kwargs:
-                print("WWTF")
+            assert "outputs" not in joined_kwargs
             joined_kwargs["outputs"] = node.outputs
 
         missing_kwargs = [req for req in node.required_kwargs if req not in joined_kwargs]
