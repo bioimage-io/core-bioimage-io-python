@@ -22,7 +22,6 @@ class MagicShapeValue(Enum):
     dynamic = "dynamic"
 
 
-
 @dataclass
 class ImportablePath(Node):
     filepath: str
@@ -110,7 +109,7 @@ class InputArray(Array):
 @dataclass
 class OutputArray(Array):
     shape: Union[Tuple[int, ...], MagicShapeValue, OutputShape]
-    halo: Tuple[int]
+    halo: Tuple[int, ...]
 
 
 @dataclass

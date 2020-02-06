@@ -6,9 +6,9 @@ from pybio.core.readers.broad_nucleus_data import BroadNucleusDataBinarized
 from pybio.spec import load_spec_and_kwargs, utils
 
 
-def test_BroadNucleusDataBinarized():
+def test_BroadNucleusDataBinarized(cache_path):
     spec_path = Path(__file__).parent / "../../../specs/readers/BroadNucleusDataBinarized.reader.yaml"
-    pybio_reader = load_spec_and_kwargs(str(spec_path), kwargs={})
+    pybio_reader = load_spec_and_kwargs(str(spec_path), kwargs={}, cache_path=cache_path)
     reader = utils.get_instance(pybio_reader)
     assert isinstance(reader, BroadNucleusDataBinarized)
 

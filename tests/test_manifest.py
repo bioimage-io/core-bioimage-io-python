@@ -29,14 +29,12 @@ specs/transformations/Reshape.transformation.yaml:
 specs/models/sklearnbased/RandomForestClassifierBroadNucleusDataBinarized.model.yaml: 
     c_indices: [1]
 specs/samplers/SequentialSamplerAlongDimension.sampler.yaml:
-    readers: [uri: {str(local_pybio_path / "specs/readers/BroadNucleusDataBinarized.reader.yaml")}]    
+    readers: [spec: {str(local_pybio_path / "specs/readers/BroadNucleusDataBinarized.reader.yaml")}]    
     sample_dimensions: [0, 0]
 specs/transformations/Cast.transformation.yaml:
     dtype: float32
 specs/readers/SimpleConcatenatedReader.reader.yaml:
-    # readers: # todo: local relative paths for uri in kwargs
-    #     - Reader: {{spec: ../specs/readers/BroadNucleusDataBinarized.reader.yaml)}}
-    readers: [uri: {str(local_pybio_path / "specs/readers/BroadNucleusDataBinarized.reader.yaml")}]    
+    readers: [spec: {str(local_pybio_path / "specs/readers/BroadNucleusDataBinarized.reader.yaml")}]    
     dims: [0, 0]
     """
     )
@@ -49,12 +47,12 @@ specs/readers/SimpleConcatenatedReader.reader.yaml:
     return kwargs
 
 
-def test_load_specs_from_manifest(category, spec_path, required_kwargs):
+def test_load_specs_from_manifest(cache_path, category, spec_path, required_kwargs):
     kwargs = required_kwargs.get(spec_path, {})
 
     spec_path = MANIFEST_PATH.parent / spec_path
     assert spec_path.exists()
 
-    loaded_spec = load_spec_and_kwargs(str(spec_path), kwargs=kwargs)
+    loaded_spec = load_spec_and_kwargs(str(spec_path), kwargs=kwargs, cache_path=cache_path)
     instance = utils.get_instance(loaded_spec)
     assert instance

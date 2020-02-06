@@ -1,4 +1,4 @@
-from typing import Any, Dict, Sequence, Tuple, Union
+from typing import Sequence, Tuple, Union, Optional
 
 import numpy
 
@@ -9,21 +9,22 @@ from pybio.spec.node import OutputArray
 
 class SimpleConcatenatedReader(PyBioReader):
     def __init__(
-        self, readers: Sequence[Union[PyBioReader, node.Reader, Dict[str, Any]]], dims: Union[int, Sequence[int]] = 0
+        self,
+        readers: Sequence[Union[PyBioReader, node.Reader]],
+        dims: Union[int, Sequence[int]] = 0,
+        *,
+        outputs: Optional[Sequence[OutputArray]] = None,
     ):
         """Concatenate the tensors of all readers along the dimension dims.
 
         The readers need to provide lists of tensors with the same axes and equal shape
         (except of the respective concatenation dimension)
         """
+        # todo: check outputs
         assert len(readers) > 0
         reader_instances = []
         for r in readers:
-            if isinstance(r, dict):
-                reader_instances.append(
-                    utils.get_instance(utils.load_spec_and_kwargs(uri=r["uri"], kwargs=r.get("kwargs", {})))
-                )
-            elif isinstance(r, node.Reader):
+            if isinstance(r, node.Reader):
                 reader_instances.append(utils.get_instance(r))
             elif isinstance(r, PyBioReader):
                 reader_instances.append(r)
@@ -73,7 +74,7 @@ class SimpleConcatenatedReader(PyBioReader):
             halo,
         )
         super().__init__(
-            output=tuple(
+            outputs=tuple(
                 OutputArray(name=n, axes=a, data_type=dt, data_range=dr, shape=s, halo=h)
                 for n, a, dt, dr, s, h in zip(name, axes, data_type, data_range, shape, halo)
             )

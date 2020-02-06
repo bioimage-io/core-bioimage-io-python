@@ -23,6 +23,7 @@ from .node import (
     Transformation,
     URI,
     WithSource,
+    ReaderSpec,
 )
 
 
@@ -90,24 +91,29 @@ def _resolve_import(importable: Source):
     raise NotImplementedError(f"Can't resolve import for type {type(importable)}")
 
 
-def get_instance(spec_node: Union[SpecWithKwargs, WithSource], **kwargs):
-    if isinstance(spec_node, SpecWithKwargs):
-        joined_spec_kwargs = dict(spec_node.kwargs)
+def get_instance(node: Union[SpecWithKwargs, WithSource, Reader], **kwargs):
+    if isinstance(node, SpecWithKwargs):
+        joined_spec_kwargs = dict(node.kwargs)
         joined_spec_kwargs.update(kwargs)
-        return get_instance(spec_node.spec, **joined_spec_kwargs)
-    elif isinstance(spec_node, WithSource):
-        joined_kwargs = dict(spec_node.optional_kwargs)
+        return get_instance(node.spec, **joined_spec_kwargs)
+    elif isinstance(node, WithSource):
+        joined_kwargs = dict(node.optional_kwargs)
         joined_kwargs.update(kwargs)
-        missing_kwargs = [req for req in spec_node.required_kwargs if req not in joined_kwargs]
+        if isinstance(node, ReaderSpec):
+            if "outputs" in joined_kwargs:
+                print("WWTF")
+            joined_kwargs["outputs"] = node.outputs
+
+        missing_kwargs = [req for req in node.required_kwargs if req not in joined_kwargs]
         if missing_kwargs:
             raise PyBioMissingKwargException(
-                f"{spec_node.__class__.__name__} missing required kwargs: {missing_kwargs}\n{spec_node.__class__.__name__}={spec_node}"
+                f"{node.__class__.__name__} missing required kwargs: {missing_kwargs}\n{node.__class__.__name__}={node}"
             )
 
-        cls = _resolve_import(spec_node.source)
+        cls = _resolve_import(node.source)
         return cls(**joined_kwargs)
     else:
-        raise TypeError(spec_node)
+        raise TypeError(node)
 
 
 def train(model: Model, **kwargs) -> Any:
@@ -205,10 +211,7 @@ class URITransformer(NodeTransformer):
 
 
 def load_spec_and_kwargs(
-    uri: str,
-    kwargs: Dict[str, Any] = None,
-    root_path: pathlib.Path = pathlib.Path("."),
-    cache_path: pathlib.Path = pathlib.Path(__file__).parent / "../../../cache",
+    uri: str, kwargs: Dict[str, Any] = None, *, root_path: pathlib.Path = pathlib.Path("."), cache_path: pathlib.Path
 ) -> Union[Model, Transformation, Reader, Sampler]:
     cache_path = cache_path.resolve()
     root_path = root_path.resolve()
@@ -235,7 +238,7 @@ def load_spec_and_kwargs(
     return transformer.transform(tree)
 
 
-def load_model(uri: str, kwargs: Dict[str, Any] = None) -> Model:
-    ret = load_spec_and_kwargs(uri=uri, kwargs=kwargs)
+def load_model(*args, **kwargs) -> Model:
+    ret = load_spec_and_kwargs(*args, **kwargs)
     assert isinstance(ret, Model)
     return ret
