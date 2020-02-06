@@ -59,7 +59,7 @@ class ImportableSource(Str):
 
             module_name = source_str[:last_dot_idx]
             object_name = source_str[last_dot_idx + 1 :]
-            return node.ImportableFromModule(callable_name=object_name, module_name=module_name)
+            return node.ImportableModule(callable_name=object_name, module_name=module_name)
 
         elif self._is_filepath(source_str):
             if source_str.startswith("/"):
@@ -74,7 +74,7 @@ class ImportableSource(Str):
             spec_dir = pathlib.Path(self.context.get("spec_path", ".")).parent
             abs_path = spec_dir / pathlib.Path(module_path)
 
-            return node.ImportableFromPath(callable_name=object_name, filepath=module_path)
+            return node.ImportablePath(callable_name=object_name, filepath=module_path)
 
 
 class Axes(Str):
