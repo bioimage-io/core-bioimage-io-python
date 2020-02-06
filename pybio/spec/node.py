@@ -22,22 +22,20 @@ class MagicShapeValue(Enum):
     dynamic = "dynamic"
 
 
+
 @dataclass
-class Importable(Node):
+class ImportablePath(Node):
+    filepath: str
     callable_name: str
 
 
 @dataclass
-class ImportableFromPath(Importable):
-    filepath: str
-
-
-@dataclass
-class ImportableFromModule(Importable):
+class ImportableModule(Node):
     module_name: str
+    callable_name: str
 
 
-Source = Union[ImportableFromModule, ImportableFromPath]
+Source = Union[ImportableModule, ImportablePath]
 
 
 @dataclass

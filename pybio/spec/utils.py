@@ -8,11 +8,11 @@ from typing import Any, Dict, Optional, Union
 from . import schema
 from .exceptions import PyBioValidationException, InvalidDoiException, PyBioMissingKwargException
 from .node import (
-    Importable,
+    Source,
     Node,
     SpecWithKwargs,
-    ImportableFromModule,
-    ImportableFromPath,
+    ImportableModule,
+    ImportablePath,
     WithSource,
     Model,
     URI,
@@ -67,11 +67,11 @@ class NodeTransformer(NodeVisitor):
             super().generic_visit(node)
 
 
-def _resolve_import(importable: Importable):
-    if isinstance(importable, ImportableFromModule):
+def _resolve_import(importable: Source):
+    if isinstance(importable, ImportableModule):
         module = importlib.import_module(importable.module_name)
         return getattr(module, importable.callable_name)
-    elif isinstance(importable, ImportableFromPath):
+    elif isinstance(importable, ImportablePath):
         raise NotImplementedError()
 
     raise NotImplementedError(f"Can't resolve import for type {type(importable)}")
