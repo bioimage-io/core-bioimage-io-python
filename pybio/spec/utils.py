@@ -11,9 +11,9 @@ import yaml
 from . import schema
 from .exceptions import InvalidDoiException, PyBioMissingKwargException, PyBioValidationException
 from .node import (
-    Importable,
-    ImportableFromModule,
-    ImportableFromPath,
+    Source,
+    ImportableModule,
+    ImportablePath,
     Model,
     Node,
     Reader,
@@ -80,11 +80,11 @@ class NodeTransformer:
         return {key: self.transform(subnode) for key, subnode in node.items()}
 
 
-def _resolve_import(importable: Importable):
-    if isinstance(importable, ImportableFromModule):
+def _resolve_import(importable: Source):
+    if isinstance(importable, ImportableModule):
         module = importlib.import_module(importable.module_name)
         return getattr(module, importable.callable_name)
-    elif isinstance(importable, ImportableFromPath):
+    elif isinstance(importable, ImportablePath):
         raise NotImplementedError()
 
     raise NotImplementedError(f"Can't resolve import for type {type(importable)}")
