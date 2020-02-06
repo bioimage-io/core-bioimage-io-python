@@ -14,7 +14,7 @@ class DummyReader(PyBioReader):
         self.Y = numpy.array([i < 7 for i in range(y_shape[0])])
 
         super().__init__(
-            output=(
+            outputs=(
                 OutputArray(
                     name="dummyX",
                     axes=Axes("bx"),

@@ -1,7 +1,7 @@
 import os
 import zipfile
 from pathlib import Path
-from typing import Tuple
+from typing import Sequence, Tuple
 from urllib.request import urlretrieve
 
 import imageio
@@ -9,6 +9,7 @@ import numpy
 import numpy as np
 
 from pybio.core.readers.base import PyBioReader
+from pybio.spec.node import MagicShapeValue, OutputArray
 
 
 def download_data(url, data_dir: Path, prefix: str):
@@ -88,8 +89,11 @@ class BroadNucleusDataBinarized(PyBioReader):
         self,
         data_dir: Path = Path(__file__).parent / "../../../cache/BroadNucleusDataBinarized",
         subset: str = "training",
+        *,
+        outputs: Sequence[OutputArray],
         **super_kwargs,
     ):
+        assert all(isinstance(out, OutputArray) for out in outputs)
         self.x, self.y = self.get_data(data_dir, subset)
         if len(self.x) != len(self.y):
             raise RuntimeError("Invalid data")
@@ -97,11 +101,17 @@ class BroadNucleusDataBinarized(PyBioReader):
         assert len(self.x.shape) == 3
         assert len(self.y.shape) == 3
 
-        super().__init__(
-            output=Path(__file__).parent / "../../../specs/readers/BroadNucleusDataBinarized.reader.yaml",
-            dynamic_shape=(self.x.shape, self.y.shape),
-            **super_kwargs,
-        )
+        dynamic_shape = (self.x.shape, self.y.shape)
+        assert len(dynamic_shape) == len(outputs)
+        outputs = list(outputs)
+        for out, s in zip(outputs, dynamic_shape):
+            if s is None:
+                assert isinstance(out.shape, tuple), type(out)
+            else:
+                assert out.shape == MagicShapeValue.dynamic
+                out.shape = s
+
+        super().__init__(outputs=outputs, **super_kwargs)
         assert self.axes == ("bxy", "bxy"), self.axes
 
     def __getitem__(
