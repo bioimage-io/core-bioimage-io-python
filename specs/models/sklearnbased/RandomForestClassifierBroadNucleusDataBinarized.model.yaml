@@ -6,7 +6,7 @@ cite:
 authors:
   - Fynn Beuttenmueller
 documentation: sklearnbased.md
-tags: [test, rf, random, forest]
+tags: [test, rf, random, forest, example]
 
 format_version: 0.1.0
 language: python
@@ -36,9 +36,8 @@ test_input: null # ../test_input.npy
 test_output: null # ../test_output.npy
 thumbnail: null # ./nuclei_thumbnail.png
 
-# TODO double check inputs/outputs
 inputs: any
-outputs: same  # that's a lie! need outputs with input references, while inputs is any... todo: a lot inputs/outputs
+outputs: dynamic
 
 prediction:
     preprocess: null
@@ -50,18 +49,21 @@ prediction:
 
 
 training:
-    setup:
-        reader:
-            spec: ../../readers/BroadNucleusDataBinarized.reader.yaml
-        sampler:
-            spec: ../../samplers/SequentialSamplerAlongDimension.sampler.yaml
-            kwargs: {sample_dimensions: [0, 0]}
+  setup:
+    readers:
+      - spec: ../../readers/BroadNucleusDataBinarized.reader.yaml
+        kwargs:
+          transformations:
+            - spec: ../../transformations/NormalizeZeroMeanUnitVariance.transformation.yaml
+    sampler:
+      spec: ../../samplers/SequentialSamplerAlongDimension.sampler.yaml
+      kwargs: {sample_dimensions: [0, 0]}
 
-    source: pybio.core.training.classic_fit.classic_fit
-    required_kwargs: [model_spec]
-    optional_kwargs: {start: 0, batch_size: 1}
-    # enable different ways of specifying the dependencies.
-    # this would hold all training dependencies, e.g. as a frozen conda environment
-    # or as a pom.xml
-    dependencies: conda:./test_env.yaml  # this is a file to the dependencies
-    description: todo describe training
+  source: pybio.core.training.classic_fit.classic_fit
+  required_kwargs: [pybio_model]
+  optional_kwargs: {start: 0, batch_size: 1}
+  # enable different ways of specifying the dependencies.
+  # this would hold all training dependencies, e.g. as a frozen conda environment
+  # or as a pom.xml
+  dependencies: conda:./test_env.yaml  # this is a file to the dependencies
+  description: todo describe training

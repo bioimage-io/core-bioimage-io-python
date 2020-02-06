@@ -24,16 +24,8 @@ setup(
         "Programming Language :: Python :: 3.7",
     ],
     packages=find_namespace_packages(exclude=["tests"]),  # Required
-    install_requires=[
-        "dataclasses; python_version<'3.7'",
-        "marshmallow>=3.3.0",
-        "PyYAML>=5.2",
-        "requests",
-    ],
-    extras_require={
-        "core": ["numpy", "sklearn", "imageio"],
-        "test": ["pytest", "tox"],
-    },
+    install_requires=["dataclasses; python_version<'3.7'", "marshmallow>=3.3.0", "PyYAML>=5.2", "requests"],
+    extras_require={"core": ["numpy", "sklearn", "imageio"], "test": ["pytest", "tox"]},
     project_urls={  # Optional
         "Bug Reports": "https://github.com/bioimage-io/python-bioimage-io/issues",
         "Source": "https://github.com/bioimage-io/python-bioimage-io",

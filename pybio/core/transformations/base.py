@@ -1,7 +1,7 @@
 from typing import List, Sequence, Tuple, Optional, Union
 
 from pybio.core.array import PyBioArray
-from pybio.spec.spec_types import InputArray, OutputArray
+from pybio.spec.node import InputArray, OutputArray
 
 
 class ApplyToAll:
@@ -21,16 +21,16 @@ class Transformation:
     def apply(self, *arrays: PyBioArray) -> List[PyBioArray]:
         return [self.apply_to_chosen(a) if i in self.apply_to else a for i, a in enumerate(arrays)]
 
-    def dynamic_output_shape(self, input_shape: List[Tuple[int]]) -> List[Tuple[int]]:
+    def dynamic_output_shape(self, input_shape: Tuple[Tuple[int]]) -> Tuple[Tuple[int]]:
         raise NotImplementedError
 
-    def dynamic_input_shape(self, output_shape: List[Tuple[int]]) -> List[Tuple[int]]:
+    def dynamic_input_shape(self, output_shape: Tuple[Tuple[int]]) -> Tuple[Tuple[int]]:
         raise NotImplementedError
 
-    def dynamic_outputs(self, inputs: List[InputArray]) -> List[OutputArray]:
+    def dynamic_outputs(self, inputs: Tuple[InputArray]) -> Tuple[OutputArray]:
         raise NotImplementedError
 
-    def dynamic_inputs(self, outputs: List[OutputArray]) -> List[InputArray]:
+    def dynamic_inputs(self, outputs: Tuple[OutputArray]) -> Tuple[InputArray]:
         raise NotImplementedError
 
 

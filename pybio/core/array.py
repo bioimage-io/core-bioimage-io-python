@@ -4,6 +4,7 @@ import numpy
 
 PyBioArrayDerived = TypeVar("PyBioArrayDerived", bound="PyBioArrayBase")
 
+
 class PyBioArrayBase:
     reshape: Callable[[Tuple[int, ...]], PyBioArrayDerived]
     shape: Tuple[int, ...]

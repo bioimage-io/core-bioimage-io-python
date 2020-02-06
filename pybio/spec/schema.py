@@ -1,11 +1,10 @@
 from dataclasses import asdict
-from typing import Any, Dict, Union
 
-from marshmallow import Schema, pprint, ValidationError, post_load, validates_schema, validates
+from marshmallow import Schema, ValidationError, post_load, pprint, validates, validates_schema
 
+from pybio.spec import fields, node
 from pybio.spec.exceptions import PyBioValidationException
-from pybio.spec import spec_types, fields
-from pybio.spec.spec_types import MagicTensorsValue, MagicShapeValue
+from pybio.spec.node import MagicShapeValue, MagicTensorsValue
 
 
 class PyBioSchema(Schema):
@@ -14,9 +13,7 @@ class PyBioSchema(Schema):
         if not data:
             return None
 
-        this_type = getattr(spec_types, self.__class__.__name__)
-        if issubclass(this_type, spec_types.Reader):
-            pass
+        this_type = getattr(node, self.__class__.__name__)
         try:
             return this_type(**data)
         except TypeError as e:
@@ -35,14 +32,14 @@ class CiteEntry(PyBioSchema):
             raise ValidationError("doi or url needs to be specified in a citation")
 
 
-class MinimalYAML(PyBioSchema):
+class BaseSpec(PyBioSchema):
     name = fields.Str(required=True)
     format_version = fields.Str(required=True)
     description = fields.Str(required=True)
     cite = fields.Nested(CiteEntry, many=True, required=True)
     authors = fields.List(fields.Str(required=True))
     documentation = fields.Path(required=True)
-    tags = fields.List(fields.Str(required=True))
+    tags = fields.List(fields.Str, required=True)
 
     language = fields.Str(required=True)
     framework = fields.Str(missing=None)
@@ -55,14 +52,14 @@ class MinimalYAML(PyBioSchema):
     thumbnail = fields.Path(missing=None)
 
 
-class BaseSpec(PyBioSchema):
+class SpecWithKwargs(PyBioSchema):
     spec: fields.SpecURI
     kwargs = fields.Dict(missing=dict)
 
 
 class InputShape(PyBioSchema):
-    min = fields.List(fields.Integer(), required=True)
-    step = fields.List(fields.Integer(), required=True)
+    min = fields.List(fields.Integer, required=True)
+    step = fields.List(fields.Integer, required=True)
 
     @validates_schema
     def matching_lengths(self, data, **kwargs):
@@ -79,8 +76,8 @@ class InputShape(PyBioSchema):
 
 class OutputShape(PyBioSchema):
     reference_input = fields.Str(missing=None)
-    scale = fields.List(fields.Float(), required=True)
-    offset = fields.List(fields.Integer(), required=True)
+    scale = fields.List(fields.Float, required=True)
+    offset = fields.List(fields.Integer, required=True)
 
     @validates_schema
     def matching_lengths(self, data, **kwargs):
@@ -125,7 +122,7 @@ class InputArray(Array):
                 if bidx != -1 and shape[bidx] != 1:
                     raise PyBioValidationException("Input shape has to be one in the batch dimension.")
 
-            elif isinstance(shape, spec_types.InputShape):
+            elif isinstance(shape, node.InputShape):
                 step = shape.step
                 if bidx != -1 and shape.min[bidx] != 1:
                     raise PyBioValidationException("Input shape has to be one in the batch dimension.")
@@ -141,7 +138,7 @@ class InputArray(Array):
 
 
 class OutputArray(Array):
-    shape = fields.Shape(OutputShape, valid_magic_values=[MagicShapeValue.any], required=True)
+    shape = fields.Shape(OutputShape, valid_magic_values=[MagicShapeValue.dynamic], required=True)
     halo = fields.List(fields.Integer(), missing=None)
 
     @validates_schema
@@ -150,27 +147,25 @@ class OutputArray(Array):
         halo = data["halo"]
         if halo is None:
             return
-        elif isinstance(shape, tuple) or isinstance(shape, spec_types.OutputShape):
+        elif isinstance(shape, tuple) or isinstance(shape, node.OutputShape):
             if len(halo) != len(shape):
                 raise PyBioValidationException(f"halo {halo} has to have same length as shape {shape}!")
         elif not isinstance(shape, MagicShapeValue):
             raise NotImplementedError
 
 
-class Transformation(MinimalYAML):
+class TransformationSpec(BaseSpec):
     dependencies = fields.Dependencies(required=True)
     inputs = fields.Tensors(
         InputArray, valid_magic_values=[MagicTensorsValue.any, MagicTensorsValue.dynamic], required=True
     )
     outputs = fields.Tensors(
-        OutputArray,
-        valid_magic_values=[MagicTensorsValue.same, MagicTensorsValue.dynamic],
-        missing=MagicTensorsValue.same,
+        OutputArray, valid_magic_values=[MagicTensorsValue.same, MagicTensorsValue.dynamic], required=True
     )
 
 
-class TransformationSpec(BaseSpec):
-    spec = fields.SpecURI(Transformation, required=True)
+class Transformation(SpecWithKwargs):
+    spec = fields.SpecURI(TransformationSpec, required=True)
 
 
 class Weights(PyBioSchema):
@@ -181,26 +176,26 @@ class Weights(PyBioSchema):
 class Prediction(PyBioSchema):
     weights = fields.Nested(Weights)
     dependencies = fields.Dependencies(missing=None)
-    preprocess = fields.Nested(TransformationSpec, many=True, missing=None)
-    postprocess = fields.Nested(TransformationSpec, many=True, missing=None)
-
-
-class Reader(MinimalYAML):
-    dependencies = fields.Dependencies(missing=None)
-    outputs = fields.Tensors(OutputArray, valid_magic_values=[], required=True)
+    preprocess = fields.Nested(Transformation, many=True, missing=None)
+    postprocess = fields.Nested(Transformation, many=True, missing=None)
 
 
 class ReaderSpec(BaseSpec):
-    spec = fields.SpecURI(Reader)
-
-
-class Sampler(MinimalYAML):
     dependencies = fields.Dependencies(missing=None)
-    outputs = fields.Tensors(OutputArray, valid_magic_values=[MagicTensorsValue.any], missing=None)
+    outputs = fields.Tensors(OutputArray, valid_magic_values=[MagicTensorsValue.dynamic], required=True)
+
+
+class Reader(SpecWithKwargs):
+    spec = fields.SpecURI(ReaderSpec)
 
 
 class SamplerSpec(BaseSpec):
-    spec = fields.SpecURI(Sampler)
+    dependencies = fields.Dependencies(missing=None)
+    outputs = fields.Tensors(OutputArray, valid_magic_values=[MagicTensorsValue.dynamic], missing=None)
+
+
+class Sampler(SpecWithKwargs):
+    spec = fields.SpecURI(SamplerSpec)
 
 
 class Optimizer(PyBioSchema):
@@ -210,11 +205,11 @@ class Optimizer(PyBioSchema):
 
 
 class Setup(PyBioSchema):
-    reader = fields.Nested(ReaderSpec, required=True)
-    sampler = fields.Nested(SamplerSpec, required=True)
-    preprocess = fields.Nested(TransformationSpec, many=True, missing=list)
-    postprocess = fields.Nested(TransformationSpec, many=True, missing=list)
-    losses = fields.Nested(TransformationSpec, many=True, missing=list)
+    readers = fields.List(fields.Nested(Reader, required=True), required=True)
+    sampler = fields.Nested(Sampler, required=True)
+    preprocess = fields.Nested(Transformation, many=True, missing=list)
+    postprocess = fields.Nested(Transformation, many=True, missing=list)
+    losses = fields.Nested(Transformation, many=True, missing=list)
     optimizer = fields.Nested(Optimizer, missing=None)
 
 
@@ -227,40 +222,39 @@ class Training(PyBioSchema):
     description = fields.Str(missing=None)
 
 
-class Model(MinimalYAML):
+class ModelSpec(BaseSpec):
     prediction = fields.Nested(Prediction)
     inputs = fields.Tensors(InputArray, valid_magic_values=[MagicTensorsValue.any], many=True)
-    outputs = fields.Tensors(OutputArray, valid_magic_values=[MagicTensorsValue.same], many=True)
+    outputs = fields.Tensors(
+        OutputArray, valid_magic_values=[MagicTensorsValue.same, MagicTensorsValue.dynamic], many=True
+    )
     training = fields.Nested(Training, missing=None)
 
     @validates("outputs")
     def validate_reference_input_names(self, data, **kwargs):
         pass  # todo validate_reference_input_names
 
-    #@validates_schema
+    # @validates_schema
     def input_propagation_from_training_reader(self, data, **kwargs):
-        spec: spec_types.Model = self.make_object(data, **kwargs)
+        spec: node.ModelSpec = self.make_object(data, **kwargs)
         if spec.training is None:
             return
 
         reader_axes = spec.training.setup.reader.spec.outputs
         inputs = spec.inputs
+        # todo: model spec validation
 
 
-class ModelSpec(BaseSpec):
-    spec = fields.SpecURI(Model, required=True)
-
-
-def load_model_spec(uri: str, kwargs: Dict[str, Any] = None) -> spec_types.ModelSpec:
-    return ModelSpec().load({"spec": uri, "kwargs": kwargs or {}})
+class Model(SpecWithKwargs):
+    spec = fields.SpecURI(ModelSpec, required=True)
 
 
 if __name__ == "__main__":
     try:
-        spec = load_model_spec(
+        model = load_model(
             "https://github.com/bioimage-io/example-unet-configurations/blob/marshmallow/models/unet-2d-nuclei-broad/UNet2DNucleiBroad.model.yaml"
         )
     except PyBioValidationException as e:
         pprint(e.normalized_messages(), width=280)
     else:
-        pprint(asdict(spec), width=280)
+        pprint(asdict(model), width=280)

@@ -1,22 +1,20 @@
 import pytest
 
 from dataclasses import dataclass
-from pybio.spec import utils, spec_types, fields, schema
-from typing import Optional, Any
+from pybio.spec import utils, node, fields, schema
+from typing import Any
 from marshmallow import post_load
 
+
 @dataclass
-class MyNode(spec_types.Node):
+class MyNode(node.Node):
     field_a: str
     field_b: int
 
 
 def test_iter_fields():
     entry = MyNode("a", 42)
-    assert [
-        ("field_a", "a"),
-        ("field_b", 42),
-    ] == list(utils.iter_fields(entry))
+    assert [("field_a", "a"), ("field_b", 42)] == list(utils.iter_fields(entry))
 
 
 @dataclass
@@ -26,7 +24,7 @@ class Content:
 
 class TestNodeVisitor:
     @dataclass
-    class Tree(spec_types.Node):
+    class Tree(node.Node):
         left: Any
         right: Any
 
@@ -47,19 +45,19 @@ class TestNodeVisitor:
 
     def test_node_transform(self, tree):
         class MyTransformer(utils.NodeTransformer):
-            def visit_URL(self, node):
-                return self.Transform(Content(f"content of url {node.url}"))
+            def transform_URL(self, node):
+                return Content(f"content of url {node.url}")
 
         assert isinstance(tree.left.right, self.URL)
         transformer = MyTransformer()
-        transformer.visit(tree)
-        assert isinstance(tree.left.right, Content)
+        transformed_tree = transformer.transform(tree)
+        assert isinstance(transformed_tree.left.right, Content)
 
 
 @dataclass
-class MySpec(spec_types.Node):
-    uri_a: spec_types.URI
-    uri_b: spec_types.URI
+class MySpec(node.Node):
+    spec_uri_a: node.SpecURI
+    spec_uri_b: node.SpecURI
 
 
 class SubSpec(schema.Schema):
@@ -67,8 +65,8 @@ class SubSpec(schema.Schema):
 
 
 class Spec(schema.Schema):
-    uri_a = fields.SpecURI(SubSpec)
-    uri_b = fields.SpecURI(SubSpec)
+    spec_uri_a = fields.SpecURI(SubSpec)
+    spec_uri_b = fields.SpecURI(SubSpec)
 
     @post_load
     def convert(self, data, **kwargs):
@@ -76,19 +74,15 @@ class Spec(schema.Schema):
 
 
 class TestTraversingSpecURI:
-
     def test_resolve_spec(self):
-        tree = Spec().load({
-            "uri_a": "https://example.com",
-            "uri_b": "../file.yml",
-        })
+        tree = Spec().load({"spec_uri_a": "https://example.com", "spec_uri_b": "../file.yml"})
 
         class MyTransformer(utils.NodeTransformer):
-            def visit_URI(self, node):
+            def transform_SpecURI(self, node):
                 res = {"axes": "xyc"}
-                return self.Transform(node.loader.load(res))
+                return node.spec_schema.load(res)
 
         transformer = MyTransformer()
-        transformer.visit(tree)
-        assert {"axes": "xyc"} == tree.uri_a
-        assert {"axes": "xyc"} == tree.uri_b
+        transformed_tree = transformer.transform(tree)
+        assert {"axes": "xyc"} == transformed_tree.spec_uri_a
+        assert {"axes": "xyc"} == transformed_tree.spec_uri_b

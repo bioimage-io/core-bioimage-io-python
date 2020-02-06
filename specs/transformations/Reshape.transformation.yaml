@@ -17,7 +17,7 @@ language: python
 dependencies: ../../env_numpy.yaml
 
 source: pybio.core.transformations.reshape.Reshape
-required_kwargs: [newshape]
+required_kwargs: [shape]
 optional_kwargs: {apply_to: null}
 
 inputs: dynamic
