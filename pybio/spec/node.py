@@ -121,8 +121,20 @@ class WithOutputs:
 
 
 @dataclass
+class URI:
+    scheme: str
+    netloc: str
+    path: str
+
+
+@dataclass
+class SpecURI(URI):
+    spec_schema: "pybio.spec.schema.BaseSpec"
+
+
+@dataclass
 class SpecWithKwargs(Node):
-    spec: BaseSpec
+    spec: Union[SpecURI, BaseSpec]
     kwargs: Dict[str, Any]
 
 
@@ -136,14 +148,7 @@ class TransformationSpec(BaseSpec, WithInputs, WithOutputs):
 
 @dataclass
 class Transformation(SpecWithKwargs):
-    spec: TransformationSpec
-
-
-@dataclass
-class URI:
-    scheme: str
-    netloc: str
-    path: str
+    spec: Union[SpecURI, TransformationSpec]
 
 
 @dataclass
@@ -172,7 +177,8 @@ class ReaderSpec(BaseSpec, WithOutputs):
 
 @dataclass
 class Reader(SpecWithKwargs):
-    spec: ReaderSpec
+    spec: Union[SpecURI, ReaderSpec]
+    transformations: List[Transformation]
 
 
 @dataclass
@@ -182,7 +188,7 @@ class SamplerSpec(BaseSpec, WithOutputs):
 
 @dataclass
 class Sampler(SpecWithKwargs):
-    spec = SamplerSpec
+    spec = Union[SpecURI, SamplerSpec]
 
 
 @dataclass
@@ -215,9 +221,4 @@ class ModelSpec(BaseSpec, WithInputs, WithOutputs):
 
 @dataclass
 class Model(SpecWithKwargs):
-    spec: ModelSpec
-
-
-@dataclass
-class SpecURI(URI):
-    spec_schema: "pybio.spec.schema.BaseSpec"
+    spec: Union[SpecURI, ModelSpec]

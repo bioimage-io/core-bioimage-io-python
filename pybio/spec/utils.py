@@ -95,6 +95,10 @@ def get_instance(node: Union[SpecWithKwargs, WithImportableSource], **kwargs):
     if isinstance(node, SpecWithKwargs):
         joined_spec_kwargs = dict(node.kwargs)
         joined_spec_kwargs.update(kwargs)
+        if isinstance(node, Reader):
+            assert "transformations" not in joined_spec_kwargs
+            joined_spec_kwargs["transformations"] = node.transformations
+
         return get_instance(node.spec, **joined_spec_kwargs)
     elif isinstance(node, WithImportableSource):
         joined_kwargs = dict(node.optional_kwargs)

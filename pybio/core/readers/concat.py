@@ -1,10 +1,10 @@
-from typing import Sequence, Tuple, Union, Optional
+from typing import Sequence, Tuple, Union
 
 import numpy
 
 from pybio.core.readers.base import PyBioReader
 from pybio.spec import node, utils
-from pybio.spec.node import OutputArray
+from pybio.spec.node import MagicTensorsValue, OutputArray
 
 
 class SimpleConcatenatedReader(PyBioReader):
@@ -13,14 +13,15 @@ class SimpleConcatenatedReader(PyBioReader):
         readers: Sequence[Union[PyBioReader, node.Reader]],
         dims: Union[int, Sequence[int]] = 0,
         *,
-        outputs: Optional[Sequence[OutputArray]] = None,
+        outputs: MagicTensorsValue = MagicTensorsValue.dynamic,
+        **super_kwargs,
     ):
         """Concatenate the tensors of all readers along the dimension dims.
 
         The readers need to provide lists of tensors with the same axes and equal shape
         (except of the respective concatenation dimension)
         """
-        # todo: check outputs
+        assert outputs == MagicTensorsValue.dynamic
         assert len(readers) > 0
         reader_instances = []
         for r in readers:
@@ -77,7 +78,8 @@ class SimpleConcatenatedReader(PyBioReader):
             outputs=tuple(
                 OutputArray(name=n, axes=a, data_type=dt, data_range=dr, shape=s, halo=h)
                 for n, a, dt, dr, s, h in zip(name, axes, data_type, data_range, shape, halo)
-            )
+            ),
+            **super_kwargs,
         )
 
     def __getitem__(self, rois: Tuple[Tuple[slice, ...], ...]) -> Sequence[numpy.ndarray]:

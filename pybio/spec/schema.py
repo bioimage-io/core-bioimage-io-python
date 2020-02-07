@@ -169,7 +169,7 @@ class Transformation(SpecWithKwargs):
 
 
 class Weights(PyBioSchema):
-    source = fields.Str(required=True)
+    source = fields.URI(required=True)
     hash = fields.Dict()
 
 
@@ -187,6 +187,7 @@ class ReaderSpec(BaseSpec):
 
 class Reader(SpecWithKwargs):
     spec = fields.SpecURI(ReaderSpec)
+    transformations = fields.List(fields.Nested(Transformation), missing=list)
 
 
 class SamplerSpec(BaseSpec):
