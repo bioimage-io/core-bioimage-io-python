@@ -55,7 +55,6 @@ def test_load_specs_from_manifest(cache_path, category, spec_path, required_spec
     spec_path = MANIFEST_PATH.parent / spec_path
     assert spec_path.exists()
 
-    if "SequentialSamplerAlongDimension" in str(spec_path):
-        loaded_spec = load_spec_and_kwargs(str(spec_path), **kwargs, cache_path=cache_path)
-        instance = utils.get_instance(loaded_spec)
-        assert instance
+    loaded_spec = load_spec_and_kwargs(str(spec_path), **kwargs, cache_path=cache_path)
+    instance = utils.get_instance(loaded_spec)
+    assert instance
