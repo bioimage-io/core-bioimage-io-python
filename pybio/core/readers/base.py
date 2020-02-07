@@ -1,9 +1,8 @@
 from typing import Sequence, Tuple
 
 from pybio.core.array import PyBioArray
-from pybio.core.transformations import apply_transformations
-from pybio.spec import utils
-from pybio.spec.node import MagicTensorsValue, OutputArray, Transformation
+from pybio.core.transformations import PyBioTransformation, apply_transformations
+from pybio.spec.node import MagicTensorsValue, OutputArray
 
 
 class PyBioReader:
