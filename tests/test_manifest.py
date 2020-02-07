@@ -20,22 +20,24 @@ def pytest_generate_tests(metafunc):
 
 
 @pytest.fixture
-def required_kwargs():
+def required_spec_kwargs():
     local_pybio_path = Path(__file__).parent.parent
     kwargs = yaml.safe_load(
         f"""
 specs/transformations/Reshape.transformation.yaml:
-    shape: [-1]
+    kwargs:
+        shape: [-1]
 specs/models/sklearnbased/RandomForestClassifierBroadNucleusDataBinarized.model.yaml: 
-    c_indices: [1]
+    kwargs:
+        c_indices: [1]
 specs/samplers/SequentialSamplerAlongDimension.sampler.yaml:
-    readers: [spec: {str(local_pybio_path / "specs/readers/BroadNucleusDataBinarized.reader.yaml")}]    
-    sample_dimensions: [0, 0]
+    readers: 
+        - spec: {str(local_pybio_path / "specs/readers/BroadNucleusDataBinarized.reader.yaml")}
+    kwargs: 
+        sample_dimensions: [0, 0]
 specs/transformations/Cast.transformation.yaml:
-    dtype: float32
-specs/readers/SimpleConcatenatedReader.reader.yaml:
-    readers: [spec: {str(local_pybio_path / "specs/readers/BroadNucleusDataBinarized.reader.yaml")}]    
-    dims: [0, 0]
+    kwargs:
+        dtype: float32
     """
     )
 
@@ -47,12 +49,13 @@ specs/readers/SimpleConcatenatedReader.reader.yaml:
     return kwargs
 
 
-def test_load_specs_from_manifest(cache_path, category, spec_path, required_kwargs):
-    kwargs = required_kwargs.get(spec_path, {})
+def test_load_specs_from_manifest(cache_path, category, spec_path, required_spec_kwargs):
+    kwargs = required_spec_kwargs.get(spec_path, {})
 
     spec_path = MANIFEST_PATH.parent / spec_path
     assert spec_path.exists()
 
-    loaded_spec = load_spec_and_kwargs(str(spec_path), kwargs=kwargs, cache_path=cache_path)
-    instance = utils.get_instance(loaded_spec)
-    assert instance
+    if "SequentialSamplerAlongDimension" in str(spec_path):
+        loaded_spec = load_spec_and_kwargs(str(spec_path), **kwargs, cache_path=cache_path)
+        instance = utils.get_instance(loaded_spec)
+        assert instance

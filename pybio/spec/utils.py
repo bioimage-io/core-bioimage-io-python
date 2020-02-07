@@ -1,33 +1,21 @@
 import dataclasses
-import importlib
+import importlib.util
+import io
 import pathlib
 import subprocess
+import uuid
 from dataclasses import fields
-from typing import Any, Dict, Optional, Union, TypeVar
-from urllib.parse import ParseResult
+from typing import Any, Dict, Optional, TypeVar, Union
+from urllib.parse import ParseResult, urlunparse
+from urllib.request import urlretrieve
 
 import yaml
 
-from . import schema
+from . import nodes, schema
 from .exceptions import InvalidDoiException, PyBioMissingKwargException, PyBioValidationException
-from .node import (
-    Source,
-    ImportableModule,
-    ImportablePath,
-    Model,
-    Node,
-    Reader,
-    Sampler,
-    SpecURI,
-    SpecWithKwargs,
-    Transformation,
-    URI,
-    WithSource,
-    ReaderSpec,
-)
 
 
-def iter_fields(node: Node):
+def iter_fields(node: nodes.Node):
     for field in fields(node):
         yield field.name, getattr(node, field.name)
 
@@ -42,7 +30,7 @@ class NodeVisitor:
 
     def generic_visit(self, node):
         """Called if no explicit visitor function exists for a node."""
-        if isinstance(node, Node):
+        if isinstance(node, nodes.Node):
             for field, value in iter_fields(node):
                 self.visit(value)
         elif isinstance(node, list):
@@ -51,23 +39,24 @@ class NodeVisitor:
             [self.visit(subnode) for subnode in node.values()]
         elif isinstance(node, tuple):
             assert not any(
-                isinstance(subnode, Node) or isinstance(subnode, list) or isinstance(subnode, dict) for subnode in node
+                isinstance(subnode, nodes.Node) or isinstance(subnode, list) or isinstance(subnode, dict)
+                for subnode in node
             )
 
 
-T = TypeVar("T")
+GenericNode = TypeVar("GenericNode")
 
 
 class NodeTransformer:
-    def transform(self, node: T) -> T:
+    def transform(self, node: GenericNode) -> GenericNode:
         method = "transform_" + node.__class__.__name__
 
         transformer = getattr(self, method, self.generic_transformer)
 
         return transformer(node)
 
-    def generic_transformer(self, node: T) -> T:
-        if isinstance(node, Node):
+    def generic_transformer(self, node: Any) -> Any:
+        if isinstance(node, nodes.Node):
             return dataclasses.replace(
                 node, **{field.name: self.transform(getattr(node, field.name)) for field in fields(node)}
             )
@@ -77,31 +66,40 @@ class NodeTransformer:
     def transform_list(self, node: list) -> list:
         return [self.transform(subnode) for subnode in node]
 
-    def transform_dict(self, node: dict) -> dict:
-        return {key: self.transform(subnode) for key, subnode in node.items()}
 
-
-def _resolve_import(importable: Source):
-    if isinstance(importable, ImportableModule):
+def _resolve_import(importable: nodes.ImportableSource):
+    if isinstance(importable, nodes.ImportableModule):
         module = importlib.import_module(importable.module_name)
         return getattr(module, importable.callable_name)
-    elif isinstance(importable, ImportablePath):
-        raise NotImplementedError()
+    elif isinstance(importable, nodes.ImportablePath):
+        importlib_spec = importlib.util.spec_from_file_location(f"user_imports.{uuid.uuid4().hex}", importable.filepath)
+        dep = importlib.util.module_from_spec(importlib_spec)
+        importlib_spec.loader.exec_module(dep)
+        return getattr(dep, importable.callable_name)
 
     raise NotImplementedError(f"Can't resolve import for type {type(importable)}")
 
 
-def get_instance(node: Union[SpecWithKwargs, WithSource, Reader], **kwargs):
-    if isinstance(node, SpecWithKwargs):
+def get_instance(node: Union[nodes.SpecWithKwargs, nodes.WithImportableSource], **kwargs):
+    if isinstance(node, nodes.SpecWithKwargs):
         joined_spec_kwargs = dict(node.kwargs)
         joined_spec_kwargs.update(kwargs)
+        if isinstance(node, nodes.Reader):
+            if node.transformations:
+                assert "transformations" not in joined_spec_kwargs
+                joined_spec_kwargs["transformations"] = [get_instance(t) for t in node.transformations]
+
+        if isinstance(node, nodes.Sampler):
+            if node.readers:
+                assert "readers" not in joined_spec_kwargs
+                joined_spec_kwargs["readers"] = [get_instance(r) for r in node.readers]
+
         return get_instance(node.spec, **joined_spec_kwargs)
-    elif isinstance(node, WithSource):
+    elif isinstance(node, nodes.WithImportableSource):
         joined_kwargs = dict(node.optional_kwargs)
         joined_kwargs.update(kwargs)
-        if isinstance(node, ReaderSpec):
-            if "outputs" in joined_kwargs:
-                print("WWTF")
+        if isinstance(node, nodes.ReaderSpec):
+            assert "outputs" not in joined_kwargs
             joined_kwargs["outputs"] = node.outputs
 
         missing_kwargs = [req for req in node.required_kwargs if req not in joined_kwargs]
@@ -116,7 +114,7 @@ def get_instance(node: Union[SpecWithKwargs, WithSource, Reader], **kwargs):
         raise TypeError(node)
 
 
-def train(model: Model, **kwargs) -> Any:
+def train(model: nodes.Model, **kwargs) -> Any:
     # resolve magic kwargs
     available_magic_kwargs = {"pybio_model": model}
     enchanted_kwargs = {req: available_magic_kwargs[req] for req in model.spec.training.required_kwargs}
@@ -125,7 +123,9 @@ def train(model: Model, **kwargs) -> Any:
     return get_instance(model.spec.training, **enchanted_kwargs)
 
 
-def resolve_uri(uri_node: URI, cache_path: pathlib.Path, root_path: Optional[pathlib.Path] = None) -> pathlib.Path:
+def resolve_uri(
+    uri_node: nodes.URI, cache_path: pathlib.Path, root_path: Optional[pathlib.Path] = None
+) -> pathlib.Path:
     if (
         uri_node.scheme == "" or len(uri_node.scheme) == 1
     ):  # Guess that scheme is not a scheme, but a windows path drive letter instead for uri.scheme == 1
@@ -155,6 +155,12 @@ def resolve_uri(uri_node: URI, cache_path: pathlib.Path, root_path: Optional[pat
             # -C <working_dir> available in git 1.8.5+
             # https://github.com/git/git/blob/5fd09df3937f54c5cfda4f1087f5d99433cce527/Documentation/RelNotes/1.8.5.txt#L115-L116
             subprocess.call(["git", "-C", cached_repo_path, "checkout", "--force", commit_id])
+    elif uri_node.scheme == "https":
+        local_path = cache_path / uri_node.scheme / uri_node.netloc / uri_node.path.strip("/")
+        if not local_path.exists():
+            local_path.parent.mkdir(parents=True, exist_ok=True)
+            url_str = urlunparse([uri_node.scheme, uri_node.netloc, uri_node.path, "", "", ""])
+            urlretrieve(url_str, str(local_path))
     else:
         raise ValueError(f"Unknown uri scheme {uri_node.scheme}")
 
@@ -185,7 +191,7 @@ class URITransformer(NodeTransformer):
         self.root_path = root_path
         self.cache_path = cache_path
 
-    def transform_SpecURI(self, node: SpecURI):
+    def transform_SpecURI(self, node: nodes.SpecURI) -> Any:
         local_path = resolve_uri(node, root_path=self.root_path, cache_path=self.cache_path)
         with local_path.open() as f:
             data = yaml.safe_load(f)
@@ -193,31 +199,28 @@ class URITransformer(NodeTransformer):
         resolved_node = node.spec_schema.load(data)
         return self.transform(resolved_node)
 
-    def transform_URI(self, node: URI):
-        raise NotImplementedError
+    def transform_URI(self, node: nodes.URI) -> io.BytesIO:
+        local_path = resolve_uri(node, root_path=self.root_path, cache_path=self.cache_path)
+        with local_path.open(mode="rb") as f:
+            return io.BytesIO(f.read())
 
-    def transform_dict(self, node: dict):
-        if "spec" in node:
-            resolved_node = load_spec_and_kwargs(
-                uri=node.pop("spec"),
-                kwargs=node.pop("kwargs", None),
-                root_path=self.root_path,
-                cache_path=self.cache_path,
-            )
-            assert not node
-            return self.transform(resolved_node)
-        else:
-            return super().transform_dict(node)
+    def transform_ImportablePath(self, node: nodes.ImportablePath) -> nodes.ImportablePath:
+        return dataclasses.replace(node, filepath=self.root_path / node.filepath)
 
 
 def load_spec_and_kwargs(
-    uri: str, kwargs: Dict[str, Any] = None, *, root_path: pathlib.Path = pathlib.Path("."), cache_path: pathlib.Path
-) -> Union[Model, Transformation, Reader, Sampler]:
+    uri: str,
+    kwargs: Dict[str, Any] = None,
+    *,
+    root_path: pathlib.Path = pathlib.Path("."),
+    cache_path: pathlib.Path,
+    **spec_kwargs,
+) -> Union[nodes.Model, nodes.Transformation, nodes.Reader, nodes.Sampler]:
     cache_path = cache_path.resolve()
     root_path = root_path.resolve()
     assert root_path.exists(), root_path
 
-    data = {"spec": str(root_path / uri), "kwargs": kwargs or {}}
+    data = {"spec": str(root_path / uri), "kwargs": kwargs or {}, **spec_kwargs}
     last_dot = uri.rfind(".")
     second_last_dot = uri[:last_dot].rfind(".")
     spec_suffix = uri[second_last_dot + 1 : last_dot]
@@ -238,7 +241,7 @@ def load_spec_and_kwargs(
     return transformer.transform(tree)
 
 
-def load_model(*args, **kwargs) -> Model:
+def load_model(*args, **kwargs) -> nodes.Model:
     ret = load_spec_and_kwargs(*args, **kwargs)
-    assert isinstance(ret, Model)
+    assert isinstance(ret, nodes.Model)
     return ret

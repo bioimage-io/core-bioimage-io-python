@@ -5,6 +5,5 @@ transformations:
     - specs/transformations/RandomAxisRotation.transformation.yaml
 readers:
     - specs/readers/BroadNucleusDataBinarized.reader.yaml
-    - specs/readers/SimpleConcatenatedReader.reader.yaml
 samplers:
     - specs/samplers/SequentialSamplerAlongDimension.sampler.yaml

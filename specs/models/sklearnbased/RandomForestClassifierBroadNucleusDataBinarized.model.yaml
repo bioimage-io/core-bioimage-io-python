@@ -42,7 +42,7 @@ outputs: dynamic
 prediction:
     preprocess: null
     weights:
-        source: todo.doi
+        source: https://zenodo.org/record/3446812/files/unet2d_weights.torch  # todo: give real RF weights
         hash: {md5: TODO}
     postprocess: null
     dependencies: conda:../env_numpy.yaml
@@ -50,14 +50,13 @@ prediction:
 
 training:
   setup:
-    readers:
-      - spec: ../../readers/BroadNucleusDataBinarized.reader.yaml
-        kwargs:
-          transformations:
-            - spec: ../../transformations/NormalizeZeroMeanUnitVariance.transformation.yaml
-    sampler:
-      spec: ../../samplers/SequentialSamplerAlongDimension.sampler.yaml
-      kwargs: {sample_dimensions: [0, 0]}
+    samplers:
+      - spec: ../../samplers/SequentialSamplerAlongDimension.sampler.yaml
+        kwargs: {sample_dimensions: [0, 0]}
+        readers:
+          - spec: ../../readers/BroadNucleusDataBinarized.reader.yaml
+            transformations:
+              - spec: ../../transformations/NormalizeZeroMeanUnitVariance.transformation.yaml
 
   source: pybio.core.training.classic_fit.classic_fit
   required_kwargs: [pybio_model]

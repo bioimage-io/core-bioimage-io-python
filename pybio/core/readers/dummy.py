@@ -3,7 +3,7 @@ from typing import Sequence, Tuple
 import numpy
 
 from pybio.core.readers.base import PyBioReader
-from pybio.spec.node import OutputArray, Axes
+from pybio.spec.nodes import OutputArray, Axes
 
 
 class DummyReader(PyBioReader):

@@ -2,10 +2,10 @@ import numpy
 import re
 
 from typing import Optional, Sequence
-from pybio.core.transformations import Transformation
+from pybio.core.transformations import PyBioTransformation
 
 
-class NumpylikeTransformation(Transformation):
+class NumpylikePyBioTransformation(PyBioTransformation):
     def __init__(self, apply_to: Sequence[int] = (0, 1), **kwargs):
         super().__init__(apply_to=apply_to)
         self.kwargs = kwargs
@@ -14,7 +14,7 @@ class NumpylikeTransformation(Transformation):
 special_numpy_name = {"AsType": "astype"}
 
 
-def make_numpy_like_transformation(class_name: str) -> NumpylikeTransformation:
+def make_numpy_like_transformation(class_name: str) -> NumpylikePyBioTransformation:
     function_name = special_numpy_name.get(class_name, re.sub(r"(?<!^)(?=[A-Z])", "_", name).lower())
     numpy_func = getattr(numpy, function_name, None)
 
@@ -24,7 +24,7 @@ def make_numpy_like_transformation(class_name: str) -> NumpylikeTransformation:
         else:
             return numpy_func(array, **self.kwargs)
 
-    return type(class_name, (NumpylikeTransformation,), {"apply_to_chosen": apply_to_ndarray})
+    return type(class_name, (NumpylikePyBioTransformation,), {"apply_to_chosen": apply_to_ndarray})
 
 
 __all__ = ["AsType", "Clip", "Transpose"]

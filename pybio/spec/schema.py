@@ -2,9 +2,9 @@ from dataclasses import asdict
 
 from marshmallow import Schema, ValidationError, post_load, pprint, validates, validates_schema
 
-from pybio.spec import fields, node
+from pybio.spec import fields, nodes
 from pybio.spec.exceptions import PyBioValidationException
-from pybio.spec.node import MagicShapeValue, MagicTensorsValue
+from pybio.spec.nodes import MagicShapeValue, MagicTensorsValue
 
 
 class PyBioSchema(Schema):
@@ -13,7 +13,7 @@ class PyBioSchema(Schema):
         if not data:
             return None
 
-        this_type = getattr(node, self.__class__.__name__)
+        this_type = getattr(nodes, self.__class__.__name__)
         try:
             return this_type(**data)
         except TypeError as e:
@@ -122,7 +122,7 @@ class InputArray(Array):
                 if bidx != -1 and shape[bidx] != 1:
                     raise PyBioValidationException("Input shape has to be one in the batch dimension.")
 
-            elif isinstance(shape, node.InputShape):
+            elif isinstance(shape, nodes.InputShape):
                 step = shape.step
                 if bidx != -1 and shape.min[bidx] != 1:
                     raise PyBioValidationException("Input shape has to be one in the batch dimension.")
@@ -147,7 +147,7 @@ class OutputArray(Array):
         halo = data["halo"]
         if halo is None:
             return
-        elif isinstance(shape, tuple) or isinstance(shape, node.OutputShape):
+        elif isinstance(shape, tuple) or isinstance(shape, nodes.OutputShape):
             if len(halo) != len(shape):
                 raise PyBioValidationException(f"halo {halo} has to have same length as shape {shape}!")
         elif not isinstance(shape, MagicShapeValue):
@@ -169,7 +169,7 @@ class Transformation(SpecWithKwargs):
 
 
 class Weights(PyBioSchema):
-    source = fields.Str(required=True)
+    source = fields.URI(required=True)
     hash = fields.Dict()
 
 
@@ -187,6 +187,7 @@ class ReaderSpec(BaseSpec):
 
 class Reader(SpecWithKwargs):
     spec = fields.SpecURI(ReaderSpec)
+    transformations = fields.List(fields.Nested(Transformation), missing=list)
 
 
 class SamplerSpec(BaseSpec):
@@ -196,6 +197,7 @@ class SamplerSpec(BaseSpec):
 
 class Sampler(SpecWithKwargs):
     spec = fields.SpecURI(SamplerSpec)
+    readers = fields.List(fields.Nested(Reader, required=True), required=True)
 
 
 class Optimizer(PyBioSchema):
@@ -205,8 +207,7 @@ class Optimizer(PyBioSchema):
 
 
 class Setup(PyBioSchema):
-    readers = fields.List(fields.Nested(Reader, required=True), required=True)
-    sampler = fields.Nested(Sampler, required=True)
+    samplers = fields.List(fields.Nested(Sampler, required=True), required=True)
     preprocess = fields.Nested(Transformation, many=True, missing=list)
     postprocess = fields.Nested(Transformation, many=True, missing=list)
     losses = fields.Nested(Transformation, many=True, missing=list)
@@ -236,7 +237,7 @@ class ModelSpec(BaseSpec):
 
     # @validates_schema
     def input_propagation_from_training_reader(self, data, **kwargs):
-        spec: node.ModelSpec = self.make_object(data, **kwargs)
+        spec: nodes.ModelSpec = self.make_object(data, **kwargs)
         if spec.training is None:
             return
 
