@@ -85,11 +85,10 @@ def _resolve_import(importable: ImportableSource):
         module = importlib.import_module(importable.module_name)
         return getattr(module, importable.callable_name)
     elif isinstance(importable, ImportablePath):
-        raise NotImplementedError  # todo: import from path
-        importlib_spec = importlib.util.spec_from_file_location(f"user_imports.{uuid.uuid4().hex}", path)
+        importlib_spec = importlib.util.spec_from_file_location(f"user_imports.{uuid.uuid4().hex}", importable.filepath)
         dep = importlib.util.module_from_spec(importlib_spec)
         importlib_spec.loader.exec_module(dep)
-        return dep
+        return getattr(dep, importable.callable_name)
 
     raise NotImplementedError(f"Can't resolve import for type {type(importable)}")
 
