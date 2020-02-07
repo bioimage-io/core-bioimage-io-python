@@ -33,9 +33,6 @@ specs/samplers/SequentialSamplerAlongDimension.sampler.yaml:
     sample_dimensions: [0, 0]
 specs/transformations/Cast.transformation.yaml:
     dtype: float32
-specs/readers/SimpleConcatenatedReader.reader.yaml:
-    readers: [spec: {str(local_pybio_path / "specs/readers/BroadNucleusDataBinarized.reader.yaml")}]    
-    dims: [0, 0]
     """
     )
 
