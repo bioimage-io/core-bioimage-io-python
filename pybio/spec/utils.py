@@ -1,5 +1,6 @@
 import dataclasses
 import importlib.util
+import io
 import pathlib
 import subprocess
 import uuid
@@ -212,7 +213,8 @@ class URITransformer(NodeTransformer):
 
     def transform_URI(self, node: URI):
         local_path = resolve_uri(node, root_path=self.root_path, cache_path=self.cache_path)
-        return local_path.open(mode="rb")
+        with local_path.open(mode="rb") as f:
+            return io.BytesIO(f.read())
 
 
 def load_spec_and_kwargs(
