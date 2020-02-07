@@ -1,7 +1,5 @@
-import importlib
 from urllib.parse import urlparse, ParseResult
 import pathlib
-import uuid
 import typing
 
 from marshmallow.fields import Str, Nested, List, Dict, Integer, Float, Tuple, ValidationError  # noqa
@@ -44,13 +42,6 @@ class ImportableSource(Str):
     @staticmethod
     def _is_filepath(path):
         return "::" in path
-
-    @staticmethod
-    def _import_module(path):
-        spec = importlib.util.spec_from_file_location(f"user_imports.{uuid.uuid4().hex}", path)
-        dep = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(dep)
-        return dep
 
     def _deserialize(self, *args, **kwargs) -> typing.Any:
         source_str: str = super()._deserialize(*args, **kwargs)

@@ -1,7 +1,8 @@
 import dataclasses
-import importlib
+import importlib.util
 import pathlib
 import subprocess
+import uuid
 from dataclasses import fields
 from typing import Any, Dict, Optional, TypeVar, Union
 from urllib.parse import ParseResult
@@ -86,7 +87,11 @@ def _resolve_import(importable: ImportableSource):
         module = importlib.import_module(importable.module_name)
         return getattr(module, importable.callable_name)
     elif isinstance(importable, ImportablePath):
-        raise NotImplementedError()
+        raise NotImplementedError  # todo: import from path
+        importlib_spec = importlib.util.spec_from_file_location(f"user_imports.{uuid.uuid4().hex}", path)
+        dep = importlib.util.module_from_spec(importlib_spec)
+        importlib_spec.loader.exec_module(dep)
+        return dep
 
     raise NotImplementedError(f"Can't resolve import for type {type(importable)}")
 
