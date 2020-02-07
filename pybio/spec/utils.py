@@ -204,6 +204,9 @@ class URITransformer(NodeTransformer):
         with local_path.open(mode="rb") as f:
             return io.BytesIO(f.read())
 
+    def transform_ImportablePath(self, node: nodes.ImportablePath) -> nodes.ImportablePath:
+        return dataclasses.replace(node, filepath=self.root_path / node.filepath)
+
 
 def load_spec_and_kwargs(
     uri: str,

@@ -71,9 +71,6 @@ class ImportableSource(Str):
 
             module_path, object_name = parts
 
-            spec_dir = pathlib.Path(self.context.get("spec_path", ".")).parent
-            abs_path = spec_dir / pathlib.Path(module_path)
-
             return nodes.ImportablePath(callable_name=object_name, filepath=module_path)
 
 

@@ -25,7 +25,7 @@ class MagicShapeValue(Enum):
 
 @dataclass
 class ImportablePath(Node):
-    filepath: str
+    filepath: Union[Path]
     callable_name: str
 
 
