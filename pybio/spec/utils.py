@@ -78,9 +78,6 @@ class NodeTransformer:
     def transform_list(self, node: list) -> list:
         return [self.transform(subnode) for subnode in node]
 
-    def transform_dict(self, node: dict) -> dict:
-        return {key: self.transform(subnode) for key, subnode in node.items()}
-
 
 def _resolve_import(importable: ImportableSource):
     if isinstance(importable, ImportableModule):
