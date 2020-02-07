@@ -1,11 +1,11 @@
 from typing import List, Optional, Sequence, Tuple
 
 from pybio.core.array import PyBioArray
-from pybio.core.transformations import ApplyToAll, Transformation
+from pybio.core.transformations import ApplyToAll, PyBioTransformation
 from pybio.spec.node import InputArray, OutputArray
 
 
-class NormalizeZeroMeanUnitVariance(Transformation):
+class NormalizeZeroMeanUnitVariance(PyBioTransformation):
     """ Sigmoid activation
     """
 
