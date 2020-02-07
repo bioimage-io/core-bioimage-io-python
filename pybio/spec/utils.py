@@ -204,19 +204,6 @@ class URITransformer(NodeTransformer):
     def transform_URI(self, node: URI):
         raise NotImplementedError
 
-    def transform_dict(self, node: dict):
-        if "spec" in node:
-            resolved_node = load_spec_and_kwargs(
-                uri=node.pop("spec"),
-                kwargs=node.pop("kwargs", None),
-                root_path=self.root_path,
-                cache_path=self.cache_path,
-            )
-            assert not node
-            return self.transform(resolved_node)
-        else:
-            return super().transform_dict(node)
-
 
 def load_spec_and_kwargs(
     uri: str, kwargs: Dict[str, Any] = None, *, root_path: pathlib.Path = pathlib.Path("."), cache_path: pathlib.Path
