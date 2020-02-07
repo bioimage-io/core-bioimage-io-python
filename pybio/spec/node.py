@@ -200,12 +200,13 @@ class Optimizer(Node, WithImportableSource):
 
 @dataclass
 class Setup(Node):
-    sampler: Sampler = dataclasses.field(init=False)  # todo: make real meta sampler
     samplers: List[Sampler]
     preprocess: List[Transformation]
     postprocess: List[Transformation]
     losses: List[Transformation]
     optimizer: Optimizer
+    # todo: make non-optional (here, but add as optional to schmea) todo: add real meta sampler
+    sampler: Optional[Sampler] = None
 
     def __post_init__(self):
         assert len(self.samplers) == 1
