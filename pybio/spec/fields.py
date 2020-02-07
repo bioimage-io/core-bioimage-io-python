@@ -12,20 +12,29 @@ class SpecURI(Nested):
     def _deserialize(self, value, attr, data, **kwargs):
         uri = urlparse(value)
 
+        if uri.query:
+            raise PyBioValidationException(f"Invalid URI: {uri}. Got URI query: {uri.query}")
         if uri.fragment:
             raise PyBioValidationException(f"Invalid URI: {uri}. Got URI fragment: {uri.fragment}")
         if uri.params:
             raise PyBioValidationException(f"Invalid URI: {uri}. Got URI params: {uri.params}")
-        if uri.query:
-            raise PyBioValidationException(f"Invalid URI: {uri}. Got URI query: {uri.query}")
 
         return node.SpecURI(spec_schema=self.schema, scheme=uri.scheme, netloc=uri.netloc, path=uri.path)
 
 
 class URI(Str):
-    def _deserialize(self, *args, **kwargs) -> ParseResult:
+    def _deserialize(self, *args, **kwargs) -> node.URI:
         uri_str = super()._deserialize(*args, **kwargs)
-        return urlparse(uri_str)
+        uri = urlparse(uri_str)
+
+        if uri.query:
+            raise PyBioValidationException(f"Invalid URI: {uri}. Got URI query: {uri.query}")
+        if uri.fragment:
+            raise PyBioValidationException(f"Invalid URI: {uri}. Got URI fragment: {uri.fragment}")
+        if uri.params:
+            raise PyBioValidationException(f"Invalid URI: {uri}. Got URI params: {uri.params}")
+
+        return node.URI(scheme=uri.scheme, netloc=uri.netloc, path=uri.path)
 
 
 class Path(Str):
@@ -78,7 +87,7 @@ class Axes(Str):
         return axes_str
 
 
-class Dependencies(URI):
+class Dependencies(Str): # todo: make Debency inherit from URI
     pass
 
 

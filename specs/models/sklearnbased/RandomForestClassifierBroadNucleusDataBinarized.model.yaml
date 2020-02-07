@@ -42,7 +42,7 @@ outputs: dynamic
 prediction:
     preprocess: null
     weights:
-        source: todo.doi
+        source: https://zenodo.org/record/3446812/files/unet2d_weights.torch  # todo: give real RF weights
         hash: {md5: TODO}
     postprocess: null
     dependencies: conda:../env_numpy.yaml

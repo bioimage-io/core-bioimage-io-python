@@ -122,7 +122,7 @@ class WithOutputs:
 
 
 @dataclass
-class URI:
+class URI(Node):
     scheme: str
     netloc: str
     path: str
