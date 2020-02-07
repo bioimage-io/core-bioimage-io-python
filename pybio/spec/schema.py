@@ -197,6 +197,7 @@ class SamplerSpec(BaseSpec):
 
 class Sampler(SpecWithKwargs):
     spec = fields.SpecURI(SamplerSpec)
+    readers = fields.List(fields.Nested(Reader, required=True), required=True)
 
 
 class Optimizer(PyBioSchema):
@@ -206,8 +207,7 @@ class Optimizer(PyBioSchema):
 
 
 class Setup(PyBioSchema):
-    readers = fields.List(fields.Nested(Reader, required=True), required=True)
-    sampler = fields.Nested(Sampler, required=True)
+    samplers = fields.List(fields.Nested(Sampler, required=True), required=True)
     preprocess = fields.Nested(Transformation, many=True, missing=list)
     postprocess = fields.Nested(Transformation, many=True, missing=list)
     losses = fields.Nested(Transformation, many=True, missing=list)

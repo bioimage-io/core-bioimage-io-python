@@ -7,11 +7,11 @@ from pybio.spec.node import MagicTensorsValue, OutputArray, Transformation
 
 
 class PyBioReader:
-    def __init__(self, outputs: Sequence[OutputArray], transformations: Sequence[Transformation] = tuple()):
+    def __init__(self, outputs: Sequence[OutputArray], transformations: Sequence[PyBioTransformation] = tuple()):
         if isinstance(outputs, MagicTensorsValue):
             raise ValueError(f"unresolved MagicTensorsValue: {outputs}")
 
-        self.transformations = [utils.get_instance(trf) for trf in transformations]
+        self.transformations = transformations
 
         self._output = tuple(outputs)
         assert len(self.axes) == len(self.shape), (self.axes, self.shape)

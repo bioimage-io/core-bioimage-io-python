@@ -1,3 +1,4 @@
+import dataclasses
 from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
@@ -188,7 +189,8 @@ class SamplerSpec(BaseSpec, WithOutputs):
 
 @dataclass
 class Sampler(SpecWithKwargs):
-    spec = Union[SpecURI, SamplerSpec]
+    spec: Union[SpecURI, SamplerSpec]
+    readers: List[Reader]
 
 
 @dataclass
@@ -198,12 +200,16 @@ class Optimizer(Node, WithImportableSource):
 
 @dataclass
 class Setup(Node):
-    readers: List[Reader]
-    sampler: Sampler
+    sampler: Sampler = dataclasses.field(init=False)  # todo: make real meta sampler
+    samplers: List[Sampler]
     preprocess: List[Transformation]
     postprocess: List[Transformation]
     losses: List[Transformation]
     optimizer: Optimizer
+
+    def __post_init__(self):
+        assert len(self.samplers) == 1
+        self.sampler = self.samplers[0]
 
 
 @dataclass

@@ -101,8 +101,14 @@ def get_instance(node: Union[SpecWithKwargs, WithImportableSource], **kwargs):
         joined_spec_kwargs = dict(node.kwargs)
         joined_spec_kwargs.update(kwargs)
         if isinstance(node, Reader):
-            assert "transformations" not in joined_spec_kwargs
-            joined_spec_kwargs["transformations"] = node.transformations
+            if node.transformations:
+                assert "transformations" not in joined_spec_kwargs
+                joined_spec_kwargs["transformations"] = [get_instance(t) for t in node.transformations]
+
+        if isinstance(node, Sampler):
+            if node.readers:
+                assert "readers" not in joined_spec_kwargs
+                joined_spec_kwargs["readers"] = [get_instance(r) for r in node.readers]
 
         return get_instance(node.spec, **joined_spec_kwargs)
     elif isinstance(node, WithImportableSource):
@@ -206,13 +212,18 @@ class URITransformer(NodeTransformer):
 
 
 def load_spec_and_kwargs(
-    uri: str, kwargs: Dict[str, Any] = None, *, root_path: pathlib.Path = pathlib.Path("."), cache_path: pathlib.Path
+    uri: str,
+    kwargs: Dict[str, Any] = None,
+    *,
+    root_path: pathlib.Path = pathlib.Path("."),
+    cache_path: pathlib.Path,
+    **spec_kwargs,
 ) -> Union[Model, Transformation, Reader, Sampler]:
     cache_path = cache_path.resolve()
     root_path = root_path.resolve()
     assert root_path.exists(), root_path
 
-    data = {"spec": str(root_path / uri), "kwargs": kwargs or {}}
+    data = {"spec": str(root_path / uri), "kwargs": kwargs or {}, **spec_kwargs}
     last_dot = uri.rfind(".")
     second_last_dot = uri[:last_dot].rfind(".")
     spec_suffix = uri[second_last_dot + 1 : last_dot]

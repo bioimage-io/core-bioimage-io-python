@@ -50,13 +50,13 @@ prediction:
 
 training:
   setup:
-    readers:
-      - spec: ../../readers/BroadNucleusDataBinarized.reader.yaml
-        transformations:
-          - spec: ../../transformations/NormalizeZeroMeanUnitVariance.transformation.yaml
-    sampler:
-      spec: ../../samplers/SequentialSamplerAlongDimension.sampler.yaml
-      kwargs: {sample_dimensions: [0, 0]}
+    samplers:
+      - spec: ../../samplers/SequentialSamplerAlongDimension.sampler.yaml
+        kwargs: {sample_dimensions: [0, 0]}
+        readers:
+          - spec: ../../readers/BroadNucleusDataBinarized.reader.yaml
+            transformations:
+              - spec: ../../transformations/NormalizeZeroMeanUnitVariance.transformation.yaml
 
   source: pybio.core.training.classic_fit.classic_fit
   required_kwargs: [pybio_model]
