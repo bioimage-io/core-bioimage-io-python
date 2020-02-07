@@ -1,7 +1,7 @@
 from typing import List, Sequence, Tuple, Optional, Union
 
 from pybio.core.array import PyBioArray
-from pybio.spec.node import InputArray, OutputArray
+from pybio.spec.nodes import InputArray, OutputArray
 
 
 class ApplyToAll:

@@ -5,7 +5,7 @@ import typing
 from marshmallow.fields import Str, Nested, List, Dict, Integer, Float, Tuple, ValidationError  # noqa
 
 from pybio.spec.exceptions import PyBioValidationException
-from pybio.spec import node
+from pybio.spec import nodes
 
 
 class SpecURI(Nested):
@@ -19,11 +19,11 @@ class SpecURI(Nested):
         if uri.params:
             raise PyBioValidationException(f"Invalid URI: {uri}. Got URI params: {uri.params}")
 
-        return node.SpecURI(spec_schema=self.schema, scheme=uri.scheme, netloc=uri.netloc, path=uri.path)
+        return nodes.SpecURI(spec_schema=self.schema, scheme=uri.scheme, netloc=uri.netloc, path=uri.path)
 
 
 class URI(Str):
-    def _deserialize(self, *args, **kwargs) -> node.URI:
+    def _deserialize(self, *args, **kwargs) -> nodes.URI:
         uri_str = super()._deserialize(*args, **kwargs)
         uri = urlparse(uri_str)
 
@@ -34,7 +34,7 @@ class URI(Str):
         if uri.params:
             raise PyBioValidationException(f"Invalid URI: {uri}. Got URI params: {uri.params}")
 
-        return node.URI(scheme=uri.scheme, netloc=uri.netloc, path=uri.path)
+        return nodes.URI(scheme=uri.scheme, netloc=uri.netloc, path=uri.path)
 
 
 class Path(Str):
@@ -59,7 +59,7 @@ class ImportableSource(Str):
 
             module_name = source_str[:last_dot_idx]
             object_name = source_str[last_dot_idx + 1 :]
-            return node.ImportableModule(callable_name=object_name, module_name=module_name)
+            return nodes.ImportableModule(callable_name=object_name, module_name=module_name)
 
         elif self._is_filepath(source_str):
             if source_str.startswith("/"):
@@ -74,7 +74,7 @@ class ImportableSource(Str):
             spec_dir = pathlib.Path(self.context.get("spec_path", ".")).parent
             abs_path = spec_dir / pathlib.Path(module_path)
 
-            return node.ImportablePath(callable_name=object_name, filepath=module_path)
+            return nodes.ImportablePath(callable_name=object_name, filepath=module_path)
 
 
 class Axes(Str):
@@ -92,7 +92,7 @@ class Dependencies(Str): # todo: make Debency inherit from URI
 
 
 class Tensors(Nested):
-    def __init__(self, *args, valid_magic_values: typing.List[node.MagicTensorsValue], **kwargs):
+    def __init__(self, *args, valid_magic_values: typing.List[nodes.MagicTensorsValue], **kwargs):
         super().__init__(*args, **kwargs)
         self.valid_magic_values = valid_magic_values
 
@@ -105,7 +105,7 @@ class Tensors(Nested):
     ):
         if isinstance(value, str):
             try:
-                value = node.MagicTensorsValue(value)
+                value = nodes.MagicTensorsValue(value)
             except ValueError as e:
                 raise PyBioValidationException(str(e)) from e
 
@@ -125,7 +125,7 @@ class Tensors(Nested):
 
 
 class Shape(Nested):
-    def __init__(self, *args, valid_magic_values: typing.List[node.MagicShapeValue], **kwargs):
+    def __init__(self, *args, valid_magic_values: typing.List[nodes.MagicShapeValue], **kwargs):
         super().__init__(*args, **kwargs)
         self.valid_magic_values = valid_magic_values
 
@@ -138,7 +138,7 @@ class Shape(Nested):
     ):
         if isinstance(value, str):
             try:
-                value = node.MagicShapeValue(value)
+                value = nodes.MagicShapeValue(value)
             except ValueError as e:
                 raise PyBioValidationException(str(e)) from e
 

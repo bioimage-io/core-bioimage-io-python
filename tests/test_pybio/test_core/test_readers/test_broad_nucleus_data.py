@@ -1,6 +1,6 @@
 from pybio.core.readers.base import PyBioReader
 from pybio.core.readers.broad_nucleus_data import BroadNucleusDataBinarized
-from pybio.spec.node import Axes, MagicShapeValue, OutputArray
+from pybio.spec.nodes import Axes, MagicShapeValue, OutputArray
 
 
 def test_broad_nucleus():

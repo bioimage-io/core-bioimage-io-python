@@ -1,4 +1,4 @@
-from pybio.spec.node import Model
+from pybio.spec.nodes import Model
 from pybio.spec.utils import get_instance
 
 

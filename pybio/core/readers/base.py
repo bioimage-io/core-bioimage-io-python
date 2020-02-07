@@ -2,7 +2,7 @@ from typing import Sequence, Tuple
 
 from pybio.core.array import PyBioArray
 from pybio.core.transformations import PyBioTransformation, apply_transformations
-from pybio.spec.node import MagicTensorsValue, OutputArray
+from pybio.spec.nodes import MagicTensorsValue, OutputArray
 
 
 class PyBioReader:

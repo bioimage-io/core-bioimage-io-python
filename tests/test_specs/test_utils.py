@@ -1,4 +1,4 @@
-from pybio.spec.node import ImportablePath
+from pybio.spec.nodes import ImportablePath
 from pybio.spec.utils import _resolve_import
 
 

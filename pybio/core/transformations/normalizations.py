@@ -2,7 +2,7 @@ from typing import List, Optional, Sequence, Tuple
 
 from pybio.core.array import PyBioArray
 from pybio.core.transformations import ApplyToAll, PyBioTransformation
-from pybio.spec.node import InputArray, OutputArray
+from pybio.spec.nodes import InputArray, OutputArray
 
 
 class NormalizeZeroMeanUnitVariance(PyBioTransformation):

@@ -9,7 +9,7 @@ import numpy
 import numpy as np
 
 from pybio.core.readers.base import PyBioReader
-from pybio.spec.node import MagicShapeValue, OutputArray
+from pybio.spec.nodes import MagicShapeValue, OutputArray
 
 
 def download_data(url, data_dir: Path, prefix: str):
