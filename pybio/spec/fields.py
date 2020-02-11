@@ -19,7 +19,7 @@ class SpecURI(Nested):
         if uri.params:
             raise PyBioValidationException(f"Invalid URI: {uri}. Got URI params: {uri.params}")
 
-        return nodes.SpecURI(spec_schema=self.schema, scheme=uri.scheme, netloc=uri.netloc, path=uri.path)
+        return nodes.SpecURI(spec_schema=self.schema, scheme=uri.scheme, netloc=uri.netloc, path=uri.path, query="")
 
 
 class URI(Str):
@@ -27,14 +27,12 @@ class URI(Str):
         uri_str = super()._deserialize(*args, **kwargs)
         uri = urlparse(uri_str)
 
-        if uri.query:
-            raise PyBioValidationException(f"Invalid URI: {uri}. Got URI query: {uri.query}")
         if uri.fragment:
             raise PyBioValidationException(f"Invalid URI: {uri}. Got URI fragment: {uri.fragment}")
         if uri.params:
             raise PyBioValidationException(f"Invalid URI: {uri}. Got URI params: {uri.params}")
 
-        return nodes.URI(scheme=uri.scheme, netloc=uri.netloc, path=uri.path)
+        return nodes.URI(scheme=uri.scheme, netloc=uri.netloc, path=uri.path, query=uri.query)
 
 
 class Path(Str):
