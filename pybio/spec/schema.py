@@ -58,8 +58,8 @@ class SpecWithKwargs(PyBioSchema):
 
 
 class InputShape(PyBioSchema):
-    min = fields.List(fields.Integer, required=True)
-    step = fields.List(fields.Integer, required=True)
+    min = fields.VariableLengthTuple(fields.Integer, required=True)
+    step = fields.VariableLengthTuple(fields.Integer, required=True)
 
     @validates_schema
     def matching_lengths(self, data, **kwargs):
@@ -76,15 +76,15 @@ class InputShape(PyBioSchema):
 
 class OutputShape(PyBioSchema):
     reference_input = fields.Str(missing=None)
-    scale = fields.List(fields.Float, required=True)
-    offset = fields.List(fields.Integer, required=True)
+    scale = fields.VariableLengthTuple(fields.Float, required=True)
+    offset = fields.VariableLengthTuple(fields.Integer, required=True)
 
     @validates_schema
     def matching_lengths(self, data, **kwargs):
-        len_scale = data["scale"]
-        len_offset = data["offset"]
-        if len(len_scale) != len(len_offset):
-            raise PyBioValidationException(f"scale {len_scale} has to have same length as offset {len_offset}!")
+        scale = data["scale"]
+        offset = data["offset"]
+        if len(scale) != len(offset):
+            raise PyBioValidationException(f"scale {scale} has to have same length as offset {offset}!")
 
 
 class Array(PyBioSchema):
@@ -139,7 +139,7 @@ class InputArray(Array):
 
 class OutputArray(Array):
     shape = fields.Shape(OutputShape, valid_magic_values=[MagicShapeValue.dynamic], required=True)
-    halo = fields.List(fields.Integer(), missing=None)
+    halo = fields.VariableLengthTuple(fields.Integer, missing=None)
 
     @validates_schema
     def matching_halo_length(self, data, **kwargs):
