@@ -236,7 +236,7 @@ class URITransformer(NodeTransformer):
 
         for path in potential_paths():
             if (path / "manifest.yaml").exists() or (path / "manifest.yml").exists():
-                return path
+                return path.resolve()
 
         raise ValueError("Missing manifest.yaml")
 
@@ -248,7 +248,7 @@ class SourceTransformer(NodeTransformer):
     """
 
     class TemporaryInsertionIntoPythonPath:
-        def __init__(self, path):
+        def __init__(self, path: str):
             self.path = path
 
         def __enter__(self):
@@ -258,7 +258,7 @@ class SourceTransformer(NodeTransformer):
             sys.path.remove(self.path)
 
     def transform_LocalImportableModule(self, node: LocalImportableModule) -> ImportedSource:
-        with self.TemporaryInsertionIntoPythonPath(node.python_path):
+        with self.TemporaryInsertionIntoPythonPath(str(node.python_path)):
             module = importlib.import_module(node.module_name)
 
         return ImportedSource(callable_=getattr(module, node.callable_name))
