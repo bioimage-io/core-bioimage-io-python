@@ -92,7 +92,6 @@ class TestTraversingSpecURI:
         assert {"axes": "xyc"} == transformed_tree.spec_uri_b
 
 
-
 def test_resolve_import_path(tmpdir, cache_path):
     tmpdir = Path(tmpdir)
     manifest_path = tmpdir / "manifest.yaml"
@@ -103,6 +102,6 @@ def test_resolve_import_path(tmpdir, cache_path):
     uri_transformed = URITransformer(root_path=tmpdir, cache_path=cache_path).transform(node)
     source_transformed = SourceTransformer().transform(uri_transformed)
     assert isinstance(source_transformed, ImportedSource)
-    Foo = source_transformed.callable_
+    Foo = source_transformed.factory
     assert Foo.__name__ == "Foo"
     assert isinstance(Foo, type)

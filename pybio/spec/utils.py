@@ -75,10 +75,10 @@ class NodeTransformer:
 
 @dataclasses.dataclass
 class ImportedSource:
-    callable_: Callable
+    factory: Callable
 
     def __call__(self, *args, **kwargs):
-        return self.callable_(*args, **kwargs)
+        return self.factory(*args, **kwargs)
 
 
 def get_instance(node: Union[nodes.SpecWithKwargs, nodes.WithImportableSource], **kwargs):
@@ -114,7 +114,7 @@ def get_instance(node: Union[nodes.SpecWithKwargs, nodes.WithImportableSource], 
                 f"{node.__class__.__name__} missing required kwargs: {missing_kwargs}\n{node.__class__.__name__}={node}"
             )
 
-        return node.source.callable_(**joined_kwargs)
+        return node.source.factory(**joined_kwargs)
     else:
         raise TypeError(node)
 
@@ -261,7 +261,7 @@ class SourceTransformer(NodeTransformer):
         with self.TemporaryInsertionIntoPythonPath(str(node.python_path)):
             module = importlib.import_module(node.module_name)
 
-        return ImportedSource(callable_=getattr(module, node.callable_name))
+        return ImportedSource(factory=getattr(module, node.callable_name))
 
     def transform_ImportableModule(self, node):
         raise RuntimeError("Encountered nodes.ImportableModule in SourceTransformer. Apply URITransformer first!")
@@ -270,7 +270,7 @@ class SourceTransformer(NodeTransformer):
         importlib_spec = importlib.util.spec_from_file_location(f"user_imports.{uuid.uuid4().hex}", node.filepath)
         dep = importlib.util.module_from_spec(importlib_spec)
         importlib_spec.loader.exec_module(dep)
-        return ImportedSource(callable_=getattr(dep, node.callable_name))
+        return ImportedSource(factory=getattr(dep, node.callable_name))
 
     def transform_ImportablePath(self, node):
         raise RuntimeError("Encountered nodes.ImportablePath in SourceTransformer. Apply URITransformer first!")
