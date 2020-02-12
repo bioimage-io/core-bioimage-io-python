@@ -13,12 +13,7 @@ from urllib.request import urlretrieve
 import yaml
 
 from . import nodes, schema
-from .exceptions import (
-    InvalidDoiException,
-    PyBioMissingKwargException,
-    PyBioTransformationOrderException,
-    PyBioValidationException,
-)
+from .exceptions import InvalidDoiException, PyBioMissingKwargException, PyBioValidationException
 
 
 def iter_fields(node: nodes.Node):
@@ -98,7 +93,7 @@ def get_instance(node: Union[nodes.SpecWithKwargs, nodes.WithImportableSource], 
         return get_instance(node.spec, **joined_spec_kwargs)
     elif isinstance(node, nodes.WithImportableSource):
         if not isinstance(node.source, ImportedSource):
-            raise PyBioTransformationOrderException(
+            raise ValueError(
                 f"Encountered unexpected node.source type {type(node.source)}. `get_instance` requires URITransformer and SourceTransformer to be applied beforehand."
             )
 

@@ -5,9 +5,6 @@ class PyBioException(Exception):
     pass
 
 
-class PyBioTransformationOrderException(PyBioException, TypeError):
-    pass
-
 class PyBioMissingKwargException(PyBioException, TypeError):
     pass
 
