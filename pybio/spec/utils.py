@@ -3,9 +3,10 @@ import importlib.util
 import io
 import pathlib
 import subprocess
+import sys
 import uuid
 from dataclasses import fields
-from typing import Any, Dict, Optional, TypeVar, Union
+from typing import Any, Callable, Dict, Optional, TypeVar, Union
 from urllib.parse import ParseResult, urlunparse
 from urllib.request import urlretrieve
 
@@ -67,17 +68,12 @@ class NodeTransformer:
         return [self.transform(subnode) for subnode in node]
 
 
-def _resolve_import(importable: nodes.ImportableSource):
-    if isinstance(importable, nodes.ImportableModule):
-        module = importlib.import_module(importable.module_name)
-        return getattr(module, importable.callable_name)
-    elif isinstance(importable, nodes.ImportablePath):
-        importlib_spec = importlib.util.spec_from_file_location(f"user_imports.{uuid.uuid4().hex}", importable.filepath)
-        dep = importlib.util.module_from_spec(importlib_spec)
-        importlib_spec.loader.exec_module(dep)
-        return getattr(dep, importable.callable_name)
+@dataclasses.dataclass
+class ImportedSource:
+    factory: Callable
 
-    raise NotImplementedError(f"Can't resolve import for type {type(importable)}")
+    def __call__(self, *args, **kwargs):
+        return self.factory(*args, **kwargs)
 
 
 def get_instance(node: Union[nodes.SpecWithKwargs, nodes.WithImportableSource], **kwargs):
@@ -96,6 +92,11 @@ def get_instance(node: Union[nodes.SpecWithKwargs, nodes.WithImportableSource], 
 
         return get_instance(node.spec, **joined_spec_kwargs)
     elif isinstance(node, nodes.WithImportableSource):
+        if not isinstance(node.source, ImportedSource):
+            raise ValueError(
+                f"Encountered unexpected node.source type {type(node.source)}. `get_instance` requires URITransformer and SourceTransformer to be applied beforehand."
+            )
+
         joined_kwargs = dict(node.optional_kwargs)
         joined_kwargs.update(kwargs)
         if isinstance(node, nodes.ReaderSpec):
@@ -108,8 +109,7 @@ def get_instance(node: Union[nodes.SpecWithKwargs, nodes.WithImportableSource], 
                 f"{node.__class__.__name__} missing required kwargs: {missing_kwargs}\n{node.__class__.__name__}={node}"
             )
 
-        cls = _resolve_import(node.source)
-        return cls(**joined_kwargs)
+        return node.source.factory(**joined_kwargs)
     else:
         raise TypeError(node)
 
@@ -186,10 +186,21 @@ def resolve_doi(uri: ParseResult) -> ParseResult:
     return urlparse(val["data"]["value"])
 
 
+@dataclasses.dataclass
+class LocalImportableModule(nodes.ImportableModule):
+    python_path: pathlib.Path
+
+
+@dataclasses.dataclass
+class ResolvedImportablePath(nodes.ImportablePath):
+    pass
+
+
 class URITransformer(NodeTransformer):
     def __init__(self, root_path: pathlib.Path, cache_path: pathlib.Path):
         self.root_path = root_path
         self.cache_path = cache_path
+        self.python_path = self._guess_python_path_from_local_spec_path(root_path=root_path)
 
     def transform_SpecURI(self, node: nodes.SpecURI) -> Any:
         local_path = resolve_uri(node, root_path=self.root_path, cache_path=self.cache_path)
@@ -197,15 +208,67 @@ class URITransformer(NodeTransformer):
             data = yaml.safe_load(f)
 
         resolved_node = node.spec_schema.load(data)
-        return self.transform(resolved_node)
+        subtransformer = self.__class__(root_path=local_path.parent, cache_path=self.cache_path)
+        return subtransformer.transform(resolved_node)
 
     def transform_URI(self, node: nodes.URI) -> io.BytesIO:
         local_path = resolve_uri(node, root_path=self.root_path, cache_path=self.cache_path)
         with local_path.open(mode="rb") as f:
             return io.BytesIO(f.read())
 
-    def transform_ImportablePath(self, node: nodes.ImportablePath) -> nodes.ImportablePath:
-        return dataclasses.replace(node, filepath=self.root_path / node.filepath)
+    def transform_ImportablePath(self, node: nodes.ImportablePath) -> ResolvedImportablePath:
+        return ResolvedImportablePath(
+            filepath=(self.root_path / node.filepath).resolve(), callable_name=node.callable_name
+        )
+
+    def transform_ImportableModule(self, node: nodes.ImportableModule) -> LocalImportableModule:
+        return LocalImportableModule(**dataclasses.asdict(node), python_path=self.python_path)
+
+    def _guess_python_path_from_local_spec_path(self, root_path: pathlib.Path):
+        def potential_paths():
+            yield root_path
+            yield from root_path.parents
+
+        for path in potential_paths():
+            if (path / "manifest.yaml").exists() or (path / "manifest.yml").exists():
+                return path.resolve()
+
+        raise ValueError("Missing manifest.yaml")
+
+
+class SourceTransformer(NodeTransformer):
+    """
+    Imports all source callables
+    note: Requires previous transformation by URITransformer
+    """
+
+    class TemporaryInsertionIntoPythonPath:
+        def __init__(self, path: str):
+            self.path = path
+
+        def __enter__(self):
+            sys.path.insert(0, self.path)
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            sys.path.remove(self.path)
+
+    def transform_LocalImportableModule(self, node: LocalImportableModule) -> ImportedSource:
+        with self.TemporaryInsertionIntoPythonPath(str(node.python_path)):
+            module = importlib.import_module(node.module_name)
+
+        return ImportedSource(factory=getattr(module, node.callable_name))
+
+    def transform_ImportableModule(self, node):
+        raise RuntimeError("Encountered nodes.ImportableModule in SourceTransformer. Apply URITransformer first!")
+
+    def transform_ResolvedImportablePath(self, node: ResolvedImportablePath) -> ImportedSource:
+        importlib_spec = importlib.util.spec_from_file_location(f"user_imports.{uuid.uuid4().hex}", node.filepath)
+        dep = importlib.util.module_from_spec(importlib_spec)
+        importlib_spec.loader.exec_module(dep)
+        return ImportedSource(factory=getattr(dep, node.callable_name))
+
+    def transform_ImportablePath(self, node):
+        raise RuntimeError("Encountered nodes.ImportablePath in SourceTransformer. Apply URITransformer first!")
 
 
 def load_spec_and_kwargs(
@@ -237,8 +300,10 @@ def load_spec_and_kwargs(
 
     local_spec_path = resolve_uri(uri_node=tree.spec, root_path=root_path, cache_path=cache_path)
 
-    transformer = URITransformer(root_path=local_spec_path.parent, cache_path=cache_path)
-    return transformer.transform(tree)
+    uri_transformer = URITransformer(root_path=local_spec_path.parent, cache_path=cache_path)
+    local_tree = uri_transformer.transform(tree)
+    local_tree_with_sources = SourceTransformer().transform(local_tree)
+    return local_tree_with_sources
 
 
 def load_model(*args, **kwargs) -> nodes.Model:

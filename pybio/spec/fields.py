@@ -84,7 +84,7 @@ class Axes(Str):
         return axes_str
 
 
-class Dependencies(Str): # todo: make Debency inherit from URI
+class Dependencies(Str):  # todo: make Debency inherit from URI
     pass
 
 
@@ -153,3 +153,12 @@ class Shape(Nested):
             return self._load(value, data)
         else:
             raise PyBioValidationException(f"Invalid input type: {type(value)}")
+
+
+class VariableLengthTuple(List):
+    def _deserialize(self, value, attr, data, **kwargs) -> typing.Optional[typing.Tuple[typing.Any]]:
+        ret = super()._serialize(value, attr, data, **kwargs)
+        if ret is None:
+            return None
+        else:
+            return tuple(ret)
