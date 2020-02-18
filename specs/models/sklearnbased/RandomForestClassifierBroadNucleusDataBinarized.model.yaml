@@ -40,11 +40,11 @@ inputs: any
 outputs: dynamic
 
 prediction:
-    preprocess: null
+    preprocess: []
     weights:
         source: https://zenodo.org/record/3446812/files/unet2d_weights.torch  # todo: give real RF weights
         hash: {md5: TODO}
-    postprocess: null
+    postprocess: []
     dependencies: conda:../env_numpy.yaml
 
 
