@@ -71,3 +71,18 @@ def apply_transformations(transformations: Sequence[PyBioTransformation], *tenso
         tensors = trafo.apply(*tensors)
 
     return tensors
+
+
+class ConcatenatedPyBioTransformation(PyBioTransformation):
+    def __init__(self, transformations: Sequence[PyBioTransformation]):
+        super().__init__()
+        if not all(isinstance(trafo, PyBioTransformation) for trafo in transformations):
+            raise ValueError("Expect iterable of transformations")
+
+        self.transformations = transformations
+
+    def apply(self, *arrays: PyBioArray) -> List[PyBioArray]:
+        for trafo in self.transformations:
+            arrays = trafo.apply(*arrays)
+
+        return arrays
