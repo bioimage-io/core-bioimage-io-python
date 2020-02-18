@@ -224,6 +224,16 @@ class URITransformer(NodeTransformer):
     def transform_ImportableModule(self, node: nodes.ImportableModule) -> LocalImportableModule:
         return LocalImportableModule(**dataclasses.asdict(node), python_path=self.python_path)
 
+    def _transform_Path(self, leaf: pathlib.Path):
+        assert not leaf.is_absolute()
+        return self.root_path / leaf
+
+    def transform_PosixPath(self, leaf: pathlib.PosixPath) -> pathlib.Path:
+        return self._transform_Path(leaf)
+
+    def transform_WindowsPath(self, leaf: pathlib.WindowsPath) -> pathlib.Path:
+        return self._transform_Path(leaf)
+
     def _guess_python_path_from_local_spec_path(self, root_path: pathlib.Path):
         def potential_paths():
             yield root_path
