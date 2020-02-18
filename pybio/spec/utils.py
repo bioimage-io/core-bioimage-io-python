@@ -156,7 +156,7 @@ def resolve_uri(
             # https://github.com/git/git/blob/5fd09df3937f54c5cfda4f1087f5d99433cce527/Documentation/RelNotes/1.8.5.txt#L115-L116
             subprocess.call(["git", "-C", cached_repo_path, "checkout", "--force", commit_id])
     elif uri_node.scheme == "https":
-        local_path = cache_path / uri_node.scheme / uri_node.netloc / uri_node.path.strip("/")
+        local_path = cache_path / uri_node.scheme / uri_node.netloc / uri_node.path.strip("/") / uri_node.query
         if not local_path.exists():
             local_path.parent.mkdir(parents=True, exist_ok=True)
             url_str = urlunparse([uri_node.scheme, uri_node.netloc, uri_node.path, "", "", ""])
