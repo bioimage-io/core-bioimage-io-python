@@ -167,8 +167,8 @@ class Weights(Node, WithFileSource):
 class Prediction(Node):
     weights: Weights
     dependencies: Optional[Dependencies]
-    preprocess: Optional[List[Transformation]]
-    postprocess: Optional[List[Transformation]]
+    preprocess: List[Transformation]
+    postprocess: List[Transformation]
 
 
 @dataclass
