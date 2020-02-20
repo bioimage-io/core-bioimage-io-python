@@ -243,7 +243,7 @@ class URITransformer(NodeTransformer):
             if (path / "manifest.yaml").exists() or (path / "manifest.yml").exists():
                 return path.resolve()
 
-        raise ValueError("Missing manifest.yaml")
+        return root_path
 
 
 class SourceTransformer(NodeTransformer):
