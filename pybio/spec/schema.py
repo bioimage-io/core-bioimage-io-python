@@ -174,7 +174,7 @@ class Weights(PyBioSchema):
 
 
 class Prediction(PyBioSchema):
-    weights = fields.Nested(Weights)
+    weights = fields.Nested(Weights, missing=None)
     dependencies = fields.Dependencies(missing=None)
     preprocess = fields.Nested(Transformation, many=True, missing=None)
     postprocess = fields.Nested(Transformation, many=True, missing=None)
