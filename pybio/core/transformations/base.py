@@ -1,4 +1,4 @@
-from typing import List, Sequence, Tuple, Optional, Union
+from typing import Callable, List, Optional, Sequence, Tuple
 
 from pybio.core.array import PyBioArray
 from pybio.spec.nodes import InputArray, OutputArray
@@ -71,3 +71,20 @@ def apply_transformations(transformations: Sequence[PyBioTransformation], *tenso
         tensors = trafo.apply(*tensors)
 
     return tensors
+
+
+def make_concatenated_apply(
+    transformations: Sequence[PyBioTransformation]
+) -> Callable[[Tuple[PyBioArray]], List[PyBioArray]]:
+    """ Helper function to apply a list of transformations to input tensors.
+    """
+    if not all(isinstance(trafo, PyBioTransformation) for trafo in transformations):
+        raise ValueError("Expect iterable of transformations")
+
+    def apply(*tensors: PyBioArray) -> List[PyBioArray]:
+        for trafo in transformations:
+            tensors = trafo.apply(*tensors)
+
+        return tensors
+
+    return apply

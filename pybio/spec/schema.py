@@ -176,8 +176,8 @@ class Weights(PyBioSchema):
 class Prediction(PyBioSchema):
     weights = fields.Nested(Weights)
     dependencies = fields.Dependencies(missing=None)
-    preprocess = fields.Nested(Transformation, many=True, missing=None)
-    postprocess = fields.Nested(Transformation, many=True, missing=None)
+    preprocess = fields.Nested(Transformation, many=True, missing=list)
+    postprocess = fields.Nested(Transformation, many=True, missing=list)
 
 
 class ReaderSpec(BaseSpec):
