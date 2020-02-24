@@ -5,6 +5,7 @@ authors:
     - Fynn Beuttenmueller
 documentation: transformations.md
 tags: [numpy, astype, cast, dtype]
+license: MIT
 
 format_version: 0.1.0
 language: python

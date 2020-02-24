@@ -40,6 +40,7 @@ class BaseSpec(PyBioSchema):
     authors = fields.List(fields.Str(required=True))
     documentation = fields.Path(required=True)
     tags = fields.List(fields.Str, required=True)
+    license = fields.Str(required=True)
 
     language = fields.Str(required=True)
     framework = fields.Str(missing=None)
@@ -49,7 +50,7 @@ class BaseSpec(PyBioSchema):
 
     test_input = fields.Path(missing=None)
     test_output = fields.Path(missing=None)
-    thumbnail = fields.Path(missing=None)
+    covers = fields.List(fields.Path, missing=list)
 
 
 class SpecWithKwargs(PyBioSchema):

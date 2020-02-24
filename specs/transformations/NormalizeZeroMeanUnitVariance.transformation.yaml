@@ -7,6 +7,7 @@ authors:
     - Fynn Beuttenmüller
 documentation: transformations.md
 tags: [normalization]
+license: MIT
 
 format_version: 0.1.0
 language: python
