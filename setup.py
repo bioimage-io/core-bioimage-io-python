@@ -10,7 +10,7 @@ with open(path.join(here, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
 setup(
-    name="pybio",
+    name="pybio.core",
     version="0.1a",
     description="Parser library for bioimage model zoo specs",
     long_description=long_description,
