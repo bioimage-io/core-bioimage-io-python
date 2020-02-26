@@ -7,6 +7,7 @@ authors:
   - Fynn Beuttenmueller
 documentation: sklearnbased.md
 tags: [test, rf, random, forest, example]
+license: MIT
 
 format_version: 0.1.0
 language: python
@@ -34,7 +35,7 @@ optional_kwargs:
 
 test_input: null # ../test_input.npy
 test_output: null # ../test_output.npy
-thumbnail: null # ./nuclei_thumbnail.png
+covers: [] # ./nuclei_thumbnail.png
 
 inputs: any
 outputs: dynamic

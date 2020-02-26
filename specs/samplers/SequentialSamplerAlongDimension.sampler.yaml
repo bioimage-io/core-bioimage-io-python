@@ -5,6 +5,7 @@ authors:
     - Fynn Beuttenmüller
 documentation: SequentialSamplerAlongDimension.md
 tags: [sequential, sampling, slice]
+license: MIT
 
 dependencies: ../../env_numpy.yaml
 format_version: 0.1.0

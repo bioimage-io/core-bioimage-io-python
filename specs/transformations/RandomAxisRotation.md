@@ -7,6 +7,7 @@ authors:
     - Constantin Pape
 documentation: bce_loss.md
 tags: [loss, binary cross entropy]
+license: MIT
 
 format_version: 0.1.0
 language: python

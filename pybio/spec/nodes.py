@@ -60,13 +60,14 @@ class BaseSpec(Node, WithImportableSource):
     authors: List[str]
     documentation: Path
     tags: List[str]
+    license: str
 
     language: str
     framework: Optional[str]
 
     test_input: Optional[Path]
     test_output: Optional[Path]
-    thumbnail: Optional[Path]
+    covers: List[Path]
 
 
 @dataclass

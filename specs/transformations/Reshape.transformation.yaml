@@ -10,6 +10,7 @@ authors:
     - Fynn Beuttenmueller
 documentation: transformations.md
 tags: [reshape]
+license: MIT
 
 format_version: 0.1.0
 language: python
