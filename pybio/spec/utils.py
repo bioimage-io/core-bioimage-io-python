@@ -1,12 +1,13 @@
 import dataclasses
 import importlib.util
 import io
+import logging
 import pathlib
 import subprocess
 import sys
 import uuid
 from dataclasses import fields
-from typing import Any, Callable, Dict, Optional, TypeVar, Union, NewType
+from typing import Any, Callable, Dict, Optional, TypeVar, Union
 from urllib.parse import ParseResult, urlunparse
 from urllib.request import urlretrieve
 
@@ -176,7 +177,11 @@ def _download_uri_node_to_local_path(uri_node: nodes.URI, cache_path: pathlib.Pa
     if not local_path.exists():
         local_path.parent.mkdir(parents=True, exist_ok=True)
         url_str = urlunparse([uri_node.scheme, uri_node.netloc, uri_node.path, "", uri_node.query, ""])
-        urlretrieve(url_str, str(local_path))
+        try:
+            urlretrieve(url_str, str(local_path))
+        except Exception:
+            logging.getLogger("download").error("Failed to download %s", uri_node)
+            raise
 
     return local_path
 
