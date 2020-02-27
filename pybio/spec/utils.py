@@ -143,26 +143,40 @@ def resolve_uri(
         #   >>> assert Path(urlparse(WindowsPath().absolute().as_uri()).path).exists() fails
         # - relative paths are invalid URIs
     elif uri_node.netloc == "github.com":
-        orga, repo_name, blob, commit_id, *in_repo_path = uri_node.path.strip("/").split("/")
-        in_repo_path = "/".join(in_repo_path)
-        cached_repo_path = cache_path / orga / repo_name / commit_id
-        local_path = cached_repo_path / in_repo_path
-        if not local_path.exists():
-            cached_repo_path = str(cached_repo_path.resolve())
-            subprocess.call(
-                ["git", "clone", f"{uri_node.scheme}://{uri_node.netloc}/{orga}/{repo_name}.git", cached_repo_path]
-            )
-            # -C <working_dir> available in git 1.8.5+
-            # https://github.com/git/git/blob/5fd09df3937f54c5cfda4f1087f5d99433cce527/Documentation/RelNotes/1.8.5.txt#L115-L116
-            subprocess.call(["git", "-C", cached_repo_path, "checkout", "--force", commit_id])
+        orga, repo_name, blob_releases_archive, commit_id, *in_repo_path = uri_node.path.strip("/").split("/")
+        if blob_releases_archive == "releases":
+            local_path = _download_uri_node_to_local_path(uri_node, cache_path)
+        elif blob_releases_archive == "archive":
+            raise NotImplementedError("unpacking of github archive not implemented")
+            # local_path = _download_uri_node_to_local_path(uri_node, cache_path)
+        elif blob_releases_archive == "blob":
+            in_repo_path = "/".join(in_repo_path)
+            cached_repo_path = cache_path / orga / repo_name / commit_id
+            local_path = cached_repo_path / in_repo_path
+            if not local_path.exists():
+                cached_repo_path = str(cached_repo_path.resolve())
+                subprocess.call(
+                    ["git", "clone", f"{uri_node.scheme}://{uri_node.netloc}/{orga}/{repo_name}.git", cached_repo_path]
+                )
+                # -C <working_dir> available in git 1.8.5+
+                # https://github.com/git/git/blob/5fd09df3937f54c5cfda4f1087f5d99433cce527/Documentation/RelNotes/1.8.5.txt#L115-L116
+                subprocess.call(["git", "-C", cached_repo_path, "checkout", "--force", commit_id])
+        else:
+            raise NotImplementedError(f"unkown github url format: {uri_node} with '{blob_releases_archive}'")
     elif uri_node.scheme == "https":
-        local_path = cache_path / uri_node.scheme / uri_node.netloc / uri_node.path.strip("/") / uri_node.query
-        if not local_path.exists():
-            local_path.parent.mkdir(parents=True, exist_ok=True)
-            url_str = urlunparse([uri_node.scheme, uri_node.netloc, uri_node.path, "", "", ""])
-            urlretrieve(url_str, str(local_path))
+        local_path = _download_uri_node_to_local_path(uri_node, cache_path)
     else:
         raise ValueError(f"Unknown uri scheme {uri_node.scheme}")
+
+    return local_path
+
+
+def _download_uri_node_to_local_path(uri_node: nodes.URI, cache_path: pathlib.Path) -> pathlib.Path:
+    local_path = cache_path / uri_node.scheme / uri_node.netloc / uri_node.path.strip("/") / uri_node.query
+    if not local_path.exists():
+        local_path.parent.mkdir(parents=True, exist_ok=True)
+        url_str = urlunparse([uri_node.scheme, uri_node.netloc, uri_node.path, "", uri_node.query, ""])
+        urlretrieve(url_str, str(local_path))
 
     return local_path
 
