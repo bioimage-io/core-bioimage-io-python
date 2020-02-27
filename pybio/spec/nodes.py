@@ -126,9 +126,7 @@ class URI(Node):
     scheme: str
     netloc: str
     path: str
-    # params: str
     query: str
-    # fragment: str
 
 
 @dataclass
