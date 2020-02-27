@@ -334,3 +334,12 @@ def load_model(*args, **kwargs) -> nodes.Model:
     ret = load_spec_and_kwargs(*args, **kwargs)
     assert isinstance(ret, nodes.Model)
     return ret
+
+
+def cache_uri(uri_str: str, hash: Dict[str, str], cache_path: pathlib.Path):
+    file_node = schema.File().load({"source": uri_str, "hash": hash})
+    uri_transformer = URITransformer(root_path=cache_path, cache_path=cache_path)
+    file_node = uri_transformer.transform(file_node)
+    file_node = SourceTransformer().transform(file_node)
+    # todo: check hash
+    return file_node.source

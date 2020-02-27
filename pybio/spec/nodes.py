@@ -126,7 +126,9 @@ class URI(Node):
     scheme: str
     netloc: str
     path: str
+    # params: str
     query: str
+    # fragment: str
 
 
 @dataclass
@@ -230,3 +232,9 @@ class ModelSpec(BaseSpec, WithInputs, WithOutputs):
 @dataclass
 class Model(SpecWithKwargs):
     spec: Union[SpecURI, ModelSpec]
+
+
+# helper nodes
+@dataclass
+class File(Node, WithFileSource):
+    pass
