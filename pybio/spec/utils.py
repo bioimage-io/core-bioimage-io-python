@@ -6,7 +6,7 @@ import subprocess
 import sys
 import uuid
 from dataclasses import fields
-from typing import Any, Callable, Dict, Optional, TypeVar, Union
+from typing import Any, Callable, Dict, Optional, TypeVar, Union, NewType
 from urllib.parse import ParseResult, urlunparse
 from urllib.request import urlretrieve
 
@@ -295,6 +295,33 @@ class SourceTransformer(NodeTransformer):
         raise RuntimeError("Encountered nodes.ImportablePath in SourceTransformer. Apply URITransformer first!")
 
 
+class MagicKwargsTransformer(NodeTransformer):
+    def __init__(self, **magic_kwargs):
+        super().__init__()
+        self.magic_kwargs = magic_kwargs
+
+    def transform_SpecWithKwargs(self, node: GenericNode) -> GenericNode:
+        for key, value in self.magic_kwargs.items():
+            if key in node.spec.required_kwargs and key not in node.kwargs:
+                node.kwargs[key] = value
+
+        return dataclasses.replace(
+            node, **{field.name: self.transform(getattr(node, field.name)) for field in fields(node)}
+        )
+
+    def transform_Model(self, node: nodes.Model) -> nodes.Model:
+        return self.transform_SpecWithKwargs(node)
+
+    def transform_Reader(self, node: nodes.Reader) -> nodes.Reader:
+        return self.transform_SpecWithKwargs(node)
+
+    def transform_Sampler(self, node: nodes.Sampler) -> nodes.Sampler:
+        return self.transform_SpecWithKwargs(node)
+
+    def transform_Transformation(self, node: nodes.Transformation) -> nodes.Transformation:
+        return self.transform_SpecWithKwargs(node)
+
+
 def load_spec_and_kwargs(
     uri: str,
     kwargs: Dict[str, Any] = None,
@@ -324,10 +351,10 @@ def load_spec_and_kwargs(
 
     local_spec_path = resolve_uri(uri_node=tree.spec, root_path=root_path, cache_path=cache_path)
 
-    uri_transformer = URITransformer(root_path=local_spec_path.parent, cache_path=cache_path)
-    local_tree = uri_transformer.transform(tree)
-    local_tree_with_sources = SourceTransformer().transform(local_tree)
-    return local_tree_with_sources
+    tree = URITransformer(root_path=local_spec_path.parent, cache_path=cache_path).transform(tree)
+    tree = SourceTransformer().transform(tree)
+    tree = MagicKwargsTransformer(cache_path=cache_path).transform(tree)
+    return tree
 
 
 def load_model(*args, **kwargs) -> nodes.Model:
