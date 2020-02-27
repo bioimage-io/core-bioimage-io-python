@@ -1,7 +1,7 @@
 import os
 import zipfile
 from pathlib import Path
-from typing import Sequence, Tuple
+from typing import Sequence, Tuple, Optional
 from urllib.request import urlretrieve
 
 import imageio
@@ -85,16 +85,9 @@ class BroadNucleusDataBinarized(PyBioReader):
 
         return images, labels
 
-    def __init__(
-        self,
-        data_dir: Path = Path(__file__).parent / "../../../cache/BroadNucleusDataBinarized",
-        subset: str = "training",
-        *,
-        outputs: Sequence[OutputArray],
-        **super_kwargs,
-    ):
+    def __init__(self, subset: str = "training", *, cache_path: Path, outputs: Sequence[OutputArray], **super_kwargs):
         assert all(isinstance(out, OutputArray) for out in outputs)
-        self.x, self.y = self.get_data(data_dir, subset)
+        self.x, self.y = self.get_data(cache_path / "BroadNucleusDataBinarizedPyBioReader", subset)
         if len(self.x) != len(self.y):
             raise RuntimeError("Invalid data")
 

@@ -230,3 +230,9 @@ class ModelSpec(BaseSpec, WithInputs, WithOutputs):
 @dataclass
 class Model(SpecWithKwargs):
     spec: Union[SpecURI, ModelSpec]
+
+
+# helper nodes
+@dataclass
+class File(Node, WithFileSource):
+    pass

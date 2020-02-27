@@ -1,6 +1,7 @@
 import dataclasses
 import importlib.util
 import io
+import logging
 import pathlib
 import subprocess
 import sys
@@ -143,26 +144,44 @@ def resolve_uri(
         #   >>> assert Path(urlparse(WindowsPath().absolute().as_uri()).path).exists() fails
         # - relative paths are invalid URIs
     elif uri_node.netloc == "github.com":
-        orga, repo_name, blob, commit_id, *in_repo_path = uri_node.path.strip("/").split("/")
-        in_repo_path = "/".join(in_repo_path)
-        cached_repo_path = cache_path / orga / repo_name / commit_id
-        local_path = cached_repo_path / in_repo_path
-        if not local_path.exists():
-            cached_repo_path = str(cached_repo_path.resolve())
-            subprocess.call(
-                ["git", "clone", f"{uri_node.scheme}://{uri_node.netloc}/{orga}/{repo_name}.git", cached_repo_path]
-            )
-            # -C <working_dir> available in git 1.8.5+
-            # https://github.com/git/git/blob/5fd09df3937f54c5cfda4f1087f5d99433cce527/Documentation/RelNotes/1.8.5.txt#L115-L116
-            subprocess.call(["git", "-C", cached_repo_path, "checkout", "--force", commit_id])
+        orga, repo_name, blob_releases_archive, commit_id, *in_repo_path = uri_node.path.strip("/").split("/")
+        if blob_releases_archive == "releases":
+            local_path = _download_uri_node_to_local_path(uri_node, cache_path)
+        elif blob_releases_archive == "archive":
+            raise NotImplementedError("unpacking of github archive not implemented")
+            # local_path = _download_uri_node_to_local_path(uri_node, cache_path)
+        elif blob_releases_archive == "blob":
+            in_repo_path = "/".join(in_repo_path)
+            cached_repo_path = cache_path / orga / repo_name / commit_id
+            local_path = cached_repo_path / in_repo_path
+            if not local_path.exists():
+                cached_repo_path = str(cached_repo_path.resolve())
+                subprocess.call(
+                    ["git", "clone", f"{uri_node.scheme}://{uri_node.netloc}/{orga}/{repo_name}.git", cached_repo_path]
+                )
+                # -C <working_dir> available in git 1.8.5+
+                # https://github.com/git/git/blob/5fd09df3937f54c5cfda4f1087f5d99433cce527/Documentation/RelNotes/1.8.5.txt#L115-L116
+                subprocess.call(["git", "-C", cached_repo_path, "checkout", "--force", commit_id])
+        else:
+            raise NotImplementedError(f"unkown github url format: {uri_node} with '{blob_releases_archive}'")
     elif uri_node.scheme == "https":
-        local_path = cache_path / uri_node.scheme / uri_node.netloc / uri_node.path.strip("/") / uri_node.query
-        if not local_path.exists():
-            local_path.parent.mkdir(parents=True, exist_ok=True)
-            url_str = urlunparse([uri_node.scheme, uri_node.netloc, uri_node.path, "", "", ""])
-            urlretrieve(url_str, str(local_path))
+        local_path = _download_uri_node_to_local_path(uri_node, cache_path)
     else:
         raise ValueError(f"Unknown uri scheme {uri_node.scheme}")
+
+    return local_path
+
+
+def _download_uri_node_to_local_path(uri_node: nodes.URI, cache_path: pathlib.Path) -> pathlib.Path:
+    local_path = cache_path / uri_node.scheme / uri_node.netloc / uri_node.path.strip("/") / uri_node.query
+    if not local_path.exists():
+        local_path.parent.mkdir(parents=True, exist_ok=True)
+        url_str = urlunparse([uri_node.scheme, uri_node.netloc, uri_node.path, "", uri_node.query, ""])
+        try:
+            urlretrieve(url_str, str(local_path))
+        except Exception:
+            logging.getLogger("download").error("Failed to download %s", uri_node)
+            raise
 
     return local_path
 
@@ -281,6 +300,33 @@ class SourceTransformer(NodeTransformer):
         raise RuntimeError("Encountered nodes.ImportablePath in SourceTransformer. Apply URITransformer first!")
 
 
+class MagicKwargsTransformer(NodeTransformer):
+    def __init__(self, **magic_kwargs):
+        super().__init__()
+        self.magic_kwargs = magic_kwargs
+
+    def transform_SpecWithKwargs(self, node: GenericNode) -> GenericNode:
+        for key, value in self.magic_kwargs.items():
+            if key in node.spec.required_kwargs and key not in node.kwargs:
+                node.kwargs[key] = value
+
+        return dataclasses.replace(
+            node, **{field.name: self.transform(getattr(node, field.name)) for field in fields(node)}
+        )
+
+    def transform_Model(self, node: nodes.Model) -> nodes.Model:
+        return self.transform_SpecWithKwargs(node)
+
+    def transform_Reader(self, node: nodes.Reader) -> nodes.Reader:
+        return self.transform_SpecWithKwargs(node)
+
+    def transform_Sampler(self, node: nodes.Sampler) -> nodes.Sampler:
+        return self.transform_SpecWithKwargs(node)
+
+    def transform_Transformation(self, node: nodes.Transformation) -> nodes.Transformation:
+        return self.transform_SpecWithKwargs(node)
+
+
 def load_spec_and_kwargs(
     uri: str,
     kwargs: Dict[str, Any] = None,
@@ -310,13 +356,22 @@ def load_spec_and_kwargs(
 
     local_spec_path = resolve_uri(uri_node=tree.spec, root_path=root_path, cache_path=cache_path)
 
-    uri_transformer = URITransformer(root_path=local_spec_path.parent, cache_path=cache_path)
-    local_tree = uri_transformer.transform(tree)
-    local_tree_with_sources = SourceTransformer().transform(local_tree)
-    return local_tree_with_sources
+    tree = URITransformer(root_path=local_spec_path.parent, cache_path=cache_path).transform(tree)
+    tree = SourceTransformer().transform(tree)
+    tree = MagicKwargsTransformer(cache_path=cache_path).transform(tree)
+    return tree
 
 
 def load_model(*args, **kwargs) -> nodes.Model:
     ret = load_spec_and_kwargs(*args, **kwargs)
     assert isinstance(ret, nodes.Model)
     return ret
+
+
+def cache_uri(uri_str: str, hash: Dict[str, str], cache_path: pathlib.Path):
+    file_node = schema.File().load({"source": uri_str, "hash": hash})
+    uri_transformer = URITransformer(root_path=cache_path, cache_path=cache_path)
+    file_node = uri_transformer.transform(file_node)
+    file_node = SourceTransformer().transform(file_node)
+    # todo: check hash
+    return file_node.source

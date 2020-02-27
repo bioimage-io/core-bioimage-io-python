@@ -251,6 +251,12 @@ class Model(SpecWithKwargs):
     spec = fields.SpecURI(ModelSpec, required=True)
 
 
+# helper schemas
+class File(PyBioSchema):
+    source = fields.URI(required=True)
+    hash = fields.Dict()
+
+
 if __name__ == "__main__":
     try:
         model = load_model(

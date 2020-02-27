@@ -3,7 +3,7 @@ from pybio.core.readers.broad_nucleus_data import BroadNucleusDataBinarized
 from pybio.spec.nodes import Axes, MagicShapeValue, OutputArray
 
 
-def test_broad_nucleus():
+def test_broad_nucleus(cache_path):
     reader = BroadNucleusDataBinarized(
         outputs=(
             OutputArray(
@@ -22,7 +22,8 @@ def test_broad_nucleus():
                 data_range=(0, 1),
                 halo=(0, 0),
             ),
-        )
+        ),
+        cache_path=cache_path,
     )
     assert isinstance(reader, PyBioReader)
     assert len(reader.shape) == 2

@@ -14,7 +14,9 @@ format_version: 0.1.0
 language: python
 
 source: pybio.core.readers.broad_nucleus_data.BroadNucleusDataBinarized
+required_kwargs: [cache_path]
 optional_kwargs: {subset: training}  # todo: dynamic shape and data range? validation and test subsets...
+
 outputs:
   - name: raw
     axes: bxy
