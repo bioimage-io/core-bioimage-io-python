@@ -2,10 +2,24 @@ from urllib.parse import urlparse, ParseResult
 import pathlib
 import typing
 
-from marshmallow.fields import Str, Nested, List, Dict, Integer, Float, Tuple, ValidationError  # noqa
+from marshmallow.fields import (
+    Str,
+    Nested,
+    List,
+    Dict,
+    Integer,
+    Float,
+    Tuple as MarshmallowTuple,
+    ValidationError,
+)  # noqa
 
 from pybio.spec.exceptions import PyBioValidationException
 from pybio.spec import nodes
+
+
+class Tuple(MarshmallowTuple):
+    def _jsonschema_type_mapping(self):
+        return {"type": "list"}
 
 
 class SpecURI(Nested):
