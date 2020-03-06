@@ -19,7 +19,12 @@ from pybio.spec import nodes
 
 class Tuple(MarshmallowTuple):
     def _jsonschema_type_mapping(self):
-        return {"type": "list"}
+        import marshmallow_jsonschema
+
+        return {
+            "type": "array",
+            "items": [marshmallow_jsonschema.JSONSchema()._get_schema_for_field(self, tf) for tf in self.tuple_fields],
+        }
 
 
 class SpecURI(Nested):
