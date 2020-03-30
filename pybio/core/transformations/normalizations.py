@@ -111,7 +111,9 @@ class NormalizeRange(PyBioTransformation):
         ret = array.astype("float32")
         ret -= data_min
         ret /= data_range
-        ret += self.data_min
+        output_range = self.output_max - self.output_min
+        ret *= output_range
+        ret += self.output_min
         return ret
 
     def dynamic_output_shape(self, input_shape: Tuple[Tuple[int]]) -> Tuple[Tuple[int]]:
