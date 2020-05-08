@@ -38,6 +38,11 @@ specs/samplers/SequentialSamplerAlongDimension.sampler.yaml:
 specs/transformations/Cast.transformation.yaml:
     kwargs:
         dtype: float32
+specs/transformations/NormalizeRange.transformation.yaml:
+    kwargs:
+        apply_to: 0
+        output_min: -1.0
+        output_max: 1.0
     """
     )
 

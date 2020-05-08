@@ -6,7 +6,7 @@ cite:
 authors:
     - Fynn Beuttenmüller
 documentation: transformations.md
-tags: [normalization]
+tags: [normalization, mean, variance]
 license: MIT
 
 format_version: 0.1.0

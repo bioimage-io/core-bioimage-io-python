@@ -1,0 +1,21 @@
+name: NormalizeRange
+description: Normalize input to specified data range
+cite: []
+authors:
+    - Fynn Beuttenmüller
+documentation: transformations.md
+tags: [normalization, min, max, range]
+license: MIT
+
+format_version: 0.1.0
+language: python
+framework: pytorch
+
+dependencies: ../../env_no_pytorch.yaml
+
+source: pybio.core.transformations.normalizations.NormalizeRange
+required_kwargs: [apply_to, output_min, output_max]
+optional_kwargs: {data_min: null, data_max: null, minimal_data_range: 1.0e-6}
+
+inputs: any
+outputs: dynamic
