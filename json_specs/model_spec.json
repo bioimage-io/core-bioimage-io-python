@@ -1,1 +1,935 @@
-{"$schema": "http://json-schema.org/draft-07/schema#", "definitions": {"CiteEntry": {"required": ["text"], "type": "object", "properties": {"doi": {"title": "doi", "type": ["string", "null"]}, "text": {"title": "text", "type": "string"}, "url": {"title": "url", "type": ["string", "null"]}}, "additionalProperties": false}, "InputArray": {"required": ["data_type", "name", "shape"], "type": "object", "properties": {"axes": {"title": "axes", "type": ["string", "null"]}, "data_range": {"type": "array", "items": [{"title": "data_range", "type": "number", "format": "float"}, {"title": "data_range", "type": "number", "format": "float"}]}, "data_type": {"title": "data_type", "type": "string"}, "name": {"title": "name", "type": "string"}, "shape": {"type": "object", "$ref": "#/definitions/InputShape"}}, "additionalProperties": false}, "InputShape": {"required": ["min", "step"], "type": "object", "properties": {"min": {"title": "min", "type": "array", "items": {"title": "min", "type": "number", "format": "integer"}}, "step": {"title": "step", "type": "array", "items": {"title": "step", "type": "number", "format": "integer"}}}, "additionalProperties": false}, "OutputArray": {"required": ["data_type", "name", "shape"], "type": "object", "properties": {"axes": {"title": "axes", "type": ["string", "null"]}, "data_range": {"type": "array", "items": [{"title": "data_range", "type": "number", "format": "float"}, {"title": "data_range", "type": "number", "format": "float"}]}, "data_type": {"title": "data_type", "type": "string"}, "halo": {"title": "halo", "type": ["array", "null"], "items": {"title": "halo", "type": "number", "format": "integer"}}, "name": {"title": "name", "type": "string"}, "shape": {"type": "object", "$ref": "#/definitions/OutputShape"}}, "additionalProperties": false}, "OutputShape": {"required": ["offset", "scale"], "type": "object", "properties": {"offset": {"title": "offset", "type": "array", "items": {"title": "offset", "type": "number", "format": "integer"}}, "reference_input": {"title": "reference_input", "type": ["string", "null"]}, "scale": {"title": "scale", "type": "array", "items": {"title": "scale", "type": "number", "format": "float"}}}, "additionalProperties": false}, "Prediction": {"type": "object", "properties": {"dependencies": {"title": "dependencies", "type": ["string", "null"]}, "postprocess": {"type": ["array", "null"], "items": {"type": "object", "$ref": "#/definitions/Transformation"}}, "preprocess": {"type": ["array", "null"], "items": {"type": "object", "$ref": "#/definitions/Transformation"}}, "weights": {"type": "object", "$ref": "#/definitions/Weights"}}, "additionalProperties": false}, "Transformation": {"required": ["spec"], "type": "object", "properties": {"kwargs": {"title": "kwargs", "type": "object"}, "spec": {"type": "object", "$ref": "#/definitions/TransformationSpec"}}, "additionalProperties": false}, "TransformationSpec": {"required": ["cite", "dependencies", "description", "documentation", "format_version", "inputs", "language", "license", "name", "outputs", "source", "tags"], "type": "object", "properties": {"authors": {"title": "authors", "type": "array", "items": {"title": "authors", "type": "string"}}, "cite": {"type": "array", "items": {"type": "object", "$ref": "#/definitions/CiteEntry"}}, "covers": {"title": "covers", "type": "array", "items": {"title": "covers", "type": "string"}}, "dependencies": {"title": "dependencies", "type": "string"}, "description": {"title": "description", "type": "string"}, "documentation": {"title": "documentation", "type": "string"}, "format_version": {"title": "format_version", "type": "string"}, "framework": {"title": "framework", "type": ["string", "null"]}, "inputs": {"type": "object", "$ref": "#/definitions/InputArray"}, "language": {"title": "language", "type": "string"}, "license": {"title": "license", "type": "string"}, "name": {"title": "name", "type": "string"}, "optional_kwargs": {"title": "optional_kwargs", "type": "object"}, "outputs": {"type": "object", "$ref": "#/definitions/OutputArray"}, "required_kwargs": {"title": "required_kwargs", "type": "array", "items": {"title": "required_kwargs", "type": "string"}}, "source": {"title": "source", "type": "string"}, "tags": {"title": "tags", "type": "array", "items": {"title": "tags", "type": "string"}}, "test_input": {"title": "test_input", "type": ["string", "null"]}, "test_output": {"title": "test_output", "type": ["string", "null"]}}, "additionalProperties": false}, "Weights": {"required": ["source"], "type": "object", "properties": {"hash": {"title": "hash", "type": "object"}, "source": {"title": "source", "type": "string"}}, "additionalProperties": false}, "Training": {"required": ["dependencies", "source"], "type": "object", "properties": {"dependencies": {"title": "dependencies", "type": "string"}, "description": {"title": "description", "type": ["string", "null"]}, "optional_kwargs": {"title": "optional_kwargs", "type": "object"}, "required_kwargs": {"title": "required_kwargs", "type": "array", "items": {"title": "required_kwargs", "type": "string"}}, "setup": {"type": "object", "$ref": "#/definitions/Setup"}, "source": {"title": "source", "type": "string"}}, "additionalProperties": false}, "Setup": {"required": ["samplers"], "type": "object", "properties": {"losses": {"type": ["array", "null"], "items": {"type": "object", "$ref": "#/definitions/Transformation"}}, "optimizer": {"type": "object", "$ref": "#/definitions/Optimizer"}, "postprocess": {"type": ["array", "null"], "items": {"type": "object", "$ref": "#/definitions/Transformation"}}, "preprocess": {"type": ["array", "null"], "items": {"type": "object", "$ref": "#/definitions/Transformation"}}, "samplers": {"title": "samplers", "type": "array", "items": {"type": "object", "$ref": "#/definitions/Sampler"}}}, "additionalProperties": false}, "Optimizer": {"required": ["source"], "type": "object", "properties": {"optional_kwargs": {"title": "optional_kwargs", "type": "object"}, "required_kwargs": {"title": "required_kwargs", "type": "array", "items": {"title": "required_kwargs", "type": "string"}}, "source": {"title": "source", "type": "string"}}, "additionalProperties": false}, "Sampler": {"required": ["readers"], "type": "object", "properties": {"kwargs": {"title": "kwargs", "type": "object"}, "readers": {"title": "readers", "type": "array", "items": {"type": "object", "$ref": "#/definitions/Reader"}}, "spec": {"type": "object", "$ref": "#/definitions/SamplerSpec"}}, "additionalProperties": false}, "Reader": {"type": "object", "properties": {"kwargs": {"title": "kwargs", "type": "object"}, "spec": {"type": "object", "$ref": "#/definitions/ReaderSpec"}, "transformations": {"title": "transformations", "type": "array", "items": {"type": "object", "$ref": "#/definitions/Transformation"}}}, "additionalProperties": false}, "ReaderSpec": {"required": ["cite", "description", "documentation", "format_version", "language", "license", "name", "outputs", "source", "tags"], "type": "object", "properties": {"authors": {"title": "authors", "type": "array", "items": {"title": "authors", "type": "string"}}, "cite": {"type": "array", "items": {"type": "object", "$ref": "#/definitions/CiteEntry"}}, "covers": {"title": "covers", "type": "array", "items": {"title": "covers", "type": "string"}}, "dependencies": {"title": "dependencies", "type": ["string", "null"]}, "description": {"title": "description", "type": "string"}, "documentation": {"title": "documentation", "type": "string"}, "format_version": {"title": "format_version", "type": "string"}, "framework": {"title": "framework", "type": ["string", "null"]}, "language": {"title": "language", "type": "string"}, "license": {"title": "license", "type": "string"}, "name": {"title": "name", "type": "string"}, "optional_kwargs": {"title": "optional_kwargs", "type": "object"}, "outputs": {"type": "object", "$ref": "#/definitions/OutputArray"}, "required_kwargs": {"title": "required_kwargs", "type": "array", "items": {"title": "required_kwargs", "type": "string"}}, "source": {"title": "source", "type": "string"}, "tags": {"title": "tags", "type": "array", "items": {"title": "tags", "type": "string"}}, "test_input": {"title": "test_input", "type": ["string", "null"]}, "test_output": {"title": "test_output", "type": ["string", "null"]}}, "additionalProperties": false}, "SamplerSpec": {"required": ["cite", "description", "documentation", "format_version", "language", "license", "name", "source", "tags"], "type": "object", "properties": {"authors": {"title": "authors", "type": "array", "items": {"title": "authors", "type": "string"}}, "cite": {"type": "array", "items": {"type": "object", "$ref": "#/definitions/CiteEntry"}}, "covers": {"title": "covers", "type": "array", "items": {"title": "covers", "type": "string"}}, "dependencies": {"title": "dependencies", "type": ["string", "null"]}, "description": {"title": "description", "type": "string"}, "documentation": {"title": "documentation", "type": "string"}, "format_version": {"title": "format_version", "type": "string"}, "framework": {"title": "framework", "type": ["string", "null"]}, "language": {"title": "language", "type": "string"}, "license": {"title": "license", "type": "string"}, "name": {"title": "name", "type": "string"}, "optional_kwargs": {"title": "optional_kwargs", "type": "object"}, "outputs": {"type": "object", "$ref": "#/definitions/OutputArray"}, "required_kwargs": {"title": "required_kwargs", "type": "array", "items": {"title": "required_kwargs", "type": "string"}}, "source": {"title": "source", "type": "string"}, "tags": {"title": "tags", "type": "array", "items": {"title": "tags", "type": "string"}}, "test_input": {"title": "test_input", "type": ["string", "null"]}, "test_output": {"title": "test_output", "type": ["string", "null"]}}, "additionalProperties": false}, "ModelSpec": {"required": ["cite", "description", "documentation", "format_version", "language", "license", "name", "source", "tags"], "type": "object", "properties": {"authors": {"title": "authors", "type": "array", "items": {"title": "authors", "type": "string"}}, "cite": {"type": "array", "items": {"type": "object", "$ref": "#/definitions/CiteEntry"}}, "covers": {"title": "covers", "type": "array", "items": {"title": "covers", "type": "string"}}, "description": {"title": "description", "type": "string"}, "documentation": {"title": "documentation", "type": "string"}, "format_version": {"title": "format_version", "type": "string"}, "framework": {"title": "framework", "type": ["string", "null"]}, "inputs": {"type": ["array", "null"], "items": {"type": "object", "$ref": "#/definitions/InputArray"}}, "language": {"title": "language", "type": "string"}, "license": {"title": "license", "type": "string"}, "name": {"title": "name", "type": "string"}, "optional_kwargs": {"title": "optional_kwargs", "type": "object"}, "outputs": {"type": ["array", "null"], "items": {"type": "object", "$ref": "#/definitions/OutputArray"}}, "prediction": {"type": "object", "$ref": "#/definitions/Prediction"}, "required_kwargs": {"title": "required_kwargs", "type": "array", "items": {"title": "required_kwargs", "type": "string"}}, "source": {"title": "source", "type": "string"}, "tags": {"title": "tags", "type": "array", "items": {"title": "tags", "type": "string"}}, "test_input": {"title": "test_input", "type": ["string", "null"]}, "test_output": {"title": "test_output", "type": ["string", "null"]}, "training": {"type": "object", "$ref": "#/definitions/Training"}}, "additionalProperties": false}}, "$ref": "#/definitions/ModelSpec"}
+{
+    "$ref": "#/definitions/ModelSpec",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "definitions": {
+        "CiteEntry": {
+            "additionalProperties": false,
+            "properties": {
+                "doi": {
+                    "title": "doi",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "text": {
+                    "title": "text",
+                    "type": "string"
+                },
+                "url": {
+                    "title": "url",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                }
+            },
+            "required": [
+                "text"
+            ],
+            "type": "object"
+        },
+        "InputArray": {
+            "additionalProperties": false,
+            "properties": {
+                "axes": {
+                    "title": "axes",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "data_range": {
+                    "items": [
+                        {
+                            "format": "float",
+                            "title": "data_range",
+                            "type": "number"
+                        },
+                        {
+                            "format": "float",
+                            "title": "data_range",
+                            "type": "number"
+                        }
+                    ],
+                    "type": "array"
+                },
+                "data_type": {
+                    "title": "data_type",
+                    "type": "string"
+                },
+                "name": {
+                    "title": "name",
+                    "type": "string"
+                },
+                "shape": {
+                    "$ref": "#/definitions/InputShape",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "data_type",
+                "name",
+                "shape"
+            ],
+            "type": "object"
+        },
+        "InputShape": {
+            "additionalProperties": false,
+            "properties": {
+                "min": {
+                    "items": {
+                        "format": "integer",
+                        "title": "min",
+                        "type": "number"
+                    },
+                    "title": "min",
+                    "type": "array"
+                },
+                "step": {
+                    "items": {
+                        "format": "integer",
+                        "title": "step",
+                        "type": "number"
+                    },
+                    "title": "step",
+                    "type": "array"
+                }
+            },
+            "required": [
+                "min",
+                "step"
+            ],
+            "type": "object"
+        },
+        "ModelSpec": {
+            "additionalProperties": false,
+            "properties": {
+                "authors": {
+                    "items": {
+                        "title": "authors",
+                        "type": "string"
+                    },
+                    "title": "authors",
+                    "type": "array"
+                },
+                "cite": {
+                    "items": {
+                        "$ref": "#/definitions/CiteEntry",
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "covers": {
+                    "items": {
+                        "title": "covers",
+                        "type": "string"
+                    },
+                    "title": "covers",
+                    "type": "array"
+                },
+                "description": {
+                    "title": "description",
+                    "type": "string"
+                },
+                "documentation": {
+                    "title": "documentation",
+                    "type": "string"
+                },
+                "format_version": {
+                    "title": "format_version",
+                    "type": "string"
+                },
+                "framework": {
+                    "title": "framework",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "inputs": {
+                    "items": {
+                        "$ref": "#/definitions/InputArray",
+                        "type": "object"
+                    },
+                    "type": [
+                        "array",
+                        "null"
+                    ]
+                },
+                "language": {
+                    "title": "language",
+                    "type": "string"
+                },
+                "license": {
+                    "title": "license",
+                    "type": "string"
+                },
+                "name": {
+                    "title": "name",
+                    "type": "string"
+                },
+                "optional_kwargs": {
+                    "title": "optional_kwargs",
+                    "type": "object"
+                },
+                "outputs": {
+                    "items": {
+                        "$ref": "#/definitions/OutputArray",
+                        "type": "object"
+                    },
+                    "type": [
+                        "array",
+                        "null"
+                    ]
+                },
+                "prediction": {
+                    "$ref": "#/definitions/Prediction",
+                    "type": "object"
+                },
+                "required_kwargs": {
+                    "items": {
+                        "title": "required_kwargs",
+                        "type": "string"
+                    },
+                    "title": "required_kwargs",
+                    "type": "array"
+                },
+                "source": {
+                    "title": "source",
+                    "type": "string"
+                },
+                "tags": {
+                    "items": {
+                        "title": "tags",
+                        "type": "string"
+                    },
+                    "title": "tags",
+                    "type": "array"
+                },
+                "test_input": {
+                    "title": "test_input",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "test_output": {
+                    "title": "test_output",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "training": {
+                    "$ref": "#/definitions/Training",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "cite",
+                "description",
+                "documentation",
+                "format_version",
+                "language",
+                "license",
+                "name",
+                "source",
+                "tags"
+            ],
+            "type": "object"
+        },
+        "Optimizer": {
+            "additionalProperties": false,
+            "properties": {
+                "optional_kwargs": {
+                    "title": "optional_kwargs",
+                    "type": "object"
+                },
+                "required_kwargs": {
+                    "items": {
+                        "title": "required_kwargs",
+                        "type": "string"
+                    },
+                    "title": "required_kwargs",
+                    "type": "array"
+                },
+                "source": {
+                    "title": "source",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "source"
+            ],
+            "type": "object"
+        },
+        "OutputArray": {
+            "additionalProperties": false,
+            "properties": {
+                "axes": {
+                    "title": "axes",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "data_range": {
+                    "items": [
+                        {
+                            "format": "float",
+                            "title": "data_range",
+                            "type": "number"
+                        },
+                        {
+                            "format": "float",
+                            "title": "data_range",
+                            "type": "number"
+                        }
+                    ],
+                    "type": "array"
+                },
+                "data_type": {
+                    "title": "data_type",
+                    "type": "string"
+                },
+                "halo": {
+                    "items": {
+                        "format": "integer",
+                        "title": "halo",
+                        "type": "number"
+                    },
+                    "title": "halo",
+                    "type": [
+                        "array",
+                        "null"
+                    ]
+                },
+                "name": {
+                    "title": "name",
+                    "type": "string"
+                },
+                "shape": {
+                    "$ref": "#/definitions/OutputShape",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "data_type",
+                "name",
+                "shape"
+            ],
+            "type": "object"
+        },
+        "OutputShape": {
+            "additionalProperties": false,
+            "properties": {
+                "offset": {
+                    "items": {
+                        "format": "integer",
+                        "title": "offset",
+                        "type": "number"
+                    },
+                    "title": "offset",
+                    "type": "array"
+                },
+                "reference_input": {
+                    "title": "reference_input",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "scale": {
+                    "items": {
+                        "format": "float",
+                        "title": "scale",
+                        "type": "number"
+                    },
+                    "title": "scale",
+                    "type": "array"
+                }
+            },
+            "required": [
+                "offset",
+                "scale"
+            ],
+            "type": "object"
+        },
+        "Prediction": {
+            "additionalProperties": false,
+            "properties": {
+                "dependencies": {
+                    "title": "dependencies",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "postprocess": {
+                    "items": {
+                        "$ref": "#/definitions/Transformation",
+                        "type": "object"
+                    },
+                    "type": [
+                        "array",
+                        "null"
+                    ]
+                },
+                "preprocess": {
+                    "items": {
+                        "$ref": "#/definitions/Transformation",
+                        "type": "object"
+                    },
+                    "type": [
+                        "array",
+                        "null"
+                    ]
+                },
+                "weights": {
+                    "$ref": "#/definitions/Weights",
+                    "type": "object"
+                }
+            },
+            "type": "object"
+        },
+        "Reader": {
+            "additionalProperties": false,
+            "properties": {
+                "kwargs": {
+                    "title": "kwargs",
+                    "type": "object"
+                },
+                "spec": {
+                    "$ref": "#/definitions/ReaderSpec",
+                    "type": "object"
+                },
+                "transformations": {
+                    "items": {
+                        "$ref": "#/definitions/Transformation",
+                        "type": "object"
+                    },
+                    "title": "transformations",
+                    "type": "array"
+                }
+            },
+            "type": "object"
+        },
+        "ReaderSpec": {
+            "additionalProperties": false,
+            "properties": {
+                "authors": {
+                    "items": {
+                        "title": "authors",
+                        "type": "string"
+                    },
+                    "title": "authors",
+                    "type": "array"
+                },
+                "cite": {
+                    "items": {
+                        "$ref": "#/definitions/CiteEntry",
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "covers": {
+                    "items": {
+                        "title": "covers",
+                        "type": "string"
+                    },
+                    "title": "covers",
+                    "type": "array"
+                },
+                "dependencies": {
+                    "title": "dependencies",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "description": {
+                    "title": "description",
+                    "type": "string"
+                },
+                "documentation": {
+                    "title": "documentation",
+                    "type": "string"
+                },
+                "format_version": {
+                    "title": "format_version",
+                    "type": "string"
+                },
+                "framework": {
+                    "title": "framework",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "language": {
+                    "title": "language",
+                    "type": "string"
+                },
+                "license": {
+                    "title": "license",
+                    "type": "string"
+                },
+                "name": {
+                    "title": "name",
+                    "type": "string"
+                },
+                "optional_kwargs": {
+                    "title": "optional_kwargs",
+                    "type": "object"
+                },
+                "outputs": {
+                    "$ref": "#/definitions/OutputArray",
+                    "type": "object"
+                },
+                "required_kwargs": {
+                    "items": {
+                        "title": "required_kwargs",
+                        "type": "string"
+                    },
+                    "title": "required_kwargs",
+                    "type": "array"
+                },
+                "source": {
+                    "title": "source",
+                    "type": "string"
+                },
+                "tags": {
+                    "items": {
+                        "title": "tags",
+                        "type": "string"
+                    },
+                    "title": "tags",
+                    "type": "array"
+                },
+                "test_input": {
+                    "title": "test_input",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "test_output": {
+                    "title": "test_output",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                }
+            },
+            "required": [
+                "cite",
+                "description",
+                "documentation",
+                "format_version",
+                "language",
+                "license",
+                "name",
+                "outputs",
+                "source",
+                "tags"
+            ],
+            "type": "object"
+        },
+        "Sampler": {
+            "additionalProperties": false,
+            "properties": {
+                "kwargs": {
+                    "title": "kwargs",
+                    "type": "object"
+                },
+                "readers": {
+                    "items": {
+                        "$ref": "#/definitions/Reader",
+                        "type": "object"
+                    },
+                    "title": "readers",
+                    "type": "array"
+                },
+                "spec": {
+                    "$ref": "#/definitions/SamplerSpec",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "readers"
+            ],
+            "type": "object"
+        },
+        "SamplerSpec": {
+            "additionalProperties": false,
+            "properties": {
+                "authors": {
+                    "items": {
+                        "title": "authors",
+                        "type": "string"
+                    },
+                    "title": "authors",
+                    "type": "array"
+                },
+                "cite": {
+                    "items": {
+                        "$ref": "#/definitions/CiteEntry",
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "covers": {
+                    "items": {
+                        "title": "covers",
+                        "type": "string"
+                    },
+                    "title": "covers",
+                    "type": "array"
+                },
+                "dependencies": {
+                    "title": "dependencies",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "description": {
+                    "title": "description",
+                    "type": "string"
+                },
+                "documentation": {
+                    "title": "documentation",
+                    "type": "string"
+                },
+                "format_version": {
+                    "title": "format_version",
+                    "type": "string"
+                },
+                "framework": {
+                    "title": "framework",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "language": {
+                    "title": "language",
+                    "type": "string"
+                },
+                "license": {
+                    "title": "license",
+                    "type": "string"
+                },
+                "name": {
+                    "title": "name",
+                    "type": "string"
+                },
+                "optional_kwargs": {
+                    "title": "optional_kwargs",
+                    "type": "object"
+                },
+                "outputs": {
+                    "$ref": "#/definitions/OutputArray",
+                    "type": "object"
+                },
+                "required_kwargs": {
+                    "items": {
+                        "title": "required_kwargs",
+                        "type": "string"
+                    },
+                    "title": "required_kwargs",
+                    "type": "array"
+                },
+                "source": {
+                    "title": "source",
+                    "type": "string"
+                },
+                "tags": {
+                    "items": {
+                        "title": "tags",
+                        "type": "string"
+                    },
+                    "title": "tags",
+                    "type": "array"
+                },
+                "test_input": {
+                    "title": "test_input",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "test_output": {
+                    "title": "test_output",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                }
+            },
+            "required": [
+                "cite",
+                "description",
+                "documentation",
+                "format_version",
+                "language",
+                "license",
+                "name",
+                "source",
+                "tags"
+            ],
+            "type": "object"
+        },
+        "Setup": {
+            "additionalProperties": false,
+            "properties": {
+                "losses": {
+                    "items": {
+                        "$ref": "#/definitions/Transformation",
+                        "type": "object"
+                    },
+                    "type": [
+                        "array",
+                        "null"
+                    ]
+                },
+                "optimizer": {
+                    "$ref": "#/definitions/Optimizer",
+                    "type": "object"
+                },
+                "postprocess": {
+                    "items": {
+                        "$ref": "#/definitions/Transformation",
+                        "type": "object"
+                    },
+                    "type": [
+                        "array",
+                        "null"
+                    ]
+                },
+                "preprocess": {
+                    "items": {
+                        "$ref": "#/definitions/Transformation",
+                        "type": "object"
+                    },
+                    "type": [
+                        "array",
+                        "null"
+                    ]
+                },
+                "samplers": {
+                    "items": {
+                        "$ref": "#/definitions/Sampler",
+                        "type": "object"
+                    },
+                    "title": "samplers",
+                    "type": "array"
+                }
+            },
+            "required": [
+                "samplers"
+            ],
+            "type": "object"
+        },
+        "Training": {
+            "additionalProperties": false,
+            "properties": {
+                "dependencies": {
+                    "title": "dependencies",
+                    "type": "string"
+                },
+                "description": {
+                    "title": "description",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "optional_kwargs": {
+                    "title": "optional_kwargs",
+                    "type": "object"
+                },
+                "required_kwargs": {
+                    "items": {
+                        "title": "required_kwargs",
+                        "type": "string"
+                    },
+                    "title": "required_kwargs",
+                    "type": "array"
+                },
+                "setup": {
+                    "$ref": "#/definitions/Setup",
+                    "type": "object"
+                },
+                "source": {
+                    "title": "source",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "dependencies",
+                "source"
+            ],
+            "type": "object"
+        },
+        "Transformation": {
+            "additionalProperties": false,
+            "properties": {
+                "kwargs": {
+                    "title": "kwargs",
+                    "type": "object"
+                },
+                "spec": {
+                    "$ref": "#/definitions/TransformationSpec",
+                    "type": "object"
+                }
+            },
+            "required": [
+                "spec"
+            ],
+            "type": "object"
+        },
+        "TransformationSpec": {
+            "additionalProperties": false,
+            "properties": {
+                "authors": {
+                    "items": {
+                        "title": "authors",
+                        "type": "string"
+                    },
+                    "title": "authors",
+                    "type": "array"
+                },
+                "cite": {
+                    "items": {
+                        "$ref": "#/definitions/CiteEntry",
+                        "type": "object"
+                    },
+                    "type": "array"
+                },
+                "covers": {
+                    "items": {
+                        "title": "covers",
+                        "type": "string"
+                    },
+                    "title": "covers",
+                    "type": "array"
+                },
+                "dependencies": {
+                    "title": "dependencies",
+                    "type": "string"
+                },
+                "description": {
+                    "title": "description",
+                    "type": "string"
+                },
+                "documentation": {
+                    "title": "documentation",
+                    "type": "string"
+                },
+                "format_version": {
+                    "title": "format_version",
+                    "type": "string"
+                },
+                "framework": {
+                    "title": "framework",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "inputs": {
+                    "$ref": "#/definitions/InputArray",
+                    "type": "object"
+                },
+                "language": {
+                    "title": "language",
+                    "type": "string"
+                },
+                "license": {
+                    "title": "license",
+                    "type": "string"
+                },
+                "name": {
+                    "title": "name",
+                    "type": "string"
+                },
+                "optional_kwargs": {
+                    "title": "optional_kwargs",
+                    "type": "object"
+                },
+                "outputs": {
+                    "$ref": "#/definitions/OutputArray",
+                    "type": "object"
+                },
+                "required_kwargs": {
+                    "items": {
+                        "title": "required_kwargs",
+                        "type": "string"
+                    },
+                    "title": "required_kwargs",
+                    "type": "array"
+                },
+                "source": {
+                    "title": "source",
+                    "type": "string"
+                },
+                "tags": {
+                    "items": {
+                        "title": "tags",
+                        "type": "string"
+                    },
+                    "title": "tags",
+                    "type": "array"
+                },
+                "test_input": {
+                    "title": "test_input",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
+                "test_output": {
+                    "title": "test_output",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                }
+            },
+            "required": [
+                "cite",
+                "dependencies",
+                "description",
+                "documentation",
+                "format_version",
+                "inputs",
+                "language",
+                "license",
+                "name",
+                "outputs",
+                "source",
+                "tags"
+            ],
+            "type": "object"
+        },
+        "Weights": {
+            "additionalProperties": false,
+            "properties": {
+                "hash": {
+                    "title": "hash",
+                    "type": "object"
+                },
+                "source": {
+                    "title": "source",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "source"
+            ],
+            "type": "object"
+        }
+    }
+}
