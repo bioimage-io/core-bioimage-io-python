@@ -2,10 +2,29 @@ from urllib.parse import urlparse, ParseResult
 import pathlib
 import typing
 
-from marshmallow.fields import Str, Nested, List, Dict, Integer, Float, Tuple, ValidationError  # noqa
+from marshmallow.fields import (
+    Str,
+    Nested,
+    List,
+    Dict,
+    Integer,
+    Float,
+    Tuple as MarshmallowTuple,
+    ValidationError,
+)  # noqa
 
 from pybio.spec.exceptions import PyBioValidationException
 from pybio.spec import nodes
+
+
+class Tuple(MarshmallowTuple):
+    def _jsonschema_type_mapping(self):
+        import marshmallow_jsonschema
+
+        return {
+            "type": "array",
+            "items": [marshmallow_jsonschema.JSONSchema()._get_schema_for_field(self, tf) for tf in self.tuple_fields],
+        }
 
 
 class SpecURI(Nested):
@@ -151,12 +170,3 @@ class Shape(Nested):
             return self._load(value, data)
         else:
             raise PyBioValidationException(f"Invalid input type: {type(value)}")
-
-
-class VariableLengthTuple(List):
-    def _deserialize(self, value, attr, data, **kwargs) -> typing.Optional[typing.Tuple[typing.Any]]:
-        ret = super()._serialize(value, attr, data, **kwargs)
-        if ret is None:
-            return None
-        else:
-            return tuple(ret)

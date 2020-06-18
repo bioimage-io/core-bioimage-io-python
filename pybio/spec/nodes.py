@@ -72,8 +72,8 @@ class BaseSpec(Node, WithImportableSource):
 
 @dataclass
 class InputShape(Node):
-    min: Tuple[float]
-    step: Tuple[float]
+    min: List[float]
+    step: List[float]
 
     def __len__(self):
         return len(self.min)
@@ -82,8 +82,8 @@ class InputShape(Node):
 @dataclass
 class OutputShape(Node):
     reference_input: Optional[str]
-    scale: Tuple[float]
-    offset: Tuple[int]
+    scale: List[float]
+    offset: List[int]
 
     def __len__(self):
         return len(self.scale)
@@ -102,13 +102,13 @@ class Array(Node):
 
 @dataclass
 class InputArray(Array):
-    shape: Union[Tuple[int, ...], MagicShapeValue, InputShape]
+    shape: Union[List[int], MagicShapeValue, InputShape]
 
 
 @dataclass
 class OutputArray(Array):
-    shape: Union[Tuple[int, ...], MagicShapeValue, OutputShape]
-    halo: Tuple[int, ...]
+    shape: Union[List[int], MagicShapeValue, OutputShape]
+    halo: List[int]
 
 
 @dataclass
