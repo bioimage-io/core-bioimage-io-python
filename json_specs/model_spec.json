@@ -169,10 +169,6 @@
                     "title": "name",
                     "type": "string"
                 },
-                "optional_kwargs": {
-                    "title": "optional_kwargs",
-                    "type": "object"
-                },
                 "outputs": {
                     "items": {
                         "$ref": "#/definitions/OutputArray",
@@ -186,14 +182,6 @@
                 "prediction": {
                     "$ref": "#/definitions/Prediction",
                     "type": "object"
-                },
-                "required_kwargs": {
-                    "items": {
-                        "title": "required_kwargs",
-                        "type": "string"
-                    },
-                    "title": "required_kwargs",
-                    "type": "array"
                 },
                 "source": {
                     "title": "source",
