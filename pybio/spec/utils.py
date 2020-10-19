@@ -232,8 +232,12 @@ class URITransformer(NodeTransformer):
 
     def transform_URI(self, node: nodes.URI) -> io.BytesIO:
         local_path = resolve_uri(node, root_path=self.root_path, cache_path=self.cache_path)
-        with local_path.open(mode="rb") as f:
-            return io.BytesIO(f.read())
+
+        if local_path.is_dir():
+            return local_path
+        else:
+            with local_path.open(mode="rb") as f:
+                return io.BytesIO(f.read())
 
     def transform_ImportablePath(self, node: nodes.ImportablePath) -> ResolvedImportablePath:
         return ResolvedImportablePath(
