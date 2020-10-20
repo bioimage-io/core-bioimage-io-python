@@ -6,7 +6,7 @@ import pytest
 from marshmallow import post_load
 
 from pybio.spec import fields, nodes, schema, utils
-from pybio.spec.nodes import ImportablePath
+from pybio.spec.nodes import ImportablePath, URI
 from pybio.spec.utils import ImportedSource, SourceTransformer, URITransformer
 
 
@@ -105,3 +105,9 @@ def test_resolve_import_path(tmpdir, cache_path):
     Foo = source_transformed.factory
     assert Foo.__name__ == "Foo"
     assert isinstance(Foo, type)
+
+
+def test_resolve_directory_uri(tmpdir, cache_path):
+    node = URI(scheme="", netloc="", path=str(tmpdir), query="")
+    uri_transformed = URITransformer(root_path=Path(tmpdir), cache_path=cache_path).transform(node)
+    assert uri_transformed == Path(tmpdir)
