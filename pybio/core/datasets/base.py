@@ -1,13 +1,11 @@
 from typing import Optional, Sequence, Tuple
 
-import torch.utils.data
-
 from pybio.core.array import PyBioArray
 from pybio.core.transformations import PyBioTransformation
 from pybio.spec.nodes import MagicTensorsValue, OutputArray
 
 
-class PyBioDataset(torch.utils.data.Dataset):
+class PyBioDataset:
     def __init__(self, outputs: Sequence[OutputArray], transformation: Optional[PyBioTransformation] = None):
         if isinstance(outputs, MagicTensorsValue):
             raise ValueError(f"unresolved MagicTensorsValue: {outputs}")
