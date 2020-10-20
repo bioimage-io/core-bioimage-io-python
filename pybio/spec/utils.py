@@ -2,6 +2,7 @@ import dataclasses
 import importlib.util
 import io
 import logging
+import os
 import pathlib
 import subprocess
 import sys
@@ -81,35 +82,17 @@ def get_instance(node: Union[nodes.SpecWithKwargs, nodes.WithImportableSource], 
     if isinstance(node, nodes.SpecWithKwargs):
         joined_spec_kwargs = dict(node.kwargs)
         joined_spec_kwargs.update(kwargs)
-        if isinstance(node, nodes.Reader):
-            if node.transformations:
-                assert "transformations" not in joined_spec_kwargs
-                joined_spec_kwargs["transformations"] = [get_instance(t) for t in node.transformations]
-
-        if isinstance(node, nodes.Sampler):
-            if node.readers:
-                assert "readers" not in joined_spec_kwargs
-                joined_spec_kwargs["readers"] = [get_instance(r) for r in node.readers]
-
         return get_instance(node.spec, **joined_spec_kwargs)
+    elif isinstance(node, nodes.ModelSpec):
+        return get_instance(node.model, **kwargs)
     elif isinstance(node, nodes.WithImportableSource):
         if not isinstance(node.source, ImportedSource):
             raise ValueError(
                 f"Encountered unexpected node.source type {type(node.source)}. `get_instance` requires URITransformer and SourceTransformer to be applied beforehand."
             )
 
-        joined_kwargs = dict(node.optional_kwargs)
+        joined_kwargs = dict(node.kwargs)
         joined_kwargs.update(kwargs)
-        if isinstance(node, nodes.ReaderSpec):
-            assert "outputs" not in joined_kwargs
-            joined_kwargs["outputs"] = node.outputs
-
-        missing_kwargs = [req for req in node.required_kwargs if req not in joined_kwargs]
-        if missing_kwargs:
-            raise PyBioMissingKwargException(
-                f"{node.__class__.__name__} missing required kwargs: {missing_kwargs}\n{node.__class__.__name__}={node}"
-            )
-
         return node.source.factory(**joined_kwargs)
     else:
         raise TypeError(node)
@@ -309,26 +292,15 @@ class MagicKwargsTransformer(NodeTransformer):
         super().__init__()
         self.magic_kwargs = magic_kwargs
 
-    def transform_SpecWithKwargs(self, node: GenericNode) -> GenericNode:
+    def transform_Kwargs(self, node: nodes.Kwargs) -> nodes.Kwargs:
         for key, value in self.magic_kwargs.items():
-            if key in node.spec.required_kwargs and key not in node.kwargs:
-                node.kwargs[key] = value
+            if key in node and node.get(key) is None:
+                node[key] = value
 
-        return dataclasses.replace(
-            node, **{field.name: self.transform(getattr(node, field.name)) for field in fields(node)}
-        )
+        return node
 
-    def transform_Model(self, node: nodes.Model) -> nodes.Model:
-        return self.transform_SpecWithKwargs(node)
-
-    def transform_Reader(self, node: nodes.Reader) -> nodes.Reader:
-        return self.transform_SpecWithKwargs(node)
-
-    def transform_Sampler(self, node: nodes.Sampler) -> nodes.Sampler:
-        return self.transform_SpecWithKwargs(node)
-
-    def transform_Transformation(self, node: nodes.Transformation) -> nodes.Transformation:
-        return self.transform_SpecWithKwargs(node)
+    # def transform_Model(self, node: nodes.Model) -> nodes.Model:
+    #     return self.transform_SpecWithKwargs(node)
 
 
 def load_spec_and_kwargs(
@@ -336,9 +308,9 @@ def load_spec_and_kwargs(
     kwargs: Dict[str, Any] = None,
     *,
     root_path: pathlib.Path = pathlib.Path("."),
-    cache_path: pathlib.Path,
+    cache_path: pathlib.Path = pathlib.Path(os.getenv("PYBIO_CACHE_PATH", "pybio_cache")),
     **spec_kwargs,
-) -> Union[nodes.Model, nodes.Transformation, nodes.Reader, nodes.Sampler]:
+) -> nodes.Model:
     cache_path = cache_path.resolve()
     root_path = root_path.resolve()
     assert root_path.exists(), root_path
@@ -349,12 +321,8 @@ def load_spec_and_kwargs(
     spec_suffix = uri[second_last_dot + 1 : last_dot]
     if spec_suffix == "model":
         tree = schema.Model().load(data)
-    elif spec_suffix == "transformation":
-        tree = schema.Transformation().load(data)
-    elif spec_suffix == "reader":
-        tree = schema.Reader().load(data)
-    elif spec_suffix == "sampler":
-        tree = schema.Sampler().load(data)
+    elif spec_suffix in ("transformation", "reader", "sampler"):
+        raise NotImplementedError(spec_suffix)
     else:
         raise ValueError(f"Invalid spec suffix: {spec_suffix}")
 
@@ -366,14 +334,14 @@ def load_spec_and_kwargs(
     return tree
 
 
-def load_model(*args, **kwargs) -> nodes.Model:
-    ret = load_spec_and_kwargs(*args, **kwargs)
+def load_model(uri: str) -> nodes.Model:
+    ret = load_spec_and_kwargs(uri)
     assert isinstance(ret, nodes.Model)
     return ret
 
 
-def cache_uri(uri_str: str, hash: Dict[str, str], cache_path: pathlib.Path):
-    file_node = schema.File().load({"source": uri_str, "hash": hash})
+def cache_uri(uri_str: str, sha256: str, cache_path: pathlib.Path):
+    file_node = schema.File().load({"source": uri_str, "sha256": sha256})
     uri_transformer = URITransformer(root_path=cache_path, cache_path=cache_path)
     file_node = uri_transformer.transform(file_node)
     file_node = SourceTransformer().transform(file_node)

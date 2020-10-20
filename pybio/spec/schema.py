@@ -1,13 +1,17 @@
 from dataclasses import asdict
 
-from marshmallow import Schema, ValidationError, post_load, pprint, validates, validates_schema
-
+import typing
+from marshmallow import Schema, ValidationError, post_load, validate, validates, validates_schema
+from pprint import pformat, pprint
 from pybio.spec import fields, nodes
 from pybio.spec.exceptions import PyBioValidationException
 from pybio.spec.nodes import MagicShapeValue, MagicTensorsValue
 
 
 class PyBioSchema(Schema):
+    def handle_error(self, error: ValidationError, data: typing.Any, *, many: bool, **kwargs):
+        raise PyBioValidationException("\n" + pformat(error.normalized_messages(), width=120)) from error
+
     @post_load
     def make_object(self, data, **kwargs):
         if not data:
@@ -33,29 +37,27 @@ class CiteEntry(PyBioSchema):
 
 
 class BaseSpec(PyBioSchema):
-    name = fields.Str(required=True)
     format_version = fields.Str(required=True)
+    name = fields.Str(required=True)
     description = fields.Str(required=True)
-    cite = fields.Nested(CiteEntry, many=True, required=True)
+
     authors = fields.List(fields.Str(required=True))
-    documentation = fields.Path(required=True)
+    cite = fields.Nested(CiteEntry, many=True, required=True)
+
+    git_repo = fields.Str(validate=validate.URL(schemes=["http", "https"]))
     tags = fields.List(fields.Str, required=True)
     license = fields.Str(required=True)
 
-    language = fields.Str(required=True)
-    framework = fields.Str(missing=None)
-    source = fields.ImportableSource(required=True)
-    required_kwargs = fields.List(fields.Str, missing=list)
-    optional_kwargs = fields.Dict(fields.Str, missing=dict)
+    documentation = fields.URI(required=True)
+    covers = fields.List(fields.URI, missing=list)
+    attachments = fields.Dict(fields.Str, missing=dict)
 
-    test_input = fields.Path(missing=None)
-    test_output = fields.Path(missing=None)
-    covers = fields.List(fields.Path, missing=list)
+    config = fields.Dict(fields.Str, missing=dict)
 
 
 class SpecWithKwargs(PyBioSchema):
     spec: fields.SpecURI
-    kwargs = fields.Dict(missing=dict)
+    kwargs = fields.Kwargs(fields.Str, missing=nodes.Kwargs)
 
 
 class InputShape(PyBioSchema):
@@ -155,112 +157,57 @@ class OutputArray(Array):
             raise NotImplementedError
 
 
-class TransformationSpec(BaseSpec):
-    dependencies = fields.Dependencies(required=True)
-    inputs = fields.Tensors(
-        InputArray, valid_magic_values=[MagicTensorsValue.any, MagicTensorsValue.dynamic], required=True
-    )
-    outputs = fields.Tensors(
-        OutputArray, valid_magic_values=[MagicTensorsValue.same, MagicTensorsValue.dynamic], required=True
-    )
-
-
-class Transformation(SpecWithKwargs):
-    spec = fields.SpecURI(TransformationSpec, required=True)
-
-
-class Weights(PyBioSchema):
+class WithFileSource(PyBioSchema):
     source = fields.URI(required=True)
-    hash = fields.Dict()
+    sha256 = fields.Str(validate=validate.Length(equal=64))
 
 
-class Prediction(PyBioSchema):
-    weights = fields.Nested(Weights, missing=None)
-    dependencies = fields.Dependencies(missing=None)
-    preprocess = fields.Nested(Transformation, many=True, missing=list)
-    postprocess = fields.Nested(Transformation, many=True, missing=list)
+class File(WithFileSource):
+    pass
 
 
-class ReaderSpec(BaseSpec):
-    dependencies = fields.Dependencies(missing=None)
-    outputs = fields.Tensors(OutputArray, valid_magic_values=[MagicTensorsValue.dynamic], required=True)
-
-
-class Reader(SpecWithKwargs):
-    spec = fields.SpecURI(ReaderSpec)
-    transformations = fields.List(fields.Nested(Transformation), missing=list)
-
-
-class SamplerSpec(BaseSpec):
-    dependencies = fields.Dependencies(missing=None)
-    outputs = fields.Tensors(OutputArray, valid_magic_values=[MagicTensorsValue.dynamic], missing=None)
-
-
-class Sampler(SpecWithKwargs):
-    spec = fields.SpecURI(SamplerSpec)
-    readers = fields.List(fields.Nested(Reader, required=True), required=True)
-
-
-class Optimizer(PyBioSchema):
+class WithImportableSource(PyBioSchema):
     source = fields.ImportableSource(required=True)
-    required_kwargs = fields.List(fields.Str, missing=list)
-    optional_kwargs = fields.Dict(fields.Str, missing=dict)
+    sha256 = fields.Str(validate=validate.Length(equal=64))
+    kwargs = fields.Kwargs(fields.Str, missing=nodes.Kwargs)
 
 
-class Setup(PyBioSchema):
-    samplers = fields.List(fields.Nested(Sampler, required=True), required=True)
-    preprocess = fields.Nested(Transformation, many=True, missing=list)
-    postprocess = fields.Nested(Transformation, many=True, missing=list)
-    losses = fields.Nested(Transformation, many=True, missing=list)
-    optimizer = fields.Nested(Optimizer, missing=None)
+class Weight(WithFileSource):
+    id = fields.Str(required=True)
+    test_input = fields.Path(missing=None)
+    test_output = fields.Path(missing=None)
 
 
-class Training(PyBioSchema):
-    setup = fields.Nested(Setup)
-    source = fields.ImportableSource(required=True)
-    required_kwargs = fields.List(fields.Str, missing=list)
-    optional_kwargs = fields.Dict(fields.Str, missing=dict)
-    dependencies = fields.Dependencies(required=True)
-    description = fields.Str(missing=None)
+class ModelDetails(WithImportableSource):
+    language = fields.Str(validate=validate.OneOf(["python", "java"]))
+    framework = fields.Str(validate=validate.OneOf(["scikit-learn", "pytorch", "tensorflow"]))
+    dependencies = fields.Dependencies(missing=None)
 
 
 class ModelSpec(BaseSpec):
-    prediction = fields.Nested(Prediction)
+    model = fields.Nested(ModelDetails, required=True)
+    weights = fields.List(fields.Nested(Weight), required=True)
     inputs = fields.Tensors(InputArray, valid_magic_values=[MagicTensorsValue.any], many=True)
     outputs = fields.Tensors(
         OutputArray, valid_magic_values=[MagicTensorsValue.same, MagicTensorsValue.dynamic], many=True
     )
-    training = fields.Nested(Training, missing=None)
+    config = fields.Dict(missing=dict)
 
     @validates("outputs")
     def validate_reference_input_names(self, data, **kwargs):
         pass  # todo validate_reference_input_names
-
-    # @validates_schema
-    def input_propagation_from_training_reader(self, data, **kwargs):
-        spec: nodes.ModelSpec = self.make_object(data, **kwargs)
-        if spec.training is None:
-            return
-
-        reader_axes = spec.training.setup.reader.spec.outputs
-        inputs = spec.inputs
-        # todo: model spec validation
 
 
 class Model(SpecWithKwargs):
     spec = fields.SpecURI(ModelSpec, required=True)
 
 
-# helper schemas
-class File(PyBioSchema):
-    source = fields.URI(required=True)
-    hash = fields.Dict()
-
-
 if __name__ == "__main__":
+    from pybio.spec import load_model
+
     try:
         model = load_model(
-            "https://github.com/bioimage-io/example-unet-configurations/blob/marshmallow/models/unet-2d-nuclei-broad/UNet2DNucleiBroad.model.yaml"
+            # "https://github.com/bioimage-io/example-unet-configurations/blob/marshmallow/models/unet-2d-nuclei-broad/UNet2DNucleiBroad.model.yaml"
         )
     except PyBioValidationException as e:
         pprint(e.normalized_messages(), width=280)

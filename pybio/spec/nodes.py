@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from collections import Mapping, UserDict
+from dataclasses import asdict, dataclass, field, make_dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, NewType, Optional, Tuple, Union
@@ -37,11 +38,28 @@ class ImportableModule(Node):
 ImportableSource = Union[ImportableModule, ImportablePath]
 
 
+@dataclass(init=False)
+class Kwargs(Node, Mapping):
+    __data: Dict[str, Any] = field(default_factory=dict)
+
+    def __init__(self, __data = None, **kwargs):
+        assert __data is None or not kwargs
+        self.__data = kwargs if __data is None else __data
+
+    def __iter__(self):
+        return iter(self.__data)
+
+    def __len__(self):
+        return len(self.__data)
+
+    def __getitem__(self, item):
+        return self.__data[item]
+
+
 @dataclass
 class WithImportableSource:
     source: ImportableSource
-    required_kwargs: List[str]
-    optional_kwargs: Dict[str, Any]
+    kwargs: Kwargs
 
 
 @dataclass
@@ -52,22 +70,31 @@ class CiteEntry(Node):
 
 
 @dataclass
-class BaseSpec(Node, WithImportableSource):
-    name: str
+class URI(Node):
+    scheme: str
+    netloc: str
+    path: str
+    query: str
+
+
+@dataclass
+class BaseSpec(Node):
     format_version: str
+    name: str
     description: str
-    cite: List[CiteEntry]
+
     authors: List[str]
-    documentation: Path
+    cite: List[CiteEntry]
+
+    git_repo: str
     tags: List[str]
     license: str
 
-    language: str
-    framework: Optional[str]
+    documentation: URI
+    covers: List[URI]
+    attachments: Dict[str, Any]
 
-    test_input: Optional[Path]
-    test_output: Optional[Path]
-    covers: List[Path]
+    config: Dict[str, Any]
 
 
 @dataclass
@@ -112,24 +139,6 @@ class OutputArray(Array):
 
 
 @dataclass
-class WithInputs:
-    inputs: Union[MagicTensorsValue, List[InputArray]]
-
-
-@dataclass
-class WithOutputs:
-    outputs: Union[MagicTensorsValue, List[OutputArray]]
-
-
-@dataclass
-class URI(Node):
-    scheme: str
-    netloc: str
-    path: str
-    query: str
-
-
-@dataclass
 class SpecURI(URI):
     spec_schema: "pybio.spec.schema.BaseSpec"
 
@@ -137,94 +146,38 @@ class SpecURI(URI):
 @dataclass
 class SpecWithKwargs(Node):
     spec: Union[SpecURI, BaseSpec]
-    kwargs: Dict[str, Any]
+    kwargs: Kwargs
 
 
 Dependencies = NewType("Dependencies", Path)
 
 
 @dataclass
-class TransformationSpec(BaseSpec, WithInputs, WithOutputs):
-    dependencies: Dependencies
-
-
-@dataclass
-class Transformation(SpecWithKwargs):
-    spec: Union[SpecURI, TransformationSpec]
-
-
-@dataclass
 class WithFileSource:
     source: URI
-    hash: Dict[str, str]
+    sha256: str
 
 
 @dataclass
-class Weights(Node, WithFileSource):
-    pass
+class Weight(Node, WithFileSource):
+    id: str
+    test_input: Optional[URI]
+    test_output: Optional[URI]
 
 
 @dataclass
-class Prediction(Node):
-    weights: Optional[Weights]
-    dependencies: Optional[Dependencies]
-    preprocess: List[Transformation]
-    postprocess: List[Transformation]
-
-
-@dataclass
-class ReaderSpec(BaseSpec, WithOutputs):
+class ModelDetails(Node, WithImportableSource):
+    language: str
+    framework: str
     dependencies: Optional[Dependencies]
 
 
 @dataclass
-class Reader(SpecWithKwargs):
-    spec: Union[SpecURI, ReaderSpec]
-    transformations: List[Transformation]
-
-
-@dataclass
-class SamplerSpec(BaseSpec, WithOutputs):
-    dependencies: Optional[Dependencies]
-
-
-@dataclass
-class Sampler(SpecWithKwargs):
-    spec: Union[SpecURI, SamplerSpec]
-    readers: List[Reader]
-
-
-@dataclass
-class Optimizer(Node, WithImportableSource):
-    pass
-
-
-@dataclass
-class Setup(Node):
-    samplers: List[Sampler]
-    preprocess: List[Transformation]
-    postprocess: List[Transformation]
-    losses: List[Transformation]
-    optimizer: Optimizer
-    # todo: make non-optional (here, but add as optional to schmea) todo: add real meta sampler
-    sampler: Optional[Sampler] = None
-
-    def __post_init__(self):
-        assert len(self.samplers) == 1
-        self.sampler = self.samplers[0]
-
-
-@dataclass
-class Training(Node, WithImportableSource):
-    setup: Setup
-    dependencies: Dependencies
-    description: Optional[str]
-
-
-@dataclass
-class ModelSpec(BaseSpec, WithInputs, WithOutputs):
-    prediction: Prediction
-    training: Optional[Training]
+class ModelSpec(BaseSpec):
+    inputs: Union[MagicTensorsValue, List[InputArray]]
+    outputs: Union[MagicTensorsValue, List[OutputArray]]
+    model: ModelDetails
+    weights: List[Weight]
 
 
 @dataclass

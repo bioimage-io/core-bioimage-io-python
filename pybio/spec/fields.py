@@ -59,6 +59,11 @@ class Path(Str):
         path_str = super()._deserialize(*args, **kwargs)
         return pathlib.Path(path_str)
 
+class SHA256(Str):
+    def _deserialize(self, *args, **kwargs):
+        value_str = super()._deserialize(*args, **kwargs)
+        return value_str
+
 
 class ImportableSource(Str):
     @staticmethod
@@ -89,6 +94,15 @@ class ImportableSource(Str):
             module_path, object_name = parts
 
             return nodes.ImportablePath(callable_name=object_name, filepath=module_path)
+        else:
+            raise ValidationError(source_str)
+
+
+
+class Kwargs(Dict):
+    def _deserialize(self, value, attr, data, **kwargs):
+        return nodes.Kwargs(**value)
+
 
 
 class Axes(Str):

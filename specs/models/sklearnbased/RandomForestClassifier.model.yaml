@@ -1,0 +1,89 @@
+format_version: 0.3.0
+
+name: sklearnRandomForestClassifierBroadNucleusData
+description: Random Forest Classifier form scikit-learn
+
+authors:
+  - Fynn Beuttenmueller
+cite:
+  - text: L. Breiman, "Random Forests", Machine Learning, 45(1), 5-32, 2001
+    url: https://scikit-learn.org/stable/modules/generated/sklearnbased.ensemble.RandomForestClassifier.html
+
+git_repo: https://github.com/bioimage-io/python-bioimage-io/tree/master/specs/models/sklearnbased
+tags: [test, rf, random, forest, example]
+license: MIT
+
+documentation: sklearnbased.md
+covers: []
+attachments: {}
+
+inputs:
+  - name: raw
+    axes: bcyx
+    data_type: float32
+    data_range: [-inf, inf]
+    shape: any
+
+outputs:
+  - name: probability in [0,1]
+    axes: bcyx
+    data_type: float32
+    data_range: [-inf, inf]
+    halo: [0, 0, 32, 32]
+    shape:
+      reference_input: raw
+      scale: [1, 1, 1, 1]
+      offset: [0, 0, 0, 0]
+
+model:
+  language: python
+  framework: scikit-learn
+  source: pybio.core.models.sklearnbased.RandomForestClassifier
+  kwargs:
+    c_indices: [1, 1]
+    n_estimators: 10
+    criterion: gini
+    max_depth: null
+    min_samples_split: 2
+    min_samples_leaf: 1
+    min_weight_fraction_leaf: 0.0
+    max_features: auto
+    max_leaf_nodes: null
+    min_impurity_decrease: 0.0
+    bootstrap: true
+    oob_score: false
+    n_jobs: 1
+    random_state: 0
+    verbose: 0
+    warm_start: false
+    class_weight: null
+  dependencies: conda:../env_numpy.yaml
+
+weights: []
+#  - id: default
+#    test_input: null # ../test_input.npy
+#    test_output: null # ../test_output.npy
+#    source: todo.source
+#    sha256: abcdefghabcdefghabcdefghabcdefghabcdefghabcdefghabcdefghabcdefgh
+
+
+config:
+  sklearnbased:
+
+    setup:
+      samplers:
+        - spec: ../../samplers/SequentialSamplerAlongDimension.sampler.yaml
+          kwargs: {sample_dimensions: [0, 0]}
+          readers:
+            - spec: ../../readers/BroadNucleusDataBinarized.reader.yaml
+              transformations:
+                - spec: ../../transformations/NormalizeZeroMeanUnitVariance.transformation.yaml
+
+    source: pybio.core.training.classic_fit.classic_fit
+    required_kwargs: [pybio_model]
+    optional_kwargs: {start: 0, batch_size: 1}
+    # enable different ways of specifying the dependencies.
+    # this would hold all training dependencies, e.g. as a frozen conda environment
+    # or as a pom.xml
+    dependencies: conda:./test_env.yaml  # this is a file to the dependencies
+    description: todo describe training

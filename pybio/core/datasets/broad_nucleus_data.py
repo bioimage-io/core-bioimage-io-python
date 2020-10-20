@@ -1,15 +1,15 @@
 import os
 import zipfile
 from pathlib import Path
-from typing import Sequence, Tuple, Optional
+from typing import Tuple
 from urllib.request import urlretrieve
 
 import imageio
 import numpy
 import numpy as np
 
-from pybio.core.readers.base import PyBioReader
-from pybio.spec.nodes import MagicShapeValue, OutputArray
+from pybio.core.datasets.base import PyBioDataset
+from pybio.spec.nodes import Axes, OutputArray
 
 
 def download_data(url, data_dir: Path, prefix: str):
@@ -53,7 +53,7 @@ def load_images(files):
     return np.stack(images)
 
 
-class BroadNucleusDataBinarized(PyBioReader):
+class BroadNucleusDataBinarized(PyBioDataset):
     # TODO store hashes and validate
     urls = {
         "images": "https://data.broadinstitute.org/bbbc/BBBC039/images.zip",
@@ -76,7 +76,7 @@ class BroadNucleusDataBinarized(PyBioReader):
         labels = labels.astype("bool")
 
         image_list = load_file_list(train_list, data_dir / "images", is_tif=True)
-        images = load_images(image_list).astype("float32")
+        images = load_images(image_list).astype("uint16", copy=False)
 
         # crop = np.s_[:, :512, :512]
         # images = images[crop]
@@ -85,8 +85,7 @@ class BroadNucleusDataBinarized(PyBioReader):
 
         return images, labels
 
-    def __init__(self, subset: str = "training", *, cache_path: Path, outputs: Sequence[OutputArray], **super_kwargs):
-        assert all(isinstance(out, OutputArray) for out in outputs)
+    def __init__(self, subset: str = "training", *, cache_path: Path, **super_kwargs):
         self.x, self.y = self.get_data(cache_path / "BroadNucleusDataBinarizedPyBioReader", subset)
         if len(self.x) != len(self.y):
             raise RuntimeError("Invalid data")
@@ -94,15 +93,24 @@ class BroadNucleusDataBinarized(PyBioReader):
         assert len(self.x.shape) == 3
         assert len(self.y.shape) == 3
 
-        dynamic_shape = (self.x.shape, self.y.shape)
-        assert len(dynamic_shape) == len(outputs)
-        outputs = list(outputs)
-        for out, s in zip(outputs, dynamic_shape):
-            if s is None:
-                assert isinstance(out.shape, tuple), type(out)
-            else:
-                assert out.shape == MagicShapeValue.dynamic
-                out.shape = s
+        outputs = [
+            OutputArray(
+                name="raw",
+                axes=Axes("bxy"),
+                data_type="uint16",
+                data_range=(numpy.iinfo(numpy.uint16).min, numpy.iinfo(numpy.uint16).max),
+                shape=list(self.x.shape),
+                halo=[0, 0, 0],
+            ),
+            OutputArray(
+                name="target",
+                axes=Axes("bxy"),
+                data_type="float32",
+                data_range=(numpy.float("-inf"), numpy.float("inf")),
+                shape=list(self.y.shape),
+                halo=[0, 0, 0],
+            ),
+        ]
 
         super().__init__(outputs=outputs, **super_kwargs)
         assert self.axes == ("bxy", "bxy"), self.axes
@@ -111,4 +119,4 @@ class BroadNucleusDataBinarized(PyBioReader):
         self, index: Tuple[Tuple[slice, slice, slice], Tuple[slice, slice, slice]]
     ) -> Tuple[numpy.ndarray, numpy.ndarray]:
         x, y = self.x[index[0]], self.y[index[1]]
-        return self.apply_transformations(x, y)
+        return self.apply_transformation(x, y)

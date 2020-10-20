@@ -62,17 +62,6 @@ class SynchronizedPyBioTransformation(PyBioTransformation):
         return super().apply(*tensors)
 
 
-def apply_transformations(transformations: Sequence[PyBioTransformation], *tensors: PyBioArray) -> List[PyBioArray]:
-    """ Helper function to apply a list of transformations to input tensors.
-    """
-    if not all(isinstance(trafo, PyBioTransformation) for trafo in transformations):
-        raise ValueError("Expect iterable of transformations")
-    for trafo in transformations:
-        tensors = trafo.apply(*tensors)
-
-    return tensors
-
-
 def make_concatenated_apply(
     transformations: Sequence[PyBioTransformation]
 ) -> Callable[[Tuple[PyBioArray]], List[PyBioArray]]:

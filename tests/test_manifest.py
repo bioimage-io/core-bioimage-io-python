@@ -21,28 +21,11 @@ def pytest_generate_tests(metafunc):
 
 @pytest.fixture
 def required_spec_kwargs():
-    local_pybio_path = Path(__file__).parent.parent
     kwargs = yaml.safe_load(
-        f"""
-specs/transformations/Reshape.transformation.yaml:
-    kwargs:
-        shape: [-1]
+        """
 specs/models/sklearnbased/RandomForestClassifierBroadNucleusDataBinarized.model.yaml: 
     kwargs:
         c_indices: [1]
-specs/samplers/SequentialSamplerAlongDimension.sampler.yaml:
-    readers: 
-        - spec: {str(local_pybio_path / "specs/readers/BroadNucleusDataBinarized.reader.yaml")}
-    kwargs: 
-        sample_dimensions: [0, 0]
-specs/transformations/Cast.transformation.yaml:
-    kwargs:
-        dtype: float32
-specs/transformations/NormalizeRange.transformation.yaml:
-    kwargs:
-        apply_to: 0
-        output_min: -1.0
-        output_max: 1.0
     """
     )
 
