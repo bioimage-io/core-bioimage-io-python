@@ -96,7 +96,7 @@ class BroadNucleusDataBinarized(PyBioDataset):
         outputs = [
             OutputArray(
                 name="raw",
-                axes=Axes("bxy"),
+                axes=Axes("byx"),
                 data_type="uint16",
                 data_range=(numpy.iinfo(numpy.uint16).min, numpy.iinfo(numpy.uint16).max),
                 shape=list(self.x.shape),
@@ -104,7 +104,7 @@ class BroadNucleusDataBinarized(PyBioDataset):
             ),
             OutputArray(
                 name="target",
-                axes=Axes("bxy"),
+                axes=Axes("byx"),
                 data_type="float32",
                 data_range=(numpy.float("-inf"), numpy.float("inf")),
                 shape=list(self.y.shape),
@@ -113,7 +113,6 @@ class BroadNucleusDataBinarized(PyBioDataset):
         ]
 
         super().__init__(outputs=outputs, **super_kwargs)
-        assert self.axes == ("bxy", "bxy"), self.axes
 
     def __getitem__(
         self, index: Tuple[Tuple[slice, slice, slice], Tuple[slice, slice, slice]]

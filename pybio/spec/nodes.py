@@ -1,8 +1,18 @@
-from collections import Mapping, UserDict
-from dataclasses import asdict, dataclass, field, make_dataclass
+from collections import Mapping
+from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, NewType, Optional, Tuple, Union
+
+try:
+    from typing import Literal
+except ImportError:
+
+    class LiteralDummy:
+        def __getitem__(self, item):
+            return Any
+
+    Literal = LiteralDummy()
 
 import pybio
 
@@ -42,7 +52,7 @@ ImportableSource = Union[ImportableModule, ImportablePath]
 class Kwargs(Node, Mapping):
     __data: Dict[str, Any] = field(default_factory=dict)
 
-    def __init__(self, __data = None, **kwargs):
+    def __init__(self, __data=None, **kwargs):
         assert __data is None or not kwargs
         self.__data = kwargs if __data is None else __data
 
@@ -55,10 +65,14 @@ class Kwargs(Node, Mapping):
     def __getitem__(self, item):
         return self.__data[item]
 
+    def __setitem__(self, key, value):
+        self.__data[key] = value
+
 
 @dataclass
 class WithImportableSource:
     source: ImportableSource
+    sha256: str
     kwargs: Kwargs
 
 
@@ -130,6 +144,7 @@ class Array(Node):
 @dataclass
 class InputArray(Array):
     shape: Union[List[int], MagicShapeValue, InputShape]
+    normalization: Optional[Literal["zero_mean_unit_variance"]]
 
 
 @dataclass
@@ -166,18 +181,17 @@ class Weight(Node, WithFileSource):
 
 
 @dataclass
-class ModelDetails(Node, WithImportableSource):
+class ModelSpec(BaseSpec, WithImportableSource):
     language: str
     framework: str
+    weights_format: Literal["pickle", "pytorch", "keras"]
     dependencies: Optional[Dependencies]
 
-
-@dataclass
-class ModelSpec(BaseSpec):
+    weights: List[Weight]
     inputs: Union[MagicTensorsValue, List[InputArray]]
     outputs: Union[MagicTensorsValue, List[OutputArray]]
-    model: ModelDetails
-    weights: List[Weight]
+
+    config: Dict
 
 
 @dataclass

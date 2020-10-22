@@ -25,7 +25,7 @@ def required_spec_kwargs():
         """
 specs/models/sklearnbased/RandomForestClassifierBroadNucleusDataBinarized.model.yaml: 
     kwargs:
-        c_indices: [1]
+        channel_indices: [1]
     """
     )
 

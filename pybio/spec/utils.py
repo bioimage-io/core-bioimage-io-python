@@ -10,7 +10,7 @@ import uuid
 from dataclasses import fields
 from typing import Any, Callable, Dict, Optional, TypeVar, Union
 from urllib.parse import ParseResult, urlunparse
-from urllib.request import urlretrieve
+from urllib.request import url2pathname, urlretrieve
 
 import yaml
 
@@ -78,7 +78,7 @@ class ImportedSource:
         return self.factory(*args, **kwargs)
 
 
-def get_instance(node: Union[nodes.SpecWithKwargs, nodes.WithImportableSource], **kwargs):
+def get_instance(node: Union[nodes.SpecWithKwargs, nodes.BaseSpec, nodes.WithImportableSource], **kwargs):
     if isinstance(node, nodes.SpecWithKwargs):
         joined_spec_kwargs = dict(node.kwargs)
         joined_spec_kwargs.update(kwargs)
@@ -99,12 +99,15 @@ def get_instance(node: Union[nodes.SpecWithKwargs, nodes.WithImportableSource], 
 
 
 def train(model: nodes.Model, **kwargs) -> Any:
+    raise NotImplementedError
     # resolve magic kwargs
     available_magic_kwargs = {"pybio_model": model}
-    enchanted_kwargs = {req: available_magic_kwargs[req] for req in model.spec.training.required_kwargs}
+    enchanted_kwargs = {
+        req: available_magic_kwargs[req] for req in model.spec.config["pybio"]["training"].get("required_kwargs", {})
+    }
     enchanted_kwargs.update(kwargs)
 
-    return get_instance(model.spec.training, **enchanted_kwargs)
+    return get_instance(model.spec.config["pybio"]["training"], **enchanted_kwargs)
 
 
 def resolve_uri(
@@ -121,11 +124,10 @@ def resolve_uri(
         else:
             local_path = root_path / uri_node.path
     elif uri_node.scheme == "file":
-        raise NotImplementedError
-        # things to keep in mind when implementing this:
-        # - problems with absolute paths on windows:
-        #   >>> assert Path(urlparse(WindowsPath().absolute().as_uri()).path).exists() fails
-        # - relative paths are invalid URIs
+        if uri_node.netloc or uri_node.query:
+            raise NotImplementedError(uri_node)
+
+        local_path = pathlib.Path(url2pathname(uri_node.path))
     elif uri_node.netloc == "github.com":
         orga, repo_name, blob_releases_archive, commit_id, *in_repo_path = uri_node.path.strip("/").split("/")
         if blob_releases_archive == "releases":
@@ -213,14 +215,14 @@ class URITransformer(NodeTransformer):
         subtransformer = self.__class__(root_path=local_path.parent, cache_path=self.cache_path)
         return subtransformer.transform(resolved_node)
 
-    def transform_URI(self, node: nodes.URI) -> io.BytesIO:
+    def transform_URI(self, node: nodes.URI) -> pathlib.Path:
         local_path = resolve_uri(node, root_path=self.root_path, cache_path=self.cache_path)
-
-        if local_path.is_dir():
-            return local_path
-        else:
-            with local_path.open(mode="rb") as f:
-                return io.BytesIO(f.read())
+        return local_path
+        # if local_path.is_dir():
+        #     return local_path
+        # else:
+        #     with local_path.open(mode="rb") as f:
+        #         return io.BytesIO(f.read())
 
     def transform_ImportablePath(self, node: nodes.ImportablePath) -> ResolvedImportablePath:
         return ResolvedImportablePath(
@@ -294,13 +296,10 @@ class MagicKwargsTransformer(NodeTransformer):
 
     def transform_Kwargs(self, node: nodes.Kwargs) -> nodes.Kwargs:
         for key, value in self.magic_kwargs.items():
-            if key in node and node.get(key) is None:
+            if key in node and node[key] is None:
                 node[key] = value
 
         return node
-
-    # def transform_Model(self, node: nodes.Model) -> nodes.Model:
-    #     return self.transform_SpecWithKwargs(node)
 
 
 def load_spec_and_kwargs(
@@ -315,7 +314,7 @@ def load_spec_and_kwargs(
     root_path = root_path.resolve()
     assert root_path.exists(), root_path
 
-    data = {"spec": str(root_path / uri), "kwargs": kwargs or {}, **spec_kwargs}
+    data = {"spec": uri, "kwargs": kwargs or {}, **spec_kwargs}
     last_dot = uri.rfind(".")
     second_last_dot = uri[:last_dot].rfind(".")
     spec_suffix = uri[second_last_dot + 1 : last_dot]

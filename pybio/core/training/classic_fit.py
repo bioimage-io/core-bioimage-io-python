@@ -21,13 +21,24 @@ def classic_fit(pybio_model: Model):
 
 
 def train_rf():
-    pybio_model = load_model(str((Path(__file__).parent / "../../../specs/models/sklearnbased/RandomForestClassifier.model.yaml").resolve()))
+    pybio_model = load_model(
+        str((Path(__file__).parent / "../../../specs/models/sklearnbased/RandomForestClassifier.model.yaml").resolve())
+    )
     rf = classic_fit(pybio_model)
     weight = rf.get_weights()
     Path("/repos/python-bioimage-io/rf_v0.pickle").write_bytes(weight)
 
-def load_rf_weight():
-    pybio_model = load_model(str((Path(__file__).parent / "../../../specs/models/sklearnbased/RandomForestClassifier.model.yaml").resolve()))
+
+def load_rf_weight_from_weights():
+    pybio_model = load_model(
+        str((Path(__file__).parent / "../../../specs/models/sklearnbased/RandomForestClassifier.model.yaml").resolve())
+    )
+    p: Path = pybio_model.spec.weights[0].source  # noqa
+    with p.open("rb") as f:
+        rf.set_weights(f.read())
+
+    return rf
+
 
 if __name__ == "__main__":
-    pass
+    rf = load_rf_weight()

@@ -1,4 +1,3 @@
-import pickle
 from typing import Optional, Sequence
 
 import numpy
@@ -6,19 +5,11 @@ import sklearn.ensemble
 
 
 class RandomForestClassifier:
-    @classmethod
-    def from_weight(cls, weight: bytes) -> "RandomForestClassifier":
-        from_weight = pickle.loads(weight)
-        if not isinstance(from_weight, cls):
-            raise ValueError(f"invalid weight: {from_weight}")
-
-        return from_weight
-
-    def __init__(self, c_indices: Sequence[Optional[int]], **kwargs):
-        self.c_indices = list(c_indices)
+    def __init__(self, channel_indices: Sequence[Optional[int]], **kwargs):
+        self.c_indices = list(channel_indices)
         self.clf = sklearn.ensemble.RandomForestClassifier(**kwargs)
 
-    def to_bc(self, arrays):
+    def to_bc(self, arrays: Sequence[numpy.ndarray]):
         return numpy.concatenate(
             [
                 array.flatten()[:, None]
@@ -29,8 +20,8 @@ class RandomForestClassifier:
             axis=0,
         )
 
-    def from_bc(self, arrays, original_arrays):
-        arrays = numpy.split(arrays, len(original_arrays))
+    def from_bc(self, bc_array: numpy.ndarray, original_arrays: Sequence[numpy.ndarray]):
+        bc_arrays = numpy.split(bc_array, len(original_arrays))
         o_shapes_c_last = [list(oa.shape) for oa in original_arrays]
         [
             o_shape.append(o_shape.pop(self.c_indices[i]))
@@ -38,14 +29,14 @@ class RandomForestClassifier:
             if self.c_indices[i] is not None
         ]
 
-        reshaped_c_last = [a.reshape(o_shape) for a, o_shape in zip(arrays, o_shapes_c_last)]
+        reshaped_c_last = [a.reshape(o_shape) for a, o_shape in zip(bc_arrays, o_shapes_c_last)]
         reshaped = [
             a if self.c_indices[i] is None else numpy.moveaxis(a, -1, self.c_indices[i])
             for i, a in enumerate(reshaped_c_last)
         ]
         return reshaped
 
-    def __call__(self, *arrays):
+    def __call__(self, arrays: Sequence[numpy.ndarray]):
         bc_arrays = self.to_bc(arrays)
         bc_predictions = self.clf.predict(bc_arrays)
         return self.from_bc(bc_predictions, arrays)
@@ -54,6 +45,3 @@ class RandomForestClassifier:
         X_bc = self.to_bc(inputs)
         y_bc = self.to_bc(targets)
         self.clf.fit(X_bc, y_bc)
-
-    def get_weights(self):
-        return pickle.dumps(self.clf)

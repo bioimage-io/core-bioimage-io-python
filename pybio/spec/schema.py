@@ -1,6 +1,8 @@
 from dataclasses import asdict
 
 import typing
+from pathlib import Path
+
 from marshmallow import Schema, ValidationError, post_load, validate, validates, validates_schema
 from pprint import pformat, pprint
 from pybio.spec import fields, nodes
@@ -108,6 +110,7 @@ class Array(PyBioSchema):
 
 class InputArray(Array):
     shape = fields.Shape(InputShape, valid_magic_values=[MagicShapeValue.any], required=True)
+    normalization = fields.Str(validate=validate.OneOf(["zero_mean_unit_variance"]), missing=None)
 
     @validates_schema
     def zero_batch_step(self, data, **kwargs):
@@ -166,26 +169,22 @@ class File(WithFileSource):
     pass
 
 
-class WithImportableSource(PyBioSchema):
-    source = fields.ImportableSource(required=True)
-    sha256 = fields.Str(validate=validate.Length(equal=64))
-    kwargs = fields.Kwargs(fields.Str, missing=nodes.Kwargs)
-
-
 class Weight(WithFileSource):
     id = fields.Str(required=True)
     test_input = fields.Path(missing=None)
     test_output = fields.Path(missing=None)
 
 
-class ModelDetails(WithImportableSource):
+class ModelSpec(BaseSpec):
     language = fields.Str(validate=validate.OneOf(["python", "java"]))
     framework = fields.Str(validate=validate.OneOf(["scikit-learn", "pytorch", "tensorflow"]))
+    weights_format = fields.Str(validate=validate.OneOf(["pickle", "pytorch", "keras"]), required=True)
     dependencies = fields.Dependencies(missing=None)
 
+    source = fields.ImportableSource(missing=None)
+    sha256 = fields.Str(validate=validate.Length(equal=64), missing=None)
+    kwargs = fields.Kwargs(fields.Str, missing=nodes.Kwargs)
 
-class ModelSpec(BaseSpec):
-    model = fields.Nested(ModelDetails, required=True)
     weights = fields.List(fields.Nested(Weight), required=True)
     inputs = fields.Tensors(InputArray, valid_magic_values=[MagicTensorsValue.any], many=True)
     outputs = fields.Tensors(
@@ -197,6 +196,24 @@ class ModelSpec(BaseSpec):
     def validate_reference_input_names(self, data, **kwargs):
         pass  # todo validate_reference_input_names
 
+    @validates_schema
+    def language_and_framework_and_weights_format_match(self, data, **kwargs):
+        names = ["language", "framework", "weights_format"]
+        valid_combinations = {
+            ("python", "scikit-learn", "pickle"): {"requires_source": False},
+            ("python", "pytorch", "pytorch"): {"requires_source": True},
+            ("python", "tensorflow", "keras"): {"requires_source": False},
+            ("java", "tensorflow", "keras"): {"requires_source": False},
+        }
+        combination = tuple(data[name] for name in names)
+        if combination not in valid_combinations:
+            raise PyBioValidationException(f"invalid combination of {dict(zip(names, combination))}")
+
+        if valid_combinations[combination]["requires_source"] and (data["source"] is None or data["sha256"] is None):
+            raise PyBioValidationException(
+                f"{dict(zip(names, combination))} require source code (and its sha256 hash) to be specified."
+            )
+
 
 class Model(SpecWithKwargs):
     spec = fields.SpecURI(ModelSpec, required=True)
@@ -207,7 +224,7 @@ if __name__ == "__main__":
 
     try:
         model = load_model(
-            # "https://github.com/bioimage-io/example-unet-configurations/blob/marshmallow/models/unet-2d-nuclei-broad/UNet2DNucleiBroad.model.yaml"
+            (Path(__file__) / "../../../specs/models/sklearnbased/RandomForestClassifier.model.yaml").as_uri()
         )
     except PyBioValidationException as e:
         pprint(e.normalized_messages(), width=280)
