@@ -43,7 +43,7 @@ class BaseSpec(PyBioSchema):
     name = fields.Str(required=True)
     description = fields.Str(required=True)
 
-    authors = fields.List(fields.Str(required=True))
+    authors = fields.List(fields.Str)
     cite = fields.Nested(CiteEntry, many=True, required=True)
 
     git_repo = fields.Str(validate=validate.URL(schemes=["http", "https"]))
@@ -93,7 +93,8 @@ class OutputShape(PyBioSchema):
 
 
 class Array(PyBioSchema):
-    name = fields.Str(required=True)
+    name = fields.Str(required=True, validate=validate.Predicate("isidentifier"))
+    description = fields.Str(required=True)
     axes = fields.Axes(missing=None)
     data_type = fields.Str(required=True)
     data_range = fields.Tuple((fields.Float(allow_nan=True), fields.Float(allow_nan=True)))
@@ -170,9 +171,17 @@ class File(WithFileSource):
 
 
 class Weight(WithFileSource):
-    id = fields.Str(required=True)
-    test_input = fields.Path(missing=None)
-    test_output = fields.Path(missing=None)
+    id = fields.Str(required=True, validate=validate.Predicate("isidentifier"))
+    name = fields.Str(required=True)
+    description = fields.Str(required=True)
+    authors = fields.List(fields.Str)
+    covers = fields.List(fields.URI, missing=list)
+    test_inputs = fields.List(fields.URI(required=True), required=True)
+    test_outputs = fields.List(fields.URI(required=True), required=True)
+    timestamp = fields.DateTime(required=True)
+    documentation = fields.URI(missing=None)
+    tags = fields.List(fields.Str, required=True)
+    attachments = fields.Dict(missing=dict)
 
 
 class ModelSpec(BaseSpec):
@@ -220,10 +229,10 @@ class Model(SpecWithKwargs):
 
 
 if __name__ == "__main__":
-    from pybio.spec import load_model
+    from pybio.spec import load_model_config
 
     try:
-        model = load_model(
+        model = load_model_config(
             (Path(__file__) / "../../../specs/models/sklearnbased/RandomForestClassifier.model.yaml").as_uri()
         )
     except PyBioValidationException as e:

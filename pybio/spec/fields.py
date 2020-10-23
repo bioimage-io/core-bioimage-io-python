@@ -1,20 +1,21 @@
-from urllib.parse import urlparse, ParseResult
 import pathlib
 import typing
+from urllib.parse import urlparse
 
 from marshmallow.fields import (
-    Str,
-    Nested,
-    List,
+    DateTime,  # noqa
     Dict,
-    Integer,
-    Float,
+    Float,  # noqa
+    Integer,  # noqa
+    List,  # noqa
+    Nested,
+    Str,
     Tuple as MarshmallowTuple,
     ValidationError,
-)  # noqa
+)
 
-from pybio.spec.exceptions import PyBioValidationException
 from pybio.spec import nodes
+from pybio.spec.exceptions import PyBioValidationException
 
 
 class Tuple(MarshmallowTuple):
@@ -59,6 +60,7 @@ class Path(Str):
         path_str = super()._deserialize(*args, **kwargs)
         return pathlib.Path(path_str)
 
+
 class SHA256(Str):
     def _deserialize(self, *args, **kwargs):
         value_str = super()._deserialize(*args, **kwargs)
@@ -98,11 +100,9 @@ class ImportableSource(Str):
             raise ValidationError(source_str)
 
 
-
 class Kwargs(Dict):
     def _deserialize(self, value, attr, data, **kwargs):
         return nodes.Kwargs(**value)
-
 
 
 class Axes(Str):

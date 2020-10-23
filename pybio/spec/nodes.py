@@ -1,5 +1,6 @@
 from collections import Mapping
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, List, NewType, Optional, Tuple, Union
@@ -136,6 +137,7 @@ Axes = NewType("Axes", str)
 @dataclass
 class Array(Node):
     name: str
+    description: str
     axes: Optional[Axes]
     data_type: str
     data_range: Tuple[float, float]
@@ -176,8 +178,16 @@ class WithFileSource:
 @dataclass
 class Weight(Node, WithFileSource):
     id: str
-    test_input: Optional[URI]
-    test_output: Optional[URI]
+    name: str
+    description: str
+    authors: List[str]
+    covers: List[URI]
+    test_inputs: List[URI]
+    test_outputs: List[URI]
+    timestamp: datetime
+    documentation: Optional[URI]
+    tags: List[str]
+    attachments: Dict
 
 
 @dataclass

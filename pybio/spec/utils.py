@@ -1,6 +1,5 @@
 import dataclasses
 import importlib.util
-import io
 import logging
 import os
 import pathlib
@@ -14,8 +13,9 @@ from urllib.request import url2pathname, urlretrieve
 
 import yaml
 
+from pybio.core.cache import cache_path
 from . import nodes, schema
-from .exceptions import InvalidDoiException, PyBioMissingKwargException, PyBioValidationException
+from .exceptions import InvalidDoiException, PyBioValidationException
 
 
 def iter_fields(node: nodes.Node):
@@ -110,19 +110,12 @@ def train(model: nodes.Model, **kwargs) -> Any:
     return get_instance(model.spec.config["pybio"]["training"], **enchanted_kwargs)
 
 
-def resolve_uri(
-    uri_node: nodes.URI, cache_path: pathlib.Path, root_path: Optional[pathlib.Path] = None
-) -> pathlib.Path:
-    if (
-        uri_node.scheme == "" or len(uri_node.scheme) == 1
-    ):  # Guess that scheme is not a scheme, but a windows path drive letter instead for uri.scheme == 1
+def resolve_uri(uri_node: nodes.URI, cache_path: pathlib.Path, root_path: pathlib.Path) -> pathlib.Path:
+    if uri_node.scheme == "":  # relative path
         if uri_node.netloc:
             raise PyBioValidationException(f"Invalid Path/URI: {uri_node}")
 
-        if root_path is None:
-            local_path = pathlib.Path(uri_node.path)
-        else:
-            local_path = root_path / uri_node.path
+        local_path = root_path / uri_node.path
     elif uri_node.scheme == "file":
         if uri_node.netloc or uri_node.query:
             raise NotImplementedError(uri_node)
@@ -333,13 +326,16 @@ def load_spec_and_kwargs(
     return tree
 
 
-def load_model(uri: str) -> nodes.Model:
+def load_model_config(uri: Union[pathlib.Path, str]) -> nodes.Model:
+    if isinstance(uri, pathlib.Path):
+        uri = uri.as_uri()
+
     ret = load_spec_and_kwargs(uri)
     assert isinstance(ret, nodes.Model)
     return ret
 
 
-def cache_uri(uri_str: str, sha256: str, cache_path: pathlib.Path):
+def cache_uri(uri_str: str, sha256: str) -> pathlib.Path:
     file_node = schema.File().load({"source": uri_str, "sha256": sha256})
     uri_transformer = URITransformer(root_path=cache_path, cache_path=cache_path)
     file_node = uri_transformer.transform(file_node)

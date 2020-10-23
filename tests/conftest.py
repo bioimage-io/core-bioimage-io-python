@@ -1,9 +1,10 @@
-import os
 from pathlib import Path
 
 import pytest
 
+from pybio.spec import load_model_config
+
 
 @pytest.fixture
-def cache_path(tmp_path):
-    return Path(os.getenv("PYBIO_CACHE_PATH", tmp_path))
+def rf_config():
+    return load_model_config(Path(__file__) / "../../specs/models/sklearn/RandomForestClassifier.model.yaml").spec
