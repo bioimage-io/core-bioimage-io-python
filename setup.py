@@ -29,6 +29,8 @@ setup(
         "marshmallow>=3.3.0,<3.5",
         "PyYAML>=5.2",
         "requests",
+        "typer",
+        "ruamel.yaml",
     ],
     extras_require={"core": ["numpy", "sklearn", "imageio"], "test": ["pytest", "tox"]},
     project_urls={  # Optional
