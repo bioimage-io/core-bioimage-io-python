@@ -7,7 +7,7 @@ import subprocess
 import sys
 import uuid
 from dataclasses import fields
-from typing import Any, Callable, Dict, Optional, TypeVar, Union
+from typing import Any, Callable, Dict, TypeVar, Union
 from urllib.parse import ParseResult, urlunparse
 from urllib.request import url2pathname, urlretrieve
 

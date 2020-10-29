@@ -11,8 +11,8 @@ from pybio.spec.nodes import MagicShapeValue, MagicTensorsValue
 
 
 class PyBioSchema(Schema):
-    def handle_error(self, error: ValidationError, data: typing.Any, *, many: bool, **kwargs):
-        raise PyBioValidationException("\n" + pformat(error.normalized_messages(), width=120)) from error
+    # def handle_error(self, error: ValidationError, data: typing.Any, *, many: bool, **kwargs):
+    #     raise PyBioValidationException("\n" + pformat(error.normalized_messages(), width=120)) from error
 
     @post_load
     def make_object(self, data, **kwargs):
@@ -226,6 +226,22 @@ class ModelSpec(BaseSpec):
 
 class Model(SpecWithKwargs):
     spec = fields.SpecURI(ModelSpec, required=True)
+
+
+class BioImageIoManifestModelEntry(Schema):
+    id = fields.Str(required=True)
+    source = fields.Str(validate=validate.URL(schemes=["http", "https"]))
+    links = fields.List(fields.Str, missing=list)
+    download_url = fields.Str(validate=validate.URL(schemes=["http", "https"]))
+
+
+class BioImageIoManifest(Schema):
+    format_version = fields.Str()
+    config = fields.Dict()
+
+    application = fields.List(fields.Dict)
+
+    model = fields.List(fields.Nested(BioImageIoManifestModelEntry))
 
 
 if __name__ == "__main__":
