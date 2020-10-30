@@ -1,0 +1,84 @@
+name: sklearnRandomForestClassifierBroadNucleusData
+description: Random Forest Classifier form scikit-learn
+cite:
+  - text: L. Breiman, "Random Forests", Machine Learning, 45(1), 5-32, 2001
+    url: https://scikit-learn.org/stable/modules/generated/sklearnbased.ensemble.RandomForestClassifier.html
+authors:
+  - Fynn Beuttenmueller
+documentation: sklearnbased.md
+tags: [test, rf, random, forest, example]
+license: MIT
+
+format_version: 0.1.0
+language: python
+
+source: pybio.core.models.sklearnbased.RandomForestClassifier
+required_kwargs: [c_indices]
+optional_kwargs:
+  n_estimators: 10
+  criterion: gini
+  max_depth: null
+  min_samples_split: 2
+  min_samples_leaf: 1
+  min_weight_fraction_leaf: 0.0
+  max_features: auto
+  max_leaf_nodes: null
+  min_impurity_decrease: 0.0
+  min_impurity_split: 1.0e-7
+  bootstrap: true
+  oob_score: false
+  n_jobs: 1
+  random_state: 0
+  verbose: 0
+  warm_start: false
+  class_weight: null
+
+test_input: null # ../test_input.npy
+test_output: null # ../test_output.npy
+covers: [] # ./nuclei_thumbnail.png
+
+inputs:
+  - name: raw
+    axes: byx
+    data_type: float32
+    data_range: [-inf, inf]
+    shape: any
+
+outputs:
+  - name: probabilities
+    axes: byx
+    data_type: float32
+    data_range: [0, 1]
+    halo: [0, 32, 32]
+    shape:
+      reference_input: raw
+      scale: [1, 1, 1]
+      offset: [0, 0, 0]
+
+prediction:
+    preprocess: []
+    weights:
+        source: https://zenodo.org/record/3446812/files/unet2d_weights.torch  # todo: give real RF weights
+        hash: {md5: TODO}
+    postprocess: []
+    dependencies: conda:../env_numpy.yaml
+
+
+training:
+  setup:
+    samplers:
+      - spec: ../../samplers/SequentialSamplerAlongDimension.sampler.yaml
+        kwargs: {sample_dimensions: [0, 0]}
+        readers:
+          - spec: ../../readers/BroadNucleusDataBinarized.reader.yaml
+            transformations:
+              - spec: ../../transformations/NormalizeZeroMeanUnitVariance.transformation.yaml
+
+  source: pybio.core.training.classic_fit.classic_fit
+  required_kwargs: [pybio_model]
+  optional_kwargs: {start: 0, batch_size: 1}
+  # enable different ways of specifying the dependencies.
+  # this would hold all training dependencies, e.g. as a frozen conda environment
+  # or as a pom.xml
+  dependencies: conda:./test_env.yaml  # this is a file to the dependencies
+  description: todo describe training

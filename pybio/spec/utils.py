@@ -6,20 +6,19 @@ import pathlib
 import subprocess
 import sys
 import uuid
-from dataclasses import fields
 from typing import Any, Callable, Dict, TypeVar, Union
-from urllib.parse import ParseResult, urlunparse
+from urllib.parse import ParseResult, urlparse, urlunparse
 from urllib.request import url2pathname, urlretrieve
 
 import yaml
 
 from pybio.core.cache import cache_path
-from . import nodes, schema
+from . import nodes, schema, fields
 from .exceptions import InvalidDoiException, PyBioValidationException
 
 
 def iter_fields(node: nodes.Node):
-    for field in fields(node):
+    for field in dataclasses.fields(node):
         yield field.name, getattr(node, field.name)
 
 
@@ -61,7 +60,7 @@ class NodeTransformer:
     def generic_transformer(self, node: Any) -> Any:
         if isinstance(node, nodes.Node):
             return dataclasses.replace(
-                node, **{field.name: self.transform(getattr(node, field.name)) for field in fields(node)}
+                node, **{field.name: self.transform(getattr(node, field.name)) for field in dataclasses.fields(node)}
             )
         else:
             return node
@@ -324,6 +323,40 @@ def load_spec_and_kwargs(
     tree = SourceTransformer().transform(tree)
     tree = MagicKwargsTransformer(cache_path=cache_path).transform(tree)
     return tree
+
+
+import copy
+
+
+def _maybe_convert_to_v0_3(data):
+    if data["format_version"] != "0.1.0":
+        return data
+
+    from . import schema_v0_1
+
+    data = copy.deepcopy(data)
+    model_schema = schema_v0_1.ModelSpec()
+    validated_data = model_schema.load(data)
+    validated_data["format_version"] = "0.3.0"
+
+    for ipt in validated_data["inputs"]:
+        ipt["description"] = ipt["name"]
+
+    for out in validated_data["outputs"]:
+        out["description"] = out["name"]
+
+    return validated_data
+
+
+def load_and_validate_model_schema(data: Dict[str, Any]) -> nodes.Model:
+    if "format_version" not in data:
+        raise PyBioValidationException("format_version")
+
+    data = _maybe_convert_to_v0_3(data)
+    if data["format_version"] == "0.3.0":
+        return schema.ModelSpec().load(data)
+    else:
+        raise PyBioValidationException(data["format_version"])
 
 
 def load_model_config(uri: Union[pathlib.Path, str]) -> nodes.Model:

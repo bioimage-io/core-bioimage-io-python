@@ -7,7 +7,7 @@ from marshmallow import post_load
 
 from pybio.spec import fields, nodes, schema, utils
 from pybio.spec.nodes import ImportablePath, URI
-from pybio.spec.utils import ImportedSource, SourceTransformer, URITransformer
+from pybio.spec.utils import ImportedSource, SourceTransformer, URITransformer, load_and_validate_model_schema
 
 
 @dataclass
@@ -111,3 +111,11 @@ def test_resolve_directory_uri(tmpdir, cache_path):
     node = URI(scheme="", netloc="", path=str(tmpdir), query="")
     uri_transformed = URITransformer(root_path=Path(tmpdir), cache_path=cache_path).transform(node)
     assert uri_transformed == Path(tmpdir)
+
+
+from pprint import pprint
+
+def test_load_and_validate_model_schema(rf_model_data_v0_1):
+    loaded = load_and_validate_model_schema(rf_model_data_v0_1)
+    pprint(loaded)
+    assert False
