@@ -11,9 +11,6 @@ from pybio.spec.nodes import MagicShapeValue, MagicTensorsValue
 
 
 class PyBioSchema(Schema):
-    # def handle_error(self, error: ValidationError, data: typing.Any, *, many: bool, **kwargs):
-    #     raise PyBioValidationException("\n" + pformat(error.normalized_messages(), width=120)) from error
-
     @post_load
     def make_object(self, data, **kwargs):
         if not data:
