@@ -1,7 +1,7 @@
 from typing import Callable, List, Optional, Sequence, Tuple
 
 from pybio.core.array import PyBioArray
-from pybio.spec.nodes import InputArray, OutputArray
+from pybio.spec.nodes import InputTensor, OutputTensor
 
 
 class ApplyToAll:
@@ -27,10 +27,10 @@ class PyBioTransformation:
     def dynamic_input_shape(self, output_shape: Tuple[Tuple[int]]) -> Tuple[Tuple[int]]:
         raise NotImplementedError
 
-    def dynamic_outputs(self, inputs: Tuple[InputArray]) -> Tuple[OutputArray]:
+    def dynamic_outputs(self, inputs: Tuple[InputTensor]) -> Tuple[OutputTensor]:
         raise NotImplementedError
 
-    def dynamic_inputs(self, outputs: Tuple[OutputArray]) -> Tuple[InputArray]:
+    def dynamic_inputs(self, outputs: Tuple[OutputTensor]) -> Tuple[InputTensor]:
         raise NotImplementedError
 
 

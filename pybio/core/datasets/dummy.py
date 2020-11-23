@@ -3,7 +3,7 @@ from typing import Sequence, Tuple
 import numpy
 
 from pybio.core.readers.base import PyBioReader
-from pybio.spec.nodes import OutputArray, Axes
+from pybio.spec.nodes import OutputTensor, Axes
 
 
 class DummyReader(PyBioReader):
@@ -15,7 +15,7 @@ class DummyReader(PyBioReader):
 
         super().__init__(
             outputs=(
-                OutputArray(
+                OutputTensor(
                     name="dummyX",
                     axes=Axes("bx"),
                     data_type="int",
@@ -23,7 +23,7 @@ class DummyReader(PyBioReader):
                     shape=x_shape,
                     halo=(0,) * len(x_shape),
                 ),
-                OutputArray(
+                OutputTensor(
                     name="dummyY",
                     axes=Axes("b"),
                     data_type="bool",

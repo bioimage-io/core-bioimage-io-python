@@ -9,7 +9,7 @@ import numpy
 import numpy as np
 
 from pybio.core.datasets.base import PyBioDataset
-from pybio.spec.nodes import Axes, OutputArray
+from pybio.spec.nodes import Axes, OutputTensor
 
 
 def download_data(url, data_dir: Path, prefix: str):
@@ -94,21 +94,23 @@ class BroadNucleusDataBinarized(PyBioDataset):
         assert len(self.y.shape) == 3
 
         outputs = [
-            OutputArray(
+            OutputTensor(
                 name="raw",
                 axes=Axes("byx"),
                 data_type="uint16",
                 data_range=(numpy.iinfo(numpy.uint16).min, numpy.iinfo(numpy.uint16).max),
                 shape=list(self.x.shape),
                 halo=[0, 0, 0],
+                description="raw"
             ),
-            OutputArray(
+            OutputTensor(
                 name="target",
                 axes=Axes("byx"),
                 data_type="float32",
                 data_range=(numpy.float("-inf"), numpy.float("inf")),
                 shape=list(self.y.shape),
                 halo=[0, 0, 0],
+                description="target",
             ),
         ]
 

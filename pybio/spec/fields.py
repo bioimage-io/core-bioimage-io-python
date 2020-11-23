@@ -1,7 +1,10 @@
 import pathlib
 import typing
 from urllib.parse import urlparse
+from urllib.request import url2pathname
 
+import numpy
+from marshmallow import validate
 from marshmallow.fields import (
     DateTime,  # noqa
     Dict,
@@ -10,6 +13,7 @@ from marshmallow.fields import (
     Integer,  # noqa
     List,  # noqa
     Nested,
+    Number,
     String,
     Tuple as MarshmallowTuple,
     ValidationError,
@@ -40,7 +44,11 @@ class SpecURI(Nested):
         if uri.params:
             raise PyBioValidationException(f"Invalid URI: {uri}. Got URI params: {uri.params}")
 
-        return nodes.SpecURI(spec_schema=self.schema, scheme=uri.scheme, netloc=uri.netloc, path=uri.path, query="")
+        # account for leading '/' for windows paths, e.g. '/C:/folder'
+        # see https://stackoverflow.com/questions/43911052/urlparse-on-a-windows-file-scheme-uri-leaves-extra-slash-at-start
+        path = url2pathname(uri.path)
+
+        return nodes.SpecURI(spec_schema=self.schema, scheme=uri.scheme, netloc=uri.netloc, path=path, query="")
 
 
 class URI(String):
@@ -153,24 +161,6 @@ class Tensors(Nested):
             raise PyBioValidationException(f"Invalid input type: {type(value)}")
 
 
-class ArbitrarilyNestedList(Nested):
-    # def __init__(self, *args, **kwargs):
-    #     super().__init__(*args, **kwargs)
-    #     self.nested_type = nested_type
-
-    def _deserialize(
-        self,
-        value: typing.Any,
-        attr: typing.Optional[str],
-        data: typing.Optional[typing.Mapping[str, typing.Any]],
-        **kwargs,
-    ):
-        if isinstance(value, list):
-            return [self._deserialize(v, attr, data, **kwargs) for v in value]
-        else:
-            super()._deserialize(value, attr, data, **kwargs)
-
-
 class Shape(Nested):
     def __init__(self, *args, valid_magic_values: typing.List[nodes.MagicShapeValue], **kwargs):
         super().__init__(*args, **kwargs)
@@ -203,3 +193,37 @@ class Shape(Nested):
             return self._load(value, data)
         else:
             raise PyBioValidationException(f"Invalid input type: {type(value)}")
+
+
+class Array(Field):
+    def __init__(self, inner: Field, **kwargs):
+        self.inner = inner
+        super().__init__(**kwargs)
+
+    @property
+    def dtype(self) -> typing.Union[typing.Type[int], typing.Type[float], typing.Type[str]]:
+        if isinstance(self.inner, Integer):
+            return int
+        elif isinstance(self.inner, Float):
+            return float
+        elif isinstance(self.inner, String):
+            return str
+        else:
+            raise NotImplementedError(self.inner)
+
+    def _deserialize_inner(self, value):
+        if isinstance(value, list):
+            return [self._deserialize_inner(v) for v in value]
+        else:
+            return self.inner.deserialize(value)
+
+    def deserialize(self, value: typing.Any, attr: str = None, data: typing.Mapping[str, typing.Any] = None, **kwargs):
+        value = self._deserialize_inner(value)
+
+        if isinstance(value, list):
+            try:
+                return numpy.array(value, dtype=self.dtype)
+            except ValueError as e:
+                raise PyBioValidationException(str(e)) from e
+        else:
+            return value

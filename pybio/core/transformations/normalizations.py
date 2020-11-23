@@ -2,7 +2,7 @@ from typing import List, Optional, Sequence, Tuple
 
 from pybio.core.array import PyBioArray
 from pybio.core.transformations import ApplyToAll, PyBioTransformation
-from pybio.spec.nodes import InputArray, OutputArray
+from pybio.spec.nodes import InputTensor, OutputTensor
 
 
 class NormalizeZeroMeanUnitVariance(PyBioTransformation):
@@ -55,9 +55,9 @@ class NormalizeZeroMeanUnitVariance(PyBioTransformation):
     def dynamic_input_shape(self, output_shape: Tuple[Tuple[int]]) -> Tuple[Tuple[int]]:
         return output_shape
 
-    def dynamic_outputs(self, inputs: Tuple[InputArray]) -> Tuple[OutputArray]:
+    def dynamic_outputs(self, inputs: Tuple[InputTensor]) -> Tuple[OutputTensor]:
         return tuple(
-            OutputArray(
+            OutputTensor(
                 name=ipt.name,
                 axes=ipt.axes,
                 data_type=ipt.data_type,
@@ -68,9 +68,9 @@ class NormalizeZeroMeanUnitVariance(PyBioTransformation):
             for ipt in inputs
         )
 
-    def dynamic_inputs(self, outputs: Tuple[OutputArray]) -> Tuple[InputArray]:
+    def dynamic_inputs(self, outputs: Tuple[OutputTensor]) -> Tuple[InputTensor]:
         return tuple(
-            InputArray(
+            InputTensor(
                 name=out.name,
                 axes=out.axes,
                 data_type="numeric",
@@ -122,9 +122,9 @@ class NormalizeRange(PyBioTransformation):
     def dynamic_input_shape(self, output_shape: Tuple[Tuple[int]]) -> Tuple[Tuple[int]]:
         return output_shape
 
-    def dynamic_outputs(self, inputs: Tuple[InputArray]) -> Tuple[OutputArray]:
+    def dynamic_outputs(self, inputs: Tuple[InputTensor]) -> Tuple[OutputTensor]:
         return tuple(
-            OutputArray(
+            OutputTensor(
                 name=ipt.name,
                 axes=ipt.axes,
                 data_type="float32",
@@ -135,9 +135,9 @@ class NormalizeRange(PyBioTransformation):
             for ipt in inputs
         )
 
-    def dynamic_inputs(self, outputs: Tuple[OutputArray]) -> Tuple[InputArray]:
+    def dynamic_inputs(self, outputs: Tuple[OutputTensor]) -> Tuple[InputTensor]:
         return tuple(
-            InputArray(
+            InputTensor(
                 name=out.name,
                 axes=out.axes,
                 data_type="numeric",

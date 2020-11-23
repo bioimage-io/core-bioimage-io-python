@@ -2,11 +2,11 @@ from typing import Optional, Sequence, Tuple
 
 from pybio.core.array import PyBioArray
 from pybio.core.transformations import PyBioTransformation
-from pybio.spec.nodes import MagicTensorsValue, OutputArray
+from pybio.spec.nodes import MagicTensorsValue, OutputTensor
 
 
 class PyBioDataset:
-    def __init__(self, outputs: Sequence[OutputArray], transformation: Optional[PyBioTransformation] = None):
+    def __init__(self, outputs: Sequence[OutputTensor], transformation: Optional[PyBioTransformation] = None):
         if isinstance(outputs, MagicTensorsValue):
             raise ValueError(f"unresolved MagicTensorsValue: {outputs}")
 
@@ -25,7 +25,7 @@ class PyBioDataset:
         return tuple(out.shape for out in self._output)
 
     @property
-    def output(self) -> Tuple[OutputArray]:
+    def output(self) -> Tuple[OutputTensor]:
         return self._output
 
     def __getitem__(self, rois: Tuple[Tuple[slice, ...], ...]) -> Sequence[PyBioArray]:
