@@ -6,9 +6,9 @@ from pybio.spec.nodes import MagicShapeValue, MagicTensorsValue
 
 
 class CiteEntry(Schema):
-    text = fields.Str(required=True)
-    doi = fields.Str(missing=None)
-    url = fields.Str(missing=None)
+    text = fields.String(required=True)
+    doi = fields.String(missing=None)
+    url = fields.String(missing=None)
 
     @validates_schema
     def doi_or_url(self, data, **kwargs):
@@ -17,20 +17,20 @@ class CiteEntry(Schema):
 
 
 class BaseSpec(Schema):
-    name = fields.Str(required=True)
-    format_version = fields.Str(required=True)
-    description = fields.Str(required=True)
+    name = fields.String(required=True)
+    format_version = fields.String(required=True)
+    description = fields.String(required=True)
     cite = fields.Nested(CiteEntry, many=True, required=True)
-    authors = fields.List(fields.Str(required=True))
+    authors = fields.List(fields.String(required=True))
     documentation = fields.Path(required=True)
-    tags = fields.List(fields.Str, required=True)
-    license = fields.Str(required=True)
+    tags = fields.List(fields.String, required=True)
+    license = fields.String(required=True)
 
-    language = fields.Str(required=True)
-    framework = fields.Str(missing=None)
+    language = fields.String(required=True)
+    framework = fields.String(missing=None)
     source = fields.ImportableSource(required=True)
-    required_kwargs = fields.List(fields.Str, missing=list)
-    optional_kwargs = fields.Dict(fields.Str, missing=dict)
+    required_kwargs = fields.List(fields.String, missing=list)
+    optional_kwargs = fields.Dict(fields.String, missing=dict)
 
     test_input = fields.Path(missing=None)
     test_output = fields.Path(missing=None)
@@ -60,7 +60,7 @@ class InputShape(Schema):
 
 
 class OutputShape(Schema):
-    reference_input = fields.Str(missing=None)
+    reference_input = fields.String(missing=None)
     scale = fields.List(fields.Float, required=True)
     offset = fields.List(fields.Integer, required=True)
 
@@ -73,9 +73,9 @@ class OutputShape(Schema):
 
 
 class Array(Schema):
-    name = fields.Str(required=True)
+    name = fields.String(required=True)
     axes = fields.Axes(missing=None)
-    data_type = fields.Str(required=True)
+    data_type = fields.String(required=True)
     data_range = fields.Tuple((fields.Float(allow_nan=True), fields.Float(allow_nan=True)))
 
     shape: fields.Nested
@@ -138,8 +138,8 @@ class Sampler(SpecWithKwargs):
 
 class Optimizer(Schema):
     source = fields.ImportableSource(required=True)
-    required_kwargs = fields.List(fields.Str, missing=list)
-    optional_kwargs = fields.Dict(fields.Str, missing=dict)
+    required_kwargs = fields.List(fields.String, missing=list)
+    optional_kwargs = fields.Dict(fields.String, missing=dict)
 
 
 class Setup(Schema):
@@ -150,13 +150,13 @@ class Setup(Schema):
     optimizer = fields.Nested(Optimizer, missing=None)
 
 
-class Training(Schema):
-    setup = fields.Nested(Setup)
-    source = fields.ImportableSource(required=True)
-    required_kwargs = fields.List(fields.Str, missing=list)
-    optional_kwargs = fields.Dict(fields.Str, missing=dict)
-    dependencies = fields.Dependencies(required=True)
-    description = fields.Str(missing=None)
+# class Training(Schema):
+#     setup = fields.Nested(Setup)
+#     source = fields.ImportableSource(required=True)
+#     required_kwargs = fields.List(fields.String, missing=list)
+#     optional_kwargs = fields.Dict(fields.String, missing=dict)
+#     dependencies = fields.Dependencies(required=True)
+#     description = fields.String(missing=None)
 
 
 class ModelSpec(BaseSpec):
@@ -165,7 +165,8 @@ class ModelSpec(BaseSpec):
     outputs = fields.Tensors(
         OutputArray, valid_magic_values=[MagicTensorsValue.same, MagicTensorsValue.dynamic], many=True
     )
-    training = fields.Nested(Training, missing=None)
+    # training = fields.Nested(Training, missing=None)
+    training = fields.Dict(missing=None)
 
 
 class Model(SpecWithKwargs):

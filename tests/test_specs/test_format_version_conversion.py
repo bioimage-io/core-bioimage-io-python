@@ -6,7 +6,8 @@ from pybio.spec.utils import _maybe_convert_to_v0_3
 
 def test_model_nodes_format_0_1_to_0_3(rf_model_data_v0_1, rf_model_data):
     expected = asdict(schema.ModelSpec().load(rf_model_data))
-    actual = asdict(schema.ModelSpec().load(_maybe_convert_to_v0_3(rf_model_data_v0_1)))
+    converted_data = _maybe_convert_to_v0_3(rf_model_data_v0_1)
+    actual = asdict(schema.ModelSpec().load(converted_data))
 
     # expect converted description
     for ipt in expected["inputs"]:

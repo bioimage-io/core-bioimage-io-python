@@ -1,6 +1,7 @@
 from dataclasses import asdict
 from pathlib import Path
 from pprint import pprint
+from typing import get_type_hints
 
 from marshmallow import Schema, ValidationError, post_load, validate, validates, validates_schema
 
@@ -88,7 +89,7 @@ class OutputShape(PyBioSchema):
             raise PyBioValidationException(f"scale {scale} has to have same length as offset {offset}!")
 
 
-class Array(PyBioSchema):
+class Tensor(PyBioSchema):
     name = fields.String(required=True, validate=validate.Predicate("isidentifier"))
     description = fields.String(required=True)
     axes = fields.Axes(missing=None)
@@ -106,15 +107,14 @@ class Array(PyBioSchema):
 
 
 class Preprocessing(PyBioSchema):
-    name = fields.String(validate=validate.OneOf(("zero_mean_unit_variance",)), required=True)
-    kwargs = fields.Dict(fields.String, missing=dict)
+    name = fields.String(validate=validate.OneOf(get_type_hints(nodes.Preprocessing)["name"].__args__), required=True)
+    kwargs = fields.Kwargs(fields.String, missing=nodes.Kwargs)
 
     @post_load
     def make_object(self, data, **kwargs):
         if not data:
             return None
 
-        camel_case_name = data["name"].title()
         this_type = getattr(nodes, self.__class__.__name__)
         try:
             return this_type(**data)
@@ -125,10 +125,8 @@ class Preprocessing(PyBioSchema):
     class ZeroMeanUniVarianceKwargs(Schema):  # not pybio schema, only returning a validated dict, no specific node
         mode = fields.String(validate=validate.OneOf(("fixed", "per_dataset", "per_sample")), required=True)
         axes = fields.Axes(valid_axes="czyx")  # todo: check for input if these axes are a subset
-        mean = fields.ArbitrarilyNestedList(
-            fields.Float, missing=None
-        )  # todo: check if means match input axes (for mode 'fixed')
-        std = fields.ArbitrarilyNestedList(fields.Float, missing=None)
+        mean = fields.Array(fields.Float(), missing=None)  # todo: check if means match input axes (for mode 'fixed')
+        std = fields.Array(fields.Float(), missing=None)
 
         @validates_schema
         def mean_and_std_match_mode(self, data, **kwargs):
@@ -152,12 +150,10 @@ class Preprocessing(PyBioSchema):
             )
 
         if kwargs_validation_errors:
-            raise PyBioValidationException(
-                f"Invalid key word arguments (kwargs) for preprocessing (name) '{data['name']}': {kwargs_validation_errors}"
-            )
+            raise PyBioValidationException(f"Invalid `kwargs` for '{data['name']}': {kwargs_validation_errors}")
 
 
-class InputArray(Array):
+class InputTensor(Tensor):
     shape = fields.Shape(InputShape, valid_magic_values=[MagicShapeValue.any], required=True)
     preprocessing = fields.List(fields.Nested(Preprocessing), missing=list)
 
@@ -192,7 +188,7 @@ class InputArray(Array):
                 raise PyBioValidationException(f"Unknown shape type {type(shape)}")
 
 
-class OutputArray(Array):
+class OutputTensor(Tensor):
     shape = fields.Shape(OutputShape, valid_magic_values=[MagicShapeValue.dynamic], required=True)
     halo = fields.List(fields.Integer, missing=None)
 
@@ -233,9 +229,15 @@ class Weight(WithFileSource):
 
 
 class ModelSpec(BaseSpec):
-    language = fields.String(validate=validate.OneOf(["python", "java"]))
-    framework = fields.String(validate=validate.OneOf(["scikit-learn", "pytorch", "tensorflow"]))
-    weights_format = fields.String(validate=validate.OneOf(["pickle", "pytorch", "keras"]), required=True)
+    language = fields.String(
+        validate=validate.OneOf(get_type_hints(nodes.ModelSpec)["language"].__args__), required=True
+    )
+    framework = fields.String(
+        validate=validate.OneOf(get_type_hints(nodes.ModelSpec)["framework"].__args__), required=True
+    )
+    weights_format = fields.String(
+        validate=validate.OneOf(get_type_hints(nodes.ModelSpec)["weights_format"].__args__), required=True
+    )
     dependencies = fields.Dependencies(missing=None)
 
     source = fields.ImportableSource(missing=None)
@@ -243,9 +245,9 @@ class ModelSpec(BaseSpec):
     kwargs = fields.Kwargs(fields.String, missing=nodes.Kwargs)
 
     weights = fields.List(fields.Nested(Weight), required=True)
-    inputs = fields.Tensors(InputArray, valid_magic_values=[MagicTensorsValue.any], many=True)
+    inputs = fields.Tensors(InputTensor, valid_magic_values=[MagicTensorsValue.any], many=True)
     outputs = fields.Tensors(
-        OutputArray, valid_magic_values=[MagicTensorsValue.same, MagicTensorsValue.dynamic], many=True
+        OutputTensor, valid_magic_values=[MagicTensorsValue.same, MagicTensorsValue.dynamic], many=True
     )
     config = fields.Dict(missing=dict)
 

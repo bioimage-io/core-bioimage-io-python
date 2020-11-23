@@ -82,8 +82,6 @@ def get_instance(node: Union[nodes.SpecWithKwargs, nodes.BaseSpec, nodes.WithImp
         joined_spec_kwargs = dict(node.kwargs)
         joined_spec_kwargs.update(kwargs)
         return get_instance(node.spec, **joined_spec_kwargs)
-    elif isinstance(node, nodes.ModelSpec):
-        return get_instance(node.model, **kwargs)
     elif isinstance(node, nodes.WithImportableSource):
         if not isinstance(node.source, ImportedSource):
             raise ValueError(

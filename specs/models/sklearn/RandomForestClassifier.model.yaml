@@ -37,13 +37,6 @@ outputs:
       scale: [1, 1, 1]
       offset: [0, 0, 0]
 
-test_inputs:
-  - test_input_raw.npy
-
-test_outputs:
-  - test_output.npy
-
-
 language: python
 framework: scikit-learn
 weights_format: pickle
@@ -79,3 +72,7 @@ weights:
     sha256: abcdefghabcdefghabcdefghabcdefghabcdefghabcdefghabcdefghabcdefgh
     timestamp: "2020-10-23T16:00:42+00:00"
     tags: [toy example]
+    test_inputs:
+      - test_input_raw.npy
+    test_outputs:
+      - test_output.npy

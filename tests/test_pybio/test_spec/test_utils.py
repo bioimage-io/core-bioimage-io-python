@@ -113,10 +113,5 @@ def test_resolve_directory_uri(tmpdir):
     assert uri_transformed == Path(tmpdir)
 
 
-from pprint import pprint
-
-
-def test_load_and_validate_model_schema(rf_model_data_v0_1):
-    loaded = load_and_validate_model_schema(rf_model_data_v0_1)
-    pprint(loaded)
-    assert False
+def test_load_and_validate_model_schema(rf_model_data):
+    load_and_validate_model_schema(rf_model_data)

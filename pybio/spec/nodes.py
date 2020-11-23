@@ -8,12 +8,7 @@ from typing import Any, Dict, List, NewType, Optional, Tuple, Union
 try:
     from typing import Literal
 except ImportError:
-
-    class LiteralDummy:
-        def __getitem__(self, item):
-            return Any
-
-    Literal = LiteralDummy()
+    from typing_extensions import Literal
 
 import pybio
 
@@ -114,6 +109,7 @@ class BaseSpec(Node):
 
 Axes = NewType("Axes", str)
 
+
 @dataclass
 class ZeroMeanUnitVariance(Node):
     mode: str
@@ -144,7 +140,7 @@ class OutputShape(Node):
 
 
 @dataclass
-class Array(Node):
+class Tensor(Node):
     name: str
     description: str
     axes: Optional[Axes]
@@ -153,13 +149,19 @@ class Array(Node):
 
 
 @dataclass
-class InputArray(Array):
-    shape: Union[List[int], MagicShapeValue, InputShape]
-    normalization: Optional[Literal["zero_mean_unit_variance"]]
+class Preprocessing:
+    name: Literal["zero_mean_unit_variance"]
+    kwargs: Kwargs
 
 
 @dataclass
-class OutputArray(Array):
+class InputTensor(Tensor):
+    shape: Union[List[int], MagicShapeValue, InputShape]
+    preprocessing: List[Preprocessing]
+
+
+@dataclass
+class OutputTensor(Tensor):
     shape: Union[List[int], MagicShapeValue, OutputShape]
     halo: List[int]
 
@@ -201,14 +203,14 @@ class Weight(Node, WithFileSource):
 
 @dataclass
 class ModelSpec(BaseSpec, WithImportableSource):
-    language: str
-    framework: str
+    language: Literal["python", "java"]
+    framework: Literal["scikit-learn", "pytorch", "tensorflow"]
     weights_format: Literal["pickle", "pytorch", "keras"]
     dependencies: Optional[Dependencies]
 
     weights: List[Weight]
-    inputs: Union[MagicTensorsValue, List[InputArray]]
-    outputs: Union[MagicTensorsValue, List[OutputArray]]
+    inputs: Union[MagicTensorsValue, List[InputTensor]]
+    outputs: Union[MagicTensorsValue, List[OutputTensor]]
 
     config: Dict
 
