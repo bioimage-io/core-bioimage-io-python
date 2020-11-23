@@ -1,10 +1,9 @@
 from dataclasses import asdict
-
-import typing
 from pathlib import Path
+from pprint import pprint
 
 from marshmallow import Schema, ValidationError, post_load, validate, validates, validates_schema
-from pprint import pformat, pprint
+
 from pybio.spec import fields, nodes
 from pybio.spec.exceptions import PyBioValidationException
 from pybio.spec.nodes import MagicShapeValue, MagicTensorsValue
@@ -25,9 +24,9 @@ class PyBioSchema(Schema):
 
 
 class CiteEntry(PyBioSchema):
-    text = fields.Str(required=True)
-    doi = fields.Str(missing=None)
-    url = fields.Str(missing=None)
+    text = fields.String(required=True)
+    doi = fields.String(missing=None)
+    url = fields.String(missing=None)
 
     @validates_schema
     def doi_or_url(self, data, **kwargs):
@@ -36,27 +35,27 @@ class CiteEntry(PyBioSchema):
 
 
 class BaseSpec(PyBioSchema):
-    format_version = fields.Str(required=True)
-    name = fields.Str(required=True)
-    description = fields.Str(required=True)
+    format_version = fields.String(required=True)
+    name = fields.String(required=True)
+    description = fields.String(required=True)
 
-    authors = fields.List(fields.Str)
+    authors = fields.List(fields.String)
     cite = fields.Nested(CiteEntry, many=True, required=True)
 
-    git_repo = fields.Str(validate=validate.URL(schemes=["http", "https"]))
-    tags = fields.List(fields.Str, required=True)
-    license = fields.Str(required=True)
+    git_repo = fields.String(validate=validate.URL(schemes=["http", "https"]))
+    tags = fields.List(fields.String, required=True)
+    license = fields.String(required=True)
 
     documentation = fields.URI(required=True)
     covers = fields.List(fields.URI, missing=list)
-    attachments = fields.Dict(fields.Str, missing=dict)
+    attachments = fields.Dict(fields.String, missing=dict)
 
-    config = fields.Dict(fields.Str, missing=dict)
+    config = fields.Dict(fields.String, missing=dict)
 
 
 class SpecWithKwargs(PyBioSchema):
     spec: fields.SpecURI
-    kwargs = fields.Kwargs(fields.Str, missing=nodes.Kwargs)
+    kwargs = fields.Kwargs(fields.String, missing=nodes.Kwargs)
 
 
 class InputShape(PyBioSchema):
@@ -77,7 +76,7 @@ class InputShape(PyBioSchema):
 
 
 class OutputShape(PyBioSchema):
-    reference_input = fields.Str(missing=None)
+    reference_input = fields.String(missing=None)
     scale = fields.List(fields.Float, required=True)
     offset = fields.List(fields.Integer, required=True)
 
@@ -90,13 +89,13 @@ class OutputShape(PyBioSchema):
 
 
 class Array(PyBioSchema):
-    name = fields.Str(required=True, validate=validate.Predicate("isidentifier"))
-    description = fields.Str(required=True)
+    name = fields.String(required=True, validate=validate.Predicate("isidentifier"))
+    description = fields.String(required=True)
     axes = fields.Axes(missing=None)
-    data_type = fields.Str(required=True)
+    data_type = fields.String(required=True)
     data_range = fields.Tuple((fields.Float(allow_nan=True), fields.Float(allow_nan=True)))
 
-    shape: fields.Nested
+    shape: fields.Shape
 
     @validates_schema
     def axes_and_shape(self, data, **kwargs):
@@ -106,9 +105,61 @@ class Array(PyBioSchema):
             raise PyBioValidationException("Axes may not be 'null', when shape is specified")
 
 
+class Preprocessing(PyBioSchema):
+    name = fields.String(validate=validate.OneOf(("zero_mean_unit_variance",)), required=True)
+    kwargs = fields.Dict(fields.String, missing=dict)
+
+    @post_load
+    def make_object(self, data, **kwargs):
+        if not data:
+            return None
+
+        camel_case_name = data["name"].title()
+        this_type = getattr(nodes, self.__class__.__name__)
+        try:
+            return this_type(**data)
+        except TypeError as e:
+            e.args += (f"when initializing {this_type} from {self}",)
+            raise e
+
+    class ZeroMeanUniVarianceKwargs(Schema):  # not pybio schema, only returning a validated dict, no specific node
+        mode = fields.String(validate=validate.OneOf(("fixed", "per_dataset", "per_sample")), required=True)
+        axes = fields.Axes(valid_axes="czyx")  # todo: check for input if these axes are a subset
+        mean = fields.ArbitrarilyNestedList(
+            fields.Float, missing=None
+        )  # todo: check if means match input axes (for mode 'fixed')
+        std = fields.ArbitrarilyNestedList(fields.Float, missing=None)
+
+        @validates_schema
+        def mean_and_std_match_mode(self, data, **kwargs):
+            if data["mode"] == "fixed" and (data["mean"] is None or data["std"] is None):
+                raise PyBioValidationException(
+                    "`kwargs` for 'zero_mean_unit_variance' preprocessing with `mode` 'fixed' require additional `kwargs`: `mean` and `std`."
+                )
+            elif data["mode"] != "fixed" and (data["mean"] is not None or data["std"] is not None):
+                raise PyBioValidationException(
+                    "`kwargs`: `mean` and `std` for 'zero_mean_unit_variance' preprocessing are only valid for `mode` 'fixed'."
+                )
+
+    @validates_schema
+    def kwargs_match_selected_preprocessing_name(self, data, **kwargs):
+        if data["name"] == "zero_mean_unit_variance":
+            kwargs_validation_errors = self.ZeroMeanUniVarianceKwargs().validate(data["kwargs"])
+        else:
+            raise NotImplementedError(
+                "Validating the 'name' field should not allow you to get here, unless you just added a new "
+                "preprocessing 'name'. So what kwargs go with it?"
+            )
+
+        if kwargs_validation_errors:
+            raise PyBioValidationException(
+                f"Invalid key word arguments (kwargs) for preprocessing (name) '{data['name']}': {kwargs_validation_errors}"
+            )
+
+
 class InputArray(Array):
     shape = fields.Shape(InputShape, valid_magic_values=[MagicShapeValue.any], required=True)
-    normalization = fields.Str(validate=validate.OneOf(["zero_mean_unit_variance"]), missing=None)
+    preprocessing = fields.List(fields.Nested(Preprocessing), missing=list)
 
     @validates_schema
     def zero_batch_step(self, data, **kwargs):
@@ -160,7 +211,7 @@ class OutputArray(Array):
 
 class WithFileSource(PyBioSchema):
     source = fields.URI(required=True)
-    sha256 = fields.Str(validate=validate.Length(equal=64))
+    sha256 = fields.String(validate=validate.Length(equal=64))
 
 
 class File(WithFileSource):
@@ -168,28 +219,28 @@ class File(WithFileSource):
 
 
 class Weight(WithFileSource):
-    id = fields.Str(required=True, validate=validate.Predicate("isidentifier"))
-    name = fields.Str(required=True)
-    description = fields.Str(required=True)
-    authors = fields.List(fields.Str)
+    id = fields.String(required=True, validate=validate.Predicate("isidentifier"))
+    name = fields.String(required=True)
+    description = fields.String(required=True)
+    authors = fields.List(fields.String)
     covers = fields.List(fields.URI, missing=list)
     test_inputs = fields.List(fields.URI(required=True), required=True)
     test_outputs = fields.List(fields.URI(required=True), required=True)
     timestamp = fields.DateTime(required=True)
     documentation = fields.URI(missing=None)
-    tags = fields.List(fields.Str, required=True)
+    tags = fields.List(fields.String, required=True)
     attachments = fields.Dict(missing=dict)
 
 
 class ModelSpec(BaseSpec):
-    language = fields.Str(validate=validate.OneOf(["python", "java"]))
-    framework = fields.Str(validate=validate.OneOf(["scikit-learn", "pytorch", "tensorflow"]))
-    weights_format = fields.Str(validate=validate.OneOf(["pickle", "pytorch", "keras"]), required=True)
+    language = fields.String(validate=validate.OneOf(["python", "java"]))
+    framework = fields.String(validate=validate.OneOf(["scikit-learn", "pytorch", "tensorflow"]))
+    weights_format = fields.String(validate=validate.OneOf(["pickle", "pytorch", "keras"]), required=True)
     dependencies = fields.Dependencies(missing=None)
 
     source = fields.ImportableSource(missing=None)
-    sha256 = fields.Str(validate=validate.Length(equal=64), missing=None)
-    kwargs = fields.Kwargs(fields.Str, missing=nodes.Kwargs)
+    sha256 = fields.String(validate=validate.Length(equal=64), missing=None)
+    kwargs = fields.Kwargs(fields.String, missing=nodes.Kwargs)
 
     weights = fields.List(fields.Nested(Weight), required=True)
     inputs = fields.Tensors(InputArray, valid_magic_values=[MagicTensorsValue.any], many=True)
@@ -226,14 +277,14 @@ class Model(SpecWithKwargs):
 
 
 class BioImageIoManifestModelEntry(Schema):
-    id = fields.Str(required=True)
-    source = fields.Str(validate=validate.URL(schemes=["http", "https"]))
-    links = fields.List(fields.Str, missing=list)
-    download_url = fields.Str(validate=validate.URL(schemes=["http", "https"]))
+    id = fields.String(required=True)
+    source = fields.String(validate=validate.URL(schemes=["http", "https"]))
+    links = fields.List(fields.String, missing=list)
+    download_url = fields.String(validate=validate.URL(schemes=["http", "https"]))
 
 
 class BioImageIoManifest(Schema):
-    format_version = fields.Str()
+    format_version = fields.String()
     config = fields.Dict()
 
     application = fields.List(fields.Dict)

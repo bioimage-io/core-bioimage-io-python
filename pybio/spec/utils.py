@@ -12,7 +12,7 @@ from urllib.request import url2pathname, urlretrieve
 
 import yaml
 
-from pybio.core.cache import cache_path
+from pybio.core.cache import PYBIO_CACHE_PATH
 from . import nodes, schema, fields
 from .exceptions import InvalidDoiException, PyBioValidationException
 
@@ -109,7 +109,7 @@ def train(model: nodes.Model, **kwargs) -> Any:
     return get_instance(model.spec.config["pybio"]["training"], **enchanted_kwargs)
 
 
-def resolve_uri(uri_node: nodes.URI, cache_path: pathlib.Path, root_path: pathlib.Path) -> pathlib.Path:
+def resolve_uri(uri_node: nodes.URI, root_path: pathlib.Path) -> pathlib.Path:
     if uri_node.scheme == "":  # relative path
         if uri_node.netloc:
             raise PyBioValidationException(f"Invalid Path/URI: {uri_node}")
@@ -123,13 +123,13 @@ def resolve_uri(uri_node: nodes.URI, cache_path: pathlib.Path, root_path: pathli
     elif uri_node.netloc == "github.com":
         orga, repo_name, blob_releases_archive, commit_id, *in_repo_path = uri_node.path.strip("/").split("/")
         if blob_releases_archive == "releases":
-            local_path = _download_uri_node_to_local_path(uri_node, cache_path)
+            local_path = _download_uri_node_to_local_path(uri_node)
         elif blob_releases_archive == "archive":
             raise NotImplementedError("unpacking of github archive not implemented")
-            # local_path = _download_uri_node_to_local_path(uri_node, cache_path)
+            # local_path = _download_uri_node_to_local_path(uri_node)
         elif blob_releases_archive == "blob":
             in_repo_path = "/".join(in_repo_path)
-            cached_repo_path = cache_path / orga / repo_name / commit_id
+            cached_repo_path = PYBIO_CACHE_PATH / orga / repo_name / commit_id
             local_path = cached_repo_path / in_repo_path
             if not local_path.exists():
                 cached_repo_path = str(cached_repo_path.resolve())
@@ -142,15 +142,15 @@ def resolve_uri(uri_node: nodes.URI, cache_path: pathlib.Path, root_path: pathli
         else:
             raise NotImplementedError(f"unkown github url format: {uri_node} with '{blob_releases_archive}'")
     elif uri_node.scheme == "https":
-        local_path = _download_uri_node_to_local_path(uri_node, cache_path)
+        local_path = _download_uri_node_to_local_path(uri_node)
     else:
         raise ValueError(f"Unknown uri scheme {uri_node.scheme}")
 
     return local_path
 
 
-def _download_uri_node_to_local_path(uri_node: nodes.URI, cache_path: pathlib.Path) -> pathlib.Path:
-    local_path = cache_path / uri_node.scheme / uri_node.netloc / uri_node.path.strip("/") / uri_node.query
+def _download_uri_node_to_local_path(uri_node: nodes.URI) -> pathlib.Path:
+    local_path = PYBIO_CACHE_PATH / uri_node.scheme / uri_node.netloc / uri_node.path.strip("/") / uri_node.query
     if not local_path.exists():
         local_path.parent.mkdir(parents=True, exist_ok=True)
         url_str = urlunparse([uri_node.scheme, uri_node.netloc, uri_node.path, "", uri_node.query, ""])
@@ -193,22 +193,21 @@ class ResolvedImportablePath(nodes.ImportablePath):
 
 
 class URITransformer(NodeTransformer):
-    def __init__(self, root_path: pathlib.Path, cache_path: pathlib.Path):
+    def __init__(self, root_path: pathlib.Path):
         self.root_path = root_path
-        self.cache_path = cache_path
         self.python_path = self._guess_python_path_from_local_spec_path(root_path=root_path)
 
     def transform_SpecURI(self, node: nodes.SpecURI) -> Any:
-        local_path = resolve_uri(node, root_path=self.root_path, cache_path=self.cache_path)
+        local_path = resolve_uri(node, root_path=self.root_path)
         with local_path.open() as f:
             data = yaml.safe_load(f)
 
         resolved_node = node.spec_schema.load(data)
-        subtransformer = self.__class__(root_path=local_path.parent, cache_path=self.cache_path)
+        subtransformer = self.__class__(root_path=local_path.parent)
         return subtransformer.transform(resolved_node)
 
     def transform_URI(self, node: nodes.URI) -> pathlib.Path:
-        local_path = resolve_uri(node, root_path=self.root_path, cache_path=self.cache_path)
+        local_path = resolve_uri(node, root_path=self.root_path)
         return local_path
         # if local_path.is_dir():
         #     return local_path
@@ -295,14 +294,8 @@ class MagicKwargsTransformer(NodeTransformer):
 
 
 def load_spec_and_kwargs(
-    uri: str,
-    kwargs: Dict[str, Any] = None,
-    *,
-    root_path: pathlib.Path = pathlib.Path("."),
-    cache_path: pathlib.Path = pathlib.Path(os.getenv("PYBIO_CACHE_PATH", "pybio_cache")),
-    **spec_kwargs,
+    uri: str, kwargs: Dict[str, Any] = None, *, root_path: pathlib.Path = pathlib.Path("."), **spec_kwargs
 ) -> nodes.Model:
-    cache_path = cache_path.resolve()
     root_path = root_path.resolve()
     assert root_path.exists(), root_path
 
@@ -317,11 +310,11 @@ def load_spec_and_kwargs(
     else:
         raise ValueError(f"Invalid spec suffix: {spec_suffix}")
 
-    local_spec_path = resolve_uri(uri_node=tree.spec, root_path=root_path, cache_path=cache_path)
+    local_spec_path = resolve_uri(uri_node=tree.spec, root_path=root_path)
 
-    tree = URITransformer(root_path=local_spec_path.parent, cache_path=cache_path).transform(tree)
+    tree = URITransformer(root_path=local_spec_path.parent).transform(tree)
     tree = SourceTransformer().transform(tree)
-    tree = MagicKwargsTransformer(cache_path=cache_path).transform(tree)
+    tree = MagicKwargsTransformer().transform(tree)
     return tree
 
 
@@ -370,7 +363,7 @@ def load_model_config(uri: Union[pathlib.Path, str]) -> nodes.Model:
 
 def cache_uri(uri_str: str, sha256: str) -> pathlib.Path:
     file_node = schema.File().load({"source": uri_str, "sha256": sha256})
-    uri_transformer = URITransformer(root_path=cache_path, cache_path=cache_path)
+    uri_transformer = URITransformer(root_path=PYBIO_CACHE_PATH)
     file_node = uri_transformer.transform(file_node)
     file_node = SourceTransformer().transform(file_node)
     # todo: check hash

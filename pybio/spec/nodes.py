@@ -112,10 +112,22 @@ class BaseSpec(Node):
     config: Dict[str, Any]
 
 
+Axes = NewType("Axes", str)
+
+@dataclass
+class ZeroMeanUnitVariance(Node):
+    mode: str
+    axes: Axes
+    mean: Optional[Union[float, List]]
+    std: Optional[Union[float, List]]
+
+
 @dataclass
 class InputShape(Node):
     min: List[float]
     step: List[float]
+
+    preprocessing: List[Union[ZeroMeanUnitVariance]]
 
     def __len__(self):
         return len(self.min)
@@ -129,9 +141,6 @@ class OutputShape(Node):
 
     def __len__(self):
         return len(self.scale)
-
-
-Axes = NewType("Axes", str)
 
 
 @dataclass

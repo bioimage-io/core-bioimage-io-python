@@ -92,14 +92,14 @@ class TestTraversingSpecURI:
         assert {"axes": "xyc"} == transformed_tree.spec_uri_b
 
 
-def test_resolve_import_path(tmpdir, cache_path):
+def test_resolve_import_path(tmpdir):
     tmpdir = Path(tmpdir)
     manifest_path = tmpdir / "manifest.yaml"
     manifest_path.touch()
     filepath = tmpdir / "my_mod.py"
     filepath.write_text("class Foo: pass", encoding="utf8")
     node = ImportablePath(filepath=filepath, callable_name="Foo")
-    uri_transformed = URITransformer(root_path=tmpdir, cache_path=cache_path).transform(node)
+    uri_transformed = URITransformer(root_path=tmpdir).transform(node)
     source_transformed = SourceTransformer().transform(uri_transformed)
     assert isinstance(source_transformed, ImportedSource)
     Foo = source_transformed.factory
@@ -107,13 +107,14 @@ def test_resolve_import_path(tmpdir, cache_path):
     assert isinstance(Foo, type)
 
 
-def test_resolve_directory_uri(tmpdir, cache_path):
+def test_resolve_directory_uri(tmpdir):
     node = URI(scheme="", netloc="", path=str(tmpdir), query="")
-    uri_transformed = URITransformer(root_path=Path(tmpdir), cache_path=cache_path).transform(node)
+    uri_transformed = URITransformer(root_path=Path(tmpdir)).transform(node)
     assert uri_transformed == Path(tmpdir)
 
 
 from pprint import pprint
+
 
 def test_load_and_validate_model_schema(rf_model_data_v0_1):
     loaded = load_and_validate_model_schema(rf_model_data_v0_1)

@@ -5,11 +5,12 @@ from urllib.parse import urlparse
 from marshmallow.fields import (
     DateTime,  # noqa
     Dict,
+    Field,
     Float,  # noqa
     Integer,  # noqa
     List,  # noqa
     Nested,
-    Str,
+    String,
     Tuple as MarshmallowTuple,
     ValidationError,
 )
@@ -42,7 +43,7 @@ class SpecURI(Nested):
         return nodes.SpecURI(spec_schema=self.schema, scheme=uri.scheme, netloc=uri.netloc, path=uri.path, query="")
 
 
-class URI(Str):
+class URI(String):
     def _deserialize(self, *args, **kwargs) -> nodes.URI:
         uri_str = super()._deserialize(*args, **kwargs)
         uri = urlparse(uri_str)
@@ -55,19 +56,19 @@ class URI(Str):
         return nodes.URI(scheme=uri.scheme, netloc=uri.netloc, path=uri.path, query=uri.query)
 
 
-class Path(Str):
+class Path(String):
     def _deserialize(self, *args, **kwargs):
         path_str = super()._deserialize(*args, **kwargs)
         return pathlib.Path(path_str)
 
 
-class SHA256(Str):
+class SHA256(String):
     def _deserialize(self, *args, **kwargs):
         value_str = super()._deserialize(*args, **kwargs)
         return value_str
 
 
-class ImportableSource(Str):
+class ImportableSource(String):
     @staticmethod
     def _is_import(path):
         return "::" not in path
@@ -105,17 +106,17 @@ class Kwargs(Dict):
         return nodes.Kwargs(**value)
 
 
-class Axes(Str):
+class Axes(String):
     def _deserialize(self, *args, **kwargs) -> str:
         axes_str = super()._deserialize(*args, **kwargs)
-        valid_axes = "bczyx"
+        valid_axes = self.metadata.get("valid_axes", "bczyx")
         if any(a not in valid_axes for a in axes_str):
-            raise PyBioValidationException(f"Invalid axes! Valid axes are: {valid_axes}")
+            raise PyBioValidationException(f"Invalid axes! Valid axes consist of: {valid_axes}")
 
         return axes_str
 
 
-class Dependencies(Str):  # todo: make Debency inherit from URI
+class Dependencies(String):  # todo: make Debency inherit from URI
     pass
 
 
@@ -150,6 +151,24 @@ class Tensors(Nested):
             #     return self._load(value, data, many=True)
         else:
             raise PyBioValidationException(f"Invalid input type: {type(value)}")
+
+
+class ArbitrarilyNestedList(Nested):
+    # def __init__(self, *args, **kwargs):
+    #     super().__init__(*args, **kwargs)
+    #     self.nested_type = nested_type
+
+    def _deserialize(
+        self,
+        value: typing.Any,
+        attr: typing.Optional[str],
+        data: typing.Optional[typing.Mapping[str, typing.Any]],
+        **kwargs,
+    ):
+        if isinstance(value, list):
+            return [self._deserialize(v, attr, data, **kwargs) for v in value]
+        else:
+            super()._deserialize(value, attr, data, **kwargs)
 
 
 class Shape(Nested):

@@ -1,8 +1,8 @@
 from os import getenv
 from pathlib import Path
 
-PYBIO_CACHE_PATH = getenv("PYBIO_CACHE_PATH")
-if PYBIO_CACHE_PATH is None:
-    cache_path = Path.home() / "pybio_cache"
+PYBIO_CACHE_PATH_ENV = getenv("PYBIO_CACHE_PATH")
+if PYBIO_CACHE_PATH_ENV is None:
+    PYBIO_CACHE_PATH = Path.home() / "pybio_cache"
 else:
-    cache_path = Path(PYBIO_CACHE_PATH)
+    PYBIO_CACHE_PATH = Path(PYBIO_CACHE_PATH_ENV)
