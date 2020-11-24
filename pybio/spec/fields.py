@@ -12,6 +12,7 @@ from marshmallow.fields import (
     Float,  # noqa
     Integer,  # noqa
     List,  # noqa
+    Method, # noqa
     Nested,
     Number,
     String,
@@ -124,7 +125,7 @@ class Axes(String):
         return axes_str
 
 
-class Dependencies(String):  # todo: make Debency inherit from URI
+class Dependencies(String):  # todo: make Dependency inherit from URI
     pass
 
 
@@ -161,38 +162,70 @@ class Tensors(Nested):
             raise PyBioValidationException(f"Invalid input type: {type(value)}")
 
 
-class Shape(Nested):
-    def __init__(self, *args, valid_magic_values: typing.List[nodes.MagicShapeValue], **kwargs):
-        super().__init__(*args, **kwargs)
-        self.valid_magic_values = valid_magic_values
+# class Shape(Nested):
+#     def deserialize(
+#             self,
+#         value: typing.Any,
+#         attr: str = None,
+#         data: typing.Mapping[str, typing.Any] = None,
+#         **kwargs
+#     ):
+#         if isinstance(value, dict):
+#             return super().deserialize(value, attr, data, **kwargs)
+#
+#         elif isinstance(value, list):
+#             if any(not isinstance(v, int) for v in value):
+#                 raise PyBioValidationException("Non-integers in explicit shape.")
+#
+#             return tuple(value)
+#         else:
+#             raise PyBioValidationException(f"Invalid input type: {type(value)}")
 
-    def _deserialize(
+
+class Shape(Nested):
+    _explicit = List(Integer)
+
+    def deserialize(
         self,
         value: typing.Any,
-        attr: typing.Optional[str],
-        data: typing.Optional[typing.Mapping[str, typing.Any]],
-        **kwargs,
+        attr: str = None,
+        data: typing.Mapping[str, typing.Any] = None,
+        **kwargs
     ):
-        if isinstance(value, str):
-            try:
-                value = nodes.MagicShapeValue(value)
-            except ValueError as e:
-                raise PyBioValidationException(str(e)) from e
-
-            if value in self.valid_magic_values:
-                return value
-            else:
-                raise PyBioValidationException(f"Invalid magic value: {value.value}")
-
-        elif isinstance(value, list):
-            if any(not isinstance(v, int) for v in value):
-                raise PyBioValidationException("Encountered non-integers in shape")
-
-            return tuple(value)
+        if isinstance(value, list):
+            return self._explicit.deserialize(value, attr, data, **kwargs)
         elif isinstance(value, dict):
-            return self._load(value, data)
+            return super().deserialize(value, attr, data, **kwargs)
         else:
-            raise PyBioValidationException(f"Invalid input type: {type(value)}")
+            self.make_error(attr, input=value, type=value.__class__.__name__)
+
+    # def deserialize(
+    #     self,
+    #     value: typing.Any,
+    #     attr: typing.Optional[str],
+    #     data: typing.Optional[typing.Mapping[str, typing.Any]],
+    #     **kwargs,
+    # ):
+    #     if isinstance(value, str):
+    #         try:
+    #             value = nodes.MagicShapeValue(value)
+    #         except ValueError as e:
+    #             raise PyBioValidationException(str(e)) from e
+    #
+    #         if value in self.valid_magic_values:
+    #             return value
+    #         else:
+    #             raise PyBioValidationException(f"Invalid magic value: {value.value}")
+    #
+    #     elif isinstance(value, list):
+    #         if any(not isinstance(v, int) for v in value):
+    #             raise PyBioValidationException("Encountered non-integers in shape")
+    #
+    #         return tuple(value)
+    #     elif isinstance(value, dict):
+    #         return self._load(value, data)
+    #     else:
+    #         raise PyBioValidationException(f"Invalid input type: {type(value)}")
 
 
 class Array(Field):
@@ -227,3 +260,14 @@ class Array(Field):
                 raise PyBioValidationException(str(e)) from e
         else:
             return value
+
+class Halo(List):
+    def __init__(self):
+        super().__init__(Integer, missing=None)
+
+
+    def _deserialize(self, value, attr, data, **kwargs) -> typing.List[typing.Any]:
+        if value is None:
+            return [0] * len(data["shape"])
+        else:
+            return super()._deserialize(value, attr, data, **kwargs)

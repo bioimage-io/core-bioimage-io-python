@@ -1,7 +1,7 @@
 from dataclasses import asdict
 from pathlib import Path
 from pprint import pprint
-from typing import get_type_hints
+from typing import Any, Iterable, Mapping, Union, get_type_hints
 
 from marshmallow import Schema, ValidationError, post_load, validate, validates, validates_schema
 
@@ -35,8 +35,10 @@ class CiteEntry(PyBioSchema):
             raise ValidationError("doi or url needs to be specified in a citation")
 
 
-class BaseSpec(PyBioSchema):
-    format_version = fields.String(required=True)
+class Spec(PyBioSchema):
+    format_version = fields.String(
+        validate=validate.OneOf(get_type_hints(nodes.Spec)["format_version"].__args__), required=True
+    )
     name = fields.String(required=True)
     description = fields.String(required=True)
 
@@ -51,7 +53,7 @@ class BaseSpec(PyBioSchema):
     covers = fields.List(fields.URI, missing=list)
     attachments = fields.Dict(fields.String, missing=dict)
 
-    config = fields.Dict(fields.String, missing=dict)
+    config = fields.Dict(missing=dict)
 
 
 class SpecWithKwargs(PyBioSchema):
@@ -92,18 +94,11 @@ class OutputShape(PyBioSchema):
 class Tensor(PyBioSchema):
     name = fields.String(required=True, validate=validate.Predicate("isidentifier"))
     description = fields.String(required=True)
-    axes = fields.Axes(missing=None)
+    axes = fields.Axes(required=True)  # todo check if null is ok (it shouldn't)
     data_type = fields.String(required=True)
     data_range = fields.Tuple((fields.Float(allow_nan=True), fields.Float(allow_nan=True)))
 
     shape: fields.Shape
-
-    @validates_schema
-    def axes_and_shape(self, data, **kwargs):
-        axes = data["axes"]
-        shape = data["shape"]
-        if not isinstance(shape, MagicShapeValue) and shape and axes is None:
-            raise PyBioValidationException("Axes may not be 'null', when shape is specified")
 
 
 class Preprocessing(PyBioSchema):
@@ -115,6 +110,7 @@ class Preprocessing(PyBioSchema):
         if not data:
             return None
 
+        # camel_case_name = data["name"].title()
         this_type = getattr(nodes, self.__class__.__name__)
         try:
             return this_type(**data)
@@ -154,43 +150,50 @@ class Preprocessing(PyBioSchema):
 
 
 class InputTensor(Tensor):
-    shape = fields.Shape(InputShape, valid_magic_values=[MagicShapeValue.any], required=True)
+    shape = fields.Shape(InputShape, required=True)
     preprocessing = fields.List(fields.Nested(Preprocessing), missing=list)
 
     @validates_schema
-    def zero_batch_step(self, data, **kwargs):
+    def zero_batch_step_and_one_batch_size(self, data, **kwargs):
         axes = data["axes"]
         shape = data["shape"]
-        if not isinstance(shape, MagicShapeValue):
-            if axes is None:
-                raise PyBioValidationException("Axes field required when shape is specified")
 
-            assert isinstance(axes, str), type(axes)
+        bidx = axes.find("b")
+        if bidx == -1:
+            return
 
-            bidx = axes.find("b")
-            if isinstance(shape, tuple):
-                # exact shape (with batch size 1)
-                if bidx != -1 and shape[bidx] != 1:
-                    raise PyBioValidationException("Input shape has to be one in the batch dimension.")
+        if isinstance(shape, nodes.InputShape):
+            step = shape.step
+            shape = shape.min
 
-            elif isinstance(shape, nodes.InputShape):
-                step = shape.step
-                if bidx != -1 and shape.min[bidx] != 1:
-                    raise PyBioValidationException("Input shape has to be one in the batch dimension.")
+        elif isinstance(shape, tuple):
+            step = (0,) * len(shape)
+        else:
+            raise PyBioValidationException(f"Unknown shape type {type(shape)}")
 
-                if bidx != -1 and step[bidx] != 0:
-                    raise PyBioValidationException(
-                        "Input shape step has to be zero in the batch dimension (the batch dimension can always be "
-                        "increased, but `step` should specify how to increase the minimal shape to find the largest "
-                        "single batch shape)"
-                    )
-            else:
-                raise PyBioValidationException(f"Unknown shape type {type(shape)}")
+        if step[bidx] != 0:
+            raise PyBioValidationException(
+                "Input shape step has to be zero in the batch dimension (the batch dimension can always be "
+                "increased, but `step` should specify how to increase the minimal shape to find the largest "
+                "single batch shape)"
+            )
+
+        if shape[bidx] != 1:
+            raise PyBioValidationException("Input shape has to be 1 in the batch dimension b.")
 
 
 class OutputTensor(Tensor):
-    shape = fields.Shape(OutputShape, valid_magic_values=[MagicShapeValue.dynamic], required=True)
-    halo = fields.List(fields.Integer, missing=None)
+    shape = fields.Shape(OutputShape, required=True)
+    halo = fields.Halo()
+
+    # halo = fields.Method(deserialize="load_halo")
+    #
+    # def load_halo(self, value):
+    #     _halo = fields.List(fields.Integer, missing=None)
+    #     if value is None:
+    #         return (0,) * len(self.shape)
+    #
+    #     return value
 
     @validates_schema
     def matching_halo_length(self, data, **kwargs):
@@ -201,17 +204,13 @@ class OutputTensor(Tensor):
         elif isinstance(shape, tuple) or isinstance(shape, nodes.OutputShape):
             if len(halo) != len(shape):
                 raise PyBioValidationException(f"halo {halo} has to have same length as shape {shape}!")
-        elif not isinstance(shape, MagicShapeValue):
-            raise NotImplementedError
+        else:
+            raise NotImplementedError(type(shape))
 
 
 class WithFileSource(PyBioSchema):
     source = fields.URI(required=True)
     sha256 = fields.String(validate=validate.Length(equal=64))
-
-
-class File(WithFileSource):
-    pass
 
 
 class Weight(WithFileSource):
@@ -222,29 +221,28 @@ class Weight(WithFileSource):
     covers = fields.List(fields.URI, missing=list)
     test_inputs = fields.List(fields.URI(required=True), required=True)
     test_outputs = fields.List(fields.URI(required=True), required=True)
-    timestamp = fields.DateTime(required=True)
     documentation = fields.URI(missing=None)
     tags = fields.List(fields.String, required=True)
     attachments = fields.Dict(missing=dict)
 
 
-class ModelSpec(BaseSpec):
-    language = fields.String(
-        validate=validate.OneOf(get_type_hints(nodes.ModelSpec)["language"].__args__), required=True
-    )
-    framework = fields.String(
-        validate=validate.OneOf(get_type_hints(nodes.ModelSpec)["framework"].__args__), required=True
-    )
-    weights_format = fields.String(
-        validate=validate.OneOf(get_type_hints(nodes.ModelSpec)["weights_format"].__args__), required=True
-    )
+class Model(Spec):
+    language = fields.String(validate=validate.OneOf(get_type_hints(nodes.Model)["language"].__args__), required=True)
+    framework = fields.String(validate=validate.OneOf(get_type_hints(nodes.Model)["framework"].__args__), required=True)
     dependencies = fields.Dependencies(missing=None)
+    timestamp = fields.DateTime(required=True)
 
     source = fields.ImportableSource(missing=None)
     sha256 = fields.String(validate=validate.Length(equal=64), missing=None)
     kwargs = fields.Kwargs(fields.String, missing=nodes.Kwargs)
 
-    weights = fields.List(fields.Nested(Weight), required=True)
+    weights = fields.Dict(
+        fields.String(
+            validate=validate.OneOf(get_type_hints(nodes.Model)["weights"].__args__[0].__args__), required=True
+        ),
+        fields.Nested(Weight),
+        required=True,
+    )
     inputs = fields.Tensors(InputTensor, valid_magic_values=[MagicTensorsValue.any], many=True)
     outputs = fields.Tensors(
         OutputTensor, valid_magic_values=[MagicTensorsValue.same, MagicTensorsValue.dynamic], many=True
@@ -256,26 +254,34 @@ class ModelSpec(BaseSpec):
         pass  # todo validate_reference_input_names
 
     @validates_schema
-    def language_and_framework_and_weights_format_match(self, data, **kwargs):
-        names = ["language", "framework", "weights_format"]
+    def language_and_framework_match(self, data, **kwargs):
+        field_names = ("language", "framework")
         valid_combinations = {
-            ("python", "scikit-learn", "pickle"): {"requires_source": False},
-            ("python", "pytorch", "pytorch"): {"requires_source": True},
-            ("python", "tensorflow", "keras"): {"requires_source": False},
-            ("java", "tensorflow", "keras"): {"requires_source": False},
+            ("python", "scikit-learn"): {"requires_source": False},
+            ("python", "pytorch"): {"requires_source": True},
+            ("python", "tensorflow"): {"requires_source": False},
+            ("java", "tensorflow"): {"requires_source": False},
         }
-        combination = tuple(data[name] for name in names)
+        combination = tuple(data[name] for name in field_names)
         if combination not in valid_combinations:
-            raise PyBioValidationException(f"invalid combination of {dict(zip(names, combination))}")
+            raise PyBioValidationException(f"invalid combination of {dict(zip(field_names, combination))}")
 
         if valid_combinations[combination]["requires_source"] and (data["source"] is None or data["sha256"] is None):
             raise PyBioValidationException(
-                f"{dict(zip(names, combination))} require source code (and its sha256 hash) to be specified."
+                f"{dict(zip(field_names, combination))} require source code (and its sha256 hash) to be specified."
             )
 
+    @validates_schema
+    def source_specified_if_required(self, data, **kwargs):
+        if data["source"] is not None:
+            return
 
-class Model(SpecWithKwargs):
-    spec = fields.SpecURI(ModelSpec, required=True)
+        weight_format_requires_source = {"pickle": True, "pytorch": True, "keras": False}
+        require_source = {wf for wf in data["weights"] if weight_format_requires_source[wf]}
+        if require_source:
+            raise PyBioValidationException(
+                f"These specified weight formats require source code to be specified: {require_source}"
+            )
 
 
 class BioImageIoManifestModelEntry(Schema):
@@ -286,12 +292,23 @@ class BioImageIoManifestModelEntry(Schema):
 
 
 class BioImageIoManifest(Schema):
-    format_version = fields.String()
+    format_version = fields.String(
+        validate=validate.OneOf(get_type_hints(nodes.Spec)["format_version"].__args__), required=True
+    )
     config = fields.Dict()
 
     application = fields.List(fields.Dict)
 
     model = fields.List(fields.Nested(BioImageIoManifestModelEntry))
+
+
+# helper schemas
+class File(WithFileSource):
+    pass
+
+
+class Resource(PyBioSchema):
+    uri = fields.URI(required=False)
 
 
 if __name__ == "__main__":

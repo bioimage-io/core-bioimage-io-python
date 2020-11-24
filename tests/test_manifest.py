@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from pybio.spec import load_spec_and_kwargs, utils
+from pybio.spec import load_spec, utils
 
 MANIFEST_PATH = Path(__file__).parent / "../manifest.yaml"
 
@@ -38,11 +38,9 @@ specs/models/sklearnbased/RandomForestClassifierBroadNucleusDataBinarized.model.
 
 
 def test_load_specs_from_manifest(cache_path, category, spec_path, required_spec_kwargs):
-    kwargs = required_spec_kwargs.get(spec_path, {})
-
     spec_path = MANIFEST_PATH.parent / spec_path
     assert spec_path.exists()
 
-    loaded_spec = load_spec_and_kwargs(str(spec_path), **kwargs, cache_path=cache_path)
+    loaded_spec = load_spec(str(spec_path))
     instance = utils.get_instance(loaded_spec)
     assert instance

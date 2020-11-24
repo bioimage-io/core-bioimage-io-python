@@ -1,13 +1,13 @@
 from dataclasses import asdict
 
 from pybio.spec import schema
-from pybio.spec.utils import _maybe_convert_to_v0_3
+from pybio.spec.utils import FormatConverter
 
 
 def test_model_nodes_format_0_1_to_0_3(rf_model_data_v0_1, rf_model_data):
-    expected = asdict(schema.ModelSpec().load(rf_model_data))
-    converted_data = _maybe_convert_to_v0_3(rf_model_data_v0_1)
-    actual = asdict(schema.ModelSpec().load(converted_data))
+    expected = asdict(schema.Model().load(rf_model_data))
+    converted_data = FormatConverter()(rf_model_data_v0_1)
+    actual = asdict(schema.Model().load(converted_data))
 
     # expect converted description
     for ipt in expected["inputs"]:
@@ -15,7 +15,6 @@ def test_model_nodes_format_0_1_to_0_3(rf_model_data_v0_1, rf_model_data):
 
     for out in expected["outputs"]:
         out["description"] = out["name"]
-
 
     for key, item in expected.items():
         assert key in actual

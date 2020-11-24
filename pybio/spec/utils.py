@@ -1,20 +1,25 @@
 import dataclasses
 import importlib.util
+import copy
 import logging
 import os
 import pathlib
 import subprocess
 import sys
 import uuid
+from collections import defaultdict
+from functools import singledispatch
 from typing import Any, Callable, Dict, TypeVar, Union
 from urllib.parse import ParseResult, urlparse, urlunparse
 from urllib.request import url2pathname, urlretrieve
 
-import yaml
+from ruamel.yaml import YAML
+
+yaml = YAML(typ="safe")
 
 from pybio.core.cache import PYBIO_CACHE_PATH
 from . import nodes, schema, fields
-from .exceptions import InvalidDoiException, PyBioValidationException
+from .exceptions import InvalidDoiException, PyBioUnconvertableException, PyBioValidationException
 
 
 def iter_fields(node: nodes.Node):
@@ -49,7 +54,7 @@ class NodeVisitor:
 GenericNode = TypeVar("GenericNode")
 
 
-class NodeTransformer:
+class Transformer:
     def transform(self, node: GenericNode) -> GenericNode:
         method = "transform_" + node.__class__.__name__
 
@@ -58,15 +63,27 @@ class NodeTransformer:
         return transformer(node)
 
     def generic_transformer(self, node: Any) -> Any:
+        return node
+
+    def transform_list(self, node: list) -> list:
+        return [self.transform(subnode) for subnode in node]
+
+    def transform_dict(self, node: dict) -> dict:
+        return {key: self.transform(value) for key, value in node.items()}
+
+
+class NodeTransformer(Transformer):
+    def generic_transformer(self, node: Any) -> Any:
         if isinstance(node, nodes.Node):
             return dataclasses.replace(
                 node, **{field.name: self.transform(getattr(node, field.name)) for field in dataclasses.fields(node)}
             )
         else:
-            return node
+            return super().generic_transformer(node)
 
-    def transform_list(self, node: list) -> list:
-        return [self.transform(subnode) for subnode in node]
+
+class RawObjTransformer(Transformer):
+    pass
 
 
 @dataclasses.dataclass
@@ -77,12 +94,8 @@ class ImportedSource:
         return self.factory(*args, **kwargs)
 
 
-def get_instance(node: Union[nodes.SpecWithKwargs, nodes.BaseSpec, nodes.WithImportableSource], **kwargs):
-    if isinstance(node, nodes.SpecWithKwargs):
-        joined_spec_kwargs = dict(node.kwargs)
-        joined_spec_kwargs.update(kwargs)
-        return get_instance(node.spec, **joined_spec_kwargs)
-    elif isinstance(node, nodes.WithImportableSource):
+def get_instance(node: nodes.WithImportableSource, **kwargs):
+    if isinstance(node, nodes.WithImportableSource):
         if not isinstance(node.source, ImportedSource):
             raise ValueError(
                 f"Encountered unexpected node.source type {type(node.source)}. `get_instance` requires URITransformer and SourceTransformer to be applied beforehand."
@@ -161,25 +174,6 @@ def _download_uri_node_to_local_path(uri_node: nodes.URI) -> pathlib.Path:
     return local_path
 
 
-def resolve_doi(uri: ParseResult) -> ParseResult:
-    if uri.scheme.lower() != "doi" and not uri.netloc.endswith("doi.org"):
-        return uri
-
-    doi = uri.path.strip("/")
-
-    url = "https://doi.org/api/handles/" + doi
-    r = requests.get(url).json()
-    response_code = r["responseCode"]
-    if response_code != 1:
-        raise InvalidDoiException(f"Could not resolve doi {doi} (responseCode={response_code})")
-
-    val = min(r["values"], key=lambda v: v["index"])
-
-    assert val["type"] == "URL"  # todo: handle other types
-    assert val["data"]["format"] == "string"
-    return urlparse(val["data"]["value"])
-
-
 @dataclasses.dataclass
 class LocalImportableModule(nodes.ImportableModule):
     python_path: pathlib.Path
@@ -190,6 +184,139 @@ class ResolvedImportablePath(nodes.ImportablePath):
     pass
 
 
+class RawURITransformer(RawObjTransformer):
+    def __init__(self, root_path: pathlib.Path):
+        self.root_path = root_path
+
+    def _transform_selected_uris(self, uri_key, uri_value):
+        """we only want to resolve certain uri's"""
+        if uri_key in []:
+            raise NotImplementedError("specify keys that point to sub-specs")
+
+        return uri_key, uri_value
+
+    def transform_dict(self, node: dict) -> dict:
+        return {key: value for key, value in map(self._transform_selected_uris, node.items())}
+
+
+def flatten_dict(dd, separator=":", prefix=""):
+    return (
+        {
+            prefix + separator + k if prefix else k: v
+            for kk, vv in dd.items()
+            for k, v in flatten_dict(vv, separator, kk).items()
+        }
+        if isinstance(dd, dict)
+        else {prefix: dd}
+    )
+
+
+class FormatConverter:
+    @staticmethod
+    def maybe_convert_to_v0_3(data: Dict) -> Dict:
+        if "format_version" not in data:
+            raise PyBioValidationException("format_version")
+
+        if data["format_version"] != "0.1.0":
+            return data
+
+        from . import schema_v0_1
+
+        # validate with old schema
+        schema_v0_1.Model().validate(data)
+
+        data = copy.deepcopy(data)
+        data["format_version"] = "0.3.0"
+
+        data["kwargs"] = {k: None for k in data.pop("required_kwargs", set())}
+        data["kwargs"].update(data.pop("optional_kwargs", {}))
+
+        for ipt in data["inputs"]:
+            ipt["description"] = ipt["name"]
+
+        for out in data["outputs"]:
+            out["description"] = out["name"]
+
+        def rec_dd():
+            return defaultdict(rec_dd)
+
+        conversion_errors = rec_dd()
+        missing = "MISSING"
+        try:
+            data["git_repo"] = data["config"]["future"].pop("git_repo")
+        except KeyError:
+            conversion_errors["config"]["future"]["git_repo"] = missing
+
+        try:
+            data["timestamp"] = data["config"]["future"].pop("timestamp")
+        except KeyError:
+            conversion_errors["config"]["future"]["timestamp"] = missing
+
+        try:
+            weights_format = data["config"]["future"].pop("weights_format")
+        except KeyError:
+            conversion_errors["config"]["future"]["weights_format"] = missing
+            weights_format = missing
+
+        try:
+            source = data["prediction"]["weights"].pop("source")
+        except KeyError:
+            conversion_errors["prediction"]["weights"]["source"] = missing
+            source = missing
+
+        try:
+            sha256 = data["prediction"]["weights"].pop("hash").pop("sha256")
+        except KeyError:
+            conversion_errors["prediction"]["weights"]["hash"]["sha256"] = missing
+            sha256 = missing
+
+        try:
+            test_input = data.pop("test_input")
+        except KeyError:
+            conversion_errors["test_input"] = missing
+            test_input = missing
+
+        try:
+            test_output = data.pop("test_output")
+        except KeyError:
+            conversion_errors["test_output"] = missing
+            test_output = missing
+
+        weights_entry = {
+            "id": "default",
+            "name": "weights",
+            "description": "weights",
+            "authors": data["authors"],
+            "source": source,
+            "sha256": sha256,
+            "tags": [],
+            "test_inputs": [test_input],  # todo: convert single file test_input to list of test_inputs
+            "test_outputs": [test_output],  # todo: convert single file test_output to list of test_outputs
+        }
+
+        data["weights"] = {weights_format: weights_entry}
+
+        if conversion_errors:
+
+            def as_nested_dict(nested_dd):
+                return {
+                    key: (as_nested_dict(value) if isinstance(value, dict) else value)
+                    for key, value in nested_dd.items()
+                }
+
+            conversion_errors = as_nested_dict(conversion_errors)
+            raise PyBioUnconvertableException(conversion_errors)
+
+        del data["prediction"]
+        del data["training"]
+        return data
+
+    def __call__(self, data):
+        data = self.maybe_convert_to_v0_3(data)
+
+        return data
+
+
 class URITransformer(NodeTransformer):
     def __init__(self, root_path: pathlib.Path):
         self.root_path = root_path
@@ -197,8 +324,7 @@ class URITransformer(NodeTransformer):
 
     def transform_SpecURI(self, node: nodes.SpecURI) -> Any:
         local_path = resolve_uri(node, root_path=self.root_path)
-        with local_path.open() as f:
-            data = yaml.safe_load(f)
+        data = yaml.load(local_path)
 
         resolved_node = node.spec_schema.load(data)
         subtransformer = self.__class__(root_path=local_path.parent)
@@ -207,11 +333,6 @@ class URITransformer(NodeTransformer):
     def transform_URI(self, node: nodes.URI) -> pathlib.Path:
         local_path = resolve_uri(node, root_path=self.root_path)
         return local_path
-        # if local_path.is_dir():
-        #     return local_path
-        # else:
-        #     with local_path.open(mode="rb") as f:
-        #         return io.BytesIO(f.read())
 
     def transform_ImportablePath(self, node: nodes.ImportablePath) -> ResolvedImportablePath:
         return ResolvedImportablePath(
@@ -291,72 +412,41 @@ class MagicKwargsTransformer(NodeTransformer):
         return node
 
 
-def load_spec_and_kwargs(
-    uri: str, kwargs: Dict[str, Any] = None, *, root_path: pathlib.Path = pathlib.Path("."), **spec_kwargs
-) -> nodes.Model:
-    root_path = root_path.resolve()
-    assert root_path.exists(), root_path
-
-    data = {"spec": uri, "kwargs": kwargs or {}, **spec_kwargs}
-    last_dot = uri.rfind(".")
-    second_last_dot = uri[:last_dot].rfind(".")
-    spec_suffix = uri[second_last_dot + 1 : last_dot]
-    if spec_suffix == "model":
-        tree = schema.Model().load(data)
-    elif spec_suffix in ("transformation", "reader", "sampler"):
-        raise NotImplementedError(spec_suffix)
-    else:
-        raise ValueError(f"Invalid spec suffix: {spec_suffix}")
-
-    local_spec_path = resolve_uri(uri_node=tree.spec, root_path=root_path)
-
-    tree = URITransformer(root_path=local_spec_path.parent).transform(tree)
+def load_model_spec(data, root_path: pathlib.Path) -> nodes.Model:
+    tree = schema.Model().load(data)
+    tree = URITransformer(root_path=root_path).transform(tree)
     tree = SourceTransformer().transform(tree)
     tree = MagicKwargsTransformer().transform(tree)
     return tree
 
 
-import copy
+@singledispatch
+def load_spec(uri) -> nodes.Model:
+    raise TypeError(uri)
 
 
-def _maybe_convert_to_v0_3(data):
-    if data["format_version"] != "0.1.0":
-        return data
-
-    from . import schema_v0_1
-
-    data = copy.deepcopy(data)
-    model_schema = schema_v0_1.ModelSpec()
-    validated_data = model_schema.load(data)
-    validated_data["format_version"] = "0.3.0"
-
-    for ipt in validated_data["inputs"]:
-        ipt["description"] = ipt["name"]
-
-    for out in validated_data["outputs"]:
-        out["description"] = out["name"]
-
-    return validated_data
-
-
-def load_and_validate_model_schema(data: Dict[str, Any]) -> nodes.Model:
-    if "format_version" not in data:
-        raise PyBioValidationException("format_version")
-
-    data = _maybe_convert_to_v0_3(data)
-    if data["format_version"] == "0.3.0":
-        return schema.ModelSpec().load(data)
+@load_spec.register
+def _(uri: str) -> nodes.Model:
+    last_dot = uri.rfind(".")
+    second_last_dot = uri[:last_dot].rfind(".")
+    spec_suffix = uri[second_last_dot + 1 : last_dot]
+    if spec_suffix == "model":
+        load_spec_from_data = load_model_spec
+    elif spec_suffix in ("transformation", "reader", "sampler"):
+        raise NotImplementedError(spec_suffix)
     else:
-        raise PyBioValidationException(data["format_version"])
+        raise ValueError(f"Invalid spec suffix: {spec_suffix}")
+
+    helper = schema.Resource().load({"uri": uri})
+
+    local_path = resolve_uri(uri_node=helper.uri, root_path=PYBIO_CACHE_PATH)
+    data = yaml.load(local_path)
+    return load_spec_from_data(data, root_path=local_path)
 
 
-def load_model_config(uri: Union[pathlib.Path, str]) -> nodes.Model:
-    if isinstance(uri, pathlib.Path):
-        uri = uri.as_uri()
-
-    ret = load_spec_and_kwargs(uri)
-    assert isinstance(ret, nodes.Model)
-    return ret
+@load_spec.register
+def _(uri: pathlib.Path):
+    return load_spec(uri.as_uri())
 
 
 def cache_uri(uri_str: str, sha256: str) -> pathlib.Path:

@@ -65,7 +65,7 @@ class SynchronizedPyBioTransformation(PyBioTransformation):
 def make_concatenated_apply(
     transformations: Sequence[PyBioTransformation]
 ) -> Callable[[Tuple[PyBioArray]], List[PyBioArray]]:
-    """ Helper function to apply a list of transformations to input tensors.
+    """ Resource function to apply a list of transformations to input tensors.
     """
     if not all(isinstance(trafo, PyBioTransformation) for trafo in transformations):
         raise ValueError("Expect iterable of transformations")

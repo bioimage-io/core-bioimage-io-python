@@ -12,6 +12,9 @@ class PyBioMissingKwargException(PyBioException, TypeError):
 class PyBioValidationException(PyBioException, ValidationError):
     pass
 
+class PyBioUnconvertableException(PyBioValidationException):
+    pass
+
 
 class InvalidDoiException(PyBioValidationException):
     pass

@@ -1,3 +1,6 @@
-__version__ = "0.3.0"
+from typing import get_type_hints
 
-from .utils import load_spec_and_kwargs, load_model_config
+from . import nodes
+from .utils import load_spec, load_model_spec
+
+__version__ = get_type_hints(nodes.Spec)["format_version"].__args__

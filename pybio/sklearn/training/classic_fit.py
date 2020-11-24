@@ -2,9 +2,9 @@ from os import getenv
 from pathlib import Path
 
 from pybio.core.datasets.broad_nucleus_data import BroadNucleusDataBinarized
-from pybio.core.models.sklearnbased import RandomForestClassifier
+from pybio.sklearn.models.sklearnbased import RandomForestClassifier
 from pybio.spec.nodes import Model
-from pybio.spec.utils import get_instance, load_model_config
+from pybio.spec.utils import get_instance, load_model_spec
 
 
 def classic_fit(pybio_model: Model):
@@ -21,7 +21,7 @@ def classic_fit(pybio_model: Model):
 
 
 def train_rf():
-    pybio_model = load_model_config(
+    pybio_model = load_model_spec(
         str((Path(__file__).parent / "../../../specs/models/sklearnbased/RandomForestClassifier.model.yaml").resolve())
     )
     rf = classic_fit(pybio_model)
@@ -30,7 +30,7 @@ def train_rf():
 
 
 def load_rf_weight_from_weights():
-    pybio_model = load_model_config(
+    pybio_model = load_model_spec(
         str((Path(__file__).parent / "../../../specs/models/sklearnbased/RandomForestClassifier.model.yaml").resolve())
     )
     p: Path = pybio_model.spec.weights[0].source  # noqa
@@ -41,4 +41,4 @@ def load_rf_weight_from_weights():
 
 
 if __name__ == "__main__":
-    rf = load_rf_weight()
+    rf = load_rf_weight_from_weights()

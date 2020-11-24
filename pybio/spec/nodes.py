@@ -88,8 +88,8 @@ class URI(Node):
 
 
 @dataclass
-class BaseSpec(Node):
-    format_version: str
+class Spec(Node):
+    format_version: Literal["0.3.0"]
     name: str
     description: str
 
@@ -110,20 +110,18 @@ class BaseSpec(Node):
 Axes = NewType("Axes", str)
 
 
-@dataclass
-class ZeroMeanUnitVariance(Node):
-    mode: str
-    axes: Axes
-    mean: Optional[Union[float, List]]
-    std: Optional[Union[float, List]]
+# @dataclass
+# class ZeroMeanUnitVariance(Node):
+#     mode: str
+#     axes: Axes
+#     mean: Optional[Union[float, List]]
+#     std: Optional[Union[float, List]]
 
 
 @dataclass
 class InputShape(Node):
     min: List[float]
     step: List[float]
-
-    preprocessing: List[Union[ZeroMeanUnitVariance]]
 
     def __len__(self):
         return len(self.min)
@@ -158,6 +156,8 @@ class Preprocessing:
 class InputTensor(Tensor):
     shape: Union[List[int], MagicShapeValue, InputShape]
     preprocessing: List[Preprocessing]
+    # preprocessing: List[Union[ZeroMeanUnitVariance]]
+
 
 
 @dataclass
@@ -168,13 +168,7 @@ class OutputTensor(Tensor):
 
 @dataclass
 class SpecURI(URI):
-    spec_schema: "pybio.spec.schema.BaseSpec"
-
-
-@dataclass
-class SpecWithKwargs(Node):
-    spec: Union[SpecURI, BaseSpec]
-    kwargs: Kwargs
+    spec_schema: "pybio.spec.schema.Spec"
 
 
 Dependencies = NewType("Dependencies", Path)
@@ -195,20 +189,19 @@ class Weight(Node, WithFileSource):
     covers: List[URI]
     test_inputs: List[URI]
     test_outputs: List[URI]
-    timestamp: datetime
     documentation: Optional[URI]
     tags: List[str]
     attachments: Dict
 
 
 @dataclass
-class ModelSpec(BaseSpec, WithImportableSource):
+class Model(Spec, WithImportableSource):
     language: Literal["python", "java"]
     framework: Literal["scikit-learn", "pytorch", "tensorflow"]
-    weights_format: Literal["pickle", "pytorch", "keras"]
     dependencies: Optional[Dependencies]
+    timestamp: datetime
 
-    weights: List[Weight]
+    weights: Dict[Literal["pickle", "pytorch", "keras"], Weight]
     inputs: Union[MagicTensorsValue, List[InputTensor]]
     outputs: Union[MagicTensorsValue, List[OutputTensor]]
 
@@ -216,11 +209,18 @@ class ModelSpec(BaseSpec, WithImportableSource):
 
 
 @dataclass
-class Model(SpecWithKwargs):
-    spec: Union[SpecURI, ModelSpec]
+class ModelParent(Node):
+    """helper class to load model from spec uri"""
+
+    spec: SpecURI
 
 
 # helper nodes
 @dataclass
 class File(Node, WithFileSource):
     pass
+
+
+@dataclass
+class Resource(Node):
+    uri: URI

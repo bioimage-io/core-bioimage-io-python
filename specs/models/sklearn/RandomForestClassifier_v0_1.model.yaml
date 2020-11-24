@@ -11,10 +11,11 @@ license: MIT
 
 format_version: 0.1.0
 language: python
+framework: scikit-learn
 
-source: pybio.core.models.sklearnbased.RandomForestClassifier
-required_kwargs: [c_indices]
+source: pybio.sklearn.models.sklearnbased.RandomForestClassifier
 optional_kwargs:
+  c_indices: [null]
   n_estimators: 10
   criterion: gini
   max_depth: null
@@ -33,8 +34,8 @@ optional_kwargs:
   warm_start: false
   class_weight: null
 
-test_input: null # ../test_input.npy
-test_output: null # ../test_output.npy
+test_input: ../test_input.npy
+test_output: ../test_output.npy
 covers: [] # ./nuclei_thumbnail.png
 
 inputs:
@@ -42,7 +43,9 @@ inputs:
     axes: byx
     data_type: float32
     data_range: [-inf, inf]
-    shape: any
+    shape:
+      min: [1, 128, 128]
+      step: [0, 1, 1]
 
 outputs:
   - name: probabilities
@@ -58,8 +61,8 @@ outputs:
 prediction:
     preprocess: []
     weights:
-        source: https://zenodo.org/record/3446812/files/unet2d_weights.torch  # todo: give real RF weights
-        hash: {md5: TODO}
+        source: "https://zenodo.org/record/3446812/files/unet2d_weights.torch"  # todo: give real RF weights
+        hash: {sha256: TOOODOOOTOOODOOOTOOODOOOTOOODOOOTOOODOOOTOOODOOOTOOODOOOTOOODOOO}
     postprocess: []
     dependencies: conda:../env_numpy.yaml
 
@@ -82,3 +85,9 @@ training:
   # or as a pom.xml
   dependencies: conda:./test_env.yaml  # this is a file to the dependencies
   description: todo describe training
+
+config:
+  future:
+    weights_format: "pickle"
+    timestamp: "2020-10-23T16:00:42+00:00"
+    git_repo: "https://github.com/bioimage-io/python-bioimage-io"

@@ -23,7 +23,9 @@ inputs:
     axes: byx
     data_type: float32
     data_range: [-inf, inf]
-    shape: any
+    shape:
+      min: [1, 128, 128]
+      step: [0, 1, 1]
 
 outputs:
   - name: probabilities
@@ -39,9 +41,8 @@ outputs:
 
 language: python
 framework: scikit-learn
-weights_format: pickle
 
-source: pybio.core.models.sklearnbased.RandomForestClassifier
+source: pybio.sklearn.models.sklearnbased.RandomForestClassifier
 kwargs:
   channel_indices: [null]
   n_estimators: 10
@@ -60,17 +61,19 @@ kwargs:
   verbose: 0
   warm_start: false
   class_weight: null
+
 dependencies: conda:../env_numpy.yaml
+timestamp: "2020-10-23T16:00:42+00:00"
 
 weights:
-  - id: default
+  pickle:
+    id: default
     name: toy examle weights
     description: Trained as a toy example on a tiny subset of the broad nucleus data. Don't use for any real problem! (Use ilastik pixelclassification instead! ;-))
     authors: [Fynn Beuttenmüller]
     covers: []
     source: rf_v0.pickle
     sha256: abcdefghabcdefghabcdefghabcdefghabcdefghabcdefghabcdefghabcdefgh
-    timestamp: "2020-10-23T16:00:42+00:00"
     tags: [toy example]
     test_inputs:
       - test_input_raw.npy

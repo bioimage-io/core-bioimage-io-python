@@ -28,7 +28,7 @@ class BaseSpec(Schema):
 
     language = fields.String(required=True)
     framework = fields.String(missing=None)
-    source = fields.ImportableSource(required=True)
+    source = fields.String(required=True)
     required_kwargs = fields.List(fields.String, missing=list)
     optional_kwargs = fields.Dict(fields.String, missing=dict)
 
@@ -137,7 +137,7 @@ class Sampler(SpecWithKwargs):
 
 
 class Optimizer(Schema):
-    source = fields.ImportableSource(required=True)
+    source = fields.String(required=True)
     required_kwargs = fields.List(fields.String, missing=list)
     optional_kwargs = fields.Dict(fields.String, missing=dict)
 
@@ -152,14 +152,14 @@ class Setup(Schema):
 
 # class Training(Schema):
 #     setup = fields.Nested(Setup)
-#     source = fields.ImportableSource(required=True)
+#     source = fields.String(required=True)
 #     required_kwargs = fields.List(fields.String, missing=list)
 #     optional_kwargs = fields.Dict(fields.String, missing=dict)
 #     dependencies = fields.Dependencies(required=True)
 #     description = fields.String(missing=None)
 
 
-class ModelSpec(BaseSpec):
+class Model(BaseSpec):
     prediction = fields.Nested(Prediction)
     inputs = fields.Tensors(InputArray, valid_magic_values=[MagicTensorsValue.any], many=True)
     outputs = fields.Tensors(
@@ -168,9 +168,10 @@ class ModelSpec(BaseSpec):
     # training = fields.Nested(Training, missing=None)
     training = fields.Dict(missing=None)
 
+    config = fields.Dict(missing=dict)
 
-class Model(SpecWithKwargs):
-    spec = fields.SpecURI(ModelSpec, required=True)
+# class Model(SpecWithKwargs):
+#     spec = fields.SpecURI(ModelSpec, required=True)
 
 
 # helper schemas
