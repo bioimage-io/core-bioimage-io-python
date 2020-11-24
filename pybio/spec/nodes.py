@@ -44,32 +44,32 @@ class ImportableModule(Node):
 ImportableSource = Union[ImportableModule, ImportablePath]
 
 
-@dataclass(init=False)
-class Kwargs(Node, Mapping):
-    __data: Dict[str, Any] = field(default_factory=dict)
-
-    def __init__(self, __data=None, **kwargs):
-        assert __data is None or not kwargs
-        self.__data = kwargs if __data is None else __data
-
-    def __iter__(self):
-        return iter(self.__data)
-
-    def __len__(self):
-        return len(self.__data)
-
-    def __getitem__(self, item):
-        return self.__data[item]
-
-    def __setitem__(self, key, value):
-        self.__data[key] = value
+# @dataclass(init=False)
+# class Kwargs(Node, Mapping):
+#     __data: Dict[str, Any] = field(default_factory=dict)
+#
+#     def __init__(self, __data=None, **kwargs):
+#         assert __data is None or not kwargs
+#         self.__data = kwargs if __data is None else __data
+#
+#     def __iter__(self):
+#         return iter(self.__data)
+#
+#     def __len__(self):
+#         return len(self.__data)
+#
+#     def __getitem__(self, item):
+#         return self.__data[item]
+#
+#     def __setitem__(self, key, value):
+#         self.__data[key] = value
 
 
 @dataclass
 class WithImportableSource:
     source: ImportableSource
     sha256: str
-    kwargs: Kwargs
+    kwargs: Dict[str, Any]
 
 
 @dataclass
@@ -149,7 +149,7 @@ class Tensor(Node):
 @dataclass
 class Preprocessing:
     name: Literal["zero_mean_unit_variance"]
-    kwargs: Kwargs
+    kwargs: Dict[str, Any]
 
 
 @dataclass

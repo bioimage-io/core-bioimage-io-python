@@ -33,7 +33,7 @@ def verify_spec(model_yaml: Path):
 
 
 def verify_model_data(model_data: dict):
-    schema.ModelSpec().load(model_data)
+    schema.Model().load(model_data)
 
 
 def verify_bioimageio_manifest_data(manifest_data: dict):

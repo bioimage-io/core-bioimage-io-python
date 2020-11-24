@@ -1,6 +1,6 @@
-from marshmallow import Schema, ValidationError, validates, validates_schema
+from marshmallow import Schema, ValidationError, validates_schema
 
-from pybio.spec import fields, nodes
+from pybio.spec import fields
 from pybio.spec.exceptions import PyBioValidationException
 from pybio.spec.nodes import MagicShapeValue, MagicTensorsValue
 
@@ -169,6 +169,7 @@ class Model(BaseSpec):
     training = fields.Dict(missing=None)
 
     config = fields.Dict(missing=dict)
+
 
 # class Model(SpecWithKwargs):
 #     spec = fields.SpecURI(ModelSpec, required=True)

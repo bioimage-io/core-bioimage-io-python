@@ -70,7 +70,7 @@ weights:
     id: default
     name: toy examle weights
     description: Trained as a toy example on a tiny subset of the broad nucleus data. Don't use for any real problem! (Use ilastik pixelclassification instead! ;-))
-    authors: [Fynn Beuttenmüller]
+    authors: [Fynn Beuttenmueller]
     covers: []
     source: rf_v0.pickle
     sha256: abcdefghabcdefghabcdefghabcdefghabcdefghabcdefghabcdefghabcdefgh

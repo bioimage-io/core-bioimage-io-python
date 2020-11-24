@@ -58,7 +58,7 @@ class Spec(PyBioSchema):
 
 class SpecWithKwargs(PyBioSchema):
     spec: fields.SpecURI
-    kwargs = fields.Kwargs(fields.String, missing=nodes.Kwargs)
+    kwargs = fields.Dict(fields.String, missing=dict)
 
 
 class InputShape(PyBioSchema):
@@ -103,7 +103,7 @@ class Tensor(PyBioSchema):
 
 class Preprocessing(PyBioSchema):
     name = fields.String(validate=validate.OneOf(get_type_hints(nodes.Preprocessing)["name"].__args__), required=True)
-    kwargs = fields.Kwargs(fields.String, missing=nodes.Kwargs)
+    kwargs = fields.Dict(fields.String, missing=dict)
 
     @post_load
     def make_object(self, data, **kwargs):
@@ -234,7 +234,7 @@ class Model(Spec):
 
     source = fields.ImportableSource(missing=None)
     sha256 = fields.String(validate=validate.Length(equal=64), missing=None)
-    kwargs = fields.Kwargs(fields.String, missing=nodes.Kwargs)
+    kwargs = fields.Dict(fields.String, missing=dict)
 
     weights = fields.Dict(
         fields.String(
