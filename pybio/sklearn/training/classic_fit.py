@@ -41,4 +41,11 @@ def load_rf_weight_from_weights():
 
 
 if __name__ == "__main__":
-    rf = load_rf_weight_from_weights()
+    # rf = load_rf_weight_from_weights()
+
+    dataset = BroadNucleusDataBinarized()
+    roi = (slice(None), slice(100, 200), slice(100, 200))
+    X, y = dataset[roi, roi]
+    print(X.shape, y.shape)
+    print(X.shape, y.shape)
+

@@ -2,15 +2,15 @@ from typing import Callable, TypeVar, Tuple, Union, NewType
 
 import numpy
 
-PyBioArrayDerived = TypeVar("PyBioArrayDerived", bound="PyBioArrayBase")
+PyBioTensorDerived = TypeVar("PyBioTensorDerived", bound="PyBioTensorBase")
 
 
-class PyBioArrayBase:
-    reshape: Callable[[Tuple[int, ...]], PyBioArrayDerived]
+class PyBioTensorBase:
+    reshape: Callable[[Tuple[int, ...]], PyBioTensorDerived]
     shape: Tuple[int, ...]
 
 
-PyBioArray = NewType("PyBioArray", Union[PyBioArrayBase, numpy.ndarray])
+PyBioTensor = NewType("PyBioTensor", Union[PyBioTensorBase, numpy.ndarray])
 
 # Same as pybio array, but should only hold a single scalar (e.g. a loss value)
-PyBioScalar = NewType("PyBioScalar", Union[PyBioArrayBase, numpy.ndarray])
+PyBioScalar = NewType("PyBioScalar", Union[PyBioTensorBase, numpy.ndarray])

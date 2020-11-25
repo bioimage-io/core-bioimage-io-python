@@ -1,15 +1,12 @@
 from typing import Optional, Sequence, Tuple
 
-from pybio.core.array import PyBioArray
+from pybio.core.array import PyBioTensor
 from pybio.core.transformations import PyBioTransformation
-from pybio.spec.nodes import MagicTensorsValue, OutputTensor
+from pybio.spec.nodes import OutputTensor
 
 
 class PyBioDataset:
     def __init__(self, outputs: Sequence[OutputTensor], transformation: Optional[PyBioTransformation] = None):
-        if isinstance(outputs, MagicTensorsValue):
-            raise ValueError(f"unresolved MagicTensorsValue: {outputs}")
-
         self.transformation = transformation
 
         self._output = tuple(outputs)
@@ -28,10 +25,10 @@ class PyBioDataset:
     def output(self) -> Tuple[OutputTensor]:
         return self._output
 
-    def __getitem__(self, rois: Tuple[Tuple[slice, ...], ...]) -> Sequence[PyBioArray]:
+    def __getitem__(self, rois: Tuple[Tuple[slice, ...], ...]) -> Sequence[PyBioTensor]:
         raise NotImplementedError
 
-    def apply_transformation(self, *arrays: PyBioArray) -> Sequence[PyBioArray]:
+    def apply_transformation(self, *arrays: PyBioTensor) -> Sequence[PyBioTensor]:
         if self.transformation is None:
             return arrays
         else:

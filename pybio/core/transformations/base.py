@@ -1,6 +1,6 @@
 from typing import Callable, List, Optional, Sequence, Tuple
 
-from pybio.core.array import PyBioArray
+from pybio.core.array import PyBioTensor
 from pybio.spec.nodes import InputTensor, OutputTensor
 
 
@@ -15,10 +15,10 @@ class PyBioTransformation:
 
     # todo: with python 3.8 add / to make array argument purely positional
     #       (might be called tensor or similar in derived classes)
-    def apply_to_chosen(self, array: PyBioArray) -> PyBioArray:
+    def apply_to_chosen(self, array: PyBioTensor) -> PyBioTensor:
         raise NotImplementedError
 
-    def apply(self, *arrays: PyBioArray) -> List[PyBioArray]:
+    def apply(self, *arrays: PyBioTensor) -> List[PyBioTensor]:
         return [self.apply_to_chosen(a) if i in self.apply_to else a for i, a in enumerate(arrays)]
 
     def dynamic_output_shape(self, input_shape: Tuple[Tuple[int]]) -> Tuple[Tuple[int]]:
@@ -35,10 +35,10 @@ class PyBioTransformation:
 
 
 class CombinedPyBioTransformation(PyBioTransformation):
-    def apply_to_chosen(self, *arrays: PyBioArray) -> List[PyBioArray]:
+    def apply_to_chosen(self, *arrays: PyBioTensor) -> List[PyBioTensor]:
         raise NotImplementedError
 
-    def apply(self, *arrays: PyBioArray) -> List[PyBioArray]:
+    def apply(self, *arrays: PyBioTensor) -> List[PyBioTensor]:
         if isinstance(self.apply_to, ApplyToAll):
             return self.apply_to_chosen(*arrays)
         else:
@@ -64,13 +64,13 @@ class SynchronizedPyBioTransformation(PyBioTransformation):
 
 def make_concatenated_apply(
     transformations: Sequence[PyBioTransformation]
-) -> Callable[[Tuple[PyBioArray]], List[PyBioArray]]:
+) -> Callable[[Tuple[PyBioTensor]], List[PyBioTensor]]:
     """ Resource function to apply a list of transformations to input tensors.
     """
     if not all(isinstance(trafo, PyBioTransformation) for trafo in transformations):
         raise ValueError("Expect iterable of transformations")
 
-    def apply(*tensors: PyBioArray) -> List[PyBioArray]:
+    def apply(*tensors: PyBioTensor) -> List[PyBioTensor]:
         for trafo in transformations:
             tensors = trafo.apply(*tensors)
 

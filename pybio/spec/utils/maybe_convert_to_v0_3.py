@@ -3,7 +3,7 @@ from collections import defaultdict
 from typing import Dict
 
 from pybio.spec import schema_v0_1
-from pybio.spec.exceptions import PyBioUnconvertableException, PyBioValidationException
+from pybio.spec.exceptions import PyBioUnconvertibleException, PyBioValidationException
 
 
 def maybe_convert_to_v0_3(data: Dict) -> Dict:
@@ -107,7 +107,7 @@ def maybe_convert_to_v0_3(data: Dict) -> Dict:
             }
 
         conversion_errors = as_nested_dict(conversion_errors)
-        raise PyBioUnconvertableException(conversion_errors)
+        raise PyBioUnconvertibleException(conversion_errors)
 
     del data["prediction"]
     del data["training"]

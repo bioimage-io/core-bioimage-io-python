@@ -2,7 +2,7 @@ from typing import Sequence, List, Tuple
 
 import numpy
 
-from pybio.core.array import PyBioArray
+from pybio.core.array import PyBioTensor
 from pybio.core.transformations import PyBioTransformation
 
 
@@ -11,7 +11,7 @@ class Reshape(PyBioTransformation):
         self.shape = shape
         super().__init__(**super_kwargs)
 
-    def apply_to_chosen(self, array: PyBioArray) -> PyBioArray:
+    def apply_to_chosen(self, array: PyBioTensor) -> PyBioTensor:
         if -2 in self.shape and self.shape.index(-2) >= len(array.shape):
             raise ValueError(f"transformation shape {self.shape} incompatible with array shape {array.shape}")
 

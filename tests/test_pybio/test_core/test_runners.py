@@ -1,6 +1,7 @@
-from pybio.runners.base import ModelInferenceRunner, SklearnModelInferenceRunner
+from pybio.runners.base import ModelInferenceRunner
 
 
-def test_SklearnModelInferenceRunner(rf_config):
-    runner = ModelInferenceRunner(rf_config)
-    assert isinstance(runner, SklearnModelInferenceRunner)
+class TestInferenceRunner:
+    def test_rf_dummy(self, rf_config):
+        runner = ModelInferenceRunner(rf_config)
+        runner.run_on_test_inputs()

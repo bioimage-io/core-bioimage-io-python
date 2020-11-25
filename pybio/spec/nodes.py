@@ -1,226 +1,67 @@
-from collections import Mapping
-from dataclasses import dataclass, field
-from datetime import datetime
-from enum import Enum
+from __future__ import annotations
+
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, NewType, Optional, Tuple, Union
-
-try:
-    from typing import Literal
-except ImportError:
-    from typing_extensions import Literal
-
-import pybio
+from typing import Callable, Dict, List, Optional
 
 
-@dataclass
-class Node:
-    pass
-
-
-class MagicTensorsValue(Enum):
-    any = "any"
-    same = "same"
-    dynamic = "dynamic"
-
-
-class MagicShapeValue(Enum):
-    any = "any"
-    dynamic = "dynamic"
-
-
-@dataclass
-class ImportablePath(Node):
-    filepath: Union[Path]
-    callable_name: str
+from .raw_nodes import (
+    Axes,  # noqa
+    CiteEntry,  # noqa
+    Dependencies,  # noqa
+    FormatVersion,  # noqa
+    Framework,  # noqa
+    InputShape,  # noqa
+    InputTensor,  # noqa
+    Language,  # noqa
+    Model as _RawModel,
+    Node,  # noqa
+    OutputShape,  # noqa
+    OutputTensor,  # noqa
+    Preprocessing,  # noqa
+    PreprocessingName,  # noqa
+    Spec as _RawSpec,
+    Tensor,  # noqa
+    WeightsEntry as _RawWeightsEntry,
+    WeightsFormat,
+    WithFileSource as _RawWithFileSource,
+    WithImportableSource as _RawWithImprtableSource,
+)
 
 
 @dataclass
-class ImportableModule(Node):
-    module_name: str
-    callable_name: str
+class ImportedSource:
+    factory: Callable
 
-
-ImportableSource = Union[ImportableModule, ImportablePath]
-
-
-# @dataclass(init=False)
-# class Kwargs(Node, Mapping):
-#     __data: Dict[str, Any] = field(default_factory=dict)
-#
-#     def __init__(self, __data=None, **kwargs):
-#         assert __data is None or not kwargs
-#         self.__data = kwargs if __data is None else __data
-#
-#     def __iter__(self):
-#         return iter(self.__data)
-#
-#     def __len__(self):
-#         return len(self.__data)
-#
-#     def __getitem__(self, item):
-#         return self.__data[item]
-#
-#     def __setitem__(self, key, value):
-#         self.__data[key] = value
+    def __call__(self, *args, **kwargs):
+        return self.factory(*args, **kwargs)
 
 
 @dataclass
-class WithImportableSource:
-    source: ImportableSource
-    sha256: str
-    kwargs: Dict[str, Any]
+class WithImportedSource(_RawWithImprtableSource):
+    source: ImportedSource
 
 
 @dataclass
-class CiteEntry(Node):
-    text: str
-    doi: Optional[str]
-    url: Optional[str]
+class Spec(_RawSpec):
+    documentation: Path
+    covers: List[Path]
 
 
 @dataclass
-class URI(Node):
-    scheme: str
-    netloc: str
-    path: str
-    query: str
+class WithFileSource(_RawWithFileSource):
+    source: Path
 
 
 @dataclass
-class Spec(Node):
-    format_version: Literal["0.3.0"]
-    name: str
-    description: str
-
-    authors: List[str]
-    cite: List[CiteEntry]
-
-    git_repo: str
-    tags: List[str]
-    license: str
-
-    documentation: URI
-    covers: List[URI]
-    attachments: Dict[str, Any]
-
-    config: Dict[str, Any]
-
-
-Axes = NewType("Axes", str)
-
-
-# @dataclass
-# class ZeroMeanUnitVariance(Node):
-#     mode: str
-#     axes: Axes
-#     mean: Optional[Union[float, List]]
-#     std: Optional[Union[float, List]]
+class WeightsEntry(_RawWeightsEntry, WithFileSource):
+    covers: List[Path]
+    test_inputs: List[Path]
+    test_outputs: List[Path]
+    documentation: Optional[Path]
 
 
 @dataclass
-class InputShape(Node):
-    min: List[float]
-    step: List[float]
+class Model(_RawModel, WithImportedSource):
 
-    def __len__(self):
-        return len(self.min)
-
-
-@dataclass
-class OutputShape(Node):
-    reference_input: Optional[str]
-    scale: List[float]
-    offset: List[int]
-
-    def __len__(self):
-        return len(self.scale)
-
-
-@dataclass
-class Tensor(Node):
-    name: str
-    description: str
-    axes: Optional[Axes]
-    data_type: str
-    data_range: Tuple[float, float]
-
-
-@dataclass
-class Preprocessing:
-    name: Literal["zero_mean_unit_variance"]
-    kwargs: Dict[str, Any]
-
-
-@dataclass
-class InputTensor(Tensor):
-    shape: Union[List[int], MagicShapeValue, InputShape]
-    preprocessing: List[Preprocessing]
-    # preprocessing: List[Union[ZeroMeanUnitVariance]]
-
-
-
-@dataclass
-class OutputTensor(Tensor):
-    shape: Union[List[int], MagicShapeValue, OutputShape]
-    halo: List[int]
-
-
-@dataclass
-class SpecURI(URI):
-    spec_schema: "pybio.spec.schema.Spec"
-
-
-Dependencies = NewType("Dependencies", Path)
-
-
-@dataclass
-class WithFileSource:
-    source: URI
-    sha256: str
-
-
-@dataclass
-class Weight(Node, WithFileSource):
-    id: str
-    name: str
-    description: str
-    authors: List[str]
-    covers: List[URI]
-    test_inputs: List[URI]
-    test_outputs: List[URI]
-    documentation: Optional[URI]
-    tags: List[str]
-    attachments: Dict
-
-
-@dataclass
-class Model(Spec, WithImportableSource):
-    language: Literal["python", "java"]
-    framework: Literal["scikit-learn", "pytorch", "tensorflow"]
-    dependencies: Optional[Dependencies]
-    timestamp: datetime
-
-    weights: Dict[Literal["pickle", "pytorch", "keras"], Weight]
-    inputs: Union[MagicTensorsValue, List[InputTensor]]
-    outputs: Union[MagicTensorsValue, List[OutputTensor]]
-
-    config: Dict
-
-
-@dataclass
-class ModelParent(Node):
-    """helper class to load model from spec uri"""
-
-    spec: SpecURI
-
-
-# helper nodes
-@dataclass
-class File(Node, WithFileSource):
-    pass
-
-
-@dataclass
-class Resource(Node):
-    uri: URI
+    weights: Dict[WeightsFormat, WeightsEntry]

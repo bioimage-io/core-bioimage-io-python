@@ -1,13 +1,11 @@
 from dataclasses import asdict
 from pathlib import Path
 from pprint import pprint
-from typing import Any, Iterable, Mapping, Union, get_type_hints
 
 from marshmallow import Schema, ValidationError, post_load, validate, validates, validates_schema
 
 from pybio.spec import fields, nodes
 from pybio.spec.exceptions import PyBioValidationException
-from pybio.spec.nodes import MagicShapeValue, MagicTensorsValue
 
 
 class PyBioSchema(Schema):
@@ -36,9 +34,7 @@ class CiteEntry(PyBioSchema):
 
 
 class Spec(PyBioSchema):
-    format_version = fields.String(
-        validate=validate.OneOf(get_type_hints(nodes.Spec)["format_version"].__args__), required=True
-    )
+    format_version = fields.String(validate=validate.OneOf(nodes.FormatVersion.__args__), required=True)
     name = fields.String(required=True)
     description = fields.String(required=True)
 
@@ -54,6 +50,8 @@ class Spec(PyBioSchema):
     attachments = fields.Dict(fields.String, missing=dict)
 
     config = fields.Dict(missing=dict)
+
+    # root = fields.Path(required=True)
 
 
 class SpecWithKwargs(PyBioSchema):
@@ -102,7 +100,7 @@ class Tensor(PyBioSchema):
 
 
 class Preprocessing(PyBioSchema):
-    name = fields.String(validate=validate.OneOf(get_type_hints(nodes.Preprocessing)["name"].__args__), required=True)
+    name = fields.String(validate=validate.OneOf(nodes.PreprocessingName.__args__), required=True)
     kwargs = fields.Dict(fields.String, missing=dict)
 
     @post_load
@@ -213,7 +211,7 @@ class WithFileSource(PyBioSchema):
     sha256 = fields.String(validate=validate.Length(equal=64))
 
 
-class Weight(WithFileSource):
+class WeightsEntry(WithFileSource):
     id = fields.String(required=True, validate=validate.Predicate("isidentifier"))
     name = fields.String(required=True)
     description = fields.String(required=True)
@@ -227,8 +225,8 @@ class Weight(WithFileSource):
 
 
 class Model(Spec):
-    language = fields.String(validate=validate.OneOf(get_type_hints(nodes.Model)["language"].__args__), required=True)
-    framework = fields.String(validate=validate.OneOf(get_type_hints(nodes.Model)["framework"].__args__), required=True)
+    language = fields.String(validate=validate.OneOf(nodes.Language.__args__), required=True)
+    framework = fields.String(validate=validate.OneOf(nodes.Framework.__args__), required=True)
     dependencies = fields.Dependencies(missing=None)
     timestamp = fields.DateTime(required=True)
 
@@ -237,16 +235,12 @@ class Model(Spec):
     kwargs = fields.Dict(fields.String, missing=dict)
 
     weights = fields.Dict(
-        fields.String(
-            validate=validate.OneOf(get_type_hints(nodes.Model)["weights"].__args__[0].__args__), required=True
-        ),
-        fields.Nested(Weight),
+        fields.String(validate=validate.OneOf(nodes.WeightsFormat.__args__), required=True),
+        fields.Nested(WeightsEntry),
         required=True,
     )
-    inputs = fields.Tensors(InputTensor, valid_magic_values=[MagicTensorsValue.any], many=True)
-    outputs = fields.Tensors(
-        OutputTensor, valid_magic_values=[MagicTensorsValue.same, MagicTensorsValue.dynamic], many=True
-    )
+    inputs = fields.Nested(InputTensor, many=True)
+    outputs = fields.Nested(OutputTensor, many=True)
     config = fields.Dict(missing=dict)
 
     @validates("outputs")
@@ -292,23 +286,12 @@ class BioImageIoManifestModelEntry(Schema):
 
 
 class BioImageIoManifest(Schema):
-    format_version = fields.String(
-        validate=validate.OneOf(get_type_hints(nodes.Spec)["format_version"].__args__), required=True
-    )
+    format_version = fields.String(validate=validate.OneOf(nodes.FormatVersion.__args__), required=True)
     config = fields.Dict()
 
     application = fields.List(fields.Dict)
 
     model = fields.List(fields.Nested(BioImageIoManifestModelEntry))
-
-
-# helper schemas
-class File(WithFileSource):
-    pass
-
-
-class Resource(PyBioSchema):
-    uri = fields.URI(required=False)
 
 
 if __name__ == "__main__":

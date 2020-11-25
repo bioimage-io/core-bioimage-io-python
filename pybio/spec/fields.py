@@ -4,23 +4,22 @@ from urllib.parse import urlparse
 from urllib.request import url2pathname
 
 import numpy
-from marshmallow import validate
 from marshmallow.fields import (
     DateTime,  # noqa
-    Dict,
+    Dict,  # noqa
     Field,
     Float,  # noqa
     Integer,  # noqa
     List,  # noqa
-    Method, # noqa
+    Method,  # noqa
     Nested,
-    Number,
+    Number,  # noqa
     String,
     Tuple as MarshmallowTuple,
     ValidationError,
 )
 
-from pybio.spec import nodes
+from pybio.spec import raw_nodes
 from pybio.spec.exceptions import PyBioValidationException
 
 
@@ -49,11 +48,11 @@ class SpecURI(Nested):
         # see https://stackoverflow.com/questions/43911052/urlparse-on-a-windows-file-scheme-uri-leaves-extra-slash-at-start
         path = url2pathname(uri.path)
 
-        return nodes.SpecURI(spec_schema=self.schema, scheme=uri.scheme, netloc=uri.netloc, path=path, query="")
+        return raw_nodes.SpecURI(spec_schema=self.schema, scheme=uri.scheme, netloc=uri.netloc, path=path, query="")
 
 
 class URI(String):
-    def _deserialize(self, *args, **kwargs) -> nodes.URI:
+    def _deserialize(self, *args, **kwargs) -> raw_nodes.URI:
         uri_str = super()._deserialize(*args, **kwargs)
         uri = urlparse(uri_str)
 
@@ -62,7 +61,7 @@ class URI(String):
         if uri.params:
             raise PyBioValidationException(f"Invalid URI: {uri}. Got URI params: {uri.params}")
 
-        return nodes.URI(scheme=uri.scheme, netloc=uri.netloc, path=uri.path, query=uri.query)
+        return raw_nodes.URI(scheme=uri.scheme, netloc=uri.netloc, path=uri.path, query=uri.query)
 
 
 class Path(String):
@@ -93,7 +92,7 @@ class ImportableSource(String):
 
             module_name = source_str[:last_dot_idx]
             object_name = source_str[last_dot_idx + 1 :]
-            return nodes.ImportableModule(callable_name=object_name, module_name=module_name)
+            return raw_nodes.ImportableModule(callable_name=object_name, module_name=module_name)
 
         elif self._is_filepath(source_str):
             if source_str.startswith("/"):
@@ -105,14 +104,14 @@ class ImportableSource(String):
 
             module_path, object_name = parts
 
-            return nodes.ImportablePath(callable_name=object_name, filepath=module_path)
+            return raw_nodes.ImportablePath(callable_name=object_name, filepath=module_path)
         else:
             raise ValidationError(source_str)
 
 
-class Kwargs(Dict):
-    def _deserialize(self, value, attr, data, **kwargs):
-        return nodes.Kwargs(**value)
+# class Kwargs(Dict):
+#     def _deserialize(self, value, attr, data, **kwargs):
+#         return nodes.Kwargs(**value)
 
 
 class Axes(String):
@@ -129,103 +128,16 @@ class Dependencies(String):  # todo: make Dependency inherit from URI
     pass
 
 
-class Tensors(Nested):
-    def __init__(self, *args, valid_magic_values: typing.List[nodes.MagicTensorsValue], **kwargs):
-        super().__init__(*args, **kwargs)
-        self.valid_magic_values = valid_magic_values
-
-    def _deserialize(
-        self,
-        value: typing.Any,
-        attr: typing.Optional[str],
-        data: typing.Optional[typing.Mapping[str, typing.Any]],
-        **kwargs,
-    ):
-        if isinstance(value, str):
-            try:
-                value = nodes.MagicTensorsValue(value)
-            except ValueError as e:
-                raise PyBioValidationException(str(e)) from e
-
-            if value in self.valid_magic_values:
-                return value
-            else:
-                raise PyBioValidationException(f"Invalid magic value: {value.value}")
-
-        elif isinstance(value, list):
-            return self._load(value, data, many=True)
-            # if all(isinstance(v, str) for v in value):
-            #     return namedtuple("CustomTensors", value)
-            # else:
-            #     return self._load(value, data, many=True)
-        else:
-            raise PyBioValidationException(f"Invalid input type: {type(value)}")
-
-
-# class Shape(Nested):
-#     def deserialize(
-#             self,
-#         value: typing.Any,
-#         attr: str = None,
-#         data: typing.Mapping[str, typing.Any] = None,
-#         **kwargs
-#     ):
-#         if isinstance(value, dict):
-#             return super().deserialize(value, attr, data, **kwargs)
-#
-#         elif isinstance(value, list):
-#             if any(not isinstance(v, int) for v in value):
-#                 raise PyBioValidationException("Non-integers in explicit shape.")
-#
-#             return tuple(value)
-#         else:
-#             raise PyBioValidationException(f"Invalid input type: {type(value)}")
-
-
 class Shape(Nested):
     _explicit = List(Integer)
 
-    def deserialize(
-        self,
-        value: typing.Any,
-        attr: str = None,
-        data: typing.Mapping[str, typing.Any] = None,
-        **kwargs
-    ):
+    def deserialize(self, value: typing.Any, attr: str = None, data: typing.Mapping[str, typing.Any] = None, **kwargs):
         if isinstance(value, list):
             return self._explicit.deserialize(value, attr, data, **kwargs)
         elif isinstance(value, dict):
             return super().deserialize(value, attr, data, **kwargs)
         else:
             self.make_error(attr, input=value, type=value.__class__.__name__)
-
-    # def deserialize(
-    #     self,
-    #     value: typing.Any,
-    #     attr: typing.Optional[str],
-    #     data: typing.Optional[typing.Mapping[str, typing.Any]],
-    #     **kwargs,
-    # ):
-    #     if isinstance(value, str):
-    #         try:
-    #             value = nodes.MagicShapeValue(value)
-    #         except ValueError as e:
-    #             raise PyBioValidationException(str(e)) from e
-    #
-    #         if value in self.valid_magic_values:
-    #             return value
-    #         else:
-    #             raise PyBioValidationException(f"Invalid magic value: {value.value}")
-    #
-    #     elif isinstance(value, list):
-    #         if any(not isinstance(v, int) for v in value):
-    #             raise PyBioValidationException("Encountered non-integers in shape")
-    #
-    #         return tuple(value)
-    #     elif isinstance(value, dict):
-    #         return self._load(value, data)
-    #     else:
-    #         raise PyBioValidationException(f"Invalid input type: {type(value)}")
 
 
 class Array(Field):
@@ -261,10 +173,10 @@ class Array(Field):
         else:
             return value
 
+
 class Halo(List):
     def __init__(self):
         super().__init__(Integer, missing=None)
-
 
     def _deserialize(self, value, attr, data, **kwargs) -> typing.List[typing.Any]:
         if value is None:

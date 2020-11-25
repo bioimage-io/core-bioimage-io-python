@@ -43,7 +43,7 @@ inputs:
     data_type: float32
     data_range: [-inf, inf]
     shape:
-      min: [1, 128, 128]
+      min: [1, 96, 96]
       step: [0, 1, 1]
 
 outputs:

@@ -1,6 +1,6 @@
 from typing import List, Optional, Sequence, Tuple
 
-from pybio.core.array import PyBioArray
+from pybio.core.array import PyBioTensor
 from pybio.core.transformations import ApplyToAll, PyBioTransformation
 from pybio.spec.nodes import InputTensor, OutputTensor
 
@@ -24,7 +24,7 @@ class NormalizeZeroMeanUnitVariance(PyBioTransformation):
         self.means = tuple(means)
         self.stds = tuple(stds)
 
-    def apply(self, *arrays: PyBioArray) -> List[PyBioArray]:
+    def apply(self, *arrays: PyBioTensor) -> List[PyBioTensor]:
         if isinstance(self.apply_to, ApplyToAll):
             assert len(self.means) == len(arrays)
             assert len(self.stds) == len(arrays)
@@ -104,7 +104,7 @@ class NormalizeRange(PyBioTransformation):
         self.data_max = data_max
         self.minimal_data_range=minimal_data_range
 
-    def apply_to_chosen(self, array: PyBioArray) -> PyBioArray:
+    def apply_to_chosen(self, array: PyBioTensor) -> PyBioTensor:
         data_min = array.min() if self.data_min is None else self.data_min
         data_max = array.max() if self.data_max is None else self.data_max
         data_range = max(self.minimal_data_range, data_max - data_min)

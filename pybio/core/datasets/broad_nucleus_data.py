@@ -8,6 +8,7 @@ import imageio
 import numpy
 import numpy as np
 
+from pybio.core.cache import PYBIO_CACHE_PATH
 from pybio.core.datasets.base import PyBioDataset
 from pybio.spec.nodes import Axes, OutputTensor
 
@@ -85,8 +86,8 @@ class BroadNucleusDataBinarized(PyBioDataset):
 
         return images, labels
 
-    def __init__(self, subset: str = "training", *, cache_path: Path, **super_kwargs):
-        self.x, self.y = self.get_data(cache_path / "BroadNucleusDataBinarizedPyBioReader", subset)
+    def __init__(self, subset: str = "training", **super_kwargs):
+        self.x, self.y = self.get_data(PYBIO_CACHE_PATH / "BroadNucleusDataBinarizedPyBioReader", subset)
         if len(self.x) != len(self.y):
             raise RuntimeError("Invalid data")
 
@@ -101,7 +102,7 @@ class BroadNucleusDataBinarized(PyBioDataset):
                 data_range=(numpy.iinfo(numpy.uint16).min, numpy.iinfo(numpy.uint16).max),
                 shape=list(self.x.shape),
                 halo=[0, 0, 0],
-                description="raw"
+                description="raw",
             ),
             OutputTensor(
                 name="target",
