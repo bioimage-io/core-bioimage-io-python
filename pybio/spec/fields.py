@@ -1,29 +1,45 @@
+from __future__ import annotations
+
 import pathlib
+import datetime
 import typing
 from urllib.parse import urlparse
 from urllib.request import url2pathname
 
 import numpy
-from marshmallow.fields import (
-    DateTime,  # noqa
-    Dict,  # noqa
-    Field,
-    Float,  # noqa
-    Integer,  # noqa
-    List,  # noqa
-    Method,  # noqa
-    Nested,
-    Number,  # noqa
-    String,
-    Tuple as MarshmallowTuple,
-    ValidationError,
-)
+from marshmallow import ValidationError, fields as marshmallow_fields
+
 
 from pybio.spec import raw_nodes
 from pybio.spec.exceptions import PyBioValidationException
 
 
-class Tuple(MarshmallowTuple):
+Dict = marshmallow_fields.Dict
+Float = marshmallow_fields.Float
+Integer = marshmallow_fields.Integer
+List = marshmallow_fields.List
+Nested = marshmallow_fields.Nested
+Number = marshmallow_fields.Number
+String = marshmallow_fields.String
+
+if typing.TYPE_CHECKING:
+    import pybio.spec.schema
+
+
+class DateTime(marshmallow_fields.DateTime):
+    """
+    Parses datetime in ISO8601 or if value already has datetime.datetime type
+    returns this value
+    """
+
+    def _deserialize(self, value, attr, data, **kwargs):
+        if isinstance(value, datetime.datetime):
+            return value
+
+        return super()._deserialize(value, attr, data, **kwargs)
+
+
+class Tuple(marshmallow_fields.Tuple):
     def _jsonschema_type_mapping(self):
         import marshmallow_jsonschema
 
@@ -128,20 +144,29 @@ class Dependencies(String):  # todo: make Dependency inherit from URI
     pass
 
 
-class Shape(Nested):
-    _explicit = List(Integer)
+class Shape(marshmallow_fields.Field):
+    explicit_shape = List(Integer)
 
-    def deserialize(self, value: typing.Any, attr: str = None, data: typing.Mapping[str, typing.Any] = None, **kwargs):
+    def __init__(
+        self,
+        nested_schema: typing.Union[
+            typing.Type[pybio.spec.schema.InputShape], typing.Type[pybio.spec.schema.OutputShape]
+        ],
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        self.nested_schema = nested_schema
+
+    def _deserialize(self, value, attr, data, partial=None, many=False, **kwargs):
+        assert not many
         if isinstance(value, list):
-            return self._explicit.deserialize(value, attr, data, **kwargs)
-        elif isinstance(value, dict):
-            return super().deserialize(value, attr, data, **kwargs)
+            return self.explicit_shape.deserialize(value)
         else:
-            self.make_error(attr, input=value, type=value.__class__.__name__)
+            return self.nested_schema().load(value)
 
 
-class Array(Field):
-    def __init__(self, inner: Field, **kwargs):
+class Array(marshmallow_fields.Field):
+    def __init__(self, inner: marshmallow_fields.Field, **kwargs):
         self.inner = inner
         super().__init__(**kwargs)
 

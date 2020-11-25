@@ -128,7 +128,7 @@ class Preprocessing(PyBioSchema):
                 raise PyBioValidationException(
                     "`kwargs` for 'zero_mean_unit_variance' preprocessing with `mode` 'fixed' require additional `kwargs`: `mean` and `std`."
                 )
-            elif data["mode"] != "fixed" and (data["mean"] is not None or data["std"] is not None):
+            elif data["mode"] != "fixed" and (data.get("mean") is not None or data.get("std") is not None):
                 raise PyBioValidationException(
                     "`kwargs`: `mean` and `std` for 'zero_mean_unit_variance' preprocessing are only valid for `mode` 'fixed'."
                 )
@@ -164,8 +164,8 @@ class InputTensor(Tensor):
             step = shape.step
             shape = shape.min
 
-        elif isinstance(shape, tuple):
-            step = (0,) * len(shape)
+        elif isinstance(shape, list):
+            step = [0] * len(shape)
         else:
             raise PyBioValidationException(f"Unknown shape type {type(shape)}")
 
@@ -208,7 +208,7 @@ class OutputTensor(Tensor):
 
 class WithFileSource(PyBioSchema):
     source = fields.URI(required=True)
-    sha256 = fields.String(validate=validate.Length(equal=64))
+    sha256 = fields.String(validate=validate.Length(equal=64), missing=None)
 
 
 class WeightsEntry(WithFileSource):
@@ -260,9 +260,9 @@ class Model(Spec):
         if combination not in valid_combinations:
             raise PyBioValidationException(f"invalid combination of {dict(zip(field_names, combination))}")
 
-        if valid_combinations[combination]["requires_source"] and (data["source"] is None or data["sha256"] is None):
+        if valid_combinations[combination]["requires_source"] and data.get("source") is None:
             raise PyBioValidationException(
-                f"{dict(zip(field_names, combination))} require source code (and its sha256 hash) to be specified."
+                f"{dict(zip(field_names, combination))} require source code to be specified."
             )
 
     @validates_schema

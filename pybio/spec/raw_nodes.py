@@ -21,7 +21,9 @@ FormatVersion = Literal["0.3.0"]
 PreprocessingName = Literal["zero_mean_unit_variance"]
 Language = Literal["python", "java"]
 Framework = Literal["scikit-learn", "pytorch", "tensorflow"]
-WeightsFormat = Literal["pickle", "pytorch", "keras"]
+WeightsFormat = Literal[
+    "pickle", "pytorch_state_dict", "pytorch_script", "keras_hdf5", "tensorflow_js", "tensorflow_saved_model_bundle"
+]
 
 Dependencies = NewType("Dependencies", str)
 Axes = NewType("Axes", str)
@@ -163,6 +165,8 @@ class WeightsEntry(Node, WithFileSource):
     documentation: Optional[URI]
     tags: List[str]
     attachments: Dict
+    # tag: Optional[str]  # todo: add to schema and check schema. only valid for tensorflow_saved_model_bundle format
+    # tensorflow_version: Optional[str]  # todo: add to schema and check schema. only valid for tensorflow_saved_model_bundle format
 
 
 @dataclass

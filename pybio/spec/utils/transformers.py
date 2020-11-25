@@ -285,18 +285,20 @@ def _download_uri_node_to_local_path(uri_node: raw_nodes.URI) -> pathlib.Path:
     return local_path
 
 
-def load_model_spec(data: dict, root_path: pathlib.Path) -> nodes.Model:
+def load_model_spec(data: dict, root_path: pathlib.Path) -> raw_nodes.Model:
     # apply raw transformers
     data: dict = UriTransformer(root_path=root_path).transform(data)
 
     data: dict = maybe_convert(data)  # convert spec to current format
     tree: raw_nodes.Model = schema.Model().load(data)
 
-    # apply transformers
-    tree: Any = UriNodeTransformer(root_path=root_path).transform(tree)
-    tree: nodes.Model = SourceNodeTransformer().transform(tree)
-
     return tree
+
+
+def resolve_all_uris_and_sources(spec: raw_nodes.Model, root_path: pathlib.Path) -> nodes.Model:
+    spec: Any = UriNodeTransformer(root_path=root_path).transform(spec)
+    spec: nodes.Model = SourceNodeTransformer().transform(spec)
+    return spec
 
 
 @singledispatch
