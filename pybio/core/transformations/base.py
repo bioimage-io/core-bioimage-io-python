@@ -1,79 +1,60 @@
-from typing import Callable, List, Optional, Sequence, Tuple
+from typing import Optional, OrderedDict, Sequence, Tuple, Union
 
 from pybio.core.array import PyBioTensor
-from pybio.spec.nodes import InputTensor, OutputTensor
-
-
-class ApplyToAll:
-    def __contains__(self, item):
-        return True
 
 
 class PyBioTransformation:
-    def __init__(self, apply_to: Optional[Sequence[int]] = None):
-        self.apply_to = ApplyToAll() if apply_to is None else apply_to
+    def __init__(self, apply_to: Union[str, Sequence[str]], output_names: Optional[Union[str, Sequence[str]]] = None):
+        self.apply_to: Tuple[str] = (apply_to,) if isinstance(apply_to, str) else tuple(apply_to)
+        self.output_names = output_names or self.apply_to
 
     # todo: with python 3.8 add / to make array argument purely positional
     #       (might be called tensor or similar in derived classes)
-    def apply_to_chosen(self, array: PyBioTensor) -> PyBioTensor:
+    def apply_to_chosen(self, tensor: PyBioTensor) -> PyBioTensor:
         raise NotImplementedError
 
-    def apply(self, *arrays: PyBioTensor) -> List[PyBioTensor]:
-        return [self.apply_to_chosen(a) if i in self.apply_to else a for i, a in enumerate(arrays)]
+    def apply(self, tensors: OrderedDict[str, PyBioTensor]) -> None:
+        updates = [self.apply_to_chosen(t) for name, t in tensors.items() if name in self.apply_to]
+        assert len(self.output_names) == len(updates)
+        for name, update in zip(self.output_names, updates):
+            tensors[name] = update
 
-    def dynamic_output_shape(self, input_shape: Tuple[Tuple[int]]) -> Tuple[Tuple[int]]:
-        raise NotImplementedError
+    # def dynamic_output_shape(self, input_shape: OrderedDict[Tuple[int]]) -> OrderedDict[Tuple[int]]:
+    #     raise NotImplementedError
+    #
+    # def dynamic_input_shape(self, output_shape: OrderedDict[Tuple[int]]) -> OrderedDict[Tuple[int]]:
+    #     raise NotImplementedError
 
-    def dynamic_input_shape(self, output_shape: Tuple[Tuple[int]]) -> Tuple[Tuple[int]]:
-        raise NotImplementedError
-
-    def dynamic_outputs(self, inputs: Tuple[InputTensor]) -> Tuple[OutputTensor]:
-        raise NotImplementedError
-
-    def dynamic_inputs(self, outputs: Tuple[OutputTensor]) -> Tuple[InputTensor]:
-        raise NotImplementedError
-
-
-class CombinedPyBioTransformation(PyBioTransformation):
-    def apply_to_chosen(self, *arrays: PyBioTensor) -> List[PyBioTensor]:
-        raise NotImplementedError
-
-    def apply(self, *arrays: PyBioTensor) -> List[PyBioTensor]:
-        if isinstance(self.apply_to, ApplyToAll):
-            return self.apply_to_chosen(*arrays)
-        else:
-            return self.apply_to_chosen(*[arrays[i] for i in self.apply_to])
+    # def dynamic_outputs(self, inputs: Tuple[InputTensor]) -> Tuple[OutputTensor]:
+    #     raise NotImplementedError
+    #
+    # def dynamic_inputs(self, outputs: Tuple[OutputTensor]) -> Tuple[InputTensor]:
+    #     raise NotImplementedError
 
 
-class SynchronizedPyBioTransformation(PyBioTransformation):
-    """ Transformation for which application to all tensors is synchronized.
-    This means, some state must be known before applying it to the tensors,
-    e.g. the degree before a random rotation
-    """
+# class CombinedPyBioTransformation(PyBioTransformation):
+#     def apply_to_chosen(self, *tensors: PyBioTensor) -> Sequence[PyBioTensor]:
+#         raise NotImplementedError
+#
+#     def apply(self, tensors: OrderedDict[str, PyBioTensor]) -> None:
+#         updates = self.apply_to_chosen(*[tensors[name] for name in self.apply_to])
+#         assert len(self.output_names) == len(updates)
+#         for name, update in zip(self.output_names, updates):
+#             tensors[name] = update
 
-    def set_next_state(self):
-        raise NotImplementedError
-
-    def apply(self, *tensors):
-        # TODO the state might depend on some tensor properties (esp. shape)
-        # inferno solves this with the 'set_random_state' and 'get_random_state' construction
-        # here, we could just pass *tensors to set_next_state
-        self.set_next_state()
-        return super().apply(*tensors)
-
-
-def make_concatenated_apply(
-    transformations: Sequence[PyBioTransformation]
-) -> Callable[[Tuple[PyBioTensor]], List[PyBioTensor]]:
-    """ Resource function to apply a list of transformations to input tensors.
-    """
-    if not all(isinstance(trafo, PyBioTransformation) for trafo in transformations):
-        raise ValueError("Expect iterable of transformations")
-
-    def apply(*tensors: PyBioTensor) -> List[PyBioTensor]:
-        for trafo in transformations:
-            tensors = trafo.apply(*tensors)
-
-        return tensors
-
-    return apply
+#
+# class SynchronizedPyBioTransformation(PyBioTransformation):
+#     """ Transformation for which application to all tensors is synchronized.
+#     This means, some state must be known before applying it to the tensors,
+#     e.g. the degree before a random rotation
+#     """
+#
+#     def set_next_state(self):
+#         raise NotImplementedError
+#
+#     def apply(self, *tensors):
+#         # TODO the state might depend on some tensor properties (esp. shape)
+#         # inferno solves this with the 'set_random_state' and 'get_random_state' construction
+#         # here, we could just pass *tensors to set_next_state
+#         self.set_next_state()
+#         return super().apply(*tensors)

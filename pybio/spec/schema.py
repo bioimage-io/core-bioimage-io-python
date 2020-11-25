@@ -38,7 +38,7 @@ class Spec(PyBioSchema):
     name = fields.String(required=True)
     description = fields.String(required=True)
 
-    authors = fields.List(fields.String)
+    authors = fields.List(fields.String, required=True)
     cite = fields.Nested(CiteEntry, many=True, required=True)
 
     git_repo = fields.String(validate=validate.URL(schemes=["http", "https"]))
@@ -50,6 +50,11 @@ class Spec(PyBioSchema):
     attachments = fields.Dict(fields.String, missing=dict)
 
     config = fields.Dict(missing=dict)
+
+    language = fields.String(validate=validate.OneOf(nodes.Language.__args__), required=True)
+    framework = fields.String(validate=validate.OneOf(nodes.Framework.__args__), required=True)
+    dependencies = fields.Dependencies(missing=None)
+    timestamp = fields.DateTime(required=True)
 
     # root = fields.Path(required=True)
 
@@ -215,20 +220,14 @@ class WeightsEntry(WithFileSource):
     id = fields.String(required=True, validate=validate.Predicate("isidentifier"))
     name = fields.String(required=True)
     description = fields.String(required=True)
-    authors = fields.List(fields.String)
+    authors = fields.List(fields.String, missing=list)  # todo: copy root authors if missing
     covers = fields.List(fields.URI, missing=list)
-    test_inputs = fields.List(fields.URI(required=True), required=True)
-    test_outputs = fields.List(fields.URI(required=True), required=True)
     documentation = fields.URI(missing=None)
     tags = fields.List(fields.String, required=True)
     attachments = fields.Dict(missing=dict)
 
 
 class Model(Spec):
-    language = fields.String(validate=validate.OneOf(nodes.Language.__args__), required=True)
-    framework = fields.String(validate=validate.OneOf(nodes.Framework.__args__), required=True)
-    dependencies = fields.Dependencies(missing=None)
-    timestamp = fields.DateTime(required=True)
 
     source = fields.ImportableSource(missing=None)
     sha256 = fields.String(validate=validate.Length(equal=64), missing=None)
@@ -239,8 +238,16 @@ class Model(Spec):
         fields.Nested(WeightsEntry),
         required=True,
     )
+
     inputs = fields.Nested(InputTensor, many=True)
     outputs = fields.Nested(OutputTensor, many=True)
+
+    test_inputs = fields.List(fields.URI, required=True)
+    test_outputs = fields.List(fields.URI, required=True)
+
+    samle_inputs = fields.List(fields.URI, missing=[])
+    samle_outputs = fields.List(fields.URI, missing=[])
+
     config = fields.Dict(missing=dict)
 
     @validates("outputs")

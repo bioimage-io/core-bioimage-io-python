@@ -160,8 +160,6 @@ class WeightsEntry(Node, WithFileSource):
     description: str
     authors: List[str]
     covers: List[URI]
-    test_inputs: List[URI]
-    test_outputs: List[URI]
     documentation: Optional[URI]
     tags: List[str]
     attachments: Dict
@@ -172,5 +170,12 @@ class WeightsEntry(Node, WithFileSource):
 @dataclass
 class Model(Spec, WithImportableSource):
     weights: Dict[WeightsFormat, WeightsEntry]
+
     inputs: List[InputTensor]
     outputs: List[OutputTensor]
+
+    test_inputs: List[URI]
+    test_outputs: List[URI]
+
+    sample_inputs: List[URI]
+    sample_outputs: List[URI]
