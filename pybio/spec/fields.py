@@ -144,7 +144,7 @@ class Dependencies(String):  # todo: make Dependency inherit from URI
     pass
 
 
-class Shape(marshmallow_fields.Field):
+class Shape(marshmallow_fields.Field):  # todo: use marshmallow_union instead
     explicit_shape = List(Integer)
 
     def __init__(
