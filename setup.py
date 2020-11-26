@@ -1,17 +1,12 @@
-from io import open
-from os import path
-
+from pathlib import Path
 from setuptools import find_namespace_packages, setup
 
-here = path.abspath(path.dirname(__file__))
-
 # Get the long description from the README file
-with open(path.join(here, "README.md"), encoding="utf-8") as f:
-    long_description = f.read()
+long_description = (Path(__file__).parent / "README.md").read_text(encoding="utf-8")
 
 setup(
     name="pybio.core",
-    version="0.1a",
+    version="0.3a",
     description="Parser library for bioimage model zoo specs",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -25,12 +20,13 @@ setup(
     ],
     packages=find_namespace_packages(exclude=["tests"]),  # Required
     install_requires=[
-        "dataclasses; python_version>='3.7.0,<3.9'",
+        "dataclasses; python_version>='3.7.2,<3.9'",
         "marshmallow>=3.3.0,<3.5",
         "PyYAML>=5.2",
         "requests",
         "typer",
         "ruamel.yaml",
+        "imageio>=2.5",
     ],
     extras_require={"core": ["numpy", "sklearn", "imageio"], "test": ["pytest", "tox"]},
     project_urls={  # Optional
