@@ -39,7 +39,7 @@ class TestArray:
             fields.Array(fields.Integer(strict=True)).deserialize(data)
 
 
-class TestDatTime:
+class TestDateTime:
     def test_datetime_from_str(self):
         timestamp = "2019-12-11T12:22:32+00:00"
         expected = datetime.fromisoformat(timestamp)

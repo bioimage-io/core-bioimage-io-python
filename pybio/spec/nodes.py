@@ -52,12 +52,12 @@ class WithFileSource(raw_nodes.WithFileSource):
 @dataclass
 class WeightsEntry(raw_nodes.WeightsEntry, WithFileSource):
     covers: List[Path]
-    test_inputs: List[Path]
-    test_outputs: List[Path]
     documentation: Optional[Path]
 
 
 @dataclass
 class Model(raw_nodes.Model, WithImportedSource):
-
     weights: Dict[WeightsFormat, WeightsEntry]
+
+    test_inputs: List[Path]
+    test_outputs: List[Path]

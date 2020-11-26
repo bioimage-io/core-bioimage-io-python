@@ -65,6 +65,11 @@ kwargs:
 dependencies: conda:../env_numpy.yaml
 timestamp: "2020-10-23T16:00:42+00:00"
 
+test_inputs:
+  - test_input_raw.npy
+test_outputs:
+  - test_output.npy
+
 weights:
   pickle:
     id: default
@@ -75,7 +80,3 @@ weights:
     source: rf_v0.pickle
     sha256: abcdefghabcdefghabcdefghabcdefghabcdefghabcdefghabcdefghabcdefgh
     tags: [toy example]
-    test_inputs:
-      - test_input_raw.npy
-    test_outputs:
-      - test_output.npy
