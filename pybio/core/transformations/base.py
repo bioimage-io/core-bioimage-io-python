@@ -1,4 +1,5 @@
-from typing import Optional, OrderedDict, Sequence, Tuple, Union
+from typing import Optional, Sequence, Tuple, Union
+from collections import OrderedDict
 
 from pybio.core.array import PyBioTensor
 
