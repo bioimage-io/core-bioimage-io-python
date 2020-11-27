@@ -1,5 +1,4 @@
-from typing import Optional, Sequence, Tuple, Union
-from collections import OrderedDict
+from typing import Optional, Sequence, Tuple, Union, Dict
 
 from pybio.core.array import PyBioTensor
 
@@ -14,7 +13,7 @@ class PyBioTransformation:
     def apply_to_chosen(self, tensor: PyBioTensor) -> PyBioTensor:
         raise NotImplementedError
 
-    def apply(self, tensors: OrderedDict[str, PyBioTensor]) -> None:
+    def apply(self, tensors: Dict[str, PyBioTensor]) -> None:
         updates = [self.apply_to_chosen(t) for name, t in tensors.items() if name in self.apply_to]
         assert len(self.output_names) == len(updates)
         for name, update in zip(self.output_names, updates):
