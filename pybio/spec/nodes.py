@@ -51,8 +51,7 @@ class WithFileSource(raw_nodes.WithFileSource):
 
 @dataclass
 class WeightsEntry(raw_nodes.WeightsEntry, WithFileSource):
-    covers: List[Path]
-    documentation: Optional[Path]
+    pass
 
 
 @dataclass

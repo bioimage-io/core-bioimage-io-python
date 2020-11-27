@@ -217,13 +217,7 @@ class WithFileSource(PyBioSchema):
 
 
 class WeightsEntry(WithFileSource):
-    id = fields.String(required=True, validate=validate.Predicate("isidentifier"))
-    name = fields.String(required=True)
-    description = fields.String(required=True)
     authors = fields.List(fields.String, missing=list)  # todo: copy root authors if missing
-    covers = fields.List(fields.URI, missing=list)
-    documentation = fields.URI(missing=None)
-    tags = fields.List(fields.String, required=True)
     attachments = fields.Dict(missing=dict)
 
 

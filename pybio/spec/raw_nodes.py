@@ -155,13 +155,7 @@ class WithFileSource:
 
 @dataclass
 class WeightsEntry(Node, WithFileSource):
-    id: str
-    name: str
-    description: str
     authors: List[str]
-    covers: List[URI]
-    documentation: Optional[URI]
-    tags: List[str]
     attachments: Dict
     # tag: Optional[str]  # todo: add to schema and check schema. only valid for tensorflow_saved_model_bundle format
     # tensorflow_version: Optional[str]  # todo: add to schema and check schema. only valid for tensorflow_saved_model_bundle format
