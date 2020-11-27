@@ -245,8 +245,8 @@ class Model(Spec):
     test_inputs = fields.List(fields.URI, required=True)
     test_outputs = fields.List(fields.URI, required=True)
 
-    samle_inputs = fields.List(fields.URI, missing=[])
-    samle_outputs = fields.List(fields.URI, missing=[])
+    sample_inputs = fields.List(fields.URI, missing=[])
+    sample_outputs = fields.List(fields.URI, missing=[])
 
     config = fields.Dict(missing=dict)
 
