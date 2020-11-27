@@ -1,9 +1,14 @@
 import collections
-from typing import Dict, Optional, OrderedDict, Sequence, Tuple
+from typing import Dict, Optional, Sequence, Tuple
 
 from pybio.core.protocols import Tensor
 from pybio.core.transformations import BatchTransformation
 from pybio.spec.nodes import OutputTensor
+
+try:
+    from typing import OrderedDict
+except ImportError:
+    from typing import MutableMapping as OrderedDict
 
 
 class Dataset:
