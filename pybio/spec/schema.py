@@ -4,7 +4,7 @@ from pprint import pprint
 
 from marshmallow import Schema, ValidationError, post_load, validate, validates, validates_schema
 
-from pybio.spec import fields, nodes
+from pybio.spec import fields, raw_nodes
 from pybio.spec.exceptions import PyBioValidationException
 
 
@@ -14,7 +14,7 @@ class PyBioSchema(Schema):
         if not data:
             return None
 
-        this_type = getattr(nodes, self.__class__.__name__)
+        this_type = getattr(raw_nodes, self.__class__.__name__)
         try:
             return this_type(**data)
         except TypeError as e:
@@ -34,7 +34,7 @@ class CiteEntry(PyBioSchema):
 
 
 class Spec(PyBioSchema):
-    format_version = fields.String(validate=validate.OneOf(nodes.FormatVersion.__args__), required=True)
+    format_version = fields.String(validate=validate.OneOf(raw_nodes.FormatVersion.__args__), required=True)
     name = fields.String(required=True)
     description = fields.String(required=True)
 
@@ -51,8 +51,8 @@ class Spec(PyBioSchema):
 
     config = fields.Dict(missing=dict)
 
-    language = fields.String(validate=validate.OneOf(nodes.Language.__args__), required=True)
-    framework = fields.String(validate=validate.OneOf(nodes.Framework.__args__), required=True)
+    language = fields.String(validate=validate.OneOf(raw_nodes.Language.__args__), required=True)
+    framework = fields.String(validate=validate.OneOf(raw_nodes.Framework.__args__), required=True)
     dependencies = fields.Dependencies(missing=None)
     timestamp = fields.DateTime(required=True)
 
@@ -82,7 +82,7 @@ class InputShape(PyBioSchema):
 
 
 class OutputShape(PyBioSchema):
-    reference_input = fields.String(missing=None)
+    reference_input = fields.String(required=True)
     scale = fields.List(fields.Float, required=True)
     offset = fields.List(fields.Integer, required=True)
 
@@ -105,21 +105,21 @@ class Tensor(PyBioSchema):
 
 
 class Preprocessing(PyBioSchema):
-    name = fields.String(validate=validate.OneOf(nodes.PreprocessingName.__args__), required=True)
+    name = fields.String(validate=validate.OneOf(raw_nodes.PreprocessingName.__args__), required=True)
     kwargs = fields.Dict(fields.String, missing=dict)
 
-    @post_load
-    def make_object(self, data, **kwargs):
-        if not data:
-            return None
-
-        # camel_case_name = data["name"].title()
-        this_type = getattr(nodes, self.__class__.__name__)
-        try:
-            return this_type(**data)
-        except TypeError as e:
-            e.args += (f"when initializing {this_type} from {self}",)
-            raise e
+    # @post_load
+    # def make_object(self, data, **kwargs):
+    #     if not data:
+    #         return None
+    #
+    #     # camel_case_name = data["name"].title()
+    #     this_type = getattr(raw_nodes, self.__class__.__name__)
+    #     try:
+    #         return this_type(**data)
+    #     except TypeError as e:
+    #         e.args += (f"when initializing {this_type} from {self}",)
+    #         raise e
 
     class ZeroMeanUniVarianceKwargs(Schema):  # not pybio schema, only returning a validated dict, no specific node
         mode = fields.String(validate=validate.OneOf(("fixed", "per_dataset", "per_sample")), required=True)
@@ -165,7 +165,7 @@ class InputTensor(Tensor):
         if bidx == -1:
             return
 
-        if isinstance(shape, nodes.InputShape):
+        if isinstance(shape, raw_nodes.InputShape):
             step = shape.step
             shape = shape.min
 
@@ -204,7 +204,7 @@ class OutputTensor(Tensor):
         halo = data["halo"]
         if halo is None:
             return
-        elif isinstance(shape, tuple) or isinstance(shape, nodes.OutputShape):
+        elif isinstance(shape, tuple) or isinstance(shape, raw_nodes.OutputShape):
             if len(halo) != len(shape):
                 raise PyBioValidationException(f"halo {halo} has to have same length as shape {shape}!")
         else:
@@ -228,7 +228,7 @@ class Model(Spec):
     kwargs = fields.Dict(fields.String, missing=dict)
 
     weights = fields.Dict(
-        fields.String(validate=validate.OneOf(nodes.WeightsFormat.__args__), required=True),
+        fields.String(validate=validate.OneOf(raw_nodes.WeightsFormat.__args__), required=True),
         fields.Nested(WeightsEntry),
         required=True,
     )
@@ -287,7 +287,7 @@ class BioImageIoManifestModelEntry(Schema):
 
 
 class BioImageIoManifest(Schema):
-    format_version = fields.String(validate=validate.OneOf(nodes.FormatVersion.__args__), required=True)
+    format_version = fields.String(validate=validate.OneOf(raw_nodes.FormatVersion.__args__), required=True)
     config = fields.Dict()
 
     application = fields.List(fields.Dict)

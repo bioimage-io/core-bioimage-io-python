@@ -1,17 +1,17 @@
 from typing import List, Optional, Sequence, Tuple
 
 from pybio.core.array import PyBioTensor
-from pybio.core.transformations import ApplyToAll, PyBioTransformation
 from pybio.spec.nodes import InputTensor, OutputTensor
+from .base import IndependentTransformation
 
 
-class NormalizeZeroMeanUnitVariance(PyBioTransformation):
+class ZeroMeanUnitVariance(IndependentTransformation):
     def __init__(
         self,
-        eps=1.0e-6,
         means: Sequence[Optional[float]] = (None,),
         stds: Sequence[Optional[float]] = (None,),
         apply_to: Optional[Sequence[int]] = (0,),
+        eps=1.0e-6,
         **super_kwargs,
     ):
         assert len(means) == len(stds)
@@ -24,7 +24,7 @@ class NormalizeZeroMeanUnitVariance(PyBioTransformation):
         self.means = tuple(means)
         self.stds = tuple(stds)
 
-    def apply(self, *arrays: PyBioTensor) -> List[PyBioTensor]:
+    def apply(self, array: PyBioTensor) -> PyBioTensor:
         if isinstance(self.apply_to, ApplyToAll):
             assert len(self.means) == len(arrays)
             assert len(self.stds) == len(arrays)
@@ -96,13 +96,13 @@ class NormalizeRange(PyBioTransformation):
         if data_min is not None and data_max is not None:
             assert data_min < data_max, (data_min, data_max)
         assert isinstance(apply_to, int), type(apply_to)
-        super().__init__(apply_to=(apply_to, ), **super_kwargs)
+        super().__init__(apply_to=(apply_to,), **super_kwargs)
 
         self.output_min = output_min
         self.output_max = output_max
         self.data_min = data_min
         self.data_max = data_max
-        self.minimal_data_range=minimal_data_range
+        self.minimal_data_range = minimal_data_range
 
     def apply_to_chosen(self, array: PyBioTensor) -> PyBioTensor:
         data_min = array.min() if self.data_min is None else self.data_min
@@ -141,7 +141,10 @@ class NormalizeRange(PyBioTransformation):
                 name=out.name,
                 axes=out.axes,
                 data_type="numeric",
-                data_range=(float("-inf") if self.data_min is None else self.data_min, float("inf") if self.data_max is None else self.data_max),
+                data_range=(
+                    float("-inf") if self.data_min is None else self.data_min,
+                    float("inf") if self.data_max is None else self.data_max,
+                ),
                 shape=out.shape,
             )
             for out in outputs

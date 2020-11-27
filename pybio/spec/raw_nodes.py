@@ -107,7 +107,7 @@ class InputShape(Node):
 
 @dataclass
 class OutputShape(Node):
-    reference_input: Optional[str]
+    reference_input: str
     scale: List[float]
     offset: List[int]
 

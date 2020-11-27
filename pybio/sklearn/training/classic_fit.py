@@ -1,51 +1,52 @@
-from os import getenv
+import pickle
 from pathlib import Path
 
+import numpy
+
 from pybio.core.datasets.broad_nucleus_data import BroadNucleusDataBinarized
-from pybio.sklearn.models.sklearnbased import RandomForestClassifier
+from pybio.sklearn.models import RandomForestClassifier
 from pybio.spec.nodes import Model
-from pybio.spec.utils import get_instance, load_model_spec
+from pybio.spec.utils import get_instance
+from pybio.spec.utils.transformers import load_and_resolve_spec
 
 
-def classic_fit(pybio_model: Model):
-    model: RandomForestClassifier = get_instance(pybio_model)
 
-    dataset = BroadNucleusDataBinarized(cache_path=Path(getenv("PYBIO_CACHE_PATH", "pybio_cache")))
-    roi = (slice(None), slice(100, 200), slice(100, 200))
-    X, y = dataset[roi, roi]
-
-    model.fit([X], [y])
-    return model
-    # return model
-    # # todo: save/return model weights/checkpoint?!?
+test_input_path = "/repos/python-bioimage-io/specs/models/sklearn/test_input_raw.npy"
+test_output_path = "/repos/python-bioimage-io/specs/models/sklearn/test_output.npy"
 
 
-def train_rf():
-    pybio_model = load_model_spec(
-        str((Path(__file__).parent / "../../../specs/models/sklearnbased/RandomForestClassifier.model.yaml").resolve())
-    )
-    rf = classic_fit(pybio_model)
-    weight = rf.get_weights()
-    Path("/repos/python-bioimage-io/rf_v0.pickle").write_bytes(weight)
-
-
-def load_rf_weight_from_weights():
-    pybio_model = load_model_spec(
-        str((Path(__file__).parent / "../../../specs/models/sklearnbased/RandomForestClassifier.model.yaml").resolve())
-    )
-    p: Path = pybio_model.spec.weights[0].source  # noqa
-    with p.open("rb") as f:
-        rf.set_weights(f.read())
-
-    return rf
-
-
-if __name__ == "__main__":
-    # rf = load_rf_weight_from_weights()
+def classic_fit(spec: Model):
+    model: RandomForestClassifier = get_instance(spec)
 
     dataset = BroadNucleusDataBinarized()
-    roi = (slice(None), slice(100, 200), slice(100, 200))
-    X, y = dataset[roi, roi]
-    print(X.shape, y.shape)
-    print(X.shape, y.shape)
+    batch = dataset[(slice(None), slice(100, 110), slice(100, 110))]
 
+    test_input = dataset[(slice(0, 1), slice(100, 200), slice(100, 200))]["x"].reshape((-1, 1))
+    numpy.save(test_input_path, test_input)
+    assert Path(test_input_path).exists()
+    model.fit(batch["x"].reshape((-1, 1)), batch["y"].reshape((-1, 1)))
+
+    test_output = model(test_input)
+    numpy.save(test_output_path, test_output)
+    return model
+
+
+def create_rf_weights():
+    spec = load_and_resolve_spec(
+        Path(__file__).parent / "../../../specs/models/sklearn/RandomForestClassifier.model.yaml"
+    )
+    model = classic_fit(spec)
+    with Path("/repos/python-bioimage-io/specs/models/sklearn/rf_v0.pickle").open("wb") as f:
+        pickle.dump(model, f)
+
+
+def restore_rf_from_weights():
+    spec = load_and_resolve_spec(
+        Path(__file__).parent / "../../../specs/models/sklearn/RandomForestClassifier.model.yaml"
+    )
+    with spec.weights["pickle"].source.open("br") as f:
+        model = pickle.load(f)
+
+if __name__ == "__main__":
+    create_rf_weights()
+    restore_rf_from_weights()

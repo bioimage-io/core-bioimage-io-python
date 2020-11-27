@@ -20,31 +20,29 @@ attachments: {}
 inputs:
   - name: raw
     description: raw input data
-    axes: byx
+    axes: bc
     data_type: float32
     data_range: [-inf, inf]
     shape:
-      min: [1, 96, 96]
-      step: [0, 1, 1]
+      min: [1, 1]
+      step: [0, 0]
 
 outputs:
   - name: probabilities
     description: probability in [0,1]
-    axes: byx
+    axes: bc
     data_type: float32
     data_range: [0, 1]
-    halo: [0, 32, 32]
     shape:
       reference_input: raw
-      scale: [1, 1, 1]
-      offset: [0, 0, 0]
+      scale: [1, 1]
+      offset: [0, 0]
 
 language: python
 framework: scikit-learn
 
-source: pybio.sklearn.models.sklearnbased.RandomForestClassifier
+source: pybio.sklearn.models.RandomForestClassifier
 kwargs:
-  channel_indices: [null]
   n_estimators: 10
   criterion: gini
   max_depth: null
@@ -72,6 +70,5 @@ test_outputs:
 
 weights:
   pickle:
-    authors: [Fynn Beuttenmueller]
     source: rf_v0.pickle
     sha256: abcdefghabcdefghabcdefghabcdefghabcdefghabcdefghabcdefghabcdefgh

@@ -1,4 +1,5 @@
 import copy
+import warnings
 from collections import defaultdict
 from typing import Dict
 
@@ -84,17 +85,21 @@ def maybe_convert_to_v0_3(data: Dict) -> Dict:
         conversion_errors["test_output"] = missing
         test_output = missing
 
+    data["test_inputs"] = [test_input]
+    data["test_outputs"] = [test_output]
+    warnings.warn(
+        "test_input and test_output need to be converted manually, "
+        "as they are split up into files for each individual tensor"
+    )
     weights_future = future.pop("weights", {})
     weights_entry = {
-        "id": weights_future.pop("id", "default"),
-        "name": weights_future.pop("name", "default weights"),
-        "description": weights_future.pop("description", "description"),
-        "authors": data["authors"],
+        # "id": weights_future.pop("id", "default"),
+        # "name": weights_future.pop("name", "default weights"),
+        # "description": weights_future.pop("description", "description"),
+        # "authors": data["authors"],
         "source": source,
         "sha256": sha256,
-        "tags": weights_future.pop("tags", []),
-        "test_inputs": [test_input],
-        "test_outputs": [test_output],
+        # "tags": weights_future.pop("tags", []),
     }
 
     data["weights"] = {weights_format: weights_entry}

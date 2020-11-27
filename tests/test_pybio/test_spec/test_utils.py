@@ -4,6 +4,7 @@ from typing import Any
 
 import pytest
 from marshmallow import post_load
+from ruamel.yaml import YAML
 
 from pybio.spec import fields, nodes, raw_nodes, schema
 from pybio.spec.utils import load_model_spec
@@ -15,6 +16,8 @@ from pybio.spec.utils.transformers import (
     UriNodeTransformer,
     iter_fields,
 )
+
+yaml = YAML(typ="safe")
 
 
 @dataclass
@@ -120,5 +123,6 @@ def test_resolve_directory_uri(tmpdir):
     assert uri_transformed == Path(tmpdir)
 
 
-def test_load_model_spec(rf_model_data, rf_config_path):
+def test_load_model_spec(rf_config_path):
+    rf_model_data = yaml.load(rf_config_path)
     load_model_spec(rf_model_data, rf_config_path)

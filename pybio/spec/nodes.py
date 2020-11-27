@@ -26,6 +26,12 @@ WeightsFormat = raw_nodes.WeightsFormat
 
 
 @dataclass
+class InputShape(raw_nodes.InputShape):
+    def matches(self, tensor: Tensor):
+        raise NotImplementedError  # todo: make InputShape handle min,step and explicit shape and add a MinStepInputShape for parsing?
+
+
+@dataclass
 class ImportedSource:
     factory: Callable
 

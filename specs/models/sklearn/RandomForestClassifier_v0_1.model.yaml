@@ -13,9 +13,8 @@ format_version: 0.1.0
 language: python
 framework: scikit-learn
 
-source: pybio.sklearn.models.sklearnbased.RandomForestClassifier
+source: pybio.sklearn.models.RandomForestClassifier
 optional_kwargs:
-  channel_indices: [null]
   n_estimators: 10
   criterion: gini
   max_depth: null
@@ -39,23 +38,22 @@ covers: [] # ./nuclei_thumbnail.png
 
 inputs:
   - name: raw
-    axes: byx
+    axes: bc
     data_type: float32
     data_range: [-inf, inf]
     shape:
-      min: [1, 96, 96]
-      step: [0, 1, 1]
+      min: [1, 1]
+      step: [0, 0]
 
 outputs:
   - name: probabilities
-    axes: byx
+    axes: bc
     data_type: float32
     data_range: [0, 1]
-    halo: [0, 32, 32]
     shape:
       reference_input: raw
-      scale: [1, 1, 1]
-      offset: [0, 0, 0]
+      scale: [1, 1]
+      offset: [0, 0]
 
 prediction:
     preprocess: []

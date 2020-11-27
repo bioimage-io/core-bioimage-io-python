@@ -5,8 +5,9 @@ import pathlib
 import subprocess
 import sys
 import uuid
+from collections import namedtuple
 from functools import singledispatch
-from typing import Any, TypeVar
+from typing import Any, NamedTuple, Type, TypeVar
 from urllib.parse import urlunparse
 from urllib.request import url2pathname, urlretrieve
 
@@ -76,7 +77,7 @@ class Transformer:
 
 class NodeTransformer(Transformer):
     def generic_transformer(self, node: GenericNode) -> GenericNode:
-        if isinstance(node, nodes.Node):
+        if isinstance(node, (nodes.Node, raw_nodes.Node)):
             return dataclasses.replace(
                 node,
                 **{field.name: self.transform(getattr(node, field.name)) for field in dataclasses.fields(node)},  # noqa
@@ -200,6 +201,22 @@ class SourceNodeTransformer(NodeTransformer):
         )
 
 
+GenericRawNode = TypeVar("GenericRawNode", bound=raw_nodes.Node)
+GenericResolvedNode = TypeVar("GenericResolvedNode", bound=nodes.Node)
+
+
+class RawNodeTypeTransformer(NodeTransformer):
+    def generic_transformer(self, node: GenericRawNode) -> GenericResolvedNode:
+        if isinstance(node, raw_nodes.Node):
+            resolved_data = {
+                field.name: self.transform(getattr(node, field.name)) for field in dataclasses.fields(node)
+            }
+            resolved_node_type: Type[GenericResolvedNode] = getattr(nodes, node.__class__.__name__)
+            return resolved_node_type(**resolved_data)
+        else:
+            return super().generic_transformer(node)
+
+
 def get_instance(node: nodes.WithImportedSource, **kwargs):
     if isinstance(node, nodes.WithImportedSource):
         if not isinstance(node.source, ImportedSource):
@@ -295,19 +312,25 @@ def load_model_spec(data: dict, root_path: pathlib.Path) -> raw_nodes.Model:
     return tree
 
 
-def resolve_all_uris_and_sources(spec: raw_nodes.Model, root_path: pathlib.Path) -> nodes.Model:
-    spec: Any = UriNodeTransformer(root_path=root_path).transform(spec)
-    spec: nodes.Model = SourceNodeTransformer().transform(spec)
+RawSpec = raw_nodes.Model
+LoadedSpec = NamedTuple("LoadedSpec", raw_spec=RawSpec, root_path=pathlib.Path)
+ResolvedSpec = nodes.Model
+
+
+def resolve_all_uris_and_sources(raw_spec: RawSpec, root_path: pathlib.Path) -> ResolvedSpec:
+    spec = UriNodeTransformer(root_path=root_path).transform(raw_spec)
+    spec = SourceNodeTransformer().transform(spec)
+    spec = RawNodeTypeTransformer().transform(spec)
     return spec
 
 
 @singledispatch
-def load_spec(uri) -> nodes.Model:
+def load_spec(uri) -> LoadedSpec:
     raise TypeError(uri)
 
 
 @load_spec.register
-def _(uri: str) -> nodes.Model:
+def _(uri: str) -> LoadedSpec:
     last_dot = uri.rfind(".")
     second_last_dot = uri[:last_dot].rfind(".")
     spec_suffix = uri[second_last_dot + 1 : last_dot]
@@ -320,12 +343,28 @@ def _(uri: str) -> nodes.Model:
 
     local_path = resolve_uri(uri, root_path=PYBIO_CACHE_PATH)
     data = yaml.load(local_path)
-    return load_spec_from_data(data, root_path=local_path.parent)
+    root_path = local_path.parent
+    return LoadedSpec(load_spec_from_data(data, root_path=root_path), root_path)
 
 
 @load_spec.register
 def _(uri: pathlib.Path):
     return load_spec(uri.as_uri())
+
+
+@singledispatch
+def load_and_resolve_spec(uri) -> ResolvedSpec:
+    raise TypeError(uri)
+
+
+@load_and_resolve_spec.register
+def _(uri: str) -> ResolvedSpec:
+    return resolve_all_uris_and_sources(*load_spec(uri))
+
+
+@load_and_resolve_spec.register
+def _(uri: pathlib.Path) -> ResolvedSpec:
+    return load_and_resolve_spec(uri.as_uri())
 
 
 # def cache_uri(uri_str: str, sha256: Optional[str] = None) -> pathlib.Path:

@@ -2,7 +2,7 @@ from typing import Sequence, Tuple
 
 import numpy
 
-from pybio.core.readers.base import PyBioReader
+from pybio.core.datasets.base import Dataset
 from pybio.spec.nodes import OutputTensor, Axes
 
 

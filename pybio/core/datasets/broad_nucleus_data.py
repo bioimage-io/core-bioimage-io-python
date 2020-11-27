@@ -1,7 +1,8 @@
+import collections
 import os
 import zipfile
 from pathlib import Path
-from typing import Tuple
+from typing import Dict, Tuple, Union
 from urllib.request import urlretrieve
 
 import imageio
@@ -9,8 +10,13 @@ import numpy
 import numpy as np
 
 from pybio.core.cache import PYBIO_CACHE_PATH
-from pybio.core.datasets.base import PyBioDataset
+from pybio.core.datasets.base import Dataset
 from pybio.spec.nodes import Axes, OutputTensor
+
+try:
+    from typing import OrderedDict
+except ImportError:
+    from typing import MutableMapping as OrderedDict
 
 
 def download_data(url, data_dir: Path, prefix: str):
@@ -54,7 +60,7 @@ def load_images(files):
     return np.stack(images)
 
 
-class BroadNucleusDataBinarized(PyBioDataset):
+class BroadNucleusDataBinarized(Dataset):
     # TODO store hashes and validate
     urls = {
         "images": "https://data.broadinstitute.org/bbbc/BBBC039/images.zip",
@@ -117,8 +123,10 @@ class BroadNucleusDataBinarized(PyBioDataset):
 
         super().__init__(outputs=outputs, **super_kwargs)
 
-    def __getitem__(
-        self, index: Tuple[Tuple[slice, slice, slice], Tuple[slice, slice, slice]]
-    ) -> Tuple[numpy.ndarray, numpy.ndarray]:
-        x, y = self.x[index[0]], self.y[index[1]]
-        return self.apply_transformation(x, y)
+    def __getitem__(self, index: Union[Tuple[slice, slice, slice], Dict[str, Tuple[slice, slice, slice]]]) -> OrderedDict[str, numpy.ndarray]:
+        if isinstance(index, tuple):
+            index = {d: index for d in "xy"}
+
+        batch = collections.OrderedDict(x=self.x[index["x"]], y=self.y[index["y"]])
+        self.apply_transformation(batch)
+        return batch

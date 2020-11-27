@@ -1,9 +1,17 @@
 from dataclasses import asdict
 
+from ruamel.yaml import YAML
+
 from pybio.spec import schema, maybe_convert
 
 
-def test_model_nodes_format_0_1_to_0_3(rf_model_data_v0_1, rf_model_data):
+yaml = YAML(typ="safe")
+
+
+def test_model_nodes_format_0_1_to_0_3(rf_config_path_v0_1, rf_config_path):
+    rf_model_data_v0_1 = yaml.load(rf_config_path_v0_1)
+    rf_model_data = yaml.load(rf_config_path)
+
     expected = asdict(schema.Model().load(rf_model_data))
     converted_data = maybe_convert(rf_model_data_v0_1)
     actual = asdict(schema.Model().load(converted_data))
