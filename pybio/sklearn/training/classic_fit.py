@@ -20,7 +20,6 @@ def classic_fit(spec: Model):
     dataset = BroadNucleusDataBinarized()
     batch = dataset[(slice(None), slice(100, 110), slice(100, 110))]
 
-    assert Path(test_input_path).exists()
     model.fit(batch["x"].reshape((-1, 1)), batch["y"].reshape((-1, 1)))
 
     write_test_inputs_and_outputs = False
