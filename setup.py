@@ -26,6 +26,7 @@ setup(
         "requests",
         "typer",
         "ruamel.yaml",
+        "typing-extensions",
         "imageio>=2.5",
     ],
     extras_require={"core": ["numpy", "sklearn", "imageio"], "test": ["pytest", "tox"]},
