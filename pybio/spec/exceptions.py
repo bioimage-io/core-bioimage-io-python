@@ -5,7 +5,7 @@ class PyBioException(Exception):
     pass
 
 
-class PyBioMissingKwargException(PyBioException, TypeError):
+class PyBioRunnerException(Exception):
     pass
 
 
@@ -13,5 +13,5 @@ class PyBioValidationException(PyBioException, ValidationError):
     pass
 
 
-class InvalidDoiException(PyBioValidationException):
+class PyBioUnconvertibleException(PyBioValidationException):
     pass

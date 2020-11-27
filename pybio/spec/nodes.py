@@ -1,238 +1,68 @@
+from __future__ import annotations
+
 from dataclasses import dataclass
-from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, NewType, Optional, Tuple, Union
-
-import pybio
+from typing import Callable, Dict, List, Optional
 
 
-@dataclass
-class Node:
-    pass
+from . import raw_nodes
 
 
-class MagicTensorsValue(Enum):
-    any = "any"
-    same = "same"
-    dynamic = "dynamic"
-
-
-class MagicShapeValue(Enum):
-    any = "any"
-    dynamic = "dynamic"
-
-
-@dataclass
-class ImportablePath(Node):
-    filepath: Union[Path]
-    callable_name: str
+Axes = raw_nodes.Axes
+CiteEntry = raw_nodes.CiteEntry
+Dependencies = raw_nodes.Dependencies
+FormatVersion = raw_nodes.FormatVersion
+Framework = raw_nodes.Framework
+InputShape = raw_nodes.InputShape
+InputTensor = raw_nodes.InputTensor
+Language = raw_nodes.Language
+Node = raw_nodes.Node
+OutputShape = raw_nodes.OutputShape
+OutputTensor = raw_nodes.OutputTensor
+Preprocessing = raw_nodes.Preprocessing
+PreprocessingName = raw_nodes.PreprocessingName
+Tensor = raw_nodes.Tensor
+WeightsFormat = raw_nodes.WeightsFormat
 
 
 @dataclass
-class ImportableModule(Node):
-    module_name: str
-    callable_name: str
-
-
-ImportableSource = Union[ImportableModule, ImportablePath]
+class InputShape(raw_nodes.InputShape):
+    def matches(self, tensor: Tensor):
+        raise NotImplementedError  # todo: make InputShape handle min,step and explicit shape and add a MinStepInputShape for parsing?
 
 
 @dataclass
-class WithImportableSource:
-    source: ImportableSource
-    required_kwargs: List[str]
-    optional_kwargs: Dict[str, Any]
+class ImportedSource:
+    factory: Callable
+
+    def __call__(self, *args, **kwargs):
+        return self.factory(*args, **kwargs)
 
 
 @dataclass
-class CiteEntry(Node):
-    text: str
-    doi: Optional[str]
-    url: Optional[str]
+class WithImportedSource(raw_nodes.WithImportableSource):
+    source: ImportedSource
 
 
 @dataclass
-class BaseSpec(Node, WithImportableSource):
-    name: str
-    format_version: str
-    description: str
-    cite: List[CiteEntry]
-    authors: List[str]
+class Spec(raw_nodes.Spec):
     documentation: Path
-    tags: List[str]
-    license: str
-
-    language: str
-    framework: Optional[str]
-
-    test_input: Optional[Path]
-    test_output: Optional[Path]
     covers: List[Path]
 
 
 @dataclass
-class InputShape(Node):
-    min: List[float]
-    step: List[float]
-
-    def __len__(self):
-        return len(self.min)
+class WithFileSource(raw_nodes.WithFileSource):
+    source: Path
 
 
 @dataclass
-class OutputShape(Node):
-    reference_input: Optional[str]
-    scale: List[float]
-    offset: List[int]
-
-    def __len__(self):
-        return len(self.scale)
-
-
-Axes = NewType("Axes", str)
-
-
-@dataclass
-class Array(Node):
-    name: str
-    axes: Optional[Axes]
-    data_type: str
-    data_range: Tuple[float, float]
-
-
-@dataclass
-class InputArray(Array):
-    shape: Union[List[int], MagicShapeValue, InputShape]
-
-
-@dataclass
-class OutputArray(Array):
-    shape: Union[List[int], MagicShapeValue, OutputShape]
-    halo: List[int]
-
-
-@dataclass
-class WithInputs:
-    inputs: Union[MagicTensorsValue, List[InputArray]]
-
-
-@dataclass
-class WithOutputs:
-    outputs: Union[MagicTensorsValue, List[OutputArray]]
-
-
-@dataclass
-class URI(Node):
-    scheme: str
-    netloc: str
-    path: str
-    query: str
-
-
-@dataclass
-class SpecURI(URI):
-    spec_schema: "pybio.spec.schema.BaseSpec"
-
-
-@dataclass
-class SpecWithKwargs(Node):
-    spec: Union[SpecURI, BaseSpec]
-    kwargs: Dict[str, Any]
-
-
-Dependencies = NewType("Dependencies", Path)
-
-
-@dataclass
-class TransformationSpec(BaseSpec, WithInputs, WithOutputs):
-    dependencies: Dependencies
-
-
-@dataclass
-class Transformation(SpecWithKwargs):
-    spec: Union[SpecURI, TransformationSpec]
-
-
-@dataclass
-class WithFileSource:
-    source: URI
-    hash: Dict[str, str]
-
-
-@dataclass
-class Weights(Node, WithFileSource):
+class WeightsEntry(raw_nodes.WeightsEntry, WithFileSource):
     pass
 
 
 @dataclass
-class Prediction(Node):
-    weights: Optional[Weights]
-    dependencies: Optional[Dependencies]
-    preprocess: List[Transformation]
-    postprocess: List[Transformation]
+class Model(raw_nodes.Model, WithImportedSource):
+    weights: Dict[WeightsFormat, WeightsEntry]
 
-
-@dataclass
-class ReaderSpec(BaseSpec, WithOutputs):
-    dependencies: Optional[Dependencies]
-
-
-@dataclass
-class Reader(SpecWithKwargs):
-    spec: Union[SpecURI, ReaderSpec]
-    transformations: List[Transformation]
-
-
-@dataclass
-class SamplerSpec(BaseSpec, WithOutputs):
-    dependencies: Optional[Dependencies]
-
-
-@dataclass
-class Sampler(SpecWithKwargs):
-    spec: Union[SpecURI, SamplerSpec]
-    readers: List[Reader]
-
-
-@dataclass
-class Optimizer(Node, WithImportableSource):
-    pass
-
-
-@dataclass
-class Setup(Node):
-    samplers: List[Sampler]
-    preprocess: List[Transformation]
-    postprocess: List[Transformation]
-    losses: List[Transformation]
-    optimizer: Optimizer
-    # todo: make non-optional (here, but add as optional to schmea) todo: add real meta sampler
-    sampler: Optional[Sampler] = None
-
-    def __post_init__(self):
-        assert len(self.samplers) == 1
-        self.sampler = self.samplers[0]
-
-
-@dataclass
-class Training(Node, WithImportableSource):
-    setup: Setup
-    dependencies: Dependencies
-    description: Optional[str]
-
-
-@dataclass
-class ModelSpec(BaseSpec, WithInputs, WithOutputs):
-    prediction: Prediction
-    training: Optional[Training]
-
-
-@dataclass
-class Model(SpecWithKwargs):
-    spec: Union[SpecURI, ModelSpec]
-
-
-# helper nodes
-@dataclass
-class File(Node, WithFileSource):
-    pass
+    test_inputs: List[Path]
+    test_outputs: List[Path]

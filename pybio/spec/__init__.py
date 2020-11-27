@@ -1,3 +1,4 @@
-__version__ = "0.1.0"
+from pybio.spec.utils import load_model_spec, load_spec, maybe_convert
+from . import nodes
 
-from .utils import load_spec_and_kwargs, load_model
+__version__ = nodes.FormatVersion.__args__[-1]

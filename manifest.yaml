@@ -1,11 +1,1 @@
-transformations:
-    - specs/transformations/Transpose.transformation.yaml
-    - specs/transformations/Reshape.transformation.yaml
-    - specs/transformations/Cast.transformation.yaml
-    - specs/transformations/RandomAxisRotation.transformation.yaml
-    - specs/transformations/NormalizeZeroMeanUnitVariance.transformation.yaml
-    - specs/transformations/NormalizeRange.transformation.yaml
-readers:
-    - specs/readers/BroadNucleusDataBinarized.reader.yaml
-samplers:
-    - specs/samplers/SequentialSamplerAlongDimension.sampler.yaml
+{}

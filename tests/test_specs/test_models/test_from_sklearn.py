@@ -2,18 +2,16 @@ from pathlib import Path
 
 import numpy
 
-from pybio.spec import utils, load_model
+from pybio.sklearn.training.classic_fit import classic_fit
+from pybio.spec.utils.transformers import load_and_resolve_spec
 
 
-def test_RandomForestClassifierBroadNucleusDataBinarized(cache_path):
-    spec_path = (
-        Path(__file__).parent
-        / "../../../specs/models/sklearnbased/RandomForestClassifierBroadNucleusDataBinarized.model.yaml"
-    )
-    pybio_model = load_model(str(spec_path), kwargs={"c_indices": [None]}, cache_path=cache_path)
-    model = utils.train(pybio_model)
+def test_RandomForestClassifier():
+    spec_path = Path(__file__).parent / "../../../specs/models/sklearn/RandomForestClassifier.model.yaml"
+    spec = load_and_resolve_spec(spec_path)
+    model = classic_fit(spec)
 
-    ipt = [numpy.arange(24).reshape((2, 3, 4))]
+    ipt = numpy.arange(24)[:, None]
     out = model(ipt)
-    assert len(out) == 1
-    assert out[0].shape == ipt[0].shape
+    assert isinstance(out, numpy.ndarray)
+    assert out.shape == ipt.shape
