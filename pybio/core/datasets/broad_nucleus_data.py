@@ -109,6 +109,7 @@ class BroadNucleusDataBinarized(Dataset):
                 shape=list(self.x.shape),
                 halo=[0, 0, 0],
                 description="raw",
+                postprocessing=[],
             ),
             OutputTensor(
                 name="target",
@@ -118,6 +119,7 @@ class BroadNucleusDataBinarized(Dataset):
                 shape=list(self.y.shape),
                 halo=[0, 0, 0],
                 description="target",
+                postprocessing=[],
             ),
         ]
 
