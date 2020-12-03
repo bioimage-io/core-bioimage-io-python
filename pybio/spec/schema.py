@@ -103,7 +103,6 @@ class Tensor(PyBioSchema):
 
     shape: fields.Shape
 
-
 class Preprocessing(PyBioSchema):
     name = fields.String(validate=validate.OneOf(raw_nodes.PreprocessingName.__args__), required=True)
     kwargs = fields.Dict(fields.String, missing=dict)
@@ -152,6 +151,11 @@ class Preprocessing(PyBioSchema):
             raise PyBioValidationException(f"Invalid `kwargs` for '{data['name']}': {kwargs_validation_errors}")
 
 
+class Postprocessing(PyBioSchema):
+    name = fields.String(validate=validate.OneOf(["sigmoid"]), required=True)
+    kwargs = fields.Dict(fields.String, missing=dict)
+
+
 class InputTensor(Tensor):
     shape = fields.Shape(InputShape, required=True)
     preprocessing = fields.List(fields.Nested(Preprocessing), missing=list)
@@ -188,6 +192,7 @@ class InputTensor(Tensor):
 class OutputTensor(Tensor):
     shape = fields.Shape(OutputShape, required=True)
     halo = fields.Halo()
+    postprocessing = fields.List(fields.Nested(Postprocessing), missing=list)
 
     # halo = fields.Method(deserialize="load_halo")
     #

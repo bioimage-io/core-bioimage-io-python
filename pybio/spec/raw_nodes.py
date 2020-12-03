@@ -131,6 +131,12 @@ class Preprocessing:
 
 
 @dataclass
+class Postprocessing:
+    name: PreprocessingName
+    kwargs: Dict[str, Any]
+
+
+@dataclass
 class InputTensor(Tensor):
     shape: Union[List[int], InputShape]
     preprocessing: List[Preprocessing]
@@ -140,6 +146,7 @@ class InputTensor(Tensor):
 class OutputTensor(Tensor):
     shape: Union[List[int], OutputShape]
     halo: List[int]
+    postprocessing: List[Postprocessing]
 
 
 @dataclass

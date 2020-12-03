@@ -8,8 +8,11 @@ from pybio.spec.exceptions import PyBioUnconvertibleException, PyBioValidationEx
 
 
 def maybe_convert_to_v0_3(data: Dict) -> Dict:
-    if "format_version" not in data:
-        raise PyBioValidationException("format_version")
+    format_version = data.get("format_verion", None)
+
+    if format_version is None:
+        warnings.warn("No spec format_version specified")
+        format_version = "0.1.0"
 
     if data["format_version"] != "0.1.0":
         return data
