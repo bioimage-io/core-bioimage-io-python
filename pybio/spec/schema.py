@@ -349,7 +349,7 @@ class BioImageIoManifestNotebookEntry(Schema):
     name = fields.String(required=True)
     description = fields.String(required=True)
 
-    cite = fields.Nested(CiteEntry, many=True, required=True)
+    cite = fields.List(fields.Nested(CiteEntry), missing=list)
     authors = fields.List(fields.String, required=True)
     covers = fields.List(fields.URI, missing=list)
 
