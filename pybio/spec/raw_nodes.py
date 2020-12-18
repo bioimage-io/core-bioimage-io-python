@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 FormatVersion = Literal["0.3.0"]
 
 PreprocessingName = Literal["zero_mean_unit_variance"]
+PostprocessingName = Literal[""]
 Language = Literal["python", "java"]
 Framework = Literal["scikit-learn", "pytorch", "tensorflow"]
 WeightsFormat = Literal[
@@ -132,7 +133,7 @@ class Preprocessing:
 
 @dataclass
 class Postprocessing:
-    name: PreprocessingName
+    name: PostprocessingName
     kwargs: Dict[str, Any]
 
 

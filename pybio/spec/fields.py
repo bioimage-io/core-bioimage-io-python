@@ -7,7 +7,7 @@ from urllib.parse import urlparse
 from urllib.request import url2pathname
 
 import numpy
-from marshmallow import ValidationError, fields as marshmallow_fields
+from marshmallow import ValidationError, fields as marshmallow_fields, validate as marshmallow_validate
 
 
 from pybio.spec import raw_nodes
@@ -138,6 +138,35 @@ class Axes(String):
             raise PyBioValidationException(f"Invalid axes! Valid axes consist of: {valid_axes}")
 
         return axes_str
+
+
+class ProcMode(String):
+    all_modes = ("fixed", "per_dataset", "per_sample")
+
+    def __init__(
+        self,
+        *,
+        validate: typing.Optional[
+            typing.Union[
+                typing.Callable[[typing.Any], typing.Any], typing.Iterable[typing.Callable[[typing.Any], typing.Any]]
+            ]
+        ] = None,
+        valid_modes: typing.Sequence[str] = all_modes,
+        required=True,
+        **kwargs,
+    ) -> None:
+        assert all(vm in self.all_modes for vm in valid_modes), valid_modes
+
+        if validate is None:
+            validate = []
+
+        if isinstance(validate, (list, tuple)):
+            validate = list(validate)
+        else:
+            validate = [validate]
+
+        validate.append(marshmallow_validate.OneOf(self.all_modes))
+        super().__init__(validate=validate, required=required, **kwargs)
 
 
 class Dependencies(String):  # todo: make Dependency inherit from URI
