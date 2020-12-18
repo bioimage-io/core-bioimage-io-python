@@ -2,7 +2,7 @@ from dataclasses import asdict
 from pathlib import Path
 from pprint import pprint
 
-from marshmallow import Schema, ValidationError, post_load, validate, validates, validates_schema
+from marshmallow import Schema, ValidationError, missing, post_load, validate, validates, validates_schema
 
 from pybio.spec import fields, raw_nodes
 from pybio.spec.exceptions import PyBioValidationException
@@ -326,13 +326,12 @@ class Model(Spec):
 
     @validates_schema
     def validate_reference_tensor_names(self, data, **kwargs):
-        valid_input_tensor_references = [ipt["name"] for ipt in data["inputs"]]
+        valid_input_tensor_references = [ipt.name for ipt in data["inputs"]]
         for out in data["outputs"]:
-            output_postprocessing = out.get("postprocessing", [])
-            kwargs = output_postprocessing.get("kwargs", {})
-            if "reference_tensor" in kwargs:
-                if kwargs["reference_tensor"] not in valid_input_tensor_references:
-                    raise PyBioValidationException(f"{kwargs['reference_tensor']} not found in inputs")
+            kwargs = out.postprocessing.kwargs
+            ref_tensor = kwargs.get("reference_tensor", missing)
+            if not (ref_tensor is missing or ref_tensor in valid_input_tensor_references):
+                raise PyBioValidationException(f"{ref_tensor} not found in inputs")
 
 
 class BioImageIoManifestModelEntry(Schema):
