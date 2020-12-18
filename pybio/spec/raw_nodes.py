@@ -18,7 +18,10 @@ if TYPE_CHECKING:
 # such that we only need to support the most up-to-date version.
 FormatVersion = Literal["0.3.0"]
 
-PreprocessingName = Literal["zero_mean_unit_variance"]
+PreprocessingName = Literal["binarize", "clip", "scale_linear", "sigmoid", "zero_mean_unit_variance", "scale_range"]
+PostprocessingName = Literal[
+    "binarize", "clip", "scale_linear", "sigmoid", "zero_mean_unit_variance", "scale_range", "scale_mean_variance"
+]
 Language = Literal["python", "java"]
 Framework = Literal["scikit-learn", "pytorch", "tensorflow"]
 WeightsFormat = Literal[
@@ -132,7 +135,7 @@ class Preprocessing:
 
 @dataclass
 class Postprocessing:
-    name: PreprocessingName
+    name: PostprocessingName
     kwargs: Dict[str, Any]
 
 
