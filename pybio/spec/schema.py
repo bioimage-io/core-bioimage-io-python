@@ -328,10 +328,10 @@ class Model(Spec):
     def validate_reference_tensor_names(self, data, **kwargs):
         valid_input_tensor_references = [ipt.name for ipt in data["inputs"]]
         for out in data["outputs"]:
-            kwargs = out.postprocessing.kwargs
-            ref_tensor = kwargs.get("reference_tensor", missing)
-            if not (ref_tensor is missing or ref_tensor in valid_input_tensor_references):
-                raise PyBioValidationException(f"{ref_tensor} not found in inputs")
+            for kwargs in out.postprocessing:
+                ref_tensor = kwargs.get("reference_tensor", missing)
+                if not (ref_tensor is missing or ref_tensor in valid_input_tensor_references):
+                    raise PyBioValidationException(f"{ref_tensor} not found in inputs")
 
 
 class BioImageIoManifestModelEntry(Schema):
