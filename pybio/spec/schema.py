@@ -117,27 +117,12 @@ class Tensor(PyBioSchema):
 
 
 class Processing(PyBioSchema):
-    # do not inherite from PyBioSchema, return only a validated dict, no specific node
+    class Binarize(Schema):  # do not inherit from PyBioSchema, return only a validated dict, no specific node
+        threshold = fields.Float(required=True)
+
     class Clip(Schema):
         min = fields.Float(required=True)
         max = fields.Float(required=True)
-
-    class Percentile(Schema):
-        mode = fields.ProcMode(required=True, valid_modes=("per_dataset", "per_sample"))
-        axes = fields.Axes(required=True, valid_axes="czyx")
-        min_percentile = fields.Float(
-            required=True, validate=validate.Range(0, 100, min_inclusive=True, max_inclusive=True)
-        )
-        max_percentile = fields.Float(
-            required=True, validate=validate.Range(1, 100, min_inclusive=False, max_inclusive=True)
-        )  # as a precaution 'max_percentile' needs to be greater than 1
-
-        @validates_schema
-        def min_smaller_max(self, data, **kwargs):
-            min_p = data["min_percentile"]
-            max_p = data["max_percentile"]
-            if min_p >= max_p:
-                raise PyBioValidationException(f"min_percentile {min_p} >= max_percentile {max_p}")
 
     class ScaleLinear(Schema):
         gain = fields.Float(missing=1.0)
@@ -163,14 +148,12 @@ class Processing(PyBioSchema):
         if kwargs_validation_errors:
             raise PyBioValidationException(f"Invalid `kwargs` for '{data['name']}': {kwargs_validation_errors}")
 
+    class Sigmoid(Schema):
+        pass
+
     class ScaleMinMax(Schema):
         mode = fields.ProcMode(required=True, valid_modes=("per_dataset", "per_sample"))
         axes = fields.Axes(required=True, valid_axes="czyx")
-
-
-class Preprocessing(Processing):
-    name = fields.String(required=True, validate=validate.OneOf(raw_nodes.PreprocessingName.__args__))
-    kwargs = fields.Dict(fields.String, missing=dict)
 
     class ZeroMeanUnitVariance(Schema):
         mode = fields.ProcMode(required=True)
@@ -191,18 +174,38 @@ class Preprocessing(Processing):
                 )
 
 
+class Preprocessing(Processing):
+    name = fields.String(required=True, validate=validate.OneOf(raw_nodes.PreprocessingName.__args__))
+    kwargs = fields.Dict(fields.String, missing=dict)
+
+    class ScaleRange(Schema):
+        mode = fields.ProcMode(required=True, valid_modes=("per_dataset", "per_sample"))
+        axes = fields.Axes(required=True, valid_axes="czyx")
+        min_percentile = fields.Float(
+            required=True, validate=validate.Range(0, 100, min_inclusive=True, max_inclusive=True)
+        )
+        max_percentile = fields.Float(
+            required=True, validate=validate.Range(1, 100, min_inclusive=False, max_inclusive=True)
+        )  # as a precaution 'max_percentile' needs to be greater than 1
+
+        @validates_schema
+        def min_smaller_max(self, data, **kwargs):
+            min_p = data["min_percentile"]
+            max_p = data["max_percentile"]
+            if min_p >= max_p:
+                raise PyBioValidationException(f"min_percentile {min_p} >= max_percentile {max_p}")
+
+
 class Postprocessing(Processing):
     name = fields.String(validate=validate.OneOf(raw_nodes.PostprocessingName.__args__), required=True)
     kwargs = fields.Dict(fields.String, missing=dict)
 
-    class Binarize(Schema):
-        threshold = fields.Float(required=True)
-
-    class Sigmoid(Schema):
-        pass
+    class ScaleRange(Preprocessing.ScaleRange):
+        reference_tensor: fields.String(required=True, validate=validate.Predicate("isidentifier"))
 
     class ScaleMeanVariance(Schema):
         mode = fields.ProcMode(required=True, valid_modes=("per_dataset", "per_sample"))
+        reference_tensor: fields.String(required=True, validate=validate.Predicate("isidentifier"))
 
 
 class InputTensor(Tensor):
@@ -291,10 +294,6 @@ class Model(Spec):
 
     config = fields.Dict(missing=dict)
 
-    @validates("outputs")
-    def validate_reference_input_names(self, data, **kwargs):
-        pass  # todo validate_reference_input_names
-
     @validates_schema
     def language_and_framework_match(self, data, **kwargs):
         field_names = ("language", "framework")
@@ -324,6 +323,16 @@ class Model(Spec):
             raise PyBioValidationException(
                 f"These specified weight formats require source code to be specified: {require_source}"
             )
+
+    @validates_schema
+    def validate_reference_tensor_names(self, data, **kwargs):
+        valid_input_tensor_references = [ipt["name"] for ipt in data["inputs"]]
+        for out in data["outputs"]:
+            output_postprocessing = out.get("postprocessing", [])
+            kwargs = output_postprocessing.get("kwargs", {})
+            if "reference_tensor" in kwargs:
+                if kwargs["reference_tensor"] not in valid_input_tensor_references:
+                    raise PyBioValidationException(f"{kwargs['reference_tensor']} not found in inputs")
 
 
 class BioImageIoManifestModelEntry(Schema):
