@@ -355,7 +355,7 @@ class BioImageIoManifestNotebookEntry(Schema):
 
     badges = fields.List(fields.Nested(Badge), missing=list)
     tags = fields.List(fields.String, missing=list)
-    source = fields.URI
+    source = fields.URI(required=True)
     links = fields.List(fields.String, missing=list)  # todo: make List[URI]?
 
 
