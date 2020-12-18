@@ -363,10 +363,11 @@ class BioImageIoManifest(Schema):
     format_version = fields.String(validate=validate.OneOf(raw_nodes.FormatVersion.__args__), required=True)
     config = fields.Dict()
 
-    application = fields.List(fields.Dict)
-
-    model = fields.List(fields.Nested(BioImageIoManifestModelEntry))
-    notebook = fields.List(fields.Nested(BioImageIoManifestNotebookEntry))
+    application = fields.List(fields.Dict, missing=list)
+    collection = fields.List(fields.Dict, missing=list)
+    model = fields.List(fields.Nested(BioImageIoManifestModelEntry), missing=list)
+    dataset = fields.List(fields.Dict, missing=list)
+    notebook = fields.List(fields.Nested(BioImageIoManifestNotebookEntry), missing=list)
 
 
 if __name__ == "__main__":
