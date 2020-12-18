@@ -125,8 +125,9 @@ class Processing(PyBioSchema):
         max = fields.Float(required=True)
 
     class ScaleLinear(Schema):
-        gain = fields.Float(missing=1.0)
-        offset = fields.Float(missing=0.0)
+        axes = fields.Axes(required=True, valid_axes="czyx")
+        mean = fields.Array(fields.Float(), missing=fields.Float(missing=1.0))  # todo: check if means match input axes
+        std = fields.Array(fields.Float(), missing=fields.Float(missing=0.0))  # todo: check if stds match input axes
 
         @validates_schema
         def either_gain_or_offset(self, data, **kwargs):
@@ -150,10 +151,6 @@ class Processing(PyBioSchema):
 
     class Sigmoid(Schema):
         pass
-
-    class ScaleMinMax(Schema):
-        mode = fields.ProcMode(required=True, valid_modes=("per_dataset", "per_sample"))
-        axes = fields.Axes(required=True, valid_axes="czyx")
 
     class ZeroMeanUnitVariance(Schema):
         mode = fields.ProcMode(required=True)
