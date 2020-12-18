@@ -338,6 +338,27 @@ class BioImageIoManifestModelEntry(Schema):
     download_url = fields.String(validate=validate.URL(schemes=["http", "https"]))
 
 
+class Badge(Schema):
+    label = fields.String(required=True)
+    icon = fields.URI
+    url = fields.URI
+
+
+class BioImageIoManifestNotebookEntry(Schema):
+    id = fields.String(required=True)
+    name = fields.String(required=True)
+    description = fields.String(required=True)
+
+    cite = fields.Nested(CiteEntry, many=True, required=True)
+    authors = fields.List(fields.String, required=True)
+    covers = fields.List(fields.URI, missing=list)
+
+    badges = fields.List(fields.Nested(Badge), missing=list)
+    tags = fields.List(fields.String, missing=list)
+    source = fields.URI
+    links = fields.List(fields.String, missing=list)  # todo: make List[URI]?
+
+
 class BioImageIoManifest(Schema):
     format_version = fields.String(validate=validate.OneOf(raw_nodes.FormatVersion.__args__), required=True)
     config = fields.Dict()
@@ -345,6 +366,7 @@ class BioImageIoManifest(Schema):
     application = fields.List(fields.Dict)
 
     model = fields.List(fields.Nested(BioImageIoManifestModelEntry))
+    notebook = fields.List(fields.Nested(BioImageIoManifestNotebookEntry))
 
 
 if __name__ == "__main__":
