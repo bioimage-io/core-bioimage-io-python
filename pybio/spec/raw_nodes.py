@@ -135,10 +135,10 @@ class Postprocessing:
 class InputTensor:
     name: str
     data_type: str
+    axes: Axes
     shape: Union[List[int], InputShape]
     preprocessing: List[Preprocessing]
     description: Optional[str] = None
-    axes: Optional[Axes] = None
     data_range: Tuple[float, float] = None
 
 
@@ -146,11 +146,11 @@ class InputTensor:
 class OutputTensor:
     name: str
     data_type: str
+    axes: Axes
     shape: Union[List[int], OutputShape]
     halo: List[int]
     postprocessing: List[Postprocessing]
     description: Optional[str] = None
-    axes: Optional[Axes] = None
     data_range: Tuple[float, float] = None
 
 
