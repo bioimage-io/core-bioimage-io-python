@@ -96,7 +96,7 @@ class OutputShape(PyBioSchema):
 
 class Tensor(PyBioSchema):
     name = fields.String(required=True, validate=validate.Predicate("isidentifier"))
-    description = fields.String(required=True)
+    description = fields.String(required=False)
     axes = fields.Axes(required=True)  # todo check if null is ok (it shouldn't)
     data_type = fields.String(required=True)
     data_range = fields.Tuple((fields.Float(allow_nan=True), fields.Float(allow_nan=True)))

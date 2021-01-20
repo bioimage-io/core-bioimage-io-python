@@ -55,3 +55,15 @@ def test_tensor_schema_no_preprocessing(data):
     validated_data = schema.InputTensor().load(data)
     assert isinstance(validated_data.preprocessing, list)
     assert len(validated_data.preprocessing) == 0
+
+
+@pytest.mark.parametrize("schema_instance", [schema.InputTensor(), schema.OutputTensor()])
+def test_tensor_schema_optional_description(schema_instance):
+    data = {
+        "name": "input_1",
+        "data_type": "float32",
+        "axes": "xyc",
+        "shape": [128, 128, 3],
+    }
+    validated_data = schema_instance.load(data)
+    assert validated_data.description is None
