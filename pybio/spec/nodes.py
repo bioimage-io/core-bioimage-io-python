@@ -23,7 +23,6 @@ Preprocessing = raw_nodes.Preprocessing
 PreprocessingName = raw_nodes.PreprocessingName
 Postprocessing = raw_nodes.Postprocessing
 PostprocessingName = raw_nodes.PostprocessingName
-Tensor = raw_nodes.Tensor
 WeightsFormat = raw_nodes.WeightsFormat
 
 
