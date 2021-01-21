@@ -96,7 +96,7 @@ class OutputShape(PyBioSchema):
 
 class Tensor(PyBioSchema):
     name = fields.String(required=True, validate=validate.Predicate("isidentifier"))
-    description = fields.String(required=True)
+    description = fields.String(required=False)
     axes = fields.Axes(required=True)  # todo check if null is ok (it shouldn't)
     data_type = fields.String(required=True)
     data_range = fields.Tuple((fields.Float(allow_nan=True), fields.Float(allow_nan=True)))
@@ -107,10 +107,10 @@ class Tensor(PyBioSchema):
     @validates_schema
     def validate_processing_kwargs(self, data, **kwargs):
         axes = data["axes"]
-        processing = data.get(self.processing_name, None)
-        if processing:
-            name = processing["name"]
-            kwargs = processing.get("kwargs", {})
+        processing_list = data.get(self.processing_name, [])
+        for processing in processing_list:
+            name = processing.name
+            kwargs = processing.kwargs or {}
             kwarg_axes = kwargs.get("axes", "")
             if any(a not in axes for a in kwarg_axes):
                 raise PyBioValidationException("`kwargs.axes` needs to be subset of axes")
@@ -326,8 +326,8 @@ class Model(Spec):
         valid_input_tensor_references = [ipt.name for ipt in data["inputs"]]
         for out in data["outputs"]:
             for kwargs in out.postprocessing:
-                ref_tensor = kwargs.get("reference_tensor", missing)
-                if not (ref_tensor is missing or ref_tensor in valid_input_tensor_references):
+                ref_tensor = kwargs.reference_tensor
+                if not (ref_tensor is None or ref_tensor in valid_input_tensor_references):
                     raise PyBioValidationException(f"{ref_tensor} not found in inputs")
 
 

@@ -119,15 +119,6 @@ class OutputShape(Node):
 
 
 @dataclass
-class Tensor(Node):
-    name: str
-    description: str
-    axes: Optional[Axes]
-    data_type: str
-    data_range: Tuple[float, float]
-
-
-@dataclass
 class Preprocessing:
     name: PreprocessingName
     kwargs: Dict[str, Any]
@@ -137,19 +128,30 @@ class Preprocessing:
 class Postprocessing:
     name: PostprocessingName
     kwargs: Dict[str, Any]
+    reference_tensor: Optional[str] = None
 
 
 @dataclass
-class InputTensor(Tensor):
+class InputTensor:
+    name: str
+    data_type: str
+    axes: Axes
     shape: Union[List[int], InputShape]
     preprocessing: List[Preprocessing]
+    description: Optional[str] = None
+    data_range: Tuple[float, float] = None
 
 
 @dataclass
-class OutputTensor(Tensor):
+class OutputTensor:
+    name: str
+    data_type: str
+    axes: Axes
     shape: Union[List[int], OutputShape]
     halo: List[int]
     postprocessing: List[Postprocessing]
+    description: Optional[str] = None
+    data_range: Tuple[float, float] = None
 
 
 @dataclass
