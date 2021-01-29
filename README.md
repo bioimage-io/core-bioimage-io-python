@@ -11,9 +11,7 @@ TODO from pip/conda
 
 Install from source and in development mode
 ```
-git clone https://github.com/bioimage-io/python-bioimage-io
-cd python-bioimage-io
-pip install -e .
+pip install git+https://github.com/bioimage-io/python-bioimage-io
 ```
 
 ## Usage
