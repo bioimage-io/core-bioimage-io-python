@@ -44,7 +44,7 @@ def verify_bioimageio_manifest_data(manifest_data: dict):
         try:
             response = requests.get(model["source"], stream=True)
             model_data = yaml.load(response.content)
-            code |= verify_model_data(model_data)
+            verify_model_data(model_data)
         except ValidationError as e:
             print("invalid model:", model["source"])
             pprint(e.messages)
