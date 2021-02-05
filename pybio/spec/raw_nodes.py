@@ -25,7 +25,7 @@ PostprocessingName = Literal[
 Language = Literal["python", "java"]
 Framework = Literal["scikit-learn", "pytorch", "tensorflow"]
 WeightsFormat = Literal[
-    "pickle", "pytorch_state_dict", "pytorch_script", "keras_hdf5", "tensorflow_js", "tensorflow_saved_model_bundle"
+    "pickle", "pytorch_state_dict", "pytorch_script", "keras_hdf5", "tensorflow_js", "tensorflow_saved_model_bundle", "onnx"
 ]
 
 Dependencies = NewType("Dependencies", str)
