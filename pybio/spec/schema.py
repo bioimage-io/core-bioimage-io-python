@@ -343,8 +343,8 @@ class BioImageIoManifestModelEntry(Schema):
 
 class Badge(Schema):
     label = fields.String(required=True)
-    icon = fields.URI
-    url = fields.URI
+    icon = fields.URI()
+    url = fields.URI()
 
 
 class BioImageIoManifestNotebookEntry(Schema):
