@@ -186,6 +186,14 @@ class Shape(marshmallow_fields.Field):  # todo: use marshmallow_union instead
         super().__init__(**kwargs)
         self.nested_schema = nested_schema
 
+    def _jsonschema_type_mapping(self):
+        return {
+            "type": "array",
+            "items": {
+                "type": "number",
+            },
+        }
+
     def _deserialize(self, value, attr, data, partial=None, many=False, **kwargs):
         assert not many
         if isinstance(value, list):
