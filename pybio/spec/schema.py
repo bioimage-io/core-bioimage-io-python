@@ -350,6 +350,7 @@ class Badge(Schema):
 class BioImageIoManifestNotebookEntry(Schema):
     id = fields.String(required=True)
     name = fields.String(required=True)
+    documentation = fields.String(required=True)
     description = fields.String(required=True)
 
     cite = fields.List(fields.Nested(CiteEntry), missing=list)

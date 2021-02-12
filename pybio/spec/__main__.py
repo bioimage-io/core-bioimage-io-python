@@ -37,7 +37,12 @@ def verify_model_data(model_data: dict):
 
 
 def verify_bioimageio_manifest_data(manifest_data: dict):
-    manifest = schema.BioImageIoManifest().load(manifest_data)
+    try:
+        manifest = schema.BioImageIoManifest().load(manifest_data)
+    except ValidationError as e:
+        pprint(e.messages)
+        return 1
+
 
     code = 0
     for model in manifest["model"]:
