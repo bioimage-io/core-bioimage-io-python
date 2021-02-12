@@ -169,6 +169,9 @@ class WithFileSource:
 class WeightsEntry(Node, WithFileSource):
     authors: List[str]
     attachments: Dict
+    parent: Optional[str]
+    # ONNX specific
+    opset_version: Optional[int]
     # tag: Optional[str]  # todo: add to schema and check schema. only valid for tensorflow_saved_model_bundle format
     # tensorflow_version: Optional[str]  # todo: add to schema and check schema. only valid for tensorflow_saved_model_bundle format
 

@@ -266,6 +266,9 @@ class WithFileSource(PyBioSchema):
 class WeightsEntry(WithFileSource):
     authors = fields.List(fields.String, missing=list)  # todo: copy root authors if missing
     attachments = fields.Dict(missing=dict)
+    parent = fields.String(missing=None)
+    # ONNX Specific
+    opset_version = fields.Number(missing=None)
 
 
 class Model(Spec):
