@@ -6,7 +6,7 @@ from typing import Callable, Dict, List, Optional
 
 
 from . import raw_nodes
-
+from pybio.core.protocols import Tensor
 
 Axes = raw_nodes.Axes
 CiteEntry = raw_nodes.CiteEntry
