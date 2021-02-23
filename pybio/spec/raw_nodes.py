@@ -172,8 +172,8 @@ class WeightsEntry(Node, WithFileSource):
     parent: Optional[str]
     # ONNX specific
     opset_version: Optional[int]
-    # tag: Optional[str]  # todo: add to schema and check schema. only valid for tensorflow_saved_model_bundle format
-    # tensorflow_version: Optional[str]  # todo: add to schema and check schema. only valid for tensorflow_saved_model_bundle format
+    # tag: Optional[str]  # todo: check schema. only valid for tensorflow_saved_model_bundle format
+    tensorflow_version: Optional[str]  # todo: check schema. only valid for tensorflow_saved_model_bundle format
 
 
 @dataclass

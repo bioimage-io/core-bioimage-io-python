@@ -269,6 +269,9 @@ class WeightsEntry(WithFileSource):
     parent = fields.String(missing=None)
     # ONNX Specific
     opset_version = fields.Number(missing=None)
+    # tensorflow_saved_model_bundle specific
+    tensorflow_version = fields.Number(missing=None)
+
 
 
 class Model(Spec):
