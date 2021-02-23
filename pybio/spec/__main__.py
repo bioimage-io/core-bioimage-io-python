@@ -28,6 +28,7 @@ def verify_spec(model_yaml: Path):
             code = 1
         else:
             code = 0
+            print(f"successfully verified model {model_yaml}")
 
     raise typer.Exit(code=code)
 
@@ -42,7 +43,6 @@ def verify_bioimageio_manifest_data(manifest_data: dict):
     except ValidationError as e:
         pprint(e.messages)
         return 1
-
 
     code = 0
     for model in manifest["model"]:
@@ -72,6 +72,8 @@ def verify_bioimageio_manifest(manifest_yaml: Path):
         code = 1
     else:
         code = verify_bioimageio_manifest_data(manifest_data)
+        if code == 0:
+            print(f"successfully verified manifest {manifest_yaml}")
 
     raise typer.Exit(code=code)
 
