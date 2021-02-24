@@ -346,12 +346,12 @@ class Model(Spec):
     @validates_schema
     def weights_entries_match_weights_formats(self, data, **kwargs):
         for weights_format, weights_entry in data["weights"].items():
-            if "tensorflow" not in weights_format and "tensorflow_version" in asdict(weights_entry):
+            if "tensorflow" not in weights_format and weights_entry.tensorflow_version is not None:
                 raise PyBioValidationException(
                     f"invalid 'tensorflow_version' entry for weights format {weights_format}"
                 )
 
-            if weights_format != "onnx" and "opset_version" in asdict(weights_entry):
+            if weights_format != "onnx" and weights_entry.opset_version is not None:
                 raise PyBioValidationException(
                     f"invalid 'opset_version' entry for weights format {weights_format} (only valid for onnx)"
                 )
