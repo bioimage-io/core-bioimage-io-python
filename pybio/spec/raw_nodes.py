@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import distutils.version
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -25,7 +26,13 @@ PostprocessingName = Literal[
 Language = Literal["python", "java"]
 Framework = Literal["scikit-learn", "pytorch", "tensorflow"]
 WeightsFormat = Literal[
-    "pickle", "pytorch_state_dict", "pytorch_script", "keras_hdf5", "tensorflow_js", "tensorflow_saved_model_bundle", "onnx"
+    "pickle",
+    "pytorch_state_dict",
+    "pytorch_script",
+    "keras_hdf5",
+    "tensorflow_js",
+    "tensorflow_saved_model_bundle",
+    "onnx",
 ]
 
 Dependencies = NewType("Dependencies", str)
@@ -173,7 +180,8 @@ class WeightsEntry(Node, WithFileSource):
     # ONNX specific
     opset_version: Optional[int]
     # tag: Optional[str]  # todo: check schema. only valid for tensorflow_saved_model_bundle format
-    tensorflow_version: Optional[str]  # todo: check schema. only valid for tensorflow_saved_model_bundle format
+    # todo: check schema. only valid for tensorflow_saved_model_bundle format
+    tensorflow_version: Optional[distutils.version.StrictVersion]
 
 
 @dataclass

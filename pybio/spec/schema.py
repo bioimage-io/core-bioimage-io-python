@@ -270,8 +270,7 @@ class WeightsEntry(WithFileSource):
     # ONNX Specific
     opset_version = fields.Number(missing=None)
     # tensorflow_saved_model_bundle specific
-    tensorflow_version = fields.String(missing=None)
-
+    tensorflow_version = fields.StrictVersion(missing=None)
 
 
 class Model(Spec):
@@ -320,7 +319,15 @@ class Model(Spec):
         if data["source"] is not None:
             return
 
-        weight_format_requires_source = {"pickle": True, "pytorch": True, "keras": False}
+        weight_format_requires_source = {
+            "pickle": True,
+            "pytorch_state_dict": True,
+            "pytorch_script": False,
+            "keras_hdf5": False,
+            "tensorflow_js": False,
+            "tensorflow_saved_model_bundle": False,
+            "onnx": False,
+        }
         require_source = {wf for wf in data["weights"] if weight_format_requires_source[wf]}
         if require_source:
             raise PyBioValidationException(
@@ -335,6 +342,19 @@ class Model(Spec):
                 ref_tensor = kwargs.reference_tensor
                 if not (ref_tensor is None or ref_tensor in valid_input_tensor_references):
                     raise PyBioValidationException(f"{ref_tensor} not found in inputs")
+
+    @validates_schema
+    def weights_entries_match_weights_formats(self, data, **kwargs):
+        for weights_format, weights_entry in data["weights"].items():
+            if "tensorflow" not in weights_format and "tensorflow_version" in weights_entry:
+                raise PyBioValidationException(
+                    f"invalid 'tensorflow_version' entry for weights format {weights_format}"
+                )
+
+            if weights_format != "onnx" and "opset_version" in weights_entry:
+                raise PyBioValidationException(
+                    f"invalid 'opset_version' entry for weights format {weights_format} (only valid for onnx)"
+                )
 
 
 class BioImageIoManifestModelEntry(Schema):

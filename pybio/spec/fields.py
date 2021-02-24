@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import pathlib
 import datetime
+import distutils.version
+import pathlib
 import typing
 from urllib.parse import urlparse
 from urllib.request import url2pathname
@@ -9,10 +10,8 @@ from urllib.request import url2pathname
 import numpy
 from marshmallow import ValidationError, fields as marshmallow_fields, validate as marshmallow_validate
 
-
 from pybio.spec import raw_nodes
 from pybio.spec.exceptions import PyBioValidationException
-
 
 Dict = marshmallow_fields.Dict
 Float = marshmallow_fields.Float
@@ -24,6 +23,20 @@ String = marshmallow_fields.String
 
 if typing.TYPE_CHECKING:
     import pybio.spec.schema
+
+
+class StrictVersion(marshmallow_fields.Field):
+    def _deserialize(
+        self,
+        value: typing.Any,
+        attr: typing.Optional[str],
+        data: typing.Optional[typing.Mapping[str, typing.Any]],
+        **kwargs,
+    ):
+        return distutils.version.StrictVersion(str(value))
+
+    def _serialize(self, value: typing.Any, attr: str, obj: typing.Any, **kwargs):
+        return str(value)
 
 
 class DateTime(marshmallow_fields.DateTime):
@@ -187,12 +200,7 @@ class Shape(marshmallow_fields.Field):  # todo: use marshmallow_union instead
         self.nested_schema = nested_schema
 
     def _jsonschema_type_mapping(self):
-        return {
-            "type": "array",
-            "items": {
-                "type": "number",
-            },
-        }
+        return {"type": "array", "items": {"type": "number"}}
 
     def _deserialize(self, value, attr, data, partial=None, many=False, **kwargs):
         assert not many
