@@ -1,3 +1,4 @@
+import typing
 from dataclasses import asdict
 from pathlib import Path
 from pprint import pprint
@@ -126,8 +127,8 @@ class Processing(PyBioSchema):
 
     class ScaleLinear(Schema):
         axes = fields.Axes(required=True, valid_axes="czyx")
-        mean = fields.Array(fields.Float(), missing=fields.Float(missing=1.0))  # todo: check if means match input axes
-        std = fields.Array(fields.Float(), missing=fields.Float(missing=0.0))  # todo: check if stds match input axes
+        gain = fields.Array(fields.Float(), missing=fields.Float(missing=1.0))  # todo: check if gain match input axes
+        offset = fields.Array(fields.Float(), missing=fields.Float(missing=0.0))  # todo: check if offset match input axes
 
         @validates_schema
         def either_gain_or_offset(self, data, **kwargs):
@@ -345,7 +346,8 @@ class Model(Spec):
 
     @validates_schema
     def weights_entries_match_weights_formats(self, data, **kwargs):
-        for weights_format, weights_entry in data["weights"].items():
+        weights: typing.Dict[str, WeightsEntry] = data["weights"]
+        for weights_format, weights_entry in weights.items():
             if "tensorflow" not in weights_format and weights_entry.tensorflow_version is not None:
                 raise PyBioValidationException(
                     f"invalid 'tensorflow_version' entry for weights format {weights_format}"
