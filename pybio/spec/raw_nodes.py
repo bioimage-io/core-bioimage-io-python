@@ -81,6 +81,11 @@ class URI(Node):
     query: str
 
 
+class RunMode(Node):
+    name: str
+    kwargs: Dict[str, Any]
+
+
 @dataclass
 class Spec(Node):
     format_version: FormatVersion
@@ -103,6 +108,7 @@ class Spec(Node):
     dependencies: Optional[Dependencies]
     timestamp: datetime
 
+    run_mode: Optional[RunMode]
     config: dict
 
 
