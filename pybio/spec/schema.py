@@ -42,7 +42,7 @@ class Spec(PyBioSchema):
     authors = fields.List(fields.String, required=True)
     cite = fields.Nested(CiteEntry, many=True, required=True)
 
-    git_repo = fields.String(validate=validate.URL(schemes=["http", "https"]))
+    git_repo = fields.String(validate=validate.URL(schemes=["http", "https"]), missing=None)
     tags = fields.List(fields.String, required=True)
     license = fields.String(required=True)
 

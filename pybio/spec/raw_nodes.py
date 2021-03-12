@@ -90,7 +90,7 @@ class Spec(Node):
     authors: List[str]
     cite: List[CiteEntry]
 
-    git_repo: str
+    git_repo: Optional[str]
     tags: List[str]
     license: str
 
