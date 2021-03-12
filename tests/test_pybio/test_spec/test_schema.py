@@ -118,6 +118,13 @@ def model_dict():
     }
 
 
+def test_model_schema_accepts_run_mode(model_dict):
+    model_schema = schema.Model()
+    model_dict.update({"run_mode": {"name": "special_run_mode", "kwargs": dict(marathon=True)}})
+    validated_data = model_schema.load(model_dict)
+    assert validated_data
+
+
 @pytest.mark.parametrize(
     "format",
     [

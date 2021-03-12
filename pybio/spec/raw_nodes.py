@@ -81,6 +81,7 @@ class URI(Node):
     query: str
 
 
+@dataclass
 class RunMode(Node):
     name: str
     kwargs: Dict[str, Any]

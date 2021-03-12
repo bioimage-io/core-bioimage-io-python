@@ -36,7 +36,7 @@ class CiteEntry(PyBioSchema):
 
 class RunMode(PyBioSchema):
     name = fields.String(required=True)
-    kwargs: fields.Dict(fields.String, missing=dict)
+    kwargs = fields.Dict(fields.String, missing=dict)
 
 
 class Spec(PyBioSchema):
