@@ -35,7 +35,7 @@ class CiteEntry(PyBioSchema):
 
 
 class RunMode(PyBioSchema):
-    name = fields.String(required=True)
+    name = fields.String(required=True)  # todo: limit valid run mode names
     kwargs = fields.Dict(fields.String, missing=dict)
 
 
