@@ -24,6 +24,7 @@ PreprocessingName = raw_nodes.PreprocessingName
 Postprocessing = raw_nodes.Postprocessing
 PostprocessingName = raw_nodes.PostprocessingName
 WeightsFormat = raw_nodes.WeightsFormat
+RunMode = raw_nodes.RunMode
 
 
 @dataclass

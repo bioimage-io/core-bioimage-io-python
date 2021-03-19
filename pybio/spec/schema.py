@@ -34,6 +34,11 @@ class CiteEntry(PyBioSchema):
             raise ValidationError("doi or url needs to be specified in a citation")
 
 
+class RunMode(PyBioSchema):
+    name = fields.String(required=True)  # todo: limit valid run mode names
+    kwargs = fields.Dict(fields.String, missing=dict)
+
+
 class Spec(PyBioSchema):
     format_version = fields.String(validate=validate.OneOf(raw_nodes.FormatVersion.__args__), required=True)
     name = fields.String(required=True)
@@ -50,6 +55,7 @@ class Spec(PyBioSchema):
     covers = fields.List(fields.URI, missing=list)
     attachments = fields.Dict(fields.String, missing=dict)
 
+    run_mode = fields.Nested(RunMode, missing=None)
     config = fields.Dict(missing=dict)
 
     language = fields.String(validate=validate.OneOf(raw_nodes.Language.__args__), required=True)
@@ -128,7 +134,9 @@ class Processing(PyBioSchema):
     class ScaleLinear(Schema):
         axes = fields.Axes(required=True, valid_axes="czyx")
         gain = fields.Array(fields.Float(), missing=fields.Float(missing=1.0))  # todo: check if gain match input axes
-        offset = fields.Array(fields.Float(), missing=fields.Float(missing=0.0))  # todo: check if offset match input axes
+        offset = fields.Array(
+            fields.Float(), missing=fields.Float(missing=0.0)
+        )  # todo: check if offset match input axes
 
         @validates_schema
         def either_gain_or_offset(self, data, **kwargs):
