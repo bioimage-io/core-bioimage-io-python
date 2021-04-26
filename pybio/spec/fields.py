@@ -162,7 +162,7 @@ class Union(DocumentedField, marshmallow_union.Union):
 class Axes(String):
     def _deserialize(self, *args, **kwargs) -> str:
         axes_str = super()._deserialize(*args, **kwargs)
-        valid_axes = self.metadata.get("valid_axes", "bczyx")
+        valid_axes = self.metadata.get("valid_axes", "bitczyx")
         if any(a not in valid_axes for a in axes_str):
             raise PyBioValidationException(f"Invalid axes! Valid axes consist of: {valid_axes}")
 
