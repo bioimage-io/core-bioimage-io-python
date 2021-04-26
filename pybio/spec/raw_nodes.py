@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 # Ideally only the current format version is valid.
 # Older formats may be converter through `pybio.spec.utils.maybe_convert`,
 # such that we only need to support the most up-to-date version.
-FormatVersion = Literal["0.3.0"]
+FormatVersion = Literal["0.3.0", "0.3.1"]  # newest format needs to be last (used in spec.__init__.py)
 
 PreprocessingName = Literal["binarize", "clip", "scale_linear", "sigmoid", "zero_mean_unit_variance", "scale_range"]
 PostprocessingName = Literal[

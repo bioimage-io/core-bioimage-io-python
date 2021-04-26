@@ -13,6 +13,9 @@ def maybe_convert_to_v0_3(data: Dict) -> Dict:
     if format_version is None:
         warnings.warn("No spec format_version specified")
         format_version = "0.1.0"
+    elif format_version == "0.3.0":
+        # no breaking change, bump to 0.3.1
+        data["format_version"] = "0.3.1"
 
     if data["format_version"] != "0.1.0":
         return data
