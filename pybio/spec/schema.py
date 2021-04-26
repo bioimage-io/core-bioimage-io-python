@@ -46,7 +46,7 @@ class Spec(PyBioSchema):
         bioimageio_doc="Version of this BioImage.IO Model Description File Specification. This is mandatory, and "
         "important for the consumer software to verify before parsing the fields. The recommended behavior for the "
         "implementation is to keep backward compatibility, and throw error if the model yaml is in an unsupported "
-        "format version.",
+        f"format version. Current format version: {raw_nodes.FormatVersion.__args__[-1]}",
     )
     name = fields.String(required=True)
     description = fields.String(required=True)
