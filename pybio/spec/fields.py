@@ -19,7 +19,18 @@ Integer = marshmallow_fields.Integer
 List = marshmallow_fields.List
 Nested = marshmallow_fields.Nested
 Number = marshmallow_fields.Number
-String = marshmallow_fields.String
+
+
+class DocumentedField:
+    def __init__(self, *super_args, bioimageio_doc: str = "<documentation missing>", **super_kwargs):
+        self.bioimageio_doc = bioimageio_doc
+        super().__init__(*super_args, **super_kwargs)
+
+    def get_bioimageio_doc(self):
+        return self.bioimageio_doc
+
+class String(DocumentedField, marshmallow_fields.String):
+    pass
 
 if typing.TYPE_CHECKING:
     import pybio.spec.schema

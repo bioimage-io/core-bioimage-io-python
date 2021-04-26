@@ -40,7 +40,14 @@ class RunMode(PyBioSchema):
 
 
 class Spec(PyBioSchema):
-    format_version = fields.String(validate=validate.OneOf(raw_nodes.FormatVersion.__args__), required=True)
+    format_version = fields.String(
+        validate=validate.OneOf(raw_nodes.FormatVersion.__args__),
+        required=True,
+        bioimageio_doc="Version of this BioImage.IO Model Description File Specification. This is mandatory, and "
+        "important for the consumer software to verify before parsing the fields. The recommended behavior for the "
+        "implementation is to keep backward compatibility, and throw error if the model yaml is in an unsupported "
+        "format version.",
+    )
     name = fields.String(required=True)
     description = fields.String(required=True)
 
@@ -58,7 +65,12 @@ class Spec(PyBioSchema):
     run_mode = fields.Nested(RunMode, missing=None)
     config = fields.Dict(missing=dict)
 
-    language = fields.String(validate=validate.OneOf(raw_nodes.Language.__args__), required=True)
+    language = fields.String(
+        validate=validate.OneOf(raw_nodes.Language.__args__),
+        missing=None,
+        bioimageio_doc="* Programming language of the source code. For now, we support python and java. This field is "
+        "only required if the field source is present.",
+    )
     framework = fields.String(validate=validate.OneOf(raw_nodes.Framework.__args__), required=True)
     dependencies = fields.Dependencies(missing=None)
     timestamp = fields.DateTime(required=True)
@@ -284,7 +296,14 @@ class WeightsEntry(WithFileSource):
 
 class Model(Spec):
 
-    source = fields.ImportableSource(missing=None)
+    source = fields.ImportableSource(
+        missing=None,
+        bioimageio_doc="* Language and framework specific implementation. As some weights contain the model "
+        "architecture, the source is optional depending on the present weight formats. `source` can either point to a "
+        "local implementation: `<relative path to file>:<identifier of implementation within the source file>` or the "
+        "implementation in an available dependency: `<root-dependency>.<sub-dependency>.<identifier>`.\nFor example: "
+        "`./my_function:MyImplementation` or `core_library.some_module.some_function`",
+    )
     sha256 = fields.String(validate=validate.Length(equal=64), missing=None)
     kwargs = fields.Dict(fields.String, missing=dict)
 
