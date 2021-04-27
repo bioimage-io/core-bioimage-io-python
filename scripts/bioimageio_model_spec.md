@@ -5,7 +5,7 @@ If a field is followed by [optional]*, they are optional depending on another fi
 
 * `format_version` Version of this BioImage.IO Model Description File Specification. This is mandatory, and important for the consumer software to verify before parsing the fields. The recommended behavior for the implementation is to keep backward compatibility, and throw error if the model yaml is in an unsupported format version. Current format version: 0.3.0
 * `authors` List
-* `cite` Nested
+* `cite` CiteEntry
   * `text` String
   * `doi` [optional] String
   * `url` [optional] String
@@ -24,13 +24,13 @@ If a field is followed by [optional]*, they are optional depending on another fi
 * `covers` [optional] List
 * `dependencies` [optional] Dependencies
 * `git_repo` [optional] String
-* `inputs` [optional] Nested
+* `inputs` [optional] InputTensor
   * `axes` Axes
   * `data_type` String
   * `name` String
-  * `shape` Union
-    1. [optional] List
-    1. [optional] Nested
+  * `shape` InputShape
+    1. [optional] ExplicitShape
+    1. [optional] ImplicitInputShape
       * `min` List
       * `step` List
   * `data_range` [optional] Tuple
@@ -38,13 +38,13 @@ If a field is followed by [optional]*, they are optional depending on another fi
   * `preprocessing` [optional] List
 * `kwargs` [optional] Dict
 * `language` [optional] * Programming language of the source code. For now, we support python and java. This field is only required if the field `source` is present.
-* `outputs` [optional] Nested
+* `outputs` [optional] OutputTensor
   * `axes` Axes
   * `data_type` String
   * `name` String
-  * `shape` Union
-    1. [optional] List
-    1. [optional] Nested
+  * `shape` OutputShape
+    1. [optional] ExplicitShape
+    1. [optional] ImplicitOutputShape
       * `offset` List
       * `reference_input` String
       * `scale` List

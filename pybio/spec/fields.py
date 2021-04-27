@@ -49,7 +49,11 @@ class Number(DocumentedField, marshmallow_fields.Number):
 
 
 class Nested(DocumentedField, marshmallow_fields.Nested):
-    pass
+    def __init__(self, *super_args, bioimageio_description: typing.Optional[str] = None, **super_kwargs):
+        super().__init__(*super_args, **super_kwargs, bioimageio_description=bioimageio_description)
+        if bioimageio_description is None:
+            self.bioimageio_description = self.schema.bioimageio_description or self.schema.__class__.__name__
+
 
 
 class String(DocumentedField, marshmallow_fields.String):
