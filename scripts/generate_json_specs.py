@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from marshmallow_jsonschema import JSONSchema  # todo: add marshmallow_jsonschema to dependencies
+from marshmallow_jsonschema import JSONSchema
 
 import pybio.spec
 from pybio.spec.schema import Model

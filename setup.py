@@ -22,6 +22,8 @@ setup(
     install_requires=[
         "dataclasses; python_version>='3.7.2,<3.9'",
         "marshmallow>=3.3.0,<3.5",
+        "marshmallow_union",
+        "marshmallow_jsonschema",
         "PyYAML>=5.2",
         "requests",
         "typer",
