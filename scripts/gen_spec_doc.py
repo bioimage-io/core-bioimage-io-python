@@ -39,6 +39,7 @@ def doc_from_schema(obj) -> typing.Union[typing.Dict[str, DocNode], DocNode]:
     description += obj.bioimageio_description
     print(type(obj), isinstance(obj, Schema))
     if isinstance(obj, pybio.spec.schema.PyBioSchema):
+
         def sort_key(name_and_nested_field):
             name, nested_field = name_and_nested_field
             if nested_field.bioimageio_description_order is None:
@@ -88,36 +89,8 @@ def markdown_from_doc(doc: DocNode, indent: int = 0):
     return f"{optional}{list_descr}{doc.description}\n{sub_doc}"
 
 
-# def markdown_from_DocNode(data, indent: int = 0):
-#     doc = "{nested}\n"
-#     if isinstance(data, str):
-#         nested = data
-#     elif isinstance(data, tuple):  # nested
-#         assert len(data) == 2
-#         doc = data[0] + "\n{nested}\n"
-#         nested = data[1]
-#     elif isinstance(data, list):  # many
-#         assert len(data) == 1
-#         doc = "A list of: {nested}\n"
-#         nested = data[0]
-#     elif isinstance(data, dict):
-#         nested = ""
-#         for key in sorted(data):
-#             # if key not in ["format_version", "language", "source", "cite"]:  # todo: remove: skip undocumented fields
-#             #     continue
-#             # if "documentation missing" in sub:
-#             #     continue
-#
-#             nested += f"{'  ' * indent}* `{key}` {markdown_from_doc_dict(data[key], indent+1)}"
-#     else:
-#         raise NotImplementedError(data)
-#
-#     return doc.format(nested=nested)
-
-
 def get_model_spec_doc_as_markdown():
     doc = doc_from_schema(pybio.spec.schema.Model())
-    # print(doc.sub_docs["format_version"])
     return markdown_from_doc(doc)
 
 
@@ -129,8 +102,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # from ruamel.yaml import YAML
-    #
-    # yaml = YAML(typ="safe")
-    # test = yaml.load(Path("test.yml"))
-    # print(test)

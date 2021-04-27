@@ -114,7 +114,7 @@ class Spec(Node):
 
 
 @dataclass
-class InputShape(Node):
+class ImplicitInputShape(Node):
     min: List[float]
     step: List[float]
 
@@ -123,7 +123,7 @@ class InputShape(Node):
 
 
 @dataclass
-class OutputShape(Node):
+class ImplicitOutputShape(Node):
     reference_input: str
     scale: List[float]
     offset: List[int]
@@ -150,7 +150,7 @@ class InputTensor:
     name: str
     data_type: str
     axes: Axes
-    shape: Union[List[int], InputShape]
+    shape: Union[List[int], ImplicitInputShape]
     preprocessing: List[Preprocessing]
     description: Optional[str] = None
     data_range: Tuple[float, float] = None
@@ -161,7 +161,7 @@ class OutputTensor:
     name: str
     data_type: str
     axes: Axes
-    shape: Union[List[int], OutputShape]
+    shape: Union[List[int], ImplicitOutputShape]
     halo: List[int]
     postprocessing: List[Postprocessing]
     description: Optional[str] = None

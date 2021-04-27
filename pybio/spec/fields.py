@@ -228,7 +228,23 @@ class Dependencies(String):  # todo: make Dependency inherit from URI
     pass
 
 
-ExplicitShape = List(Integer)
+class ExplicitShape(List):
+    def __init__(self, **super_kwargs):
+        super().__init__(Integer, **super_kwargs)
+
+
+class InputShape(Union):
+    def __init__(self, **super_kwargs):
+        from pybio.spec.schema import ImplicitInputShape
+
+        super().__init__(fields=[ExplicitShape(), Nested(ImplicitInputShape)], **super_kwargs)
+
+
+class OutputShape(Union):
+    def __init__(self, **super_kwargs):
+        from pybio.spec.schema import ImplicitOutputShape
+
+        super().__init__(fields=[ExplicitShape(), Nested(ImplicitOutputShape)], **super_kwargs)
 
 
 class Array(marshmallow_fields.Field):

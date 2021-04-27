@@ -93,7 +93,7 @@ class SpecWithKwargs(PyBioSchema):
     kwargs = fields.Dict(fields.String, missing=dict)
 
 
-class InputShape(PyBioSchema):
+class ImplicitInputShape(PyBioSchema):
     min = fields.List(fields.Integer, required=True)
     step = fields.List(fields.Integer, required=True)
 
@@ -110,7 +110,7 @@ class InputShape(PyBioSchema):
             )
 
 
-class OutputShape(PyBioSchema):
+class ImplicitOutputShape(PyBioSchema):
     reference_input = fields.String(required=True)
     scale = fields.List(fields.Float, required=True)
     offset = fields.List(fields.Integer, required=True)
@@ -149,11 +149,11 @@ class Processing(PyBioSchema):
     class Binarize(Schema):  # do not inherit from PyBioSchema, return only a validated dict, no specific node
         threshold = fields.Float(required=True)
 
-    class Clip(Schema):
+    class Clip(PyBioSchema):
         min = fields.Float(required=True)
         max = fields.Float(required=True)
 
-    class ScaleLinear(Schema):
+    class ScaleLinear(PyBioSchema):
         axes = fields.Axes(required=True, valid_axes="czyx")
         gain = fields.Array(fields.Float(), missing=fields.Float(missing=1.0))  # todo: check if gain match input axes
         offset = fields.Array(
@@ -180,10 +180,10 @@ class Processing(PyBioSchema):
         if kwargs_validation_errors:
             raise PyBioValidationException(f"Invalid `kwargs` for '{data['name']}': {kwargs_validation_errors}")
 
-    class Sigmoid(Schema):
+    class Sigmoid(PyBioSchema):
         pass
 
-    class ZeroMeanUnitVariance(Schema):
+    class ZeroMeanUnitVariance(PyBioSchema):
         mode = fields.ProcMode(required=True)
         axes = fields.Axes(required=True, valid_axes="czyx")
         mean = fields.Array(fields.Float(), missing=None)  # todo: check if means match input axes (for mode 'fixed')
@@ -206,7 +206,7 @@ class Preprocessing(Processing):
     name = fields.String(required=True, validate=validate.OneOf(raw_nodes.PreprocessingName.__args__))
     kwargs = fields.Dict(fields.String, missing=dict)
 
-    class ScaleRange(Schema):
+    class ScaleRange(PyBioSchema):
         mode = fields.ProcMode(required=True, valid_modes=("per_dataset", "per_sample"))
         axes = fields.Axes(required=True, valid_axes="czyx")
         min_percentile = fields.Float(
@@ -231,13 +231,13 @@ class Postprocessing(Processing):
     class ScaleRange(Preprocessing.ScaleRange):
         reference_tensor: fields.String(required=True, validate=validate.Predicate("isidentifier"))
 
-    class ScaleMeanVariance(Schema):
+    class ScaleMeanVariance(PyBioSchema):
         mode = fields.ProcMode(required=True, valid_modes=("per_dataset", "per_sample"))
         reference_tensor: fields.String(required=True, validate=validate.Predicate("isidentifier"))
 
 
 class InputTensor(Tensor):
-    shape = fields.Union([fields.ExplicitShape, fields.Nested(InputShape)], required=True)
+    shape = fields.InputShape(required=True)
     preprocessing = fields.List(fields.Nested(Preprocessing), missing=list)
     processing_name = "preprocessing"
 
@@ -250,7 +250,7 @@ class InputTensor(Tensor):
         if bidx == -1:
             return
 
-        if isinstance(shape, raw_nodes.InputShape):
+        if isinstance(shape, raw_nodes.ImplicitInputShape):
             step = shape.step
             shape = shape.min
 
@@ -271,7 +271,7 @@ class InputTensor(Tensor):
 
 
 class OutputTensor(Tensor):
-    shape = fields.Union([fields.ExplicitShape, fields.Nested(OutputShape)], required=True)
+    shape = fields.OutputShape(required=True)
     halo = fields.Halo()
     postprocessing = fields.List(fields.Nested(Postprocessing), missing=list)
     processing_name = "postprocessing"
@@ -282,7 +282,7 @@ class OutputTensor(Tensor):
         halo = data["halo"]
         if halo is None:
             return
-        elif isinstance(shape, tuple) or isinstance(shape, raw_nodes.OutputShape):
+        elif isinstance(shape, tuple) or isinstance(shape, raw_nodes.ImplicitOutputShape):
             if len(halo) != len(shape):
                 raise PyBioValidationException(f"halo {halo} has to have same length as shape {shape}!")
         else:
@@ -400,20 +400,20 @@ If a field is followed by [optional]*, they are optional depending on another fi
                 )
 
 
-class BioImageIoManifestModelEntry(Schema):
+class BioImageIoManifestModelEntry(PyBioSchema):
     id = fields.String(required=True)
     source = fields.String(validate=validate.URL(schemes=["http", "https"]))
     links = fields.List(fields.String, missing=list)
     download_url = fields.String(validate=validate.URL(schemes=["http", "https"]))
 
 
-class Badge(Schema):
+class Badge(PyBioSchema):
     label = fields.String(required=True)
     icon = fields.URI()
     url = fields.URI()
 
 
-class BioImageIoManifestNotebookEntry(Schema):
+class BioImageIoManifestNotebookEntry(PyBioSchema):
     id = fields.String(required=True)
     name = fields.String(required=True)
     documentation = fields.String(required=True)
@@ -429,7 +429,7 @@ class BioImageIoManifestNotebookEntry(Schema):
     links = fields.List(fields.String, missing=list)  # todo: make List[URI]?
 
 
-class BioImageIoManifest(Schema):
+class BioImageIoManifest(PyBioSchema):
     format_version = fields.String(validate=validate.OneOf(raw_nodes.FormatVersion.__args__), required=True)
     config = fields.Dict()
 
