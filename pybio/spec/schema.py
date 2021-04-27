@@ -119,7 +119,7 @@ class Tensor(PyBioSchema):
     axes = fields.Axes(required=True)  # todo check if null is ok (it shouldn't)
     data_type = fields.String(required=True)
     data_range = fields.Tuple((fields.Float(allow_nan=True), fields.Float(allow_nan=True)))
-    shape: fields.Shape
+    shape: fields.Union
 
     processing_name: str
 
@@ -227,7 +227,7 @@ class Postprocessing(Processing):
 
 
 class InputTensor(Tensor):
-    shape = fields.Shape(InputShape, required=True)
+    shape = fields.Union([fields.ExplicitShape, fields.Nested(InputShape)], required=True)
     preprocessing = fields.List(fields.Nested(Preprocessing), missing=list)
     processing_name = "preprocessing"
 
@@ -261,7 +261,7 @@ class InputTensor(Tensor):
 
 
 class OutputTensor(Tensor):
-    shape = fields.Shape(OutputShape, required=True)
+    shape = fields.Union([fields.ExplicitShape, fields.Nested(OutputShape)], required=True)
     halo = fields.Halo()
     postprocessing = fields.List(fields.Nested(Postprocessing), missing=list)
     processing_name = "postprocessing"

@@ -81,11 +81,11 @@ class Array(Schema):
 
 
 class InputArray(Array):
-    shape = fields.Shape(InputShape, required=True)
+    shape = fields.Union(fields.ExplicitShape, fields.Nested(InputShape), required=True)
 
 
 class OutputArray(Array):
-    shape = fields.Shape(OutputShape, required=True)
+    shape = fields.Union(fields.ExplicitShape, fields.Nested(OutputShape), required=True)
     halo = fields.List(fields.Integer, missing=None)
 
 

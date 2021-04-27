@@ -9,6 +9,7 @@ from urllib.request import url2pathname
 
 import numpy
 from marshmallow import ValidationError, fields as marshmallow_fields, validate as marshmallow_validate
+import marshmallow_union
 
 from pybio.spec import raw_nodes
 from pybio.spec.exceptions import PyBioValidationException
@@ -31,6 +32,11 @@ class DocumentedField:
 
 class String(DocumentedField, marshmallow_fields.String):
     pass
+
+
+class Union(DocumentedField, marshmallow_union.Union):
+    pass
+
 
 if typing.TYPE_CHECKING:
     import pybio.spec.schema
@@ -200,28 +206,7 @@ class Dependencies(String):  # todo: make Dependency inherit from URI
     pass
 
 
-class Shape(marshmallow_fields.Field):  # todo: use marshmallow_union instead
-    explicit_shape = List(Integer)
-
-    def __init__(
-        self,
-        nested_schema: typing.Union[
-            typing.Type[pybio.spec.schema.InputShape], typing.Type[pybio.spec.schema.OutputShape]
-        ],
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        self.nested_schema = nested_schema
-
-    def _jsonschema_type_mapping(self):
-        return {"type": "array", "items": {"type": "number"}}
-
-    def _deserialize(self, value, attr, data, partial=None, many=False, **kwargs):
-        assert not many
-        if isinstance(value, list):
-            return self.explicit_shape.deserialize(value)
-        else:
-            return self.nested_schema().load(value)
+ExplicitShape = List(Integer)
 
 
 class Array(marshmallow_fields.Field):
