@@ -14,21 +14,43 @@ import marshmallow_union
 from pybio.spec import raw_nodes
 from pybio.spec.exceptions import PyBioValidationException
 
-Dict = marshmallow_fields.Dict
-Float = marshmallow_fields.Float
-Integer = marshmallow_fields.Integer
-List = marshmallow_fields.List
-Nested = marshmallow_fields.Nested
-Number = marshmallow_fields.Number
-
 
 class DocumentedField:
-    def __init__(self, *super_args, bioimageio_doc: str = "<documentation missing>", **super_kwargs):
-        self.bioimageio_doc = bioimageio_doc
+    def __init__(
+        self,
+        *super_args,
+        bioimageio_description: typing.Optional[str] = None,
+        bioimageio_description_order: typing.Optional[int] = None,
+        **super_kwargs,
+    ):
+        self.bioimageio_description = bioimageio_description or self.__class__.__name__
+        self.bioimageio_description_order = bioimageio_description_order
         super().__init__(*super_args, **super_kwargs)
 
-    def get_bioimageio_doc(self):
-        return self.bioimageio_doc
+
+class Dict(DocumentedField, marshmallow_fields.Dict):
+    pass
+
+
+class Float(DocumentedField, marshmallow_fields.Float):
+    pass
+
+
+class Integer(DocumentedField, marshmallow_fields.Integer):
+    pass
+
+
+class List(DocumentedField, marshmallow_fields.List):
+    pass
+
+
+class Number(DocumentedField, marshmallow_fields.Number):
+    pass
+
+
+class Nested(DocumentedField, marshmallow_fields.Nested):
+    pass
+
 
 class String(DocumentedField, marshmallow_fields.String):
     pass
@@ -59,7 +81,7 @@ class StrictVersion(marshmallow_fields.Field):
         return {"type": "string"}
 
 
-class DateTime(marshmallow_fields.DateTime):
+class DateTime(DocumentedField, marshmallow_fields.DateTime):
     """
     Parses datetime in ISO8601 or if value already has datetime.datetime type
     returns this value
@@ -72,7 +94,7 @@ class DateTime(marshmallow_fields.DateTime):
         return super()._deserialize(value, attr, data, **kwargs)
 
 
-class Tuple(marshmallow_fields.Tuple):
+class Tuple(DocumentedField, marshmallow_fields.Tuple):
     def _jsonschema_type_mapping(self):
         import marshmallow_jsonschema
 

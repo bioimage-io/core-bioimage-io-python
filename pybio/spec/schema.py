@@ -10,6 +10,8 @@ from pybio.spec.exceptions import PyBioValidationException
 
 
 class PyBioSchema(Schema):
+    bioimageio_description: str = ""
+
     @post_load
     def make_object(self, data, **kwargs):
         if not data:
@@ -43,7 +45,8 @@ class Spec(PyBioSchema):
     format_version = fields.String(
         validate=validate.OneOf(raw_nodes.FormatVersion.__args__),
         required=True,
-        bioimageio_doc="Version of this BioImage.IO Model Description File Specification. This is mandatory, and "
+        bioimageio_description_order=0,
+        bioimageio_description="Version of this BioImage.IO Model Description File Specification. This is mandatory, and "
         "important for the consumer software to verify before parsing the fields. The recommended behavior for the "
         "implementation is to keep backward compatibility, and throw error if the model yaml is in an unsupported "
         f"format version. Current format version: {raw_nodes.FormatVersion.__args__[-1]}",
@@ -62,14 +65,21 @@ class Spec(PyBioSchema):
     covers = fields.List(fields.URI, missing=list)
     attachments = fields.Dict(fields.String, missing=dict)
 
-    run_mode = fields.Nested(RunMode, missing=None)
+    run_mode = fields.Nested(
+        RunMode,
+        missing=None,
+        bioimageio_description="Custom run mode for this model: for more complex prediction procedures like test time data "
+        "augmentation that currently cannot be expressed in the specification. The different run modes should be "
+        "listed in [supported_formats_and_operations.md#Run Modes]"
+        "(https://github.com/bioimage-io/configuration/blob/master/supported_formats_and_operations.md#run-modes).",
+    )
     config = fields.Dict(missing=dict)
 
     language = fields.String(
         validate=validate.OneOf(raw_nodes.Language.__args__),
         missing=None,
-        bioimageio_doc="* Programming language of the source code. For now, we support python and java. This field is "
-        "only required if the field source is present.",
+        bioimageio_description="* Programming language of the source code. For now, we support python and java. This field is "
+        "only required if the field `source` is present.",
     )
     framework = fields.String(validate=validate.OneOf(raw_nodes.Framework.__args__), required=True)
     dependencies = fields.Dependencies(missing=None)
@@ -295,10 +305,14 @@ class WeightsEntry(WithFileSource):
 
 
 class Model(Spec):
-
+    bioimageio_description = f"""# BioImage.IO Model Description File Specification {raw_nodes.FormatVersion.__args__[-1]}
+A model entry in the bioimage.io model zoo is defined by a configuration file model.yaml.
+The configuration file must contain the following fields; optional fields are followed by [optional]. 
+If a field is followed by [optional]*, they are optional depending on another field.
+"""
     source = fields.ImportableSource(
         missing=None,
-        bioimageio_doc="* Language and framework specific implementation. As some weights contain the model "
+        bioimageio_description="* Language and framework specific implementation. As some weights contain the model "
         "architecture, the source is optional depending on the present weight formats. `source` can either point to a "
         "local implementation: `<relative path to file>:<identifier of implementation within the source file>` or the "
         "implementation in an available dependency: `<root-dependency>.<sub-dependency>.<identifier>`.\nFor example: "
