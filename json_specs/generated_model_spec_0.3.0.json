@@ -157,7 +157,10 @@
                 },
                 "git_repo": {
                     "title": "git_repo",
-                    "type": "string"
+                    "type": [
+                        "string",
+                        "null"
+                    ]
                 },
                 "inputs": {
                     "items": {
@@ -200,6 +203,10 @@
                         "array",
                         "null"
                     ]
+                },
+                "run_mode": {
+                    "$ref": "#/definitions/RunMode",
+                    "type": "object"
                 },
                 "sample_inputs": {
                     "items": {
@@ -413,6 +420,24 @@
             ],
             "type": "object"
         },
+        "RunMode": {
+            "additionalProperties": false,
+            "properties": {
+                "kwargs": {
+                    "additionalProperties": {},
+                    "title": "kwargs",
+                    "type": "object"
+                },
+                "name": {
+                    "title": "name",
+                    "type": "string"
+                }
+            },
+            "required": [
+                "name"
+            ],
+            "type": "object"
+        },
         "WeightsEntry": {
             "additionalProperties": false,
             "properties": {
@@ -429,6 +454,21 @@
                     "title": "authors",
                     "type": "array"
                 },
+                "opset_version": {
+                    "format": "decimal",
+                    "title": "opset_version",
+                    "type": [
+                        "number",
+                        "null"
+                    ]
+                },
+                "parent": {
+                    "title": "parent",
+                    "type": [
+                        "string",
+                        "null"
+                    ]
+                },
                 "sha256": {
                     "maxLength": 64,
                     "minLength": 64,
@@ -440,6 +480,9 @@
                 },
                 "source": {
                     "title": "source",
+                    "type": "string"
+                },
+                "tensorflow_version": {
                     "type": "string"
                 }
             },

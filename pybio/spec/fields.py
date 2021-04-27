@@ -38,6 +38,9 @@ class StrictVersion(marshmallow_fields.Field):
     def _serialize(self, value: typing.Any, attr: str, obj: typing.Any, **kwargs):
         return str(value)
 
+    def _jsonschema_type_mapping(self):
+        return {"type": "string"}
+
 
 class DateTime(marshmallow_fields.DateTime):
     """
