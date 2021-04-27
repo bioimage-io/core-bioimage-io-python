@@ -29,6 +29,67 @@
             ],
             "type": "object"
         },
+        "ImplicitInputShape": {
+            "additionalProperties": false,
+            "properties": {
+                "min": {
+                    "items": {
+                        "format": "integer",
+                        "title": "min",
+                        "type": "number"
+                    },
+                    "title": "min",
+                    "type": "array"
+                },
+                "step": {
+                    "items": {
+                        "format": "integer",
+                        "title": "step",
+                        "type": "number"
+                    },
+                    "title": "step",
+                    "type": "array"
+                }
+            },
+            "required": [
+                "min",
+                "step"
+            ],
+            "type": "object"
+        },
+        "ImplicitOutputShape": {
+            "additionalProperties": false,
+            "properties": {
+                "offset": {
+                    "items": {
+                        "format": "integer",
+                        "title": "offset",
+                        "type": "number"
+                    },
+                    "title": "offset",
+                    "type": "array"
+                },
+                "reference_input": {
+                    "title": "reference_input",
+                    "type": "string"
+                },
+                "scale": {
+                    "items": {
+                        "format": "float",
+                        "title": "scale",
+                        "type": "number"
+                    },
+                    "title": "scale",
+                    "type": "array"
+                }
+            },
+            "required": [
+                "offset",
+                "reference_input",
+                "scale"
+            ],
+            "type": "object"
+        },
         "InputTensor": {
             "additionalProperties": false,
             "properties": {
@@ -72,10 +133,21 @@
                     "type": "array"
                 },
                 "shape": {
-                    "items": {
-                        "type": "number"
-                    },
-                    "type": "array"
+                    "anyOf": [
+                        {
+                            "items": {
+                                "format": "integer",
+                                "title": "",
+                                "type": "number"
+                            },
+                            "title": "",
+                            "type": "array"
+                        },
+                        {
+                            "$ref": "#/definitions/ImplicitInputShape",
+                            "type": "object"
+                        }
+                    ]
                 }
             },
             "required": [
@@ -184,7 +256,10 @@
                     ],
                     "enumNames": [],
                     "title": "language",
-                    "type": "string"
+                    "type": [
+                        "string",
+                        "null"
+                    ]
                 },
                 "license": {
                     "title": "license",
@@ -285,7 +360,6 @@
                 "documentation",
                 "format_version",
                 "framework",
-                "language",
                 "license",
                 "name",
                 "tags",
@@ -351,10 +425,21 @@
                     "type": "array"
                 },
                 "shape": {
-                    "items": {
-                        "type": "number"
-                    },
-                    "type": "array"
+                    "anyOf": [
+                        {
+                            "items": {
+                                "format": "integer",
+                                "title": "",
+                                "type": "number"
+                            },
+                            "title": "",
+                            "type": "array"
+                        },
+                        {
+                            "$ref": "#/definitions/ImplicitOutputShape",
+                            "type": "object"
+                        }
+                    ]
                 }
             },
             "required": [

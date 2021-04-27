@@ -94,11 +94,10 @@ def get_model_spec_doc_as_markdown():
     return markdown_from_doc(doc)
 
 
-def main():
+def export_markdown_doc(path: Path):
     doc = get_model_spec_doc_as_markdown()
-    pprint(doc)
-    Path("bioimageio_model_spec.md").write_text(doc)
+    path.write_text(doc)
 
 
 if __name__ == "__main__":
-    main()
+    export_markdown_doc(Path(__file__).parent / "../generated/bioimageio_model_spec.md")
