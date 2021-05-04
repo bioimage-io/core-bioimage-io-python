@@ -19,17 +19,29 @@ class DocumentedField:
     def __init__(
         self,
         *super_args,
-        bioimageio_description: typing.Optional[str] = None,
+        bioimageio_description: str = "",
         bioimageio_description_order: typing.Optional[int] = None,
+        bioimageio_maybe_required: bool = False,  # indicates that this field may be required, depending on other fields
         **super_kwargs,
     ):
-        self.bioimageio_description = bioimageio_description or self.__class__.__name__
+        bases = [b.__name__ for b in self.__class__.__bases__ if issubclass(b, marshmallow_fields.Field)]
+        if self.__class__.__name__ not in bases:
+            bases.insert(0, self.__class__.__name__)
+
+        self.type_name = "->".join(bases)
+        self.bioimageio_description = bioimageio_description
         self.bioimageio_description_order = bioimageio_description_order
+        self.bioimageio_maybe_required = bioimageio_maybe_required
         super().__init__(*super_args, **super_kwargs)
 
 
 class Dict(DocumentedField, marshmallow_fields.Dict):
-    pass
+    def __init__(self, *super_args, **super_kwargs):
+        super().__init__(*super_args, **super_kwargs)
+        # add types of dict keys and values
+        key = "Any" if self.key_field is None else self.key_field.type_name
+        value = "Any" if self.value_field is None else self.value_field.type_name
+        self.type_name += f"\[{key}, {value}\]"
 
 
 class Float(DocumentedField, marshmallow_fields.Float):
@@ -41,7 +53,9 @@ class Integer(DocumentedField, marshmallow_fields.Integer):
 
 
 class List(DocumentedField, marshmallow_fields.List):
-    pass
+    def __init__(self, *super_args, **super_kwargs):
+        super().__init__(*super_args, **super_kwargs)
+        self.type_name += f"\[{self.inner.type_name}\]"  # add type of list elements
 
 
 class Number(DocumentedField, marshmallow_fields.Number):
@@ -49,11 +63,17 @@ class Number(DocumentedField, marshmallow_fields.Number):
 
 
 class Nested(DocumentedField, marshmallow_fields.Nested):
-    def __init__(self, *super_args, bioimageio_description: typing.Optional[str] = None, **super_kwargs):
-        super().__init__(*super_args, **super_kwargs, bioimageio_description=bioimageio_description)
-        if bioimageio_description is None:
-            self.bioimageio_description = self.schema.bioimageio_description or self.schema.__class__.__name__
+    def __init__(self, *super_args, **super_kwargs):
+        super().__init__(*super_args, **super_kwargs)
 
+        self.type_name = self.schema.__class__.__name__
+        if self.many:
+            self.type_name = f"List\[{self.type_name}\]"
+
+        if not self.bioimageio_description:
+            self.bioimageio_description = self.schema.bioimageio_description
+
+        self.bioimageio_description += f" \nEach {self.schema.__class__.__name__} is a Dict with the following keys:"
 
 
 class String(DocumentedField, marshmallow_fields.String):
@@ -61,14 +81,16 @@ class String(DocumentedField, marshmallow_fields.String):
 
 
 class Union(DocumentedField, marshmallow_union.Union):
-    pass
+    def __init__(self, *super_args, **super_kwargs):
+        super().__init__(*super_args, **super_kwargs)
+        self.type_name += f"\[{' | '.join(cf.type_name for cf in self._candidate_fields)}\]"  # add types of options
 
 
 if typing.TYPE_CHECKING:
     import pybio.spec.schema
 
 
-class StrictVersion(marshmallow_fields.Field):
+class StrictVersion(String):
     def _deserialize(
         self,
         value: typing.Any,
@@ -78,11 +100,11 @@ class StrictVersion(marshmallow_fields.Field):
     ):
         return distutils.version.StrictVersion(str(value))
 
-    def _serialize(self, value: typing.Any, attr: str, obj: typing.Any, **kwargs):
-        return str(value)
+    # def _serialize(self, value: typing.Any, attr: str, obj: typing.Any, **kwargs):
+    #     return str(value)
 
-    def _jsonschema_type_mapping(self):
-        return {"type": "string"}
+    # def _jsonschema_type_mapping(self):
+    #     return {"type": "string"}  # todo: improve json schema of StrictVersion
 
 
 class DateTime(DocumentedField, marshmallow_fields.DateTime):
@@ -228,7 +250,7 @@ class ProcMode(String):
         super().__init__(validate=validate, required=required, **kwargs)
 
 
-class Dependencies(String):  # todo: make Dependency inherit from URI
+class Dependencies(String):  # todo: check format of dependency string
     pass
 
 
