@@ -28,7 +28,8 @@ class DocumentedField:
         if self.__class__.__name__ not in bases:
             bases.insert(0, self.__class__.__name__)
 
-        self.type_name = "->".join(bases)
+        self.type_name = "→".join(bases)
+        # self.type_name = bases[-1]
         self.bioimageio_description = bioimageio_description
         self.bioimageio_description_order = bioimageio_description_order
         self.bioimageio_maybe_required = bioimageio_maybe_required
@@ -73,7 +74,7 @@ class Nested(DocumentedField, marshmallow_fields.Nested):
         if not self.bioimageio_description:
             self.bioimageio_description = self.schema.bioimageio_description
 
-        self.bioimageio_description += f" \nEach {self.schema.__class__.__name__} is a Dict with the following keys:"
+        self.bioimageio_description += f" is a Dict with the following keys:"
 
 
 class String(DocumentedField, marshmallow_fields.String):
@@ -263,14 +264,35 @@ class InputShape(Union):
     def __init__(self, **super_kwargs):
         from pybio.spec.schema import ImplicitInputShape
 
-        super().__init__(fields=[ExplicitShape(), Nested(ImplicitInputShape)], **super_kwargs)
+        super().__init__(
+            fields=[
+                ExplicitShape(
+                    bioimageio_description="Exact shape with same length as `axes`, e.g. `shape: [1, 512, 512, 1]`"
+                ),
+                Nested(
+                    ImplicitInputShape,
+                    bioimageio_description="A sequence of valid shapes given by `shape = min + k * step for k in {0, 1, ...}`.",
+                ),
+            ],
+            **super_kwargs,
+        )
 
 
 class OutputShape(Union):
     def __init__(self, **super_kwargs):
         from pybio.spec.schema import ImplicitOutputShape
 
-        super().__init__(fields=[ExplicitShape(), Nested(ImplicitOutputShape)], **super_kwargs)
+        super().__init__(
+            fields=[
+                ExplicitShape(),
+                Nested(
+                    ImplicitOutputShape,
+                    bioimageio_description="In reference to the shape of an input tensor, the shape of the output "
+                    "tensor is `shape = shape(input_tensor) * scale + 2 * offset`.",
+                ),
+            ],
+            **super_kwargs,
+        )
 
 
 class Array(marshmallow_fields.Field):
@@ -308,11 +330,16 @@ class Array(marshmallow_fields.Field):
 
 
 class Halo(List):
-    def __init__(self):
-        super().__init__(Integer, missing=None)
+    def __init__(self, *super_args, **super_kwargs):
+        super().__init__(Integer, *super_args, **super_kwargs)
 
     def _deserialize(self, value, attr, data, **kwargs) -> typing.List[typing.Any]:
         if value is None:
             return [0] * len(data["shape"])
         else:
             return super()._deserialize(value, attr, data, **kwargs)
+
+
+class Kwargs(Dict):
+    def __init__(self, keys=String, missing=dict, bioimageio_description="Key word arguments.", **super_kwargs):
+        super().__init__(keys, missing=missing, bioimageio_description=bioimageio_description, **super_kwargs)

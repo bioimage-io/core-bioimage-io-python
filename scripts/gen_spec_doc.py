@@ -123,7 +123,7 @@ def markdown_from_schema(schema: pybio.spec.schema.PyBioSchema) -> str:
 
 def export_markdown_docs(folder: Path):
     doc = markdown_from_schema(pybio.spec.schema.Model())
-    (folder / "bioimageio_model_spec.md").write_text(doc)
+    (folder / "bioimageio_model_spec.md").write_text(doc, encoding="utf-8")
 
 
 if __name__ == "__main__":
