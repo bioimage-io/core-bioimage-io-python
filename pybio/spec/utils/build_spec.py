@@ -44,7 +44,7 @@ def build_spec_torch(
     license,
     documentation,
     covers,
-    dependecies,
+    dependencies,
     # model specific optional
     sample_inputs=None,
     sample_outputs=None,
@@ -60,17 +60,13 @@ def build_spec_torch(
 ):
     """
     """
-    model = raw_nodes.Model
-
     #
     # generate the model specific fields
     #
 
-    model.source = source
-    model.kwargs = model_kwargs
     # generate sha256
     source_path = _ensure_uri(source.split("::")[0])
-    model.sha256 = _get_hash(source_path)
+    source_hash = _get_hash(source_path)
 
     # check the test inputs and auto-generate input/  output description from test inputs / outputs
     if isinstance(test_inputs, list):
@@ -88,50 +84,74 @@ def build_spec_torch(
         assert test_out.ndim in (4, 5)
 
     # TODO enable over-riding with optional arguments
-    input_tensor = raw_nodes.InputTensor
-    input_tensor.name = 'input'
-    input_tensor.data_type = str(test_in.dtype)
-    input_tensor.axes = ['b', 'c', 'z', 'y', 'x'] if test_in.ndim == 5 else ['b', 'c', 'y', 'x']
-    input_tensor.shape = test_in.shape
     # TODO description, preprocessing from optional arguments
+    inputs = raw_nodes.InputTensor(
+        name='input',
+        data_type=str(test_in.dtype),
+        axes=['b', 'c', 'z', 'y', 'x'] if test_in.ndim == 5 else ['b', 'c', 'y', 'x'],
+        shape=test_in.shape,
+        preprocessing=None
+    )
 
     # TODO enable over-riding with optional arguments
-    output_tensor = raw_nodes.OutputTensor
-    output_tensor.name = 'output'
-    output_tensor.data_type = str(test_out.dtype)
-    output_tensor.axes = ['b', 'c', 'z', 'y', 'x'] if test_out.ndim == 5 else ['b', 'c', 'y', 'x']
-    output_tensor.shape = test_out.shape
     # TODO description, halo, postprocessing from optional arguments
+    outputs = raw_nodes.OutputTensor(
+        name='output',
+        data_type=str(test_out.dtype),
+        axes=['b', 'c', 'z', 'y', 'x'] if test_out.ndim == 5 else ['b', 'c', 'y', 'x'],
+        shape=test_out.shape,
+        postprocessing=None,
+        halo=None
+    )
 
-    weights = raw_nodes.WeightsEntry
-    weight_path = _ensure_uri(weight_uri)
-    weights.source = weight_uri
-    weights.sha256 = _get_hash(weight_path)
-    model.weights = {'pytorch_state_dict': weights}
-
-    # TODO add the optional model specific stuff
+    weight_hash = _get_hash(weight_path)
+    weights = raw_nodes.WeightsEntry(
+        authors=None,
+        attachments=None,
+        parent=None,
+        opset_version=None,
+        tensorflow_version=None,
+        source=weight_uri,
+        sha256=weight_hash,
+    )
 
     #
     # generate general fields
     #
+    format_version = '0.3.1'  # TODO get this from somewhere central
+    timestamp = datetime.datetime.now().isoformat()
+    language = 'python'
+    framework = 'pytorch'
 
-    model.name = name
-    model.description = description
-    model.authors = authors
-    model.tags = tags
-    model.license = license
-    model.documentation = documentation
-    model.covers = covers
-    model.dependecies = dependecies
-
-    # auto-generate timestamp, add language and framework
-    model.timestamp = datetime.datetime.now().isoformat()
-    model.language = 'python'
-    model.framework = 'pytorch'
-    model.format_version = '0.3.1'  # TODO get this from somewhere central
-
-    # TODO add the optional generic stuff
-
+    model = raw_nodes.Model(
+        source=source,
+        sha256=source_hash,
+        kwargs=model_kwargs,
+        format_version=format_version,
+        name=name,
+        description=description,
+        authors=authors,
+        cite=[] if cite is None else cite,
+        git_repo=git_repo,
+        tags=tags,
+        license=license,
+        documentation=documentation,
+        covers=covers,
+        attachments=attachments,
+        language=language,
+        framework=framework,
+        dependencies=dependencies,
+        timestamp=timestamp,
+        run_mode=run_mode,
+        config=config,
+        weights={'pytorch_state_dict': weights},
+        inputs=[inputs],
+        outputs=[outputs],
+        test_inputs=test_inputs,
+        test_outputs=test_outputs,
+        sample_inputs=None,
+        sample_outputs=None
+    )
     return model
 
 
@@ -174,6 +194,6 @@ if __name__ == '__main__':
         license="MIT",
         documentation="not_documented.md",
         covers=["no covers"],
-        dependecies="conda:./no_deps.yaml"
+        dependencies="conda:./no_deps.yaml"
     )
     print(model_spec)
