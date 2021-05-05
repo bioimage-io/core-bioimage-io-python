@@ -64,19 +64,19 @@ class TestShape:
     def test_explicit_input_shape(self):
         data = [1, 2, 3]
         expected = data
-        actual = fields.Shape(schema.InputShape).deserialize(data)
+        actual = fields.InputShape().deserialize(data)
         assert expected == actual
 
     def test_explicit_output_shape(self):
         data = [1, 2, 3]
         expected = data
-        actual = fields.Shape(schema.OutputShape).deserialize(data)
+        actual = schema.OutputTensor().fields["shape"].deserialize(data)
         assert expected == actual
 
     def test_min_step_input_shape(self):
         data = {"min": [1, 2, 3], "step": [0, 1, 3]}
-        expected = raw_nodes.InputShape(**data)
-        actual = fields.Shape(schema.InputShape).deserialize(data)
+        expected = raw_nodes.ImplicitInputShape(**data)
+        actual = fields.InputShape().deserialize(data)
         assert expected == actual
 
     def test_todo_output_shape(self):
@@ -85,7 +85,7 @@ class TestShape:
 
     def test_explicit_input_shape_schema(self):
         class MySchema(schema.Schema):
-            shape = fields.Shape(schema.InputShape)
+            shape = fields.InputShape()
 
         data = {
             "shape": [1, 2, 3],

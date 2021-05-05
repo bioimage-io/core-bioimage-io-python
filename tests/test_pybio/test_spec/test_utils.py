@@ -74,16 +74,20 @@ class MySpec(nodes.Node):
     spec_uri_b: raw_nodes.SpecURI
 
 
-class SubSpec(schema.Schema):
+class SubSpec(schema.PyBioSchema):
     axes = fields.Axes()
 
+    @post_load
+    def make_object(self, data, **kwargs):
+        return data
 
-class Spec(schema.Schema):
+
+class Spec(schema.PyBioSchema):
     spec_uri_a = fields.SpecURI(SubSpec)
     spec_uri_b = fields.SpecURI(SubSpec)
 
     @post_load
-    def convert(self, data, **kwargs):
+    def make_object(self, data, **kwargs):
         return MySpec(**data)
 
 

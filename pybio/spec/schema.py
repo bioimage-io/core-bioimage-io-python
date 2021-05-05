@@ -10,6 +10,8 @@ from pybio.spec.exceptions import PyBioValidationException
 
 
 class PyBioSchema(Schema):
+    bioimageio_description: str = ""
+
     @post_load
     def make_object(self, data, **kwargs):
         if not data:
@@ -35,45 +37,123 @@ class CiteEntry(PyBioSchema):
 
 
 class RunMode(PyBioSchema):
-    name = fields.String(required=True)  # todo: limit valid run mode names
-    kwargs = fields.Dict(fields.String, missing=dict)
+    name = fields.String(
+        required=True, bioimageio_description="The name of the `run_mode`"
+    )  # todo: limit valid run mode names
+    kwargs = fields.Kwargs()
 
 
 class Spec(PyBioSchema):
-    format_version = fields.String(validate=validate.OneOf(raw_nodes.FormatVersion.__args__), required=True)
+    format_version = fields.String(
+        validate=validate.OneOf(raw_nodes.FormatVersion.__args__),
+        required=True,
+        bioimageio_description_order=0,
+        bioimageio_description=f"""Version of the BioImage.IO Model Description File Specification used. 
+This is mandatory, and important for the consumer software to verify before parsing the fields. 
+The recommended behavior for the implementation is to keep backward compatibility and throw an error if the model yaml 
+is in an unsupported format version. The current format version described here is 
+{raw_nodes.FormatVersion.__args__[-1]}""",
+    )
     name = fields.String(required=True)
-    description = fields.String(required=True)
+    description = fields.String(required=True, bioimageio_description="A string containing a brief description.")
 
-    authors = fields.List(fields.String, required=True)
-    cite = fields.Nested(CiteEntry, many=True, required=True)
+    authors = fields.List(
+        fields.String,
+        required=True,
+        bioimageio_description="""A list of author strings. 
+A string can be separated by `;` in order to identify multiple handles per author.
+The authors are the creators of the specifications and the primary points of contact.""",
+    )
+    cite = fields.Nested(
+        CiteEntry,
+        many=True,
+        required=True,
+        bioimageio_description="""A citation entry or list of citation entries.
+Each entry contains a mandatory `text` field and either one or both of `doi` and `url`.
+E.g. the citation for the model architecture and/or the training data used.""",
+    )
 
-    git_repo = fields.String(validate=validate.URL(schemes=["http", "https"]), missing=None)
-    tags = fields.List(fields.String, required=True)
-    license = fields.String(required=True)
+    git_repo = fields.String(
+        validate=validate.URL(schemes=["http", "https"]),
+        missing=None,
+        bioimageio_description="""A url to the git repository, e.g. to Github or Gitlab.
+If the model is contained in a subfolder of a git repository, then a url to the exact folder 
+(which contains the configuration yaml file) should be used.""",
+    )
+    tags = fields.List(fields.String, required=True, bioimageio_description="A list of tags.")
+    license = fields.String(
+        required=True,
+        bioimageio_description="A string to a common license name (e.g. `MIT`, `APLv2`) or a relative path to the "
+        "license file.",
+    )
 
-    documentation = fields.URI(required=True)
-    covers = fields.List(fields.URI, missing=list)
-    attachments = fields.Dict(fields.String, missing=dict)
+    documentation = fields.URI(
+        required=True, bioimageio_description="Relative path to file with additional documentation in markdown."
+    )
+    covers = fields.List(
+        fields.URI,
+        missing=list,
+        bioimageio_description="A list of cover images provided by either a relative path to the model folder, or a "
+        "hyperlink starting with 'https'.Please use an image smaller than 500KB and an aspect ratio width to height "
+        "of 2:1. The supported image formats are: 'jpg', 'png', 'gif'.",  # todo: validate image format
+    )
+    attachments = fields.Dict(
+        fields.String,
+        fields.Union([fields.URI(), fields.List(fields.URI)]),
+        missing=dict,
+        bioimageio_maybe_required=True,
+        bioimageio_description="""Dictionary of text keys and URI (or a list of URI) values to additional, relevant 
+files. E.g. we can place a list of URIs under the `files` to list images and other files that are necessary for the 
+documentation or for the model to run, these files will be included when generating the model package.""",
+    )
 
-    run_mode = fields.Nested(RunMode, missing=None)
+    run_mode = fields.Nested(
+        RunMode,
+        missing=None,
+        bioimageio_description="Custom run mode for this model: for more complex prediction procedures like test time "
+        "data augmentation that currently cannot be expressed in the specification. The different run modes should be "
+        "listed in [supported_formats_and_operations.md#Run Modes]"
+        "(https://github.com/bioimage-io/configuration/blob/master/supported_formats_and_operations.md#run-modes).",
+    )
     config = fields.Dict(missing=dict)
 
-    language = fields.String(validate=validate.OneOf(raw_nodes.Language.__args__), required=True)
-    framework = fields.String(validate=validate.OneOf(raw_nodes.Framework.__args__), required=True)
-    dependencies = fields.Dependencies(missing=None)
-    timestamp = fields.DateTime(required=True)
-
-    # root = fields.Path(required=True)
+    language = fields.String(
+        validate=validate.OneOf(raw_nodes.Language.__args__),
+        missing=None,
+        bioimageio_maybe_required=True,
+        bioimageio_description=f"Programming language of the source code. One of: "
+        f"{', '.join(raw_nodes.Language.__args__)}. This field is only required if the field `source` is present.",
+    )
+    framework = fields.String(
+        validate=validate.OneOf(raw_nodes.Framework.__args__),
+        missing=None,
+        bioimageio_description=f"The deep learning framework of the source code. One of: "
+        f"{', '.join(raw_nodes.Framework.__args__)}. This field is only required if the field `source` is present.",
+    )
+    dependencies = fields.Dependencies(
+        missing=None,
+        bioimageio_description="Dependency manager and dependency file, specified as `<dependency manager>:<relative "
+        "path to file>`. For example: 'conda:./environment.yaml', 'maven:./pom.xml', or 'pip:./requirements.txt'",
+    )
+    timestamp = fields.DateTime(
+        required=True,
+        bioimageio_description="Timestamp of the initial creation of this model in [ISO 8601]"
+        "(#https://en.wikipedia.org/wiki/ISO_8601) format.",
+    )
 
 
 class SpecWithKwargs(PyBioSchema):
     spec: fields.SpecURI
-    kwargs = fields.Dict(fields.String, missing=dict)
+    kwargs = fields.Kwargs()
 
 
-class InputShape(PyBioSchema):
-    min = fields.List(fields.Integer, required=True)
-    step = fields.List(fields.Integer, required=True)
+class ImplicitInputShape(PyBioSchema):
+    min = fields.List(
+        fields.Integer, required=True, bioimageio_description="The minimum input shape with same length as `axes`"
+    )
+    step = fields.List(
+        fields.Integer, required=True, bioimageio_description="The minimum shape change with same length as `axes`"
+    )
 
     @validates_schema
     def matching_lengths(self, data, **kwargs):
@@ -88,10 +168,12 @@ class InputShape(PyBioSchema):
             )
 
 
-class OutputShape(PyBioSchema):
-    reference_input = fields.String(required=True)
-    scale = fields.List(fields.Float, required=True)
-    offset = fields.List(fields.Integer, required=True)
+class ImplicitOutputShape(PyBioSchema):
+    reference_input = fields.String(required=True, bioimageio_description="Name of the reference input tensor.")
+    scale = fields.List(
+        fields.Float, required=True, bioimageio_description="'output_pix/input_pix' for each dimension."
+    )
+    offset = fields.List(fields.Integer, required=True, bioimageio_description="Position of origin wrt to input.")
 
     @validates_schema
     def matching_lengths(self, data, **kwargs):
@@ -102,12 +184,38 @@ class OutputShape(PyBioSchema):
 
 
 class Tensor(PyBioSchema):
-    name = fields.String(required=True, validate=validate.Predicate("isidentifier"))
+    name = fields.String(
+        required=True, validate=validate.Predicate("isidentifier"), bioimageio_description="Tensor name."
+    )
     description = fields.String(required=False)
-    axes = fields.Axes(required=True)  # todo check if null is ok (it shouldn't)
-    data_type = fields.String(required=True)
-    data_range = fields.Tuple((fields.Float(allow_nan=True), fields.Float(allow_nan=True)))
-    shape: fields.Shape
+    axes = fields.Axes(
+        required=True,
+        bioimageio_description="""Axes identifying characters from: bitczyx. Same length and order as the axes in `shape`.
+        
+    | character | description |
+    | --- | --- |
+    |  b  |  batch (groups multiple samples) |
+    |  i  |  instance/index/element |
+    |  t  |  time |
+    |  c  |  channel |
+    |  z  |  spatial dimension z |
+    |  y  |  spatial dimension y |
+    |  x  |  spatial dimension x |""",
+    )
+    data_type = fields.String(
+        required=True,
+        bioimageio_description="The data type of this tensor. For inputs, only `float32` is allowed and the consumer "
+        "software needs to ensure that the correct data type is passed here. For outputs can be any of `float32, "
+        "float64, (u)int8, (u)int16, (u)int32, (u)int64`. The data flow in bioimage.io models is explained "
+        "[in this diagram.](https://docs.google.com/drawings/d/1FTw8-Rn6a6nXdkZ_SkMumtcjvur9mtIhRqLwnKqZNHM/edit).",
+    )
+    data_range = fields.Tuple(
+        (fields.Float(allow_nan=True), fields.Float(allow_nan=True)),
+        missing=(None, None),
+        bioimageio_description="Tuple `(minimum, maximum)` specifying the allowed range of the data in this tensor. "
+        "If not specified, the full data range that can be expressed in `data_type` is allowed.",
+    )
+    shape: fields.Union
 
     processing_name: str
 
@@ -127,11 +235,11 @@ class Processing(PyBioSchema):
     class Binarize(Schema):  # do not inherit from PyBioSchema, return only a validated dict, no specific node
         threshold = fields.Float(required=True)
 
-    class Clip(Schema):
+    class Clip(PyBioSchema):
         min = fields.Float(required=True)
         max = fields.Float(required=True)
 
-    class ScaleLinear(Schema):
+    class ScaleLinear(PyBioSchema):
         axes = fields.Axes(required=True, valid_axes="czyx")
         gain = fields.Array(fields.Float(), missing=fields.Float(missing=1.0))  # todo: check if gain match input axes
         offset = fields.Array(
@@ -158,10 +266,10 @@ class Processing(PyBioSchema):
         if kwargs_validation_errors:
             raise PyBioValidationException(f"Invalid `kwargs` for '{data['name']}': {kwargs_validation_errors}")
 
-    class Sigmoid(Schema):
+    class Sigmoid(PyBioSchema):
         pass
 
-    class ZeroMeanUnitVariance(Schema):
+    class ZeroMeanUnitVariance(PyBioSchema):
         mode = fields.ProcMode(required=True)
         axes = fields.Axes(required=True, valid_axes="czyx")
         mean = fields.Array(fields.Float(), missing=None)  # todo: check if means match input axes (for mode 'fixed')
@@ -181,10 +289,17 @@ class Processing(PyBioSchema):
 
 
 class Preprocessing(Processing):
-    name = fields.String(required=True, validate=validate.OneOf(raw_nodes.PreprocessingName.__args__))
-    kwargs = fields.Dict(fields.String, missing=dict)
+    name = fields.String(
+        required=True,
+        validate=validate.OneOf(raw_nodes.PreprocessingName.__args__),
+        bioimageio_description=f"Name of preprocessing. One of: {', '.join(raw_nodes.PreprocessingName.__args__)} "
+        f"(see [supported_formats_and_operations.md#preprocessing](https://github.com/bioimage-io/configuration/"
+        f"blob/master/supported_formats_and_operations.md#preprocessing) "
+        f"for information on which transformations are supported by specific consumer software).",
+    )
+    kwargs = fields.Kwargs()
 
-    class ScaleRange(Schema):
+    class ScaleRange(PyBioSchema):
         mode = fields.ProcMode(required=True, valid_modes=("per_dataset", "per_sample"))
         axes = fields.Axes(required=True, valid_axes="czyx")
         min_percentile = fields.Float(
@@ -203,20 +318,31 @@ class Preprocessing(Processing):
 
 
 class Postprocessing(Processing):
-    name = fields.String(validate=validate.OneOf(raw_nodes.PostprocessingName.__args__), required=True)
-    kwargs = fields.Dict(fields.String, missing=dict)
+    name = fields.String(
+        validate=validate.OneOf(raw_nodes.PostprocessingName.__args__),
+        required=True,
+        bioimageio_description=f"Name of postprocessing. One of: {', '.join(raw_nodes.PostprocessingName.__args__)} "
+        f"(see [supported_formats_and_operations.md#postprocessing](https://github.com/bioimage-io/configuration/"
+        f"blob/master/supported_formats_and_operations.md#postprocessing) "
+        f"for information on which transformations are supported by specific consumer software).",
+    )
+    kwargs = fields.Kwargs()
 
     class ScaleRange(Preprocessing.ScaleRange):
         reference_tensor: fields.String(required=True, validate=validate.Predicate("isidentifier"))
 
-    class ScaleMeanVariance(Schema):
+    class ScaleMeanVariance(PyBioSchema):
         mode = fields.ProcMode(required=True, valid_modes=("per_dataset", "per_sample"))
         reference_tensor: fields.String(required=True, validate=validate.Predicate("isidentifier"))
 
 
 class InputTensor(Tensor):
-    shape = fields.Shape(InputShape, required=True)
-    preprocessing = fields.List(fields.Nested(Preprocessing), missing=list)
+    shape = fields.InputShape(required=True, bioimageio_description="Specification of tensor shape.")
+    preprocessing = fields.List(
+        fields.Nested(Preprocessing),
+        missing=list,
+        bioimageio_description="Description of how this input should be preprocessed.",
+    )
     processing_name = "preprocessing"
 
     @validates_schema
@@ -228,7 +354,7 @@ class InputTensor(Tensor):
         if bidx == -1:
             return
 
-        if isinstance(shape, raw_nodes.InputShape):
+        if isinstance(shape, raw_nodes.ImplicitInputShape):
             step = shape.step
             shape = shape.min
 
@@ -249,9 +375,19 @@ class InputTensor(Tensor):
 
 
 class OutputTensor(Tensor):
-    shape = fields.Shape(OutputShape, required=True)
-    halo = fields.Halo()
-    postprocessing = fields.List(fields.Nested(Postprocessing), missing=list)
+    shape = fields.OutputShape(required=True)
+    halo = fields.Halo(
+        bioimageio_description="The halo to crop from the output tensor (for example to crop away boundary effects or "
+        "for tiling). The halo should be cropped from both sides, i.e. `shape_after_crop = shape - 2 * halo`. The "
+        "`halo` is not cropped by the bioimage.io model, but is left to be cropped by the consumer software. Use "
+        "`shape:offset` if the model output itself is cropped and input and output shapes not fixed.",
+        missing=None,
+    )
+    postprocessing = fields.List(
+        fields.Nested(Postprocessing),
+        missing=list,
+        bioimageio_description="Description of how this output should be postprocessed.",
+    )
     processing_name = "postprocessing"
 
     @validates_schema
@@ -260,50 +396,196 @@ class OutputTensor(Tensor):
         halo = data["halo"]
         if halo is None:
             return
-        elif isinstance(shape, tuple) or isinstance(shape, raw_nodes.OutputShape):
+        elif isinstance(shape, tuple) or isinstance(shape, raw_nodes.ImplicitOutputShape):
             if len(halo) != len(shape):
                 raise PyBioValidationException(f"halo {halo} has to have same length as shape {shape}!")
         else:
             raise NotImplementedError(type(shape))
 
 
+_common_sha256_hint = (
+    "You can drag and drop your file to this [online tool]"
+    "(http://emn178.github.io/online-tools/sha256_checksum.html) to generate it in your browser. "
+    "Or you can generate the SHA256 code for your model and weights by using for example, `hashlib` in Python. "
+    # "[here is a codesnippet](#code-snippet-to-compute-sha256-checksum)."  # todo: link to code snippet and don't multiply it
+    + """
+Code snippet to compute SHA256 checksum
+
+```python
+import hashlib
+
+filename = "your filename here"
+with open(filename, "rb") as f:
+  bytes = f.read() # read entire file as bytes
+  readable_hash = hashlib.sha256(bytes).hexdigest()
+  print(readable_hash)
+  ```
+
+"""
+)
+
+
 class WithFileSource(PyBioSchema):
-    source = fields.URI(required=True)
-    sha256 = fields.String(validate=validate.Length(equal=64), missing=None)
+    source = fields.URI(required=True, bioimageio_description="Link to the source file. Preferably a url.")
+    sha256 = fields.String(
+        validate=validate.Length(equal=64),
+        missing=None,
+        bioimageio_description="SHA256 checksum of the source file specified. " + _common_sha256_hint,
+    )
 
 
 class WeightsEntry(WithFileSource):
-    authors = fields.List(fields.String, missing=list)  # todo: copy root authors if missing
-    attachments = fields.Dict(missing=dict)
-    parent = fields.String(missing=None)
+    authors = fields.List(
+        fields.String,
+        missing=list,
+        bioimageio_description="A list of authors. If this is the root weight (it does not have a `parent` field): the "
+        "person(s) that have trained this model. If this is a child weight (it has a `parent` field): the person(s) "
+        "who have converted the weights to this format.",
+    )  # todo: copy root authors if missing
+    attachments = fields.Dict(
+        missing=dict,
+        bioimageio_description="Dictionary of text keys and URI (or a list of URI) values to additional, relevant "
+        "files that are specific to the current weight format. A list of URIs can be listed under the `files` key to "
+        "included additional files for generating the model package.",
+    )
+    parent = fields.String(
+        missing=None,
+        bioimageio_description="The source weights used as input for converting the weights to this format. For "
+        "example, if the weights were converted from the format `pytorch_state_dict` to `pytorch_script`, the parent "
+        "is `pytorch_state_dict`. All weight entries except one (the initial set of weights resulting from training "
+        "the model), need to have this field.",
+    )
     # ONNX Specific
     opset_version = fields.Number(missing=None)
     # tensorflow_saved_model_bundle specific
     tensorflow_version = fields.StrictVersion(missing=None)
 
 
+class ModelParent(PyBioSchema):
+    uri = fields.URI(
+        bioimageio_description="Url of another model available on bioimage.io or path to a local model in the "
+        "bioimage.io specification. If it is a url, it needs to be a github url linking to the page containing the "
+        "model (NOT the raw file)."
+    )
+    sha256 = fields.SHA256(bioimageio_description="Hash of the weights of the parent model.")
+
+
 class Model(Spec):
-
-    source = fields.ImportableSource(missing=None)
-    sha256 = fields.String(validate=validate.Length(equal=64), missing=None)
-    kwargs = fields.Dict(fields.String, missing=dict)
-
-    weights = fields.Dict(
-        fields.String(validate=validate.OneOf(raw_nodes.WeightsFormat.__args__), required=True),
-        fields.Nested(WeightsEntry),
+    bioimageio_description = f"""# BioImage.IO Model Description File Specification {raw_nodes.FormatVersion.__args__[-1]}
+A model entry in the bioimage.io model zoo is defined by a configuration file model.yaml.
+The configuration file must contain the following fields; optional fields are indicated by _optional_. 
+_optional*_ with an asterisk indicates the field is optional depending on the value in another field.
+"""
+    name = fields.String(
+        # validate=validate.Length(max=36),  # todo: enforce in future version
         required=True,
+        bioimageio_description="Name of this model. It should be human-readable and only contain letters, numbers, "
+        "`_`, `-` or spaces and not be longer than 36 characters.",
     )
 
-    inputs = fields.Nested(InputTensor, many=True)
-    outputs = fields.Nested(OutputTensor, many=True)
+    packaged_by = fields.List(
+        fields.String,
+        missing=list,
+        bioimageio_description=f"The persons that have packaged and uploaded this model. Only needs to be specified if "
+        f"different from `authors` in root or any {WeightsEntry.__name__}.",
+    )
 
-    test_inputs = fields.List(fields.URI, required=True)
-    test_outputs = fields.List(fields.URI, required=True)
+    parent = fields.Nested(
+        ModelParent,
+        missing=None,
+        bioimageio_description="Parent model from which the trained weights of this model have been derived, e.g. by "
+        "finetuning the weights of this model on a different dataset. For format changes of the same trained model "
+        "checkpoint, see `weights`.",
+    )
 
-    sample_inputs = fields.List(fields.URI, missing=[])
-    sample_outputs = fields.List(fields.URI, missing=[])
+    source = fields.ImportableSource(
+        missing=None,
+        bioimageio_maybe_required=True,
+        bioimageio_description="Language and framework specific implementation. As some weights contain the model "
+        "architecture, the source is optional depending on the present weight formats. `source` can either point to a "
+        "local implementation: `<relative path to file>:<identifier of implementation within the source file>` or the "
+        "implementation in an available dependency: `<root-dependency>.<sub-dependency>.<identifier>`.\nFor example: "
+        "`./my_function:MyImplementation` or `core_library.some_module.some_function`.",
+    )
+    sha256 = fields.String(
+        validate=validate.Length(equal=64),
+        missing=None,
+        bioimageio_description="SHA256 checksum of the model source code file."
+        + _common_sha256_hint
+        + " This field is only required if the field source is present.",
+    )
+    kwargs = fields.Kwargs(
+        bioimageio_description="Keyword arguments for the implementation specified by `source`. "
+        "This field is only required if the field `source` is present."
+    )
 
-    config = fields.Dict(missing=dict)
+    weights = fields.Dict(
+        fields.String(
+            validate=validate.OneOf(raw_nodes.WeightsFormat.__args__),
+            required=True,
+            bioimageio_description=f"Format of this set of weights. Weight formats can define additional (optional or "
+            f"required) fields. See [supported_formats_and_operations.md#Weight Format]"
+            f"(https://github.com/bioimage-io/configuration/blob/master/supported_formats_and_operations.md#weight_format). "
+            f"One of: {', '.join(raw_nodes.WeightsFormat.__args__)}",
+        ),
+        fields.Nested(WeightsEntry),
+        required=True,
+        bioimageio_description="The weights for this model. Weights can be given for different formats, but should "
+        "otherwise be equivalent. The available weight formats determine which consumers can use this model.",
+    )
+
+    inputs = fields.Nested(
+        InputTensor, many=True, bioimageio_description="Describes the input tensors expected by this model."
+    )
+    outputs = fields.Nested(
+        OutputTensor, many=True, bioimageio_description="Describes the output tensors from this model."
+    )
+
+    test_inputs = fields.List(
+        fields.URI,
+        required=True,
+        bioimageio_description="List of URIs to test inputs as described in inputs for a single test case. "
+        "Supported file formats/extensions: '.npy'",
+    )
+    test_outputs = fields.List(fields.URI, required=True, bioimageio_description="Analog to to test_inputs.")
+
+    sample_inputs = fields.List(
+        fields.URI,
+        missing=[],
+        bioimageio_description="List of URIs to sample inputs to illustrate possible inputs for the model, for example "
+        "stored as png or tif images.",
+    )
+    sample_outputs = fields.List(
+        fields.URI,
+        missing=[],
+        bioimageio_description="List of URIs to sample outputs corresponding to the `sample_inputs`.",
+    )
+
+    config = fields.Dict(
+        missing=dict,
+        bioimageio_description="""
+A custom configuration field that can contain any other keys which are not defined above. It can be very specifc to a framework or specific tool. To avoid conflicted definitions, it is recommended to wrap configuration into a sub-field named with the specific framework or tool name. 
+
+For example:
+```yaml
+config:
+  # custom config for DeepImageJ, see https://github.com/bioimage-io/configuration/issues/23
+  deepimagej:
+    model_keys:
+      # In principle the tag "SERVING" is used in almost every tf model
+      model_tag: tf.saved_model.tag_constants.SERVING
+      # Signature definition to call the model. Again "SERVING" is the most general
+      signature_definition: tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY
+    test_information:  
+      input_size: [2048x2048] # Size of the input images  
+      output_size: [1264x1264 ]# Size of all the outputs  
+      device: cpu # Device used. In principle either cpu or GPU  
+      memory_peak: 257.7 Mb # Maximum memory consumed by the model in the device  
+      runtime: 78.8s # Time it took to run the model
+      pixel_size: [9.658E-4µmx9.658E-4µm] # Size of the pixels of the input
+```
+""",
+    )
 
     @validates_schema
     def language_and_framework_match(self, data, **kwargs):
@@ -367,20 +649,20 @@ class Model(Spec):
                 )
 
 
-class BioImageIoManifestModelEntry(Schema):
+class BioImageIoManifestModelEntry(PyBioSchema):
     id = fields.String(required=True)
     source = fields.String(validate=validate.URL(schemes=["http", "https"]))
     links = fields.List(fields.String, missing=list)
     download_url = fields.String(validate=validate.URL(schemes=["http", "https"]))
 
 
-class Badge(Schema):
+class Badge(PyBioSchema):
     label = fields.String(required=True)
     icon = fields.URI()
     url = fields.URI()
 
 
-class BioImageIoManifestNotebookEntry(Schema):
+class BioImageIoManifestNotebookEntry(PyBioSchema):
     id = fields.String(required=True)
     name = fields.String(required=True)
     documentation = fields.String(required=True)
@@ -396,7 +678,7 @@ class BioImageIoManifestNotebookEntry(Schema):
     links = fields.List(fields.String, missing=list)  # todo: make List[URI]?
 
 
-class BioImageIoManifest(Schema):
+class BioImageIoManifest(PyBioSchema):
     format_version = fields.String(validate=validate.OneOf(raw_nodes.FormatVersion.__args__), required=True)
     config = fields.Dict()
 

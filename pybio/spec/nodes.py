@@ -13,11 +13,11 @@ CiteEntry = raw_nodes.CiteEntry
 Dependencies = raw_nodes.Dependencies
 FormatVersion = raw_nodes.FormatVersion
 Framework = raw_nodes.Framework
-InputShape = raw_nodes.InputShape
+ImplicitInputShape = raw_nodes.ImplicitInputShape
 InputTensor = raw_nodes.InputTensor
 Language = raw_nodes.Language
 Node = raw_nodes.Node
-OutputShape = raw_nodes.OutputShape
+ImplicitOutputShape = raw_nodes.ImplicitOutputShape
 OutputTensor = raw_nodes.OutputTensor
 Preprocessing = raw_nodes.Preprocessing
 PreprocessingName = raw_nodes.PreprocessingName
@@ -25,12 +25,6 @@ Postprocessing = raw_nodes.Postprocessing
 PostprocessingName = raw_nodes.PostprocessingName
 WeightsFormat = raw_nodes.WeightsFormat
 RunMode = raw_nodes.RunMode
-
-
-@dataclass
-class InputShape(raw_nodes.InputShape):
-    def matches(self, tensor: Tensor):
-        raise NotImplementedError  # todo: make InputShape handle min,step and explicit shape and add a MinStepInputShape for parsing?
 
 
 @dataclass
