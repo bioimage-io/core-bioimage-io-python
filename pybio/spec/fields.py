@@ -8,13 +8,7 @@ from urllib.parse import urlparse
 from urllib.request import url2pathname
 
 import numpy
-from marshmallow import (
-    ValidationError,
-    fields as marshmallow_fields,
-    missing,
-    post_load,
-    validate as marshmallow_validate,
-)
+from marshmallow import ValidationError, fields as marshmallow_fields, validate as marshmallow_validate
 import marshmallow_union
 
 from pybio.spec import raw_nodes
