@@ -192,14 +192,19 @@ class WeightsEntry(Node, WithFileSource):
 
 
 @dataclass
-class Model(Spec, WithImportableSource):
-    weights: Dict[WeightsFormat, WeightsEntry]
+class ModelParent(Node):
+    uri: URI
+    sha256: str
 
+
+@dataclass
+class Model(Spec, WithImportableSource):
     inputs: List[InputTensor]
     outputs: List[OutputTensor]
-
-    test_inputs: List[URI]
-    test_outputs: List[URI]
-
+    packaged_by: List[str]
+    parent: ModelParent
     sample_inputs: List[URI]
     sample_outputs: List[URI]
+    test_inputs: List[URI]
+    test_outputs: List[URI]
+    weights: Dict[WeightsFormat, WeightsEntry]
