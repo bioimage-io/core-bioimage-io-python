@@ -477,7 +477,7 @@ The configuration file must contain the following fields; optional fields are in
 _optional*_ with an asterisk indicates the field is optional depending on the value in another field.
 """
     name = fields.String(
-        validate=validate.Length(max=36),
+        # validate=validate.Length(max=36),  # todo: enforce in future version
         required=True,
         bioimageio_description="Name of this model. It should be human-readable and only contain letters, numbers, "
         "`_`, `-` or spaces and not be longer than 36 characters.",
