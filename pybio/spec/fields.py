@@ -8,7 +8,13 @@ from urllib.parse import urlparse
 from urllib.request import url2pathname
 
 import numpy
-from marshmallow import ValidationError, fields as marshmallow_fields, validate as marshmallow_validate
+from marshmallow import (
+    ValidationError,
+    fields as marshmallow_fields,
+    missing,
+    post_load,
+    validate as marshmallow_validate,
+)
 import marshmallow_union
 
 from pybio.spec import raw_nodes
@@ -57,6 +63,10 @@ class List(DocumentedField, marshmallow_fields.List):
     def __init__(self, *super_args, **super_kwargs):
         super().__init__(*super_args, **super_kwargs)
         self.type_name += f"\[{self.inner.type_name}\]"  # add type of list elements
+
+
+class Method(DocumentedField, marshmallow_fields.Method):
+    pass
 
 
 class Number(DocumentedField, marshmallow_fields.Number):
@@ -122,6 +132,10 @@ class DateTime(DocumentedField, marshmallow_fields.DateTime):
 
 
 class Tuple(DocumentedField, marshmallow_fields.Tuple):
+    def _serialize(self, value, attr, obj, **kwargs) -> typing.List:
+        value = super()._serialize(value, attr, obj, **kwargs)
+        return list(value)  # return tuple as list
+
     def _jsonschema_type_mapping(self):
         import marshmallow_jsonschema
 
@@ -146,7 +160,7 @@ class SpecURI(Nested):
         # see https://stackoverflow.com/questions/43911052/urlparse-on-a-windows-file-scheme-uri-leaves-extra-slash-at-start
         path = url2pathname(uri.path)
 
-        return raw_nodes.SpecURI(spec_schema=self.schema, scheme=uri.scheme, netloc=uri.netloc, path=path, query="")
+        return raw_nodes.SpecURI(spec_schema=self.schema, scheme=uri.scheme, authority=uri.netloc, path=path, query="")
 
 
 class URI(String):
@@ -154,18 +168,28 @@ class URI(String):
         uri_str = super()._deserialize(*args, **kwargs)
         uri = urlparse(uri_str)
 
-        if uri.fragment:
-            raise PyBioValidationException(f"Invalid URI: {uri}. Got URI fragment: {uri.fragment}")
-        if uri.params:
-            raise PyBioValidationException(f"Invalid URI: {uri}. Got URI params: {uri.params}")
+        if not uri.path:
+            raise PyBioValidationException(f"Invalid URI: {uri_str}. Missing path.")
 
-        return raw_nodes.URI(scheme=uri.scheme, netloc=uri.netloc, path=uri.path, query=uri.query)
+        if uri.fragment:
+            raise PyBioValidationException(f"Invalid URI: {uri_str}. We do not support URI fragment: {uri.fragment}")
+
+        if uri.params:
+            raise PyBioValidationException(f"Invalid URI: {uri_str}. We do not support URL parameters: {uri.params}")
+
+        return raw_nodes.URI(
+            scheme=uri.scheme, authority=uri.netloc, path=uri.path, query=uri.query, fragment=uri.fragment
+        )
 
 
 class Path(String):
     def _deserialize(self, *args, **kwargs):
         path_str = super()._deserialize(*args, **kwargs)
         return pathlib.Path(path_str)
+
+    def _serialize(self, value, attr, obj, **kwargs) -> typing.Optional[str]:
+        assert isinstance(value, pathlib.Path)
+        return value.as_posix()
 
 
 class SHA256(String):
@@ -190,11 +214,22 @@ class ImportableSource(String):
 
             module_name = source_str[:last_dot_idx]
             object_name = source_str[last_dot_idx + 1 :]
+
+            if not module_name:
+                raise PyBioValidationException(
+                    f"Missing module name in importable source: {source_str}. Is it just missing a dot?"
+                )
+
+            if not object_name:
+                raise PyBioValidationException(
+                    f"Missing object/callable name in importable source: {source_str}. Is it just missing a dot?"
+                )
+
             return raw_nodes.ImportableModule(callable_name=object_name, module_name=module_name)
 
         elif self._is_filepath(source_str):
             if source_str.startswith("/"):
-                raise ValidationError("Only realative paths are allowed")
+                raise ValidationError("Only relative paths are allowed")
 
             parts = source_str.split("::")
             if len(parts) != 2:
@@ -205,6 +240,14 @@ class ImportableSource(String):
             return raw_nodes.ImportablePath(callable_name=object_name, filepath=module_path)
         else:
             raise ValidationError(source_str)
+
+    def _serialize(self, value, attr, obj, **kwargs) -> typing.Optional[str]:
+        if isinstance(value, raw_nodes.ImportableModule):
+            return value.module_name + "." + value.callable_name
+        elif isinstance(value, raw_nodes.ImportablePath):
+            return value.filepath.as_posix() + "::" + value.callable_name
+        else:
+            raise TypeError(f"{value} has unexpected type {type(value)}")
 
 
 # class Kwargs(Dict):
@@ -327,17 +370,6 @@ class Array(marshmallow_fields.Field):
                 raise PyBioValidationException(str(e)) from e
         else:
             return value
-
-
-class Halo(List):
-    def __init__(self, *super_args, **super_kwargs):
-        super().__init__(Integer, *super_args, **super_kwargs)
-
-    def _deserialize(self, value, attr, data, **kwargs) -> typing.List[typing.Any]:
-        if value is None:
-            return [0] * len(data["shape"])
-        else:
-            return super()._deserialize(value, attr, data, **kwargs)
 
 
 class Kwargs(Dict):

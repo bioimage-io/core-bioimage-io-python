@@ -187,7 +187,7 @@ class Tensor(PyBioSchema):
     name = fields.String(
         required=True, validate=validate.Predicate("isidentifier"), bioimageio_description="Tensor name."
     )
-    description = fields.String(required=False)
+    description = fields.String(missing=None)
     axes = fields.Axes(
         required=True,
         bioimageio_description="""Axes identifying characters from: bitczyx. Same length and order as the axes in `shape`.
@@ -376,12 +376,13 @@ class InputTensor(Tensor):
 
 class OutputTensor(Tensor):
     shape = fields.OutputShape(required=True)
-    halo = fields.Halo(
+    halo = fields.List(
+        fields.Integer,
+        missing=None,
         bioimageio_description="The halo to crop from the output tensor (for example to crop away boundary effects or "
         "for tiling). The halo should be cropped from both sides, i.e. `shape_after_crop = shape - 2 * halo`. The "
         "`halo` is not cropped by the bioimage.io model, but is left to be cropped by the consumer software. Use "
         "`shape:offset` if the model output itself is cropped and input and output shapes not fixed.",
-        missing=None,
     )
     postprocessing = fields.List(
         fields.Nested(Postprocessing),
@@ -396,11 +397,20 @@ class OutputTensor(Tensor):
         halo = data["halo"]
         if halo is None:
             return
-        elif isinstance(shape, tuple) or isinstance(shape, raw_nodes.ImplicitOutputShape):
+        elif isinstance(shape, list) or isinstance(shape, raw_nodes.ImplicitOutputShape):
             if len(halo) != len(shape):
                 raise PyBioValidationException(f"halo {halo} has to have same length as shape {shape}!")
         else:
             raise NotImplementedError(type(shape))
+
+    @post_load
+    def make_object(self, data, **kwargs):
+        shape = data["shape"]
+        halo = data["halo"]
+        if halo is None:
+            data["halo"] = [0] * len(shape)
+
+        return super().make_object(data, **kwargs)
 
 
 _common_sha256_hint = (
