@@ -6,6 +6,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, NewType, Optional, TYPE_CHECKING, Tuple, Union
 
+from marshmallow import missing
+
 try:
     from typing import Literal
 except ImportError:
@@ -46,14 +48,14 @@ class Node:
 
 @dataclass
 class ImportablePath(Node):
-    filepath: Union[Path]
-    callable_name: str
+    filepath: Path = missing
+    callable_name: str = missing
 
 
 @dataclass
 class ImportableModule(Node):
-    module_name: str
-    callable_name: str
+    module_name: str = missing
+    callable_name: str = missing
 
 
 ImportableSource = Union[ImportableModule, ImportablePath]
@@ -61,62 +63,75 @@ ImportableSource = Union[ImportableModule, ImportablePath]
 
 @dataclass
 class WithImportableSource:
-    source: ImportableSource
-    sha256: str
-    kwargs: Dict[str, Any]
+    source: ImportableSource = missing
+    sha256: str = missing
+    kwargs: Dict[str, Any] = missing
 
 
 @dataclass
 class CiteEntry(Node):
-    text: str
-    doi: Optional[str]
-    url: Optional[str]
+    text: str = missing
+    doi: Optional[str] = missing
+    url: Optional[str] = missing
 
 
 @dataclass
 class URI(Node):
-    scheme: str
-    netloc: str
-    path: str
-    query: str
+    """URI as  scheme:[//authority]path[?query][#fragment]"""
+
+    scheme: str = missing
+    authority: str = missing
+    path: str = missing
+    query: str = missing
+    fragment: str = missing
+
+    def __str__(self):
+        """scheme:[//authority]path[?query][#fragment]"""
+        return (
+            (self.scheme + ":" if self.scheme else "")
+            + ("//" + self.authority if self.authority else "")
+            + self.path
+            + ("?" + self.query if self.query else "")
+            + ("#" + self.fragment if self.fragment else "")
+        )
 
 
 @dataclass
 class RunMode(Node):
-    name: str
-    kwargs: Dict[str, Any]
+    name: str = missing
+    kwargs: Dict[str, Any] = missing
 
 
 @dataclass
 class Spec(Node):
-    format_version: FormatVersion
-    name: str
-    description: str
+    format_version: FormatVersion = missing
+    name: str = missing
+    description: str = missing
 
-    authors: List[str]
-    cite: List[CiteEntry]
+    authors: List[str] = missing
+    cite: List[CiteEntry] = missing
 
-    git_repo: Optional[str]
-    tags: List[str]
-    license: str
+    git_repo: Optional[str] = missing
+    tags: List[str] = missing
+    license: str = missing
 
-    documentation: URI
-    covers: List[URI]
-    attachments: Dict[str, Any]
+    documentation: URI = missing
+    covers: List[URI] = missing
+    attachments: Dict[str, Any] = missing
 
-    language: Language
-    framework: Framework
-    dependencies: Optional[Dependencies]
-    timestamp: datetime
+    language: Language = missing
+    framework: Framework = missing
+    dependencies: Optional[Dependencies] = missing
+    timestamp: datetime = missing
 
-    run_mode: Optional[RunMode]
-    config: dict
+    run_mode: Optional[RunMode] = missing
+    config: dict = missing
 
 
 @dataclass
 class ImplicitInputShape(Node):
-    min: List[float]
-    step: List[float]
+    min: List[float] = missing
+    step: List[float] = missing
 
     def __len__(self):
         return len(self.min)
@@ -124,9 +139,9 @@ class ImplicitInputShape(Node):
 
 @dataclass
 class ImplicitOutputShape(Node):
-    reference_input: str
-    scale: List[float]
-    offset: List[int]
+    reference_input: str = missing
+    scale: List[float] = missing
+    offset: List[int] = missing
 
     def __len__(self):
         return len(self.scale)
@@ -134,77 +149,77 @@ class ImplicitOutputShape(Node):
 
 @dataclass
 class Preprocessing:
-    name: PreprocessingName
-    kwargs: Dict[str, Any]
+    name: PreprocessingName = missing
+    kwargs: Dict[str, Any] = missing
 
 
 @dataclass
 class Postprocessing:
-    name: PostprocessingName
-    kwargs: Dict[str, Any]
-    reference_tensor: Optional[str] = None
+    name: PostprocessingName = missing
+    kwargs: Dict[str, Any] = missing
+    reference_tensor: Optional[str] = missing
 
 
 @dataclass
 class InputTensor:
-    name: str
-    data_type: str
-    axes: Axes
-    shape: Union[List[int], ImplicitInputShape]
-    preprocessing: List[Preprocessing]
-    description: Optional[str] = None
-    data_range: Tuple[float, float] = None
+    name: str = missing
+    data_type: str = missing
+    axes: Axes = missing
+    shape: Union[List[int], ImplicitInputShape] = missing
+    preprocessing: List[Preprocessing] = missing
+    description: Optional[str] =  missing
+    data_range: Tuple[float, float] = missing
 
 
 @dataclass
 class OutputTensor:
-    name: str
-    data_type: str
-    axes: Axes
-    shape: Union[List[int], ImplicitOutputShape]
-    halo: List[int]
-    postprocessing: List[Postprocessing]
-    description: Optional[str] = None
-    data_range: Tuple[float, float] = None
+    name: str = missing
+    data_type: str = missing
+    axes: Axes = missing
+    shape: Union[List[int], ImplicitOutputShape] = missing
+    halo: List[int] = missing
+    postprocessing: List[Postprocessing] = missing
+    description: Optional[str]  = missing
+    data_range: Tuple[float, float]  = missing
 
 
 @dataclass
 class SpecURI(URI):
-    spec_schema: pybio.spec.schema.Spec
+    spec_schema: pybio.spec.schema.Spec = missing
 
 
 @dataclass
 class WithFileSource:
-    source: URI
-    sha256: str
+    source: URI = missing
+    sha256: str = missing
 
 
 @dataclass
 class WeightsEntry(Node, WithFileSource):
-    authors: List[str]
-    attachments: Dict
-    parent: Optional[str]
+    authors: List[str] = missing
+    attachments: Dict = missing
+    parent: Optional[str] = missing
     # ONNX specific
-    opset_version: Optional[int]
+    opset_version: Optional[int] = missing
     # tag: Optional[str]  # todo: check schema. only valid for tensorflow_saved_model_bundle format
     # todo: check schema. only valid for tensorflow_saved_model_bundle format
-    tensorflow_version: Optional[distutils.version.StrictVersion]
+    tensorflow_version: Optional[distutils.version.StrictVersion] = missing
 
 
 @dataclass
 class ModelParent(Node):
-    uri: URI
-    sha256: str
+    uri: URI = missing
+    sha256: str = missing
 
 
 @dataclass
 class Model(Spec, WithImportableSource):
-    inputs: List[InputTensor]
-    outputs: List[OutputTensor]
-    packaged_by: List[str]
-    parent: ModelParent
-    sample_inputs: List[URI]
-    sample_outputs: List[URI]
-    test_inputs: List[URI]
-    test_outputs: List[URI]
-    weights: Dict[WeightsFormat, WeightsEntry]
+    inputs: List[InputTensor] = missing
+    outputs: List[OutputTensor] = missing
+    packaged_by: List[str] = missing
+    parent: ModelParent = missing
+    sample_inputs: List[URI] = missing
+    sample_outputs: List[URI] = missing
+    test_inputs: List[URI] = missing
+    test_outputs: List[URI] = missing
+    weights: Dict[WeightsFormat, WeightsEntry] = missing
