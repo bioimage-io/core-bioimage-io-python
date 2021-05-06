@@ -14,8 +14,11 @@ def rf_config_path_v0_1():
 
 
 @pytest.fixture
-def rf_config_path():
+def rf_config_path_v0_3_0():
     return Path(__file__).parent / "../specs/models/sklearn/RandomForestClassifier.model.yaml"
+
+
+rf_config_path = rf_config_path_v0_3_0
 
 
 @pytest.fixture

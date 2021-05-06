@@ -22,7 +22,7 @@ inputs:
     description: raw input data
     axes: bc
     data_type: float32
-    data_range: [-inf, inf]
+    data_range: [-.inf, .inf]
     shape:
       min: [1, 1]
       step: [0, 0]
@@ -32,10 +32,10 @@ outputs:
     description: probability in [0,1]
     axes: bc
     data_type: float32
-    data_range: [0, 1]
+    data_range: [0.0, 1.0]
     shape:
       reference_input: raw
-      scale: [1, 1]
+      scale: [1.0, 1.0]
       offset: [0, 0]
 
 language: python

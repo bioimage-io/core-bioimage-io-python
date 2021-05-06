@@ -4,7 +4,11 @@ from pybio.spec import fields
 from pybio.spec.exceptions import PyBioValidationException
 
 
-class CiteEntry(Schema):
+class PyBioSchema(Schema):
+    bioimageio_description: str = ""
+
+
+class CiteEntry(PyBioSchema):
     text = fields.String(required=True)
     doi = fields.String(missing=None)
     url = fields.String(missing=None)
@@ -15,11 +19,11 @@ class CiteEntry(Schema):
             raise ValidationError("doi or url needs to be specified in a citation")
 
 
-class BaseSpec(Schema):
+class BaseSpec(PyBioSchema):
     name = fields.String(required=True)
     format_version = fields.String(required=True)
     description = fields.String(required=True)
-    cite = fields.Nested(CiteEntry, many=True, required=True)
+    cite = fields.Nested(CiteEntry(), many=True, required=True)
     authors = fields.List(fields.String(required=True))
     documentation = fields.Path(required=True)
     tags = fields.List(fields.String, required=True)
@@ -36,12 +40,12 @@ class BaseSpec(Schema):
     covers = fields.List(fields.Path, missing=list)
 
 
-class SpecWithKwargs(Schema):
+class SpecWithKwargs(PyBioSchema):
     spec: fields.SpecURI
     kwargs = fields.Dict(missing=dict)
 
 
-class InputShape(Schema):
+class InputShape(PyBioSchema):
     min = fields.List(fields.Integer, required=True)
     step = fields.List(fields.Integer, required=True)
 
@@ -58,7 +62,7 @@ class InputShape(Schema):
             )
 
 
-class OutputShape(Schema):
+class OutputShape(PyBioSchema):
     reference_input = fields.String(missing=None)
     scale = fields.List(fields.Float, required=True)
     offset = fields.List(fields.Integer, required=True)
@@ -71,7 +75,7 @@ class OutputShape(Schema):
             raise PyBioValidationException(f"scale {scale} has to have same length as offset {offset}!")
 
 
-class Array(Schema):
+class Array(PyBioSchema):
     name = fields.String(required=True)
     axes = fields.Axes(missing=None)
     data_type = fields.String(required=True)
@@ -81,11 +85,11 @@ class Array(Schema):
 
 
 class InputArray(Array):
-    shape = fields.Shape(InputShape, required=True)
+    shape = fields.Union([fields.ExplicitShape(), fields.Nested(InputShape)], required=True)
 
 
 class OutputArray(Array):
-    shape = fields.Shape(OutputShape, required=True)
+    shape = fields.Union([fields.ExplicitShape(), fields.Nested(OutputShape)], required=True)
     halo = fields.List(fields.Integer, missing=None)
 
 
@@ -99,12 +103,12 @@ class Transformation(SpecWithKwargs):
     spec = fields.SpecURI(TransformationSpec, required=True)
 
 
-class Weights(Schema):
+class Weights(PyBioSchema):
     source = fields.URI(required=True)
     hash = fields.Dict()
 
 
-class Prediction(Schema):
+class Prediction(PyBioSchema):
     weights = fields.Nested(Weights, missing=None)
     dependencies = fields.Dependencies(missing=None)
     preprocess = fields.Nested(Transformation, many=True, missing=list)
@@ -131,13 +135,13 @@ class Sampler(SpecWithKwargs):
     readers = fields.List(fields.Nested(Reader, required=True), required=True)
 
 
-class Optimizer(Schema):
+class Optimizer(PyBioSchema):
     source = fields.String(required=True)
     required_kwargs = fields.List(fields.String, missing=list)
     optional_kwargs = fields.Dict(fields.String, missing=dict)
 
 
-class Setup(Schema):
+class Setup(PyBioSchema):
     samplers = fields.List(fields.Nested(Sampler, required=True), required=True)
     preprocess = fields.Nested(Transformation, many=True, missing=list)
     postprocess = fields.Nested(Transformation, many=True, missing=list)

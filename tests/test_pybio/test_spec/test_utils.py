@@ -74,16 +74,20 @@ class MySpec(nodes.Node):
     spec_uri_b: raw_nodes.SpecURI
 
 
-class SubSpec(schema.Schema):
+class SubSpec(schema.PyBioSchema):
     axes = fields.Axes()
 
+    @post_load
+    def make_object(self, data, **kwargs):
+        return data
 
-class Spec(schema.Schema):
+
+class Spec(schema.PyBioSchema):
     spec_uri_a = fields.SpecURI(SubSpec)
     spec_uri_b = fields.SpecURI(SubSpec)
 
     @post_load
-    def convert(self, data, **kwargs):
+    def make_object(self, data, **kwargs):
         return MySpec(**data)
 
 
@@ -118,7 +122,7 @@ def test_resolve_import_path(tmpdir):
 
 
 def test_resolve_directory_uri(tmpdir):
-    node = raw_nodes.URI(scheme="", netloc="", path=str(tmpdir), query="")
+    node = raw_nodes.URI(scheme="", authority="", path=str(tmpdir), query="", fragment="")
     uri_transformed = UriNodeTransformer(root_path=Path(tmpdir)).transform(node)
     assert uri_transformed == Path(tmpdir)
 
