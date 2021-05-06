@@ -319,6 +319,8 @@ class SpecURI(Nested):
     def _deserialize(self, value, attr, data, **kwargs):
         uri = urlparse(value)
 
+        if not uri.path:
+            raise PyBioValidationException(f"Invalid URI: {uri_str}. Missing path.")
         if uri.query:
             raise PyBioValidationException(f"Invalid URI: {value}. We do not support query: {uri.query}")
         if uri.fragment:
@@ -326,9 +328,12 @@ class SpecURI(Nested):
         if uri.params:
             raise PyBioValidationException(f"Invalid URI: {value}. We do not support params: {uri.params}")
 
-        # account for leading '/' for windows paths, e.g. '/C:/folder'
-        # see https://stackoverflow.com/questions/43911052/urlparse-on-a-windows-file-scheme-uri-leaves-extra-slash-at-start
-        path = url2pathname(uri.path)
+        if uri.scheme == "file":
+            # account for leading '/' for windows paths, e.g. '/C:/folder'
+            # see https://stackoverflow.com/questions/43911052/urlparse-on-a-windows-file-scheme-uri-leaves-extra-slash-at-start
+            path = url2pathname(uri.path)
+        else:
+            path = uri.path
 
         return raw_nodes.SpecURI(
             spec_schema=self.schema, scheme=uri.scheme, authority=uri.netloc, path=path, query="", fragment=""
@@ -353,12 +358,16 @@ class URI(String):
 
         if not uri.path:
             raise PyBioValidationException(f"Invalid URI: {uri_str}. Missing path.")
-
         if uri.fragment:
             raise PyBioValidationException(f"Invalid URI: {uri_str}. We do not support fragment: {uri.fragment}")
         if uri.params:
             raise PyBioValidationException(f"Invalid URI: {uri_str}. We do not support params: {uri.params}")
 
-        return raw_nodes.URI(
-            scheme=uri.scheme, authority=uri.netloc, path=uri.path, query=uri.query, fragment=uri.fragment
-        )
+        if uri.scheme == "file":
+            # account for leading '/' for windows paths, e.g. '/C:/folder'
+            # see https://stackoverflow.com/questions/43911052/urlparse-on-a-windows-file-scheme-uri-leaves-extra-slash-at-start
+            path = url2pathname(uri.path)
+        else:
+            path = uri.path
+
+        return raw_nodes.URI(scheme=uri.scheme, authority=uri.netloc, path=path, query=uri.query, fragment=uri.fragment)
