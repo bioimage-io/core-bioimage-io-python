@@ -139,6 +139,6 @@ def test_model_schema_accepts_run_mode(model_dict):
 )
 def test_model_schema_accepts_valid_weight_formats(model_dict, format):
     model_schema = schema.Model()
-    model_dict.update({"weights": {format: {"source": ""}}})
+    model_dict.update({"weights": {format: {"source": "local_weights"}}})
     validated_data = model_schema.load(model_dict)
     assert validated_data

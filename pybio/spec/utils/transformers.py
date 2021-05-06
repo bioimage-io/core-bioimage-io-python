@@ -5,11 +5,12 @@ import pathlib
 import subprocess
 import sys
 import uuid
-from collections import namedtuple
 from functools import singledispatch
 from typing import Any, NamedTuple, Type, TypeVar
 from urllib.parse import urlunparse
 from urllib.request import url2pathname, urlretrieve
+
+from marshmallow import missing
 
 from pybio.core.cache import PYBIO_CACHE_PATH
 from pybio.spec import nodes, raw_nodes, schema
@@ -22,7 +23,7 @@ from pybio.spec.utils.maybe_convert import maybe_convert
 
 @dataclasses.dataclass
 class LocalImportableModule(raw_nodes.ImportableModule):
-    python_path: pathlib.Path
+    python_path: pathlib.Path = missing
 
 
 def iter_fields(node: dataclasses.dataclass):
@@ -88,7 +89,7 @@ class NodeTransformer(Transformer):
 
 @dataclasses.dataclass
 class LocalImportableModule(raw_nodes.ImportableModule):
-    python_path: pathlib.Path
+    python_path: pathlib.Path = missing
 
 
 @dataclasses.dataclass
@@ -250,16 +251,19 @@ def _(uri: str, root_path: pathlib.Path = pathlib.Path()) -> pathlib.Path:
 @resolve_uri.register
 def _(uri: raw_nodes.URI, root_path: pathlib.Path) -> pathlib.Path:
     if uri.scheme == "":  # relative path
-        if uri.netloc:
+        if uri.authority or uri.query or uri.fragment:
             raise PyBioValidationException(f"Invalid Path/URI: {uri}")
 
         local_path = root_path / uri.path
     elif uri.scheme == "file":
-        if uri.netloc or uri.query:
+        if uri.authority or uri.query or uri.fragment:
             raise NotImplementedError(uri)
 
         local_path = pathlib.Path(url2pathname(uri.path))
-    elif uri.netloc == "github.com":
+    elif uri.authority == "github.com":
+        if uri.query:
+            raise PyBioValidationException(f"Invalid github link: {uri}")
+
         orga, repo_name, blob_releases_archive, commit_id, *in_repo_path = uri.path.strip("/").split("/")
         if blob_releases_archive == "releases":
             local_path = _download_uri_node_to_local_path(uri)
@@ -273,7 +277,7 @@ def _(uri: raw_nodes.URI, root_path: pathlib.Path) -> pathlib.Path:
             if not local_path.exists():
                 cached_repo_path = str(cached_repo_path.resolve())
                 subprocess.call(
-                    ["git", "clone", f"{uri.scheme}://{uri.netloc}/{orga}/{repo_name}.git", cached_repo_path]
+                    ["git", "clone", f"{uri.scheme}://{uri.authority}/{orga}/{repo_name}.git", cached_repo_path]
                 )
                 # -C <working_dir> available in git 1.8.5+
                 # https://github.com/git/git/blob/5fd09df3937f54c5cfda4f1087f5d99433cce527/Documentation/RelNotes/1.8.5.txt#L115-L116
@@ -289,10 +293,10 @@ def _(uri: raw_nodes.URI, root_path: pathlib.Path) -> pathlib.Path:
 
 
 def _download_uri_node_to_local_path(uri_node: raw_nodes.URI) -> pathlib.Path:
-    local_path = PYBIO_CACHE_PATH / uri_node.scheme / uri_node.netloc / uri_node.path.strip("/") / uri_node.query
+    local_path = PYBIO_CACHE_PATH / uri_node.scheme / uri_node.authority / uri_node.path.strip("/") / uri_node.query
     if not local_path.exists():
         local_path.parent.mkdir(parents=True, exist_ok=True)
-        url_str = urlunparse([uri_node.scheme, uri_node.netloc, uri_node.path, "", uri_node.query, ""])
+        url_str = urlunparse([uri_node.scheme, uri_node.authority, uri_node.path, "", uri_node.query, ""])
         try:
             urlretrieve(url_str, str(local_path))
         except Exception:

@@ -122,7 +122,7 @@ def test_resolve_import_path(tmpdir):
 
 
 def test_resolve_directory_uri(tmpdir):
-    node = raw_nodes.URI(scheme="", netloc="", path=str(tmpdir), query="")
+    node = raw_nodes.URI(scheme="", authority="", path=str(tmpdir), query="", fragment="")
     uri_transformed = UriNodeTransformer(root_path=Path(tmpdir)).transform(node)
     assert uri_transformed == Path(tmpdir)
 

@@ -10,7 +10,7 @@ def test_load_non_existing_spec():
         load_spec(spec_path)
 
 
-def test_load_non_valid_spec_nam():
+def test_load_non_valid_spec_name():
     spec_path = "some/none/existing/path/to/spec.not_valid.yaml"
 
     with pytest.raises(ValueError):
