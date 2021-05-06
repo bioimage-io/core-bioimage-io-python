@@ -157,7 +157,6 @@ class Preprocessing:
 class Postprocessing:
     name: PostprocessingName = missing
     kwargs: Dict[str, Any] = missing
-    reference_tensor: Optional[str] = missing
 
 
 @dataclass
@@ -167,7 +166,7 @@ class InputTensor:
     axes: Axes = missing
     shape: Union[List[int], ImplicitInputShape] = missing
     preprocessing: List[Preprocessing] = missing
-    description: Optional[str] =  missing
+    description: Optional[str] = missing
     data_range: Tuple[float, float] = missing
 
 
@@ -179,8 +178,8 @@ class OutputTensor:
     shape: Union[List[int], ImplicitOutputShape] = missing
     halo: List[int] = missing
     postprocessing: List[Postprocessing] = missing
-    description: Optional[str]  = missing
-    data_range: Tuple[float, float]  = missing
+    description: Optional[str] = missing
+    data_range: Tuple[float, float] = missing
 
 
 @dataclass

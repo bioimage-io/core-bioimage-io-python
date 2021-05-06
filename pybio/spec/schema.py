@@ -48,10 +48,10 @@ class Spec(PyBioSchema):
         validate=validate.OneOf(raw_nodes.FormatVersion.__args__),
         required=True,
         bioimageio_description_order=0,
-        bioimageio_description=f"""Version of the BioImage.IO Model Description File Specification used. 
-This is mandatory, and important for the consumer software to verify before parsing the fields. 
-The recommended behavior for the implementation is to keep backward compatibility and throw an error if the model yaml 
-is in an unsupported format version. The current format version described here is 
+        bioimageio_description=f"""Version of the BioImage.IO Model Description File Specification used.
+This is mandatory, and important for the consumer software to verify before parsing the fields.
+The recommended behavior for the implementation is to keep backward compatibility and throw an error if the model yaml
+is in an unsupported format version. The current format version described here is
 {raw_nodes.FormatVersion.__args__[-1]}""",
     )
     name = fields.String(required=True)
@@ -60,7 +60,7 @@ is in an unsupported format version. The current format version described here i
     authors = fields.List(
         fields.String,
         required=True,
-        bioimageio_description="""A list of author strings. 
+        bioimageio_description="""A list of author strings.
 A string can be separated by `;` in order to identify multiple handles per author.
 The authors are the creators of the specifications and the primary points of contact.""",
     )
@@ -77,7 +77,7 @@ E.g. the citation for the model architecture and/or the training data used.""",
         validate=validate.URL(schemes=["http", "https"]),
         missing=None,
         bioimageio_description="""A url to the git repository, e.g. to Github or Gitlab.
-If the model is contained in a subfolder of a git repository, then a url to the exact folder 
+If the model is contained in a subfolder of a git repository, then a url to the exact folder
 (which contains the configuration yaml file) should be used.""",
     )
     tags = fields.List(fields.String, required=True, bioimageio_description="A list of tags.")
@@ -102,8 +102,8 @@ If the model is contained in a subfolder of a git repository, then a url to the 
         fields.Union([fields.URI(), fields.List(fields.URI)]),
         missing=dict,
         bioimageio_maybe_required=True,
-        bioimageio_description="""Dictionary of text keys and URI (or a list of URI) values to additional, relevant 
-files. E.g. we can place a list of URIs under the `files` to list images and other files that are necessary for the 
+        bioimageio_description="""Dictionary of text keys and URI (or a list of URI) values to additional, relevant
+files. E.g. we can place a list of URIs under the `files` to list images and other files that are necessary for the
 documentation or for the model to run, these files will be included when generating the model package.""",
     )
 
@@ -191,7 +191,7 @@ class Tensor(PyBioSchema):
     axes = fields.Axes(
         required=True,
         bioimageio_description="""Axes identifying characters from: bitczyx. Same length and order as the axes in `shape`.
-        
+
     | character | description |
     | --- | --- |
     |  b  |  batch (groups multiple samples) |
@@ -483,7 +483,7 @@ class ModelParent(PyBioSchema):
 class Model(Spec):
     bioimageio_description = f"""# BioImage.IO Model Description File Specification {raw_nodes.FormatVersion.__args__[-1]}
 A model entry in the bioimage.io model zoo is defined by a configuration file model.yaml.
-The configuration file must contain the following fields; optional fields are indicated by _optional_. 
+The configuration file must contain the following fields; optional fields are indicated by _optional_.
 _optional*_ with an asterisk indicates the field is optional depending on the value in another field.
 """
     name = fields.String(
@@ -574,7 +574,7 @@ _optional*_ with an asterisk indicates the field is optional depending on the va
     config = fields.Dict(
         missing=dict,
         bioimageio_description="""
-A custom configuration field that can contain any other keys which are not defined above. It can be very specifc to a framework or specific tool. To avoid conflicted definitions, it is recommended to wrap configuration into a sub-field named with the specific framework or tool name. 
+A custom configuration field that can contain any other keys which are not defined above. It can be very specifc to a framework or specific tool. To avoid conflicted definitions, it is recommended to wrap configuration into a sub-field named with the specific framework or tool name.
 
 For example:
 ```yaml
@@ -586,11 +586,11 @@ config:
       model_tag: tf.saved_model.tag_constants.SERVING
       # Signature definition to call the model. Again "SERVING" is the most general
       signature_definition: tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY
-    test_information:  
-      input_size: [2048x2048] # Size of the input images  
-      output_size: [1264x1264 ]# Size of all the outputs  
-      device: cpu # Device used. In principle either cpu or GPU  
-      memory_peak: 257.7 Mb # Maximum memory consumed by the model in the device  
+    test_information:
+      input_size: [2048x2048] # Size of the input images
+      output_size: [1264x1264 ]# Size of all the outputs
+      device: cpu # Device used. In principle either cpu or GPU
+      memory_peak: 257.7 Mb # Maximum memory consumed by the model in the device
       runtime: 78.8s # Time it took to run the model
       pixel_size: [9.658E-4µmx9.658E-4µm] # Size of the pixels of the input
 ```
@@ -639,9 +639,9 @@ config:
     def validate_reference_tensor_names(self, data, **kwargs):
         valid_input_tensor_references = [ipt.name for ipt in data["inputs"]]
         for out in data["outputs"]:
-            for kwargs in out.postprocessing:
-                ref_tensor = kwargs.reference_tensor
-                if not (ref_tensor is None or ref_tensor in valid_input_tensor_references):
+            for postpr in out.postprocessing:
+                ref_tensor = postpr.kwargs.get("reference_tensor", None)
+                if ref_tensor is not None and ref_tensor not in valid_input_tensor_references:
                     raise PyBioValidationException(f"{ref_tensor} not found in inputs")
 
     @validates_schema
