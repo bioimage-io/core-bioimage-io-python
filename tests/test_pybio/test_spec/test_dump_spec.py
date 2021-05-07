@@ -1,8 +1,8 @@
 from copy import deepcopy
 
-from pybio.spec import load_spec, raw_nodes, schema
-from pybio.spec.utils import yaml
-from pybio.spec.utils.transformers import load_model_spec
+from bioimageio.spec import load_spec, raw_nodes, schema
+from bioimageio.spec.utils import yaml
+from bioimageio.spec.utils.transformers import load_model_spec
 
 
 def test_spec_roundtrip(rf_config_path):

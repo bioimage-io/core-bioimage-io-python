@@ -3,8 +3,8 @@ import inspect
 import typing
 from pathlib import Path
 
-import pybio.spec.schema
-from pybio.spec.fields import Dict, DocumentedField, Nested, Union
+import bioimageio.spec.schema
+from bioimageio.spec.fields import Dict, DocumentedField, Nested, Union
 
 
 @dataclasses.dataclass
@@ -42,11 +42,11 @@ def doc_from_schema(obj) -> typing.Union[typing.Dict[str, DocNode], DocNode]:
     details = []
     sub_docs = []
     required = True
-    if inspect.isclass(obj) and issubclass(obj, pybio.spec.schema.PyBioSchema):
+    if inspect.isclass(obj) and issubclass(obj, bioimageio.spec.schema.PyBioSchema):
 
         obj = obj()
 
-    if isinstance(obj, pybio.spec.schema.PyBioSchema):
+    if isinstance(obj, bioimageio.spec.schema.PyBioSchema):
 
         def sort_key(name_and_nested_field):
             name, nested_field = name_and_nested_field
@@ -116,13 +116,13 @@ def markdown_from_doc(doc: DocNode, indent: int = 0):
     return f"{type_name}{doc.description}\n{sub_doc}"
 
 
-def markdown_from_schema(schema: pybio.spec.schema.PyBioSchema) -> str:
+def markdown_from_schema(schema: bioimageio.spec.schema.PyBioSchema) -> str:
     doc = doc_from_schema(schema)
     return markdown_from_doc(doc)
 
 
 def export_markdown_docs(folder: Path):
-    doc = markdown_from_schema(pybio.spec.schema.Model())
+    doc = markdown_from_schema(bioimageio.spec.schema.Model())
     (folder / "bioimageio_model_spec.md").write_text(doc, encoding="utf-8")
 
 

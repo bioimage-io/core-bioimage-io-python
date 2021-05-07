@@ -13,7 +13,7 @@ format_version: 0.1.0
 language: python
 framework: scikit-learn
 
-source: pybio.sklearn.models.RandomForestClassifier
+source: bioimageio.sklearn.models.RandomForestClassifier
 optional_kwargs:
   n_estimators: 10
   criterion: gini
@@ -74,8 +74,8 @@ training:
             transformations:
               - spec: ../../transformations/NormalizeZeroMeanUnitVariance.transformation.yaml
 
-  source: pybio.core.training.classic_fit.classic_fit
-  required_kwargs: [pybio_model]
+  source: bioimageio.core.training.classic_fit.classic_fit
+  required_kwargs: [bioimageio_model]
   optional_kwargs: {start: 0, batch_size: 1}
   # enable different ways of specifying the dependencies.
   # this would hold all training dependencies, e.g. as a frozen conda environment

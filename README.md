@@ -18,7 +18,7 @@ pip install git+https://github.com/bioimage-io/python-bioimage-io
 
 You can verify a model configuration in the [bioimage.io model format]() using the following command:
 ```
-python -m pybio.spec verify-spec <MY-MODEL>.model.yaml
+python -m bioimageio.spec verify-spec <MY-MODEL>.model.yaml
 ```
 The output of this command will indicate missing or invalid fields in the model file. For example, if the field `timestamp` was missing it would print the following:
 ```

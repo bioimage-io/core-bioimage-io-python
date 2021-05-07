@@ -1,6 +1,6 @@
 import numpy
 
-from pybio.runners.base import ModelInferenceRunner
+from bioimageio.runners.base import ModelInferenceRunner
 
 
 class TestInferenceRunner:

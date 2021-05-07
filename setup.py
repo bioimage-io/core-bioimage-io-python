@@ -5,7 +5,7 @@ from setuptools import find_namespace_packages, setup
 long_description = (Path(__file__).parent / "README.md").read_text(encoding="utf-8")
 
 setup(
-    name="pybio",
+    name="bioimageio",
     version="0.3b",
     description="Parser library for bioimage model zoo specs",
     long_description=long_description,
