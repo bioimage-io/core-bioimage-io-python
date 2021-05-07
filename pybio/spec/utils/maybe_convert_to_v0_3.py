@@ -43,12 +43,14 @@ def maybe_convert_to_v0_3(data: Dict) -> Dict:
     try:
         future = data["config"]["future"].pop("0.3.0")
     except KeyError:
-        conversion_errors["config"]["future"]["0.3.0"] = missing
         future = {}
 
     try:
         future.update(data["config"]["future"].pop("0.3.1"))
     except KeyError:
+        pass
+
+    if not future:
         conversion_errors["config"]["future"]["0.3.1"] = missing
 
     try:
