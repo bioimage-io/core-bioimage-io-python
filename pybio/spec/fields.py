@@ -162,7 +162,7 @@ class Union(DocumentedField, marshmallow_union.Union):
 class Axes(String):
     def _deserialize(self, *args, **kwargs) -> str:
         axes_str = super()._deserialize(*args, **kwargs)
-        valid_axes = self.metadata.get("valid_axes", "bczyx")
+        valid_axes = self.metadata.get("valid_axes", "bitczyx")
         if any(a not in valid_axes for a in axes_str):
             raise PyBioValidationException(f"Invalid axes! Valid axes consist of: {valid_axes}")
 
@@ -319,8 +319,6 @@ class SpecURI(Nested):
     def _deserialize(self, value, attr, data, **kwargs):
         uri = urlparse(value)
 
-        if not uri.path:
-            raise PyBioValidationException(f"Invalid URI: {uri_str}. Missing path.")
         if uri.query:
             raise PyBioValidationException(f"Invalid URI: {value}. We do not support query: {uri.query}")
         if uri.fragment:
@@ -356,8 +354,6 @@ class URI(String):
         uri_str = super()._deserialize(*args, **kwargs)
         uri = urlparse(uri_str)
 
-        if not uri.path:
-            raise PyBioValidationException(f"Invalid URI: {uri_str}. Missing path.")
         if uri.fragment:
             raise PyBioValidationException(f"Invalid URI: {uri_str}. We do not support fragment: {uri.fragment}")
         if uri.params:

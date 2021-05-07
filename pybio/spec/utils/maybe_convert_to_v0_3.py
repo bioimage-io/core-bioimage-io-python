@@ -13,6 +13,9 @@ def maybe_convert_to_v0_3(data: Dict) -> Dict:
     if format_version is None:
         warnings.warn("No spec format_version specified")
         format_version = "0.1.0"
+    elif format_version == "0.3.0":
+        # no breaking change, bump to 0.3.1
+        data["format_version"] = "0.3.1"
 
     if data["format_version"] != "0.1.0":
         return data
@@ -20,7 +23,7 @@ def maybe_convert_to_v0_3(data: Dict) -> Dict:
     schema_v0_1.Model().validate(data)
 
     data = copy.deepcopy(data)
-    data["format_version"] = "0.3.0"
+    data["format_version"] = "0.3.1"
 
     data["kwargs"] = {k: None for k in data.pop("required_kwargs", set())}
     data["kwargs"].update(data.pop("optional_kwargs", {}))
@@ -40,8 +43,15 @@ def maybe_convert_to_v0_3(data: Dict) -> Dict:
     try:
         future = data["config"]["future"].pop("0.3.0")
     except KeyError:
-        conversion_errors["config"]["future"]["0.3.0"] = missing
         future = {}
+
+    try:
+        future.update(data["config"]["future"].pop("0.3.1"))
+    except KeyError:
+        pass
+
+    if not future:
+        conversion_errors["config"]["future"]["0.3.1"] = missing
 
     try:
         data["git_repo"] = future.pop("git_repo")
@@ -120,7 +130,8 @@ def maybe_convert_to_v0_3(data: Dict) -> Dict:
     del data["prediction"]
     del data["training"]
     # remove 'future' from config if no other than the used future entries exist
-    if not data.get("config", {}).get("future"):
-        del data["config"]["future"]
+    config = data.get("config", {})
+    if config.get("future") == {}:
+        del config["future"]
 
     return data
