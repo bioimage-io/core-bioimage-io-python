@@ -157,10 +157,10 @@ def build_spec(
     # generate general fields
     #
     format_version = '0.3.1'  # TODO get this from somewhere central
-    timestamp = datetime.datetime.now().isoformat()
+    timestamp = datetime.datetime.now()
 
     model = raw_nodes.Model(
-        source=source,
+        source=None if source is None else raw_nodes.URI(source),
         sha256=source_hash,
         kwargs=model_kwargs,
         format_version=format_version,
