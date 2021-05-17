@@ -3,7 +3,7 @@ import datetime
 import hashlib
 import numpy as np
 
-import pybio.spec.raw_nodes as raw_nodes
+import bioimageio.spec.raw_nodes as raw_nodes
 
 #
 # utility functions to build the spec from python
@@ -27,18 +27,19 @@ def _get_hash(path):
         return hashlib.sha256(data).hexdigest()
 
 
-def _get_weights(weight_uri, weight_type):
+def _get_weights(weight_uri, weight_type, source):
     assert weight_type is not None, "Weight type detection not supported"
-    weight_path = _ensure_uri(weight_uri)
 
     # TODO try to auto-dectect the weight type
     # TODO add the other weight types and get this from somwhere central
     weight_types = (
         'pytorch_state_dict',
+        'pickle'
     )
+    weight_path = _ensure_uri(weight_uri)
+    weight_hash = _get_hash(weight_path)
 
     if weight_type == 'pytorch_state_dict':
-        weight_hash = _get_hash(weight_path)
         weights = raw_nodes.WeightsEntry(
             authors=None,
             attachments=None,
@@ -51,10 +52,31 @@ def _get_weights(weight_uri, weight_type):
         weights = {'pytorch_state_dict': weights}
         language = 'python'
         framework = 'pytorch'
+
+        # pytorch-state-dict -> we need a source file
+        # generate sha256 for the source file
+        assert source is not None
+        source_path = _ensure_uri(source.split("::")[0])
+        source_hash = _get_hash(source_path)
+    elif weight_type == 'pickle':
+        weights = raw_nodes.WeightsEntry(
+            authors=None,
+            attachments=None,
+            parent=None,
+            opset_version=None,
+            tensorflow_version=None,
+            source=weight_uri,
+            sha256=weight_hash,
+        )
+        weights = {'pickle': weights}
+        language = 'python'
+        framework = 'scikit-learn'
+
+        source_hash = None
     else:
         raise ValueError(f"Invalid weight type {weight_type}, expect one of {weight_types}")
 
-    return weights, language, framework
+    return weights, language, framework, source_hash
 
 
 # TODO optional
@@ -95,10 +117,6 @@ def build_spec(
     # generate the model specific fields
     #
 
-    # generate sha256
-    source_path = _ensure_uri(source.split("::")[0])
-    source_hash = _get_hash(source_path)
-
     # check the test inputs and auto-generate input/  output description from test inputs / outputs
     if isinstance(test_inputs, list):
         assert isinstance(test_outputs, list)
@@ -111,8 +129,6 @@ def build_spec(
     for test_in, test_out in zip(test_inputs, test_outputs):
         test_in, test_out = _ensure_uri(test_in), _ensure_uri(test_out)
         test_in, test_out = np.load(test_in), np.load(test_out)
-        assert test_in.ndim in (4, 5)
-        assert test_out.ndim in (4, 5)
 
     # TODO enable over-riding with optional arguments
     # TODO description, preprocessing from optional arguments
@@ -135,7 +151,7 @@ def build_spec(
         halo=None
     )
 
-    weights, language, framework = _get_weights(weight_path, weight_type)
+    weights, language, framework, source_hash = _get_weights(weight_uri, weight_type, source)
 
     #
     # generate general fields
