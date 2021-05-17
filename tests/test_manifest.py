@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from pybio.spec import load_spec, utils
+from bioimageio.spec import load_spec, utils
 
 MANIFEST_PATH = Path(__file__).parent / "../manifest.yaml"
 
@@ -23,7 +23,7 @@ def pytest_generate_tests(metafunc):
 def required_spec_kwargs():
     kwargs = yaml.safe_load(
         """
-specs/models/sklearnbased/RandomForestClassifierBroadNucleusDataBinarized.model.yaml: 
+specs/models/sklearnbased/RandomForestClassifierBroadNucleusDataBinarized.model.yaml:
     kwargs:
         channel_indices: [1]
     """
@@ -37,7 +37,7 @@ specs/models/sklearnbased/RandomForestClassifierBroadNucleusDataBinarized.model.
     return kwargs
 
 
-def test_load_specs_from_manifest(cache_path, category, spec_path, required_spec_kwargs):
+def test_load_specs_from_manifest(category, spec_path, required_spec_kwargs):
     spec_path = MANIFEST_PATH.parent / spec_path
     assert spec_path.exists()
 

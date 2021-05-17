@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 from ruamel.yaml import YAML
 
-from pybio.spec.utils.transformers import load_and_resolve_spec
+from bioimageio.spec.utils.transformers import load_and_resolve_spec
 
 yaml = YAML(typ="safe")
 

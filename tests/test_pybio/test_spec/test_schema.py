@@ -1,7 +1,7 @@
 import pytest
 from datetime import datetime
 
-from pybio.spec import nodes, schema
+from bioimageio.spec import nodes, schema
 
 
 def test_tensor_schema_preprocessing():
