@@ -41,7 +41,7 @@ outputs:
 language: python
 framework: scikit-learn
 
-source: pybio.sklearn.models.RandomForestClassifier
+source: bioimageio.sklearn.models.RandomForestClassifier
 kwargs:
   n_estimators: 10
   criterion: gini

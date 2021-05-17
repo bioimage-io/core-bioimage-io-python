@@ -6,9 +6,9 @@ import pytest
 from marshmallow import post_load
 from ruamel.yaml import YAML
 
-from pybio.spec import fields, nodes, raw_nodes, schema
-from pybio.spec.utils import load_model_spec
-from pybio.spec.utils.transformers import (
+from bioimageio.spec import fields, nodes, raw_nodes, schema
+from bioimageio.spec.utils import load_model_spec
+from bioimageio.spec.utils.transformers import (
     ImportedSource,
     NodeTransformer,
     NodeVisitor,

@@ -1,7 +1,7 @@
 from marshmallow import ValidationError
 from pytest import raises
 
-from pybio.spec import schema
+from bioimageio.spec import schema
 
 
 class TestPreprocessing:
