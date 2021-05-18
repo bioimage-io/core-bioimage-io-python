@@ -30,7 +30,7 @@ def test_build_spec_torch(rf_config_path):
         dependencies=source['dependencies'],
         weight_type='pickle'
     )
-
-    # TODO fix this
     serialized = schema.Model().dump(raw_model)
-    print(type(serialized))
+
+    # TODO test that dicts agree properly
+    assert type(serialized) == type(source)

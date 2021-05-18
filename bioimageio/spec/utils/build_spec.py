@@ -4,15 +4,11 @@ import hashlib
 import numpy as np
 
 import bioimageio.spec.raw_nodes as raw_nodes
+import bioimageio.spec.fields as fields
 
 #
 # utility functions to build the spec from python
 #
-
-
-# TODO refactor common stuff here
-def _build_spec():
-    pass
 
 
 # TODO this should handle both local file paths and urls and download the url somwhere temp
@@ -159,8 +155,11 @@ def build_spec(
     format_version = '0.3.1'  # TODO get this from somewhere central
     timestamp = datetime.datetime.now()
 
+    if source is not None:
+        source = fields.ImportableSource().deserialize(source)
+
     model = raw_nodes.Model(
-        source=None if source is None else raw_nodes.URI(source),
+        source=source,
         sha256=source_hash,
         kwargs=model_kwargs,
         format_version=format_version,
