@@ -1,8 +1,8 @@
 import os
 import datetime
 import hashlib
-import numpy as np
 
+import numpy as np
 import bioimageio.spec.raw_nodes as raw_nodes
 import bioimageio.spec.fields as fields
 
@@ -12,8 +12,10 @@ import bioimageio.spec.fields as fields
 
 
 # TODO this should handle both local file paths and urls and download the url somwhere temp
-def _ensure_uri(uri):
-    assert os.path.exists(uri)
+def _ensure_uri(uri, root=None):
+    if not os.path.exists(uri) and root is not None:
+        uri = os.path.join(root, uri)
+    assert os.path.exists(uri), uri
     return uri
 
 
@@ -23,7 +25,7 @@ def _get_hash(path):
         return hashlib.sha256(data).hexdigest()
 
 
-def _get_weights(weight_uri, weight_type, source):
+def _get_weights(weight_uri, weight_type, source, root):
     assert weight_type is not None, "Weight type detection not supported"
 
     # TODO try to auto-dectect the weight type
@@ -32,7 +34,7 @@ def _get_weights(weight_uri, weight_type, source):
         'pytorch_state_dict',
         'pickle'
     )
-    weight_path = _ensure_uri(weight_uri)
+    weight_path = _ensure_uri(weight_uri, root)
     weight_hash = _get_hash(weight_path)
 
     if weight_type == 'pytorch_state_dict':
@@ -52,7 +54,7 @@ def _get_weights(weight_uri, weight_type, source):
         # pytorch-state-dict -> we need a source file
         # generate sha256 for the source file
         assert source is not None
-        source_path = _ensure_uri(source.split("::")[0])
+        source_path = _ensure_uri(source.split("::")[0], root)
         source_hash = _get_hash(source_path)
     elif weight_type == 'pickle':
         weights = raw_nodes.WeightsEntry(
@@ -93,6 +95,7 @@ def build_spec(
     documentation,
     covers,
     dependencies,
+    root=None,
     # model specific optional
     weight_type=None,
     sample_inputs=None,
@@ -123,7 +126,7 @@ def build_spec(
         raise ValueError("Invalid input tensor URI")
 
     for test_in, test_out in zip(test_inputs, test_outputs):
-        test_in, test_out = _ensure_uri(test_in), _ensure_uri(test_out)
+        test_in, test_out = _ensure_uri(test_in, root), _ensure_uri(test_out, root)
         test_in, test_out = np.load(test_in), np.load(test_out)
 
     # TODO enable over-riding with optional arguments
@@ -147,7 +150,9 @@ def build_spec(
         halo=None
     )
 
-    weights, language, framework, source_hash = _get_weights(weight_uri, weight_type, source)
+    (weights, language,
+     framework, source_hash) = _get_weights(weight_uri, weight_type,
+                                            source, root)
 
     #
     # generate general fields

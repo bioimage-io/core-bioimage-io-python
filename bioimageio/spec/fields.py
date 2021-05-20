@@ -217,7 +217,7 @@ class ImportableSource(String):
 
             module_path, object_name = parts
 
-            return raw_nodes.ImportablePath(callable_name=object_name, filepath=module_path)
+            return raw_nodes.ImportablePath(callable_name=object_name, filepath=pathlib.Path(module_path))
         else:
             raise ValidationError(source_str)
 
