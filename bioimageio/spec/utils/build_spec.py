@@ -39,13 +39,8 @@ def _get_weights(weight_uri, weight_type, source, root):
 
     if weight_type == 'pytorch_state_dict':
         weights = raw_nodes.WeightsEntry(
-            authors=None,
-            attachments=None,
-            parent=None,
-            opset_version=None,
-            tensorflow_version=None,
             source=weight_uri,
-            sha256=weight_hash,
+            sha256=weight_hash
         )
         weights = {'pytorch_state_dict': weights}
         language = 'python'
@@ -58,13 +53,8 @@ def _get_weights(weight_uri, weight_type, source, root):
         source_hash = _get_hash(source_path)
     elif weight_type == 'pickle':
         weights = raw_nodes.WeightsEntry(
-            authors=None,
-            attachments=None,
-            parent=None,
-            opset_version=None,
-            tensorflow_version=None,
             source=weight_uri,
-            sha256=weight_hash,
+            sha256=weight_hash
         )
         weights = {'pickle': weights}
         language = 'python'
@@ -106,8 +96,8 @@ def build_spec(
     git_repo=None,
     attachments=None,
     packaged_by=None,
-    parent=None,
     run_mode=None,
+    parent=None,
     config=None
 ):
     """
@@ -163,6 +153,16 @@ def build_spec(
     if source is not None:
         source = fields.ImportableSource().deserialize(source)
 
+    # optional kwargs, don't pass them if none
+    optional_kwargs = {'git_repo': git_repo, 'attachments': attachments,
+                       'packaged_by': packaged_by, 'parent': parent,
+                       'run_mode': run_mode, 'config': config,
+                       'sample_inputs': sample_inputs,
+                       'sample_outputs': sample_outputs}
+    kwargs = {
+        k: v for k, v in optional_kwargs.items() if v is not None
+    }
+
     model = raw_nodes.Model(
         source=source,
         sha256=source_hash,
@@ -172,70 +172,19 @@ def build_spec(
         description=description,
         authors=authors,
         cite=[] if cite is None else cite,
-        git_repo=git_repo,
         tags=tags,
         license=license,
         documentation=documentation,
         covers=covers,
-        attachments=attachments,
         language=language,
         framework=framework,
         dependencies=dependencies,
         timestamp=timestamp,
-        run_mode=run_mode,
-        config=config,
         weights=weights,
         inputs=[inputs],
         outputs=[outputs],
         test_inputs=test_inputs,
         test_outputs=test_outputs,
-        sample_inputs=None,
-        sample_outputs=None
+        **kwargs
     )
     return model
-
-
-# just a quick local test
-if __name__ == '__main__':
-    import torch
-    import imageio
-    from torch_em.model import UNet2d
-
-    model_kwargs = {"in_channels": 1, "out_channels": 2, "initial_features": 8}
-    weight_path = "/home/pape/Work/my_projects/torch-em/experiments/dsb/checkpoints/dsb-boundary-model/weights.pt"
-
-    model = UNet2d(**model_kwargs)
-    state = torch.load(weight_path)
-    model.load_state_dict(state)
-
-    test_inp = './test_input.npy'
-    test_outp = './test_output.npy'
-
-    im_path = os.path.join('/home/pape/Work/data/data_science_bowl/dsb2018/test/images',
-                           '0bda515e370294ed94efd36bd53782288acacb040c171df2ed97fd691fc9d8fe.tif')
-    im = np.asarray(imageio.imread(im_path))
-    inp = im[None, None].astype('float32')
-    np.save(test_inp, inp)
-
-    with torch.no_grad():
-        outp = model(torch.from_numpy(inp))
-    outp = outp.numpy()
-    np.save(test_outp, outp)
-
-    model_spec = build_spec(
-        source='/home/pape/Work/my_projects/torch-em/torch_em/model/unet.py::UNet2d',
-        model_kwargs=model_kwargs,
-        weight_uri=weight_path,
-        weight_type="pytorch_state_dict",
-        test_inputs=test_inp,
-        test_outputs=test_outp,
-        name="Unet2dDSB",
-        description="A unet trained on DSB",
-        authors=["Constantin Pape"],
-        tags=["nuclei"],
-        license="MIT",
-        documentation="not_documented.md",
-        covers=["no covers"],
-        dependencies="conda:./no_deps.yaml"
-    )
-    print(model_spec)
