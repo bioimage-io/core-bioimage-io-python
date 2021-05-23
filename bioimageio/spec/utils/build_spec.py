@@ -1,6 +1,7 @@
 import os
 import datetime
 import hashlib
+from typing import Dict, List, Optional, Union
 
 import numpy as np
 import bioimageio.spec.raw_nodes as raw_nodes
@@ -67,71 +68,108 @@ def _get_weights(weight_uri, weight_type, source, root):
     return weights, language, framework, source_hash
 
 
-# TODO enable different shape specification and description
-def _get_input_tensor(test_in, preprocessing):
-    kwargs = {} if preprocessing is None else {'preprocessing': preprocessing}
+def _get_input_tensor(test_in, name, step, min_shape, preprocessing):
+    shape = test_in.shape
+    if step is None:
+        assert min_shape is None
+        shape_description = shape
+    else:
+        shape_description = {
+            'min': shape if min_shape is None else min_shape,
+            'step': step
+        }
+
+    kwargs = {}
+    if preprocessing is None:
+        kwargs['preprocessing'] = preprocessing
+
     inputs = raw_nodes.InputTensor(
-        name='input',
+        name='input' if name is None else name,
         data_type=str(test_in.dtype),
         axes='bczyx' if test_in.ndim == 5 else 'bcyx',
-        shape=test_in.shape,
+        shape=shape_description,
         **kwargs
     )
     return inputs
 
 
-# TODO enable different shape specification and description
-def _get_output_tensor(test_out, postprocessing, halo):
+def _get_output_tensor(test_out, name,
+                       reference_input, scale, offset,
+                       postprocessing, halo):
+    shape = test_out.shape
+    if reference_input is None:
+        assert scale is None
+        assert offset is None
+        shape_description = shape
+    else:
+        assert scale is not None
+        assert offset is not None
+        shape_description = {
+            'reference_input': reference_input,
+            'scale': scale,
+            'offset': offset
+        }
+
     kwargs = {}
     if postprocessing is not None:
         kwargs['postprocessing'] = postprocessing
     if halo is not None:
         kwargs['halo'] = halo
+
     outputs = raw_nodes.OutputTensor(
-        name='output',
+        name='output' if name is None else name,
         data_type=str(test_out.dtype),
         axes='bczyx' if test_out.ndim == 5 else 'bcyx',
-        shape=test_out.shape,
+        shape=shape_description,
         **kwargs
     )
     return outputs
 
 
-# TODO type-annotations
+# NOTE does not support multiple input / output tensors yet
+# to implement this we should wait for 0.4.0, see also
+# https://github.com/bioimage-io/spec-bioimage-io/issues/70#issuecomment-825737433
 def build_spec(
     # model specific required
-    source,
-    model_kwargs,
-    weight_uri,
-    test_inputs,
-    test_outputs,
+    source: str,
+    model_kwargs: Dict[str, Union[int, float, str]],
+    weight_uri: str,
+    test_inputs: List[str],
+    test_outputs: List[str],
     # general required
-    name,
-    description,
-    authors,
-    tags,
-    license,
-    documentation,
-    covers,
-    dependencies,
-    root=None,
+    name: str,
+    description: str,
+    authors: List[str],
+    tags: List[str],
+    license: str,
+    documentation: str,
+    covers: str,
+    dependencies: str,
+    root: Optional[str] = None,
     # model specific optional
-    weight_type=None,
-    sample_inputs=None,
-    sample_outputs=None,
+    weight_type: Optional[str] = None,
+    sample_inputs: Optional[str] = None,
+    sample_outputs: Optional[str] = None,
     # TODO optional arguments to over-ride the input / output tensor descriptions
     # tensor specific
-    preprocessing=None,
-    postprocessing=None,
-    halo=None,
+    input_name: Optional[str] = None,
+    input_step: Optional[List[int]] = None,
+    input_min_shape: Optional[List[int]] = None,
+    output_name: Optional[str] = None,
+    output_reference: Optional[str] = None,
+    output_scale: Optional[List[int]] = None,
+    output_offset: Optional[List[int]] = None,
+    halo: Optional[List[int]] = None,
+    preprocessing: Optional[Dict[str, Dict[str, Union[int, float, str]]]] = None,
+    postprocessing: Optional[Dict[str, Dict[str, Union[int, float, str]]]] = None,
     # general optional
-    cite=None,
-    git_repo=None,
-    attachments=None,
-    packaged_by=None,
-    run_mode=None,
-    parent=None,
-    config=None
+    cite: Optional[List[int]] = None,
+    git_repo: Optional[str] = None,
+    attachments: Optional[List[str]] = None,
+    packaged_by: Optional[List[str]] = None,
+    run_mode: Optional[str] = None,
+    parent: Optional[str] = None,
+    config=None  # TODO note sure what are the correct type hints for config
 ):
     """
     """
@@ -139,21 +177,14 @@ def build_spec(
     # generate the model specific fields
     #
 
-    # check the test inputs and auto-generate input/  output description from test inputs / outputs
-    if isinstance(test_inputs, list):
-        assert isinstance(test_outputs, list)
-    elif isinstance(test_inputs, str):
-        assert isinstance(test_outputs, str)
-        test_inputs, test_outputs = [test_inputs], [test_outputs]
-    else:
-        raise ValueError("Invalid input tensor URI")
-
+    # check the test inputs and auto-generate input/output description from test inputs/outputs
     for test_in, test_out in zip(test_inputs, test_outputs):
         test_in, test_out = _ensure_uri(test_in, root), _ensure_uri(test_out, root)
         test_in, test_out = np.load(test_in), np.load(test_out)
-
-    inputs = _get_input_tensor(test_in, preprocessing)
-    outputs = _get_output_tensor(test_out, postprocessing, halo)
+    inputs = _get_input_tensor(test_in, input_name, input_step, input_min_shape, preprocessing)
+    outputs = _get_output_tensor(test_out, output_name,
+                                 output_reference, output_scale, output_offset,
+                                 postprocessing, halo)
 
     (weights, language,
      framework, source_hash) = _get_weights(weight_uri, weight_type,
