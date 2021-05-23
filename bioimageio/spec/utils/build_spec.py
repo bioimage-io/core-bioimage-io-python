@@ -67,7 +67,36 @@ def _get_weights(weight_uri, weight_type, source, root):
     return weights, language, framework, source_hash
 
 
-# TODO optional
+# TODO enable different shape specification and description
+def _get_input_tensor(test_in, preprocessing):
+    kwargs = {} if preprocessing is None else {'preprocessing': preprocessing}
+    inputs = raw_nodes.InputTensor(
+        name='input',
+        data_type=str(test_in.dtype),
+        axes='bczyx' if test_in.ndim == 5 else 'bcyx',
+        shape=test_in.shape,
+        **kwargs
+    )
+    return inputs
+
+
+# TODO enable different shape specification and description
+def _get_output_tensor(test_out, postprocessing, halo):
+    kwargs = {}
+    if postprocessing is not None:
+        kwargs['postprocessing'] = postprocessing
+    if halo is not None:
+        kwargs['halo'] = halo
+    outputs = raw_nodes.OutputTensor(
+        name='output',
+        data_type=str(test_out.dtype),
+        axes='bczyx' if test_out.ndim == 5 else 'bcyx',
+        shape=test_out.shape,
+        **kwargs
+    )
+    return outputs
+
+
 # TODO type-annotations
 def build_spec(
     # model specific required
@@ -91,6 +120,10 @@ def build_spec(
     sample_inputs=None,
     sample_outputs=None,
     # TODO optional arguments to over-ride the input / output tensor descriptions
+    # tensor specific
+    preprocessing=None,
+    postprocessing=None,
+    halo=None,
     # general optional
     cite=None,
     git_repo=None,
@@ -119,26 +152,8 @@ def build_spec(
         test_in, test_out = _ensure_uri(test_in, root), _ensure_uri(test_out, root)
         test_in, test_out = np.load(test_in), np.load(test_out)
 
-    # TODO enable over-riding with optional arguments
-    # TODO description, preprocessing from optional arguments
-    inputs = raw_nodes.InputTensor(
-        name='input',
-        data_type=str(test_in.dtype),
-        axes=['b', 'c', 'z', 'y', 'x'] if test_in.ndim == 5 else ['b', 'c', 'y', 'x'],
-        shape=test_in.shape,
-        preprocessing=None
-    )
-
-    # TODO enable over-riding with optional arguments
-    # TODO description, halo, postprocessing from optional arguments
-    outputs = raw_nodes.OutputTensor(
-        name='output',
-        data_type=str(test_out.dtype),
-        axes=['b', 'c', 'z', 'y', 'x'] if test_out.ndim == 5 else ['b', 'c', 'y', 'x'],
-        shape=test_out.shape,
-        postprocessing=None,
-        halo=None
-    )
+    inputs = _get_input_tensor(test_in, preprocessing)
+    outputs = _get_output_tensor(test_out, postprocessing, halo)
 
     (weights, language,
      framework, source_hash) = _get_weights(weight_uri, weight_type,
