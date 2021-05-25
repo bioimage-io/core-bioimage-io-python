@@ -80,7 +80,7 @@ def _get_input_tensor(test_in, name, step, min_shape, preprocessing):
         }
 
     kwargs = {}
-    if preprocessing is None:
+    if preprocessing is not None:
         kwargs['preprocessing'] = preprocessing
 
     inputs = raw_nodes.InputTensor(
@@ -126,6 +126,14 @@ def _get_output_tensor(test_out, name,
     return outputs
 
 
+# TODO can we pattern match to decide if we have a url or doi?
+def _build_cite(cite):
+    citation_list = [
+        raw_nodes.CiteEntry(text=k, url=v) for k, v in cite.items()
+    ]
+    return citation_list
+
+
 # NOTE does not support multiple input / output tensors yet
 # to implement this we should wait for 0.4.0, see also
 # https://github.com/bioimage-io/spec-bioimage-io/issues/70#issuecomment-825737433
@@ -145,12 +153,12 @@ def build_spec(
     documentation: str,
     covers: str,
     dependencies: str,
+    cite: Optional[List[str]],
     root: Optional[str] = None,
     # model specific optional
     weight_type: Optional[str] = None,
     sample_inputs: Optional[str] = None,
     sample_outputs: Optional[str] = None,
-    # TODO optional arguments to over-ride the input / output tensor descriptions
     # tensor specific
     input_name: Optional[str] = None,
     input_step: Optional[List[int]] = None,
@@ -160,16 +168,15 @@ def build_spec(
     output_scale: Optional[List[int]] = None,
     output_offset: Optional[List[int]] = None,
     halo: Optional[List[int]] = None,
-    preprocessing: Optional[Dict[str, Dict[str, Union[int, float, str]]]] = None,
-    postprocessing: Optional[Dict[str, Dict[str, Union[int, float, str]]]] = None,
+    preprocessing: Optional[List[Dict[str, Dict[str, Union[int, float, str]]]]] = None,
+    postprocessing: Optional[List[Dict[str, Dict[str, Union[int, float, str]]]]] = None,
     # general optional
-    cite: Optional[List[int]] = None,
     git_repo: Optional[str] = None,
     attachments: Optional[List[str]] = None,
     packaged_by: Optional[List[str]] = None,
     run_mode: Optional[str] = None,
     parent: Optional[str] = None,
-    config=None  # TODO note sure what are the correct type hints for config
+    config=None  # TODO not sure what are the correct type hints for config
 ):
     """
     """
@@ -209,6 +216,9 @@ def build_spec(
         k: v for k, v in optional_kwargs.items() if v is not None
     }
 
+    # build the citation object
+    cite = _build_cite(cite)
+
     model = raw_nodes.Model(
         source=source,
         sha256=source_hash,
@@ -217,7 +227,7 @@ def build_spec(
         name=name,
         description=description,
         authors=authors,
-        cite=[] if cite is None else cite,
+        cite=cite,
         tags=tags,
         license=license,
         documentation=documentation,

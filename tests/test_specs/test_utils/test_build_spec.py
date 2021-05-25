@@ -14,6 +14,8 @@ def test_build_spec_torch(rf_config_path):
     test_inputs = [os.path.join(root, pp) for pp in source['test_inputs']]
     test_outputs = [os.path.join(root, pp) for pp in source['test_outputs']]
 
+    cite = {'source': 'https://citation.com'}
+
     raw_model = build_spec(
         source=source['source'],
         model_kwargs=source['kwargs'],
@@ -28,7 +30,8 @@ def test_build_spec_torch(rf_config_path):
         documentation=source['documentation'],
         covers=source['covers'],
         dependencies=source['dependencies'],
-        weight_type='pickle'
+        weight_type='pickle',
+        cite=cite
     )
     serialized = schema.Model().dump(raw_model)
 
