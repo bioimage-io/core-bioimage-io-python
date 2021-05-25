@@ -1,7 +1,7 @@
 import os
 import datetime
 import hashlib
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
 import bioimageio.spec.raw_nodes as raw_nodes
@@ -151,9 +151,9 @@ def build_spec(
     tags: List[str],
     license: str,
     documentation: str,
-    covers: str,
+    covers: List[str],
     dependencies: str,
-    cite: Optional[List[str]],
+    cite: Dict[str, str],
     root: Optional[str] = None,
     # model specific optional
     weight_type: Optional[str] = None,
@@ -176,7 +176,7 @@ def build_spec(
     packaged_by: Optional[List[str]] = None,
     run_mode: Optional[str] = None,
     parent: Optional[str] = None,
-    config=None  # TODO not sure what are the correct type hints for config
+    config: Optional[Dict[str, Any]] = None,
 ):
     """
     """
