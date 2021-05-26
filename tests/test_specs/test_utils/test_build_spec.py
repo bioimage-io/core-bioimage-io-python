@@ -3,7 +3,7 @@ from bioimageio.spec import schema
 from bioimageio.spec.utils import yaml
 
 
-def test_build_spec_torch(rf_config_path):
+def test_build_spec_pickle(rf_config_path):
     from bioimageio.spec.utils.build_spec import build_spec
     source = yaml.load(rf_config_path)
 
@@ -15,6 +15,8 @@ def test_build_spec_torch(rf_config_path):
     test_outputs = [os.path.join(root, pp) for pp in source['test_outputs']]
 
     cite = {'source': 'https://citation.com'}
+    attachments = {'files': './some_local_file',
+                   'urls': ['https://attachment1.com', 'https://attachment2.com']}
 
     raw_model = build_spec(
         source=source['source'],
@@ -31,7 +33,14 @@ def test_build_spec_torch(rf_config_path):
         covers=source['covers'],
         dependencies=source['dependencies'],
         weight_type='pickle',
-        cite=cite
+        cite=cite,
+        attachments=attachments,
+        input_name='raw',
+        input_min_shape=[1, 1],
+        input_step=[0, 0],
+        output_reference='raw',
+        output_scale=[1, 1],
+        output_offset=[0, 0]
     )
     serialized = schema.Model().dump(raw_model)
 
