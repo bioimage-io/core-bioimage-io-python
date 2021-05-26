@@ -4,8 +4,7 @@ import hashlib
 from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
-import bioimageio.spec.raw_nodes as raw_nodes
-import bioimageio.spec.fields as fields
+import bioimageio.spec as spec
 
 #
 # utility functions to build the spec from python
@@ -39,7 +38,7 @@ def _get_weights(weight_uri, weight_type, source, root):
     weight_hash = _get_hash(weight_path)
 
     if weight_type == 'pytorch_state_dict':
-        weights = raw_nodes.WeightsEntry(
+        weights = spec.raw_nodes.WeightsEntry(
             source=weight_uri,
             sha256=weight_hash
         )
@@ -53,7 +52,7 @@ def _get_weights(weight_uri, weight_type, source, root):
         source_path = _ensure_uri(source.split("::")[0], root)
         source_hash = _get_hash(source_path)
     elif weight_type == 'pickle':
-        weights = raw_nodes.WeightsEntry(
+        weights = spec.raw_nodes.WeightsEntry(
             source=weight_uri,
             sha256=weight_hash
         )
@@ -83,7 +82,7 @@ def _get_input_tensor(test_in, name, step, min_shape, preprocessing):
     if preprocessing is not None:
         kwargs['preprocessing'] = preprocessing
 
-    inputs = raw_nodes.InputTensor(
+    inputs = spec.raw_nodes.InputTensor(
         name='input' if name is None else name,
         data_type=str(test_in.dtype),
         axes='bczyx' if test_in.ndim == 5 else 'bcyx',
@@ -116,7 +115,7 @@ def _get_output_tensor(test_out, name,
     if halo is not None:
         kwargs['halo'] = halo
 
-    outputs = raw_nodes.OutputTensor(
+    outputs = spec.raw_nodes.OutputTensor(
         name='output' if name is None else name,
         data_type=str(test_out.dtype),
         axes='bczyx' if test_out.ndim == 5 else 'bcyx',
@@ -129,7 +128,7 @@ def _get_output_tensor(test_out, name,
 # TODO can we pattern match to decide if we have a url or doi?
 def _build_cite(cite):
     citation_list = [
-        raw_nodes.CiteEntry(text=k, url=v) for k, v in cite.items()
+        spec.raw_nodes.CiteEntry(text=k, url=v) for k, v in cite.items()
     ]
     return citation_list
 
@@ -172,7 +171,7 @@ def build_spec(
     postprocessing: Optional[List[Dict[str, Dict[str, Union[int, float, str]]]]] = None,
     # general optional
     git_repo: Optional[str] = None,
-    attachments: Optional[List[str]] = None,
+    attachments: Optional[Dict[str, Union[str, List[str]]]] = None,
     packaged_by: Optional[List[str]] = None,
     run_mode: Optional[str] = None,
     parent: Optional[str] = None,
@@ -204,7 +203,7 @@ def build_spec(
     timestamp = datetime.datetime.now()
 
     if source is not None:
-        source = fields.ImportableSource().deserialize(source)
+        source = spec.fields.ImportableSource().deserialize(source)
 
     # optional kwargs, don't pass them if none
     optional_kwargs = {'git_repo': git_repo, 'attachments': attachments,
@@ -219,7 +218,7 @@ def build_spec(
     # build the citation object
     cite = _build_cite(cite)
 
-    model = raw_nodes.Model(
+    model = spec.raw_nodes.Model(
         source=source,
         sha256=source_hash,
         kwargs=model_kwargs,
@@ -243,4 +242,10 @@ def build_spec(
         test_outputs=test_outputs,
         **kwargs
     )
+
+    # serialize and deserialize the raw_nodes.Model to
+    # check that all fields are well formed
+    serialized = spec.schema.Model().dump(model)
+    model = spec.schema.Model().load(serialized)
+
     return model
