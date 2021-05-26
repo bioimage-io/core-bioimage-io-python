@@ -67,7 +67,32 @@ def _get_weights(weight_uri, weight_type, source, root):
     return weights, language, framework, source_hash
 
 
-def _get_input_tensor(test_in, name, step, min_shape, preprocessing):
+def _get_data_range(data_range, dtype):
+    if data_range is None:
+        if np.issubdtype(np.dtype(dtype), np.integer):
+            min_, max_ = np.iinfo(dtype).min, np.iinfo(dtype).max
+        # for floating point numbers we assume valid range from -inf to inf
+        elif np.issubdtype(np.dtype(dtype), np.floating):
+            min_, max_ = -np.inf, np.inf
+        elif np.issubdtype(np.dtype(dtype), np.bool):
+            min_, max_ = 0, 1
+        else:
+            raise RuntimeError(f"Cannot derived data range for dtype {dtype}")
+        data_range = (min_, max_)
+    assert isinstance(data_range, (tuple, list))
+    assert len(data_range) == 2
+    return data_range
+
+
+def _get_axes(axes, ndim):
+    if axes is None:
+        assert ndim in (2, 4, 5)
+        default_axes = {2: 'bc', 4: 'bcyx', 5: 'bczyx'}
+        axes = default_axes[ndim]
+    return axes
+
+
+def _get_input_tensor(test_in, name, step, min_shape, data_range, axes, preprocessing):
     shape = test_in.shape
     if step is None:
         assert min_shape is None
@@ -78,6 +103,9 @@ def _get_input_tensor(test_in, name, step, min_shape, preprocessing):
             'step': step
         }
 
+    axes = _get_axes(axes, test_in.ndim)
+    data_range = _get_data_range(data_range, test_in.dtype)
+
     kwargs = {}
     if preprocessing is not None:
         kwargs['preprocessing'] = preprocessing
@@ -85,8 +113,9 @@ def _get_input_tensor(test_in, name, step, min_shape, preprocessing):
     inputs = spec.raw_nodes.InputTensor(
         name='input' if name is None else name,
         data_type=str(test_in.dtype),
-        axes='bczyx' if test_in.ndim == 5 else 'bcyx',
+        axes=axes,
         shape=shape_description,
+        data_range=data_range,
         **kwargs
     )
     return inputs
@@ -94,6 +123,7 @@ def _get_input_tensor(test_in, name, step, min_shape, preprocessing):
 
 def _get_output_tensor(test_out, name,
                        reference_input, scale, offset,
+                       axes, data_range,
                        postprocessing, halo):
     shape = test_out.shape
     if reference_input is None:
@@ -109,6 +139,9 @@ def _get_output_tensor(test_out, name,
             'offset': offset
         }
 
+    axes = _get_axes(axes, test_out.ndim)
+    data_range = _get_data_range(data_range, test_out.dtype)
+
     kwargs = {}
     if postprocessing is not None:
         kwargs['postprocessing'] = postprocessing
@@ -118,7 +151,8 @@ def _get_output_tensor(test_out, name,
     outputs = spec.raw_nodes.OutputTensor(
         name='output' if name is None else name,
         data_type=str(test_out.dtype),
-        axes='bczyx' if test_out.ndim == 5 else 'bcyx',
+        axes=axes,
+        data_range=data_range,
         shape=shape_description,
         **kwargs
     )
@@ -162,10 +196,14 @@ def build_spec(
     input_name: Optional[str] = None,
     input_step: Optional[List[int]] = None,
     input_min_shape: Optional[List[int]] = None,
+    input_axes: Optional[str] = None,
+    input_data_range: Optional[List[Union[int, str]]] = None,
     output_name: Optional[str] = None,
     output_reference: Optional[str] = None,
     output_scale: Optional[List[int]] = None,
     output_offset: Optional[List[int]] = None,
+    output_axes: Optional[str] = None,
+    output_data_range: Optional[List[Union[int, str]]] = None,
     halo: Optional[List[int]] = None,
     preprocessing: Optional[List[Dict[str, Dict[str, Union[int, float, str]]]]] = None,
     postprocessing: Optional[List[Dict[str, Dict[str, Union[int, float, str]]]]] = None,
@@ -187,9 +225,11 @@ def build_spec(
     for test_in, test_out in zip(test_inputs, test_outputs):
         test_in, test_out = _ensure_uri(test_in, root), _ensure_uri(test_out, root)
         test_in, test_out = np.load(test_in), np.load(test_out)
-    inputs = _get_input_tensor(test_in, input_name, input_step, input_min_shape, preprocessing)
+    inputs = _get_input_tensor(test_in, input_name, input_step, input_min_shape,
+                               input_axes, input_data_range, preprocessing)
     outputs = _get_output_tensor(test_out, output_name,
                                  output_reference, output_scale, output_offset,
+                                 output_axes, output_data_range,
                                  postprocessing, halo)
 
     (weights, language,
