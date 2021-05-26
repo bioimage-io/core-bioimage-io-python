@@ -11,11 +11,16 @@ import bioimageio.spec as spec
 #
 
 
-# TODO this should handle both local file paths and urls and download the url somwhere temp
-def _ensure_uri(uri, root=None):
-    if not os.path.exists(uri) and root is not None:
-        uri = os.path.join(root, uri)
-    assert os.path.exists(uri), uri
+def _get_local_path(uri, root=None):
+    is_local_path = os.path.exists(uri)
+    if not is_local_path and root is not None:
+        uri2 = os.path.join(root, uri)
+        if os.path.exists(uri2):
+            uri = uri2
+            is_local_path = True
+    if not is_local_path:
+        uri = spec.fields.URI().deserialize(uri)
+        uri = spec.utils.transformers._download_uri_node_to_local_path(uri).as_posix()
     return uri
 
 
@@ -25,19 +30,37 @@ def _get_hash(path):
         return hashlib.sha256(data).hexdigest()
 
 
-def _get_weights(weight_uri, weight_type, source, root):
-    assert weight_type is not None, "Weight type detection not supported"
+def _infer_weight_type(path):
+    ext = os.path.splitext(path)[-1]
+    if ext in ('.pt', '.torch'):
+        return 'pytorch_state_dict'
+    elif ext in ('.pickle', '.pkl'):
+        return 'pickle'
+    elif ext == '.onnx':
+        return 'onnx'
+    else:
+        raise ValueError(f"Could not infer weight type from extension {ext} for weight file {path}")
 
-    # TODO try to auto-dectect the weight type
-    # TODO add the other weight types and get this from somwhere central
-    weight_types = (
-        'pytorch_state_dict',
-        'pickle'
-    )
-    weight_path = _ensure_uri(weight_uri, root)
+
+# TODO extend supported weight types
+def _get_weights(weight_uri, weight_type, source, root, **kwargs):
+    weight_path = _get_local_path(weight_uri, root)
+    if weight_type is None:
+        weight_type = _infer_weight_type(weight_path)
     weight_hash = _get_hash(weight_path)
 
+    # if we have a "::" this is a python file with class specified,
+    # so we can compute the hash for it
+    if source is not None and "::" in source:
+        source_path = _get_local_path(source.split("::")[0], root)
+        source_hash = _get_hash(source_path)
+    else:
+        source_hash = None
+
+    weight_types = spec.raw_nodes.WeightsFormat
     if weight_type == 'pytorch_state_dict':
+        # pytorch-state-dict -> we need a source
+        assert source is not None
         weights = spec.raw_nodes.WeightsEntry(
             source=weight_uri,
             sha256=weight_hash
@@ -46,11 +69,6 @@ def _get_weights(weight_uri, weight_type, source, root):
         language = 'python'
         framework = 'pytorch'
 
-        # pytorch-state-dict -> we need a source file
-        # generate sha256 for the source file
-        assert source is not None
-        source_path = _ensure_uri(source.split("::")[0], root)
-        source_hash = _get_hash(source_path)
     elif weight_type == 'pickle':
         weights = spec.raw_nodes.WeightsEntry(
             source=weight_uri,
@@ -60,7 +78,31 @@ def _get_weights(weight_uri, weight_type, source, root):
         language = 'python'
         framework = 'scikit-learn'
 
-        source_hash = None
+    elif weight_type == 'onnx':
+        weights = spec.raw_nodes.WeightsEntry(
+            source=weight_uri,
+            sha256=weight_hash,
+            opset_version=kwargs.get('opset_version', 12)
+        )
+        weights = {'onnx': weights}
+        language = None
+        framework = None
+
+    elif weight_type == 'pytorch_script':
+        weights = spec.raw_nodes.WeightsEntry(
+            source=weight_uri,
+            sha256=weight_hash
+        )
+        weights = {'pytorch_script': weights}
+        if source is None:
+            language = None
+            framework = None
+        else:
+            language = 'python'
+            framework = 'pytorch'
+
+    elif weight_type in weight_types:
+        raise ValueError(f"Weight type {weight_type} is not supported yet in 'build_spec'")
     else:
         raise ValueError(f"Invalid weight type {weight_type}, expect one of {weight_types}")
 
@@ -159,7 +201,7 @@ def _get_output_tensor(test_out, name,
     return outputs
 
 
-# TODO can we pattern match to decide if we have a url or doi?
+# TODO The citation entry should be improved so that we can properly derive doi vs. url
 def _build_cite(cite):
     citation_list = [
         spec.raw_nodes.CiteEntry(text=k, url=v) for k, v in cite.items()
@@ -172,7 +214,6 @@ def _build_cite(cite):
 # https://github.com/bioimage-io/spec-bioimage-io/issues/70#issuecomment-825737433
 def build_spec(
     # model specific required
-    source: str,
     model_kwargs: Dict[str, Union[int, float, str]],
     weight_uri: str,
     test_inputs: List[str],
@@ -189,6 +230,7 @@ def build_spec(
     cite: Dict[str, str],
     root: Optional[str] = None,
     # model specific optional
+    source: Optional[str] = None,
     weight_type: Optional[str] = None,
     sample_inputs: Optional[str] = None,
     sample_outputs: Optional[str] = None,
@@ -214,6 +256,7 @@ def build_spec(
     run_mode: Optional[str] = None,
     parent: Optional[str] = None,
     config: Optional[Dict[str, Any]] = None,
+    **weight_kwargs
 ):
     """
     """
@@ -223,7 +266,7 @@ def build_spec(
 
     # check the test inputs and auto-generate input/output description from test inputs/outputs
     for test_in, test_out in zip(test_inputs, test_outputs):
-        test_in, test_out = _ensure_uri(test_in, root), _ensure_uri(test_out, root)
+        test_in, test_out = _get_local_path(test_in, root), _get_local_path(test_out, root)
         test_in, test_out = np.load(test_in), np.load(test_out)
     inputs = _get_input_tensor(test_in, input_name, input_step, input_min_shape,
                                input_axes, input_data_range, preprocessing)
@@ -234,7 +277,7 @@ def build_spec(
 
     (weights, language,
      framework, source_hash) = _get_weights(weight_uri, weight_type,
-                                            source, root)
+                                            source, root, **weight_kwargs)
 
     #
     # generate general fields
@@ -250,7 +293,8 @@ def build_spec(
                        'packaged_by': packaged_by, 'parent': parent,
                        'run_mode': run_mode, 'config': config,
                        'sample_inputs': sample_inputs,
-                       'sample_outputs': sample_outputs}
+                       'sample_outputs': sample_outputs,
+                       'framework': framework, 'language': language}
     kwargs = {
         k: v for k, v in optional_kwargs.items() if v is not None
     }
@@ -271,8 +315,6 @@ def build_spec(
         license=license,
         documentation=documentation,
         covers=covers,
-        language=language,
-        framework=framework,
         dependencies=dependencies,
         timestamp=timestamp,
         weights=weights,
