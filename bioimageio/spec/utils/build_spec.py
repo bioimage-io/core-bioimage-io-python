@@ -294,7 +294,8 @@ def build_spec(
                        'run_mode': run_mode, 'config': config,
                        'sample_inputs': sample_inputs,
                        'sample_outputs': sample_outputs,
-                       'framework': framework, 'language': language}
+                       'framework': framework, 'language': language,
+                       'source': source, 'sha256': source_hash}
     kwargs = {
         k: v for k, v in optional_kwargs.items() if v is not None
     }
@@ -303,8 +304,6 @@ def build_spec(
     cite = _build_cite(cite)
 
     model = spec.raw_nodes.Model(
-        source=source,
-        sha256=source_hash,
         kwargs=model_kwargs,
         format_version=format_version,
         name=name,
