@@ -239,7 +239,7 @@ def build_spec(
     #
     # generate general fields
     #
-    format_version = '0.3.1'  # TODO get this from somewhere central
+    format_version = spec.__version__
     timestamp = datetime.datetime.now()
 
     if source is not None:
