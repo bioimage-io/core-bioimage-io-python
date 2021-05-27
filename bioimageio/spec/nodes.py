@@ -36,29 +36,20 @@ class ImportedSource:
 
 
 @dataclass
-class WithImportedSource(raw_nodes.WithImportableSource):
-    source: ImportedSource
-
-
-@dataclass
 class Spec(raw_nodes.Spec):
     documentation: Path
     covers: List[Path]
 
 
 @dataclass
-class WithFileSource(raw_nodes.WithFileSource):
+class WeightsEntry(raw_nodes.WeightsEntry):
     source: Path
 
 
 @dataclass
-class WeightsEntry(raw_nodes.WeightsEntry, WithFileSource):
-    pass
-
-
-@dataclass
-class Model(raw_nodes.Model, WithImportedSource):
+class Model(raw_nodes.Model):
     weights: Dict[WeightsFormat, WeightsEntry]
 
+    source: ImportedSource
     test_inputs: List[Path]
     test_outputs: List[Path]

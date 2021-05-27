@@ -217,12 +217,14 @@ class ImportableSource(String):
 
             module_path, object_name = parts
 
-            return raw_nodes.ImportablePath(callable_name=object_name, filepath=module_path)
+            return raw_nodes.ImportablePath(callable_name=object_name, filepath=pathlib.Path(module_path))
         else:
             raise ValidationError(source_str)
 
     def _serialize(self, value, attr, obj, **kwargs) -> typing.Optional[str]:
-        if isinstance(value, raw_nodes.ImportableModule):
+        if value is None:
+            return None
+        elif isinstance(value, raw_nodes.ImportableModule):
             return value.module_name + "." + value.callable_name
         elif isinstance(value, raw_nodes.ImportablePath):
             return value.filepath.as_posix() + "::" + value.callable_name
