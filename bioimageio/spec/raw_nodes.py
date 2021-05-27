@@ -210,7 +210,7 @@ class Model(Spec):
     sample_inputs: List[URI] = missing
     sample_outputs: List[URI] = missing
     sha256: str = missing
-    source: Optional[ImportableSource] = None
+    source: Optional[ImportableSource] = missing
     test_inputs: List[URI] = missing
     test_outputs: List[URI] = missing
     weights: Dict[WeightsFormat, WeightsEntry] = missing
