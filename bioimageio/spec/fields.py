@@ -222,7 +222,9 @@ class ImportableSource(String):
             raise ValidationError(source_str)
 
     def _serialize(self, value, attr, obj, **kwargs) -> typing.Optional[str]:
-        if isinstance(value, raw_nodes.ImportableModule):
+        if value is None:
+            return None
+        elif isinstance(value, raw_nodes.ImportableModule):
             return value.module_name + "." + value.callable_name
         elif isinstance(value, raw_nodes.ImportablePath):
             return value.filepath.as_posix() + "::" + value.callable_name
