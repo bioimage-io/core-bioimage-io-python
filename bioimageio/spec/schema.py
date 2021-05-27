@@ -600,20 +600,20 @@ config:
     @validates_schema
     def language_and_framework_match(self, data, **kwargs):
         field_names = ("language", "framework")
-        valid_combinations = {
-            ("python", "scikit-learn"): {"requires_source": False},
-            ("python", "pytorch"): {"requires_source": True},
-            ("python", "tensorflow"): {"requires_source": False},
-            ("java", "tensorflow"): {"requires_source": False},
-        }
+        valid_combinations = [
+            ("python", "scikit-learn"),
+            ("python", "pytorch"),
+            ("python", "tensorflow"),
+            ("java", "tensorflow"),
+        ]
+        if data["source"] is None:
+            valid_combinations.append((None, None))
+            valid_combinations.append(("python", None)) # todo: in py3.9 use typing.get_args(raw_nodes.Langauge)
+            valid_combinations.append(("java", None))
+
         combination = tuple(data[name] for name in field_names)
         if combination not in valid_combinations:
             raise PyBioValidationException(f"invalid combination of {dict(zip(field_names, combination))}")
-
-        if valid_combinations[combination]["requires_source"] and data.get("source") is None:
-            raise PyBioValidationException(
-                f"{dict(zip(field_names, combination))} require source code to be specified."
-            )
 
     @validates_schema
     def source_specified_if_required(self, data, **kwargs):
