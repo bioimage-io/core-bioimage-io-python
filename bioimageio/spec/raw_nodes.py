@@ -62,13 +62,6 @@ ImportableSource = Union[ImportableModule, ImportablePath]
 
 
 @dataclass
-class WithImportableSource:
-    source: ImportableSource = missing
-    sha256: str = missing
-    kwargs: Dict[str, Any] = missing
-
-
-@dataclass
 class CiteEntry(Node):
     text: str = missing
     doi: Optional[str] = missing
@@ -188,13 +181,7 @@ class SpecURI(URI):
 
 
 @dataclass
-class WithFileSource:
-    source: URI = missing
-    sha256: str = missing
-
-
-@dataclass
-class WeightsEntry(Node, WithFileSource):
+class WeightsEntry(Node):
     authors: List[str] = missing
     attachments: Dict = missing
     parent: Optional[str] = missing
@@ -202,6 +189,8 @@ class WeightsEntry(Node, WithFileSource):
     opset_version: Optional[int] = missing
     # tag: Optional[str]  # todo: check schema. only valid for tensorflow_saved_model_bundle format
     # todo: check schema. only valid for tensorflow_saved_model_bundle format
+    sha256: str = missing
+    source: URI = missing
     tensorflow_version: Optional[distutils.version.StrictVersion] = missing
 
 
@@ -212,13 +201,16 @@ class ModelParent(Node):
 
 
 @dataclass
-class Model(Spec, WithImportableSource):
+class Model(Spec):
     inputs: List[InputTensor] = missing
+    kwargs: Dict[str, Any] = missing
     outputs: List[OutputTensor] = missing
     packaged_by: List[str] = missing
     parent: ModelParent = missing
     sample_inputs: List[URI] = missing
     sample_outputs: List[URI] = missing
+    sha256: str = missing
+    source: Optional[ImportableSource] = None
     test_inputs: List[URI] = missing
     test_outputs: List[URI] = missing
     weights: Dict[WeightsFormat, WeightsEntry] = missing

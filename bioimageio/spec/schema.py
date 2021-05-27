@@ -435,16 +435,7 @@ with open(filename, "rb") as f:
 )
 
 
-class WithFileSource(PyBioSchema):
-    source = fields.URI(required=True, bioimageio_description="Link to the source file. Preferably a url.")
-    sha256 = fields.String(
-        validate=validate.Length(equal=64),
-        missing=None,
-        bioimageio_description="SHA256 checksum of the source file specified. " + _common_sha256_hint,
-    )
-
-
-class WeightsEntry(WithFileSource):
+class WeightsEntry(PyBioSchema):
     authors = fields.List(
         fields.String,
         missing=list,
@@ -465,10 +456,14 @@ class WeightsEntry(WithFileSource):
         "is `pytorch_state_dict`. All weight entries except one (the initial set of weights resulting from training "
         "the model), need to have this field.",
     )
-    # ONNX Specific
-    opset_version = fields.Number(missing=None)
-    # tensorflow_saved_model_bundle specific
-    tensorflow_version = fields.StrictVersion(missing=None)
+    opset_version = fields.Number(missing=None)  # ONNX Specific
+    sha256 = fields.String(
+        validate=validate.Length(equal=64),
+        missing=None,
+        bioimageio_description="SHA256 checksum of the source file specified. " + _common_sha256_hint,
+    )
+    source = fields.URI(required=True, bioimageio_description="Link to the source file. Preferably a url.")
+    tensorflow_version = fields.StrictVersion(missing=None)  # tensorflow_saved_model_bundle specific
 
 
 class ModelParent(PyBioSchema):
@@ -608,7 +603,7 @@ config:
         ]
         if data["source"] is None:
             valid_combinations.append((None, None))
-            valid_combinations.append(("python", None)) # todo: in py3.9 use typing.get_args(raw_nodes.Langauge)
+            valid_combinations.append(("python", None))  # todo: in py3.9 use typing.get_args(raw_nodes.Langauge)
             valid_combinations.append(("java", None))
 
         combination = tuple(data[name] for name in field_names)

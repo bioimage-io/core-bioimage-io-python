@@ -218,8 +218,8 @@ class RawNodeTypeTransformer(NodeTransformer):
             return super().generic_transformer(node)
 
 
-def get_instance(node: nodes.WithImportedSource, **kwargs):
-    if isinstance(node, nodes.WithImportedSource):
+def get_instance(node: nodes.Model, **kwargs):
+    if isinstance(node, nodes.Model):
         if not isinstance(node.source, ImportedSource):
             raise ValueError(
                 f"Encountered unexpected node.source type {type(node.source)}. "
