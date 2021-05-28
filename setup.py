@@ -21,7 +21,7 @@ setup(
     packages=find_namespace_packages(exclude=["tests"]),  # Required
     install_requires=[
         "PyYAML>=5.2",
-        "bioimageio.spec @ git+http://github.com/bioimage-io/spec-bioimage-io#egg=bioimageio.spec",
+        "bioimageio.spec @ git+https://github.com/bioimage-io/spec-bioimage-io/tree/move_spec#egg=bioimageio.spec",  # todo: user master
         "dataclasses; python_version>='3.7.2,<3.9'",
         "imageio>=2.5",
         "marshmallow>=3.3.0,<3.5",
