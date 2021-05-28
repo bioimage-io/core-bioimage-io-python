@@ -1,6 +1,7 @@
 import dataclasses
 import importlib.util
 import logging
+import os
 import pathlib
 import subprocess
 import sys
@@ -352,8 +353,8 @@ def _(uri: str) -> LoadedSpec:
 
 
 @load_spec.register
-def _(uri: pathlib.Path):
-    return load_spec(uri.as_uri())
+def _(uri: os.PathLike):
+    return load_spec(pathlib.Path(uri).absolute().as_uri())
 
 
 @singledispatch
@@ -367,8 +368,8 @@ def _(uri: str) -> ResolvedSpec:
 
 
 @load_and_resolve_spec.register
-def _(uri: pathlib.Path) -> ResolvedSpec:
-    return load_and_resolve_spec(uri.as_uri())
+def _(uri: os.PathLike) -> ResolvedSpec:
+    return load_and_resolve_spec(pathlib.Path(uri).absolute().as_uri())
 
 
 # def cache_uri(uri_str: str, sha256: Optional[str] = None) -> pathlib.Path:
