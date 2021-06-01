@@ -20,19 +20,12 @@ setup(
     ],
     packages=find_namespace_packages(exclude=["tests"]),  # Required
     install_requires=[
-        "PyYAML>=5.2",
-        "bioimageio.spec @ git+https://github.com/bioimage-io/spec-bioimage-io/tree/move_spec#egg=bioimageio.spec",  # todo: user master
-        "dataclasses; python_version>='3.7.2,<3.9'",
+        "bioimageio.spec @ git+https://github.com/bioimage-io/spec-bioimage-io/tree/move_spec#egg=bioimageio.spec",  # todo: use master
         "imageio>=2.5",
-        "marshmallow>=3.3.0,<3.5",
-        "marshmallow_jsonschema",
-        "marshmallow_union",
-        "requests",
-        "ruamel.yaml",
-        "typer",
-        "typing-extensions",
+        "numpy",
+        "sklearn",
     ],
-    extras_require={"core": ["numpy", "sklearn", "imageio"], "test": ["pytest", "tox"], "dev": ["pre-commit"]},
+    extras_require={"test": ["pytest", "tox"], "dev": ["pre-commit"]},
     project_urls={  # Optional
         "Bug Reports": "https://github.com/bioimage-io/python-bioimage-io/issues",
         "Source": "https://github.com/bioimage-io/python-bioimage-io",
