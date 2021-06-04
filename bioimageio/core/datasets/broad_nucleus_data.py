@@ -9,9 +9,10 @@ import imageio
 import numpy
 import numpy as np
 
-from bioimageio.core.cache import PYBIO_CACHE_PATH
 from bioimageio.core.datasets.base import Dataset
 from bioimageio.spec.nodes import Axes, OutputTensor
+
+BIOIMAGEIO_CACHE_PATH = Path(os.getenv("BIOIMAGEIO_CACHE_PATH", Path.home() / "bioimageio_cache"))
 
 try:
     from typing import OrderedDict
@@ -93,7 +94,7 @@ class BroadNucleusDataBinarized(Dataset):
         return images, labels
 
     def __init__(self, subset: str = "training", **super_kwargs):
-        self.x, self.y = self.get_data(PYBIO_CACHE_PATH / "BroadNucleusDataBinarizedPyBioReader", subset)
+        self.x, self.y = self.get_data(BIOIMAGEIO_CACHE_PATH / "BroadNucleusDataBinarizedPyBioReader", subset)
         if len(self.x) != len(self.y):
             raise RuntimeError("Invalid data")
 
@@ -125,7 +126,9 @@ class BroadNucleusDataBinarized(Dataset):
 
         super().__init__(outputs=outputs, **super_kwargs)
 
-    def __getitem__(self, index: Union[Tuple[slice, slice, slice], Dict[str, Tuple[slice, slice, slice]]]) -> OrderedDict[str, numpy.ndarray]:
+    def __getitem__(
+        self, index: Union[Tuple[slice, slice, slice], Dict[str, Tuple[slice, slice, slice]]]
+    ) -> OrderedDict[str, numpy.ndarray]:
         if isinstance(index, tuple):
             index = {d: index for d in "xy"}
 

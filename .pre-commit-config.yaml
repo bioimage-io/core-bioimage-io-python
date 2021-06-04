@@ -3,11 +3,3 @@ repos:
     rev: stable
     hooks:
     - id: black
-  - repo: local
-    hooks:
-    - id: generate docs
-      name: generate docs
-      entry: python scripts/gen_spec_doc.py
-      language: system
-      always_run: true
-      pass_filenames: false

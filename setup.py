@@ -5,7 +5,7 @@ from setuptools import find_namespace_packages, setup
 long_description = (Path(__file__).parent / "README.md").read_text(encoding="utf-8")
 
 setup(
-    name="bioimageio",
+    name="bioimageio.core",
     version="0.3b",
     description="Parser library for bioimage model zoo specs",
     long_description=long_description,
@@ -20,19 +20,12 @@ setup(
     ],
     packages=find_namespace_packages(exclude=["tests"]),  # Required
     install_requires=[
-        "dataclasses; python_version>='3.7.2,<3.9'",
-        "marshmallow>=3.3.0,<3.5",
-        "marshmallow_union",
-        "marshmallow_jsonschema",
-        "PyYAML>=5.2",
-        "requests",
-        "typer",
-        "ruamel.yaml",
-        "typing-extensions",
+        "bioimageio.spec @ git+https://github.com/bioimage-io/spec-bioimage-io#egg=bioimageio.spec",
         "imageio>=2.5",
+        "numpy",
+        "sklearn",
     ],
-    extras_require={"core": ["numpy", "sklearn", "imageio"], "test": ["pytest", "tox"], "dev": ["pre-commit"]},
-    scripts=["scripts/gen_spec_doc.py"],
+    extras_require={"test": ["pytest", "tox"], "dev": ["pre-commit"]},
     project_urls={  # Optional
         "Bug Reports": "https://github.com/bioimage-io/python-bioimage-io/issues",
         "Source": "https://github.com/bioimage-io/python-bioimage-io",
