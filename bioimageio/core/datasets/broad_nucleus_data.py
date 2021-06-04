@@ -12,7 +12,7 @@ import numpy as np
 from bioimageio.core.datasets.base import Dataset
 from bioimageio.spec.nodes import Axes, OutputTensor
 
-PYBIO_CACHE_PATH = Path(os.getenv("PYBIO_CACHE_PATH", Path.home() / "bioimageio_cache"))
+BIOIMAGEIO_CACHE_PATH = Path(os.getenv("BIOIMAGEIO_CACHE_PATH", Path.home() / "bioimageio_cache"))
 
 try:
     from typing import OrderedDict
@@ -94,7 +94,7 @@ class BroadNucleusDataBinarized(Dataset):
         return images, labels
 
     def __init__(self, subset: str = "training", **super_kwargs):
-        self.x, self.y = self.get_data(PYBIO_CACHE_PATH / "BroadNucleusDataBinarizedPyBioReader", subset)
+        self.x, self.y = self.get_data(BIOIMAGEIO_CACHE_PATH / "BroadNucleusDataBinarizedPyBioReader", subset)
         if len(self.x) != len(self.y):
             raise RuntimeError("Invalid data")
 
