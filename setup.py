@@ -5,7 +5,7 @@ from setuptools import find_namespace_packages, setup
 long_description = (Path(__file__).parent / "README.md").read_text(encoding="utf-8")
 
 setup(
-    name="bioimageio",
+    name="bioimageio.core",
     version="0.3b",
     description="Parser library for bioimage model zoo specs",
     long_description=long_description,
@@ -20,7 +20,7 @@ setup(
     ],
     packages=find_namespace_packages(exclude=["tests"]),  # Required
     install_requires=[
-        "bioimageio.spec @ git+https://github.com/bioimage-io/spec-bioimage-io#egg=bioimageio.spec",  # todo: use master
+        "bioimageio.spec @ git+https://github.com/bioimage-io/spec-bioimage-io#egg=bioimageio.spec",
         "imageio>=2.5",
         "numpy",
         "sklearn",
