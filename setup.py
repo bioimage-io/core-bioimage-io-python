@@ -20,7 +20,7 @@ setup(
     ],
     packages=find_namespace_packages(exclude=["tests"]),  # Required
     install_requires=[
-        "bioimageio.spec @ git+https://github.com/bioimage-io/spec-bioimage-io/tree/move_spec#egg=bioimageio.spec",  # todo: use master
+        "bioimageio.spec @ git+https://github.com/bioimage-io/spec-bioimage-io#egg=bioimageio.spec",  # todo: use master
         "imageio>=2.5",
         "numpy",
         "sklearn",
