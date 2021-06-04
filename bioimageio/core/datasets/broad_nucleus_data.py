@@ -9,9 +9,10 @@ import imageio
 import numpy
 import numpy as np
 
-from bioimageio.core.cache import PYBIO_CACHE_PATH
 from bioimageio.core.datasets.base import Dataset
 from bioimageio.spec.nodes import Axes, OutputTensor
+
+PYBIO_CACHE_PATH = Path(os.getenv("PYBIO_CACHE_PATH", Path.home() / "bioimageio_cache"))
 
 try:
     from typing import OrderedDict
@@ -125,7 +126,9 @@ class BroadNucleusDataBinarized(Dataset):
 
         super().__init__(outputs=outputs, **super_kwargs)
 
-    def __getitem__(self, index: Union[Tuple[slice, slice, slice], Dict[str, Tuple[slice, slice, slice]]]) -> OrderedDict[str, numpy.ndarray]:
+    def __getitem__(
+        self, index: Union[Tuple[slice, slice, slice], Dict[str, Tuple[slice, slice, slice]]]
+    ) -> OrderedDict[str, numpy.ndarray]:
         if isinstance(index, tuple):
             index = {d: index for d in "xy"}
 
