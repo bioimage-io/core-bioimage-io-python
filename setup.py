@@ -7,7 +7,7 @@ long_description = (Path(__file__).parent / "README.md").read_text(encoding="utf
 setup(
     name="bioimageio.core",
     version="0.3b",
-    description="Parser library for bioimage model zoo specs",
+    description="Python functionality for the bioimage model zoo",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/bioimage-io/python-bioimage-io",
