@@ -4,8 +4,9 @@ from setuptools import find_namespace_packages, setup
 # Get the long description from the README file
 long_description = (Path(__file__).parent / "README.md").read_text(encoding="utf-8")
 
+# TODO how do we deal with different sub-packages here?
 setup(
-    name="bioimageio.core",
+    name="bioimageio.weight_converter",
     version="0.3b",
     description="Python functionality for the bioimage model zoo",
     long_description=long_description,
@@ -22,8 +23,7 @@ setup(
     install_requires=[
         "bioimageio.spec @ git+https://github.com/bioimage-io/spec-bioimage-io#egg=bioimageio.spec",
         "imageio>=2.5",
-        "numpy",
-        "sklearn",
+        "numpy"
     ],
     extras_require={"test": ["pytest", "tox"], "dev": ["pre-commit"]},
     project_urls={  # Optional

@@ -10,27 +10,28 @@ import numpy as np
 import torch
 from numpy.testing import assert_array_almost_equal
 
-from pybio.spec.utils.transformers import load_and_resolve_spec
-from pybio.spec.utils import get_instance
+import bioimageio.spec as spec
 
 
 def convert_weights_to_torchscript(
-    model_yaml: Union[str, Path],
+    model_spec: Union[str, Path, spec.raw_nodes.Model],
     output_path: Union[str, Path],
     use_tracing: bool = True
 ):
     """ Convert model weights from format 'pytorch_state_dict' to 'torchscript'.
     """
-    spec = load_and_resolve_spec(model_yaml)
+    if isinstance(model_spec, (str, Path)):
+        # TODO we probably need the root path here
+        model_spec = spec.load_model(model_spec)
 
     with torch.no_grad():
         # load input and expected output data
-        input_data = np.load(spec.test_inputs[0]).astype('float32')
+        input_data = np.load(model_spec.test_inputs[0]).astype('float32')
         input_data = torch.from_numpy(input_data)
 
         # instantiate model and get reference output
-        model = get_instance(spec)
-        state = torch.load(spec.weights['pytorch_state_dict'].source)
+        model = spec.get_nn_instance(model_spec)
+        state = torch.load(model_spec.weights['pytorch_state_dict'].source)
         model.load_state_dict(state)
 
         # get the expected output to validate the torchscript weights
