@@ -13,7 +13,7 @@ from numpy.testing import assert_array_almost_equal
 import bioimageio.spec as spec
 
 
-def convert_weights_to_torchscript(
+def convert_weights_to_pytorch_script(
     model_spec: Union[str, Path, spec.raw_nodes.Model],
     output_path: Union[str, Path],
     use_tracing: bool = True
@@ -65,9 +65,9 @@ def main():
     parser.add_argument("--tracing", "-t", default=1, type=int)
 
     args = parser.parse_args()
-    return convert_weights_to_torchscript(os.path.abspath(args.model),
-                                          args.output,
-                                          bool(args.tracing))
+    return convert_weights_to_pytorch_script(os.path.abspath(args.model),
+                                             args.output,
+                                             bool(args.tracing))
 
 
 if __name__ == '__main__':
