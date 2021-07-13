@@ -5,8 +5,10 @@ import warnings
 from pathlib import Path
 from typing import Union
 
-# TODO fail gracefully without onnxruntime
-import onnxruntime as rt
+try:
+    import onnxruntime as rt
+except ImportError:
+    rt = None
 import numpy as np
 import torch
 from numpy.testing import assert_array_almost_equal
@@ -31,9 +33,12 @@ def convert_weights_to_onnx(
         use_tracing: whether to use tracing or scripting to export the onnx format
         verbose: be verbose during the onnx export
     """
+    if rt is None:
+        raise RuntimeError("Could not find onnxruntime.")
+
     if isinstance(model_spec, (str, Path)):
-        # TODO we probably need the root path here
-        model_spec = spec.load_model(model_spec)
+        root = os.path.split(model_spec)[0]
+        model_spec = spec.load_model(Path(model_spec), root_path=root)
 
     with torch.no_grad():
         # load input and expected output data

@@ -30,4 +30,10 @@ setup(
         "Bug Reports": "https://github.com/bioimage-io/python-bioimage-io/issues",
         "Source": "https://github.com/bioimage-io/python-bioimage-io",
     },
+    entry_points={
+        "console_scripts": [
+            "bioimageio-convert_torch_to_onnx = bioimageio.weight_converter.torch.onnx:main",
+            "bioimageio-convert_torch_to_torchscript = bioimageio.weight_converter.torch.torchscript:main"
+        ]
+    }
 )
