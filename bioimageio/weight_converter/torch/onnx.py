@@ -47,6 +47,7 @@ def convert_weights_to_onnx(
 
         # instantiate and generate the expected output
         model = get_nn_instance(model_spec)
+        model.eval()
         state = torch.load(model_spec.weights['pytorch_state_dict'].source)
         model.load_state_dict(state)
         expected_output = model(input_tensor).numpy()

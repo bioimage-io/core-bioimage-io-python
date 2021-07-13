@@ -32,6 +32,7 @@ def convert_weights_to_pytorch_script(
 
         # instantiate model and get reference output
         model = get_nn_instance(model_spec)
+        model.eval()
         state = torch.load(model_spec.weights['pytorch_state_dict'].source)
         model.load_state_dict(state)
 
