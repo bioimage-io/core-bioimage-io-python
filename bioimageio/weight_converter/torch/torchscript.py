@@ -11,6 +11,7 @@ import torch
 from numpy.testing import assert_array_almost_equal
 
 import bioimageio.spec as spec
+from .utils import get_nn_instance
 
 
 def convert_weights_to_pytorch_script(
@@ -30,7 +31,7 @@ def convert_weights_to_pytorch_script(
         input_data = torch.from_numpy(input_data)
 
         # instantiate model and get reference output
-        model = spec.get_nn_instance(model_spec)
+        model = get_nn_instance(model_spec)
         state = torch.load(model_spec.weights['pytorch_state_dict'].source)
         model.load_state_dict(state)
 
