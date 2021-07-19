@@ -5,4 +5,7 @@ from marshmallow import missing
 def get_nn_instance(node, **kwargs):
     joined_kwargs = {} if node.kwargs is missing else dict(node.kwargs)  # type: ignore
     joined_kwargs.update(kwargs)
-    return node.source(**joined_kwargs)
+    model = node.source(**joined_kwargs)
+    model.eval()
+    model.cpu()
+    return model

@@ -14,6 +14,64 @@ import bioimageio.spec as spec
 from .utils import get_nn_instance
 
 
+def _check_predictions(model, scripted_model, model_spec, input_data):
+
+    def _check(expected_output, output):
+        try:
+            assert_array_almost_equal(expected_output, output, decimal=4)
+            return 0
+        except AssertionError as e:
+            msg = f"The onnx weights were exported, but results before and after conversion do not agree:\n {str(e)}"
+            warnings.warn(msg)
+            return 1
+
+    # get the expected output to validate the torchscript weights
+    expected_output = model(input_data).numpy()
+    output = scripted_model(input_data).numpy()
+
+    ret = _check(expected_output, output)
+    # check has not passed? then return immediately
+    if ret == 1:
+        return ret
+
+    # do we have fixed input size or variable?
+    # if variable, we need to check multiple sizes!
+    shape_spec = model_spec.inputs[0].shape
+    try:  # we have a variable shape
+        min_shape = shape_spec.min
+        step = shape_spec.step
+    except AttributeError:  # we have fixed shape
+        return ret
+
+    half_step = [st // 2 for st in step]
+    max_steps = 4
+    step_factor = 1
+
+    # check that input and output agree for decreasing input sizes
+    while True:
+
+        slice_ = tuple(
+            slice(None) if st == 0 else slice(step_factor * st, -step_factor * st)
+            for st in half_step
+        )
+        this_input = input_data[slice_]
+        this_shape = this_input.shape
+        if any(tsh < msh for tsh, msh in zip(this_shape, min_shape)):
+            return ret
+
+        expected_output = model(this_input).numpy()
+        output = scripted_model(this_input).numpy()
+
+        ret = _check(expected_output, output)
+        if ret == 1:
+            return ret
+        step_factor += 1
+        if step_factor > max_steps:
+            return ret
+
+    return ret
+
+
 def convert_weights_to_pytorch_script(
     model_spec: Union[str, Path, spec.raw_nodes.Model],
     output_path: Union[str, Path],
@@ -32,12 +90,8 @@ def convert_weights_to_pytorch_script(
 
         # instantiate model and get reference output
         model = get_nn_instance(model_spec)
-        model.eval()
         state = torch.load(model_spec.weights['pytorch_state_dict'].source)
         model.load_state_dict(state)
-
-        # get the expected output to validate the torchscript weights
-        expected_output = model(input_data)
 
         # make scripted model
         if use_tracing:
@@ -46,18 +100,11 @@ def convert_weights_to_pytorch_script(
             scripted_model = torch.jit.script(model)
 
         # check the scripted model
-        output = scripted_model(input_data).numpy()
+        ret = _check_predictions(model, scripted_model, model_spec, input_data)
 
     # save the torchscript model
     scripted_model.save(output_path)
-
-    try:
-        assert_array_almost_equal(expected_output, output, decimal=4)
-        return 0
-    except AssertionError as e:
-        msg = f"The onnx weights were exported, but results before and after conversion do not agree:\n {str(e)}"
-        warnings.warn(msg)
-        return 1
+    return ret
 
 
 def main():
