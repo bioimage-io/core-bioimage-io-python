@@ -14,7 +14,7 @@ import torch
 from numpy.testing import assert_array_almost_equal
 
 import bioimageio.spec as spec
-from .utils import get_nn_instance
+from .utils import load_model
 
 
 def convert_weights_to_onnx(
@@ -46,10 +46,7 @@ def convert_weights_to_onnx(
         input_tensor = torch.from_numpy(input_data)
 
         # instantiate and generate the expected output
-        model = get_nn_instance(model_spec)
-        model.eval()
-        state = torch.load(model_spec.weights['pytorch_state_dict'].source)
-        model.load_state_dict(state)
+        model = load_model(model_spec)
         expected_output = model(input_tensor).numpy()
 
         if use_tracing:

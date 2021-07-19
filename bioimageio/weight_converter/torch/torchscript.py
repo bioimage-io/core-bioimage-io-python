@@ -11,7 +11,7 @@ import torch
 from numpy.testing import assert_array_almost_equal
 
 import bioimageio.spec as spec
-from .utils import get_nn_instance
+from .utils import load_model
 
 
 def _check_predictions(model, scripted_model, model_spec, input_data):
@@ -89,9 +89,7 @@ def convert_weights_to_pytorch_script(
         input_data = torch.from_numpy(input_data)
 
         # instantiate model and get reference output
-        model = get_nn_instance(model_spec)
-        state = torch.load(model_spec.weights['pytorch_state_dict'].source)
-        model.load_state_dict(state)
+        model = load_model(model_spec)
 
         # make scripted model
         if use_tracing:
