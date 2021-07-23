@@ -64,7 +64,7 @@ def _get_weights(weight_uri, weight_type, source, root, **kwargs):
     # if we have a ":" (or deprecated "::") this is a python file with class specified,
     # so we can compute the hash for it
     if source is not None and ":" in source:
-        source_path = _get_local_path(source.replace("::", ":").split(":")[0], root)
+        source_path = _get_local_path(":".join(source.replace("::", ":").split(":")[:-1]), root)
         source_hash = _get_hash(source_path)
     else:
         source_hash = None
