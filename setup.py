@@ -4,7 +4,6 @@ from setuptools import find_namespace_packages, setup
 # Get the long description from the README file
 long_description = (Path(__file__).parent / "README.md").read_text(encoding="utf-8")
 
-# TODO how do we deal with different sub-packages here?
 setup(
     name="bioimageio.weight_converter",
     version="0.3b",
@@ -32,8 +31,8 @@ setup(
     },
     entry_points={
         "console_scripts": [
-            "bioimageio-convert_torch_to_onnx = bioimageio.weight_converter.torch.onnx:main",
-            "bioimageio-convert_torch_to_torchscript = bioimageio.weight_converter.torch.torchscript:main"
+            "bioimageio-convert_torch_to_onnx = bioimageio.core.weight_converter.torch.onnx:main",
+            "bioimageio-convert_torch_to_torchscript = bioimageio.core.weight_converter.torch.torchscript:main"
         ]
     }
 )
