@@ -18,6 +18,7 @@ class ModelAdapter(abc.ABC):
     def __init__(self, *, bioimageio_model: nodes.Model, devices=List[str]):
         ...
 
+    # todo: separate preprocessing/actual forward/postprocessing
     @abc.abstractmethod
     def forward(self, input_tensor: xr.DataArray) -> xr.DataArray:
         """
@@ -26,21 +27,6 @@ class ModelAdapter(abc.ABC):
         xarray.DataArray
         """
         ...
-
-    # Training methods
-    @property
-    def max_num_iterations(self) -> int:
-        return 0
-
-    @property
-    def iteration_count(self) -> int:
-        return 0
-
-    def set_break_callback(self, thunk: Callable[[], bool]) -> None:
-        pass
-
-    def set_max_num_iterations(self, val: int) -> None:
-        pass
 
 
 def get_weight_formats() -> List[str]:

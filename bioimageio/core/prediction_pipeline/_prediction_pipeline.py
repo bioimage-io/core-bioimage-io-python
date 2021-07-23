@@ -139,24 +139,11 @@ class _PredictionPipelineImpl(PredictionPipeline):
     def input_shape(self):
         return self._input_shape
 
+    # todo: separate preprocessing/actual forward/postprocessing
     def forward(self, input_tensor: xr.DataArray) -> xr.DataArray:
         preprocessed = self._preprocessing(input_tensor)
         prediction = self._model.forward(preprocessed)
         return self._postprocessing(prediction)
-
-    @property
-    def max_num_iterations(self) -> int:
-        return self._model.max_num_iterations
-
-    @property
-    def iteration_count(self) -> int:
-        return self._model.iteration_count
-
-    def set_break_callback(self, thunk: Callable[[], bool]) -> None:
-        self._model.set_break_callback(thunk)
-
-    def set_max_num_iterations(self, val: int) -> None:
-        self._model.set_max_num_iterations(val)
 
 
 def enforce_min_shape(min_shape, step, axes):
