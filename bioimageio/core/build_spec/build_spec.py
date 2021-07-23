@@ -9,6 +9,7 @@ from ruamel.yaml import YAML
 
 import bioimageio.spec as spec
 import bioimageio.spec.model as model_spec
+from bioimageio.spec.shared.utils import resolve_uri
 
 try:
     from typing import get_args
@@ -18,19 +19,6 @@ except ImportError:
 #
 # utility functions to build the spec from python
 #
-
-
-def _get_local_path(uri, root=None):
-    is_local_path = os.path.exists(uri)
-    if not is_local_path and root is not None:
-        uri2 = os.path.join(root, uri)
-        if os.path.exists(uri2):
-            uri = uri2
-            is_local_path = True
-    if not is_local_path:
-        uri = spec.shared.fields.URI().deserialize(uri)
-        uri = spec.shared.download_uri_to_local_path(uri).as_posix()
-    return uri
 
 
 def _get_hash(path):
@@ -56,7 +44,7 @@ def _infer_weight_type(path):
 
 
 def _get_weights(weight_uri, weight_type, source, root, **kwargs):
-    weight_path = _get_local_path(weight_uri, root)
+    weight_path = resolve_uri(weight_uri, root)
     if weight_type is None:
         weight_type = _infer_weight_type(weight_path)
     weight_hash = _get_hash(weight_path)
@@ -64,7 +52,7 @@ def _get_weights(weight_uri, weight_type, source, root, **kwargs):
     # if we have a ":" (or deprecated "::") this is a python file with class specified,
     # so we can compute the hash for it
     if source is not None and ":" in source:
-        source_path = _get_local_path(":".join(source.replace("::", ":").split(":")[:-1]), root)
+        source_path = resolve_uri(":".join(source.replace("::", ":").split(":")[:-1]), root)
         source_hash = _get_hash(source_path)
     else:
         source_hash = None
@@ -121,7 +109,12 @@ def _get_weights(weight_uri, weight_type, source, root, **kwargs):
         framework = "tensorflow"
 
     elif weight_type == "tensorflow_js":
-        weights = model_spec.raw_nodes.TensorflowJsWeightsEntry(source=weight_uri, sha256=weight_hash, **attachments)
+        weights = model_spec.raw_nodes.TensorflowJsWeightsEntry(
+            source=weight_uri,
+            sha256=weight_hash,
+            tensorflow_version=kwargs.get("tensorflow_version", "1.15"),
+            **attachments
+        )
         language = None
         framework = None
 
@@ -346,7 +339,7 @@ def build_spec(
 
     # check the test inputs and auto-generate input/output description from test inputs/outputs
     for test_in, test_out in zip(test_inputs, test_outputs):
-        test_in, test_out = _get_local_path(test_in, root), _get_local_path(test_out, root)
+        test_in, test_out = resolve_uri(test_in, root), resolve_uri(test_out, root)
         test_in, test_out = np.load(test_in), np.load(test_out)
     inputs = _get_input_tensor(
         test_in, input_name, input_step, input_min_shape, input_axes, input_data_range, preprocessing

@@ -4,13 +4,13 @@ from pathlib import Path
 from bioimageio.spec.model import schema
 from bioimageio.spec.model.converters import maybe_convert
 from bioimageio.spec.shared import yaml
+from bioimageio.spec.shared.utils import resolve_uri
 
 
-# TODO is this the proper way to do this with pytest?
 def _test_unet(url, weight_type, weight_source):
-    from bioimageio.core.build_spec import _get_local_path, build_spec
+    from bioimageio.core.build_spec import build_spec
 
-    config_path = Path(_get_local_path(url))
+    config_path = Path(resolve_uri(url))
     assert os.path.exists(config_path), config_path
     model_spec = yaml.load(Path(config_path))
     model_spec = maybe_convert(model_spec)
@@ -27,18 +27,22 @@ def _test_unet(url, weight_type, weight_source):
     cite = {entry["text"]: entry["doi"] if "doi" in entry else entry["url"] for entry in model_spec["cite"]}
 
     if weight_type == "pytorch_state_dict":
-        source_file = ("https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
-                       "unet2d_nuclei_broad/unet2d.py:UNet2d")
+        # we need to download the source code for pytorch weights
+        # and then pass the model source as local path and model class
+        source_url = ("https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
+                      "unet2d_nuclei_broad/unet2d.py")
+        resolve_uri(source_url)
+        model_source = "unet2d.py:UNet2d"
         weight_type_ = None   # the weight type can be auto-detected
     elif weight_type == "pytorch_script":
-        source_file = None
+        model_source = None
         weight_type_ = "pytorch_script"  # the weight type CANNOT be auto-detcted
     else:
-        source_file = None
+        model_source = None
         weight_type_ = None  # the weight type can be auto-detected
 
     raw_model = build_spec(
-        source=source_file,
+        source=model_source,
         model_kwargs=model_spec["kwargs"],
         weight_uri=weight_source,
         test_inputs=test_inputs,
@@ -59,9 +63,8 @@ def _test_unet(url, weight_type, weight_source):
     assert type(serialized) == type(model_spec)
 
 
-# FIXME need to download the source for this one
 def test_build_spec_pytorch(unet2d_nuclei_broad_model_url):
-    _test_unet(unet2d_nuclei_broad_model_url, "pytorch_state_dict")
+    _test_unet(unet2d_nuclei_broad_model_url, "pytorch_state_dict", None)
 
 
 def test_build_spec_onnx(unet2d_nuclei_broad_model_url):
@@ -77,9 +80,9 @@ def test_build_spec_torchscript(unet2d_nuclei_broad_model_url):
 
 
 def _test_frunet(url, weight_source):
-    from bioimageio.core.build_spec import _get_local_path, build_spec
+    from bioimageio.core.build_spec import build_spec
 
-    config_path = _get_local_path(url)
+    config_path = resolve_uri(url)
     assert os.path.exists(config_path), config_path
     source = yaml.load(Path(config_path))
     source = maybe_convert(source)
