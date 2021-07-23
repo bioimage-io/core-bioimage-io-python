@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
 import numpy as np
-from ruamel.yaml import YAML
 
 import bioimageio.spec as spec
 import bioimageio.spec.model as model_spec
@@ -219,12 +218,10 @@ def _build_cite(cite: Dict[str, str]):
     return citation_list
 
 
-# TODO we should make the name more specific: "build_model_spec"?
-# TODO maybe "build_raw_model" as it return raw_nodes.Model
 # NOTE does not support multiple input / output tensors yet
 # to implement this we should wait for 0.4.0, see also
 # https://github.com/bioimage-io/spec-bioimage-io/issues/70#issuecomment-825737433
-def build_spec(
+def build_model(
     weight_uri: str,
     test_inputs: List[str],
     test_outputs: List[str],
@@ -270,13 +267,14 @@ def build_spec(
     links: Optional[List[str]] = None,
     **weight_kwargs,
 ):
-    """Create a bioimageio.spec.model.raw_nodes.Model object that can be used to serialize a model.yaml
+    """Create a bioimageio.spec.model.raw_nodes.Model object that can be used to serialize a rdf.yaml
     in the bioimage.io format.
 
     Example usage:
     ```
     import bioimageio.spec as spec
-    model_spec = spec.build_spec(
+    import bioimageio.core.build_spec as build_spec
+    model_spec = build_spec.build_model(
         weight_uri="test_weights.pt",
         test_inputs=["./test_inputs"],
         test_outputs=["./test_outputs"],
@@ -289,7 +287,7 @@ def build_spec(
         covers=["./my_cover.png"],
         cite={"Architecture": "https://my_architecture.com"}
     )
-    spec.serialize_pec(model_spec, "model.yaml")
+    spec.save_raw_node(model_spec, "rdf.yaml")
     ```
 
     Args:
@@ -431,10 +429,3 @@ def add_weights(model, weight_uri: str, root: Optional[str] = None, weight_type:
     model = model_spec.schema.Model().load(serialized)
 
     return model
-
-
-def serialize_spec(model, out_path):  # TODO change name to include model (see build_model_spec)
-    yaml = YAML(typ="safe")
-    serialized = model_spec.schema.Model().dump(model)
-    with open(out_path, "w") as f:
-        yaml.dump(serialized, f)

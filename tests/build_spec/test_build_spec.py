@@ -8,7 +8,7 @@ from bioimageio.spec.shared.utils import resolve_uri
 
 
 def _test_unet(url, weight_type, weight_source):
-    from bioimageio.core.build_spec import build_spec
+    from bioimageio.core.build_spec import build_model
 
     config_path = Path(resolve_uri(url))
     assert os.path.exists(config_path), config_path
@@ -41,7 +41,7 @@ def _test_unet(url, weight_type, weight_source):
         model_source = None
         weight_type_ = None  # the weight type can be auto-detected
 
-    raw_model = build_spec(
+    raw_model = build_model(
         source=model_source,
         model_kwargs=model_spec["kwargs"],
         weight_uri=weight_source,
@@ -80,7 +80,7 @@ def test_build_spec_torchscript(unet2d_nuclei_broad_model_url):
 
 
 def _test_frunet(url, weight_source):
-    from bioimageio.core.build_spec import build_spec
+    from bioimageio.core.build_spec import build_model
 
     config_path = resolve_uri(url)
     assert os.path.exists(config_path), config_path
@@ -91,7 +91,7 @@ def _test_frunet(url, weight_source):
     test_outputs = ["https://github.com/deepimagej/models/raw/master/fru-net_sev_segmentation/resultImage.npy"]
     cite = {entry["text"]: entry["doi"] if "doi" in entry else entry["url"] for entry in source["cite"]}
 
-    raw_model = build_spec(
+    raw_model = build_model(
         weight_uri=weight_source,
         test_inputs=test_inputs,
         test_outputs=test_outputs,
