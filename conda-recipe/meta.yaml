@@ -35,15 +35,16 @@ requirements:
 
 test:
   imports:
-    - pybio.spec
+    - bioimageio.core
+    - bioimageio.core.build_spec
   source_files:
     - tests
   requires:
     {% for dep in setup_py_data['extras_require']['test'] %}
     - {{ dep.lower() }}
     {% endfor %}
-  # commands:
-  #   - pytest .
+  commands:
+    - pytest
 
 
 about:
