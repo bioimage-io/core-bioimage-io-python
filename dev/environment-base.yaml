@@ -1,0 +1,11 @@
+name: bio-core-dev
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - black
+  - bioimageio.spec
+  - mypy
+  - pytest
+  - python >=3.7

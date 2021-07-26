@@ -42,12 +42,9 @@ test:
     {% for dep in setup_py_data['extras_require']['test'] %}
     - {{ dep.lower() }}
     {% endfor %}
-  commands:
-    - pytest .
+  # commands:
+  #   - pytest .
 
-
-outputs:
-  - name: python-bioimage-io
 
 about:
   home: https://github.com/bioimage-io/python-bioimage-io
