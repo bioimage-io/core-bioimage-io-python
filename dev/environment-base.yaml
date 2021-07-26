@@ -6,6 +6,7 @@ channels:
 dependencies:
   - black
   - bioimageio.spec
+  - conda-build
   - mypy
   - pytest
   - python >=3.7
