@@ -1,0 +1,58 @@
+{% set setup_py_data = load_setup_py_data() %}
+
+package:
+  name: python-bioimage-io
+  version: {{ setup_py_data['version'] }}
+
+source:
+  path: ..
+
+build:
+  noarch: python
+  number: 0
+  script: "{{ PYTHON }} -m pip install --no-deps --ignore-installed ."
+
+requirements:
+  host:
+    - python >=3.7
+    - pip
+  run:
+    - python >=3.7
+    {% for dep in setup_py_data['install_requires'] %}
+    - {{ dep.lower() }}
+    {% endfor %}
+  run_constrained:
+    {% for dep in setup_py_data['extras_require']['pytorch'] %}
+    - {{ dep.lower() }}
+    {% endfor %}
+    {% for dep in setup_py_data['extras_require']['onnx'] %}
+    - {{ dep.lower() }}
+    {% endfor %}
+    {% for dep in setup_py_data['extras_require']['tensorflow'] %}
+    - {{ dep.lower() }}
+    {% endfor %}
+
+
+test:
+  imports:
+    - bioimageio.core
+    - bioimageio.core.build_spec
+  source_files:
+    - tests
+  requires:
+    {% for dep in setup_py_data['extras_require']['test'] %}
+    - {{ dep.lower() }}
+    {% endfor %}
+  commands:
+    - pytest
+
+
+about:
+  home: https://github.com/bioimage-io/python-bioimage-io
+  license: MIT
+  license_family: MIT
+  license_file: LICENSE
+  summary: 'Tools for running BioimageIO compliant neural networks in Python.'
+
+  doc_url: https://github.com/bioimage-io/python-bioimage-io
+  dev_url: https://github.com/bioimage-io/python-bioimage-io

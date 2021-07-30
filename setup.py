@@ -5,7 +5,7 @@ from setuptools import find_namespace_packages, setup
 long_description = (Path(__file__).parent / "README.md").read_text(encoding="utf-8")
 
 setup(
-    name="bioimageio.weight_converter",
+    name="bioimageio.core",
     version="0.3b",
     description="Python functionality for the bioimage model zoo",
     long_description=long_description,
@@ -19,12 +19,14 @@ setup(
         "Programming Language :: Python :: 3.8",
     ],
     packages=find_namespace_packages(exclude=["tests"]),  # Required
-    install_requires=[
-        "bioimageio.spec @ git+https://github.com/bioimage-io/spec-bioimage-io#egg=bioimageio.spec",
-        "imageio>=2.5",
-        "numpy"
-    ],
-    extras_require={"test": ["pytest", "tox"], "dev": ["pre-commit"]},
+    install_requires=["bioimageio.spec", "imageio>=2.5", "numpy", "xarray"],
+    extras_require={
+        "test": ["pytest", "tox"],
+        "dev": ["pre-commit"],
+        "pytorch": ["pytorch>=1.6", "torchvision", "cudatoolkit>=10.1"],
+        "tensorflow": ["tensorflow"],
+        "onnx": ["onnxruntime"],
+    },
     project_urls={  # Optional
         "Bug Reports": "https://github.com/bioimage-io/python-bioimage-io/issues",
         "Source": "https://github.com/bioimage-io/python-bioimage-io",
@@ -32,7 +34,7 @@ setup(
     entry_points={
         "console_scripts": [
             "bioimageio-convert_torch_to_onnx = bioimageio.core.weight_converter.torch.onnx:main",
-            "bioimageio-convert_torch_to_torchscript = bioimageio.core.weight_converter.torch.torchscript:main"
+            "bioimageio-convert_torch_to_torchscript = bioimageio.core.weight_converter.torch.torchscript:main",
         ]
-    }
+    },
 )
