@@ -13,7 +13,7 @@ from bioimageio.spec import load_resource_description
 from bioimageio.spec.model.nodes import Model
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-m", "--model", help="bioimage model source", required=True)
+parser.add_argument("-m", "--model", help="bioimage model resource (ziped package or rdf.yaml)", required=True)
 parser.add_argument(
     "-f", "--weight-format", help="weight format to use for the test", default=None, choices=get_weight_formats()
 )
