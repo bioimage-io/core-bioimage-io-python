@@ -55,9 +55,15 @@ def model_test(source: Union[Path, str], weight_format: Optional[str], decimals:
     except Exception as e:
         raise RuntimeError("Failed to process test_inputs") from e
 
+    if len(expected_outputs) > 1:
+        raise NotImplementedError(len(expected_outputs))
+
+    expected_outputs = expected_outputs[0]
+    # single tensor output for now todo: extend to multiple outputs
     try:
-        for actual, expected in zip(actual_outputs, expected_outputs):
-            assert_array_almost_equal(actual, expected, decimals)
+        assert_array_almost_equal(actual_outputs, expected_outputs, decimals)
+        # for actual, expected in zip(actual_outputs, expected_outputs):
+        #     assert_array_almost_equal(actual, expected, decimals)
     except AssertionError as e:
         raise RuntimeError("Failed to reproduce test_outputs") from e
 
