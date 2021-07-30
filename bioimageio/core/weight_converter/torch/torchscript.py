@@ -73,15 +73,15 @@ def _check_predictions(model, scripted_model, model_spec, input_data):
 
 
 def convert_weights_to_pytorch_script(
-    model_spec: Union[str, Path, spec.raw_nodes.Model],
+    model_spec: Union[str, Path, spec.model.raw_nodes.Model],
     output_path: Union[str, Path],
     use_tracing: bool = True
 ):
     """ Convert model weights from format 'pytorch_state_dict' to 'torchscript'.
     """
     if isinstance(model_spec, (str, Path)):
-        # TODO we probably need the root path here
-        model_spec = spec.load_model(model_spec)
+        root = os.path.split(model_spec)[0]
+        model_spec = spec.load_resource_description(model_spec, root_path=root)
 
     with torch.no_grad():
         # load input and expected output data
