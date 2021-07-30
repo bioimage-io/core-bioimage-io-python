@@ -2,7 +2,8 @@ from typing import Dict, List
 
 import numpy as np
 import xarray as xr
-from bioimageio.spec.model.nodes import Preprocessing, PreprocessingName
+from bioimageio.spec.model.nodes import Preprocessing
+from bioimageio.spec.model.base_nodes import PreprocessingName
 
 from ._types import Transform
 
