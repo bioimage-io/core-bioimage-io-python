@@ -1,17 +1,16 @@
 import abc
 import math
-from typing import Callable, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 import xarray as xr
 from bioimageio.spec.model import nodes
 from marshmallow import missing
 
 from ._model_adapters import ModelAdapter, create_model_adapter
-from ._postprocessing import REMOVE_BATCH_DIM, make_postprocessing
+from ._postprocessing import make_postprocessing
 # from ._preprocessing import ADD_BATCH_DIM, make_ensure_dtype_preprocessing
 from ._preprocessing import make_preprocessing
 from ._types import Transform
-from ._utils import has_batch_dim
 
 
 class PredictionPipeline(ModelAdapter):

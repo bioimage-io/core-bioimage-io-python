@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 import xarray as xr
-from bioimageio.spec.nodes import Preprocessing
+from bioimageio.spec.model.nodes import Preprocessing
 
-from tiktorch.runner.prediction_pipeline._preprocessing import ADD_BATCH_DIM, make_preprocessing
+from bioimageio.core.prediction_pipeline._preprocessing import make_preprocessing
 
 
 def test_scale_linear():
@@ -57,7 +57,7 @@ def test_zero_mean_unit_across_axes():
     )
     preprocessing = make_preprocessing([zero_mean_spec])
     result = preprocessing(data)
-    xr.testing.assert_allclose(expected, result[0])
+    xr.testing.assert_allclose(expected, result[dict(c=0)])
 
 
 def test_binarize():
@@ -94,15 +94,6 @@ def test_unknown_preprocessing_should_raise():
         make_preprocessing([mypreprocessing])
 
 
-def test_add_batch_dim():
-    add_batch = make_preprocessing([ADD_BATCH_DIM])
-
-    data = xr.DataArray(np.arange(18).reshape(2, 3, 3), dims=("c", "x", "y"))
-    result = add_batch(data)
-    assert result.shape == (1, 2, 3, 3)
-    assert result.dims == ("b", "c", "x", "y")
-
-
 def test_combination_of_preprocessing_steps_with_dims_specified():
     zero_mean_spec = Preprocessing(name="zero_mean_unit_variance", kwargs={"axes": ("x", "y")})
     data = xr.DataArray(np.arange(18).reshape(2, 3, 3), dims=("c", "x", "y"))
@@ -118,6 +109,6 @@ def test_combination_of_preprocessing_steps_with_dims_specified():
         dims=("x", "y"),
     )
 
-    preprocessing = make_preprocessing([ADD_BATCH_DIM, zero_mean_spec])
+    preprocessing = make_preprocessing([zero_mean_spec])
     result = preprocessing(data)
-    xr.testing.assert_allclose(expected, result[0][0])
+    xr.testing.assert_allclose(expected, result[dict(c=0)])
