@@ -380,7 +380,7 @@ def build_model(
         "source": source,
         "sha256": source_hash,
         "kwargs": model_kwargs,
-        "dependencies": dependencies,
+        "dependencies": f"conda:{dependencies}",
         "links": links,
     }
     kwargs = {k: v for k, v in optional_kwargs.items() if v is not None}
