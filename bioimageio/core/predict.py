@@ -11,8 +11,8 @@ from bioimageio.spec.model.nodes import Model
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-m", "--model", help="bioimage model resource (ziped package or rdf.yaml)", required=True)
-parser.add_argument("images", nargs="+", dest="image(s)", help="image to process (.npy)")
-parser.add_argument("-o", "--outputs", nargs="+", help="output image (.npy)", required=True)
+parser.add_argument("images", nargs="+", dest="image(s)", help="image(s) to process (.npy)")
+parser.add_argument("-o", "--outputs", nargs="+", dest="output(s)", help="output image(s) (.npy)", required=True)
 
 
 def main():
