@@ -101,7 +101,7 @@ def convert_weights_to_pytorch_script(
         ret = _check_predictions(model, scripted_model, model_spec, input_data)
 
     # save the torchscript model
-    scripted_model.save(output_path)
+    scripted_model.save(str(output_path))  # does not support Path, so need to cast to str
     return ret
 
 
