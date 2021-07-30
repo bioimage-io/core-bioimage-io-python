@@ -20,7 +20,7 @@ def scale_linear(tensor: xr.DataArray, *, gain, offset, axes) -> xr.DataArray:
     if scale_axes:
         gain = xr.DataArray(np.atleast_1d(gain), dims=scale_axes)
         offset = xr.DataArray(np.atleast_1d(offset), dims=scale_axes)
-    return tensor * gain + offset
+    return ensure_dtype(tensor * gain + offset, dtype="float32")
 
 
 def zero_mean_unit_variance(tensor: xr.DataArray, axes=None, eps=1.0e-6, mode="per_sample") -> xr.DataArray:
@@ -35,15 +35,15 @@ def zero_mean_unit_variance(tensor: xr.DataArray, axes=None, eps=1.0e-6, mode="p
 
     ret = (tensor - mean) / (std + 1.0e-6)
 
-    return ret
+    return ensure_dtype(ret, dtype="float32")
 
 
 def binarize(tensor: xr.DataArray, *, threshold) -> xr.DataArray:
-    return tensor > threshold
+    return ensure_dtype(tensor > threshold, dtype="float32")
 
 
 def clip(tensor: xr.DataArray, *, min: float, max: float) -> xr.DataArray:
-    return tensor.clip(min=min, max=max)
+    return ensure_dtype(tensor.clip(min=min, max=max), dtype="float32")
 
 
 def ensure_dtype(tensor: xr.DataArray, *, dtype):
@@ -53,19 +53,11 @@ def ensure_dtype(tensor: xr.DataArray, *, dtype):
     return tensor.astype(dtype)
 
 
-def add_batch_dim(tensor: xr.DataArray):
-    """
-    Add a singleton batch dimension
-    """
-    return tensor.expand_dims("b")
-
-
 KNOWN_PREPROCESSING: Dict[PreprocessingName, Transform] = {
     "scale_linear": scale_linear,
     "zero_mean_unit_variance": zero_mean_unit_variance,
     "binarize": binarize,
     "clip": clip,
-    # "__tiktorch_add_batch_dim": add_batch_dim,
     # "__tiktorch_ensure_dtype": ensure_dtype,
 }
 
