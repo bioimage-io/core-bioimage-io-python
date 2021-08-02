@@ -4,10 +4,11 @@ import bioimageio.spec as spec
 from marshmallow import missing
 
 
-def _test_build_spec(path, weight_type, tf_version=None):
+def _test_build_spec(path, weight_type, tensorflow_version=None):
     from bioimageio.core.build_spec import build_model
 
-    model_spec, root_path = spec.ensure_raw_resource_description(path, None, update_to_current_format=False)
+    model_spec, root_path = spec.ensure_raw_resource_description(path, update_to_current_format=False)
+    assert isinstance(model_spec, spec.model.raw_nodes.Model)
     weight_source = model_spec.weights[weight_type].source
 
     cite = {entry.text: entry.doi if entry.url is missing else entry.url for entry in model_spec.cite}
@@ -24,7 +25,7 @@ def _test_build_spec(path, weight_type, tf_version=None):
         model_source = None
         weight_type_ = None  # the weight type can be auto-detected
 
-    dep_file = model_spec.dependencies.file.path
+    dep_file = None if model_spec.dependencies is missing else model_spec.dependencies.file.path
     authors = [{"name": auth.name, "affiliation": auth.affiliation} for auth in model_spec.authors]
     covers = [cover.path for cover in model_spec.covers]
     kwargs = dict(
@@ -45,8 +46,8 @@ def _test_build_spec(path, weight_type, tf_version=None):
         root=root_path,
         weight_type=weight_type_
     )
-    if tf_version is not None:
-        kwargs["tf_version"] = tf_version
+    if tensorflow_version is not None:
+        kwargs["tensorflow_version"] = tensorflow_version
     raw_model = build_model(**kwargs)
     spec.model.schema.Model().dump(raw_model)
 
