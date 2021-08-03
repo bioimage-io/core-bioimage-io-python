@@ -61,7 +61,7 @@ def _get_weights(weight_uri, weight_type, source, root, **kwargs):
     else:
         attachments = {}
 
-    weight_types = model_spec.raw_nodes.WeightsFormat
+    weight_types = model_spec.base_nodes.WeightsFormat
     if weight_type == "pytorch_state_dict":
         # pytorch-state-dict -> we need a source
         assert source is not None
@@ -359,7 +359,7 @@ def build_model(
     #
     # generate general fields
     #
-    format_version = get_args(model_spec.raw_nodes.FormatVersion)[-1]
+    format_version = get_args(model_spec.base_nodes.FormatVersion)[-1]
     timestamp = datetime.datetime.now()
 
     if source is not None:

@@ -48,7 +48,7 @@ jobs:
       shell: bash -l {0}
       run: |
         conda remove --force bioimageio.spec
-        conda install -c conda-forge -y pip
+        conda install -c pytorch -c conda-forge -y pip
         pip install --no-deps git+https://github.com/bioimage-io/spec-bioimage-io
         conda develop .
     - name: pytest-base-bioimage-spec-main
