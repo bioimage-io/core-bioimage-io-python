@@ -2,6 +2,7 @@ import argparse
 import sys
 
 import numpy as np
+# FIXME this is too torch specific
 import torch.cuda
 import xarray as xr
 
@@ -30,7 +31,8 @@ def main():
         raise ValueError(f"Expected {len(model.outputs)} output images, not {len(args.outputs)}")
 
     input_tensors = [np.load(ipt) for ipt in args.images]
-    tagged_data = [xr.DataArray(ipt_tensor, dims=tuple(ipt.axes)) for ipt_tensor, ipt in zip(input_tensors, model.inputs)]
+    tagged_data = [xr.DataArray(ipt_tensor, dims=tuple(ipt.axes))
+                   for ipt_tensor, ipt in zip(input_tensors, model.inputs)]
     if len(tagged_data) > 1:
         raise NotImplementedError(len(tagged_data))
 

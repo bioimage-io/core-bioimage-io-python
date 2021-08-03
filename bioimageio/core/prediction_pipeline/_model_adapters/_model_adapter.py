@@ -1,12 +1,12 @@
 import abc
-from typing import Callable, List, Optional, Type
+from typing import List, Optional, Type
 
 import xarray as xr
 from bioimageio.spec.model import nodes
 
 #: Known weigh types in order of priority
 #: First match wins
-_WEIGHT_FORMATS = ["pytorch_state_dict", "tensorflow_saved_model_bundle", "pytorch_script", "onnx"]
+_WEIGHT_FORMATS = ["pytorch_state_dict", "tensorflow_saved_model_bundle", "pytorch_script", "onnx", "keras_hdf5"]
 
 
 class ModelAdapter(abc.ABC):
@@ -86,6 +86,11 @@ def _get_model_adapter(weight_format: str) -> Type[ModelAdapter]:
         from ._torchscript_model_adapter import TorchscriptModelAdapter
 
         return TorchscriptModelAdapter
+
+    elif weight_format == "keras_hdf5":
+        from ._tensorflow_model_adapter import KerasModelAdapter
+
+        return KerasModelAdapter
 
     else:
         raise ValueError(f"Weight format {weight_format} is not supported.")
