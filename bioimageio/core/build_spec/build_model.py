@@ -112,7 +112,7 @@ def _get_weights(weight_uri, weight_type, source, root, **kwargs):
             source=weight_uri,
             sha256=weight_hash,
             tensorflow_version=kwargs.get("tensorflow_version", "1.15"),
-            **attachments
+            **attachments,
         )
         language = None
         framework = None
@@ -380,10 +380,11 @@ def build_model(
         "source": source,
         "sha256": source_hash,
         "kwargs": model_kwargs,
-        "dependencies": dependencies,
         "links": links,
     }
     kwargs = {k: v for k, v in optional_kwargs.items() if v is not None}
+    if dependencies is not None:
+        kwargs["dependencies"] = model_spec.raw_nodes.Dependencies(manager="conda", file=Path(dependencies))
 
     # build raw_nodes objects
     authors = _build_authors(authors)
@@ -414,8 +415,9 @@ def build_model(
 
     # serialize and deserialize the raw_nodes.Model to
     # check that all fields are well formed
-    serialized = model_spec.schema.Model().dump(model)
-    model = model_spec.schema.Model().load(serialized)
+    # use export_package to make invalid absolute paths (e.g. from auto-conversion) relative
+    model_package = model_spec.export_package(model, root)
+    model = model_spec.load_raw_resource_description(model_package)
 
     return model
 

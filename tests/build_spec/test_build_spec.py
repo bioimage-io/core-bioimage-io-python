@@ -1,38 +1,22 @@
 import os
-from pathlib import Path
 
-from bioimageio.spec.model import schema
-from bioimageio.spec.model.converters import maybe_convert
-from bioimageio.spec.shared import yaml
-from bioimageio.spec.shared.utils import resolve_uri
+import bioimageio.spec as spec
+from marshmallow import missing
 
 
-def _test_unet(url, weight_type, weight_source):
+def _test_build_spec(path, weight_type, tensorflow_version=None):
     from bioimageio.core.build_spec import build_model
 
-    config_path = Path(resolve_uri(url))
-    assert os.path.exists(config_path), config_path
-    model_spec = yaml.load(Path(config_path))
-    model_spec = maybe_convert(model_spec)
+    model_spec, root_path = spec.ensure_raw_resource_description(path, update_to_current_format=False)
+    assert isinstance(model_spec, spec.model.raw_nodes.Model)
+    weight_source = model_spec.weights[weight_type].source
 
-    if weight_source is None:
-        weight_source = model_spec["weights"][weight_type]["source"]
-    test_inputs = [
-        "https://github.com/bioimage-io/pytorch-bioimage-io/raw/master/specs/models/unet2d_nuclei_broad/test_input.npy"
-    ]
-    test_outputs = [
-        "https://github.com/bioimage-io/pytorch-bioimage-io/raw/master/specs/models/unet2d_nuclei_broad/test_output.npy"
-    ]
-
-    cite = {entry["text"]: entry["doi"] if "doi" in entry else entry["url"] for entry in model_spec["cite"]}
+    cite = {entry.text: entry.doi if entry.url is missing else entry.url for entry in model_spec.cite}
 
     if weight_type == "pytorch_state_dict":
-        # we need to download the source code for pytorch weights
-        # and then pass the model source as local path and model class
-        source_url = ("https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
-                      "unet2d_nuclei_broad/unet2d.py")
-        resolve_uri(source_url)
-        model_source = "unet2d.py:UNet2d"
+        source_path = os.path.join(model_spec.source.source_file.path)
+        class_name = model_spec.source.callable_name
+        model_source = f"{source_path}:{class_name}"
         weight_type_ = None   # the weight type can be auto-detected
     elif weight_type == "pytorch_script":
         model_source = None
@@ -41,88 +25,52 @@ def _test_unet(url, weight_type, weight_source):
         model_source = None
         weight_type_ = None  # the weight type can be auto-detected
 
-    raw_model = build_model(
+    dep_file = None if model_spec.dependencies is missing else model_spec.dependencies.file.path
+    authors = [{"name": auth.name, "affiliation": auth.affiliation} for auth in model_spec.authors]
+    covers = [cover.path for cover in model_spec.covers]
+    kwargs = dict(
         source=model_source,
-        model_kwargs=model_spec["kwargs"],
+        model_kwargs=model_spec.kwargs,
         weight_uri=weight_source,
-        test_inputs=test_inputs,
-        test_outputs=test_outputs,
-        name=model_spec["name"],
-        description=model_spec["description"],
-        authors=model_spec["authors"],
-        tags=model_spec["tags"],
-        license=model_spec["license"],
-        documentation=model_spec["documentation"],
-        covers=model_spec["covers"],
-        dependencies=model_spec["dependencies"],
+        test_inputs=[inp.path for inp in model_spec.test_inputs],
+        test_outputs=[outp.path for outp in model_spec.test_outputs],
+        name=model_spec.name,
+        description=model_spec.description,
+        authors=authors,
+        tags=model_spec.tags,
+        license=model_spec.license,
+        documentation=model_spec.documentation,
+        covers=covers,
+        dependencies=dep_file,
         cite=cite,
-        root=config_path.parent,
+        root=root_path,
         weight_type=weight_type_
     )
-    serialized = schema.Model().dump(raw_model)
-    assert type(serialized) == type(model_spec)
+    if tensorflow_version is not None:
+        kwargs["tensorflow_version"] = tensorflow_version
+    raw_model = build_model(**kwargs)
+    spec.model.schema.Model().dump(raw_model)
 
 
-def test_build_spec_pytorch(unet2d_nuclei_broad_model_url):
-    _test_unet(unet2d_nuclei_broad_model_url, "pytorch_state_dict", None)
+def test_build_spec_pytorch(unet2d_nuclei_broad_model):
+    _test_build_spec(unet2d_nuclei_broad_model, "pytorch_state_dict")
 
 
-def test_build_spec_onnx(unet2d_nuclei_broad_model_url):
-    weight_source = ("https://github.com/bioimage-io/spec-bioimage-io/blob/main/example_specs/models/"
-                     "unet2d_nuclei_broad/weights.onnx")
-    _test_unet(unet2d_nuclei_broad_model_url, "onnx", weight_source)
+def test_build_spec_onnx(unet2d_nuclei_broad_model):
+    _test_build_spec(unet2d_nuclei_broad_model, "onnx")
 
 
-def test_build_spec_torchscript(unet2d_nuclei_broad_model_url):
-    weight_source = ("https://github.com/bioimage-io/spec-bioimage-io/blob/main/example_specs/"
-                     "models/unet2d_nuclei_broad/weights.pt")
-    _test_unet(unet2d_nuclei_broad_model_url, "pytorch_script", weight_source)
+def test_build_spec_torchscript(unet2d_nuclei_broad_model):
+    _test_build_spec(unet2d_nuclei_broad_model, "pytorch_script")
 
 
-def _test_frunet(url, weight_source):
-    from bioimageio.core.build_spec import build_model
-
-    config_path = resolve_uri(url)
-    assert os.path.exists(config_path), config_path
-    source = yaml.load(Path(config_path))
-    source = maybe_convert(source)
-
-    test_inputs = ["https://github.com/deepimagej/models/raw/master/fru-net_sev_segmentation/exampleImage.npy"]
-    test_outputs = ["https://github.com/deepimagej/models/raw/master/fru-net_sev_segmentation/resultImage.npy"]
-    cite = {entry["text"]: entry["doi"] if "doi" in entry else entry["url"] for entry in source["cite"]}
-
-    raw_model = build_model(
-        weight_uri=weight_source,
-        test_inputs=test_inputs,
-        test_outputs=test_outputs,
-        name=source["name"],
-        description=source["description"],
-        authors=source["authors"],
-        tags=source["tags"],
-        license=source["license"],
-        documentation=source["documentation"],
-        covers=source["covers"],
-        cite=cite,
-        tensorflow_version="1.12",
-    )
-
-    serialized = schema.Model().dump(raw_model)
-    assert type(serialized) == type(source)
+def test_build_spec_keras(FruNet_model):
+    _test_build_spec(FruNet_model, "keras_hdf5", tensorflow_version="1.12")
 
 
-def test_build_spec_keras(FruNet_model_url):
-    weight_source = "https://zenodo.org/record/4156050/files/fully_residual_dropout_segmentation.h5"
-    _test_frunet(FruNet_model_url, weight_source)
+def test_build_spec_tf(FruNet_model):
+    _test_build_spec(FruNet_model, "tensorflow_saved_model_bundle", tensorflow_version="1.12")
 
 
-def test_build_spec_tf(FruNet_model_url):
-    weight_source = "https://zenodo.org/record/4156050/files/tensorflow_saved_model_bundle.zip"
-    _test_frunet(FruNet_model_url, weight_source)
-
-
-def test_build_spec_tfjs(FruNet_model_url):
-    weight_source = (
-        "https://raw.githubusercontent.com/deepimagej/tensorflow-js-models/main/"
-        "fru-net_sev_segmentation_tf_js_model/model.json"
-    )
-    _test_frunet(FruNet_model_url, weight_source)
+def test_build_spec_tfjs(FruNet_model):
+    _test_build_spec(FruNet_model, "tensorflow_js", tensorflow_version="1.12")

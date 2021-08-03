@@ -18,7 +18,7 @@ from .utils import load_model
 
 
 def convert_weights_to_onnx(
-    model_spec: Union[str, Path, spec.raw_nodes.Model],
+    model_spec: Union[str, Path, spec.model.raw_nodes.Model],
     output_path: Union[str, Path],
     opset_version: Union[str, None] = 12,
     use_tracing: bool = True,
@@ -38,7 +38,7 @@ def convert_weights_to_onnx(
 
     if isinstance(model_spec, (str, Path)):
         root = os.path.split(model_spec)[0]
-        model_spec = spec.load_model(Path(model_spec), root_path=root)
+        model_spec = spec.load_resource_description(Path(model_spec), root_path=root)
 
     with torch.no_grad():
         # load input and expected output data
@@ -55,8 +55,13 @@ def convert_weights_to_onnx(
         else:
             raise NotImplementedError
 
+        if rt is None:
+            msg = "The onnx weights were exported, but onnx rt is not available and weights cannot be checked."
+            warnings.warn(msg)
+            return
+
         # check the onnx model
-        sess = rt.InferenceSession(output_path)
+        sess = rt.InferenceSession(str(output_path))  # does not support Path, so need to cast to str
         input_name = sess.get_inputs()[0].name
         output = sess.run(None, {input_name: input_data})[0]
 
