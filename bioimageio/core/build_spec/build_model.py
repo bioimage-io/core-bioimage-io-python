@@ -112,7 +112,7 @@ def _get_weights(weight_uri, weight_type, source, root, **kwargs):
             source=weight_uri,
             sha256=weight_hash,
             tensorflow_version=kwargs.get("tensorflow_version", "1.15"),
-            **attachments
+            **attachments,
         )
         language = None
         framework = None
@@ -380,10 +380,11 @@ def build_model(
         "source": source,
         "sha256": source_hash,
         "kwargs": model_kwargs,
-        "dependencies": None if dependencies is None else f"conda:{dependencies}",
         "links": links,
     }
     kwargs = {k: v for k, v in optional_kwargs.items() if v is not None}
+    if dependencies is not None:
+        kwargs["dependencies"] = model_spec.raw_nodes.Dependencies(manager="conda", file=Path(dependencies))
 
     # build raw_nodes objects
     authors = _build_authors(authors)
