@@ -414,8 +414,9 @@ def build_model(
 
     # serialize and deserialize the raw_nodes.Model to
     # check that all fields are well formed
-    serialized = model_spec.schema.Model().dump(model)
-    model = model_spec.schema.Model().load(serialized)
+    # use export_package to make invalid absolute paths (e.g. from auto-conversion) relative
+    model_package = model_spec.export_package(model)
+    model = model_spec.load_raw_resource_description(model_package)
 
     return model
 
