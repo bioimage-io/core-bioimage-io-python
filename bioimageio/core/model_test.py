@@ -36,9 +36,7 @@ def model_test(source: Union[Path, str], weight_format: Optional[str], devices: 
             msg += f" for weight format {weight_format}"
         raise RuntimeError(msg) from e
 
-    pipeline = create_prediction_pipeline(
-        bioimageio_model=model, devices=devices
-    )
+    pipeline = create_prediction_pipeline(bioimageio_model=model, devices=devices)
 
     try:
         inputs = [load_array(inp, inp_spec) for inp, inp_spec in zip(model.test_inputs, model.inputs)]

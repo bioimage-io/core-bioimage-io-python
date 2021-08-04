@@ -19,9 +19,7 @@ def main():
     args = parser.parse_args()
     model = load_resource_description(args.model)
     assert isinstance(model, Model)
-    prediction_pipeline = create_prediction_pipeline(
-        bioimageio_model=model, devices=args.devices
-    )
+    prediction_pipeline = create_prediction_pipeline(bioimageio_model=model, devices=args.devices)
 
     if len(args.images) != len(model.inputs):
         raise ValueError(f"Expected {len(model.inputs)} input images, not {len(args.images)}")
@@ -30,8 +28,9 @@ def main():
         raise ValueError(f"Expected {len(model.outputs)} output images, not {len(args.outputs)}")
 
     input_tensors = [np.load(ipt) for ipt in args.images]
-    tagged_data = [xr.DataArray(ipt_tensor, dims=tuple(ipt.axes))
-                   for ipt_tensor, ipt in zip(input_tensors, model.inputs)]
+    tagged_data = [
+        xr.DataArray(ipt_tensor, dims=tuple(ipt.axes)) for ipt_tensor, ipt in zip(input_tensors, model.inputs)
+    ]
     if len(tagged_data) > 1:
         raise NotImplementedError(len(tagged_data))
 
