@@ -1,17 +1,16 @@
 name: bio-core-dev
 channels:
-  - pytorch
   - conda-forge
   - defaults
 dependencies:
   - black
   - bioimageio.spec
   - conda-build
+  - h5py >=2.10,<2.11
   - mypy
   - pytest
   - python >=3.7
   - xarray
   - pytorch
-  - cpuonly
   - onnxruntime
-  - tensorflow
+  - tensorflow >=1.14,<2.0

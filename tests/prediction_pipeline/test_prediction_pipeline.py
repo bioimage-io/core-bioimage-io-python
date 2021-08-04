@@ -9,8 +9,7 @@ def _test_prediction_pipeline(model_package, weight_format):
     from bioimageio.core.prediction_pipeline import create_prediction_pipeline
 
     bio_model = spec.load_resource_description(model_package)
-    # FIXME devices need to be handled framework independent
-    pp = create_prediction_pipeline(bioimageio_model=bio_model, weight_format=weight_format, devices=["cpu"])
+    pp = create_prediction_pipeline(bioimageio_model=bio_model, weight_format=weight_format)
 
     input_tensors = [np.load(ipt) for ipt in bio_model.test_inputs]
     assert len(input_tensors) == 1
