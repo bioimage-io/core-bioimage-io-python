@@ -1,4 +1,5 @@
 import logging
+import warnings
 from typing import List, Optional
 
 import onnxruntime as rt
@@ -32,6 +33,8 @@ class ONNXModelAdapter(ModelAdapter):
         self._input_name = onnx_inputs[0].name
         # TODO onnx device management
         self.devices = []
+        if devices is not None:
+            warnings.warn(f"Device management is not implemented for onnx yet, ignoring the devices {devices}")
 
     def forward(self, input: xr.DataArray) -> xr.DataArray:
         result = self._session.run(None, {self._input_name: input.data})[0]

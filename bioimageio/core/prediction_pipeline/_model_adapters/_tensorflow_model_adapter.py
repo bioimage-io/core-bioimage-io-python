@@ -1,3 +1,4 @@
+import warnings
 import zipfile
 from typing import List, Optional
 
@@ -28,7 +29,10 @@ class TensorflowModelAdapterBase(ModelAdapter):
         self._internal_output_axes = _output.axes
 
         # TODO tf device management
+        if devices is not None:
+            warnings.warn(f"Device management is not implemented for tensorflow yet, ignoring the devices {devices}")
         self.devices = []
+
         weight_file = self.require_unzipped(spec.weights[weight_format].source)
         self.model = tf.keras.models.load_model(weight_file)
 
