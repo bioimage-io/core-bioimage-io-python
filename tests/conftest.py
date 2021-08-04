@@ -26,8 +26,10 @@ def pytest_configure():
 
 @pytest.fixture
 def unet2d_nuclei_broad_model():
-    url = ("https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/"
-           "models/unet2d_nuclei_broad/rdf.yaml")
+    url = (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/"
+        "models/unet2d_nuclei_broad/rdf.yaml"
+    )
     cached_path = export_resource_package(url)
     return cached_path
 

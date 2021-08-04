@@ -17,7 +17,7 @@ def _test_build_spec(path, weight_type, tensorflow_version=None):
         source_path = os.path.join(model_spec.source.source_file.path)
         class_name = model_spec.source.callable_name
         model_source = f"{source_path}:{class_name}"
-        weight_type_ = None   # the weight type can be auto-detected
+        weight_type_ = None  # the weight type can be auto-detected
     elif weight_type == "pytorch_script":
         model_source = None
         weight_type_ = "pytorch_script"  # the weight type CANNOT be auto-detcted
@@ -44,7 +44,7 @@ def _test_build_spec(path, weight_type, tensorflow_version=None):
         dependencies=dep_file,
         cite=cite,
         root=root_path,
-        weight_type=weight_type_
+        weight_type=weight_type_,
     )
     if tensorflow_version is not None:
         kwargs["tensorflow_version"] = tensorflow_version
