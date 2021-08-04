@@ -112,9 +112,7 @@ def main():
     parser.add_argument("--tracing", "-t", default=1, type=int)
 
     args = parser.parse_args()
-    return convert_weights_to_pytorch_script(os.path.abspath(args.model),
-                                             args.output,
-                                             bool(args.tracing))
+    return convert_weights_to_pytorch_script(args.model, args.output, bool(args.tracing))
 
 
 if __name__ == '__main__':

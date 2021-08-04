@@ -83,7 +83,7 @@ def main():
     parser.add_argument("--verbose", "-v", default=1, type=int)
 
     args = parser.parse_args()
-    return convert_weights_to_onnx(os.path.abspath(args.model),
+    return convert_weights_to_onnx(args.model,
                                    args.output,
                                    args.opset_version,
                                    bool(args.tracing),
