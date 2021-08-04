@@ -8,6 +8,7 @@ from marshmallow import missing
 
 from ._model_adapters import ModelAdapter, create_model_adapter
 from ._postprocessing import make_postprocessing
+
 # from ._preprocessing import ADD_BATCH_DIM, make_ensure_dtype_preprocessing
 from ._preprocessing import make_preprocessing
 from ._types import Transform
@@ -173,7 +174,7 @@ def enforce_min_shape(min_shape, step, axes):
 
 
 def create_prediction_pipeline(
-    *, bioimageio_model: nodes.Model, devices=List[str], weight_format: Optional[str] = None
+    *, bioimageio_model: nodes.Model, devices: Optional[List[str]] = None, weight_format: Optional[str] = None
 ) -> PredictionPipeline:
     """
     Creates prediction pipeline which includes:

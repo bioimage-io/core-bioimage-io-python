@@ -15,7 +15,6 @@ from .utils import load_model
 
 
 def _check_predictions(model, scripted_model, model_spec, input_data):
-
     def _check(expected_output, output):
         try:
             assert_array_almost_equal(expected_output, output, decimal=4)
@@ -50,10 +49,7 @@ def _check_predictions(model, scripted_model, model_spec, input_data):
     # check that input and output agree for decreasing input sizes
     while True:
 
-        slice_ = tuple(
-            slice(None) if st == 0 else slice(step_factor * st, -step_factor * st)
-            for st in half_step
-        )
+        slice_ = tuple(slice(None) if st == 0 else slice(step_factor * st, -step_factor * st) for st in half_step)
         this_input = input_data[slice_]
         this_shape = this_input.shape
         if any(tsh < msh for tsh, msh in zip(this_shape, min_shape)):
@@ -73,9 +69,7 @@ def _check_predictions(model, scripted_model, model_spec, input_data):
 
 
 def convert_weights_to_pytorch_script(
-    model_spec: Union[str, Path, spec.model.raw_nodes.Model],
-    output_path: Union[str, Path],
-    use_tracing: bool = True
+    model_spec: Union[str, Path, spec.model.raw_nodes.Model], output_path: Union[str, Path], use_tracing: bool = True
 ):
     """ Convert model weights from format 'pytorch_state_dict' to 'torchscript'.
     """
@@ -85,7 +79,7 @@ def convert_weights_to_pytorch_script(
 
     with torch.no_grad():
         # load input and expected output data
-        input_data = np.load(model_spec.test_inputs[0]).astype('float32')
+        input_data = np.load(model_spec.test_inputs[0]).astype("float32")
         input_data = torch.from_numpy(input_data)
 
         # instantiate model and get reference output
@@ -115,5 +109,5 @@ def main():
     return convert_weights_to_pytorch_script(args.model, args.output, bool(args.tracing))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 import torch
@@ -9,7 +9,7 @@ from ._model_adapter import ModelAdapter
 
 
 class TorchscriptModelAdapter(ModelAdapter):
-    def __init__(self, *, bioimageio_model: nodes.Model, devices=List[str]):
+    def __init__(self, *, bioimageio_model: nodes.Model, devices: Optional[List[str]] = None):
         spec = bioimageio_model
         self.name = spec.name
 
@@ -20,8 +20,14 @@ class TorchscriptModelAdapter(ModelAdapter):
         self._internal_output_axes = _output.axes
 
         self.devices = devices
+        if devices is None:
+            devices = ["cuda" if torch.cuda.is_available() else "cpu"]
+        else:
+            self.devices = [torch.device(d) for d in devices]
+
         weight_path = str(spec.weights["pytorch_script"].source.resolve())
         self.model = torch.jit.load(weight_path)
+        self.model.to(self.devices[0])
 
     def forward(self, batch: xr.DataArray) -> xr.DataArray:
         with torch.no_grad():
