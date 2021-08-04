@@ -1,5 +1,5 @@
 import logging
-from typing import Sequence
+from typing import List, Optional
 
 import torch
 import xarray as xr
@@ -12,11 +12,16 @@ logger = logging.getLogger(__name__)
 
 
 class PytorchModelAdapter(ModelAdapter):
-    def __init__(self, *, bioimageio_model: nodes.Model, devices=Sequence[str]):
+    def __init__(self, *, bioimageio_model: nodes.Model, devices: Optional[List[str]] = None):
         self._internal_output_axes = bioimageio_model.outputs[0].axes
         self.model = self.get_nn_instance(bioimageio_model)
-        self.devices = [torch.device(d) for d in devices]
+
+        if devices is None:
+            devices = ["cuda" if torch.cuda.is_available() else "cpu"]
+        else:
+            self.devices = [torch.device(d) for d in devices]
         self.model.to(self.devices[0])
+
         assert isinstance(self.model, torch.nn.Module)
         weights = bioimageio_model.weights.get("pytorch_state_dict")
         if weights is not None and weights.source:

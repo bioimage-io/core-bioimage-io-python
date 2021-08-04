@@ -1,16 +1,25 @@
-from typing import List
+import warnings
+import zipfile
+from typing import List, Optional
 
 import numpy as np
 import tensorflow as tf
 import xarray as xr
 
-from bioimageio.core.utils import get_nn_instance
 from bioimageio.spec.model import nodes
 from ._model_adapter import ModelAdapter
 
 
-class TensorflowModelAdapter(ModelAdapter):
-    def __init__(self, *, bioimageio_model: nodes.Model, devices=List[str]):
+class TensorflowModelAdapterBase(ModelAdapter):
+    def require_unzipped(self, weight_file):
+        if zipfile.is_zipfile(weight_file):
+            out_path = weight_file.with_suffix("")
+            with zipfile.ZipFile(weight_file, "r") as f:
+                f.extractall(out_path)
+            return out_path
+        return weight_file
+
+    def __init__(self, *, bioimageio_model: nodes.Model, weight_format: str, devices: Optional[List[str]] = None):
         spec = bioimageio_model
         self.name = spec.name
 
@@ -19,10 +28,13 @@ class TensorflowModelAdapter(ModelAdapter):
         # FIXME: TF probably uses different axis names
         self._internal_output_axes = _output.axes
 
-        self.model = get_nn_instance(bioimageio_model)
+        # TODO tf device management
+        if devices is not None:
+            warnings.warn(f"Device management is not implemented for tensorflow yet, ignoring the devices {devices}")
         self.devices = []
-        tf_model = tf.keras.models.load_model(spec.weights["tensorflow_saved_model_bundle"].source)
-        self.model.set_model(tf_model)
+
+        weight_file = self.require_unzipped(spec.weights[weight_format].source)
+        self.model = tf.keras.models.load_model(weight_file)
 
     def forward(self, input_tensor: xr.DataArray) -> xr.DataArray:
         tf_tensor = tf.convert_to_tensor(input_tensor.data)
@@ -33,3 +45,15 @@ class TensorflowModelAdapter(ModelAdapter):
             res = tf.make_ndarray(res)
 
         return xr.DataArray(res, dims=tuple(self._internal_output_axes))
+
+
+class TensorflowModelAdapter(TensorflowModelAdapterBase):
+    def __init__(self, *, bioimageio_model: nodes.Model, devices=List[str]):
+        weight_format = "tensorflow_saved_model_bundle"
+        super().__init__(bioimageio_model=bioimageio_model, weight_format=weight_format, devices=devices)
+
+
+class KerasModelAdapter(TensorflowModelAdapterBase):
+    def __init__(self, *, bioimageio_model: nodes.Model, devices=List[str]):
+        weight_format = "keras_hdf5"
+        super().__init__(bioimageio_model=bioimageio_model, weight_format=weight_format, devices=devices)
