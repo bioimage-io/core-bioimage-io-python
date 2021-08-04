@@ -13,4 +13,4 @@ dependencies:
   - xarray
   - pytorch
   - onnxruntime
-  - tensorflow >=1.14,<2.0
+  - tensorflow >=1.12,<2.0

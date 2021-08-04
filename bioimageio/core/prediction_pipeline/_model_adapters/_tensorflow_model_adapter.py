@@ -19,31 +19,66 @@ class TensorflowModelAdapterBase(ModelAdapter):
             return out_path
         return weight_file
 
-    def __init__(self, *, bioimageio_model: nodes.Model, weight_format: str, devices: Optional[List[str]] = None):
-        spec = bioimageio_model
-        self.name = spec.name
+    def _load_model(self, weight_file):
+        weight_file = self.require_unzipped(weight_file)
+        if self.use_keras_api:
+            return tf.keras.models.load_model(weight_file)
+        else:
+            # NOTE in tf1 the model needs to be loaded inside of the session, so we cannot preload the model
+            return str(weight_file)
 
-        spec.inputs[0]
-        _output = spec.outputs[0]
-        # FIXME: TF probably uses different axis names
-        self._internal_output_axes = _output.axes
+    def __init__(self, *, bioimageio_model: nodes.Model, weight_format: str, devices: Optional[List[str]] = None):
+        self.spec = bioimageio_model
+        self.name = self.spec.name
+
+        # TODO deal with missing version?
+        tf_version = self.spec.weights[weight_format].tensorflow_version.version
+        tf_major_ver = tf_version[0]
+        assert tf_major_ver in (1, 2)
+        self.use_keras_api = tf_major_ver > 1 or weight_format == "keras_hdf5"
 
         # TODO tf device management
         if devices is not None:
             warnings.warn(f"Device management is not implemented for tensorflow yet, ignoring the devices {devices}")
         self.devices = []
 
-        weight_file = self.require_unzipped(spec.weights[weight_format].source)
-        self.model = tf.keras.models.load_model(weight_file)
+        weight_file = self.require_unzipped(self.spec.weights[weight_format].source)
+        self.model = self._load_model(weight_file)
 
-    def forward(self, input_tensor: xr.DataArray) -> xr.DataArray:
-        tf_tensor = tf.convert_to_tensor(input_tensor.data)
+    def _forward_tf(self, data):
+        assert len(self.spec.inputs) == len(self.spec.outputs) == 1
+        input_key = self.spec.inputs[0].name
+        output_key = self.spec.outputs[0].name
 
+        # TODO read from spec
+        tag = tf.saved_model.tag_constants.SERVING
+
+        graph = tf.Graph()
+        with graph.as_default():
+            with tf.Session(graph=graph) as sess:
+                tf.saved_model.loader.load(sess, [tag], self.model)
+                # FIXME where do we get signature from?
+                in_name = signature[signature_key].inputs[input_key].name
+                out_name = signature[signature_key].inputs[output_key].name
+                in_tensor = graph.get_tensor_by_name(in_name)
+                out_tensor = graph.get_tensor_by_name(out_name)
+
+                res = sess.run(out_tensor, {in_tensor: data})
+
+        return res
+
+    def _forward_keras(self, data):
+        tf_tensor = tf.convert_to_tensor(data)
         res = self.model.forward(tf_tensor)
-
         if not isinstance(res, np.ndarray):
             res = tf.make_ndarray(res)
+        return res
 
+    def forward(self, input_tensor: xr.DataArray) -> xr.DataArray:
+        if self.use_keras_api:
+            res = self._forward_keras(input_tensor.data)
+        else:
+            res = self._forward_tf(input_tensor.data)
         return xr.DataArray(res, dims=tuple(self._internal_output_axes))
 
 
