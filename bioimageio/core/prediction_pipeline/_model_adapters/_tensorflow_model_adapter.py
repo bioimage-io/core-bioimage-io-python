@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 import tensorflow as tf
@@ -9,7 +9,7 @@ from ._model_adapter import ModelAdapter
 
 
 class TensorflowModelAdapterBase(ModelAdapter):
-    def __init__(self, *, bioimageio_model: nodes.Model, weight_format: str, devices=List[str]):
+    def __init__(self, *, bioimageio_model: nodes.Model, weight_format: str, devices: Optional[List[str]] = None):
         spec = bioimageio_model
         self.name = spec.name
 
@@ -18,6 +18,7 @@ class TensorflowModelAdapterBase(ModelAdapter):
         # FIXME: TF probably uses different axis names
         self._internal_output_axes = _output.axes
 
+        # TODO tf device management
         self.devices = []
         weight_file = spec.weights[weight_format].source
         self.model = tf.keras.models.load_model(weight_file)

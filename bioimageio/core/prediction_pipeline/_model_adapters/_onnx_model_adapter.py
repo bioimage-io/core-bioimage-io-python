@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import List, Optional
 
 import onnxruntime as rt
 import xarray as xr
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class ONNXModelAdapter(ModelAdapter):
-    def __init__(self, *, bioimageio_model: nodes.Model, devices=List[str]):
+    def __init__(self, *, bioimageio_model: nodes.Model, devices: Optional[List[str]] = None):
         spec = bioimageio_model
         self.name = spec.name
 
@@ -30,6 +30,7 @@ class ONNXModelAdapter(ModelAdapter):
         onnx_inputs = self._session.get_inputs()
         assert len(onnx_inputs) == 1, f"expected onnx model to have one input got {len(onnx_inputs)}"
         self._input_name = onnx_inputs[0].name
+        # TODO onnx device management
         self.devices = []
 
     def forward(self, input: xr.DataArray) -> xr.DataArray:

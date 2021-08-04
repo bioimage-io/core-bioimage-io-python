@@ -173,7 +173,7 @@ def enforce_min_shape(min_shape, step, axes):
 
 
 def create_prediction_pipeline(
-    *, bioimageio_model: nodes.Model, devices=List[str], weight_format: Optional[str] = None
+    *, bioimageio_model: nodes.Model, devices: Optional[List[str]] = None, weight_format: Optional[str] = None
 ) -> PredictionPipeline:
     """
     Creates prediction pipeline which includes:

@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Optional, Union
 
 import numpy as np
-import torch
 import xarray as xr
 from numpy.testing import assert_array_almost_equal
 
@@ -18,13 +17,14 @@ parser.add_argument(
     "-f", "--weight-format", help="weight format to use for the test", default=None, choices=get_weight_formats()
 )
 parser.add_argument("-d", "--decimals", help="test precision", default=4, type=int)
+parser.add_argument("--devices", nargs="+", help="Devices to run this model", default=None)
 
 
 def load_array(path_to_npy: Union[Path, str], spec):
     return xr.DataArray(np.load(path_to_npy), dims=tuple(spec.axes))
 
 
-def model_test(source: Union[Path, str], weight_format: Optional[str], decimals: int = 4):
+def model_test(source: Union[Path, str], weight_format: Optional[str], devices: Optional[str], decimals: int = 4):
     """Check if forward(test_input) == test_output (includes pre- and postprocessing). Raises RuntimeError."""
 
     try:
@@ -37,7 +37,7 @@ def model_test(source: Union[Path, str], weight_format: Optional[str], decimals:
         raise RuntimeError(msg) from e
 
     pipeline = create_prediction_pipeline(
-        bioimageio_model=model, devices=["cuda" if torch.cuda.is_available() else "cpu"]
+        bioimageio_model=model, devices=devices
     )
 
     try:
@@ -71,7 +71,7 @@ def model_test(source: Union[Path, str], weight_format: Optional[str], decimals:
 def main():
     args = parser.parse_args()
     try:
-        model_test(args.model, args.weight_format, args.decimals)
+        model_test(args.model, args.weight_format, args.devices, args.decimals)
     except RuntimeError as e:
         print(e)
         raise e

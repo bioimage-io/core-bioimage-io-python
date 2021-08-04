@@ -2,8 +2,6 @@ import argparse
 import sys
 
 import numpy as np
-# FIXME this is too torch specific
-import torch.cuda
 import xarray as xr
 
 from bioimageio.core.prediction_pipeline import create_prediction_pipeline
@@ -14,6 +12,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-m", "--model", help="bioimage model resource (ziped package or rdf.yaml)", required=True)
 parser.add_argument("images", nargs="+", dest="image(s)", help="image(s) to process (.npy)")
 parser.add_argument("-o", "--outputs", nargs="+", dest="output(s)", help="output image(s) (.npy)", required=True)
+parser.add_argument("--devices", nargs="+", help="Devices to run this model", default=None)
 
 
 def main():
@@ -21,7 +20,7 @@ def main():
     model = load_resource_description(args.model)
     assert isinstance(model, Model)
     prediction_pipeline = create_prediction_pipeline(
-        bioimageio_model=model, devices=["cuda" if torch.cuda.is_available() else "cpu"]
+        bioimageio_model=model, devices=args.devices
     )
 
     if len(args.images) != len(model.inputs):
