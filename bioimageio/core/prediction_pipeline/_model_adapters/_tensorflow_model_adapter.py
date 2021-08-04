@@ -1,3 +1,4 @@
+import zipfile
 from typing import List, Optional
 
 import numpy as np
@@ -9,6 +10,14 @@ from ._model_adapter import ModelAdapter
 
 
 class TensorflowModelAdapterBase(ModelAdapter):
+    def require_unzipped(self, weight_file):
+        if zipfile.is_zipfile(weight_file):
+            out_path = weight_file.with_suffix("")
+            with zipfile.ZipFile(weight_file, "r") as f:
+                f.extractall(out_path)
+            return out_path
+        return weight_file
+
     def __init__(self, *, bioimageio_model: nodes.Model, weight_format: str, devices: Optional[List[str]] = None):
         spec = bioimageio_model
         self.name = spec.name
@@ -20,7 +29,7 @@ class TensorflowModelAdapterBase(ModelAdapter):
 
         # TODO tf device management
         self.devices = []
-        weight_file = spec.weights[weight_format].source
+        weight_file = self.require_unzipped(spec.weights[weight_format].source)
         self.model = tf.keras.models.load_model(weight_file)
 
     def forward(self, input_tensor: xr.DataArray) -> xr.DataArray:
