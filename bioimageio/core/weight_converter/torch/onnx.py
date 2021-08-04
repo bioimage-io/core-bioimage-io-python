@@ -33,9 +33,6 @@ def convert_weights_to_onnx(
         use_tracing: whether to use tracing or scripting to export the onnx format
         verbose: be verbose during the onnx export
     """
-    if rt is None:
-        raise RuntimeError("Could not find onnxruntime.")
-
     if isinstance(model_spec, (str, Path)):
         root = os.path.split(model_spec)[0]
         model_spec = spec.load_resource_description(Path(model_spec), root_path=root)
@@ -57,7 +54,7 @@ def convert_weights_to_onnx(
         if rt is None:
             msg = "The onnx weights were exported, but onnx rt is not available and weights cannot be checked."
             warnings.warn(msg)
-            return
+            return 1
 
         # check the onnx model
         sess = rt.InferenceSession(str(output_path))  # does not support Path, so need to cast to str
