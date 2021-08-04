@@ -24,7 +24,7 @@ def convert_weights_to_onnx(
     use_tracing: bool = True,
     verbose: bool = True,
 ):
-    """ Convert model weights from format 'pytorch_state_dict' to 'onnx'.
+    """Convert model weights from format 'pytorch_state_dict' to 'onnx'.
 
     Arguments:
         model_yaml: location of the model.yaml file with bioimage.io spec
@@ -82,7 +82,6 @@ def main():
     return convert_weights_to_onnx(
         os.path.abspath(args.model), args.output, args.opset_version, bool(args.tracing), bool(args.verbose)
     )
-
 
 
 if __name__ == "__main__":
