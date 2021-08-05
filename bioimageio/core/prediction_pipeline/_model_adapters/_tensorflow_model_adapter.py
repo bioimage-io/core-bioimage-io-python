@@ -31,8 +31,10 @@ class TensorflowModelAdapterBase(ModelAdapter):
         self.spec = bioimageio_model
         self.name = self.spec.name
 
-        # TODO deal with missing version?
-        tf_version = self.spec.weights[weight_format].tensorflow_version.version
+        try:
+            tf_version = self.spec.weights[weight_format].tensorflow_version.version
+        except AttributeError:
+            tf_version = (1, 14, 0)
         tf_major_ver = tf_version[0]
         assert tf_major_ver in (1, 2)
         self.use_keras_api = tf_major_ver > 1 or weight_format == "keras_hdf5"
@@ -45,6 +47,8 @@ class TensorflowModelAdapterBase(ModelAdapter):
         weight_file = self.require_unzipped(self.spec.weights[weight_format].source)
         self.model = self._load_model(weight_file)
 
+    # TODO currently we relaod the model every time. it would be better to keep the graph and session
+    # alive in between of forward passes (but then the sessions need to be properly opened / closed)
     def _forward_tf(self, data):
         assert len(self.spec.inputs) == len(self.spec.outputs) == 1
         input_key = self.spec.inputs[0].name
@@ -52,17 +56,23 @@ class TensorflowModelAdapterBase(ModelAdapter):
 
         # TODO read from spec
         tag = tf.saved_model.tag_constants.SERVING
+        signature_key = tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY
 
         graph = tf.Graph()
         with graph.as_default():
             with tf.Session(graph=graph) as sess:
-                tf.saved_model.loader.load(sess, [tag], self.model)
-                # FIXME where do we get signature from?
+
+                # load the model and the signature
+                graph_def = tf.saved_model.loader.load(sess, [tag], self.model)
+                signature = graph_def.signature_def
+
+                # get the tensors into the graph
                 in_name = signature[signature_key].inputs[input_key].name
-                out_name = signature[signature_key].inputs[output_key].name
+                out_name = signature[signature_key].outputs[output_key].name
                 in_tensor = graph.get_tensor_by_name(in_name)
                 out_tensor = graph.get_tensor_by_name(out_name)
 
+                # run prediction
                 res = sess.run(out_tensor, {in_tensor: data})
 
         return res
