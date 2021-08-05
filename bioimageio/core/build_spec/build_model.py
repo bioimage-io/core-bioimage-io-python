@@ -221,7 +221,7 @@ def _build_cite(cite: Dict[str, str]):
 
 def _extract_zip(zip_path, name, out_path):
     with ZipFile(zip_path) as z:
-        with open(out_path, 'w') as f:
+        with open(out_path, "w") as f:
             f.write(z.read(name).decode("utf-8"))
 
 
