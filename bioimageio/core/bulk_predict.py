@@ -162,7 +162,7 @@ def main():
 
     padding = args.padding
     if padding is not None:
-        padding = json.loads(padding.replace("'", "\""))
+        padding = json.loads(padding.replace("'", '"'))
         assert isinstance(padding, dict)
 
     for input_ in tqdm(input_files):

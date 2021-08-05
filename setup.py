@@ -37,7 +37,7 @@ setup(
         "console_scripts": [
             "bioimageio-convert_torch_to_onnx = bioimageio.core.weight_converter.torch.onnx:main",
             "bioimageio-convert_torch_to_torchscript = bioimageio.core.weight_converter.torch.torchscript:main",
-            "bioimageio-bulk_predict = bioimageio.core.bulk_predict:main"
+            "bioimageio-bulk_predict = bioimageio.core.bulk_predict:main",
         ]
     },
 )
