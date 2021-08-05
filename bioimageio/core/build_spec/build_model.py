@@ -8,7 +8,7 @@ import numpy as np
 
 import bioimageio.spec as spec
 import bioimageio.spec.model as model_spec
-from bioimageio.spec.shared.utils import resolve_uri
+from bioimageio.core.resource_io.utils import resolve_uri
 
 try:
     from typing import get_args
