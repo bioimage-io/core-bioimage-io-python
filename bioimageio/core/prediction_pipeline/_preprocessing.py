@@ -23,6 +23,7 @@ def scale_linear(tensor: xr.DataArray, *, gain, offset, axes) -> xr.DataArray:
     return ensure_dtype(tensor * gain + offset, dtype="float32")
 
 
+# TODO accept mean and std as arguments
 def zero_mean_unit_variance(tensor: xr.DataArray, axes=None, eps=1.0e-6, mode="per_sample") -> xr.DataArray:
     if axes:
         axes = tuple(axes)
@@ -30,6 +31,8 @@ def zero_mean_unit_variance(tensor: xr.DataArray, axes=None, eps=1.0e-6, mode="p
     else:
         mean, std = tensor.mean(), tensor.std()
 
+    # valid modes according to spec: "per_sample", "per_dataset", "fixed"
+    # TODO implement per_dataset and fixed
     if mode != "per_sample":
         raise NotImplementedError(f"Unsupported mode for zero_mean_unit_variance: {mode}")
 
@@ -40,6 +43,23 @@ def zero_mean_unit_variance(tensor: xr.DataArray, axes=None, eps=1.0e-6, mode="p
 
 def binarize(tensor: xr.DataArray, *, threshold) -> xr.DataArray:
     return ensure_dtype(tensor > threshold, dtype="float32")
+
+
+def scale_range(
+    tensor: xr.DataArray, *, mode="per_sample", axes=None, min_percentile=0.0, max_percentile=100.0
+) -> xr.DataArray:
+    # valid modes according to spec: "per_sample", "per_dataset"
+    # TODO implement per_dataset
+    if mode != "per_sample":
+        raise NotImplementedError(f"Unsupported mode for zero_mean_unit_variance: {mode}")
+    # TODO support axes
+    if axes is None:
+        raise NotImplementedError
+
+    v_lower = np.percentile(tensor, min_percentile, axis=axes, keepdims=True)
+    v_upper = np.percentile(tensor, max_percentile, axis=axes, keepdims=True)
+
+    return ensure_dtype((tensor - v_lower) / v_upper)
 
 
 def clip(tensor: xr.DataArray, *, min: float, max: float) -> xr.DataArray:
@@ -58,6 +78,7 @@ KNOWN_PREPROCESSING: Dict[PreprocessingName, Transform] = {
     "zero_mean_unit_variance": zero_mean_unit_variance,
     "binarize": binarize,
     "clip": clip,
+    "scale_range": scale_range
     # "__tiktorch_ensure_dtype": ensure_dtype,
 }
 
