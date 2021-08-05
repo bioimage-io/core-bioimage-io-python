@@ -1,5 +1,6 @@
 import argparse
 import sys
+from pathlib import Path
 
 import numpy as np
 import xarray as xr
@@ -17,7 +18,7 @@ parser.add_argument("--devices", nargs="+", help="Devices to run this model", de
 
 def main():
     args = parser.parse_args()
-    model = load_resource_description(args.model)
+    model = load_resource_description(Path(args.model))
     assert isinstance(model, Model)
     prediction_pipeline = create_prediction_pipeline(bioimageio_model=model, devices=args.devices)
 
