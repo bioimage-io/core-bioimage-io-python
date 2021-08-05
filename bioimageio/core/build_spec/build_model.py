@@ -3,6 +3,7 @@ import hashlib
 import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
+from zipfile import ZipFile
 
 import numpy as np
 
@@ -218,6 +219,12 @@ def _build_cite(cite: Dict[str, str]):
     return citation_list
 
 
+def _extract_zip(zip_path, name, out_path):
+    with ZipFile(zip_path) as z:
+        with open(out_path, "w") as f:
+            f.write(z.read(name).decode("utf-8"))
+
+
 # NOTE does not support multiple input / output tensors yet
 # to implement this we should wait for 0.4.0, see also
 # https://github.com/bioimage-io/spec-bioimage-io/issues/70#issuecomment-825737433
@@ -234,7 +241,7 @@ def build_model(
     documentation: Union[str, Path],
     covers: List[str],
     cite: Dict[str, str],
-    root: Optional[str] = None,
+    root: Union[str, Path],
     # model specific optional
     source: Optional[str] = None,
     model_kwargs: Optional[Dict[str, Union[int, float, str]]] = None,
@@ -413,12 +420,16 @@ def build_model(
         **kwargs,
     )
 
-    # serialize and deserialize the raw_nodes.Model to
-    # check that all fields are well formed
+    # serialize and deserialize the raw_nodes.Model to check that all fields are well formed
     # use export_package to make invalid absolute paths (e.g. from auto-conversion) relative
-    model_package = model_spec.export_package(model, root)
-    model = model_spec.load_raw_resource_description(model_package)
+    zip_path = os.path.join(root, f"{name}.zip")
+    model_package = model_spec.export_package(model, Path(root), output_path=Path(zip_path))
 
+    # extract the rdf.yaml from the zip
+    assert os.path.exists(zip_path)
+    _extract_zip(zip_path, "rdf.yaml", os.path.join(root, "rdf.yaml"))
+
+    model = model_spec.load_raw_resource_description(model_package)
     return model
 
 
