@@ -21,9 +21,7 @@ if TYPE_CHECKING:
     import bioimageio.spec.model
 
 
-def load_raw_resource_description(
-    source: Union[os.PathLike, str, dict, base_nodes.URI]
-) -> RawResourceDescription:
+def load_raw_resource_description(source: Union[os.PathLike, str, dict, base_nodes.URI]) -> RawResourceDescription:
     """load a raw python representation from a BioImage.IO resource description file (RDF).
     Use `load_resource_description` for a more convenient representation.
 
@@ -87,7 +85,6 @@ def ensure_raw_resource_description(
 
     assert not isinstance(raw_rd, RawResourceDescription)
     return cls.load_raw_resource_description(raw_rd), root_path
-
 
     if isinstance(raw_rd, raw_nodes.ResourceDescription) and not isinstance(raw_rd, base_nodes.URI):
         return raw_rd, pathlib.Path(root_path)

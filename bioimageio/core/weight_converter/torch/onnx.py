@@ -79,9 +79,7 @@ def main():
     parser.add_argument("--verbose", "-v", default=1, type=int)
 
     args = parser.parse_args()
-    return convert_weights_to_onnx(
-        args.model, args.output, args.opset_version, bool(args.tracing), bool(args.verbose)
-    )
+    return convert_weights_to_onnx(args.model, args.output, args.opset_version, bool(args.tracing), bool(args.verbose))
 
 
 if __name__ == "__main__":
