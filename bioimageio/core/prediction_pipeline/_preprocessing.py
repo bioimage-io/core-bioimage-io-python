@@ -53,13 +53,13 @@ def scale_range(
     if mode != "per_sample":
         raise NotImplementedError(f"Unsupported mode for zero_mean_unit_variance: {mode}")
     # TODO support axes
-    if axes is None:
+    if axes is not None:
         raise NotImplementedError
 
     v_lower = np.percentile(tensor, min_percentile, axis=axes, keepdims=True)
     v_upper = np.percentile(tensor, max_percentile, axis=axes, keepdims=True)
 
-    return ensure_dtype((tensor - v_lower) / v_upper)
+    return ensure_dtype((tensor - v_lower) / v_upper, dtype="float32")
 
 
 def clip(tensor: xr.DataArray, *, min: float, max: float) -> xr.DataArray:
