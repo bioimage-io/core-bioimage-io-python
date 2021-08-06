@@ -22,20 +22,19 @@ if TYPE_CHECKING:
 
 
 def load_raw_resource_description(
-    source: Union[os.PathLike, str, dict, base_nodes.URI], update_to_current_format: bool = False
+    source: Union[os.PathLike, str, dict, base_nodes.URI]
 ) -> RawResourceDescription:
     """load a raw python representation from a BioImage.IO resource description file (RDF).
     Use `load_resource_description` for a more convenient representation.
 
     Args:
         source: resource description file (RDF)
-        update_to_current_format: auto convert content to adhere to the latest appropriate RDF format version
 
     Returns:
         raw BioImage.IO resource
     """
     data, type_ = resolve_rdf_source_and_type(source)
-    raw_rd = spec.load_raw_resource_description(data, update_to_current_format)
+    raw_rd = spec.load_raw_resource_description(data, update_to_current_format=True)
     if isinstance(source, base_nodes.URI) or isinstance(source, str) and source.startswith("http"):
         # for a remote source relative paths are invalid; replace all relative file paths in source with URLs
         if isinstance(source, str):
@@ -70,7 +69,6 @@ def serialize_raw_resource_description(raw_rd: RawResourceDescription) -> str:
 def ensure_raw_resource_description(
     source: Union[str, dict, os.PathLike, base_nodes.URI, RawResourceDescription],
     root_path: os.PathLike = pathlib.Path(),
-    update_to_current_format: bool = True,
 ) -> Tuple[RawResourceDescription, pathlib.Path]:
     if isinstance(source, raw_nodes.RawNode):
         assert isinstance(source, RawResourceDescription)
@@ -105,7 +103,6 @@ def load_resource_description(
     source: Union[RawResourceDescription, os.PathLike, str, dict, base_nodes.URI],
     root_path: os.PathLike = pathlib.Path(),
     *,
-    update_to_current_format: bool = True,
     weights_priority_order: Optional[Sequence[str]] = None,  # model only
 ) -> ResourceDescription:
     """load a BioImage.IO resource description file (RDF).
@@ -115,13 +112,12 @@ def load_resource_description(
     Args:
         source: resource description file (RDF) or raw BioImage.IO resource
         root_path: to resolve relative paths in the RDF (ignored if source is path/URI)
-        update_to_current_format: auto convert content to adhere to the latest appropriate RDF format version
         weights_priority_order: If given only the first weights format present in the model resource is included
     Returns:
         BioImage.IO resource
     """
     source = deepcopy(source)
-    raw_rd, root_path = ensure_raw_resource_description(source, root_path, update_to_current_format)
+    raw_rd, root_path = ensure_raw_resource_description(source, root_path)
 
     if weights_priority_order is not None:
         for wf in weights_priority_order:
@@ -175,26 +171,3 @@ def export_resource_package(
         compression=compression,
         compression_level=compression_level,
     )
-
-
-def get_resource_package_content(
-    source: Union[RawResourceDescription, os.PathLike, str, dict],
-    root_path: pathlib.Path,
-    update_to_current_format: bool = False,
-    *,
-    weights_priority_order: Optional[Sequence[str]] = None,
-) -> Dict[str, Union[str, pathlib.Path]]:
-    """
-    Args:
-        source: raw resource description, path, URI or raw data as dict
-        root_path:  for relative paths (only used if source is RawResourceDescription or dict)
-        update_to_current_format: Convert not only the patch version, but also the major and minor version.
-        weights_priority_order: If given only the first weights format present in the model is included.
-                                If none of the prioritized weights formats is found all are included.
-
-    Returns:
-        Package content of local file paths or text content keyed by file names.
-    """
-    raw_rd, _ = ensure_raw_resource_description(source, root_path, update_to_current_format)
-    io_cls = _get_matching_io_class(raw_rd.type, raw_rd.format_version)
-    return io_cls.get_resource_package_content(source, root_path, weights_priority_order=weights_priority_order)

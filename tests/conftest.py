@@ -1,5 +1,5 @@
 import pytest
-from bioimageio.spec import export_resource_package
+from bioimageio.core import export_resource_package
 
 
 # set 'skip_<FRAMEWORK>' flags as global pytest variables,
