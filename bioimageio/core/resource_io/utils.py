@@ -13,7 +13,7 @@ from urllib.request import url2pathname, urlretrieve
 import requests
 from marshmallow import ValidationError
 
-from bioimageio.spec.shared import base_nodes, fields, raw_nodes
+from bioimageio.spec.shared import fields, raw_nodes
 from bioimageio.spec.shared.common import BIOIMAGEIO_CACHE_PATH
 from bioimageio.spec.shared.utils import GenericRawNode, GenericRawRD, NodeTransformer, NodeVisitor
 from . import nodes
@@ -57,13 +57,13 @@ class UriNodeTransformer(NodeTransformer):
         return local_path
 
     def transform_ImportableSourceFile(
-        self, node: base_nodes.ImportableSourceFile
+        self, node: raw_nodes.ImportableSourceFile
     ) -> nodes.ResolvedImportableSourceFile:
         return nodes.ResolvedImportableSourceFile(
             source_file=resolve_uri(node.source_file, self.root_path), callable_name=node.callable_name
         )
 
-    def transform_ImportableModule(self, node: base_nodes.ImportableModule) -> nodes.LocalImportableModule:
+    def transform_ImportableModule(self, node: raw_nodes.ImportableModule) -> nodes.LocalImportableModule:
         return nodes.LocalImportableModule(**dataclasses.asdict(node), root_path=self.root_path)
 
     def _transform_Path(self, leaf: pathlib.Path):
@@ -143,10 +143,10 @@ def resolve_uri(uri, root_path: os.PathLike = pathlib.Path()):
 
 
 @resolve_uri.register
-def _resolve_uri_uri_node(uri: base_nodes.URI, root_path: os.PathLike = pathlib.Path()) -> pathlib.Path:
+def _resolve_uri_uri_node(uri: raw_nodes.URI, root_path: os.PathLike = pathlib.Path()) -> pathlib.Path:
     assert isinstance(uri, (raw_nodes.URI, nodes.URI))
     path_or_remote_uri = resolve_local_uri(uri, root_path)
-    if isinstance(path_or_remote_uri, base_nodes.URI):
+    if isinstance(path_or_remote_uri, raw_nodes.URI):
         local_path = _download_uri_to_local_path(path_or_remote_uri)
     elif isinstance(path_or_remote_uri, pathlib.Path):
         local_path = path_or_remote_uri
@@ -180,7 +180,7 @@ def _resolve_uri_resolved_importable_path(
 
 @resolve_uri.register
 def _resolve_uri_importable_path(
-    uri: base_nodes.ImportableSourceFile, root_path: os.PathLike = pathlib.Path()
+    uri: raw_nodes.ImportableSourceFile, root_path: os.PathLike = pathlib.Path()
 ) -> nodes.ResolvedImportableSourceFile:
     return nodes.ResolvedImportableSourceFile(
         callable_name=uri.callable_name, source_file=resolve_uri(uri.source_file, root_path)
@@ -210,7 +210,7 @@ def resolve_local_uri(
     if isinstance(uri, str):
         uri = fields.URI().deserialize(uri)
 
-    assert isinstance(uri, base_nodes.URI), uri
+    assert isinstance(uri, raw_nodes.URI), uri
     if not uri.scheme:  # relative path
         if uri.authority or uri.query or uri.fragment:
             raise ValidationError(f"Invalid Path/URI: {uri}")
@@ -231,7 +231,7 @@ def resolve_local_uri(
 
 def uri_available(uri: raw_nodes.URI, root_path: pathlib.Path) -> bool:
     local_path_or_remote_uri = resolve_local_uri(uri, root_path)
-    if isinstance(local_path_or_remote_uri, base_nodes.URI):
+    if isinstance(local_path_or_remote_uri, raw_nodes.URI):
         response = requests.head(str(local_path_or_remote_uri))
         available = response.status_code == 200
     elif isinstance(local_path_or_remote_uri, pathlib.Path):
