@@ -9,7 +9,6 @@ from marshmallow.utils import _Missing
 from bioimageio.spec.model.v0_3 import raw_nodes as model_raw_nodes
 from bioimageio.spec.rdf.v0_2 import raw_nodes as rdf_raw_nodes
 from bioimageio.spec.shared import raw_nodes
-from bioimageio.spec.shared.common import DataClassFilterUnknownKwargsMixin
 
 
 @dataclass
@@ -71,18 +70,9 @@ class Badge(Node, rdf_raw_nodes.Badge):
     pass
 
 
-# to pass mypy:
-# separate dataclass and abstract class as a workaround for abstract dataclasses
-# from https://github.com/python/mypy/issues/5374#issuecomment-650656381
-@dataclass  # use super init to allow for additional unknown kwargs
-class _RDF(Node, rdf_raw_nodes._RDF):
+@dataclass
+class RDF(rdf_raw_nodes.RDF, Node):
     covers: Union[_Missing, List[Path]] = missing
-
-
-class RDF(_RDF, rdf_raw_nodes.RDF, DataClassFilterUnknownKwargsMixin):
-    def __init__(self, **kwargs):  # todo: improve signature
-        known_kwargs = self.get_known_kwargs(kwargs)
-        super().__init__(**known_kwargs)
 
 
 @dataclass
@@ -126,37 +116,37 @@ class OutputTensor(Node, model_raw_nodes.OutputTensor):
 
 
 @dataclass
-class WeightsEntryBase(Node, model_raw_nodes.WeightsEntryBase):
+class _WeightsEntryBase(Node, model_raw_nodes._WeightsEntryBase):
     source: Path = missing
 
 
 @dataclass
-class KerasHdf5WeightsEntry(WeightsEntryBase, model_raw_nodes.KerasHdf5WeightsEntry):
+class KerasHdf5WeightsEntry(_WeightsEntryBase, model_raw_nodes.KerasHdf5WeightsEntry):
     pass
 
 
 @dataclass
-class OnnxWeightsEntry(WeightsEntryBase, model_raw_nodes.OnnxWeightsEntry):
+class OnnxWeightsEntry(_WeightsEntryBase, model_raw_nodes.OnnxWeightsEntry):
     pass
 
 
 @dataclass
-class PytorchStateDictWeightsEntry(WeightsEntryBase, model_raw_nodes.PytorchStateDictWeightsEntry):
+class PytorchStateDictWeightsEntry(_WeightsEntryBase, model_raw_nodes.PytorchStateDictWeightsEntry):
     pass
 
 
 @dataclass
-class PytorchScriptWeightsEntry(WeightsEntryBase, model_raw_nodes.PytorchScriptWeightsEntry):
+class PytorchScriptWeightsEntry(_WeightsEntryBase, model_raw_nodes.PytorchScriptWeightsEntry):
     pass
 
 
 @dataclass
-class TensorflowJsWeightsEntry(WeightsEntryBase, model_raw_nodes.TensorflowJsWeightsEntry):
+class TensorflowJsWeightsEntry(_WeightsEntryBase, model_raw_nodes.TensorflowJsWeightsEntry):
     pass
 
 
 @dataclass
-class TensorflowSavedModelBundleWeightsEntry(WeightsEntryBase, model_raw_nodes.TensorflowSavedModelBundleWeightsEntry):
+class TensorflowSavedModelBundleWeightsEntry(_WeightsEntryBase, model_raw_nodes.TensorflowSavedModelBundleWeightsEntry):
     pass
 
 
