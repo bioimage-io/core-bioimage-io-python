@@ -44,6 +44,7 @@ def unet2d_nuclei_broad_model():
 
 @pytest.fixture
 def FruNet_model():
-    url = "https://raw.githubusercontent.com/deepimagej/models/master/fru-net_sev_segmentation/model.yaml"
+    # url = "https://raw.githubusercontent.com/deepimagej/models/master/fru-net_sev_segmentation/model.yaml"
+    url = "https://sandbox.zenodo.org/record/894498/files/rdf.yaml"
     cached_path = export_resource_package(url)
     return cached_path
