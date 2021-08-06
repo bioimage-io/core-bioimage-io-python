@@ -7,7 +7,8 @@ from bioimageio.spec import export_resource_package
 def pytest_configure():
     try:
         import tensorflow
-        pytest.tf_major_version = int(tensorflow.__version__.split('.')[0])
+
+        pytest.tf_major_version = int(tensorflow.__version__.split(".")[0])
     except ImportError:
         tensorflow = None
     pytest.skip_tf = tensorflow is None
