@@ -40,11 +40,11 @@ def test_prediction_pipeline_onnx(unet2d_nuclei_broad_model):
     _test_prediction_pipeline(unet2d_nuclei_broad_model, "onnx")
 
 
-@pytest.mark.skipif(pytest.skip_tf, reason="requires tensorflow")
+@pytest.mark.skipif(pytest.skip_tf and pytest.tf_major_version != 1, reason="requires tensorflow1")
 def test_prediction_pipeline_tensorflow(FruNet_model):
     _test_prediction_pipeline(FruNet_model, "tensorflow_saved_model_bundle")
 
 
-@pytest.mark.skipif(pytest.skip_tf, reason="requires tensorflow")
+@pytest.mark.skipif(pytest.skip_keras, reason="requires keras")
 def test_prediction_pipeline_keras(FruNet_model):
     _test_prediction_pipeline(FruNet_model, "keras_hdf5")

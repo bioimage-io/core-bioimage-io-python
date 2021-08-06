@@ -17,7 +17,7 @@ class PytorchModelAdapter(ModelAdapter):
         self.model = self.get_nn_instance(bioimageio_model)
 
         if devices is None:
-            devices = ["cuda" if torch.cuda.is_available() else "cpu"]
+            self.devices = ["cuda" if torch.cuda.is_available() else "cpu"]
         else:
             self.devices = [torch.device(d) for d in devices]
         self.model.to(self.devices[0])

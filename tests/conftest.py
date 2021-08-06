@@ -7,6 +7,7 @@ from bioimageio.spec import export_resource_package
 def pytest_configure():
     try:
         import tensorflow
+        pytest.tf_major_version = int(tensorflow.__version__.split('.')[0])
     except ImportError:
         tensorflow = None
     pytest.skip_tf = tensorflow is None
@@ -22,6 +23,12 @@ def pytest_configure():
     except ImportError:
         onnxruntime = None
     pytest.skip_onnx = onnxruntime is None
+
+    try:
+        import keras
+    except ImportError:
+        keras = None
+    pytest.skip_keras = keras is None
 
 
 @pytest.fixture
