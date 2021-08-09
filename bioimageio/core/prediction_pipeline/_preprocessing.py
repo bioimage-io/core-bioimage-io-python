@@ -58,11 +58,11 @@ def scale_range(
 
     if axes:
         axes = tuple(axes)
-        v_lower = tensor.quantile(min_percentile / 100., dim=axes)
-        v_upper = tensor.quantile(max_percentile / 100., dim=axes)
+        v_lower = tensor.quantile(min_percentile / 100.0, dim=axes)
+        v_upper = tensor.quantile(max_percentile / 100.0, dim=axes)
     else:
-        v_lower = tensor.quantile(min_percentile / 100.)
-        v_upper = tensor.quantile(max_percentile / 100.)
+        v_lower = tensor.quantile(min_percentile / 100.0)
+        v_upper = tensor.quantile(max_percentile / 100.0)
 
     return ensure_dtype((tensor - v_lower) / v_upper, dtype="float32")
 
