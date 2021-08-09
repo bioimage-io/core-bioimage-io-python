@@ -23,20 +23,23 @@ def scale_linear(tensor: xr.DataArray, *, gain, offset, axes) -> xr.DataArray:
     return ensure_dtype(tensor * gain + offset, dtype="float32")
 
 
-# TODO accept mean and std as arguments
-def zero_mean_unit_variance(tensor: xr.DataArray, axes=None, eps=1.0e-6, mode="per_sample") -> xr.DataArray:
-    if axes:
+def zero_mean_unit_variance(
+    tensor: xr.DataArray, *, axes=None, eps=1.0e-6, mode="per_sample", mean=None, std=None
+) -> xr.DataArray:
+    # valid modes according to spec: "per_sample", "per_dataset", "fixed"
+    # TODO implement "per_dataset"
+    if mode not in ("per_sample", "fixed"):
+        raise NotImplementedError(f"Unsupported mode for zero_mean_unit_variance: {mode}")
+
+    if mode == "fixed":
+        assert mean is not None and std is not None
+    elif axes:
         axes = tuple(axes)
         mean, std = tensor.mean(axes), tensor.std(axes)
     else:
         mean, std = tensor.mean(), tensor.std()
 
-    # valid modes according to spec: "per_sample", "per_dataset", "fixed"
-    # TODO implement per_dataset and fixed
-    if mode != "per_sample":
-        raise NotImplementedError(f"Unsupported mode for zero_mean_unit_variance: {mode}")
-
-    ret = (tensor - mean) / (std + 1.0e-6)
+    ret = (tensor - mean) / (std + eps)
 
     return ensure_dtype(ret, dtype="float32")
 
@@ -51,13 +54,15 @@ def scale_range(
     # valid modes according to spec: "per_sample", "per_dataset"
     # TODO implement per_dataset
     if mode != "per_sample":
-        raise NotImplementedError(f"Unsupported mode for zero_mean_unit_variance: {mode}")
-    # TODO support axes
-    if axes is not None:
-        raise NotImplementedError
+        raise NotImplementedError(f"Unsupported mode for scale_range: {mode}")
 
-    v_lower = np.percentile(tensor, min_percentile, axis=axes, keepdims=True)
-    v_upper = np.percentile(tensor, max_percentile, axis=axes, keepdims=True)
+    if axes:
+        axes = tuple(axes)
+        v_lower = tensor.quantile(min_percentile / 100., dim=axes)
+        v_upper = tensor.quantile(max_percentile / 100., dim=axes)
+    else:
+        v_lower = tensor.quantile(min_percentile / 100.)
+        v_upper = tensor.quantile(max_percentile / 100.)
 
     return ensure_dtype((tensor - v_lower) / v_upper, dtype="float32")
 
