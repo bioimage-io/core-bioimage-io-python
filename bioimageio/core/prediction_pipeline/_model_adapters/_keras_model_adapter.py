@@ -23,4 +23,6 @@ class KerasModelAdapter(ModelAdapter):
 
     def forward(self, input_tensor: xr.DataArray) -> xr.DataArray:
         res = self.model.predict(input_tensor.data)
-        return res
+        # TODO deal with multiple output tensors
+        output_axes = tuple(self.spec.outputs[0].axes)
+        return xr.DataArray(res, dims=output_axes)

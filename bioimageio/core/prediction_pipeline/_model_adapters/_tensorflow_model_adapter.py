@@ -89,7 +89,9 @@ class TensorflowModelAdapterBase(ModelAdapter):
             res = self._forward_keras(input_tensor.data)
         else:
             res = self._forward_tf(input_tensor.data)
-        return xr.DataArray(res, dims=tuple(self._internal_output_axes))
+        # TODO deal with multiple output tensors
+        output_axes = tuple(self.spec.outputs[0].axes)
+        return xr.DataArray(res, dims=output_axes)
 
 
 class TensorflowModelAdapter(TensorflowModelAdapterBase):
