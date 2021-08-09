@@ -4,6 +4,8 @@ Python specific core utilities for working with the BioimageIO model zoo.
 
 ## Installation
 
+### Via Conda
+
 The `bioimageio.core` package supports various back-ends for running BioimageIO networks:
 
 * Pytorch/Torchscript:
@@ -24,8 +26,31 @@ The `bioimageio.core` package supports various back-ends for running BioimageIO 
 * ONNXRuntime
   ```bash
   # currently only cpu version supported
-  install -c conda-forge -c ilastik-forge bioimageio.core onnxruntime
+  conda install -c conda-forge -c ilastik-forge bioimageio.core onnxruntime
   ```
+
+### Set up Development Environment
+
+To set up a development conda enveironment run the following commands:
+```
+conda env create -f dev/environment-base.yaml
+conda activate bio-core-dev
+pip install -e . --no-deps
+```
+
+## Command Line
+
+Test a model:
+```
+bioimageio-test -m <MODEL>
+```
+
+Run prediction:
+```
+bioimageio-predict -m <MODEL> -i <INPUT> -o <OUTPUT>
+```
+
+This is subject to change, see https://github.com/bioimage-io/python-bioimage-io/issues/87.
 
 
 ## Running network predictions:

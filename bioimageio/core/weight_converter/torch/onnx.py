@@ -80,7 +80,7 @@ def main():
 
     args = parser.parse_args()
     return convert_weights_to_onnx(
-        os.path.abspath(args.model), args.output, args.opset_version, bool(args.tracing), bool(args.verbose)
+        args.model, args.output, args.opset_version, bool(args.tracing), bool(args.verbose)
     )
 
 

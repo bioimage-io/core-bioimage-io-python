@@ -88,7 +88,13 @@ def _get_model_adapter(weight_format: str) -> Type[ModelAdapter]:
         return TorchscriptModelAdapter
 
     elif weight_format == "keras_hdf5":
-        from ._tensorflow_model_adapter import KerasModelAdapter
+        # keras can either be installed as a separate package or used as part of tensorflow
+        # we try to first import the keras model adapter using the separate package and,
+        # if it is not available, try to load the one using tf
+        try:
+            from ._keras_model_adapter import KerasModelAdapter
+        except ImportError:
+            from ._tensorflow_model_adapter import KerasModelAdapter
 
         return KerasModelAdapter
 

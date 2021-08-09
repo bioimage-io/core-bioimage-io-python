@@ -31,12 +31,14 @@ setup(
         "Bug Reports": "https://github.com/bioimage-io/python-bioimage-io/issues",
         "Source": "https://github.com/bioimage-io/python-bioimage-io",
     },
-    # TODO single entry point for all bioimageio CLI, see
-    # https://github.com/bioimage-io/python-bioimage-io/issues/87
+    # TODO simplify CLI, see https://github.com/bioimage-io/python-bioimage-io/issues/87
+    # TODO merge bulk_predict and predict
     entry_points={
         "console_scripts": [
             "bioimageio-convert_torch_to_onnx = bioimageio.core.weight_converter.torch.onnx:main",
             "bioimageio-convert_torch_to_torchscript = bioimageio.core.weight_converter.torch.torchscript:main",
+            "bioimageio-predict = bioimageio.core.predict:main",
+            "bioimageio-test = bioimageio.core.model_test:main",
             "bioimageio-bulk_predict = bioimageio.core.bulk_predict:main"
         ]
     },

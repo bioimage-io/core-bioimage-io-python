@@ -75,7 +75,7 @@ def convert_weights_to_pytorch_script(
     """
     if isinstance(model_spec, (str, Path)):
         root = os.path.split(model_spec)[0]
-        model_spec = spec.load_resource_description(model_spec, root_path=root)
+        model_spec = spec.load_resource_description(Path(model_spec), root_path=root)
 
     with torch.no_grad():
         # load input and expected output data
