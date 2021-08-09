@@ -18,6 +18,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("-m", "--model", help="bioimage model resource (ziped package or rdf.yaml)", required=True)
 parser.add_argument("-i", "--input", help="input folder with images for prediction", required=True)
 parser.add_argument("-o", "--output", help="output folder to save the predictions", required=True)
+parser.add_argument("-e", "--output_extension", help="", default=None)
 parser.add_argument("--devices", nargs="+", help="Devices to run this model", default=None)
 parser.add_argument("--wildcard", default=None, help="glob wildcard to select files in the input folder")
 # implement tiling and enable this as well???
@@ -94,8 +95,9 @@ def _load_image(in_path, axes, padding):
     return [xr.DataArray(im, dims=axes)], crop
 
 
-def _save_image(out_path, image, axes):
-    ext = os.path.splitext(out_path)
+def _save_image(out_path, image, axes, ext):
+    if ext is None:
+        ext = os.path.splitext(out_path)
     if ext == ".npy":
         np.save(out_path, image)
     else:
@@ -134,7 +136,7 @@ def _save_image(out_path, image, axes):
                 save_function(chan_out_path, image[..., c])
 
 
-def _predict(prediction_pipeline, in_path, out_path, model, padding):
+def _predict(prediction_pipeline, in_path, out_path, model, padding, output_ext):
     axes = tuple(model.inputs[0].axes)
     input_, crop = _load_image(in_path, axes, padding)
 
@@ -144,7 +146,7 @@ def _predict(prediction_pipeline, in_path, out_path, model, padding):
         res = res[crop]
 
     axes = tuple(model.outputs[0].axes)
-    _save_image(out_path, res.data, axes)
+    _save_image(out_path, res.data, axes, output_ext)
 
 
 def main():
@@ -167,7 +169,7 @@ def main():
 
     for input_ in tqdm(input_files):
         output = os.path.join(args.output, os.path.split(input_)[1])
-        _predict(prediction_pipeline, input_, output, model, padding)
+        _predict(prediction_pipeline, input_, output, model, padding, args.output_extension)
 
     return 0
 
