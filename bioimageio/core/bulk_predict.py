@@ -95,9 +95,8 @@ def _load_image(in_path, axes, padding):
     return [xr.DataArray(im, dims=axes)], crop
 
 
-def _save_image(out_path, image, axes, ext):
-    if ext is None:
-        ext = os.path.splitext(out_path)
+def _save_image(out_path, image, axes):
+    ext = os.path.splitext(out_path)[1]
     if ext == ".npy":
         np.save(out_path, image)
     else:
@@ -136,7 +135,7 @@ def _save_image(out_path, image, axes, ext):
                 save_function(chan_out_path, image[..., c])
 
 
-def _predict(prediction_pipeline, in_path, out_path, model, padding, output_ext):
+def _predict(prediction_pipeline, in_path, out_path, model, padding):
     axes = tuple(model.inputs[0].axes)
     input_, crop = _load_image(in_path, axes, padding)
 
@@ -146,7 +145,7 @@ def _predict(prediction_pipeline, in_path, out_path, model, padding, output_ext)
         res = res[crop]
 
     axes = tuple(model.outputs[0].axes)
-    _save_image(out_path, res.data, axes, output_ext)
+    _save_image(out_path, res.data, axes)
 
 
 def main():
@@ -168,8 +167,12 @@ def main():
         assert isinstance(padding, dict)
 
     for input_ in tqdm(input_files):
-        output = os.path.join(args.output, os.path.split(input_)[1])
-        _predict(prediction_pipeline, input_, output, model, padding, args.output_extension)
+        fname, ext = os.path.splitext(os.path.split(input_)[1])
+        if args.output_extension is None:
+            output = os.path.join(args.output, f"{fname}{ext}")
+        else:
+            output = os.path.join(args.output, f"{fname}{args.output_extension}")
+        _predict(prediction_pipeline, input_, output, model, padding)
 
     return 0
 
