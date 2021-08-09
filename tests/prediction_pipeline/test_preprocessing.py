@@ -64,7 +64,7 @@ def test_zero_mean_unit_variance_fixed():
     np_data = np.arange(9).reshape(3, 3)
     mean = np_data.mean()
     std = np_data.mean()
-    eps = 1.e-7
+    eps = 1.0e-7
     kwargs = {"mode": "fixed", "mean": mean, "std": std, "eps": eps}
     zero_mean_spec = Preprocessing(name="zero_mean_unit_variance", kwargs=kwargs)
     data = xr.DataArray(np_data, dims=("x", "y"))
