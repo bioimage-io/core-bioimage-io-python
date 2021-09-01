@@ -70,7 +70,7 @@ def pad(im, axes, padding):
 
 
 def load_image(in_path, axes):
-    ext = os.path.splitext(in_path)
+    ext = os.path.splitext(in_path)[1]
     if ext == ".npy":
         im = np.load(in_path)
     else:
@@ -80,30 +80,29 @@ def load_image(in_path, axes):
     return im
 
 
-def save_image(out_path, image, axes):
+def save_image(out_path, image):
     ext = os.path.splitext(out_path)[1]
     if ext == ".npy":
         np.save(out_path, image)
     else:
-        is_volume = "z" in axes
-
-        # to channel last
-        chan_id = axes.index("c")
-        if chan_id != len(axes) - 1:
-            target_axes = tuple(ax for ax in axes if ax != "c") + ("c",)
-            axes_permutation = tuple(axes.index(ax) for ax in target_axes)
-            image = image.transpose(axes_permutation)
-            axes = target_axes
+        is_volume = "z" in image.dims
 
         # squeeze singleton axes
         squeeze = []
-        for ax, dlen in zip(axes, image.shape):
+        for ax, dlen in zip(image.dims, image.shape):
             # squeeze batch or channle axes if they are singletons
             if ax in "bc" and dlen == 1:
                 squeeze.append(0)
             else:
                 squeeze.append(slice(None))
         image = image[tuple(squeeze)]
+
+        # to channel last
+        if "c" in image.dims:
+            chan_id = image.dims.index("c")
+            if chan_id != image.ndim - 1:
+                target_axes = tuple(ax for ax in image.dims if ax != "c") + ("c",)
+                image = image.transpose(*target_axes)
 
         save_function = imageio.volsave if is_volume else imageio.imsave
         # most image formats only support channel dimensions of 1, 3 or 4;
@@ -130,6 +129,7 @@ def apply_crop(data, crop):
 #
 
 
+# TODO support models with multiple in/outputs
 def predict(prediction_pipeline, inputs):
     if isinstance(inputs, np.ndarray):
         inputs = [inputs]
@@ -163,6 +163,7 @@ def pad_predict_crop(prediction_pipeline, inputs, padding):
 
 
 # TODO add support for tiling
+# TODO support models with multiple in/outputs
 def predict_image(model_rdf, inputs, outputs, padding=None, devices=None):
     """Run prediction for a single set of inputs with a bioimage.io model.
     """
@@ -170,9 +171,18 @@ def predict_image(model_rdf, inputs, outputs, padding=None, devices=None):
         inputs = [inputs]
     if len(inputs) > 1:
         raise NotImplementedError(len(inputs))
+    if isinstance(outputs, (str, Path)):
+        outputs = [outputs]
+    if len(outputs) > 1:
+        raise NotImplementedError(len(outputs))
 
     model = load_resource_description(Path(model_rdf))
     assert isinstance(model, Model)
+    if len(model.inputs) != len(inputs):
+        raise ValueError
+    if len(model.outputs) != len(outputs):
+        raise ValueError
+
     prediction_pipeline = create_prediction_pipeline(bioimageio_model=model, devices=devices)
 
     axes = tuple(prediction_pipeline.input_axes)
@@ -182,7 +192,10 @@ def predict_image(model_rdf, inputs, outputs, padding=None, devices=None):
         res = predict(prediction_pipeline, input_data)
     else:
         res = pad_predict_crop(prediction_pipeline, input_data, padding)
-    save_image(res, outputs[0], axes)
+
+    if isinstance(res, list):
+        res = res[0]
+    save_image(outputs[0], res)
 
 
 # TODO add support for tiling
@@ -206,4 +219,4 @@ def predict_images(model_rdf, inputs, outputs, verbose=False, padding=None, devi
             res = predict(prediction_pipeline, inp)
         else:
             res = pad_predict_crop(prediction_pipeline, inp, padding)
-        save_image(res, outp, axes)
+        save_image(outp, res)
