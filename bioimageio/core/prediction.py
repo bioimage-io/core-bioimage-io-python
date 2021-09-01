@@ -1,8 +1,4 @@
-import argparse
-import json
 import os
-import sys
-from glob import glob
 from pathlib import Path
 
 import imageio
@@ -57,20 +53,20 @@ def pad(im, axes, padding):
         assert len(padding) == 2
 
     pad_width = []
-    crop = []
+    crop = {}
     for ax, dlen in zip(axes, im.shape):
         if ax in "zyx":
             pad_to = padding[ax]
             r = dlen % pad_to
             pwidth = 0 if r == 0 else (pad_to - r)
             pad_width.append([0, pwidth])
-            crop.append(slice(0, dlen))
+            crop[ax] = slice(0, dlen)
         else:
             pad_width.append([0, 0])
-            crop.append(slice(None))
+            crop[ax] = slice(None)
 
     im = np.pad(im, pad_width)
-    return im, tuple(crop)
+    return im, crop
 
 
 def load_image(in_path, axes):
@@ -124,6 +120,11 @@ def save_image(out_path, image, axes):
                 save_function(chan_out_path, image[..., c])
 
 
+def apply_crop(data, crop):
+    crop = tuple(crop[ax] for ax in data.dims)
+    return data[crop]
+
+
 #
 # prediction functions
 #
@@ -155,17 +156,24 @@ def pad_predict_crop(prediction_pipeline, inputs, padding):
     inputs = [pad(inp, axes, padding) for inp in inputs]
     inputs, crops = [inp[0] for inp in inputs], [inp[1] for inp in inputs]
     result = predict(prediction_pipeline, inputs)
-    result = [res[crop] for res, crop in zip(result, crops)]
+    result = [apply_crop(res, crop) for res, crop in zip(result, crops)]
     if return_array:
         return result[0]
     return result
 
 
-def predict_image(prediction_pipeline, inputs, outputs, padding=None):
+# TODO add support for tiling
+def predict_image(model_rdf, inputs, outputs, padding=None, devices=None):
+    """Run prediction for a single set of inputs with a bioimage.io model.
+    """
     if isinstance(inputs, (str, Path)):
         inputs = [inputs]
     if len(inputs) > 1:
         raise NotImplementedError(len(inputs))
+
+    model = load_resource_description(Path(model_rdf))
+    assert isinstance(model, Model)
+    prediction_pipeline = create_prediction_pipeline(bioimageio_model=model, devices=devices)
 
     axes = tuple(prediction_pipeline.input_axes)
     input_data = [load_image(inp, axes) for inp in inputs]
@@ -177,8 +185,17 @@ def predict_image(prediction_pipeline, inputs, outputs, padding=None):
     save_image(res, outputs[0], axes)
 
 
-def predict_images(prediction_pipeline, inputs, outputs, verbose=False, padding=None):
+# TODO add support for tiling
+def predict_images(model_rdf, inputs, outputs, verbose=False, padding=None, devices=None):
+    """Predict multiple inputs with a bioimage.io model.
+
+    Only works for models with a single input and output tensor.
+    """
+    model = load_resource_description(Path(model_rdf))
+    assert isinstance(model, Model)
+    prediction_pipeline = create_prediction_pipeline(bioimageio_model=model, devices=devices)
     axes = tuple(prediction_pipeline.input_axes)
+
     prog = zip(inputs, outputs)
     if verbose:
         prog = tqdm(prog, total=len(inputs))
@@ -190,79 +207,3 @@ def predict_images(prediction_pipeline, inputs, outputs, verbose=False, padding=
         else:
             res = pad_predict_crop(prediction_pipeline, inp, padding)
         save_image(res, outp, axes)
-
-
-def _from_glob(input_, output, wildcard, output_ext):
-    input_files = []
-    output_files = []
-    for root_in, root_out in zip(input_, output):
-        files = glob(os.path.join(root_in, wildcard))
-        input_files.extend(files)
-        file_names = [os.path.split(ff)[1] for ff in files]
-        out_files = [
-            os.path.join(root_out, fname)
-            if output_ext is None
-            else os.path.join(root_out, f"{os.path.splitext(fname)[0]}.{output_ext}")
-            for fname in file_names
-        ]
-        output_files.extend(out_files)
-    return input_files, output_files
-
-
-# TODO refactor to central CLI file
-# TODO add options to run with tiling
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-m", "--model", help="The bioimage model resource (ziped package or rdf.yaml).", required=True)
-
-    msg = "The image(s) to be processed. Can be a list of image files or root location(s) for a glob pattern."
-    msg += 'Use the "wildcard" to use a glob pattern.'
-    parser.add_argument("-i", "--input", nargs="+", help=msg, required=True)
-    msg = "The output images. Can be a list of output files or root locations to save the outputs"
-    msg += "in case a glob pattern is used."
-    parser.add_argument("-o", "--output", nargs="+", help=msg, required=True)
-
-    parser.add_argument("--wildcard", default=None, help="The glob wildcard to select files in the input folder(s).")
-    parser.add_argument("-e", "--output_extension", help="Extension for saveing the output images.", default=None)
-
-    parser.add_argument("--devices", nargs="+", help="The devices to run this model", default=None)
-
-    # json-encoded dict
-    parser.add_argument("--padding", type=str, default=None, help="")
-    # parser.add_argument("--tiling")  TODO
-
-    args = parser.parse_args()
-
-    model = load_resource_description(Path(args.model))
-    assert isinstance(model, Model)
-    prediction_pipeline = create_prediction_pipeline(bioimageio_model=model, devices=args.devices)
-
-    if args.padding is None:
-        padding = None
-    else:
-        padding = json.loads(padding.replace("'", '"'))
-        assert isinstance(padding, dict)
-
-    # no wildcard -> single prediction mode, the number of inputs and outputs
-    # must be equal to the number of inputs / outputs of the model
-    if args.wildcard is None:
-        if len(args.input) != len(model.inputs):
-            raise ValueError(f"Expected {len(model.inputs)} input images, not {len(args.input)}.")
-        if len(args.output) != len(model.outputs):
-            raise ValueError(f"Expected {len(model.outputs)} output images, not {len(args.output)}.")
-        predict_image(prediction_pipeline, args.input, args.output, padding=padding)
-
-    # wildcard -> bulk prediction mode, only supported for a single network input / output
-    else:
-        if len(model.inputs) != 1 or len(model.outputs) != 1:
-            raise ValueError("Bulk prediction is only implemented for models with a single in/output.")
-        if len(args.input) != len(args.output):
-            raise ValueError
-        inputs, outputs = _from_glob(args.input, args.output, args.wildcard, args.output_extension)
-        predict_images(prediction_pipeline, inputs, outputs, verbose=True, padding=padding)
-
-    return 0
-
-
-if __name__ == "__main__":
-    sys.exit(main())
