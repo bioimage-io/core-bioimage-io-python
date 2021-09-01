@@ -90,7 +90,7 @@ class _PredictionPipelineImpl(PredictionPipeline):
         self,
         *,
         name: str,
-        input_axes: str,
+        input_axes: str,  # TODO shouldn't this be a list for multple input tensors?
         input_shape: List[Tuple[str, int]],
         output_axes: str,
         halo: List[Tuple[str, int]],
