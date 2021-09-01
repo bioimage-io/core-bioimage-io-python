@@ -128,6 +128,7 @@ def save_image(out_path, image, axes):
 # prediction functions
 #
 
+
 def predict(prediction_pipeline, inputs):
     if isinstance(inputs, np.ndarray):
         inputs = [inputs]
@@ -199,8 +200,9 @@ def _from_glob(input_, output, wildcard, output_ext):
         input_files.extend(files)
         file_names = [os.path.split(ff)[1] for ff in files]
         out_files = [
-            os.path.join(root_out, fname) if output_ext is None else
-            os.path.join(root_out, f"{os.path.splitext(fname)[0]}.{output_ext}")
+            os.path.join(root_out, fname)
+            if output_ext is None
+            else os.path.join(root_out, f"{os.path.splitext(fname)[0]}.{output_ext}")
             for fname in file_names
         ]
         output_files.extend(out_files)
@@ -214,7 +216,7 @@ def main():
     parser.add_argument("-m", "--model", help="The bioimage model resource (ziped package or rdf.yaml).", required=True)
 
     msg = "The image(s) to be processed. Can be a list of image files or root location(s) for a glob pattern."
-    msg += "Use the \"wildcard\" to use a glob pattern."
+    msg += 'Use the "wildcard" to use a glob pattern.'
     parser.add_argument("-i", "--input", nargs="+", help=msg, required=True)
     msg = "The output images. Can be a list of output files or root locations to save the outputs"
     msg += "in case a glob pattern is used."
@@ -238,7 +240,7 @@ def main():
     if args.padding is None:
         padding = None
     else:
-        padding = json.loads(padding.replace("'", "\""))
+        padding = json.loads(padding.replace("'", '"'))
         assert isinstance(padding, dict)
 
     # no wildcard -> single prediction mode, the number of inputs and outputs
