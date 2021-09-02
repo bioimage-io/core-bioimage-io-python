@@ -9,6 +9,7 @@ from numpy.testing import assert_array_almost_equal
 @pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
 def test_predict_image(unet2d_nuclei_broad_model, tmp_path):
     from bioimageio.core.prediction import predict_image
+
     spec = load_resource_description(unet2d_nuclei_broad_model)
     inputs = spec.test_inputs
     assert len(inputs) == 1
@@ -25,6 +26,7 @@ def test_predict_image(unet2d_nuclei_broad_model, tmp_path):
 @pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
 def test_predict_image_with_padding(unet2d_nuclei_broad_model, tmp_path):
     from bioimageio.core.prediction import predict_image
+
     spec = load_resource_description(unet2d_nuclei_broad_model)
     image = np.load(spec.test_inputs[0])[0, 0]
     assert image.ndim == 2
@@ -34,8 +36,7 @@ def test_predict_image_with_padding(unet2d_nuclei_broad_model, tmp_path):
     out_path = tmp_path / "out.tif"
     imageio.imwrite(in_path, image)
 
-    predict_image(unet2d_nuclei_broad_model, in_path, out_path,
-                  padding={"x": 8, "y": 8})
+    predict_image(unet2d_nuclei_broad_model, in_path, out_path, padding={"x": 8, "y": 8})
     assert out_path.exists()
     res = imageio.imread(out_path)
     assert res.shape == image.shape
@@ -44,6 +45,7 @@ def test_predict_image_with_padding(unet2d_nuclei_broad_model, tmp_path):
 @pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
 def test_predict_images(unet2d_nuclei_broad_model, tmp_path):
     from bioimageio.core.prediction import predict_images
+
     n_images = 5
     shape = (256, 256)
 

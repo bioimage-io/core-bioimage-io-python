@@ -165,8 +165,7 @@ def pad_predict_crop(prediction_pipeline, inputs, padding):
 # TODO add support for tiling
 # TODO support models with multiple in/outputs
 def predict_image(model_rdf, inputs, outputs, padding=None, devices=None):
-    """Run prediction for a single set of inputs with a bioimage.io model.
-    """
+    """Run prediction for a single set of inputs with a bioimage.io model."""
     if isinstance(inputs, (str, Path)):
         inputs = [inputs]
     if len(inputs) > 1:

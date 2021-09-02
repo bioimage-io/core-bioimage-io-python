@@ -36,9 +36,7 @@ def test_cli_predict_images(unet2d_nuclei_broad_model, tmp_path):
         expected_outputs.append(out_folder / f"im-{i}.npy")
 
     input_pattern = str(in_folder / "*.npy")
-    ret = subprocess.run(
-        ["bioimageio", "predict-images", unet2d_nuclei_broad_model, input_pattern, str(out_folder)]
-    )
+    ret = subprocess.run(["bioimageio", "predict-images", unet2d_nuclei_broad_model, input_pattern, str(out_folder)])
     assert ret.returncode == 0
 
     for out_path in expected_outputs:
