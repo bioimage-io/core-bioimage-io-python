@@ -1,6 +1,4 @@
-import argparse
 import os
-import sys
 import warnings
 
 from pathlib import Path
@@ -97,17 +95,3 @@ def convert_weights_to_pytorch_script(
     # save the torchscript model
     scripted_model.save(str(output_path))  # does not support Path, so need to cast to str
     return ret
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model", "-m", required=True)
-    parser.add_argument("--output", "-o", required=True)
-    parser.add_argument("--tracing", "-t", default=1, type=int)
-
-    args = parser.parse_args()
-    return convert_weights_to_pytorch_script(args.model, args.output, bool(args.tracing))
-
-
-if __name__ == "__main__":
-    sys.exit(main())

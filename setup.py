@@ -6,7 +6,7 @@ from setuptools import find_namespace_packages, setup
 # Get the long description from the README file
 ROOT_DIR = Path(__file__).parent.resolve()
 long_description = (ROOT_DIR / "README.md").read_text(encoding="utf-8")
-VERSION_FILE = ROOT_DIR / "bioimageio" / "spec" / "VERSION"
+VERSION_FILE = ROOT_DIR / "bioimageio" / "core" / "VERSION"
 VERSION = json.loads(VERSION_FILE.read_text())["version"]
 
 
@@ -38,5 +38,4 @@ setup(
         "Source": "https://github.com/bioimage-io/python-bioimage-io",
     },
     entry_points={"console_scripts": ["bioimageio = bioimageio.core.__main__:app"]},
-    },
 )

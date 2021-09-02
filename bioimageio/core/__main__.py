@@ -8,10 +8,13 @@ from typing import List, Optional
 import typer
 
 from bioimageio.core import __version__, prediction
+try:
+    from bioimageio.core.weight_converter import torch as torch_converter
+except ImportError:
+    torch_converter = None
 
 app = typer.Typer()  # https://typer.tiangolo.com/
 
-# TODO move weight converter command line utils here
 # TODO merge spec and core CLI, see https://github.com/bioimage-io/python-bioimage-io/issues/87
 
 
@@ -81,6 +84,37 @@ def predict_images(
 
 
 predict_images.__doc__ = prediction.predict_images.__doc__
+
+
+if torch_converter is not None:
+
+    @app.command()
+    def convert_torch_weights_to_onnx(
+        model_rdf: Path = typer.Argument(
+            ...,
+            help="Path to the model resource description file (rdf.yaml) or zipped model."
+        ),
+        output_path: Path = typer.Argument(..., help="Where to save the onnx weights."),
+        opset_version: Optional[int] = typer.Argument(12, help="Onnx opset version."),
+        use_tracing: bool = typer.Argument(True, help="Whether to use torch.jit tracing or scripting."),
+        verbose: bool = typer.Argument(True, help="Verbosity")
+    ) -> int:
+        return torch_converter.convert_weights_to_onnx(model_rdf, output_path, opset_version, use_tracing, verbose)
+
+    convert_torch_weights_to_onnx.__doc__ = torch_converter.convert_weights_to_onnx.__doc__
+
+    @app.command()
+    def convert_torch_weights_to_torchscript(
+        model_rdf: Path = typer.Argument(
+            ...,
+            help="Path to the model resource description file (rdf.yaml) or zipped model."
+        ),
+        output_path: Path = typer.Argument(..., help="Where to save the torchscript weights."),
+        use_tracing: bool = typer.Argument(True, help="Whether to use torch.jit tracing or scripting.")
+    ) -> int:
+        return torch_converter.convert_weights_to_pytorch_script(model_rdf, output_path, use_tracing)
+
+    convert_torch_weights_to_torchscript.__doc__ = torch_converter.convert_weights_to_pytorch_script.__doc__
 
 
 if __name__ == "__main__":

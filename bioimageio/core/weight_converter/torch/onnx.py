@@ -1,9 +1,7 @@
-import argparse
 import os
-import sys
 import warnings
 from pathlib import Path
-from typing import Union
+from typing import Union, Optional
 
 try:
     import onnxruntime as rt
@@ -20,7 +18,7 @@ from .utils import load_model
 def convert_weights_to_onnx(
     model_spec: Union[str, Path, spec.model.raw_nodes.Model],
     output_path: Union[str, Path],
-    opset_version: Union[str, None] = 12,
+    opset_version: Optional[int] = 12,
     use_tracing: bool = True,
     verbose: bool = True,
 ):
@@ -68,21 +66,3 @@ def convert_weights_to_onnx(
             msg = f"The onnx weights were exported, but results before and after conversion do not agree:\n {str(e)}"
             warnings.warn(msg)
             return 1
-
-
-def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--model", "-m", required=True)
-    parser.add_argument("--output", "-o", required=True)
-    parser.add_argument("--opset_version", default=12, type=int)
-    parser.add_argument("--tracing", "-t", default=1, type=int)
-    parser.add_argument("--verbose", "-v", default=1, type=int)
-
-    args = parser.parse_args()
-    return convert_weights_to_onnx(
-        args.model, args.output, args.opset_version, bool(args.tracing), bool(args.verbose)
-    )
-
-
-if __name__ == "__main__":
-    sys.exit(main())
