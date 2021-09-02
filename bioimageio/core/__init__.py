@@ -1,4 +1,4 @@
 import json
 import pathlib
 
-VERSION = json.loads((pathlib.Path(__file__).parent / "VERSION").read_text())["version"]
+__version__ = json.loads((pathlib.Path(__file__).parent / "VERSION").read_text())["version"]
