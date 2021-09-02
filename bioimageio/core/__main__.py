@@ -26,8 +26,8 @@ def predict_image(
         ...,
         help="Path to the model resource description file (rdf.yaml) or zipped model."
     ),
-    inputs: List[Path] = typer.Argument(..., help="Path(s) to the model input(s)."),
-    outputs: List[Path] = typer.Argument(..., help="Path(s) for saveing the model output(s)."),
+    inputs: List[Path] = typer.Option(..., help="Path(s) to the model input(s)."),
+    outputs: List[Path] = typer.Option(..., help="Path(s) for saveing the model output(s)."),
     padding: Optional[str] = typer.Argument(
         None,
         help="Padding to apply in each dimension passed as json encoded string."
@@ -40,6 +40,9 @@ def predict_image(
     if padding is not None:
         padding = json.loads(padding.replace("'", "\""))
         assert isinstance(padding, dict)
+    # this is a weird typer bug: default devices are empty tuple although they should be None
+    if len(devices) == 0:
+        devices = None
     prediction.predict_image(model_rdf, inputs, outputs, padding, devices)
     return 0
 
@@ -78,7 +81,10 @@ def predict_images(
         padding = json.loads(padding.replace("'", "\""))
         assert isinstance(padding, dict)
 
-    prediction.predict_images(input_files, output_files, verbose=True,
+    # this is a weird typer bug: default devices are empty tuple although they should be None
+    if len(devices) == 0:
+        devices = None
+    prediction.predict_images(model_rdf, input_files, output_files, verbose=True,
                               devices=devices, padding=padding)
     return 0
 
