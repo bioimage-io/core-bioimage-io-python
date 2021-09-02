@@ -1,12 +1,18 @@
+import json
 from pathlib import Path
+
 from setuptools import find_namespace_packages, setup
 
 # Get the long description from the README file
-long_description = (Path(__file__).parent / "README.md").read_text(encoding="utf-8")
+ROOT_DIR = Path(__file__).parent.resolve()
+long_description = (ROOT_DIR / "README.md").read_text(encoding="utf-8")
+VERSION_FILE = ROOT_DIR / "bioimageio" / "spec" / "VERSION"
+VERSION = json.loads(VERSION_FILE.read_text())["version"]
+
 
 setup(
     name="bioimageio.core",
-    version="0.3b",
+    version=VERSION,
     description="Python functionality for the bioimage model zoo",
     long_description=long_description,
     long_description_content_type="text/markdown",
