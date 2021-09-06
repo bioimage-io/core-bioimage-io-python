@@ -1,7 +1,7 @@
 from typing import List
 
 import xarray as xr
-from bioimageio.spec.model.nodes import Postprocessing
+from bioimageio.core.resource_io.nodes import Postprocessing
 
 from ._preprocessing import chain
 from ._types import Transform

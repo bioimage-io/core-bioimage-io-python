@@ -2,10 +2,11 @@ from typing import Dict, List
 
 import numpy as np
 import xarray as xr
-from bioimageio.spec.model.nodes import Preprocessing
-from bioimageio.spec.model.base_nodes import PreprocessingName
 
+from bioimageio.core.resource_io.nodes import Preprocessing
+from bioimageio.spec.model.raw_nodes import PreprocessingName
 from ._types import Transform
+
 
 # ADD_BATCH_DIM = Preprocessing(name="__tiktorch_add_batch_dim", kwargs=None)
 

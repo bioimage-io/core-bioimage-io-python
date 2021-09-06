@@ -2,7 +2,7 @@ import abc
 from typing import List, Optional, Type
 
 import xarray as xr
-from bioimageio.spec.model import nodes
+from bioimageio.core.resource_io import nodes
 
 #: Known weigh types in order of priority
 #: First match wins
