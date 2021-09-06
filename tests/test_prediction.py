@@ -29,17 +29,32 @@ def test_predict_image_with_padding(unet2d_nuclei_broad_model, tmp_path):
 
     spec = load_resource_description(unet2d_nuclei_broad_model)
     image = np.load(spec.test_inputs[0])[0, 0]
+    original_shape = image.shape
     assert image.ndim == 2
 
-    image = np.pad(image, [[3, 2], [1, 12]])
+    # write the padded image
+    image = image[3:-2, 1:-12]
     in_path = tmp_path / "in.tif"
     out_path = tmp_path / "out.tif"
     imageio.imwrite(in_path, image)
 
-    predict_image(unet2d_nuclei_broad_model, in_path, out_path, padding={"x": 8, "y": 8})
-    assert out_path.exists()
-    res = imageio.imread(out_path)
-    assert res.shape == image.shape
+    def check_result():
+        assert out_path.exists()
+        res = imageio.imread(out_path)
+        assert res.shape == image.shape
+
+    # test with dynamic padding
+    predict_image(unet2d_nuclei_broad_model, in_path, out_path, padding={"x": 8, "y": 8, "mode": "dynamic"})
+    check_result()
+
+    # test with fixed padding
+    predict_image(unet2d_nuclei_broad_model, in_path, out_path,
+                  padding={"x": original_shape[0], "y": original_shape[1], "mode": "fixed"})
+    check_result()
+
+    # test with automated padding
+    predict_image(unet2d_nuclei_broad_model, in_path, out_path, padding=True)
+    check_result()
 
 
 @pytest.mark.skipif(pytest.skip_torch, reason="requires torch")

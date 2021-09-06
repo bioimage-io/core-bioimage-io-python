@@ -1,4 +1,5 @@
 import os
+from copy import deepcopy
 from pathlib import Path
 
 import imageio
@@ -46,20 +47,31 @@ def require_axes(im, axes):
 
 
 def pad(im, axes, padding):
+    padding_ = deepcopy(padding)
+    mode = padding_.pop("mode", "dynamic")
+    assert mode in ("dynamic", "fixed")
+
     is_volume = "z" in axes
     if is_volume:
-        assert len(padding) == 3
+        assert len(padding_) == 3
     else:
-        assert len(padding) == 2
+        assert len(padding_) == 2
 
     pad_width = []
     crop = {}
     for ax, dlen in zip(axes, im.shape):
-        if ax in "zyx":
-            pad_to = padding[ax]
+        if ax in "zyx" and mode == "dynamic":
+            pad_to = padding_[ax]
             r = dlen % pad_to
             pwidth = 0 if r == 0 else (pad_to - r)
             pad_width.append([0, pwidth])
+            crop[ax] = slice(0, dlen)
+        elif ax in "zyx" and mode == "fixed":
+            pad_to = padding_[ax]
+            if pad_to < dlen:
+                msg = f"Padding for axis {ax} failed; pad shape {pad_to} is smaller than the image shape {dlen}."
+                raise RuntimeError(msg)
+            pad_width.append([0, pad_to - dlen])
             crop[ax] = slice(0, dlen)
         else:
             pad_width.append([0, 0])
@@ -146,7 +158,7 @@ def predict(prediction_pipeline, inputs):
     return result
 
 
-def pad_predict_crop(prediction_pipeline, inputs, padding):
+def predict_with_padding(prediction_pipeline, inputs, padding):
     if isinstance(inputs, np.ndarray):
         inputs = [inputs]
         return_array = True
@@ -162,9 +174,49 @@ def pad_predict_crop(prediction_pipeline, inputs, padding):
     return result
 
 
-# TODO add support for tiling
+# TODO
+def predict_with_tiling(prediction_pipeline, inputs, padding):
+    pass
+
+
+def parse_padding(padding, model):
+
+    input_spec = model.inputs[0]
+    pad_keys = tuple(input_spec.axes) + ("mode",)
+
+    def check_padding(padding):
+        assert all(k in pad_keys for k in padding.keys())
+
+    if padding is None:  # no padding
+        return padding
+    elif isinstance(padding, dict):  # pre-defined padding
+        check_padding(padding)
+    elif isinstance(padding, bool):  # determine padding from spec
+        if padding:
+            axes = input_spec.axes
+            shape = input_spec.shape
+            if isinstance(shape, list):  # fixed padding
+                padding = {ax: sh for ax, sh in zip(axes, shape) if ax in "xyz"}
+                padding["mode"] = "fixed"
+            else:  # dynamic padding
+                step = shape.step
+                padding = {ax: st for ax, st in zip(axes, step) if ax in "xyz"}
+                padding["mode"] = "dynamic"
+            check_padding(padding)
+        else:  # no padding
+            padding = None
+    else:
+        raise ValueError(f"Invalid argument for padding: {padding}")
+    return padding
+
+
+# TODO
+def parse_tiling(tiling, model):
+    pass
+
+
 # TODO support models with multiple in/outputs
-def predict_image(model_rdf, inputs, outputs, padding=None, devices=None):
+def predict_image(model_rdf, inputs, outputs, padding=None, tiling=None, devices=None):
     """Run prediction for a single set of inputs with a bioimage.io model."""
     if isinstance(inputs, (str, Path)):
         inputs = [inputs]
@@ -183,22 +235,27 @@ def predict_image(model_rdf, inputs, outputs, padding=None, devices=None):
         raise ValueError
 
     prediction_pipeline = create_prediction_pipeline(bioimageio_model=model, devices=devices)
-
     axes = tuple(prediction_pipeline.input_axes)
-    input_data = [load_image(inp, axes) for inp in inputs]
 
-    if padding is None:
-        res = predict(prediction_pipeline, input_data)
+    padding = parse_padding(padding, model)
+    tiling = parse_tiling(tiling, model)
+    if padding is not None and tiling is not None:
+        raise ValueError("Only one of padding or tiling is supported")
+
+    input_data = [load_image(inp, axes) for inp in inputs]
+    if padding is not None:
+        res = predict_with_padding(prediction_pipeline, input_data, padding)
+    elif tiling is not None:
+        res = predict_with_tiling(prediction_pipeline, input_data, tiling)
     else:
-        res = pad_predict_crop(prediction_pipeline, input_data, padding)
+        res = predict(prediction_pipeline, input_data)
 
     if isinstance(res, list):
         res = res[0]
     save_image(outputs[0], res)
 
 
-# TODO add support for tiling
-def predict_images(model_rdf, inputs, outputs, verbose=False, padding=None, devices=None):
+def predict_images(model_rdf, inputs, outputs, verbose=False, padding=None, tiling=None, devices=None):
     """Predict multiple inputs with a bioimage.io model.
 
     Only works for models with a single input and output tensor.
@@ -208,14 +265,21 @@ def predict_images(model_rdf, inputs, outputs, verbose=False, padding=None, devi
     prediction_pipeline = create_prediction_pipeline(bioimageio_model=model, devices=devices)
     axes = tuple(prediction_pipeline.input_axes)
 
+    padding = parse_padding(padding, model)
+    tiling = parse_tiling(tiling, model)
+    if padding is not None and tiling is not None:
+        raise ValueError("Only one of padding or tiling is supported")
+
     prog = zip(inputs, outputs)
     if verbose:
         prog = tqdm(prog, total=len(inputs))
 
     for inp, outp in prog:
         inp = load_image(inp, axes)
-        if padding is None:
-            res = predict(prediction_pipeline, inp)
+        if padding is not None:
+            res = predict_with_padding(prediction_pipeline, inp, padding)
+        elif tiling is not None:
+            res = predict_with_tiling(prediction_pipeline, inp, tiling)
         else:
-            res = pad_predict_crop(prediction_pipeline, inp, padding)
+            res = predict(prediction_pipeline, inp)
         save_image(outp, res)
