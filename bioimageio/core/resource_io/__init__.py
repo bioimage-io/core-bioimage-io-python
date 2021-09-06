@@ -1,4 +1,4 @@
-from .delegator import (
+from .io_ import (
     export_resource_package,
     load_raw_resource_description,
     load_resource_description,
