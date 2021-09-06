@@ -48,8 +48,12 @@ def test_predict_image_with_padding(unet2d_nuclei_broad_model, tmp_path):
     check_result()
 
     # test with fixed padding
-    predict_image(unet2d_nuclei_broad_model, in_path, out_path,
-                  padding={"x": original_shape[0], "y": original_shape[1], "mode": "fixed"})
+    predict_image(
+        unet2d_nuclei_broad_model,
+        in_path,
+        out_path,
+        padding={"x": original_shape[0], "y": original_shape[1], "mode": "fixed"},
+    )
     check_result()
 
     # test with automated padding

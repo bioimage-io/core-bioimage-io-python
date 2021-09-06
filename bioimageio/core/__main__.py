@@ -33,12 +33,8 @@ def predict_image(
     # tiling: Optional[Union[str, bool]] = typer.Argument(
     #     None, help="Padding to apply in each dimension passed as json encoded string."
     # ),
-    padding: Optional[bool] = typer.Argument(
-        None, help="Whether to pad the image to a size suited for the model."
-    ),
-    tiling: Optional[bool] = typer.Argument(
-        None, help="Whether to run prediction in tiling mode."
-    ),
+    padding: Optional[bool] = typer.Argument(None, help="Whether to pad the image to a size suited for the model."),
+    tiling: Optional[bool] = typer.Argument(None, help="Whether to run prediction in tiling mode."),
     devices: Optional[List[str]] = typer.Argument(None, help="Devices for running the model."),
 ) -> int:
 
@@ -74,12 +70,8 @@ def predict_images(
     # tiling: Optional[Union[str, bool]] = typer.Argument(
     #     None, help="Padding to apply in each dimension passed as json encoded string."
     # ),
-    padding: Optional[bool] = typer.Argument(
-        None, help="Whether to pad the image to a size suited for the model."
-    ),
-    tiling: Optional[bool] = typer.Argument(
-        None, help="Whether to run prediction in tiling mode."
-    ),
+    padding: Optional[bool] = typer.Argument(None, help="Whether to pad the image to a size suited for the model."),
+    tiling: Optional[bool] = typer.Argument(None, help="Whether to run prediction in tiling mode."),
     devices: Optional[List[str]] = typer.Argument(None, help="Devices for running the model."),
 ) -> int:
     input_files = glob(input_pattern)
@@ -98,8 +90,9 @@ def predict_images(
     # this is a weird typer bug: default devices are empty tuple although they should be None
     if len(devices) == 0:
         devices = None
-    prediction.predict_images(model_rdf, input_files, output_files,
-                              verbose=True, devices=devices, padding=padding, tiling=tiling)
+    prediction.predict_images(
+        model_rdf, input_files, output_files, verbose=True, devices=devices, padding=padding, tiling=tiling
+    )
     return 0
 
 
