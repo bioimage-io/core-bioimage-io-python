@@ -112,14 +112,6 @@ def _to_channel_last(image):
     return image
 
 
-def _to_channel_first(image):
-    chan_id = image.dims.index("c")
-    if chan_id != 0:
-        target_axes = ("c",) + tuple(ax for ax in image.dims if ax != "c")
-        image = image.transpose(*target_axes)
-    return image
-
-
 def save_image(out_path, image):
     ext = os.path.splitext(out_path)[1]
     if ext == ".npy":
@@ -198,7 +190,7 @@ def get_tiling(shape, tile_shape, halo, input_axes):
         yield outer_tile, inner_tile, local_tile
 
 
-def predict_with_tiling_impl(prediction_pipeline, input_, output, tile_shape, halo, input_axes, channel_first):
+def predict_with_tiling_impl(prediction_pipeline, input_, output, tile_shape, halo, input_axes):
     assert input_.ndim == len(input_axes), f"{input_.ndim}, {len(input_axes)}"
 
     input_ = xr.DataArray(input_, dims=input_axes)
@@ -211,14 +203,6 @@ def predict_with_tiling_impl(prediction_pipeline, input_, output, tile_shape, ha
         pad_right = [None, None] + [tile[ax].start == 0 for ax in input_axes if ax in "xyz"]
         return inp, pad_right
 
-    def write_tile(out, inner_tile, local_tile):
-        c_index = out.dims.index("c")
-        if channel_first and c_index != 0:
-            out = _to_channel_first(out)
-        elif not channel_first and c_index != len(out.dims) - 1:
-            out = _to_channel_last(out)
-        output[inner_tile] = out[local_tile]
-
     # we need to use padded prediction for the individual tiles in case the
     # border tiles don't match the requested tile shape
     padding = {ax: tile_shape[ax] + 2 * halo[ax] for ax in input_axes if ax in "xyz"}
@@ -226,7 +210,7 @@ def predict_with_tiling_impl(prediction_pipeline, input_, output, tile_shape, ha
     for outer_tile, inner_tile, local_tile in tiles:
         inp, pad_right = load_tile(outer_tile)
         out = predict_with_padding(prediction_pipeline, inp, padding, pad_right)
-        write_tile(out, inner_tile, local_tile)
+        output[inner_tile] = out[local_tile]
 
 
 #
@@ -267,24 +251,23 @@ def predict_with_tiling(prediction_pipeline, inputs, tiling):
     else:
         input_ = inputs
     input_axes = tuple(prediction_pipeline.input_axes)
-    in_channels = input_.shape[input_axes.index("c")]
 
     output_axes = tuple(prediction_pipeline.output_axes)
+    # NOTE there could also be models with a fixed output shape, but this is currently
+    # not reflected in prediction_pipeline, need to adapt this here once fixed
     scale, offset = prediction_pipeline.scale, prediction_pipeline.offset
     scale, offset = {sc[0]: sc[1] for sc in scale}, {off[0]: off[1] for off in offset}
 
     # for now, we only support tiling if the spatial shape doesn't change
+    # supporting this should not be so difficult, we would just need to apply the inverse
+    # to "out_shape = scale * in_shape + 2 * offset" ("in_shape = (out_shape - 2 * offset) / scale")
+    # to 'outer_tile' in 'get_tiling'
     if any(scale[ax] != 1 for ax in output_axes if ax in "xyz") or\
        any(offset[ax] != 0 for ax in output_axes if ax in "xyz"):
         raise NotImplementedError("Tiling with a different output shape is not yet supported")
 
-    out_channels = int(scale["c"] * in_channels + 2 * offset["c"])
-    c_index = output_axes.index("c")
-    channel_first = c_index <= 1
-
     out_shape = tuple(
-        out_channels if ax == "c" else input_.shape[input_axes.index(ax)]
-        for ax in output_axes
+        int(scale[ax] * input_.shape[input_axes.index(ax)] + 2 * offset[ax]) for ax in output_axes
     )
     # TODO the dtype information is missing from prediction pipeline
     out_dtype = "float32"
@@ -293,7 +276,7 @@ def predict_with_tiling(prediction_pipeline, inputs, tiling):
     halo = tiling["halo"]
     tile_shape = tiling["tile"]
 
-    predict_with_tiling_impl(prediction_pipeline, input_, output, tile_shape, halo, input_axes, channel_first)
+    predict_with_tiling_impl(prediction_pipeline, input_, output, tile_shape, halo, input_axes)
     return output
 
 
@@ -344,6 +327,8 @@ def parse_tiling(tiling, model):
             # NOTE we assume here that shape in input and output are the same
             # for different input and output shapes, we should actually tile in the
             # output space and then request the corresponding input tiles
+            # so we would need to apply the output scale and offset to the
+            # input shape to compute the tile size and halo here
             axes = input_spec.axes
             shape = input_spec.shape
             if not isinstance(shape, list):
