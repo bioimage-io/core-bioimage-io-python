@@ -7,6 +7,8 @@ from bioimageio.core import export_resource_package
 def pytest_configure():
     try:
         import tensorflow
+
+        pytest.tf_major_version = int(tensorflow.__version__.split(".")[0])
     except ImportError:
         tensorflow = None
     pytest.skip_tf = tensorflow is None
@@ -23,6 +25,12 @@ def pytest_configure():
         onnxruntime = None
     pytest.skip_onnx = onnxruntime is None
 
+    try:
+        import keras
+    except ImportError:
+        keras = None
+    pytest.skip_keras = keras is None
+
 
 @pytest.fixture
 def unet2d_nuclei_broad_model():
@@ -36,6 +44,7 @@ def unet2d_nuclei_broad_model():
 
 @pytest.fixture
 def FruNet_model():
-    url = "https://raw.githubusercontent.com/deepimagej/models/master/fru-net_sev_segmentation/model.yaml"
+    # url = "https://raw.githubusercontent.com/deepimagej/models/master/fru-net_sev_segmentation/model.yaml"
+    url = "https://sandbox.zenodo.org/record/894498/files/rdf.yaml"
     cached_path = export_resource_package(url)
     return cached_path

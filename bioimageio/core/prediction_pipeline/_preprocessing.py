@@ -23,23 +23,48 @@ def scale_linear(tensor: xr.DataArray, *, gain, offset, axes) -> xr.DataArray:
     return ensure_dtype(tensor * gain + offset, dtype="float32")
 
 
-def zero_mean_unit_variance(tensor: xr.DataArray, axes=None, eps=1.0e-6, mode="per_sample") -> xr.DataArray:
-    if axes:
+def zero_mean_unit_variance(
+    tensor: xr.DataArray, *, axes=None, eps=1.0e-6, mode="per_sample", mean=None, std=None
+) -> xr.DataArray:
+    # valid modes according to spec: "per_sample", "per_dataset", "fixed"
+    # TODO implement "per_dataset"
+    if mode not in ("per_sample", "fixed"):
+        raise NotImplementedError(f"Unsupported mode for zero_mean_unit_variance: {mode}")
+
+    if mode == "fixed":
+        assert mean is not None and std is not None
+    elif axes:
         axes = tuple(axes)
         mean, std = tensor.mean(axes), tensor.std(axes)
     else:
         mean, std = tensor.mean(), tensor.std()
 
-    if mode != "per_sample":
-        raise NotImplementedError(f"Unsupported mode for zero_mean_unit_variance: {mode}")
-
-    ret = (tensor - mean) / (std + 1.0e-6)
+    ret = (tensor - mean) / (std + eps)
 
     return ensure_dtype(ret, dtype="float32")
 
 
 def binarize(tensor: xr.DataArray, *, threshold) -> xr.DataArray:
     return ensure_dtype(tensor > threshold, dtype="float32")
+
+
+def scale_range(
+    tensor: xr.DataArray, *, mode="per_sample", axes=None, min_percentile=0.0, max_percentile=100.0
+) -> xr.DataArray:
+    # valid modes according to spec: "per_sample", "per_dataset"
+    # TODO implement per_dataset
+    if mode != "per_sample":
+        raise NotImplementedError(f"Unsupported mode for scale_range: {mode}")
+
+    if axes:
+        axes = tuple(axes)
+        v_lower = tensor.quantile(min_percentile / 100.0, dim=axes)
+        v_upper = tensor.quantile(max_percentile / 100.0, dim=axes)
+    else:
+        v_lower = tensor.quantile(min_percentile / 100.0)
+        v_upper = tensor.quantile(max_percentile / 100.0)
+
+    return ensure_dtype((tensor - v_lower) / v_upper, dtype="float32")
 
 
 def clip(tensor: xr.DataArray, *, min: float, max: float) -> xr.DataArray:
@@ -58,6 +83,7 @@ KNOWN_PREPROCESSING: Dict[PreprocessingName, Transform] = {
     "zero_mean_unit_variance": zero_mean_unit_variance,
     "binarize": binarize,
     "clip": clip,
+    "scale_range": scale_range
     # "__tiktorch_ensure_dtype": ensure_dtype,
 }
 

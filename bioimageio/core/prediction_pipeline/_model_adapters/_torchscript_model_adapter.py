@@ -19,9 +19,8 @@ class TorchscriptModelAdapter(ModelAdapter):
         self._internal_input_axes = _input.axes
         self._internal_output_axes = _output.axes
 
-        self.devices = devices
         if devices is None:
-            devices = ["cuda" if torch.cuda.is_available() else "cpu"]
+            self.devices = ["cuda" if torch.cuda.is_available() else "cpu"]
         else:
             self.devices = [torch.device(d) for d in devices]
 

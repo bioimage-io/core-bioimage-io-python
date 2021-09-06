@@ -60,6 +60,21 @@ def test_zero_mean_unit_across_axes():
     xr.testing.assert_allclose(expected, result[dict(c=0)])
 
 
+def test_zero_mean_unit_variance_fixed():
+    np_data = np.arange(9).reshape(3, 3)
+    mean = np_data.mean()
+    std = np_data.mean()
+    eps = 1.0e-7
+    kwargs = {"mode": "fixed", "mean": mean, "std": std, "eps": eps}
+    zero_mean_spec = Preprocessing(name="zero_mean_unit_variance", kwargs=kwargs)
+    data = xr.DataArray(np_data, dims=("x", "y"))
+
+    expected = xr.DataArray((np_data - mean) / (std + eps), dims=("x", "y"))
+    preprocessing = make_preprocessing([zero_mean_spec])
+    result = preprocessing(data)
+    xr.testing.assert_allclose(expected, result)
+
+
 def test_binarize():
     binarize_spec = Preprocessing(name="binarize", kwargs={"threshold": 14})
     data = xr.DataArray(np.arange(30).reshape(2, 3, 5), dims=("x", "y", "c"))
@@ -103,3 +118,36 @@ def test_combination_of_preprocessing_steps_with_dims_specified():
     preprocessing = make_preprocessing([zero_mean_spec])
     result = preprocessing(data)
     xr.testing.assert_allclose(expected, result[dict(c=0)])
+
+
+def test_scale_range():
+    scale_range_spec = Preprocessing(name="scale_range", kwargs={})
+
+    np_data = np.arange(9).reshape(3, 3).astype("float32")
+    data = xr.DataArray(np_data, dims=("x", "y"))
+
+    exp_data = (np_data - np_data.min()) / np_data.max()
+    expected = xr.DataArray(exp_data, dims=("x", "y"))
+
+    preprocessing = make_preprocessing([scale_range_spec])
+    result = preprocessing(data)
+    xr.testing.assert_allclose(expected, result)
+
+
+def test_scale_range_axes():
+    min_percentile = 1.0
+    max_percentile = 99.0
+    kwargs = {"axes": ("x", "y"), "min_percentile": min_percentile, "max_percentile": max_percentile}
+    scale_range_spec = Preprocessing(name="scale_range", kwargs=kwargs)
+
+    np_data = np.arange(18).reshape(2, 3, 3).astype("float32")
+    data = xr.DataArray(np_data, dims=("c", "x", "y"))
+
+    p_low = np.percentile(np_data, min_percentile, axis=(1, 2), keepdims=True)
+    p_up = np.percentile(np_data, max_percentile, axis=(1, 2), keepdims=True)
+    exp_data = (np_data - p_low) / p_up
+    expected = xr.DataArray(exp_data, dims=("c", "x", "y"))
+
+    preprocessing = make_preprocessing([scale_range_spec])
+    result = preprocessing(data)
+    xr.testing.assert_allclose(expected, result)
