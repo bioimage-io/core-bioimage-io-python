@@ -6,13 +6,17 @@ from io import StringIO
 from typing import Dict, Optional, Sequence, Tuple, Union
 from zipfile import ZIP_DEFLATED, ZipFile
 
+from marshmallow import ValidationError
+
 from bioimageio import spec
 from bioimageio.core.resource_io.nodes import ResourceDescription
 from bioimageio.spec.shared import raw_nodes
 from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
 from bioimageio.spec.shared.utils import PathToRemoteUriTransformer
-from .common import yaml
-from .utils import resolve_local_uri, resolve_uri
+from . import nodes
+from .common import BIOIMAGEIO_CACHE_PATH, yaml
+from .utils import _download_uri_to_local_path, resolve_local_uri, resolve_raw_resource_description, resolve_uri
+from bioimageio.spec.shared.common import get_class_name_from_type
 
 
 def load_raw_resource_description(source: Union[os.PathLike, str, dict, raw_nodes.URI]) -> RawResourceDescription:
@@ -62,28 +66,26 @@ def ensure_raw_resource_description(
     source: Union[str, dict, os.PathLike, raw_nodes.URI, RawResourceDescription],
     root_path: os.PathLike = pathlib.Path(),
 ) -> Tuple[RawResourceDescription, pathlib.Path]:
+    root_path = pathlib.Path(root_path)
     if isinstance(source, raw_nodes.RawNode) and not isinstance(source, raw_nodes.URI):
         assert isinstance(source, RawResourceDescription)
-        return source, pathlib.Path(root_path)
+        return source, root_path
     elif isinstance(source, dict):
         data = source
     elif isinstance(source, (str, os.PathLike, raw_nodes.URI)):
-        local_raw_rd = resolve_uri(source, root_path)
-        if local_raw_rd.suffix == ".zip":
-            local_raw_rd = extract_resource_package(local_raw_rd)
-            raw_rd = local_raw_rd  # zip package contains everything. ok to 'forget' that source was remote
+        local_source = resolve_uri(source, root_path)
+        if local_source.suffix == ".zip":
+            local_source = extract_resource_package(local_source)
 
-        root_path = local_raw_rd.parent
-        data = yaml.load(local_raw_rd)
+        root_path = local_source.parent
+        data = yaml.load(local_source)
     else:
         raise TypeError(source)
 
     assert isinstance(data, dict)
 
-    format_version = "latest" if update_to_current_format else data.get("format_version", "latest")
-    io_cls = _get_matching_io_class(type_, format_version)
-
-    return io_cls.ensure_raw_rd(raw_rd, root_path)
+    raw_rd = load_raw_resource_description(data)
+    return raw_rd, root_path
 
 
 def load_resource_description(
@@ -115,9 +117,9 @@ def load_resource_description(
             raise ValueError(f"Not found any of the specified weights formats ({weights_priority_order})")
 
     rd: ResourceDescription = resolve_raw_resource_description(
-        raw_rd=raw_rd, root_path=pathlib.Path(root_path), nodes_module=cls.nodes
+        raw_rd=raw_rd, root_path=pathlib.Path(root_path), nodes_module=nodes
     )
-    assert isinstance(rd, getattr(cls.nodes, get_class_name_from_type(raw_rd.type)))
+    assert isinstance(rd, getattr(nodes, get_class_name_from_type(raw_rd.type)))
 
     return rd
 
@@ -127,7 +129,6 @@ def export_resource_package(
     root_path: os.PathLike = pathlib.Path(),
     *,
     output_path: Optional[os.PathLike] = None,
-    update_to_current_format: bool = False,
     weights_priority_order: Optional[Sequence[Union[str]]] = None,
     compression: int = ZIP_DEFLATED,
     compression_level: int = 1,
@@ -138,7 +139,6 @@ def export_resource_package(
         source: raw resource description, path, URI or raw data as dict
         root_path: for relative paths (only used if source is RawResourceDescription or dict)
         output_path: file path to write package to
-        update_to_current_format: Convert not only the patch version, but also the major and minor version.
         weights_priority_order: If given only the first weights format present in the model is included.
                                 If none of the prioritized weights formats is found all are included.
         compression: The numeric constant of compression method.
@@ -148,9 +148,8 @@ def export_resource_package(
     Returns:
         path to zipped BioImage.IO package in BIOIMAGEIO_CACHE_PATH or 'output_path'
     """
-    raw_rd, _ = ensure_raw_resource_description(source, root_path, update_to_current_format)
-    io_cls = _get_matching_io_class(raw_rd.type, raw_rd.format_version)
-    return io_cls.export_resource_package(
+    raw_rd, _ = ensure_raw_resource_description(source, root_path)
+    return export_resource_package(
         source,
         root_path,
         output_path=output_path,
