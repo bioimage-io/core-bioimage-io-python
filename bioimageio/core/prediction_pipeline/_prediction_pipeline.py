@@ -204,8 +204,10 @@ def create_prediction_pipeline(
     preprocessing: Transform = make_preprocessing(preprocessing_spec)
 
     output = bioimageio_model.outputs[0]
+    # TODO are we using the halo here at all?
     halo_shape = output.halo or [0 for _ in output.axes]
     output_axes = bioimageio_model.outputs[0].axes
+    # TODO don't we also have fixed output shape?
     scale = output.shape.scale
     offset = output.shape.offset
     postprocessing_spec = [] if output.postprocessing is missing else output.postprocessing.copy()

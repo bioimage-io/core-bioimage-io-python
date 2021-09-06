@@ -19,8 +19,6 @@ app = typer.Typer()  # https://typer.tiangolo.com/
 # TODO merge spec and core CLI, see https://github.com/bioimage-io/python-bioimage-io/issues/87
 
 
-# TODO add support for tiling
-# TODO support models with multiple in/outputs
 @app.command()
 def predict_image(
     model_rdf: Path = typer.Argument(
@@ -28,25 +26,39 @@ def predict_image(
     ),
     inputs: List[Path] = typer.Option(..., help="Path(s) to the model input(s)."),
     outputs: List[Path] = typer.Option(..., help="Path(s) for saveing the model output(s)."),
-    padding: Optional[str] = typer.Argument(
-        None, help="Padding to apply in each dimension passed as json encoded string."
+    # NOTE: typer currently doesn't support union types, so we only support boolean here
+    # padding: Optional[Union[str, bool]] = typer.Argument(
+    #     None, help="Padding to apply in each dimension passed as json encoded string."
+    # ),
+    # tiling: Optional[Union[str, bool]] = typer.Argument(
+    #     None, help="Padding to apply in each dimension passed as json encoded string."
+    # ),
+    padding: Optional[bool] = typer.Argument(
+        None, help="Whether to pad the image to a size suited for the model."
+    ),
+    tiling: Optional[bool] = typer.Argument(
+        None, help="Whether to run prediction in tiling mode."
     ),
     devices: Optional[List[str]] = typer.Argument(None, help="Devices for running the model."),
 ) -> int:
-    if padding is not None:
+
+    if isinstance(padding, str):
         padding = json.loads(padding.replace("'", '"'))
         assert isinstance(padding, dict)
+    if isinstance(tiling, str):
+        tiling = json.loads(tiling.replace("'", '"'))
+        assert isinstance(tiling, dict)
+
     # this is a weird typer bug: default devices are empty tuple although they should be None
     if len(devices) == 0:
         devices = None
-    prediction.predict_image(model_rdf, inputs, outputs, padding, devices)
+    prediction.predict_image(model_rdf, inputs, outputs, padding, tiling, devices)
     return 0
 
 
 predict_image.__doc__ = prediction.predict_image.__doc__
 
 
-# TODO add support for tiling
 @app.command()
 def predict_images(
     model_rdf: Path = typer.Argument(
@@ -55,8 +67,18 @@ def predict_images(
     input_pattern: str = typer.Argument(..., help="Glob pattern for the input images."),
     output_folder: str = typer.Argument(..., help="Folder to save the outputs."),
     output_extension: Optional[str] = typer.Argument(None, help="Optional output extension."),
-    padding: Optional[str] = typer.Argument(
-        None, help="Padding to apply in each dimension passed as json encoded string."
+    # NOTE: typer currently doesn't support union types, so we only support boolean here
+    # padding: Optional[Union[str, bool]] = typer.Argument(
+    #     None, help="Padding to apply in each dimension passed as json encoded string."
+    # ),
+    # tiling: Optional[Union[str, bool]] = typer.Argument(
+    #     None, help="Padding to apply in each dimension passed as json encoded string."
+    # ),
+    padding: Optional[bool] = typer.Argument(
+        None, help="Whether to pad the image to a size suited for the model."
+    ),
+    tiling: Optional[bool] = typer.Argument(
+        None, help="Whether to run prediction in tiling mode."
     ),
     devices: Optional[List[str]] = typer.Argument(None, help="Devices for running the model."),
 ) -> int:
@@ -66,14 +88,18 @@ def predict_images(
     if output_extension is not None:
         output_files = [f"{os.path.splitext(outfile)[0]}{output_extension}" for outfile in output_files]
 
-    if padding is not None:
+    if isinstance(padding, str):
         padding = json.loads(padding.replace("'", '"'))
         assert isinstance(padding, dict)
+    if isinstance(tiling, str):
+        tiling = json.loads(tiling.replace("'", '"'))
+        assert isinstance(tiling, dict)
 
     # this is a weird typer bug: default devices are empty tuple although they should be None
     if len(devices) == 0:
         devices = None
-    prediction.predict_images(model_rdf, input_files, output_files, verbose=True, devices=devices, padding=padding)
+    prediction.predict_images(model_rdf, input_files, output_files,
+                              verbose=True, devices=devices, padding=padding, tiling=tiling)
     return 0
 
 

@@ -58,6 +58,35 @@ def test_predict_image_with_padding(unet2d_nuclei_broad_model, tmp_path):
 
 
 @pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
+def test_predict_image_with_tiling(unet2d_nuclei_broad_model, tmp_path):
+    from bioimageio.core.prediction import predict_image
+
+    spec = load_resource_description(unet2d_nuclei_broad_model)
+    inputs = spec.test_inputs
+    assert len(inputs) == 1
+    exp = np.load(spec.test_outputs[0])
+
+    out_path = tmp_path.with_suffix(".npy")
+
+    def check_result():
+        assert out_path.exists()
+        res = np.load(out_path)
+        assert res.shape == exp.shape
+        # mean deviation should be smaller 0.1
+        mean_deviation = np.abs(res - exp).mean()
+        assert mean_deviation < 0.1
+
+    # with tiling config
+    tiling = {"halo": {"x": 32, "y": 32}, "tile": {"x": 256, "y": 256}}
+    predict_image(unet2d_nuclei_broad_model, inputs, [out_path], tiling=tiling)
+    check_result()
+
+    # with tiling determined from spec
+    predict_image(unet2d_nuclei_broad_model, inputs, [out_path], tiling=True)
+    check_result()
+
+
+@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
 def test_predict_images(unet2d_nuclei_broad_model, tmp_path):
     from bioimageio.core.prediction import predict_images
 
