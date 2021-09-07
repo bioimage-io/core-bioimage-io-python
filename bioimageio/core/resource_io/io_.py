@@ -110,6 +110,36 @@ def load_resource_description(
     return rd
 
 
+def get_local_resource_package_content(
+    source: RawResourceDescription, root_path: os.PathLike, weights_priority_order: Optional[Sequence[Union[str]]]
+) -> Dict[str, Union[pathlib.Path, str]]:
+    """
+
+    Args:
+        source: raw resource description
+        root_path: root for relative paths
+        weights_priority_order: If given only the first weights format present in the model is included.
+                                If none of the prioritized weights formats is found all are included.
+
+    Returns:
+        Package content of local file paths or text content keyed by file names.
+
+    """
+    raw_rd, root_path = ensure_raw_resource_description(source, root_path)
+    raw_rd, package_content = spec.get_resource_package_content(raw_rd, weights_priority_order=weights_priority_order)
+
+    local_package_content = {}
+    for k, v in package_content.items():
+        if isinstance(v, raw_nodes.URI):
+            v = resolve_uri(v, root_path)
+        elif isinstance(v, pathlib.Path):
+            v = root_path / v
+
+        local_package_content[k] = v
+
+    return local_package_content
+
+
 def export_resource_package(
     source: Union[RawResourceDescription, os.PathLike, str, dict, raw_nodes.URI],
     root_path: os.PathLike = pathlib.Path(),
