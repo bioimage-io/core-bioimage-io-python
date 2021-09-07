@@ -2,7 +2,6 @@ import os
 import pathlib
 import warnings
 from copy import deepcopy
-from io import StringIO
 from typing import Dict, Optional, Sequence, Tuple, Union
 from zipfile import ZIP_DEFLATED, ZipFile
 
@@ -17,6 +16,10 @@ from . import nodes
 from .common import BIOIMAGEIO_CACHE_PATH, yaml
 from .utils import _download_uri_to_local_path, resolve_local_uri, resolve_raw_resource_description, resolve_uri
 from bioimageio.spec.shared.common import get_class_name_from_type
+
+
+serialize_raw_resource_description = spec.io_.serialize_raw_resource_description
+save_raw_resource_description = spec.io_.save_raw_resource_description
 
 
 def load_raw_resource_description(source: Union[os.PathLike, str, dict, raw_nodes.URI]) -> RawResourceDescription:
@@ -43,23 +46,6 @@ def load_raw_resource_description(source: Union[os.PathLike, str, dict, raw_node
         raw_rd = PathToRemoteUriTransformer(remote_source=source).transform(raw_rd)
 
     return raw_rd
-
-
-def save_raw_resource_description(raw_rd: RawResourceDescription, path: pathlib.Path):
-    warnings.warn("only saving serialized rdf, no associated resources.")
-    if path.suffix != ".yaml":
-        warnings.warn("saving with '.yaml' suffix is strongly encouraged.")
-
-    serialized = spec.serialize_raw_resource_description_to_dict(raw_rd)
-    yaml.dump(serialized, path)
-
-
-def serialize_raw_resource_description(raw_rd: RawResourceDescription) -> str:
-    serialized = spec.serialize_raw_resource_description_to_dict(raw_rd)
-
-    with StringIO() as stream:
-        yaml.dump(serialized, stream)
-        return stream.getvalue()
 
 
 def ensure_raw_resource_description(
