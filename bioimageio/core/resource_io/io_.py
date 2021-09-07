@@ -124,7 +124,7 @@ def get_local_resource_package_content(
     """
     raw_rd, rp = ensure_raw_resource_description(source)
     root_path = root_path / rp
-    raw_rd, package_content = spec.get_resource_package_content(raw_rd, weights_priority_order=weights_priority_order)
+    package_content = spec.get_resource_package_content(raw_rd, weights_priority_order=weights_priority_order)
 
     local_package_content = {}
     for k, v in package_content.items():
