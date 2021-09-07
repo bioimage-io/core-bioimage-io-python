@@ -66,8 +66,6 @@ def _check_predictions(model, scripted_model, model_spec, input_data):
         if step_factor > max_steps:
             return ret
 
-    return ret
-
 
 def convert_weights_to_pytorch_script(
     model_spec: Union[str, Path, spec.model.raw_nodes.Model], output_path: Union[str, Path], use_tracing: bool = True
