@@ -2,7 +2,7 @@ import os
 import pathlib
 import warnings
 from copy import deepcopy
-from typing import Dict, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, Optional, Sequence, Tuple, Union
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from marshmallow import ValidationError, missing
@@ -22,18 +22,9 @@ serialize_raw_resource_description = spec.io_.serialize_raw_resource_description
 save_raw_resource_description = spec.io_.save_raw_resource_description
 
 
-def load_raw_resource_description(source: Union[os.PathLike, str, dict, raw_nodes.URI]) -> RawResourceDescription:
-    """load a raw python representation from a BioImage.IO resource description file (RDF).
-    Use `load_resource_description` for a more convenient representation.
-
-    Args:
-        source: resource description file (RDF)
-
-    Returns:
-        raw BioImage.IO resource
-    """
-    data, type_ = resolve_rdf_source_and_type(source)
-    raw_rd = spec.load_raw_resource_description(data, update_to_current_format=True)
+def _replace_relative_paths_for_remote_source(
+    raw_rd: RawResourceDescription, source: Union[Any, str, raw_nodes.URI]
+) -> RawResourceDescription:
     if isinstance(source, raw_nodes.URI) or isinstance(source, str) and source.startswith("http"):
         # for a remote source relative paths are invalid; replace all relative file paths in source with URLs
         if isinstance(source, str):
@@ -48,6 +39,22 @@ def load_raw_resource_description(source: Union[os.PathLike, str, dict, raw_node
     return raw_rd
 
 
+def load_raw_resource_description(source: Union[os.PathLike, str, dict, raw_nodes.URI]) -> RawResourceDescription:
+    """load a raw python representation from a BioImage.IO resource description file (RDF).
+    Use `load_resource_description` for a more convenient representation.
+
+    Args:
+        source: resource description file (RDF)
+
+    Returns:
+        raw BioImage.IO resource
+    """
+    data, type_ = resolve_rdf_source_and_type(source)
+    raw_rd = spec.load_raw_resource_description(data, update_to_current_format=True)
+    raw_rd = _replace_relative_paths_for_remote_source(raw_rd, source)
+    return raw_rd
+
+
 def ensure_raw_resource_description(
     source: Union[str, dict, os.PathLike, raw_nodes.URI, RawResourceDescription]
 ) -> Tuple[RawResourceDescription, pathlib.Path]:
@@ -59,6 +66,7 @@ def ensure_raw_resource_description(
 
     assert isinstance(data, dict)
     raw_rd = load_raw_resource_description(data)
+    raw_rd = _replace_relative_paths_for_remote_source(raw_rd, source)
     return raw_rd, root_path
 
 
@@ -267,6 +275,7 @@ def get_dict_and_root_path_from_yaml_source(
     assert isinstance(local_source, pathlib.Path)
     if local_source.suffix == ".zip":
         local_source = extract_resource_package(local_source)
+        root_path = local_source.parent
 
     if local_source.suffix == ".yml":
         warnings.warn(
