@@ -49,27 +49,15 @@ def load_raw_resource_description(source: Union[os.PathLike, str, dict, raw_node
 
 
 def ensure_raw_resource_description(
-    source: Union[str, dict, os.PathLike, raw_nodes.URI, RawResourceDescription],
-    root_path: os.PathLike = pathlib.Path(),
+    source: Union[str, dict, os.PathLike, raw_nodes.URI, RawResourceDescription]
 ) -> Tuple[RawResourceDescription, pathlib.Path]:
-    root_path = pathlib.Path(root_path)
     if isinstance(source, raw_nodes.RawNode) and not isinstance(source, raw_nodes.URI):
         assert isinstance(source, RawResourceDescription)
-        return source, root_path
-    elif isinstance(source, dict):
-        data = source
-    elif isinstance(source, (str, os.PathLike, raw_nodes.URI)):
-        local_source = resolve_uri(source, root_path)
-        if local_source.suffix == ".zip":
-            local_source = extract_resource_package(local_source)
-
-        root_path = local_source.parent
-        data = yaml.load(local_source)
+        return source, pathlib.Path()
     else:
-        raise TypeError(source)
+        data, root_path = get_dict_and_root_path_from_yaml_source(source)
 
     assert isinstance(data, dict)
-
     raw_rd = load_raw_resource_description(data)
     return raw_rd, root_path
 
@@ -92,7 +80,8 @@ def load_resource_description(
         BioImage.IO resource
     """
     source = deepcopy(source)
-    raw_rd, root_path = ensure_raw_resource_description(source, root_path)
+    raw_rd, rp = ensure_raw_resource_description(source)
+    root_path = root_path / rp
 
     if weights_priority_order is not None:
         for wf in weights_priority_order:
@@ -125,7 +114,8 @@ def get_local_resource_package_content(
         Package content of local file paths or text content keyed by file names.
 
     """
-    raw_rd, root_path = ensure_raw_resource_description(source, root_path)
+    raw_rd, rp = ensure_raw_resource_description(source)
+    root_path = root_path / rp
     raw_rd, package_content = spec.get_resource_package_content(raw_rd, weights_priority_order=weights_priority_order)
 
     local_package_content = {}
@@ -164,7 +154,8 @@ def export_resource_package(
     Returns:
         path to zipped BioImage.IO package in BIOIMAGEIO_CACHE_PATH or 'output_path'
     """
-    raw_rd, root_path = ensure_raw_resource_description(source, root_path)
+    raw_rd, rp = ensure_raw_resource_description(source)
+    root_path = root_path / rp
     package_content = get_local_resource_package_content(raw_rd, root_path, weights_priority_order)
     if output_path is None:
         package_path = _get_tmp_package_path(raw_rd, weights_priority_order)
