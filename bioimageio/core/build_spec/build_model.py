@@ -9,6 +9,7 @@ import numpy as np
 
 import bioimageio.spec as spec
 import bioimageio.spec.model as model_spec
+from bioimageio.core import export_resource_package, load_raw_resource_description
 from bioimageio.core.resource_io.utils import resolve_uri
 
 try:
@@ -62,7 +63,7 @@ def _get_weights(weight_uri, weight_type, source, root, **kwargs):
     else:
         attachments = {}
 
-    weight_types = model_spec.base_nodes.WeightsFormat
+    weight_types = model_spec.raw_nodes.WeightsFormat
     if weight_type == "pytorch_state_dict":
         # pytorch-state-dict -> we need a source
         assert source is not None
@@ -343,6 +344,8 @@ def build_model(
     #
 
     # check the test inputs and auto-generate input/output description from test inputs/outputs
+    assert len(test_inputs)
+    assert len(test_outputs)
     for test_in, test_out in zip(test_inputs, test_outputs):
         test_in, test_out = resolve_uri(test_in, root), resolve_uri(test_out, root)
         test_in, test_out = np.load(test_in), np.load(test_out)
@@ -366,7 +369,7 @@ def build_model(
     #
     # generate general fields
     #
-    format_version = get_args(model_spec.base_nodes.FormatVersion)[-1]
+    format_version = get_args(model_spec.raw_nodes.FormatVersion)[-1]
     timestamp = datetime.datetime.now()
 
     if source is not None:
@@ -423,13 +426,13 @@ def build_model(
     # serialize and deserialize the raw_nodes.Model to check that all fields are well formed
     # use export_package to make invalid absolute paths (e.g. from auto-conversion) relative
     zip_path = os.path.join(root, f"{name}.zip")
-    model_package = model_spec.export_package(model, Path(root), output_path=Path(zip_path))
+    model_package = export_resource_package(model, Path(root), output_path=Path(zip_path))
 
     # extract the rdf.yaml from the zip
     assert os.path.exists(zip_path)
     _extract_zip(zip_path, "rdf.yaml", os.path.join(root, "rdf.yaml"))
 
-    model = model_spec.load_raw_resource_description(model_package)
+    model = load_raw_resource_description(model_package)
     return model
 
 
