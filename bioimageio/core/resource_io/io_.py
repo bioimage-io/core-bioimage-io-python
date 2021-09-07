@@ -5,17 +5,17 @@ from copy import deepcopy
 from typing import Dict, Optional, Sequence, Tuple, Union
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from marshmallow import ValidationError
+from marshmallow import ValidationError, missing
 
 from bioimageio import spec
 from bioimageio.core.resource_io.nodes import ResourceDescription
 from bioimageio.spec.shared import raw_nodes
+from bioimageio.spec.shared.common import get_class_name_from_type
 from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
 from bioimageio.spec.shared.utils import PathToRemoteUriTransformer
 from . import nodes
 from .common import BIOIMAGEIO_CACHE_PATH, yaml
 from .utils import _download_uri_to_local_path, resolve_local_uri, resolve_raw_resource_description, resolve_uri
-from bioimageio.spec.shared.common import get_class_name_from_type
 
 
 serialize_raw_resource_description = spec.io_.serialize_raw_resource_description
@@ -164,15 +164,44 @@ def export_resource_package(
     Returns:
         path to zipped BioImage.IO package in BIOIMAGEIO_CACHE_PATH or 'output_path'
     """
-    raw_rd, _ = ensure_raw_resource_description(source, root_path)
-    return export_resource_package(
-        source,
-        root_path,
-        output_path=output_path,
-        weights_priority_order=weights_priority_order,
-        compression=compression,
-        compression_level=compression_level,
-    )
+    raw_rd, root_path = ensure_raw_resource_description(source, root_path)
+    package_content = get_local_resource_package_content(raw_rd, root_path, weights_priority_order)
+    if output_path is None:
+        package_path = _get_tmp_package_path(raw_rd, weights_priority_order)
+    else:
+        package_path = output_path
+
+    make_zip(package_path, package_content, compression=compression, compression_level=compression_level)
+    return package_path
+
+
+def _get_package_base_name(raw_rd: RawResourceDescription, weights_priority_order: Optional[Sequence[str]]) -> str:
+    package_file_name = raw_rd.name
+    if raw_rd.version is not missing:
+        package_file_name += f"_{raw_rd.version}"
+
+    package_file_name = package_file_name.replace(" ", "_").replace(".", "_")
+
+    return package_file_name
+
+
+def _get_tmp_package_path(raw_rd: RawResourceDescription, weights_priority_order: Optional[Sequence[str]]):
+    package_file_name = _get_package_base_name(raw_rd, weights_priority_order)
+
+    BIOIMAGEIO_CACHE_PATH.mkdir(exist_ok=True, parents=True)
+    package_path = (BIOIMAGEIO_CACHE_PATH / package_file_name).with_suffix(".zip")
+    max_cached_packages_with_same_name = 100
+    for p in range(max_cached_packages_with_same_name):
+        if package_path.exists():
+            package_path = (BIOIMAGEIO_CACHE_PATH / f"{package_file_name}p{p}").with_suffix(".zip")
+        else:
+            break
+    else:
+        raise FileExistsError(
+            f"Already caching {max_cached_packages_with_same_name} versions of {BIOIMAGEIO_CACHE_PATH / package_file_name}!"
+        )
+
+    return package_path
 
 
 def extract_resource_package(source: Union[os.PathLike, str, raw_nodes.URI]) -> pathlib.Path:
