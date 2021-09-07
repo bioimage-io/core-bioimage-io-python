@@ -56,7 +56,7 @@ def test_load_model_with_abs_path_source(unet2d_nuclei_broad_model):
     from bioimageio.core.resource_io import ensure_raw_resource_description, load_resource_description
 
     raw_rd, root_path = ensure_raw_resource_description(unet2d_nuclei_broad_model)
-    path_source = root_path / "rdf.yaml"
+    path_source = (root_path / "rdf.yaml").absolute()
     assert path_source.is_absolute()
     model = load_resource_description(path_source)
     assert model
@@ -76,7 +76,7 @@ def test_load_model_with_abs_str_source(unet2d_nuclei_broad_model):
     from bioimageio.core.resource_io import ensure_raw_resource_description, load_resource_description
 
     raw_rd, root_path = ensure_raw_resource_description(unet2d_nuclei_broad_model)
-    path_source = root_path / "rdf.yaml"
+    path_source = (root_path / "rdf.yaml").absolute()
     assert path_source.is_absolute()
     model = load_resource_description(str(path_source))
     assert model
