@@ -3,11 +3,13 @@ import os
 import bioimageio.spec as spec
 from marshmallow import missing
 
+from bioimageio.core.resource_io.io_ import ensure_raw_resource_description
+
 
 def _test_build_spec(path, weight_type, tensorflow_version=None):
     from bioimageio.core.build_spec import build_model
 
-    model_spec, root_path = spec.ensure_raw_resource_description(path, update_to_current_format=False)
+    model_spec, root_path = ensure_raw_resource_description(path)
     assert isinstance(model_spec, spec.model.raw_nodes.Model)
     weight_source = model_spec.weights[weight_type].source
 

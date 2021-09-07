@@ -8,10 +8,10 @@ from marshmallow import missing
 from bioimageio.spec.model import raw_nodes
 
 
-def test_export_package(unet2d_nuclei_broad_latest_path):
-    from bioimageio.spec import export_resource_package, load_raw_resource_description
+def test_export_package(unet2d_nuclei_broad_model):
+    from bioimageio.core import export_resource_package, load_raw_resource_description
 
-    package_path = export_resource_package(unet2d_nuclei_broad_latest_path, weights_priority_order=["onnx"])
+    package_path = export_resource_package(unet2d_nuclei_broad_model, weights_priority_order=["onnx"])
     assert isinstance(package_path, Path), package_path
     assert package_path.exists(), package_path
 
@@ -20,7 +20,7 @@ def test_export_package(unet2d_nuclei_broad_latest_path):
 
 
 def test_package_with_folder(unet2d_nuclei_broad_latest_package_path):
-    from bioimageio.spec import export_resource_package, load_raw_resource_description
+    from bioimageio.core import export_resource_package, load_raw_resource_description
 
     with TemporaryDirectory() as tmp_dir:
         tmp_dir = Path(tmp_dir)
