@@ -266,9 +266,7 @@ def predict_with_tiling(prediction_pipeline, inputs, tiling):
        any(offset[ax] != 0 for ax in output_axes if ax in "xyz"):
         raise NotImplementedError("Tiling with a different output shape is not yet supported")
 
-    out_shape = tuple(
-        int(scale[ax] * input_.shape[input_axes.index(ax)] + 2 * offset[ax]) for ax in output_axes
-    )
+    out_shape = tuple(int(scale[ax] * input_.shape[input_axes.index(ax)] + 2 * offset[ax]) for ax in output_axes)
     # TODO the dtype information is missing from prediction pipeline
     out_dtype = "float32"
     output = xr.DataArray(np.zeros(out_shape, dtype=out_dtype), dims=output_axes)
