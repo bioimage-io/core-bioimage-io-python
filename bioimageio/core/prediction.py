@@ -1,4 +1,5 @@
 import os
+import warnings
 from copy import deepcopy
 from itertools import product
 from pathlib import Path
@@ -347,7 +348,7 @@ def parse_tiling(tiling, model):
 
 
 # TODO support models with multiple in/outputs
-def predict_image(model_rdf, inputs, outputs, padding=None, tiling=None, devices=None):
+def predict_image(model_rdf, inputs, outputs, padding=None, tiling=None, weight_format=None, devices=None):
     """Run prediction for a single set of inputs with a bioimage.io model."""
     if isinstance(inputs, (str, Path)):
         inputs = [inputs]
@@ -365,7 +366,9 @@ def predict_image(model_rdf, inputs, outputs, padding=None, tiling=None, devices
     if len(model.outputs) != len(outputs):
         raise ValueError
 
-    prediction_pipeline = create_prediction_pipeline(bioimageio_model=model, devices=devices)
+    prediction_pipeline = create_prediction_pipeline(
+        bioimageio_model=model, weight_format=weight_format, devices=devices
+    )
     axes = tuple(prediction_pipeline.input_axes)
 
     padding = parse_padding(padding, model)
@@ -390,7 +393,16 @@ def predict_image(model_rdf, inputs, outputs, padding=None, tiling=None, devices
         save_image(outputs[0], result)
 
 
-def predict_images(model_rdf, inputs, outputs, verbose=False, padding=None, tiling=None, devices=None):
+def predict_images(
+    model_rdf,
+    inputs,
+    outputs,
+    padding=None,
+    tiling=None,
+    weight_format=None,
+    devices=None,
+    verbose=False
+):
     """Predict multiple inputs with a bioimage.io model.
 
     Only works for models with a single input and output tensor.
@@ -398,9 +410,11 @@ def predict_images(model_rdf, inputs, outputs, verbose=False, padding=None, tili
     model = load_resource_description(Path(model_rdf))
     assert isinstance(model, Model)
     if len(model.inputs) > 1 or len(model.outputs) > 1:
-        raise RuntimeError("predict_images only supports models that have a single input/output tensor")
+        raise ValueError("predict_images only supports models that have a single input/output tensor")
 
-    prediction_pipeline = create_prediction_pipeline(bioimageio_model=model, devices=devices)
+    prediction_pipeline = create_prediction_pipeline(
+        bioimageio_model=model, weight_format=weight_format, devices=devices
+    )
     axes = tuple(prediction_pipeline.input_axes)
 
     padding = parse_padding(padding, model)
@@ -421,3 +435,32 @@ def predict_images(model_rdf, inputs, outputs, verbose=False, padding=None, tili
         else:
             res = predict(prediction_pipeline, inp)
         save_image(outp, res)
+
+
+def test_model(model_rdf, weight_format=None, devices=None, decimal=4):
+    """Test whether the test output(s) of a model can be reproduced.
+
+    Returns True if the test passes, otherwise returns False and issues a warning.
+    """
+    model = load_resource_description(Path(model_rdf))
+    assert isinstance(model, Model)
+    prediction_pipeline = create_prediction_pipeline(
+        bioimageio_model=model, devices=devices, weight_format=weight_format
+    )
+    inputs = [np.load(in_path) for in_path in model.test_inputs]
+    results = predict(prediction_pipeline, inputs)
+    if isinstance(results, (np.ndarray, xr.DataArray)):
+        results = [results]
+
+    expected = [np.load(out_path) for out_path in model.test_outputs]
+    if len(results) != len(expected):
+        warnings.warn(f"Number of outputs and number of expected outputs disagree: {len(results)} != {len(expected)}")
+        return False
+
+    for res, exp in zip(results, expected):
+        try:
+            np.testing.assert_array_almost_equal(res, exp, decimal=decimal)
+        except AssertionError as e:
+            warnings.warn(f"Output and expected output disagree:\n {e}")
+            return False
+    return True

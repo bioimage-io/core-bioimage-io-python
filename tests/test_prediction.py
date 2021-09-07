@@ -7,6 +7,12 @@ from numpy.testing import assert_array_almost_equal
 
 
 @pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
+def test_test_model(unet2d_nuclei_broad_model):
+    from bioimageio.core.prediction import test_model
+    assert test_model(unet2d_nuclei_broad_model)
+
+
+@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
 def test_predict_image(unet2d_nuclei_broad_model, tmp_path):
     from bioimageio.core.prediction import predict_image
 

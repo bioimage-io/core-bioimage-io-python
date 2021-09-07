@@ -6,6 +6,12 @@ from bioimageio.spec import load_resource_description
 
 
 @pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
+def test_cli_test_model(unet2d_nuclei_broad_model):
+    ret = subprocess.run(["bioimageio", "test-model", unet2d_nuclei_broad_model])
+    assert ret.returncode == 0
+
+
+@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
 def test_cli_predict_image(unet2d_nuclei_broad_model, tmp_path):
     spec = load_resource_description(unet2d_nuclei_broad_model)
     in_path = spec.test_inputs[0]
@@ -21,7 +27,7 @@ def test_cli_predict_image(unet2d_nuclei_broad_model, tmp_path):
 def test_cli_predict_images(unet2d_nuclei_broad_model, tmp_path):
     n_images = 3
     shape = (1, 1, 128, 128)
-    expected_shape = (1, 128, 128)  # for some reason the batchdim is dropped
+    expected_shape = (1, 1, 128, 128)
 
     in_folder = tmp_path / "inputs"
     in_folder.mkdir()
