@@ -19,7 +19,7 @@ def test_export_package(unet2d_nuclei_broad_model):
     assert isinstance(raw_model, raw_nodes.Model)
 
 
-def test_package_with_folder(unet2d_nuclei_broad_latest_package_path):
+def test_package_with_folder(unet2d_nuclei_broad_model):
     from bioimageio.core import export_resource_package, load_raw_resource_description
 
     with TemporaryDirectory() as tmp_dir:
@@ -27,7 +27,7 @@ def test_package_with_folder(unet2d_nuclei_broad_latest_package_path):
 
         # extract package (to not cache to BIOIMAGEIO_CACHE)
         package_folder = tmp_dir / "package"
-        with ZipFile(unet2d_nuclei_broad_latest_package_path) as zf:
+        with ZipFile(unet2d_nuclei_broad_model) as zf:
             zf.extractall(package_folder)
 
         # load package
