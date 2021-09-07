@@ -2,7 +2,6 @@ import os
 import pathlib
 import warnings
 from copy import deepcopy
-from io import StringIO
 from typing import Any, Dict, Optional, Sequence, Tuple, Union
 from zipfile import ZIP_DEFLATED, ZipFile
 
@@ -17,6 +16,10 @@ from bioimageio.spec.shared.utils import PathToRemoteUriTransformer
 from . import nodes
 from .common import BIOIMAGEIO_CACHE_PATH, yaml
 from .utils import _download_uri_to_local_path, resolve_local_uri, resolve_raw_resource_description, resolve_uri
+
+
+serialize_raw_resource_description = spec.io_.serialize_raw_resource_description
+save_raw_resource_description = spec.io_.save_raw_resource_description
 
 
 def _replace_relative_paths_for_remote_source(
@@ -104,29 +107,6 @@ def load_resource_description(
     return rd
 
 
-def serialize_raw_resource_description(raw_rd: RawResourceDescription) -> str:
-    if yaml is None:
-        raise RuntimeError("'serialize_raw_resource_description' requires yaml")
-
-    serialized = spec.serialize_raw_resource_description_to_dict(raw_rd)
-
-    with StringIO() as stream:
-        yaml.dump(serialized, stream)
-        return stream.getvalue()
-
-
-def save_raw_resource_description(raw_rd: RawResourceDescription, path: pathlib.Path):
-    if yaml is None:
-        raise RuntimeError("'save_raw_resource_description' requires yaml")
-
-    warnings.warn("only saving serialized rdf, no associated resources.")
-    if path.suffix != ".yaml":
-        warnings.warn("saving with '.yaml' suffix is strongly encouraged.")
-
-    serialized = spec.serialize_raw_resource_description_to_dict(raw_rd)
-    yaml.dump(serialized, path)
-
-
 def get_local_resource_package_content(
     source: RawResourceDescription, root_path: os.PathLike, weights_priority_order: Optional[Sequence[Union[str]]]
 ) -> Dict[str, Union[pathlib.Path, str]]:
@@ -144,13 +124,7 @@ def get_local_resource_package_content(
     """
     raw_rd, rp = ensure_raw_resource_description(source)
     root_path = root_path / rp
-    package_content: Dict[str, Union[str, pathlib.PurePath, raw_nodes.URI]]
     raw_rd, package_content = spec.get_resource_package_content(raw_rd, weights_priority_order=weights_priority_order)
-
-    if yaml is None:
-        raise RuntimeError("'get_resource_package_content' requires yaml")
-
-    package_content["rdf.yaml"] = serialize_raw_resource_description(raw_rd)
 
     local_package_content = {}
     for k, v in package_content.items():
