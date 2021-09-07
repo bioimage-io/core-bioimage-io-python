@@ -4,7 +4,7 @@ import numpy as np
 import torch
 import xarray as xr
 
-from bioimageio.spec.model import nodes
+from bioimageio.core.resource_io import nodes
 from ._model_adapter import ModelAdapter
 
 

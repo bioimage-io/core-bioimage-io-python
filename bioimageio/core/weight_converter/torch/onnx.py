@@ -5,16 +5,19 @@ import warnings
 from pathlib import Path
 from typing import Union
 
-try:
-    import onnxruntime as rt
-except ImportError:
-    rt = None
 import numpy as np
 import torch
 from numpy.testing import assert_array_almost_equal
 
 import bioimageio.spec as spec
+from bioimageio.core import load_resource_description
+from bioimageio.core.resource_io import nodes
 from .utils import load_model
+
+try:
+    import onnxruntime as rt
+except ImportError:
+    rt = None
 
 
 def convert_weights_to_onnx(
@@ -35,11 +38,12 @@ def convert_weights_to_onnx(
     """
     if isinstance(model_spec, (str, Path)):
         root = os.path.split(model_spec)[0]
-        model_spec = spec.load_resource_description(Path(model_spec), root_path=root)
+        model_spec = load_resource_description(Path(model_spec), root_path=root)
 
+    assert isinstance(model_spec, nodes.Model)
     with torch.no_grad():
         # load input and expected output data
-        input_data = np.load(model_spec.test_inputs[0]).astype("float32")
+        input_data = np.load(str(model_spec.test_inputs[0])).astype("float32")
         input_tensor = torch.from_numpy(input_data)
 
         # instantiate and generate the expected output
