@@ -1,4 +1,6 @@
+import pathlib
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 import pytest
 from marshmallow import ValidationError
@@ -15,13 +17,24 @@ def test_load_non_existing_rdf():
         load_resource_description(spec_path)
 
 
-def test_load_non_valid_rdf_name():
+def test_load_non_valid_rdf_name_no_suffix():
     from bioimageio.core import load_resource_description
 
-    spec_path = Path("some/none/existing/path/to/spec.not_valid_suffix")
+    with NamedTemporaryFile() as f:
+        spec_path = pathlib.Path(f.name)
 
-    with pytest.raises(ValidationError):
-        load_resource_description(spec_path)
+        with pytest.raises(ValidationError):
+            load_resource_description(spec_path)
+
+
+def test_load_non_valid_rdf_name_invalid_suffix():
+    from bioimageio.core import load_resource_description
+
+    with NamedTemporaryFile(suffix=".invalid_suffix") as f:
+        spec_path = pathlib.Path(f.name)
+
+        with pytest.raises(ValidationError):
+            load_resource_description(spec_path)
 
 
 def test_load_raw_model(unet2d_nuclei_broad_any_path):
