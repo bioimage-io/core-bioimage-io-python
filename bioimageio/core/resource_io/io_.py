@@ -50,7 +50,7 @@ def load_raw_resource_description(source: Union[os.PathLike, str, dict, raw_node
         raw BioImage.IO resource
     """
     data, type_ = resolve_rdf_source_and_type(source)
-    raw_rd = spec.load_raw_resource_description_from_dict(data, update_to_current_format=True)
+    raw_rd = spec.load_raw_resource_description(data, update_to_current_format=True)
     raw_rd = _replace_relative_paths_for_remote_source(raw_rd, source)
     return raw_rd
 
