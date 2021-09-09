@@ -39,10 +39,10 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: additional setup
       shell: bash -l {0}
-      run: conda develop .
+      run: pip install --no-deps -e .
     - name: pytest-base-bioimage-spec-conda
       shell: bash -l {0}
-      run: pytest
+      run: pytest --disable-pytest-warnings
 
   test-base-bioimage-spec-main:
     runs-on: ubuntu-latest
@@ -64,10 +64,10 @@ jobs:
       run: |
         conda remove --force bioimageio.spec
         pip install --no-deps git+https://github.com/bioimage-io/spec-bioimage-io
-        conda develop .
+        pip install --no-deps -e .
     - name: pytest-base-bioimage-spec-main
       shell: bash -l {0}
-      run: pytest
+      run: pytest --disable-pytest-warnings
   
   test-base-bioimage-spec-tf-legacy:
     runs-on: ubuntu-latest
@@ -89,10 +89,10 @@ jobs:
       run: |
         conda remove --force bioimageio.spec
         pip install --no-deps git+https://github.com/bioimage-io/spec-bioimage-io
-        conda develop .
+        pip install --no-deps -e .
     - name: pytest-base-bioimage-spec-tf-legacy
       shell: bash -l {0}
-      run: pytest
+      run: pytest --disable-pytest-warnings
 
   conda-build:
     runs-on: ubuntu-latest
