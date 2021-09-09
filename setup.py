@@ -6,7 +6,7 @@ from setuptools import find_namespace_packages, setup
 # Get the long description from the README file
 ROOT_DIR = Path(__file__).parent.resolve()
 long_description = (ROOT_DIR / "README.md").read_text(encoding="utf-8")
-VERSION_FILE = ROOT_DIR / "bioimageio" / "spec" / "VERSION"
+VERSION_FILE = ROOT_DIR / "bioimageio" / "core" / "VERSION"
 VERSION = json.loads(VERSION_FILE.read_text())["version"]
 
 
@@ -37,13 +37,5 @@ setup(
         "Bug Reports": "https://github.com/bioimage-io/python-bioimage-io/issues",
         "Source": "https://github.com/bioimage-io/python-bioimage-io",
     },
-    # TODO simplify CLI, see https://github.com/bioimage-io/python-bioimage-io/issues/87
-    entry_points={
-        "console_scripts": [
-            "bioimageio-convert_torch_to_onnx = bioimageio.core.weight_converter.torch.onnx:main",
-            "bioimageio-convert_torch_to_torchscript = bioimageio.core.weight_converter.torch.torchscript:main",
-            "bioimageio-predict = bioimageio.core.predict:main",
-            "bioimageio-test = bioimageio.core.model_test:main",
-        ]
-    },
+    entry_points={"console_scripts": ["bioimageio = bioimageio.core.__main__:app"]},
 )

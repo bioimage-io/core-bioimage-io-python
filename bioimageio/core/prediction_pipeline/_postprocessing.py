@@ -3,7 +3,7 @@ from typing import List
 import xarray as xr
 from bioimageio.core.resource_io.nodes import Postprocessing
 
-from ._preprocessing import chain
+from ._preprocessing import binarize, chain
 from ._types import Transform
 
 
@@ -13,7 +13,7 @@ def sigmoid(tensor: xr.DataArray, **kwargs):
     return 1 / (1 + xr.ufuncs.exp(-tensor))
 
 
-KNOWN_POSTPROCESSING = {"sigmoid": sigmoid}
+KNOWN_POSTPROCESSING = {"binarize": binarize, "sigmoid": sigmoid}
 
 
 def make_postprocessing(spec: List[Postprocessing]) -> Transform:
