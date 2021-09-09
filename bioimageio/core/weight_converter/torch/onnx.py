@@ -35,8 +35,7 @@ def convert_weights_to_onnx(
         verbose: be verbose during the onnx export
     """
     if isinstance(model_spec, (str, Path)):
-        root = os.path.split(model_spec)[0]
-        model_spec = load_resource_description(Path(model_spec), root_path=root)
+        model_spec = load_resource_description(Path(model_spec))
 
     assert isinstance(model_spec, nodes.Model)
     with torch.no_grad():

@@ -391,6 +391,7 @@ def build_model(
         "sha256": source_hash,
         "kwargs": model_kwargs,
         "links": links,
+        "root_path": root,
     }
     kwargs = {k: v for k, v in optional_kwargs.items() if v is not None}
     if dependencies is not None:
@@ -426,7 +427,7 @@ def build_model(
     # serialize and deserialize the raw_nodes.Model to check that all fields are well formed
     # use export_package to make invalid absolute paths (e.g. from auto-conversion) relative
     zip_path = os.path.join(root, f"{name}.zip")
-    model_package = export_resource_package(model, Path(root), output_path=Path(zip_path))
+    model_package = export_resource_package(model, output_path=Path(zip_path))
 
     # extract the rdf.yaml from the zip
     assert os.path.exists(zip_path)

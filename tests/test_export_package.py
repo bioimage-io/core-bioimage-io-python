@@ -45,9 +45,7 @@ def test_package_with_folder(unet2d_nuclei_broad_model):
 
         # export altered package
         altered_package = tmp_dir / "altered_package.zip"
-        altered_package = export_resource_package(
-            model, root_path=package_folder, output_path=altered_package, weights_priority_order=["onnx"]
-        )
+        altered_package = export_resource_package(model, output_path=altered_package, weights_priority_order=["onnx"])
 
         # extract altered package (to not cache to BIOIMAGEIO_CACHE)
         altered_package_folder = tmp_dir / "altered_package"

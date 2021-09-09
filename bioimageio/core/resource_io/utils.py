@@ -283,11 +283,9 @@ def _download_uri_to_local_path(uri: raw_nodes.URI) -> pathlib.Path:
     return local_path
 
 
-def resolve_raw_resource_description(
-    raw_rd: GenericRawRD, root_path: os.PathLike, nodes_module: typing.Any
-) -> GenericResolvedNode:
+def resolve_raw_resource_description(raw_rd: GenericRawRD, nodes_module: typing.Any) -> GenericResolvedNode:
     """resolve all uris and sources"""
-    rd = UriNodeTransformer(root_path=root_path).transform(raw_rd)
+    rd = UriNodeTransformer(root_path=raw_rd.root_path).transform(raw_rd)
     rd = SourceNodeTransformer().transform(rd)
     rd = RawNodeTypeTransformer(nodes_module).transform(rd)
     return rd
