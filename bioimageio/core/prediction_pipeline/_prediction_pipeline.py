@@ -3,7 +3,7 @@ import math
 from typing import List, Optional, Tuple
 
 import xarray as xr
-from bioimageio.spec.model import nodes
+from bioimageio.core.resource_io import nodes
 from marshmallow import missing
 
 from ._model_adapters import ModelAdapter, create_model_adapter

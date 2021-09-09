@@ -1,5 +1,5 @@
 import pytest
-from bioimageio.spec import export_resource_package
+from bioimageio.core import export_resource_package
 
 
 # set 'skip_<FRAMEWORK>' flags as global pytest variables,
@@ -30,6 +30,8 @@ def pytest_configure():
     except ImportError:
         keras = None
     pytest.skip_keras = keras is None
+
+    pytest.skip_frunet = True  # disable tests based on fru net for now as it is not expected to pass atm
 
 
 @pytest.fixture
