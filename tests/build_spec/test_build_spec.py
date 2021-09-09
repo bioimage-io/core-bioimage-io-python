@@ -1,5 +1,7 @@
 import os
 
+import pytest
+
 import bioimageio.spec as spec
 from marshmallow import missing
 
@@ -66,13 +68,16 @@ def test_build_spec_torchscript(unet2d_nuclei_broad_model):
     _test_build_spec(unet2d_nuclei_broad_model, "pytorch_script")
 
 
+@pytest.mark.skipif(pytest.skip_frunet, reason="pending update to FruNet")
 def test_build_spec_keras(FruNet_model):
     _test_build_spec(FruNet_model, "keras_hdf5", tensorflow_version="1.12")
 
 
+@pytest.mark.skipif(pytest.skip_frunet, reason="pending update to FruNet")
 def test_build_spec_tf(FruNet_model):
     _test_build_spec(FruNet_model, "tensorflow_saved_model_bundle", tensorflow_version="1.12")
 
 
+@pytest.mark.skipif(pytest.skip_frunet, reason="pending update to FruNet")
 def test_build_spec_tfjs(FruNet_model):
     _test_build_spec(FruNet_model, "tensorflow_js", tensorflow_version="1.12")
