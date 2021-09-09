@@ -149,6 +149,14 @@ class _PredictionPipelineImpl(PredictionPipeline):
         prediction = self.predict(preprocessed)
         return self._postprocessing(prediction)
 
+    def preprocess(self, input_tensor: xr.DataArray) -> xr.DataArray:
+        """Apply preprocessing."""
+        return self._preprocessing(input_tensor)
+
+    def postprocess(self, input_tensor: xr.DataArray) -> xr.DataArray:
+        """Apply postprocessing."""
+        return self._postprocessing(input_tensor)
+
     def __call__(self, input_tensor: xr.DataArray) -> xr.DataArray:
         return self.forward(input_tensor)
 
