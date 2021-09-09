@@ -1,4 +1,4 @@
-name: bio-core-dev
+name: bio-core-tf
 channels:
   - conda-forge
   - defaults
@@ -12,8 +12,6 @@ dependencies:
   - pytest
   - python >=3.7,<3.8  # this environment is only available for python 3.7
   - xarray
-  - pytorch
-  - onnxruntime
   - tensorflow >=1.12,<2.0
   - pip:
     - keras==1.2.2
