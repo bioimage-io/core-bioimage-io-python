@@ -2,7 +2,7 @@ import imageio
 import numpy as np
 import pytest
 
-from bioimageio.spec import load_resource_description
+from bioimageio.core import load_resource_description
 from numpy.testing import assert_array_almost_equal
 
 

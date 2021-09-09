@@ -2,7 +2,7 @@ import subprocess
 
 import numpy as np
 import pytest
-from bioimageio.spec import load_resource_description
+from bioimageio.core import load_resource_description
 
 
 @pytest.mark.skipif(pytest.skip_torch, reason="requires torch")

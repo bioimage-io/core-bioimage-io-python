@@ -8,9 +8,9 @@ import imageio
 import numpy as np
 import xarray as xr
 
+from bioimageio.core import load_resource_description
+from bioimageio.core.resource_io.nodes import Model
 from bioimageio.core.prediction_pipeline import create_prediction_pipeline
-from bioimageio.spec import load_resource_description
-from bioimageio.spec.model.nodes import Model
 from tqdm import tqdm
 
 
