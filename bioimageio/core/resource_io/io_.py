@@ -187,17 +187,18 @@ def _get_package_base_name(raw_rd: RawResourceDescription, weights_priority_orde
 def _get_tmp_package_path(raw_rd: RawResourceDescription, weights_priority_order: Optional[Sequence[str]]):
     package_file_name = _get_package_base_name(raw_rd, weights_priority_order)
 
-    BIOIMAGEIO_CACHE_PATH.mkdir(exist_ok=True, parents=True)
-    package_path = (BIOIMAGEIO_CACHE_PATH / package_file_name).with_suffix(".zip")
+    cache_folder = BIOIMAGEIO_CACHE_PATH / "packages"
+    cache_folder.mkdir(exist_ok=True, parents=True)
+    package_path = (cache_folder / package_file_name).with_suffix(".zip")
     max_cached_packages_with_same_name = 100
     for p in range(max_cached_packages_with_same_name):
         if package_path.exists():
-            package_path = (BIOIMAGEIO_CACHE_PATH / f"{package_file_name}p{p}").with_suffix(".zip")
+            package_path = (cache_folder / f"{package_file_name}p{p}").with_suffix(".zip")
         else:
             break
     else:
         raise FileExistsError(
-            f"Already caching {max_cached_packages_with_same_name} versions of {BIOIMAGEIO_CACHE_PATH / package_file_name}!"
+            f"Already caching {max_cached_packages_with_same_name} versions of {cache_folder / package_file_name}!"
         )
 
     return package_path
@@ -207,8 +208,9 @@ def extract_resource_package(source: Union[os.PathLike, str, raw_nodes.URI]) -> 
     """extract a zip source to BIOIMAGEIO_CACHE_PATH"""
     local_source = resolve_uri(source)
     assert isinstance(local_source, pathlib.Path)
-    BIOIMAGEIO_CACHE_PATH.mkdir(exist_ok=True, parents=True)
-    package_path = BIOIMAGEIO_CACHE_PATH / f"{local_source.stem}_unzipped"
+    cache_folder = BIOIMAGEIO_CACHE_PATH / "extracted_packages"
+    cache_folder.mkdir(exist_ok=True, parents=True)
+    package_path = cache_folder / f"{local_source.stem}"
     with ZipFile(local_source) as zf:
         zf.extractall(package_path)
 

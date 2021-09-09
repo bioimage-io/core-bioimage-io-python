@@ -197,10 +197,21 @@ def resolve_local_uri(
 ) -> typing.Union[pathlib.Path, raw_nodes.URI]:
     if isinstance(uri, os.PathLike) or isinstance(uri, str):
         if isinstance(uri, str):
-            try:
-                is_path = pathlib.Path(uri).exists()
+            try:  # uri as relative path from cwd
+                is_path_cwd = pathlib.Path(uri).exists()
             except OSError:
-                is_path = False
+                is_path_cwd = False
+
+            try:  # uri as relative path from root_path
+                path_from_root = pathlib.Path(root_path) / uri
+                is_path_rp = (path_from_root).exists()
+            except OSError:
+                is_path_rp = False
+            else:
+                if not is_path_cwd and is_path_rp:
+                    uri = path_from_root
+
+            is_path = is_path_cwd or is_path_rp
         else:
             is_path = True
 
