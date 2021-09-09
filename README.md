@@ -31,12 +31,14 @@ The `bioimageio.core` package supports various back-ends for running BioimageIO 
 
 ### Set up Development Environment
 
-To set up a development conda enveironment run the following commands:
+To set up a development conda environment run the following commands:
 ```
 conda env create -f dev/environment-base.yaml
 conda activate bio-core-dev
 pip install -e . --no-deps
 ```
+
+There are different environment files that only install tensorflow or pytorch as dependencies available.
 
 ## Command Line
 
@@ -47,7 +49,7 @@ bioimageio-test -m <MODEL>
 
 Run prediction:
 ```
-bioimageio-predict -m <MODEL> -i <INPUT> -o <OUTPUT>
+bioimageio predict -m <MODEL> -i <INPUT> -o <OUTPUT>
 ```
 
 This is subject to change, see https://github.com/bioimage-io/python-bioimage-io/issues/87.
