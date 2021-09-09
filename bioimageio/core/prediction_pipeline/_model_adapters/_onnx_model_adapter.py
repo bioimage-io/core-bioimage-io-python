@@ -5,7 +5,7 @@ from typing import List, Optional
 import onnxruntime as rt
 import xarray as xr
 
-from bioimageio.spec.model import nodes
+from bioimageio.core.resource_io import nodes
 from ._model_adapter import ModelAdapter
 
 logger = logging.getLogger(__name__)

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 import xarray as xr
-from bioimageio.spec.model.nodes import Preprocessing
+from bioimageio.core.resource_io.nodes import Preprocessing
 
 from bioimageio.core.prediction_pipeline._preprocessing import make_preprocessing
 

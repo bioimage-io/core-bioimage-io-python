@@ -11,6 +11,7 @@ import torch
 from numpy.testing import assert_array_almost_equal
 
 import bioimageio.spec as spec
+from bioimageio.core import load_resource_description
 from .utils import load_model
 
 
@@ -65,21 +66,18 @@ def _check_predictions(model, scripted_model, model_spec, input_data):
         if step_factor > max_steps:
             return ret
 
-    return ret
-
 
 def convert_weights_to_pytorch_script(
     model_spec: Union[str, Path, spec.model.raw_nodes.Model], output_path: Union[str, Path], use_tracing: bool = True
 ):
-    """ Convert model weights from format 'pytorch_state_dict' to 'torchscript'.
-    """
+    """Convert model weights from format 'pytorch_state_dict' to 'torchscript'."""
     if isinstance(model_spec, (str, Path)):
         root = os.path.split(model_spec)[0]
-        model_spec = spec.load_resource_description(Path(model_spec), root_path=root)
+        model_spec = load_resource_description(Path(model_spec), root_path=root)
 
     with torch.no_grad():
         # load input and expected output data
-        input_data = np.load(model_spec.test_inputs[0]).astype("float32")
+        input_data = np.load(str(model_spec.test_inputs[0])).astype("float32")
         input_data = torch.from_numpy(input_data)
 
         # instantiate model and get reference output
