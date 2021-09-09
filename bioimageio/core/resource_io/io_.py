@@ -18,6 +18,7 @@ from .common import BIOIMAGEIO_CACHE_PATH, yaml
 from .utils import _download_uri_to_local_path, resolve_local_uri, resolve_raw_resource_description, resolve_uri
 
 
+ROOT_PATH = "root_path"
 serialize_raw_resource_description = spec.io_.serialize_raw_resource_description
 save_raw_resource_description = spec.io_.save_raw_resource_description
 
@@ -35,11 +36,14 @@ def _replace_relative_paths_for_remote_source(
             "(may result in an invalid node)"
         )
         raw_rd = PathToRemoteUriTransformer(remote_source=source).transform(raw_rd)
+        raw_rd.root_path = pathlib.Path()  # root_path cannot be URI
 
     return raw_rd
 
 
-def load_raw_resource_description(source: Union[os.PathLike, str, dict, raw_nodes.URI]) -> RawResourceDescription:
+def load_raw_resource_description(
+    source: Union[os.PathLike, str, dict, raw_nodes.URI, RawResourceDescription]
+) -> RawResourceDescription:
     """load a raw python representation from a BioImage.IO resource description file (RDF).
     Use `load_resource_description` for a more convenient representation.
 
@@ -49,30 +53,17 @@ def load_raw_resource_description(source: Union[os.PathLike, str, dict, raw_node
     Returns:
         raw BioImage.IO resource
     """
+    if isinstance(source, RawResourceDescription):
+        return source
+
     data, type_ = resolve_rdf_source_and_type(source)
     raw_rd = spec.load_raw_resource_description(data, update_to_current_format=True)
     raw_rd = _replace_relative_paths_for_remote_source(raw_rd, source)
     return raw_rd
 
 
-def ensure_raw_resource_description(
-    source: Union[str, dict, os.PathLike, raw_nodes.URI, RawResourceDescription]
-) -> Tuple[RawResourceDescription, pathlib.Path]:
-    if isinstance(source, raw_nodes.RawNode) and not isinstance(source, raw_nodes.URI):
-        assert isinstance(source, RawResourceDescription)
-        return source, pathlib.Path()
-    else:
-        data, root_path = get_dict_and_root_path_from_yaml_source(source)
-
-    assert isinstance(data, dict)
-    raw_rd = load_raw_resource_description(data)
-    raw_rd = _replace_relative_paths_for_remote_source(raw_rd, source)
-    return raw_rd, root_path
-
-
 def load_resource_description(
     source: Union[RawResourceDescription, os.PathLike, str, dict, raw_nodes.URI],
-    root_path: os.PathLike = pathlib.Path(),
     *,
     weights_priority_order: Optional[Sequence[str]] = None,  # model only
 ) -> ResourceDescription:
@@ -82,14 +73,12 @@ def load_resource_description(
 
     Args:
         source: resource description file (RDF) or raw BioImage.IO resource
-        root_path: to resolve relative paths in the RDF (ignored if source is path/URI)
         weights_priority_order: If given only the first weights format present in the model resource is included
     Returns:
         BioImage.IO resource
     """
     source = deepcopy(source)
-    raw_rd, rp = ensure_raw_resource_description(source)
-    root_path = root_path / rp
+    raw_rd = load_raw_resource_description(source)
 
     if weights_priority_order is not None:
         for wf in weights_priority_order:
@@ -99,22 +88,19 @@ def load_resource_description(
         else:
             raise ValueError(f"Not found any of the specified weights formats ({weights_priority_order})")
 
-    rd: ResourceDescription = resolve_raw_resource_description(
-        raw_rd=raw_rd, root_path=pathlib.Path(root_path), nodes_module=nodes
-    )
+    rd: ResourceDescription = resolve_raw_resource_description(raw_rd=raw_rd, nodes_module=nodes)
     assert isinstance(rd, getattr(nodes, get_class_name_from_type(raw_rd.type)))
 
     return rd
 
 
 def get_local_resource_package_content(
-    source: RawResourceDescription, root_path: os.PathLike, weights_priority_order: Optional[Sequence[Union[str]]]
+    source: RawResourceDescription, weights_priority_order: Optional[Sequence[Union[str]]]
 ) -> Dict[str, Union[pathlib.Path, str]]:
     """
 
     Args:
         source: raw resource description
-        root_path: root for relative paths
         weights_priority_order: If given only the first weights format present in the model is included.
                                 If none of the prioritized weights formats is found all are included.
 
@@ -122,16 +108,15 @@ def get_local_resource_package_content(
         Package content of local file paths or text content keyed by file names.
 
     """
-    raw_rd, rp = ensure_raw_resource_description(source)
-    root_path = root_path / rp
+    raw_rd = load_raw_resource_description(source)
     package_content = spec.get_resource_package_content(raw_rd, weights_priority_order=weights_priority_order)
 
     local_package_content = {}
     for k, v in package_content.items():
         if isinstance(v, raw_nodes.URI):
-            v = resolve_uri(v, root_path)
+            v = resolve_uri(v, raw_rd.root_path)
         elif isinstance(v, pathlib.Path):
-            v = root_path / v
+            v = raw_rd.root_path / v
 
         local_package_content[k] = v
 
@@ -140,7 +125,6 @@ def get_local_resource_package_content(
 
 def export_resource_package(
     source: Union[RawResourceDescription, os.PathLike, str, dict, raw_nodes.URI],
-    root_path: os.PathLike = pathlib.Path(),
     *,
     output_path: Optional[os.PathLike] = None,
     weights_priority_order: Optional[Sequence[Union[str]]] = None,
@@ -151,7 +135,6 @@ def export_resource_package(
 
     Args:
         source: raw resource description, path, URI or raw data as dict
-        root_path: for relative paths (only used if source is RawResourceDescription or dict)
         output_path: file path to write package to
         weights_priority_order: If given only the first weights format present in the model is included.
                                 If none of the prioritized weights formats is found all are included.
@@ -162,9 +145,8 @@ def export_resource_package(
     Returns:
         path to zipped BioImage.IO package in BIOIMAGEIO_CACHE_PATH or 'output_path'
     """
-    raw_rd, rp = ensure_raw_resource_description(source)
-    root_path = root_path / rp
-    package_content = get_local_resource_package_content(raw_rd, root_path, weights_priority_order)
+    raw_rd = load_raw_resource_description(source)
+    package_content = get_local_resource_package_content(raw_rd, weights_priority_order)
     if output_path is None:
         package_path = _get_tmp_package_path(raw_rd, weights_priority_order)
     else:
@@ -248,20 +230,22 @@ def make_zip(
 def resolve_rdf_source_and_type(source: Union[os.PathLike, str, dict, raw_nodes.URI]) -> Tuple[dict, str]:
     if isinstance(source, dict):
         data = source
+        if ROOT_PATH not in data:
+            data[ROOT_PATH] = pathlib.Path()
     else:
-        source = resolve_local_uri(source, pathlib.Path())
-        data, root_path = get_dict_and_root_path_from_yaml_source(source)
+        data = get_dict_from_yaml_source(source)
 
     type_ = data.get("type", "model")  # todo: remove default 'model' type
 
     return data, type_
 
 
-def get_dict_and_root_path_from_yaml_source(
-    source: Union[os.PathLike, str, raw_nodes.URI, dict]
-) -> Tuple[dict, pathlib.Path]:
+def get_dict_from_yaml_source(source: Union[os.PathLike, str, raw_nodes.URI, dict]) -> dict:
     if isinstance(source, dict):
-        return source, pathlib.Path()
+        if ROOT_PATH not in source:
+            source[ROOT_PATH] = pathlib.Path()
+
+        return source
     elif isinstance(source, (str, os.PathLike, raw_nodes.URI)):
         source = resolve_local_uri(source, pathlib.Path())
     else:
@@ -289,4 +273,5 @@ def get_dict_and_root_path_from_yaml_source(
 
     data = yaml.load(local_source)
     assert isinstance(data, dict)
-    return data, root_path
+    data[ROOT_PATH] = root_path
+    return data

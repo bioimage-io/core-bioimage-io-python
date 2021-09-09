@@ -72,8 +72,7 @@ def convert_weights_to_pytorch_script(
 ):
     """Convert model weights from format 'pytorch_state_dict' to 'torchscript'."""
     if isinstance(model_spec, (str, Path)):
-        root = os.path.split(model_spec)[0]
-        model_spec = load_resource_description(Path(model_spec), root_path=root)
+        model_spec = load_resource_description(Path(model_spec))
 
     with torch.no_grad():
         # load input and expected output data

@@ -5,13 +5,13 @@ import pytest
 import bioimageio.spec as spec
 from marshmallow import missing
 
-from bioimageio.core.resource_io.io_ import ensure_raw_resource_description
+from bioimageio.core.resource_io.io_ import load_raw_resource_description
 
 
 def _test_build_spec(path, weight_type, tensorflow_version=None):
     from bioimageio.core.build_spec import build_model
 
-    model_spec, root_path = ensure_raw_resource_description(path)
+    model_spec = load_raw_resource_description(path)
     assert isinstance(model_spec, spec.model.raw_nodes.Model)
     weight_source = model_spec.weights[weight_type].source
 
@@ -47,7 +47,7 @@ def _test_build_spec(path, weight_type, tensorflow_version=None):
         covers=covers,
         dependencies=dep_file,
         cite=cite,
-        root=root_path,
+        root=model_spec.root_path,
         weight_type=weight_type_,
     )
     if tensorflow_version is not None:
