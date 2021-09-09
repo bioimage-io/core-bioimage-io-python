@@ -140,13 +140,11 @@ class _PredictionPipelineImpl(PredictionPipeline):
         return self._input_shape
 
     def predict(self, input_tensor: xr.DataArray) -> xr.DataArray:
-        """Predict input_tensor with the model without applying pre/postprocessing.
-        """
+        """Predict input_tensor with the model without applying pre/postprocessing."""
         return self._model.forward(input_tensor)
 
     def forward(self, input_tensor: xr.DataArray) -> xr.DataArray:
-        """Apply preprocessing, run prediction and apply postprocessing.
-        """
+        """Apply preprocessing, run prediction and apply postprocessing."""
         preprocessed = self._preprocessing(input_tensor)
         prediction = self.predict(preprocessed)
         return self._postprocessing(prediction)
