@@ -8,6 +8,7 @@ dependencies:
   - conda-build
   - h5py >=2.10,<2.11
   - mypy
+  - pip
   - pytest
   - python >=3.7
   - xarray
