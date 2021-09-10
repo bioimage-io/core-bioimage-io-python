@@ -8,13 +8,6 @@ from bioimageio.spec.model.raw_nodes import PreprocessingName
 from ._types import Transform
 
 
-# ADD_BATCH_DIM = Preprocessing(name="__tiktorch_add_batch_dim", kwargs=None)
-
-
-# def make_ensure_dtype_preprocessing(dtype):
-#     return Preprocessing(name="__tiktorch_ensure_dtype", kwargs={"dtype": dtype})
-
-
 def scale_linear(tensor: xr.DataArray, *, gain, offset, axes) -> xr.DataArray:
     """scale the tensor with a fixed multiplicative and additive factor"""
     scale_axes = tuple(ax for ax in tensor.dims if (ax not in axes and ax != "b"))
