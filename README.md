@@ -42,9 +42,14 @@ There are different environment files that only install tensorflow or pytorch as
 
 ## Command Line
 
+You can list all the available command line options:
+```
+bioimageio
+```
+
 Test a model:
 ```
-bioimageio-test -m <MODEL>
+bioimageio test -m <MODEL>
 ```
 
 Run prediction:
