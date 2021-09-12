@@ -19,10 +19,13 @@ class KerasModelAdapter(ModelAdapter):
         self.devices = []
 
         weight_file = self.spec.weights["keras_hdf5"].source
-        self.model = keras.models.load_model(weight_file)
+        self._model = keras.models.load_model(weight_file)
+        self._output_axes = [tuple(out.axes) for out in bioimageio_model.outputs]
 
-    def forward(self, input_tensor: xr.DataArray) -> xr.DataArray:
-        res = self.model.predict(input_tensor.data)
-        # TODO deal with multiple output tensors
-        output_axes = tuple(self.spec.outputs[0].axes)
-        return xr.DataArray(res, dims=output_axes)
+    def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
+        result = self._model.predict(*[ipt.data for ipt in input_tensors])
+        if not isinstance(result, (tuple, list)):
+            result = [result]
+
+        assert len(result) == len(self._output_axes)
+        return [xr.DataArray(r, dims=axes) for r, axes, in zip(result, self._output_axes)]
