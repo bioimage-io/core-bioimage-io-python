@@ -73,7 +73,7 @@ class PredictionPipeline(ModelAdapter):
 
     @property
     @abc.abstractmethod
-    def output_shape(self) -> List[Union[List[Tuple[str, float]]], NamedImplicitOutputShape]:
+    def output_shape(self) -> List[Union[List[Tuple[str, float]], NamedImplicitOutputShape]]:
         """
         Named output dimensions. Either explicitly defined or implicitly in relation to an input
         """
@@ -96,7 +96,7 @@ class _PredictionPipelineImpl(PredictionPipeline):
         input_axes: Sequence[str],
         input_shape: Sequence[List[Tuple[str, int]]],
         output_axes: Sequence[str],
-        output_shape: Sequence[Union[List[Tuple[str, int]]], NamedImplicitOutputShape],
+        output_shape: Sequence[Union[List[Tuple[str, int]], NamedImplicitOutputShape]],
         halo: Sequence[List[Tuple[str, int]]],
         preprocessing: Sequence[Transform],
         model: ModelAdapter,
