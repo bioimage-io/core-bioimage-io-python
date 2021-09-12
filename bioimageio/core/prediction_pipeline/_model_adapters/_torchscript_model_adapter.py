@@ -30,5 +30,4 @@ class TorchscriptModelAdapter(ModelAdapter):
             result = [r.cpu().numpy() if not isinstance(r, np.ndarray) else r for r in result]
 
         assert len(result) == len(self._internal_output_axes)
-        result = [xr.DataArray(r, dims=axes) for r, axes in zip(result, self._internal_output_axes)]
-        return result
+        return [xr.DataArray(r, dims=axes) for r, axes in zip(result, self._internal_output_axes)]
