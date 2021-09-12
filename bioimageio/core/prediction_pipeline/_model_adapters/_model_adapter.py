@@ -1,5 +1,5 @@
 import abc
-from typing import List, Optional, Type
+from typing import Any, List, Optional, Type, Union
 
 import xarray as xr
 from bioimageio.core.resource_io import nodes
@@ -20,7 +20,7 @@ class ModelAdapter(abc.ABC):
 
     # todo: separate preprocessing/actual forward/postprocessing
     @abc.abstractmethod
-    def forward(self, input_tensor: xr.DataArray) -> xr.DataArray:
+    def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         """
         Run forward pass of model to get model predictions
         Note: model is responsible converting it's data representation to
