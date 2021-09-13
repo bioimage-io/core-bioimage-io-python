@@ -12,7 +12,7 @@ from ._postprocessing import make_postprocessing
 
 from ._preprocessing import make_preprocessing
 from ._types import Transform
-from ..resource_io.nodes import ImplicitOutputShape, InputTensor, OutputTensor
+from ..resource_io.nodes import ImplicitOutputShape, InputTensor, Model, OutputTensor
 
 
 @dataclass
@@ -110,6 +110,7 @@ class _PredictionPipelineImpl(PredictionPipeline):
         self,
         *,
         name: str,
+        bioimageio_model: Model,
         input_axes: Sequence[str],
         input_shape: Sequence[List[Tuple[str, int]]],
         output_axes: Sequence[str],
@@ -120,6 +121,8 @@ class _PredictionPipelineImpl(PredictionPipeline):
         postprocessing: Sequence[Transform],
     ) -> None:
         self._name = name
+        self._input_specs = bioimageio_model.inputs
+        self._output_specs = bioimageio_model.outputs
         self._input_axes = [tuple(axes) for axes in input_axes]
         self._input_shape = input_shape
         self._output_axes = [tuple(axes) for axes in output_axes]
@@ -132,6 +135,14 @@ class _PredictionPipelineImpl(PredictionPipeline):
     @property
     def name(self):
         return self._name
+
+    @property
+    def input_specs(self):
+        return self._input_specs
+
+    @property
+    def output_specs(self):
+        return self._output_specs
 
     @property
     def input_axes(self):
@@ -260,6 +271,7 @@ def create_prediction_pipeline(
 
     return _PredictionPipelineImpl(
         name=bioimageio_model.name,
+        bioimageio_model=bioimageio_model,
         input_axes=input_axes,
         input_shape=named_input_shape,
         output_axes=output_axes,
