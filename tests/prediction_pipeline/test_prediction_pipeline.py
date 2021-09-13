@@ -19,13 +19,13 @@ def _test_prediction_pipeline(model_package, weight_format):
     tagged_data = [
         xr.DataArray(ipt_tensor, dims=tuple(ipt.axes)) for ipt_tensor, ipt in zip(input_tensors, bio_model.inputs)
     ]
-    output = pp.forward(*tagged_data)
+    outputs = pp.forward(*tagged_data)
+    assert len(outputs) == 1
 
-    expected_outputs = [np.load(opt) for opt in bio_model.test_outputs]
+    expected_outputs = [np.load(str(opt)) for opt in bio_model.test_outputs]
     assert len(expected_outputs) == 1
-    expected_output = expected_outputs[0]
 
-    assert_array_almost_equal(output, expected_output, decimal=4)
+    assert_array_almost_equal(outputs[0], expected_outputs[0], decimal=4)
 
 
 @pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
