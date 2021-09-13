@@ -50,8 +50,14 @@ def convert_weights_to_onnx(
         expected_outputs = [out.numpy() for out in expected_outputs]
 
         if use_tracing:
-            torch.onnx.export(model, input_tensors, output_path, verbose=verbose, opset_version=opset_version,
-                              example_outputs=expected_outputs)
+            torch.onnx.export(
+                model,
+                input_tensors if len(input_tensors) > 1 else input_tensors[0],
+                output_path,
+                verbose=verbose,
+                opset_version=opset_version,
+                example_outputs=expected_outputs,
+            )
         else:
             raise NotImplementedError
 

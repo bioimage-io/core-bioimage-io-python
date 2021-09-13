@@ -37,8 +37,9 @@ def _check_predictions(model, scripted_model, model_spec, input_data):
             return 1
 
     ret = _check(input_data)
-    # check has not passed? then return immediately
-    if ret == 1:
+    n_inputs = len(model_spec.inputs)
+    # check has not passed or we have more tahn one input? then return immediately
+    if ret == 1 or n_inputs > 1:
         return ret
 
     # do we have fixed input size or variable?
@@ -58,8 +59,8 @@ def _check_predictions(model, scripted_model, model_spec, input_data):
     while True:
 
         slice_ = tuple(slice(None) if st == 0 else slice(step_factor * st, -step_factor * st) for st in half_step)
-        this_input = input_data[slice_]
-        this_shape = this_input.shape
+        this_input = [inp[slice_] for inp in input_data]
+        this_shape = this_input[0].shape
         if any(tsh < msh for tsh, msh in zip(this_shape, min_shape)):
             return ret
 
