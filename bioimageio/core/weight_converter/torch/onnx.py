@@ -1,4 +1,3 @@
-import os
 import warnings
 from pathlib import Path
 from typing import Union, Optional
@@ -24,6 +23,7 @@ def convert_weights_to_onnx(
     opset_version: Optional[int] = 12,
     use_tracing: bool = True,
     verbose: bool = True,
+    test_decimal: int = 4
 ):
     """Convert model weights from format 'pytorch_state_dict' to 'onnx'.
 
@@ -33,6 +33,7 @@ def convert_weights_to_onnx(
         opset_version: onnx opset version
         use_tracing: whether to use tracing or scripting to export the onnx format
         verbose: be verbose during the onnx export
+        test_decimal: precision for testing whether the results agree
     """
     if isinstance(model_spec, (str, Path)):
         model_spec = load_resource_description(Path(model_spec))
@@ -40,32 +41,43 @@ def convert_weights_to_onnx(
     assert isinstance(model_spec, nodes.Model)
     with torch.no_grad():
         # load input and expected output data
-        input_data = np.load(str(model_spec.test_inputs[0])).astype("float32")
-        input_tensor = torch.from_numpy(input_data)
+        input_data = [np.load(inp).astype("float32") for inp in model_spec.test_inputs]
+        input_tensors = [torch.from_numpy(inp) for inp in input_data]
 
         # instantiate and generate the expected output
         model = load_model(model_spec)
-        expected_output = model(input_tensor).numpy()
+        expected_outputs = model(*input_tensors)
+        if isinstance(expected_outputs, torch.Tensor):
+            expected_outputs = [expected_outputs]
+        expected_outputs = [out.numpy() for out in expected_outputs]
 
         if use_tracing:
-            torch.onnx.export(model, input_tensor, output_path, verbose=verbose, opset_version=opset_version)
+            torch.onnx.export(
+                model,
+                input_tensors if len(input_tensors) > 1 else input_tensors[0],
+                output_path,
+                verbose=verbose,
+                opset_version=opset_version,
+                example_outputs=expected_outputs,
+            )
         else:
             raise NotImplementedError
 
-        if rt is None:
-            msg = "The onnx weights were exported, but onnx rt is not available and weights cannot be checked."
-            warnings.warn(msg)
-            return 1
+    if rt is None:
+        msg = "The onnx weights were exported, but onnx rt is not available and weights cannot be checked."
+        warnings.warn(msg)
+        return 1
 
-        # check the onnx model
-        sess = rt.InferenceSession(str(output_path))  # does not support Path, so need to cast to str
-        input_name = sess.get_inputs()[0].name
-        output = sess.run(None, {input_name: input_data})[0]
+    # check the onnx model
+    sess = rt.InferenceSession(str(output_path))  # does not support Path, so need to cast to str
+    onnx_inputs = {input_name.name: inp for input_name, inp in zip(sess.get_inputs(), input_data)}
+    outputs = sess.run(None, onnx_inputs)
 
-        try:
-            assert_array_almost_equal(expected_output, output, decimal=4)
-            return 0
-        except AssertionError as e:
-            msg = f"The onnx weights were exported, but results before and after conversion do not agree:\n {str(e)}"
-            warnings.warn(msg)
-            return 1
+    try:
+        for exp, out in zip(expected_outputs, outputs):
+            assert_array_almost_equal(exp, out, decimal=test_decimal)
+        return 0
+    except AssertionError as e:
+        msg = f"The onnx weights were exported, but results before and after conversion do not agree:\n {str(e)}"
+        warnings.warn(msg)
+        return 1
