@@ -1,4 +1,3 @@
-import os
 import warnings
 
 from pathlib import Path
@@ -14,20 +13,30 @@ from .utils import load_model
 
 
 def _check_predictions(model, scripted_model, model_spec, input_data):
-    def _check(expected_output, output):
+    assert isinstance(input_data, list)
+
+    def _check(input_):
+        # get the expected output to validate the torchscript weights
+        expected_outputs = model(*input_)
+        if isinstance(expected_outputs, (torch.Tensor)):
+            expected_outputs = [expected_outputs]
+        expected_outputs = [out.numpy() for out in expected_outputs]
+
+        outputs = scripted_model(*input_)
+        if isinstance(outputs, (torch.Tensor)):
+            outputs = [outputs]
+        outputs = [out.numpy() for out in outputs]
+
         try:
-            assert_array_almost_equal(expected_output, output, decimal=4)
+            for exp, out in zip(expected_outputs, outputs):
+                assert_array_almost_equal(exp, out, decimal=4)
             return 0
         except AssertionError as e:
             msg = f"The onnx weights were exported, but results before and after conversion do not agree:\n {str(e)}"
             warnings.warn(msg)
             return 1
 
-    # get the expected output to validate the torchscript weights
-    expected_output = model(input_data).numpy()
-    output = scripted_model(input_data).numpy()
-
-    ret = _check(expected_output, output)
+    ret = _check(input_data)
     # check has not passed? then return immediately
     if ret == 1:
         return ret
@@ -54,10 +63,7 @@ def _check_predictions(model, scripted_model, model_spec, input_data):
         if any(tsh < msh for tsh, msh in zip(this_shape, min_shape)):
             return ret
 
-        expected_output = model(this_input).numpy()
-        output = scripted_model(this_input).numpy()
-
-        ret = _check(expected_output, output)
+        ret = _check(this_input)
         if ret == 1:
             return ret
         step_factor += 1
@@ -74,8 +80,8 @@ def convert_weights_to_pytorch_script(
 
     with torch.no_grad():
         # load input and expected output data
-        input_data = np.load(str(model_spec.test_inputs[0])).astype("float32")
-        input_data = torch.from_numpy(input_data)
+        input_data = [np.load(inp).astype("float32") for inp in model_spec.test_inputs]
+        input_data = [torch.from_numpy(inp) for inp in input_data]
 
         # instantiate model and get reference output
         model = load_model(model_spec)
