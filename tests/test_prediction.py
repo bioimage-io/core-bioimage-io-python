@@ -5,6 +5,8 @@ import pytest
 from bioimageio.core import load_resource_description
 from numpy.testing import assert_array_almost_equal
 
+from bioimageio.core.resource_io.nodes import Model
+
 
 @pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
 def test_test_model(unet2d_nuclei_broad_model):
@@ -35,7 +37,8 @@ def test_predict_image_with_padding(unet2d_nuclei_broad_model, tmp_path):
     from bioimageio.core.prediction import predict_image
 
     spec = load_resource_description(unet2d_nuclei_broad_model)
-    image = np.load(spec.test_inputs[0])[0, 0]
+    assert isinstance(spec, Model)
+    image = np.load(str(spec.test_inputs[0]))[0, 0]
     original_shape = image.shape
     assert image.ndim == 2
 
@@ -73,9 +76,10 @@ def test_predict_image_with_tiling(unet2d_nuclei_broad_model, tmp_path):
     from bioimageio.core.prediction import predict_image
 
     spec = load_resource_description(unet2d_nuclei_broad_model)
+    assert isinstance(spec, Model)
     inputs = spec.test_inputs
     assert len(inputs) == 1
-    exp = np.load(spec.test_outputs[0])
+    exp = np.load(str(spec.test_outputs[0]))
 
     out_path = tmp_path.with_suffix(".npy")
 
