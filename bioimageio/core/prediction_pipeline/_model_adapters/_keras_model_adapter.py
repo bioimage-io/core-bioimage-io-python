@@ -19,7 +19,7 @@ class KerasModelAdapter(ModelAdapter):
         self._output_axes = [tuple(out.axes) for out in bioimageio_model.outputs]
 
     def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
-        result = self._model.predict(*[ipt.data for ipt in input_tensors])
+        result = self._model.predict(*input_tensors)
         if not isinstance(result, (tuple, list)):
             result = [result]
 
