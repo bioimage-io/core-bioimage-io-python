@@ -12,7 +12,7 @@ from ._postprocessing import make_postprocessing
 
 from ._preprocessing import make_preprocessing
 from ._types import Transform
-from ..resource_io.nodes import ImplicitOutputShape
+from ..resource_io.nodes import ImplicitOutputShape, InputTensor, OutputTensor
 
 
 @dataclass
@@ -47,7 +47,24 @@ class PredictionPipeline(ModelAdapter):
 
     @property
     @abc.abstractmethod
-    def input_axes(self) -> List[str]:
+    def input_specs(self) -> List[InputTensor]:
+        """
+        specs of inputs
+        """
+        ...
+
+    @property
+    @abc.abstractmethod
+    def output_specs(self) -> List[OutputTensor]:
+        """
+        specs of outputs
+        """
+        ...
+
+    # todo: replace all uses of properties below with 'input_specs' and 'output_specs'
+    @property
+    @abc.abstractmethod
+    def input_axes(self) -> List[Tuple[str, ...]]:
         """
         Input axes excepted by this pipeline
         Note: one character axes names
@@ -64,7 +81,7 @@ class PredictionPipeline(ModelAdapter):
 
     @property
     @abc.abstractmethod
-    def output_axes(self) -> List[str]:
+    def output_axes(self) -> List[Tuple[str, ...]]:
         """
         Output axes of this pipeline
         Note: one character axes names
@@ -103,9 +120,9 @@ class _PredictionPipelineImpl(PredictionPipeline):
         postprocessing: Sequence[Transform],
     ) -> None:
         self._name = name
-        self._input_axes = input_axes
+        self._input_axes = [tuple(axes) for axes in input_axes]
         self._input_shape = input_shape
-        self._output_axes = output_axes
+        self._output_axes = [tuple(axes) for axes in output_axes]
         self._output_shape = output_shape
         self._halo = halo
         self._preprocessing = preprocessing
