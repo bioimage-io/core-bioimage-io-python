@@ -29,7 +29,6 @@ class TensorflowModelAdapterBase(ModelAdapter):
 
     def __init__(self, *, bioimageio_model: nodes.Model, weight_format: str, devices: Optional[List[str]] = None):
         self.spec = bioimageio_model
-        self.name = self.spec.name
 
         try:
             tf_version = self.spec.weights[weight_format].tensorflow_version.version
@@ -42,17 +41,16 @@ class TensorflowModelAdapterBase(ModelAdapter):
         # TODO tf device management
         if devices is not None:
             warnings.warn(f"Device management is not implemented for tensorflow yet, ignoring the devices {devices}")
-        self.devices = []
 
         weight_file = self.require_unzipped(self.spec.weights[weight_format].source)
-        self.model = self._load_model(weight_file)
+        self._model = self._load_model(weight_file)
+        self._internal_output_axes = [tuple(out.axes) for out in bioimageio_model.outputs]
 
     # TODO currently we relaod the model every time. it would be better to keep the graph and session
     # alive in between of forward passes (but then the sessions need to be properly opened / closed)
-    def _forward_tf(self, data):
-        assert len(self.spec.inputs) == len(self.spec.outputs) == 1
-        input_key = self.spec.inputs[0].name
-        output_key = self.spec.outputs[0].name
+    def _forward_tf(self, *input_tensors):
+        input_keys = [ipt.name for ipt in self.spec.inputs]
+        output_keys = [out.name for out in self.spec.outputs]
 
         # TODO read from spec
         tag = tf.saved_model.tag_constants.SERVING
@@ -63,35 +61,36 @@ class TensorflowModelAdapterBase(ModelAdapter):
             with tf.Session(graph=graph) as sess:
 
                 # load the model and the signature
-                graph_def = tf.saved_model.loader.load(sess, [tag], self.model)
+                graph_def = tf.saved_model.loader.load(sess, [tag], self._model)
                 signature = graph_def.signature_def
 
                 # get the tensors into the graph
-                in_name = signature[signature_key].inputs[input_key].name
-                out_name = signature[signature_key].outputs[output_key].name
-                in_tensor = graph.get_tensor_by_name(in_name)
-                out_tensor = graph.get_tensor_by_name(out_name)
+                in_names = [signature[signature_key].inputs[key].name for key in input_keys]
+                out_names = [signature[signature_key].outputs[key].name for key in output_keys]
+                in_tensors = [graph.get_tensor_by_name(name) for name in in_names]
+                out_tensors = [graph.get_tensor_by_name(name) for name in out_names]
 
                 # run prediction
-                res = sess.run(out_tensor, {in_tensor: data})
+                res = sess.run(dict(zip(out_names, out_tensors)), dict(zip(in_tensors, input_tensors)))
 
         return res
 
-    def _forward_keras(self, data):
-        tf_tensor = tf.convert_to_tensor(data)
-        res = self.model.forward(tf_tensor)
-        if not isinstance(res, np.ndarray):
-            res = tf.make_ndarray(res)
-        return res
+    def _forward_keras(self, input_tensors):
+        tf_tensor = [tf.convert_to_tensor(ipt) for ipt in input_tensors]
+        result = self._model.forward(*tf_tensor)
+        if not isinstance(result, (tuple, list)):
+            result = [result]
 
-    def forward(self, input_tensor: xr.DataArray) -> xr.DataArray:
+        return [r if isinstance(r, np.ndarray) else tf.make_ndarray(r) for r in result]
+
+    def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
+        data = [ipt.data for ipt in input_tensors]
         if self.use_keras_api:
-            res = self._forward_keras(input_tensor.data)
+            result = self._forward_keras(*data)
         else:
-            res = self._forward_tf(input_tensor.data)
-        # TODO deal with multiple output tensors
-        output_axes = tuple(self.spec.outputs[0].axes)
-        return xr.DataArray(res, dims=output_axes)
+            result = self._forward_tf(*data)
+
+        return [xr.DataArray(r, dims=axes) for r, axes in zip(result, self._internal_output_axes)]
 
 
 class TensorflowModelAdapter(TensorflowModelAdapterBase):

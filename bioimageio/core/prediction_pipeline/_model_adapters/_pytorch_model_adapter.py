@@ -1,4 +1,3 @@
-import logging
 from typing import List, Optional
 
 import torch
@@ -8,35 +7,36 @@ from marshmallow import missing
 from bioimageio.core.resource_io import nodes
 from ._model_adapter import ModelAdapter
 
-logger = logging.getLogger(__name__)
-
 
 class PytorchModelAdapter(ModelAdapter):
     def __init__(self, *, bioimageio_model: nodes.Model, devices: Optional[List[str]] = None):
-        self._internal_output_axes = bioimageio_model.outputs[0].axes
-        self.model = self.get_nn_instance(bioimageio_model)
+        self._model = self.get_nn_instance(bioimageio_model)
 
         if devices is None:
-            self.devices = ["cuda" if torch.cuda.is_available() else "cpu"]
+            self._devices = ["cuda" if torch.cuda.is_available() else "cpu"]
         else:
-            self.devices = [torch.device(d) for d in devices]
-        self.model.to(self.devices[0])
+            self._devices = [torch.device(d) for d in devices]
+        self._model.to(self._devices[0])
 
-        assert isinstance(self.model, torch.nn.Module)
+        assert isinstance(self._model, torch.nn.Module)
         weights = bioimageio_model.weights.get("pytorch_state_dict")
         if weights is not None and weights.source:
-            state = torch.load(weights.source, map_location=self.devices[0])
-            self.model.load_state_dict(state)
+            state = torch.load(weights.source, map_location=self._devices[0])
+            self._model.load_state_dict(state)
 
-    def forward(self, input_tensor: xr.DataArray) -> xr.DataArray:
+        self._internal_output_axes = [tuple(out.axes) for out in bioimageio_model.outputs]
+
+    def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         with torch.no_grad():
-            tensor = torch.from_numpy(input_tensor.data)
-            tensor = tensor.to(self.devices[0])
-            result = self.model(*[tensor])
-            if isinstance(result, torch.Tensor):
-                result = result.detach().cpu().numpy()
+            tensors = [torch.from_numpy(ipt.data) for ipt in input_tensors]
+            tensors = [t.to(self._devices[0]) for t in tensors]
+            result = self._model(*tensors)
+            if not isinstance(result, (tuple, list)):
+                result = [result]
 
-        return xr.DataArray(result, dims=tuple(self._internal_output_axes))
+            result = [r.detach().cpu().numpy() if isinstance(r, torch.Tensor) else r for r in result]
+
+        return [xr.DataArray(r, dims=axes) for r, axes in zip(result, self._internal_output_axes)]
 
     @staticmethod
     def get_nn_instance(model_node: nodes.Model, **kwargs):

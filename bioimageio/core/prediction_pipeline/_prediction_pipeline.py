@@ -1,6 +1,7 @@
 import abc
 import math
-from typing import List, Optional, Tuple
+from dataclasses import dataclass
+from typing import List, Optional, Sequence, Tuple, Union
 
 import xarray as xr
 from bioimageio.core.resource_io import nodes
@@ -9,9 +10,19 @@ from marshmallow import missing
 from ._model_adapters import ModelAdapter, create_model_adapter
 from ._postprocessing import make_postprocessing
 
-# from ._preprocessing import ADD_BATCH_DIM, make_ensure_dtype_preprocessing
 from ._preprocessing import make_preprocessing
 from ._types import Transform
+from ..resource_io.nodes import ImplicitOutputShape, InputTensor, Model, OutputTensor
+
+
+@dataclass
+class NamedImplicitOutputShape:
+    reference_input: str = missing
+    scale: List[Tuple[str, float]] = missing
+    offset: List[Tuple[str, int]] = missing
+
+    def __len__(self):
+        return len(self.scale)
 
 
 class PredictionPipeline(ModelAdapter):
@@ -20,7 +31,7 @@ class PredictionPipeline(ModelAdapter):
     """
 
     @abc.abstractmethod
-    def forward(self, input_tensor: xr.DataArray) -> xr.DataArray:
+    def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         """
         Compute predictions
         """
@@ -36,7 +47,24 @@ class PredictionPipeline(ModelAdapter):
 
     @property
     @abc.abstractmethod
-    def input_axes(self) -> str:
+    def input_specs(self) -> List[InputTensor]:
+        """
+        specs of inputs
+        """
+        ...
+
+    @property
+    @abc.abstractmethod
+    def output_specs(self) -> List[OutputTensor]:
+        """
+        specs of outputs
+        """
+        ...
+
+    # todo: replace all uses of properties below with 'input_specs' and 'output_specs'
+    @property
+    @abc.abstractmethod
+    def input_axes(self) -> List[Tuple[str, ...]]:
         """
         Input axes excepted by this pipeline
         Note: one character axes names
@@ -45,7 +73,7 @@ class PredictionPipeline(ModelAdapter):
 
     @property
     @abc.abstractmethod
-    def input_shape(self) -> List[Tuple[str, int]]:
+    def input_shape(self) -> List[List[Tuple[str, int]]]:
         """
         Named input dimensions
         """
@@ -53,7 +81,7 @@ class PredictionPipeline(ModelAdapter):
 
     @property
     @abc.abstractmethod
-    def output_axes(self) -> str:
+    def output_axes(self) -> List[Tuple[str, ...]]:
         """
         Output axes of this pipeline
         Note: one character axes names
@@ -62,25 +90,17 @@ class PredictionPipeline(ModelAdapter):
 
     @property
     @abc.abstractmethod
-    def halo(self) -> List[Tuple[str, int]]:
+    def output_shape(self) -> List[Union[List[Tuple[str, float]], NamedImplicitOutputShape]]:
         """
-        Size of output borders that have unreliable data due to artifacts
-        """
-        ...
-
-    @property
-    @abc.abstractmethod
-    def scale(self) -> List[Tuple[str, float]]:
-        """
-        Scale of output tensor relative to input
+        Named output dimensions. Either explicitly defined or implicitly in relation to an input
         """
         ...
 
     @property
     @abc.abstractmethod
-    def offset(self) -> List[Tuple[str, int]]:
+    def halo(self) -> List[List[Tuple[str, int]]]:
         """
-        Offset of output tensor relative to input
+        Size of output borders that have unreliable data due to artifacts (after application of postprocessing)
         """
         ...
 
@@ -90,23 +110,24 @@ class _PredictionPipelineImpl(PredictionPipeline):
         self,
         *,
         name: str,
-        input_axes: str,  # TODO shouldn't this be a list for multple input tensors?
-        input_shape: List[Tuple[str, int]],
-        output_axes: str,
-        halo: List[Tuple[str, int]],
-        scale: List[Tuple[str, float]],
-        offset: List[Tuple[str, int]],
-        preprocessing: Transform,
+        bioimageio_model: Model,
+        input_axes: Sequence[str],
+        input_shape: Sequence[List[Tuple[str, int]]],
+        output_axes: Sequence[str],
+        output_shape: Sequence[Union[List[Tuple[str, int]], NamedImplicitOutputShape]],
+        halo: Sequence[List[Tuple[str, int]]],
+        preprocessing: Sequence[Transform],
         model: ModelAdapter,
-        postprocessing: Transform,
+        postprocessing: Sequence[Transform],
     ) -> None:
         self._name = name
-        self._halo = halo
-        self._scale = scale
-        self._offset = offset
-        self._input_axes = input_axes
-        self._output_axes = output_axes
+        self._input_specs = bioimageio_model.inputs
+        self._output_specs = bioimageio_model.outputs
+        self._input_axes = [tuple(axes) for axes in input_axes]
         self._input_shape = input_shape
+        self._output_axes = [tuple(axes) for axes in output_axes]
+        self._output_shape = output_shape
+        self._halo = halo
         self._preprocessing = preprocessing
         self._model: ModelAdapter = model
         self._postprocessing = postprocessing
@@ -116,49 +137,57 @@ class _PredictionPipelineImpl(PredictionPipeline):
         return self._name
 
     @property
-    def halo(self):
-        return self._halo
+    def input_specs(self):
+        return self._input_specs
 
     @property
-    def scale(self):
-        return self._scale
-
-    @property
-    def offset(self):
-        return self._offset
+    def output_specs(self):
+        return self._output_specs
 
     @property
     def input_axes(self):
         return self._input_axes
 
     @property
+    def input_shape(self):
+        return self._input_shape
+
+    @property
     def output_axes(self):
         return self._output_axes
 
     @property
-    def input_shape(self):
-        return self._input_shape
+    def output_shape(self):
+        return self._output_shape
 
-    def predict(self, input_tensor: xr.DataArray) -> xr.DataArray:
+    @property
+    def halo(self):
+        return self._halo
+
+    def predict(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         """Predict input_tensor with the model without applying pre/postprocessing."""
-        return self._model.forward(input_tensor)
+        return self._model.forward(*input_tensors)
 
-    def forward(self, input_tensor: xr.DataArray) -> xr.DataArray:
+    def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         """Apply preprocessing, run prediction and apply postprocessing."""
-        preprocessed = self._preprocessing(input_tensor)
-        prediction = self.predict(preprocessed)
-        return self._postprocessing(prediction)
+        assert len(self._preprocessing) == len(input_tensors)
+        preprocessed = [fn(x) for fn, x in zip(self._preprocessing, input_tensors)]
+        prediction = self.predict(*preprocessed)
+        assert len(self._postprocessing) == len(prediction)
+        return [fn(x) for fn, x in zip(self._postprocessing, prediction)]
 
-    def preprocess(self, input_tensor: xr.DataArray) -> xr.DataArray:
+    def preprocess(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         """Apply preprocessing."""
-        return self._preprocessing(input_tensor)
+        assert len(self._preprocessing) == len(input_tensors)
+        return [fn(x) for fn, x in zip(self._preprocessing, input_tensors)]
 
-    def postprocess(self, input_tensor: xr.DataArray) -> xr.DataArray:
+    def postprocess(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         """Apply postprocessing."""
-        return self._postprocessing(input_tensor)
+        assert len(self._postprocessing) == len(input_tensors)
+        return [fn(x) for fn, x in zip(self._postprocessing, input_tensors)]
 
-    def __call__(self, input_tensor: xr.DataArray) -> xr.DataArray:
-        return self.forward(input_tensor)
+    def __call__(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
+        return self.forward(*input_tensors)
 
 
 def enforce_min_shape(min_shape, step, axes):
@@ -197,53 +226,57 @@ def create_prediction_pipeline(
     * model prediction
     * postprocessing
     """
-    if len(bioimageio_model.inputs) != 1 or len(bioimageio_model.outputs) != 1:
-        raise NotImplementedError("Only models with single input and output are supported")
-
     model_adapter: ModelAdapter = create_model_adapter(
         bioimageio_model=bioimageio_model, devices=devices, weight_format=weight_format
     )
 
-    input = bioimageio_model.inputs[0]
-    input_axes = input.axes
-    try:
-        input_shape = input.shape.min
-        step = input.shape.step
-        input_shape = enforce_min_shape(input_shape, step, input_axes)
-    except AttributeError:
-        input_shape = input.shape
+    input_axes: List[str] = []
+    named_input_shape: List[List[Tuple[str, int]]] = []
+    preprocessing: List[Transform] = []
+    for ipt in bioimageio_model.inputs:
+        try:
+            input_shape = ipt.shape.min
+            step = ipt.shape.step
+            input_shape = enforce_min_shape(input_shape, step, ipt.axes)
+        except AttributeError:
+            input_shape = ipt.shape
 
-    preprocessing_spec = [] if input.preprocessing is missing else input.preprocessing.copy()
+        input_axes.append(ipt.axes)
+        named_input_shape.append(list(zip(ipt.axes, input_shape)))
+        preprocessing_spec = [] if ipt.preprocessing is missing else ipt.preprocessing.copy()
+        preprocessing.append(make_preprocessing(preprocessing_spec))
 
-    input_named_shape = list(zip(input_axes, input_shape))
-    preprocessing: Transform = make_preprocessing(preprocessing_spec)
+    output_axes: List[str] = []
+    named_output_shape: List[Union[List[Tuple[str, int]], NamedImplicitOutputShape]] = []
+    named_halo: List[List[Tuple[str, int]]] = []
+    postprocessing: List[Transform] = []
+    for out in bioimageio_model.outputs:
+        output_axes.append(out.axes)
+        if isinstance(out.shape, list):  # explict output shape
+            named_output_shape.append(list(zip(out.axes, out.shape)))
+        elif isinstance(out.shape, ImplicitOutputShape):
+            named_output_shape.append(
+                NamedImplicitOutputShape(
+                    reference_input=out.shape.reference_input,
+                    scale=list(zip(out.axes, out.shape.scale)),
+                    offset=list(zip(out.axes, out.shape.offset)),
+                )
+            )
+        else:
+            raise TypeError(f"Unexpected type for output shape: {type(out.shape)}")
 
-    output = bioimageio_model.outputs[0]
-    # TODO are we using the halo here at all?
-    halo_shape = output.halo or [0 for _ in output.axes]
-    output_axes = bioimageio_model.outputs[0].axes
-    # TODO don't we also have fixed output shape?
-    scale = output.shape.scale
-    offset = output.shape.offset
-    postprocessing_spec = [] if output.postprocessing is missing else output.postprocessing.copy()
-    halo_named_shape = list(zip(output_axes, halo_shape))
-
-    if isinstance(output.shape, list):
-        raise NotImplementedError("Expected implicit output shape")
-
-    named_scale = list(zip(output_axes, scale))
-    named_offset = list(zip(output_axes, offset))
-
-    postprocessing: Transform = make_postprocessing(postprocessing_spec)
+        named_halo.append(list(zip(out.axes, out.halo or [0 for _ in out.axes])))
+        postprocessing_spec = [] if out.postprocessing is missing else out.postprocessing.copy()
+        postprocessing.append(make_postprocessing(postprocessing_spec))
 
     return _PredictionPipelineImpl(
         name=bioimageio_model.name,
+        bioimageio_model=bioimageio_model,
         input_axes=input_axes,
-        input_shape=input_named_shape,
+        input_shape=named_input_shape,
         output_axes=output_axes,
-        halo=halo_named_shape,
-        scale=named_scale,
-        offset=named_offset,
+        output_shape=named_output_shape,
+        halo=named_halo,
         preprocessing=preprocessing,
         model=model_adapter,
         postprocessing=postprocessing,

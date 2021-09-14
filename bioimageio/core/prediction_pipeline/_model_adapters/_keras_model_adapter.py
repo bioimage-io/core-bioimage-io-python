@@ -10,19 +10,18 @@ from ._model_adapter import ModelAdapter
 
 class KerasModelAdapter(ModelAdapter):
     def __init__(self, *, bioimageio_model: nodes.Model, devices: Optional[List[str]] = None):
-        self.spec = bioimageio_model
-        self.name = self.spec.name
-
         # TODO keras device management
         if devices is not None:
             warnings.warn(f"Device management is not implemented for tensorflow yet, ignoring the devices {devices}")
-        self.devices = []
 
-        weight_file = self.spec.weights["keras_hdf5"].source
-        self.model = keras.models.load_model(weight_file)
+        weight_file = bioimageio_model.weights["keras_hdf5"].source
+        self._model = keras.models.load_model(weight_file)
+        self._output_axes = [tuple(out.axes) for out in bioimageio_model.outputs]
 
-    def forward(self, input_tensor: xr.DataArray) -> xr.DataArray:
-        res = self.model.predict(input_tensor.data)
-        # TODO deal with multiple output tensors
-        output_axes = tuple(self.spec.outputs[0].axes)
-        return xr.DataArray(res, dims=output_axes)
+    def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
+        result = self._model.predict(*input_tensors)
+        if not isinstance(result, (tuple, list)):
+            result = [result]
+
+        assert len(result) == len(self._output_axes)
+        return [xr.DataArray(r, dims=axes) for r, axes, in zip(result, self._output_axes)]
