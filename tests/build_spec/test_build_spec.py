@@ -56,14 +56,17 @@ def _test_build_spec(path, weight_type, tensorflow_version=None):
     spec.model.schema.Model().dump(raw_model)
 
 
+@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
 def test_build_spec_pytorch(unet2d_nuclei_broad_model):
     _test_build_spec(unet2d_nuclei_broad_model, "pytorch_state_dict")
 
 
+@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
 def test_build_spec_onnx(unet2d_nuclei_broad_model):
     _test_build_spec(unet2d_nuclei_broad_model, "onnx")
 
 
+@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
 def test_build_spec_torchscript(unet2d_nuclei_broad_model):
     _test_build_spec(unet2d_nuclei_broad_model, "pytorch_script")
 
