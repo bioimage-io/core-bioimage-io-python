@@ -14,14 +14,17 @@ def _test_prediction_pipeline(model_package, weight_format):
     assert isinstance(bio_model, Model)
     pp = create_prediction_pipeline(bioimageio_model=bio_model, weight_format=weight_format)
 
-    input_tensors = [np.load(str(ipt)) for ipt in bio_model.test_inputs]
-    tagged_data = [
-        xr.DataArray(ipt_tensor, dims=tuple(ipt.axes)) for ipt_tensor, ipt in zip(input_tensors, bio_model.inputs)
+    inputs = [
+        xr.DataArray(np.load(str(test_tensor)), dims=tuple(spec.axes))
+        for test_tensor, spec in zip(bio_model.test_inputs, bio_model.inputs)
     ]
-    outputs = pp.forward(*tagged_data)
+    outputs = pp.forward(*inputs)
     assert isinstance(outputs, list)
 
-    expected_outputs = [np.load(str(opt)) for opt in bio_model.test_outputs]
+    expected_outputs = [
+        xr.DataArray(np.load(str(test_tensor)), dims=tuple(spec.axes))
+        for test_tensor, spec in zip(bio_model.test_outputs, bio_model.outputs)
+    ]
     assert len(outputs) == len(expected_outputs)
 
     for out, exp in zip(outputs, expected_outputs):
