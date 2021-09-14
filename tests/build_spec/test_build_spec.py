@@ -57,18 +57,18 @@ def _test_build_spec(path, weight_type, tensorflow_version=None):
 
 
 @pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
-def test_build_spec_pytorch(unet2d_nuclei_broad_model):
-    _test_build_spec(unet2d_nuclei_broad_model, "pytorch_state_dict")
+def test_build_spec_pytorch(any_torch_model):
+    _test_build_spec(any_torch_model, "pytorch_state_dict")
 
 
 @pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
-def test_build_spec_onnx(unet2d_nuclei_broad_model):
-    _test_build_spec(unet2d_nuclei_broad_model, "onnx")
+def test_build_spec_torchscript(any_torchscript_model):
+    _test_build_spec(any_torchscript_model, "pytorch_script")
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
-def test_build_spec_torchscript(unet2d_nuclei_broad_model):
-    _test_build_spec(unet2d_nuclei_broad_model, "pytorch_script")
+@pytest.mark.skipif(pytest.skip_onnx, reason="requires onnx")
+def test_build_spec_onnx(any_onnx_model):
+    _test_build_spec(any_onnx_model, "onnx")
 
 
 @pytest.mark.skipif(pytest.skip_tensorflow or pytest.tf_major_version != 1, reason="requires tensorflow 1")
