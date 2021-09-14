@@ -55,7 +55,7 @@ def pytest_configure():
     pytest.skip_keras = True  # FruNet requires update
 
     # load all model packages we need for testing
-    load_packages = set()
+    load_packages = {"unet2d_nuclei_broad_model"}  # always load unet2d_nuclei_broad_model
     if not pytest.skip_torch:
         load_packages |= set(torch_models + torchscript_models)
 
