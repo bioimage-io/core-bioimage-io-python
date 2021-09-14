@@ -251,8 +251,17 @@ def predict_with_padding(prediction_pipeline, inputs, padding, pad_right=True) -
     if not isinstance(inputs, (tuple, list)):
         inputs = [inputs]
 
+    assert len(inputs) == len(prediction_pipeline.input_specs)
+
+    if not isinstance(padding, (tuple, list)):
+        padding = [padding]
+
+    assert len(padding) == len(prediction_pipeline.input_specs)
     inputs, crops = zip(
-        *[pad(inp, axes, padding, pad_right=pad_right) for inp, axes in zip(inputs, prediction_pipeline.input_axes)]
+        *[
+            pad(inp, spec.axes, p, pad_right=pad_right)
+            for inp, spec, p in zip(inputs, prediction_pipeline.input_specs, padding)
+        ]
     )
 
     result = predict(prediction_pipeline, inputs)
