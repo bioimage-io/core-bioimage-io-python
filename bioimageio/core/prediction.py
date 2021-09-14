@@ -307,7 +307,7 @@ def predict_with_tiling(prediction_pipeline: PredictionPipeline, inputs, tiling)
 
 def parse_padding(padding, model):
     if len(model.inputs) > 1:
-        raise NotImplementedError("Tiling for multiple inputs not yet implemented")
+        raise NotImplementedError("Padding for multiple inputs not yet implemented")
 
     input_spec = model.inputs[0]
     pad_keys = tuple(input_spec.axes) + ("mode",)
