@@ -34,8 +34,8 @@ def test_prediction_pipeline_torch(any_torch_model):
 
 
 @pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
-def test_prediction_pipeline_torchscript(any_torchsccript_model):
-    _test_prediction_pipeline(any_torchsccript_model, "pytorch_script")
+def test_prediction_pipeline_torchscript(any_torchscript_model):
+    _test_prediction_pipeline(any_torchscript_model, "pytorch_script")
 
 
 @pytest.mark.skipif(pytest.skip_onnx, reason="requires onnx")
