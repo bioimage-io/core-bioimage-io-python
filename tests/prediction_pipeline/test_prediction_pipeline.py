@@ -15,41 +15,44 @@ def _test_prediction_pipeline(model_package, weight_format):
     pp = create_prediction_pipeline(bioimageio_model=bio_model, weight_format=weight_format)
 
     input_tensors = [np.load(str(ipt)) for ipt in bio_model.test_inputs]
-    assert len(input_tensors) == 1
     tagged_data = [
         xr.DataArray(ipt_tensor, dims=tuple(ipt.axes)) for ipt_tensor, ipt in zip(input_tensors, bio_model.inputs)
     ]
     outputs = pp.forward(*tagged_data)
-    assert len(outputs) == 1
+    assert isinstance(outputs, list)
 
     expected_outputs = [np.load(str(opt)) for opt in bio_model.test_outputs]
-    assert len(expected_outputs) == 1
+    assert len(outputs) == len(expected_outputs)
 
-    assert_array_almost_equal(outputs[0], expected_outputs[0], decimal=4)
-
-
-@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
-def test_prediction_pipeline_torch(unet2d_nuclei_broad_model):
-    _test_prediction_pipeline(unet2d_nuclei_broad_model, "pytorch_state_dict")
+    for out, exp in zip(outputs, expected_outputs):
+        assert_array_almost_equal(out, exp, decimal=4)
 
 
 @pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
-def test_prediction_pipeline_torchscript(unet2d_nuclei_broad_model):
-    _test_prediction_pipeline(unet2d_nuclei_broad_model, "pytorch_script")
+def test_prediction_pipeline_torch(any_torch_model):
+    _test_prediction_pipeline(any_torch_model, "pytorch_state_dict")
+
+
+@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
+def test_prediction_pipeline_torchscript(any_torchsccript_model):
+    _test_prediction_pipeline(any_torchsccript_model, "pytorch_script")
 
 
 @pytest.mark.skipif(pytest.skip_onnx, reason="requires onnx")
-def test_prediction_pipeline_onnx(unet2d_nuclei_broad_model):
-    _test_prediction_pipeline(unet2d_nuclei_broad_model, "onnx")
+def test_prediction_pipeline_onnx(any_onnx_model):
+    _test_prediction_pipeline(any_onnx_model, "onnx")
 
 
-@pytest.mark.skipif(pytest.skip_frunet, reason="pending update to FruNet")
-@pytest.mark.skipif(pytest.skip_tf or pytest.tf_major_version != 1, reason="requires tensorflow1")
-def test_prediction_pipeline_tensorflow(FruNet_model):
-    _test_prediction_pipeline(FruNet_model, "tensorflow_saved_model_bundle")
+@pytest.mark.skipif(pytest.skip_tensorflow or pytest.tf_major_version != 1, reason="requires tensorflow 1")
+def test_prediction_pipeline_tensorflow(any_tensorflow1_model):
+    _test_prediction_pipeline(any_tensorflow1_model, "tensorflow_saved_model_bundle")
 
 
-@pytest.mark.skipif(pytest.skip_frunet, reason="pending update to FruNet")
+@pytest.mark.skipif(pytest.skip_tensorflow or pytest.tf_major_version != 2, reason="requires tensorflow 2")
+def test_prediction_pipeline_tensorflow(any_tensorflow2_model):
+    _test_prediction_pipeline(any_tensorflow2_model, "tensorflow_saved_model_bundle")
+
+
 @pytest.mark.skipif(pytest.skip_keras, reason="requires keras")
-def test_prediction_pipeline_keras(FruNet_model):
-    _test_prediction_pipeline(FruNet_model, "keras_hdf5")
+def test_prediction_pipeline_keras(any_keras_model):
+    _test_prediction_pipeline(any_keras_model, "keras_hdf5")
