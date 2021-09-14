@@ -8,6 +8,7 @@ onnx_models = ["unet2d_nuclei_broad_model", "unet2d_multi_tensor"]
 tensorflow1_models = ["FruNet_model"]
 tensorflow2_models = []
 keras_models = ["FruNet_model"]
+tensorflow_js_models = ["FruNet_model"]
 
 model_sources = {
     "unet2d_nuclei_broad_model": (
@@ -61,11 +62,13 @@ def pytest_configure():
     if not pytest.skip_onnx:
         load_packages |= set(onnx_models)
 
-    if not pytest.skip_tensorflow and pytest.tf_major_version == 1:
-        load_packages |= set(tensorflow1_models)
-
-    if not pytest.skip_tensorflow and pytest.tf_major_version == 2:
-        load_packages |= set(tensorflow2_models)
+    if not pytest.skip_tensorflow:
+        load_packages |= set(keras_models)
+        load_packages |= set(tensorflow_js_models)
+        if pytest.tf_major_version == 1:
+            load_packages |= set(tensorflow1_models)
+        elif pytest.tf_major_version == 2:
+            load_packages |= set(tensorflow2_models)
 
     pytest.model_packages = {name: export_resource_package(model_sources[name]) for name in load_packages}
 
@@ -105,18 +108,22 @@ def any_onnx_model(request):
     return pytest.model_packages[request.param]
 
 
-@pytest.fixture(params=tensorflow1_models)
-def any_tensorflow1_model(request):
-    return pytest.model_packages[request.param]
-
-
-@pytest.fixture(params=tensorflow2_models)
-def any_tensorflow2_model(request):
-    return pytest.model_packages[request.param]
+@pytest.fixture(params=set(tensorflow1_models) | set(tensorflow2_models))
+def any_tensorflow_model(request):
+    name = request.param
+    if (pytest.tf_major_version == 1 and name in tensorflow1_models) or (
+        pytest.tf_major_version == 2 and name in tensorflow2_models
+    ):
+        return pytest.model_packages[name]
 
 
 @pytest.fixture(params=keras_models)
 def any_keras_model(request):
+    return pytest.model_packages[request.param]
+
+
+@pytest.fixture(params=tensorflow_js_models)
+def any_tensorflow_js_model(request):
     return pytest.model_packages[request.param]
 
 
