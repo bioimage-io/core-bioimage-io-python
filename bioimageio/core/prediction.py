@@ -200,7 +200,7 @@ def predict_with_tiling_impl(
         raise NotImplementedError("Tiling with multiple inputs not implemented yet")
 
     if len(outputs) > 1:
-        raise NotImplementedError("Tiling with multiple inputs not implemented yet")
+        raise NotImplementedError("Tiling with multiple outputs not implemented yet")
 
     assert len(tile_shapes) == len(outputs)
     assert len(halos) == len(outputs)
