@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import imageio
 import numpy as np
 import pytest
@@ -24,12 +26,12 @@ def test_predict_image(unet2d_fixed_shape_or_not, tmpdir):
     assert isinstance(spec, Model)
     inputs = spec.test_inputs
 
-    outputs = [tmpdir / f"out{i}.npy" for i in range(len(spec.test_outputs))]
+    outputs = [Path(tmpdir) / f"out{i}.npy" for i in range(len(spec.test_outputs))]
     predict_image(any_model, inputs, outputs)
     for out_path in outputs:
         assert out_path.exists()
 
-    result = [np.load(p) for p in outputs]
+    result = [np.load(str(p)) for p in outputs]
     expected = [np.load(str(p)) for p in spec.test_outputs]
     for res, exp in zip(result, expected):
         assert_array_almost_equal(res, exp, decimal=4)
