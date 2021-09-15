@@ -18,7 +18,6 @@ class ModelAdapter(abc.ABC):
     def __init__(self, *, bioimageio_model: nodes.Model, devices=Optional[List[str]]):
         ...
 
-    # todo: separate preprocessing/actual forward/postprocessing
     @abc.abstractmethod
     def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         """
