@@ -77,7 +77,8 @@ if not skip_tensorflow:
 
 def pytest_configure():
 
-    # explicit skip flag needed for pytorch to onnx converter test
+    # explicit skip flags needed for some tests
+    pytest.skip_torch = skip_torch
     pytest.skip_onnx = skip_onnx
 
     # load all model packages used in tests

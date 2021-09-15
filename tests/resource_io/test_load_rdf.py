@@ -92,6 +92,7 @@ def test_load_model_with_rel_str_source(unet2d_nuclei_broad_model):
     assert model
 
 
+@pytest.mark.skipif(pytest.skip_torch, reason="requires pytorch")
 def test_load_remote_model_with_folders():
     from bioimageio.core import load_resource_description, load_raw_resource_description
     from bioimageio.core.resource_io import nodes
