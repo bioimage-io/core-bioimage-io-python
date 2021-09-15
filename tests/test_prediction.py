@@ -2,22 +2,18 @@ from pathlib import Path
 
 import imageio
 import numpy as np
-import pytest
-
-from bioimageio.core import load_resource_description
 from numpy.testing import assert_array_almost_equal
 
+from bioimageio.core import load_resource_description
 from bioimageio.core.resource_io.nodes import Model
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
 def test_test_model(unet2d_nuclei_broad_model):
     from bioimageio.core.prediction import test_model
 
     assert test_model(unet2d_nuclei_broad_model)
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
 def test_predict_image(unet2d_fixed_shape_or_not, tmpdir):
     any_model = unet2d_fixed_shape_or_not  # todo: replace 'unet2d_fixed_shape_or_not' with 'any_model'
     from bioimageio.core.prediction import predict_image
@@ -37,7 +33,6 @@ def test_predict_image(unet2d_fixed_shape_or_not, tmpdir):
         assert_array_almost_equal(res, exp, decimal=4)
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
 def test_predict_image_with_padding(unet2d_fixed_shape_or_not, tmp_path):
     any_model = unet2d_fixed_shape_or_not  # todo: replace 'unet2d_fixed_shape_or_not' with 'any_model'
     from bioimageio.core.prediction import predict_image
@@ -74,7 +69,6 @@ def test_predict_image_with_padding(unet2d_fixed_shape_or_not, tmp_path):
     check_result()
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
 def test_predict_image_with_tiling(unet2d_nuclei_broad_model, tmp_path):
     from bioimageio.core.prediction import predict_image
 
@@ -104,7 +98,6 @@ def test_predict_image_with_tiling(unet2d_nuclei_broad_model, tmp_path):
     check_result()
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
 def test_predict_images(unet2d_nuclei_broad_model, tmp_path):
     from bioimageio.core.prediction import predict_images
 

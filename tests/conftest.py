@@ -49,6 +49,7 @@ except ImportError:
 
 skip_tensorflow = tensorflow is None
 skip_tensorflow = True  # todo: update FruNet and remove this
+skip_tensorflow_js = True  # todo: update FruNet and figure out how to test tensorflow_js weights in python
 
 try:
     import keras
@@ -74,80 +75,71 @@ if not skip_tensorflow:
         load_model_packages |= set(tensorflow2_models)
 
 
-# set 'skip_<FRAMEWORK>' flags as global pytest variables,
-# to deselect tests that require frameworks not available in current env
 def pytest_configure():
-    pytest.skip_torch = skip_torch
+
+    # explicit skip flag needed for pytorch to onnx converter test
     pytest.skip_onnx = skip_onnx
-    pytest.skip_tensorflow = skip_tensorflow
-    pytest.tf_major_version = tf_major_version
-    pytest.skip_keras = skip_keras
 
-    pytest.model_packages = {
-        name: export_resource_package(model_sources[name])
-        for name in (load_model_packages | {"unet2d_nuclei_broad_model"})  # always load unet2d_nuclei_broad_model
-    }
-
-
-@pytest.fixture
-def unet2d_nuclei_broad_model():
-    return pytest.model_packages["unet2d_nuclei_broad_model"]
-
-
-@pytest.fixture
-def unet2d_multi_tensor():
-    return pytest.model_packages["unet2d_multi_tensor"]
-
-
-@pytest.fixture
-def FruNet_model():
-    return pytest.model_packages["FruNet_model"]
+    # load all model packages used in tests
+    pytest.model_packages = {name: export_resource_package(model_sources[name]) for name in load_model_packages}
 
 
 #
-# model groups
+# model groups of the form any_<weight format>_model that include all models providing a specific weight format
 #
 
+# written as model group to automatically skip on missing torch
+@pytest.fixture(params=[] if skip_torch else ["unet2d_nuclei_broad_model"])
+def unet2d_nuclei_broad_model(request):
+    return pytest.model_packages[request.param]
 
-@pytest.fixture(params=torch_models)
+
+# written as model group to automatically skip on missing tensorflow 1
+@pytest.fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["FruNet_model"])
+def FruNet_model(request):
+    return pytest.model_packages[request.param]
+
+
+@pytest.fixture(params=[] if skip_torch else torch_models)
 def any_torch_model(request):
     return pytest.model_packages[request.param]
 
 
-@pytest.fixture(params=torchscript_models)
+@pytest.fixture(params=[] if skip_torch else torchscript_models)
 def any_torchscript_model(request):
     return pytest.model_packages[request.param]
 
 
-@pytest.fixture(params=onnx_models)
+@pytest.fixture(params=[] if skip_onnx else onnx_models)
 def any_onnx_model(request):
     return pytest.model_packages[request.param]
 
 
-@pytest.fixture(params=set(tensorflow1_models) | set(tensorflow2_models))
+@pytest.fixture(params=[] if skip_tensorflow else (set(tensorflow1_models) | set(tensorflow2_models)))
 def any_tensorflow_model(request):
     name = request.param
-    if (pytest.tf_major_version == 1 and name in tensorflow1_models) or (
-        pytest.tf_major_version == 2 and name in tensorflow2_models
-    ):
+    if (tf_major_version == 1 and name in tensorflow1_models) or (tf_major_version == 2 and name in tensorflow2_models):
         return pytest.model_packages[name]
 
 
-@pytest.fixture(params=keras_models)
+@pytest.fixture(params=[] if skip_keras else keras_models)
 def any_keras_model(request):
     return pytest.model_packages[request.param]
 
 
-@pytest.fixture(params=tensorflow_js_models)
+@pytest.fixture(params=[] if skip_tensorflow_js else tensorflow_js_models)
 def any_tensorflow_js_model(request):
     return pytest.model_packages[request.param]
 
 
+# fixture to test with all models that should run in the current environment
 @pytest.fixture(params=load_model_packages)
 def any_model(request):
     return pytest.model_packages[request.param]
 
 
-@pytest.fixture(params=["unet2d_nuclei_broad_model", "unet2d_fixed_shape"])
+# temporary fixture to test not with all, but only a manual selection of models
+# (models/functionality should be improved to get rid of this specific model group)
+@pytest.fixture(params=[] if skip_torch else ["unet2d_nuclei_broad_model", "unet2d_fixed_shape"])
 def unet2d_fixed_shape_or_not(request):
     return pytest.model_packages[request.param]

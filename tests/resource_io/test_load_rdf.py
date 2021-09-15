@@ -52,7 +52,6 @@ def test_load_model(any_model):
     assert model
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires pytorch")
 def test_load_model_with_abs_path_source(unet2d_nuclei_broad_model):
     from bioimageio.core.resource_io import load_raw_resource_description, load_resource_description
 
@@ -63,7 +62,6 @@ def test_load_model_with_abs_path_source(unet2d_nuclei_broad_model):
     assert model
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires pytorch")
 def test_load_model_with_rel_path_source(unet2d_nuclei_broad_model):
     from bioimageio.core.resource_io import load_raw_resource_description, load_resource_description
 
@@ -74,7 +72,6 @@ def test_load_model_with_rel_path_source(unet2d_nuclei_broad_model):
     assert model
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires pytorch")
 def test_load_model_with_abs_str_source(unet2d_nuclei_broad_model):
     from bioimageio.core.resource_io import load_raw_resource_description, load_resource_description
 
@@ -85,7 +82,6 @@ def test_load_model_with_abs_str_source(unet2d_nuclei_broad_model):
     assert model
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires pytorch")
 def test_load_model_with_rel_str_source(unet2d_nuclei_broad_model):
     from bioimageio.core.resource_io import load_raw_resource_description, load_resource_description
 
@@ -96,7 +92,6 @@ def test_load_model_with_rel_str_source(unet2d_nuclei_broad_model):
     assert model
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires pytorch")
 def test_load_remote_model_with_folders():
     from bioimageio.core import load_resource_description, load_raw_resource_description
     from bioimageio.core.resource_io import nodes

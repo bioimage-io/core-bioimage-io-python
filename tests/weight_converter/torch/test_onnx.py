@@ -2,7 +2,6 @@ import os
 import pytest
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires pytorch")
 def test_onnx_converter_from_torch(any_torch_model, tmp_path):
     from bioimageio.core.weight_converter.torch.onnx import convert_weights_to_onnx
 
