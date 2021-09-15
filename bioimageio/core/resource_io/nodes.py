@@ -27,7 +27,7 @@ class URI(Node, raw_nodes.URI):
 
 
 @dataclass
-class ImplicitInputShape(Node, raw_nodes.ImplicitInputShape):
+class ParametrizedInputShape(Node, raw_nodes.ParametrizedInputShape):
     pass
 
 
