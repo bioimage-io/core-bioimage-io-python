@@ -148,6 +148,6 @@ def any_model(request):
     return pytest.model_packages[request.param]
 
 
-@pytest.fixture(params=["unet2d_nuclei_broad_model", "unet2d_fixed_shaped"])
+@pytest.fixture(params=["unet2d_nuclei_broad_model", "unet2d_fixed_shape"])
 def unet2d_fixed_shape_or_not(request):
     return pytest.model_packages[request.param]
