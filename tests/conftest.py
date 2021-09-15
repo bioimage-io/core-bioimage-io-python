@@ -58,7 +58,7 @@ skip_keras = keras is None
 skip_keras = True  # FruNet requires update
 
 # load all model packages we need for testing
-load_model_packages = {"unet2d_nuclei_broad_model"}  # always load unet2d_nuclei_broad_model
+load_model_packages = set()
 if not skip_torch:
     load_model_packages |= set(torch_models + torchscript_models)
 
@@ -83,7 +83,10 @@ def pytest_configure():
     pytest.tf_major_version = tf_major_version
     pytest.skip_keras = skip_keras
 
-    pytest.model_packages = {name: export_resource_package(model_sources[name]) for name in load_model_packages}
+    pytest.model_packages = {
+        name: export_resource_package(model_sources[name])
+        for name in (load_model_packages | {"unet2d_nuclei_broad_model"})  # always load unet2d_nuclei_broad_model
+    }
 
 
 @pytest.fixture
