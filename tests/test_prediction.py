@@ -15,28 +15,26 @@ def test_test_model(unet2d_nuclei_broad_model):
     assert test_model(unet2d_nuclei_broad_model)
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
-def test_predict_image(unet2d_nuclei_broad_model, tmp_path):
+def test_predict_image(any_model, tmp_path):
     from bioimageio.core.prediction import predict_image
 
-    spec = load_resource_description(unet2d_nuclei_broad_model)
+    spec = load_resource_description(any_model)
     inputs = spec.test_inputs
     assert len(inputs) == 1
 
     out_path = tmp_path.with_suffix(".npy")
     outputs = [out_path]
-    predict_image(unet2d_nuclei_broad_model, inputs, outputs)
+    predict_image(any_model, inputs, outputs)
     assert out_path.exists()
     res = np.load(out_path)
     exp = np.load(spec.test_outputs[0])
     assert_array_almost_equal(res, exp, decimal=4)
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
-def test_predict_image_with_padding(unet2d_nuclei_broad_model, tmp_path):
+def test_predict_image_with_padding(any_model, tmp_path):
     from bioimageio.core.prediction import predict_image
 
-    spec = load_resource_description(unet2d_nuclei_broad_model)
+    spec = load_resource_description(any_model)
     assert isinstance(spec, Model)
     image = np.load(str(spec.test_inputs[0]))[0, 0]
     original_shape = image.shape
@@ -54,12 +52,12 @@ def test_predict_image_with_padding(unet2d_nuclei_broad_model, tmp_path):
         assert res.shape == image.shape
 
     # test with dynamic padding
-    predict_image(unet2d_nuclei_broad_model, in_path, out_path, padding={"x": 8, "y": 8, "mode": "dynamic"})
+    predict_image(any_model, in_path, out_path, padding={"x": 8, "y": 8, "mode": "dynamic"})
     check_result()
 
     # test with fixed padding
     predict_image(
-        unet2d_nuclei_broad_model,
+        any_model,
         in_path,
         out_path,
         padding={"x": original_shape[0], "y": original_shape[1], "mode": "fixed"},
@@ -67,7 +65,7 @@ def test_predict_image_with_padding(unet2d_nuclei_broad_model, tmp_path):
     check_result()
 
     # test with automated padding
-    predict_image(unet2d_nuclei_broad_model, in_path, out_path, padding=True)
+    predict_image(any_model, in_path, out_path, padding=True)
     check_result()
 
 
