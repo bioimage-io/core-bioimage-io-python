@@ -2,25 +2,29 @@ import pytest
 from bioimageio.core import export_resource_package
 
 # test models for various frameworks
-torch_models = ["unet2d_nuclei_broad_model", "unet2d_multi_tensor"]
-torchscript_models = ["unet2d_nuclei_broad_model", "unet2d_multi_tensor"]
-onnx_models = ["unet2d_nuclei_broad_model", "unet2d_multi_tensor"]
+torch_models = ["unet2d_fixed_shape", "unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
+torchscript_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
+onnx_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
 tensorflow1_models = ["FruNet_model"]
 tensorflow2_models = []
 keras_models = ["FruNet_model"]
 tensorflow_js_models = ["FruNet_model"]
 
 model_sources = {
+    "FruNet_model": "https://sandbox.zenodo.org/record/894498/files/rdf.yaml",
+    # "FruNet_model": "https://raw.githubusercontent.com/deepimagej/models/master/fru-net_sev_segmentation/model.yaml",
     "unet2d_nuclei_broad_model": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
         "unet2d_nuclei_broad/rdf.yaml"
+    ),
+    "unet2d_fixed_shape": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
+        "unet2d_fixed_shape/rdf.yaml"
     ),
     "unet2d_multi_tensor": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
         "unet2d_multi_tensor/rdf.yaml"
     ),
-    "FruNet_model": "https://sandbox.zenodo.org/record/894498/files/rdf.yaml",
-    # "FruNet_model": "https://raw.githubusercontent.com/deepimagej/models/master/fru-net_sev_segmentation/model.yaml",
 }
 
 # set 'skip_<FRAMEWORK>' flags as global pytest variables,
