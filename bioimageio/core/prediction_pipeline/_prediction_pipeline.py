@@ -64,15 +64,6 @@ class PredictionPipeline(ModelAdapter):
     # todo: replace all uses of properties below with 'input_specs' and 'output_specs'
     @property
     @abc.abstractmethod
-    def input_axes(self) -> List[Tuple[str, ...]]:
-        """
-        Input axes excepted by this pipeline
-        Note: one character axes names
-        """
-        ...
-
-    @property
-    @abc.abstractmethod
     def input_shape(self) -> List[List[Tuple[str, int]]]:
         """
         Named input dimensions
@@ -123,7 +114,6 @@ class _PredictionPipelineImpl(PredictionPipeline):
         self._name = name
         self._input_specs = bioimageio_model.inputs
         self._output_specs = bioimageio_model.outputs
-        self._input_axes = [tuple(axes) for axes in input_axes]
         self._input_shape = input_shape
         self._output_axes = [tuple(axes) for axes in output_axes]
         self._output_shape = output_shape
@@ -143,10 +133,6 @@ class _PredictionPipelineImpl(PredictionPipeline):
     @property
     def output_specs(self):
         return self._output_specs
-
-    @property
-    def input_axes(self):
-        return self._input_axes
 
     @property
     def input_shape(self):
