@@ -15,23 +15,27 @@ def test_test_model(unet2d_nuclei_broad_model):
     assert test_model(unet2d_nuclei_broad_model)
 
 
-def test_predict_image(any_model, tmp_path):
+def test_predict_image(unet2d_fixed_shape_or_not, tmpdir):
+    any_model = unet2d_fixed_shape_or_not  # todo: replace 'unet2d_fixed_shape_or_not' with 'any_model'
     from bioimageio.core.prediction import predict_image
 
     spec = load_resource_description(any_model)
+    assert isinstance(spec, Model)
     inputs = spec.test_inputs
-    assert len(inputs) == 1
 
-    out_path = tmp_path.with_suffix(".npy")
-    outputs = [out_path]
+    outputs = [tmpdir / f"out{i}.npy" for i in range(len(spec.test_outputs))]
     predict_image(any_model, inputs, outputs)
-    assert out_path.exists()
-    res = np.load(out_path)
-    exp = np.load(spec.test_outputs[0])
-    assert_array_almost_equal(res, exp, decimal=4)
+    for out_path in outputs:
+        assert out_path.exists()
+
+    result = [np.load(p) for p in outputs]
+    expected = [np.load(str(p)) for p in spec.test_outputs]
+    for res, exp in zip(result, expected):
+        assert_array_almost_equal(res, exp, decimal=4)
 
 
-def test_predict_image_with_padding(any_model, tmp_path):
+def test_predict_image_with_padding(unet2d_fixed_shape_or_not, tmp_path):
+    any_model = unet2d_fixed_shape_or_not  # todo: replace 'unet2d_fixed_shape_or_not' with 'any_model'
     from bioimageio.core.prediction import predict_image
 
     spec = load_resource_description(any_model)
@@ -57,10 +61,7 @@ def test_predict_image_with_padding(any_model, tmp_path):
 
     # test with fixed padding
     predict_image(
-        any_model,
-        in_path,
-        out_path,
-        padding={"x": original_shape[0], "y": original_shape[1], "mode": "fixed"},
+        any_model, in_path, out_path, padding={"x": original_shape[0], "y": original_shape[1], "mode": "fixed"}
     )
     check_result()
 
