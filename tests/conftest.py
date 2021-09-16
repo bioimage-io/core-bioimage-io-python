@@ -139,8 +139,15 @@ def any_model(request):
     return pytest.model_packages[request.param]
 
 
-# temporary fixture to test not with all, but only a manual selection of models
+#
+# temporary fixtures to test not with all, but only a manual selection of models
 # (models/functionality should be improved to get rid of this specific model group)
+#
 @pytest.fixture(params=[] if skip_torch else ["unet2d_nuclei_broad_model", "unet2d_fixed_shape"])
 def unet2d_fixed_shape_or_not(request):
+    return pytest.model_packages[request.param]
+
+
+@pytest.fixture(params=[] if skip_torch else ["unet2d_nuclei_broad_model", "unet2d_multi_tensor"])
+def unet2d_multi_tensor_or_not(request):
     return pytest.model_packages[request.param]
