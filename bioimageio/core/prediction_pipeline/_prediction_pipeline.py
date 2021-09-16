@@ -157,7 +157,6 @@ def create_prediction_pipeline(
         bioimageio_model=bioimageio_model, devices=devices, weight_format=weight_format
     )
 
-    named_input_shape: List[List[Tuple[str, int]]] = []
     preprocessing: List[Transform] = []
     for ipt in bioimageio_model.inputs:
         try:
@@ -167,14 +166,11 @@ def create_prediction_pipeline(
         except AttributeError:
             input_shape = ipt.shape
 
-        named_input_shape.append(list(zip(ipt.axes, input_shape)))
         preprocessing_spec = [] if ipt.preprocessing is missing else ipt.preprocessing.copy()
         preprocessing.append(make_preprocessing(preprocessing_spec))
 
-    named_halo: List[List[Tuple[str, int]]] = []
     postprocessing: List[Transform] = []
     for out in bioimageio_model.outputs:
-        named_halo.append(list(zip(out.axes, out.halo or [0 for _ in out.axes])))
         postprocessing_spec = [] if out.postprocessing is missing else out.postprocessing.copy()
         postprocessing.append(make_postprocessing(postprocessing_spec))
 
