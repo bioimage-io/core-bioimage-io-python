@@ -2,16 +2,15 @@ import subprocess
 
 import numpy as np
 import pytest
+
 from bioimageio.core import load_resource_description
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
 def test_cli_test_model(unet2d_nuclei_broad_model):
     ret = subprocess.run(["bioimageio", "test-model", unet2d_nuclei_broad_model])
     assert ret.returncode == 0
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
 def test_cli_predict_image(unet2d_nuclei_broad_model, tmp_path):
     spec = load_resource_description(unet2d_nuclei_broad_model)
     in_path = spec.test_inputs[0]
@@ -23,7 +22,6 @@ def test_cli_predict_image(unet2d_nuclei_broad_model, tmp_path):
     assert out_path.exists()
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
 def test_cli_predict_images(unet2d_nuclei_broad_model, tmp_path):
     n_images = 3
     shape = (1, 1, 128, 128)
@@ -50,7 +48,6 @@ def test_cli_predict_images(unet2d_nuclei_broad_model, tmp_path):
         assert np.load(out_path).shape == expected_shape
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
 def test_torch_to_torchscript(unet2d_nuclei_broad_model, tmp_path):
     out_path = tmp_path.with_suffix(".pt")
     ret = subprocess.run(
@@ -60,7 +57,7 @@ def test_torch_to_torchscript(unet2d_nuclei_broad_model, tmp_path):
     assert out_path.exists()
 
 
-@pytest.mark.skipif(pytest.skip_torch or pytest.skip_onnx, reason="requires torch and onnx")
+@pytest.mark.skipif(pytest.skip_onnx, reason="requires torch and onnx")
 def test_torch_to_onnx(unet2d_nuclei_broad_model, tmp_path):
     out_path = tmp_path.with_suffix(".onnx")
     ret = subprocess.run(["bioimageio", "convert-torch-weights-to-onnx", str(unet2d_nuclei_broad_model), str(out_path)])

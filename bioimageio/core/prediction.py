@@ -295,7 +295,7 @@ def predict_with_tiling(prediction_pipeline: PredictionPipeline, inputs, tiling)
             ):
                 raise NotImplementedError("Tiling with a different output shape is not yet supported")
 
-            ref_input = named_inputs[output_spec.shape.reference_input]
+            ref_input = named_inputs[output_spec.shape.reference_tensor]
             ref_input_shape = dict(zip(ref_input.dims, ref_input.shape))
             output_shape = tuple(int(scale[ax] * ref_input_shape[ax] + 2 * offset[ax]) for ax in output_spec.axes)
         else:

@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 import xarray as xr
 from numpy.testing import assert_array_almost_equal
 
@@ -31,31 +30,21 @@ def _test_prediction_pipeline(model_package, weight_format):
         assert_array_almost_equal(out, exp, decimal=4)
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
 def test_prediction_pipeline_torch(any_torch_model):
     _test_prediction_pipeline(any_torch_model, "pytorch_state_dict")
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
 def test_prediction_pipeline_torchscript(any_torchscript_model):
     _test_prediction_pipeline(any_torchscript_model, "pytorch_script")
 
 
-@pytest.mark.skipif(pytest.skip_onnx, reason="requires onnx")
 def test_prediction_pipeline_onnx(any_onnx_model):
     _test_prediction_pipeline(any_onnx_model, "onnx")
 
 
-@pytest.mark.skipif(pytest.skip_tensorflow or pytest.tf_major_version != 1, reason="requires tensorflow 1")
-def test_prediction_pipeline_tensorflow(any_tensorflow1_model):
-    _test_prediction_pipeline(any_tensorflow1_model, "tensorflow_saved_model_bundle")
+def test_prediction_pipeline_tensorflow(any_tensorflow_model):
+    _test_prediction_pipeline(any_tensorflow_model, "tensorflow_saved_model_bundle")
 
 
-@pytest.mark.skipif(pytest.skip_tensorflow or pytest.tf_major_version != 2, reason="requires tensorflow 2")
-def test_prediction_pipeline_tensorflow(any_tensorflow2_model):
-    _test_prediction_pipeline(any_tensorflow2_model, "tensorflow_saved_model_bundle")
-
-
-@pytest.mark.skipif(pytest.skip_keras, reason="requires keras")
 def test_prediction_pipeline_keras(any_keras_model):
     _test_prediction_pipeline(any_keras_model, "keras_hdf5")

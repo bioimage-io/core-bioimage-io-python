@@ -8,10 +8,10 @@ from marshmallow import missing
 from bioimageio.spec.model import raw_nodes
 
 
-def test_export_package(unet2d_nuclei_broad_model):
+def test_export_package(any_onnx_model):
     from bioimageio.core import export_resource_package, load_raw_resource_description
 
-    package_path = export_resource_package(unet2d_nuclei_broad_model, weights_priority_order=["onnx"])
+    package_path = export_resource_package(any_onnx_model, weights_priority_order=["onnx"])
     assert isinstance(package_path, Path), package_path
     assert package_path.exists(), package_path
 

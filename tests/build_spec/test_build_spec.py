@@ -1,10 +1,8 @@
 import os
 
-import pytest
-
-import bioimageio.spec as spec
 from marshmallow import missing
 
+import bioimageio.spec as spec
 from bioimageio.core.resource_io.io_ import load_raw_resource_description
 
 
@@ -56,33 +54,27 @@ def _test_build_spec(path, weight_type, tensorflow_version=None):
     spec.model.schema.Model().dump(raw_model)
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
 def test_build_spec_pytorch(any_torch_model):
     _test_build_spec(any_torch_model, "pytorch_state_dict")
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
 def test_build_spec_torchscript(any_torchscript_model):
     _test_build_spec(any_torchscript_model, "pytorch_script")
 
 
-@pytest.mark.skipif(pytest.skip_onnx, reason="requires onnx")
 def test_build_spec_onnx(any_onnx_model):
     _test_build_spec(any_onnx_model, "onnx")
 
 
-@pytest.mark.skipif(pytest.skip_tensorflow or pytest.tf_major_version != 1, reason="requires tensorflow 1")
 def test_build_spec_keras(any_keras_model):
     _test_build_spec(any_keras_model, "keras_hdf5", tensorflow_version="1.12")  # todo: keras for tf 2??
 
 
-@pytest.mark.skipif(pytest.skip_tensorflow, reason="requires tensorflow")
 def test_build_spec_tf(any_tensorflow_model):
     _test_build_spec(
         any_tensorflow_model, "tensorflow_saved_model_bundle", tensorflow_version="1.12"
     )  # check tf version
 
 
-@pytest.mark.skipif(pytest.skip_tensorflow, reason="requires tensorflow")
 def test_build_spec_tfjs(any_tensorflow_js_model):
     _test_build_spec(any_tensorflow_js_model, "tensorflow_js", tensorflow_version="1.12")
