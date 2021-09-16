@@ -55,7 +55,7 @@ KNOWN_POSTPROCESSING = {
     "scale_linear": ops.scale_linear,
     "scale_range": ops.scale_range,
     "sigmoid": ops.sigmoid,
-    "zero_mean_unit_variance": ops.zero_mean_unit_variance
+    "zero_mean_unit_variance": ops.zero_mean_unit_variance,
 }
 
 

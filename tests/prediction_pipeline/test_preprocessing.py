@@ -162,5 +162,5 @@ def test_sigmoid():
     sigmoid = make_preprocessing([Preprocessing("sigmoid")])
     res = sigmoid(data)
 
-    exp = 1. / (1 + np.exp(-np_data))
+    exp = 1.0 / (1 + np.exp(-np_data))
     xr.testing.assert_allclose(res, exp)
