@@ -257,7 +257,7 @@ def create_prediction_pipeline(
         elif isinstance(out.shape, ImplicitOutputShape):
             named_output_shape.append(
                 NamedImplicitOutputShape(
-                    reference_input=out.shape.reference_input,
+                    reference_input=out.shape.reference_tensor,
                     scale=list(zip(out.axes, out.shape.scale)),
                     offset=list(zip(out.axes, out.shape.offset)),
                 )

@@ -38,23 +38,20 @@ def test_load_non_valid_rdf_name_invalid_suffix():
             load_resource_description(spec_path)
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires pytorch")
-def test_load_raw_model(unet2d_nuclei_broad_model):
+def test_load_raw_model(any_model):
     from bioimageio.core import load_raw_resource_description
 
-    raw_model = load_raw_resource_description(unet2d_nuclei_broad_model)
+    raw_model = load_raw_resource_description(any_model)
     assert raw_model
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires pytorch")
-def test_load_model(unet2d_nuclei_broad_model):
+def test_load_model(any_model):
     from bioimageio.core import load_resource_description
 
-    model = load_resource_description(unet2d_nuclei_broad_model)
+    model = load_resource_description(any_model)
     assert model
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires pytorch")
 def test_load_model_with_abs_path_source(unet2d_nuclei_broad_model):
     from bioimageio.core.resource_io import load_raw_resource_description, load_resource_description
 
@@ -65,7 +62,6 @@ def test_load_model_with_abs_path_source(unet2d_nuclei_broad_model):
     assert model
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires pytorch")
 def test_load_model_with_rel_path_source(unet2d_nuclei_broad_model):
     from bioimageio.core.resource_io import load_raw_resource_description, load_resource_description
 
@@ -76,7 +72,6 @@ def test_load_model_with_rel_path_source(unet2d_nuclei_broad_model):
     assert model
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires pytorch")
 def test_load_model_with_abs_str_source(unet2d_nuclei_broad_model):
     from bioimageio.core.resource_io import load_raw_resource_description, load_resource_description
 
@@ -87,7 +82,6 @@ def test_load_model_with_abs_str_source(unet2d_nuclei_broad_model):
     assert model
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires pytorch")
 def test_load_model_with_rel_str_source(unet2d_nuclei_broad_model):
     from bioimageio.core.resource_io import load_raw_resource_description, load_resource_description
 
