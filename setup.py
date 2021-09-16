@@ -26,6 +26,7 @@ setup(
     ],
     packages=find_namespace_packages(exclude=["tests"]),  # Required
     install_requires=["bioimageio.spec", "imageio>=2.5", "numpy", "xarray"],
+    include_package_data=True,
     extras_require={
         "test": ["pytest", "tox"],
         "dev": ["pre-commit"],
