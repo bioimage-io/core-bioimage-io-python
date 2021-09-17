@@ -1,10 +1,12 @@
 from dataclasses import dataclass
 from typing import (
+    Any,
     Dict,
     List,
     Literal,
     Optional,
     Sequence,
+    Set,
     Type,
     Union,
     get_args,
@@ -28,36 +30,29 @@ def ensure_dtype(tensor: xr.DataArray, *, dtype) -> xr.DataArray:
 @dataclass
 class Processing:
     apply_to: str
-    computed_statistics: Dict[str, Dict[str, Measure]]
+    computed_statistics: Dict[str, Dict[Measure, Any]]
 
-    def get_required_statistics(self) -> Dict[str, Dict[str, Measure]]:
+    def get_required_dataset_statistics(self) -> Dict[str, Set[Measure]]:
         """
-        specifies which dataset measures are required for which purpose from what tensor.
-        Returns: dataset measures required to apply this processing indexed by <tensor_name> and <role>:
-                 Dict[<tensor_name>, Dict[<role>, Measure]]
-
+        Specifies which dataset measures are required from what tensor.
+        Returns: dataset measures required to apply this processing indexed by <tensor_name>.
         """
         return {}
 
-    def set_computed_statistics(self, computed: Dict[str, Dict[str, Measure]]):
+    def set_computed_statistics(self, computed: Dict[str, Dict[Measure, Any]]):
         """helper to set computed statistics and check if they match the requirements"""
-        for tensor_measures in computed.values():
-            for measure in tensor_measures.values():
-                assert measure.value is not None, "encountered uncomputed measure"
-
-        for tensor_name, req_measures in self.get_required_statistics():
+        for tensor_name, req_measures in self.get_required_dataset_statistics():
             comp_measures = computed.get(tensor_name, {})
-            for name, req_measure in req_measures.items():
-                comp_measure = comp_measures.get(name)
-                assert isinstance(comp_measure, type(req_measure))
-
+            for req_measure in req_measures:
+                if req_measure not in comp_measures:
+                    raise ValueError("Missing required measure {req_measure} for {tensor_name}")
         self.computed_statistics = computed
 
-    def get_computed_statistics(self, tensor_name: str, measure_name: str):
+    def get_computed_statistics(self, tensor_name: str, measure: Measure):
         """helper to unpack self.computed_statistics"""
-        ret = self.computed_statistics.get(tensor_name, {}).get(measure_name)
+        ret = self.computed_statistics.get(tensor_name, {}).get(measure)
         if ret is None:
-            raise RuntimeError(f"Missing {measure_name} for {tensor_name} dataset.")
+            raise RuntimeError(f"Missing computed {measure} for {tensor_name} dataset.")
 
         return ret
 
@@ -105,9 +100,9 @@ class ZeroMeanUnitVariance(Processing):
     axes: Optional[Sequence[str]] = None
     eps: float = 1.0e-6
 
-    def get_required_statistics(self) -> Dict[str, Dict[str, Measure]]:
+    def get_required_dataset_statistics(self) -> Dict[str, Set[Measure]]:
         if self.mode == "per_dataset":
-            return {self.apply_to: {"mean": Mean(), "std": Std()}}
+            return {self.apply_to: {Mean(), Std()}}
         else:
             return {}
 
@@ -150,11 +145,11 @@ class ScaleRange(Processing):
     max_percentile: float = 100.0
     reference_tensor: Optional[str] = None
 
-    def get_required_statistics(self) -> Dict[str, Dict[str, Measure]]:
+    def get_required_dataset_statistics(self) -> Dict[str, Set[Measure]]:
         if self.mode == "per_sample":
             return {}
         elif self.mode == "per_dataset":
-            measures = {"v_lower": Percentile(self.min_percentile), "v_upper": Percentile(self.max_percentile)}
+            measures = {Percentile(self.min_percentile), Percentile(self.max_percentile)}
             return {self.reference_tensor or self.apply_to: measures}
         else:
             raise ValueError(self.mode)
@@ -171,8 +166,8 @@ class ScaleRange(Processing):
             v_lower = ref_tensor.quantile(self.min_percentile / 100.0, dim=axes)
             v_upper = ref_tensor.quantile(self.max_percentile / 100.0, dim=axes)
         elif self.mode == "per_dataset":
-            v_lower = self.get_computed_statistics(ref_name, "v_lower")
-            v_upper = self.get_computed_statistics(ref_name, "v_upper")
+            v_lower = self.get_computed_statistics(ref_name, Percentile(self.min_percentile))
+            v_upper = self.get_computed_statistics(ref_name, Percentile(self.max_percentile))
         else:
             raise ValueError(self.mode)
 
