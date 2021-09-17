@@ -72,12 +72,19 @@ def ensure_dtype(tensor: xr.DataArray, *, dtype):
     return tensor.astype(dtype)
 
 
+def sigmoid(tensor: xr.DataArray, **kwargs):
+    if kwargs:
+        raise NotImplementedError(f"Passed kwargs for sigmoid {kwargs}")
+    return 1.0 / (1.0 + xr.ufuncs.exp(-tensor))
+
+
 KNOWN_PREPROCESSING: Dict[PreprocessingName, Transform] = {
     "scale_linear": scale_linear,
     "zero_mean_unit_variance": zero_mean_unit_variance,
     "binarize": binarize,
     "clip": clip,
-    "scale_range": scale_range
+    "scale_range": scale_range,
+    "sigmoid": sigmoid
     # "__tiktorch_ensure_dtype": ensure_dtype,
 }
 

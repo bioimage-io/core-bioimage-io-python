@@ -3,20 +3,61 @@ from typing import List
 import xarray as xr
 from bioimageio.core.resource_io.nodes import Postprocessing
 
-from ._preprocessing import binarize, chain
+from . import _preprocessing as ops
 from ._types import Transform
 
 
-def sigmoid(tensor: xr.DataArray, **kwargs):
-    if kwargs:
-        raise NotImplementedError(f"Passed kwargs for sigmoid {kwargs}")
-    return 1 / (1 + xr.ufuncs.exp(-tensor))
+# TODO how do we implement reference_tensor?
 
 
-KNOWN_POSTPROCESSING = {"binarize": binarize, "sigmoid": sigmoid}
+def scale_range(
+    tensor: xr.DataArray,
+    *,
+    reference_tensor=None,
+    mode="per_sample",
+    axes=None,
+    min_percentile=0.0,
+    max_percentile=100.0,
+) -> xr.DataArray:
+
+    # TODO if reference tensor is passed, we need to use it to compute quantiles instead of 'tensor'
+    if reference_tensor is None:
+        tensor_ = tensor
+    else:
+        raise NotImplementedError
+
+    # valid modes according to spec: "per_sample", "per_dataset"
+    # TODO implement per_dataset
+    if mode != "per_sample":
+        raise NotImplementedError(f"Unsupported mode for scale_range: {mode}")
+
+    if axes:
+        axes = tuple(axes)
+        v_lower = tensor_.quantile(min_percentile / 100.0, dim=axes)
+        v_upper = tensor_.quantile(max_percentile / 100.0, dim=axes)
+    else:
+        v_lower = tensor_.quantile(min_percentile / 100.0)
+        v_upper = tensor_.quantile(max_percentile / 100.0)
+
+    return ops.ensure_dtype((tensor - v_lower) / v_upper, dtype="float32")
 
 
-def make_postprocessing(spec: List[Postprocessing]) -> Transform:
+# TODO scale the tensor s.t. it matches the mean and variance of the reference tensor
+def scale_mean_variance(tensor: xr.DataArray, *, reference_tensor, mode="per_sample"):
+    raise NotImplementedError
+
+
+KNOWN_POSTPROCESSING = {
+    "binarize": ops.binarize,
+    "clip": ops.clip,
+    "scale_linear": ops.scale_linear,
+    "scale_range": ops.scale_range,
+    "sigmoid": ops.sigmoid,
+    "zero_mean_unit_variance": ops.zero_mean_unit_variance,
+}
+
+
+def make_postprocessing(spec: List[Postprocessing], dtype: str) -> Transform:
     """
     :param preprocessing: bioimage-io spec node
     """
@@ -32,4 +73,9 @@ def make_postprocessing(spec: List[Postprocessing]) -> Transform:
 
         functions.append((fn, kwargs))
 
-    return chain(*functions)
+    # There is a difference between pre-and-postprocessing:
+    # Tre-processing always returns float32, because its output is consumed y the model.
+    # Post-processing, however, should return the dtype that is specified in the model spec.
+    functions.append((ops.ensure_dtype, {"dtype": dtype}))
+
+    return ops.chain(*functions)

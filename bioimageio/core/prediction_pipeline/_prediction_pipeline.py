@@ -172,7 +172,7 @@ def create_prediction_pipeline(
     postprocessing: List[Transform] = []
     for out in bioimageio_model.outputs:
         postprocessing_spec = [] if out.postprocessing is missing else out.postprocessing.copy()
-        postprocessing.append(make_postprocessing(postprocessing_spec))
+        postprocessing.append(make_postprocessing(postprocessing_spec, out.data_type))
 
     return _PredictionPipelineImpl(
         name=bioimageio_model.name,

@@ -151,3 +151,16 @@ def test_scale_range_axes():
     preprocessing = make_preprocessing([scale_range_spec])
     result = preprocessing(data)
     xr.testing.assert_allclose(expected, result)
+
+
+def test_sigmoid():
+    shape = (3, 32, 32)
+    axes = ("c", "y", "x")
+    np_data = np.random.rand(*shape)
+    data = xr.DataArray(np_data, dims=axes)
+
+    sigmoid = make_preprocessing([Preprocessing("sigmoid", kwargs={})])
+    res = sigmoid(data)
+
+    exp = xr.DataArray(1.0 / (1 + np.exp(-np_data)), dims=axes)
+    xr.testing.assert_allclose(res, exp)
