@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Optional, Tuple
 
 
 @dataclass(frozen=True)
@@ -8,12 +9,12 @@ class Measure:
 
 @dataclass(frozen=True)
 class Mean(Measure):
-    pass
+    axes: Optional[Tuple[str]] = None
 
 
 @dataclass(frozen=True)
 class Std(Measure):
-    pass
+    axes: Optional[Tuple[str]] = None
 
 
 @dataclass(frozen=True)
