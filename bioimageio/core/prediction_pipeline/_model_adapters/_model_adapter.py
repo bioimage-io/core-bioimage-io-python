@@ -1,7 +1,8 @@
 import abc
-from typing import Any, List, Optional, Type, Union
+from typing import List, Optional, Type
 
 import xarray as xr
+
 from bioimageio.core.resource_io import nodes
 
 #: Known weigh types in order of priority
@@ -18,7 +19,6 @@ class ModelAdapter(abc.ABC):
     def __init__(self, *, bioimageio_model: nodes.Model, devices=Optional[List[str]]):
         ...
 
-    # todo: separate preprocessing/actual forward/postprocessing
     @abc.abstractmethod
     def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         """
