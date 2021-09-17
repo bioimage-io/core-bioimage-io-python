@@ -159,8 +159,8 @@ def test_sigmoid():
     np_data = np.random.rand(*shape)
     data = xr.DataArray(np_data, dims=axes)
 
-    sigmoid = make_preprocessing([Preprocessing("sigmoid")])
+    sigmoid = make_preprocessing([Preprocessing("sigmoid", kwargs={})])
     res = sigmoid(data)
 
-    exp = 1.0 / (1 + np.exp(-np_data))
+    exp = xr.DataArray(1.0 / (1 + np.exp(-np_data)), dims=axes)
     xr.testing.assert_allclose(res, exp)

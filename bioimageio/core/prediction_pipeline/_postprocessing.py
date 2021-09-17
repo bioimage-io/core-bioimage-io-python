@@ -47,11 +47,6 @@ def scale_mean_variance(tensor: xr.DataArray, *, reference_tensor, mode="per_sam
     raise NotImplementedError
 
 
-# NOTE there is a subtle difference between pre-and-postprocessing:
-# pre-processing always returns float32, because the post-processing output is consumed
-# by the model. Post-processing, however, should return the dtype that is specified in the model spec
-# TODO I think the easiest way to implement this is to add dtype is an option to 'make_postprocessing'
-# and then apply 'ensure_dtype' to the result of the postprocessing chain
 KNOWN_POSTPROCESSING = {
     "binarize": ops.binarize,
     "clip": ops.clip,
@@ -62,7 +57,7 @@ KNOWN_POSTPROCESSING = {
 }
 
 
-def make_postprocessing(spec: List[Postprocessing]) -> Transform:
+def make_postprocessing(spec: List[Postprocessing], dtype: str) -> Transform:
     """
     :param preprocessing: bioimage-io spec node
     """
@@ -77,5 +72,10 @@ def make_postprocessing(spec: List[Postprocessing]) -> Transform:
             raise NotImplementedError(f"Postprocessing {step.name}")
 
         functions.append((fn, kwargs))
+
+    # There is a difference between pre-and-postprocessing:
+    # Tre-processing always returns float32, because its output is consumed y the model.
+    # Post-processing, however, should return the dtype that is specified in the model spec.
+    functions.append((ops.ensure_dtype, {"dtype": dtype}))
 
     return ops.chain(*functions)
