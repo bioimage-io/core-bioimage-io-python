@@ -61,49 +61,6 @@ class PredictionPipeline(ModelAdapter):
         """
         ...
 
-    # todo: replace all uses of properties below with 'input_specs' and 'output_specs'
-    @property
-    @abc.abstractmethod
-    def input_axes(self) -> List[Tuple[str, ...]]:
-        """
-        Input axes excepted by this pipeline
-        Note: one character axes names
-        """
-        ...
-
-    @property
-    @abc.abstractmethod
-    def input_shape(self) -> List[List[Tuple[str, int]]]:
-        """
-        Named input dimensions
-        """
-        ...
-
-    @property
-    @abc.abstractmethod
-    def output_axes(self) -> List[Tuple[str, ...]]:
-        """
-        Output axes of this pipeline
-        Note: one character axes names
-        """
-        ...
-
-    @property
-    @abc.abstractmethod
-    def output_shape(self) -> List[Union[List[Tuple[str, float]], NamedImplicitOutputShape]]:
-        """
-        Named output dimensions. Either explicitly defined or implicitly in relation to an input
-        """
-        ...
-
-    @property
-    @abc.abstractmethod
-    def halo(self) -> List[List[Tuple[str, int]]]:
-        """
-        Size of output borders that have unreliable data due to artifacts (after application of postprocessing)
-        """
-        ...
-
 
 class _PredictionPipelineImpl(PredictionPipeline):
     def __init__(
@@ -111,11 +68,6 @@ class _PredictionPipelineImpl(PredictionPipeline):
         *,
         name: str,
         bioimageio_model: Model,
-        input_axes: Sequence[str],
-        input_shape: Sequence[List[Tuple[str, int]]],
-        output_axes: Sequence[str],
-        output_shape: Sequence[Union[List[Tuple[str, int]], NamedImplicitOutputShape]],
-        halo: Sequence[List[Tuple[str, int]]],
         preprocessing: Sequence[Transform],
         model: ModelAdapter,
         postprocessing: Sequence[Transform],
@@ -123,11 +75,6 @@ class _PredictionPipelineImpl(PredictionPipeline):
         self._name = name
         self._input_specs = bioimageio_model.inputs
         self._output_specs = bioimageio_model.outputs
-        self._input_axes = [tuple(axes) for axes in input_axes]
-        self._input_shape = input_shape
-        self._output_axes = [tuple(axes) for axes in output_axes]
-        self._output_shape = output_shape
-        self._halo = halo
         self._preprocessing = preprocessing
         self._model: ModelAdapter = model
         self._postprocessing = postprocessing
@@ -143,26 +90,6 @@ class _PredictionPipelineImpl(PredictionPipeline):
     @property
     def output_specs(self):
         return self._output_specs
-
-    @property
-    def input_axes(self):
-        return self._input_axes
-
-    @property
-    def input_shape(self):
-        return self._input_shape
-
-    @property
-    def output_axes(self):
-        return self._output_axes
-
-    @property
-    def output_shape(self):
-        return self._output_shape
-
-    @property
-    def halo(self):
-        return self._halo
 
     def predict(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         """Predict input_tensor with the model without applying pre/postprocessing."""
@@ -230,8 +157,6 @@ def create_prediction_pipeline(
         bioimageio_model=bioimageio_model, devices=devices, weight_format=weight_format
     )
 
-    input_axes: List[str] = []
-    named_input_shape: List[List[Tuple[str, int]]] = []
     preprocessing: List[Transform] = []
     for ipt in bioimageio_model.inputs:
         try:
@@ -241,42 +166,17 @@ def create_prediction_pipeline(
         except AttributeError:
             input_shape = ipt.shape
 
-        input_axes.append(ipt.axes)
-        named_input_shape.append(list(zip(ipt.axes, input_shape)))
         preprocessing_spec = [] if ipt.preprocessing is missing else ipt.preprocessing.copy()
         preprocessing.append(make_preprocessing(preprocessing_spec))
 
-    output_axes: List[str] = []
-    named_output_shape: List[Union[List[Tuple[str, int]], NamedImplicitOutputShape]] = []
-    named_halo: List[List[Tuple[str, int]]] = []
     postprocessing: List[Transform] = []
     for out in bioimageio_model.outputs:
-        output_axes.append(out.axes)
-        if isinstance(out.shape, list):  # explict output shape
-            named_output_shape.append(list(zip(out.axes, out.shape)))
-        elif isinstance(out.shape, ImplicitOutputShape):
-            named_output_shape.append(
-                NamedImplicitOutputShape(
-                    reference_input=out.shape.reference_tensor,
-                    scale=list(zip(out.axes, out.shape.scale)),
-                    offset=list(zip(out.axes, out.shape.offset)),
-                )
-            )
-        else:
-            raise TypeError(f"Unexpected type for output shape: {type(out.shape)}")
-
-        named_halo.append(list(zip(out.axes, out.halo or [0 for _ in out.axes])))
         postprocessing_spec = [] if out.postprocessing is missing else out.postprocessing.copy()
         postprocessing.append(make_postprocessing(postprocessing_spec))
 
     return _PredictionPipelineImpl(
         name=bioimageio_model.name,
         bioimageio_model=bioimageio_model,
-        input_axes=input_axes,
-        input_shape=named_input_shape,
-        output_axes=output_axes,
-        output_shape=named_output_shape,
-        halo=named_halo,
         preprocessing=preprocessing,
         model=model_adapter,
         postprocessing=postprocessing,

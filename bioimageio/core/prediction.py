@@ -11,7 +11,7 @@ import numpy as np
 import xarray as xr
 
 from bioimageio.core import load_resource_description
-from bioimageio.core.resource_io.nodes import Model
+from bioimageio.core.resource_io.nodes import InputTensor, Model, OutputTensor
 from bioimageio.core.prediction_pipeline import PredictionPipeline, create_prediction_pipeline
 from tqdm import tqdm
 
@@ -93,7 +93,7 @@ def pad(im, axes: Sequence[str], padding, pad_right=True) -> Tuple[np.ndarray, D
     return im, crop
 
 
-def load_image(in_path, axes):
+def load_image(in_path, axes: Sequence[str]) -> xr.DataArray:
     ext = os.path.splitext(in_path)[1]
     if ext == ".npy":
         im = np.load(in_path)
@@ -101,7 +101,11 @@ def load_image(in_path, axes):
         is_volume = "z" in axes
         im = imageio.volread(in_path) if is_volume else imageio.imread(in_path)
         im = require_axes(im, axes)
-    return im
+    return xr.DataArray(im, dims=axes)
+
+
+def load_tensors(sources, tensor_specs: List[Union[InputTensor, OutputTensor]]) -> List[xr.DataArray]:
+    return [load_image(s, sspec.axes) for s, sspec in zip(sources, tensor_specs)]
 
 
 def _to_channel_last(image):
@@ -239,11 +243,14 @@ def predict_with_tiling_impl(
 #
 
 
-def predict(prediction_pipeline, inputs) -> List[xr.DataArray]:
+def predict(prediction_pipeline: PredictionPipeline, inputs) -> List[xr.DataArray]:
     if not isinstance(inputs, (tuple, list)):
         inputs = [inputs]
 
-    tagged_data = [xr.DataArray(ipt, dims=axes) for ipt, axes in zip(inputs, prediction_pipeline.input_axes)]
+    assert len(inputs) == len(prediction_pipeline.input_specs)
+    tagged_data = [
+        xr.DataArray(ipt, dims=ipt_spec.axes) for ipt, ipt_spec in zip(inputs, prediction_pipeline.input_specs)
+    ]
     return prediction_pipeline.forward(*tagged_data)
 
 
@@ -411,10 +418,15 @@ def predict_image(model_rdf, inputs, outputs, padding=None, tiling=None, weight_
 
     padding = parse_padding(padding, model)
     tiling = parse_tiling(tiling, model)
+
+    _predict_sample(prediction_pipeline, inputs, outputs, padding, tiling)
+
+
+def _predict_sample(prediction_pipeline, inputs, outputs, padding, tiling):
     if padding is not None and tiling is not None:
         raise ValueError("Only one of padding or tiling is supported")
 
-    input_data = [load_image(inp, axes) for inp, axes in zip(inputs, prediction_pipeline.input_axes)]
+    input_data = load_tensors(inputs, prediction_pipeline.input_specs)
     if padding is not None:
         result = predict_with_padding(prediction_pipeline, input_data, padding)
     elif tiling is not None:
@@ -439,6 +451,7 @@ def predict_images(
     verbose=False,
 ):
     """Predict multiple inputs with a bioimage.io model."""
+
     model = load_resource_description(model_rdf)
     assert isinstance(model, Model)
 
@@ -448,8 +461,6 @@ def predict_images(
 
     padding = parse_padding(padding, model)
     tiling = parse_tiling(tiling, model)
-    if padding is not None and tiling is not None:
-        raise ValueError("Only one of padding or tiling is supported")
 
     prog = zip(inputs, outputs)
     if verbose:
@@ -462,17 +473,7 @@ def predict_images(
         if not isinstance(outp, (tuple, list)):
             outp = [outp]
 
-        inp = [load_image(im, sp.axes) for im, sp in zip(inp, prediction_pipeline.input_specs)]
-        if padding is not None:
-            res = predict_with_padding(prediction_pipeline, inp, padding)
-        elif tiling is not None:
-            res = predict_with_tiling(prediction_pipeline, inp, tiling)
-        else:
-            res = predict(prediction_pipeline, inp)
-
-        assert isinstance(res, list)
-        for out, r in zip(outp, res):
-            save_image(out, r)
+        _predict_sample(prediction_pipeline, inp, outp, padding, tiling)
 
 
 def test_model(model_rdf: Union[URI, Path, str], weight_format=None, devices=None, decimal=4):

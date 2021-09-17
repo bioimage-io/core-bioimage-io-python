@@ -1,7 +1,7 @@
 import pathlib
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Dict, List, Union
+from typing import Callable, Dict, List, Tuple, Union
 
 from marshmallow import missing
 from marshmallow.utils import _Missing
@@ -107,12 +107,22 @@ class Postprocessing(Node, model_raw_nodes.Postprocessing):
 
 @dataclass
 class InputTensor(Node, model_raw_nodes.InputTensor):
-    pass
+    axes: Tuple[str, ...] = missing
+
+    def __post_init__(self):
+        super().__post_init__()
+        # raw node has string with single letter axes names. Here we use a tuple of string here (like xr.DataArray).
+        self.axes = tuple(self.axes)
 
 
 @dataclass
 class OutputTensor(Node, model_raw_nodes.OutputTensor):
-    pass
+    axes: Tuple[str, ...] = missing
+
+    def __post_init__(self):
+        super().__post_init__()
+        # raw node has string with single letter axes names. Here we use a tuple of string here (like xr.DataArray).
+        self.axes = tuple(self.axes)
 
 
 @dataclass
