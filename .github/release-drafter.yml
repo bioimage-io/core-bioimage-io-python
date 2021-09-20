@@ -1,0 +1,73 @@
+autolabeler:
+  - label: "github_actions"
+    files:
+      - ".github/workflows/*"
+  - label: "ci"
+    files:
+      - ".github/*"
+  - label: "documentation"
+    files:
+      - "*.md"
+    branch:
+      - '/docs{0,1}\/.+/'
+  - label: "bug"
+    branch:
+      - '/fix\/.+/'
+    title:
+      - "/fix/i"
+  - label: "enhancement"
+    branch:
+      - '/feature\/.+/'
+      - '/add\/.+/'
+      - '/support\/.+/'
+    title:
+      - "/add/i"
+      - "/support/i"
+  - label: "refactoring"
+    branch:
+      - '/refactor\/.+/'
+    title:
+      - "/refactor/i"
+  - label: "removal"
+    branch:
+      - '/deprecate\/.+/'
+      - '/remove\/.+/'
+    title:
+      - "/deprecate/i"
+      - "/remove/i"
+  - label: "testing"
+    branch:
+      - '/test\/.+/'
+    title:
+      - "/test/i"
+categories:
+  - title: ":boom: Breaking Changes"
+    label: "breaking"
+  - title: ":rocket: Features"
+    label: "enhancement"
+  - title: ":fire: Removals and Deprecations"
+    label: "removal"
+  - title: ":beetle: Fixes"
+    label: "bug"
+  - title: ":racehorse: Performance"
+    label: "performance"
+  - title: ":rotating_light: Testing"
+    label: "testing"
+  - title: ":construction_worker: Continuous Integration"
+    labels:
+      - "ci"
+      - "github_actions"
+  - title: ":books: Documentation"
+    label: "documentation"
+  - title: ":hammer: Refactoring"
+    label: "refactoring"
+  - title: ":lipstick: Style"
+    label: "style"
+  - title: ":package: Dependencies"
+    labels:
+      - "dependencies"
+      - "build"
+template: |
+  ## Changes
+
+  $CHANGES
