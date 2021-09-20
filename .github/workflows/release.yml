@@ -29,13 +29,8 @@ jobs:
       - name: Install dependencies
         run: |
           pip install wheel
-          pip install tox tox-gh-actions
-
-      - name: Test with tox
-        run: tox
-
-      - name: Check passthrough models
-        run: python scripts/generate_passthrough_modules.py check
+  
+      # TODO: add tests here
 
       - name: Check if there is a parent commit
         id: check-parent-commit
