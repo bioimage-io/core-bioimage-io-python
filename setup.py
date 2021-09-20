@@ -25,10 +25,10 @@ setup(
         "Programming Language :: Python :: 3.8",
     ],
     packages=find_namespace_packages(exclude=["tests"]),  # Required
-    install_requires=["bioimageio.spec", "imageio>=2.5", "numpy", "xarray"],
+    install_requires=["bioimageio.spec", "imageio>=2.5", "numpy", "ruamel.yaml", "xarray"],
     include_package_data=True,
     extras_require={
-        "test": ["pytest", "tox"],
+        "test": ["pytest"],
         "dev": ["pre-commit"],
         "pytorch": ["pytorch>=1.6", "torchvision", "cudatoolkit>=10.1"],
         "tensorflow": ["tensorflow"],

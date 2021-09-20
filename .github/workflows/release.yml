@@ -26,16 +26,17 @@ jobs:
           python -m pip install --upgrade pip
           pip --version
 
-      - name: Install dependencies
+      - name: install tox
+        run: |
+          pip install tox
+
+      - name: run tests
+        run: |
+          tox
+
+      - name: Install build dependencies
         run: |
           pip install wheel
-          pip install tox tox-gh-actions
-
-      - name: Test with tox
-        run: tox
-
-      - name: Check passthrough models
-        run: python scripts/generate_passthrough_modules.py check
 
       - name: Check if there is a parent commit
         id: check-parent-commit
