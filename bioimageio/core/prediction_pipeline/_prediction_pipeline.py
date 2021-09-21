@@ -1,18 +1,15 @@
 import abc
 import math
 from dataclasses import dataclass
-from typing import List, Optional, Sequence, Tuple, Union
+from typing import List, Optional, Tuple
 
 import xarray as xr
-from bioimageio.core.resource_io import nodes
 from marshmallow import missing
 
+from bioimageio.core.resource_io import nodes
+from ._combined_processing import CombinedProcessing
 from ._model_adapters import ModelAdapter, create_model_adapter
-from ._postprocessing import make_postprocessing
-
-from ._preprocessing import make_preprocessing
-from ._types import Transform
-from ..resource_io.nodes import ImplicitOutputShape, InputTensor, Model, OutputTensor
+from ..resource_io.nodes import InputTensor, Model, OutputTensor
 
 
 @dataclass
@@ -64,20 +61,13 @@ class PredictionPipeline(ModelAdapter):
 
 class _PredictionPipelineImpl(PredictionPipeline):
     def __init__(
-        self,
-        *,
-        name: str,
-        bioimageio_model: Model,
-        preprocessing: Sequence[Transform],
-        model: ModelAdapter,
-        postprocessing: Sequence[Transform],
+        self, *, name: str, bioimageio_model: Model, processing: CombinedProcessing, model: ModelAdapter
     ) -> None:
         self._name = name
         self._input_specs = bioimageio_model.inputs
         self._output_specs = bioimageio_model.outputs
-        self._preprocessing = preprocessing
+        self._processing = processing
         self._model: ModelAdapter = model
-        self._postprocessing = postprocessing
 
     @property
     def name(self):
@@ -97,21 +87,17 @@ class _PredictionPipelineImpl(PredictionPipeline):
 
     def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         """Apply preprocessing, run prediction and apply postprocessing."""
-        assert len(self._preprocessing) == len(input_tensors)
-        preprocessed = [fn(x) for fn, x in zip(self._preprocessing, input_tensors)]
+        preprocessed, sample_stats = self._processing.apply_preprocessing(*input_tensors)
         prediction = self.predict(*preprocessed)
-        assert len(self._postprocessing) == len(prediction)
-        return [fn(x) for fn, x in zip(self._postprocessing, prediction)]
+        return self._processing.apply_postprocessing(*prediction, input_sample_statistics=sample_stats)[0]
 
     def preprocess(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         """Apply preprocessing."""
-        assert len(self._preprocessing) == len(input_tensors)
-        return [fn(x) for fn, x in zip(self._preprocessing, input_tensors)]
+        return self._processing.apply_preprocessing(*input_tensors)[0]
 
-    def postprocess(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
+    def postprocess(self, *input_tensors: xr.DataArray, input_sample_statistics) -> List[xr.DataArray]:
         """Apply postprocessing."""
-        assert len(self._postprocessing) == len(input_tensors)
-        return [fn(x) for fn, x in zip(self._postprocessing, input_tensors)]
+        return self._processing.apply_postprocessing(*input_tensors, input_sample_statistics=input_sample_statistics)[0]
 
     def __call__(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         return self.forward(*input_tensors)
@@ -157,27 +143,8 @@ def create_prediction_pipeline(
         bioimageio_model=bioimageio_model, devices=devices, weight_format=weight_format
     )
 
-    preprocessing: List[Transform] = []
-    for ipt in bioimageio_model.inputs:
-        try:
-            input_shape = ipt.shape.min
-            step = ipt.shape.step
-            input_shape = enforce_min_shape(input_shape, step, ipt.axes)
-        except AttributeError:
-            input_shape = ipt.shape
-
-        preprocessing_spec = [] if ipt.preprocessing is missing else ipt.preprocessing.copy()
-        preprocessing.append(make_preprocessing(preprocessing_spec))
-
-    postprocessing: List[Transform] = []
-    for out in bioimageio_model.outputs:
-        postprocessing_spec = [] if out.postprocessing is missing else out.postprocessing.copy()
-        postprocessing.append(make_postprocessing(postprocessing_spec, out.data_type))
+    processing = CombinedProcessing(bioimageio_model.inputs, bioimageio_model.outputs)
 
     return _PredictionPipelineImpl(
-        name=bioimageio_model.name,
-        bioimageio_model=bioimageio_model,
-        preprocessing=preprocessing,
-        model=model_adapter,
-        postprocessing=postprocessing,
+        name=bioimageio_model.name, bioimageio_model=bioimageio_model, model=model_adapter, tprocessing=processing
     )
