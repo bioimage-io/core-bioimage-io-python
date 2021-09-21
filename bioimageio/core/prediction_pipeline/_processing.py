@@ -167,14 +167,20 @@ class ScaleRange(Processing):
         if self.mode == "per_sample":
             return {}
         elif self.mode == "per_dataset":
-            measures = {Percentile(self.min_percentile), Percentile(self.max_percentile)}
+            measures = {
+                Percentile(self.min_percentile, axes=self.axes),
+                Percentile(self.max_percentile, axes=self.axes),
+            }
             return {self.reference_tensor or self.tensor_name: measures}
         else:
             raise ValueError(self.mode)
 
     def get_required_sample_statistics(self) -> Dict[str, Set[Measure]]:
         if self.mode == "per_sample":
-            measures = {Percentile(self.min_percentile), Percentile(self.max_percentile)}
+            measures = {
+                Percentile(self.min_percentile, axes=self.axes),
+                Percentile(self.max_percentile, axes=self.axes),
+            }
             return {self.reference_tensor or self.tensor_name: measures}
         elif self.mode == "per_dataset":
             return {}
@@ -199,6 +205,10 @@ class ScaleRange(Processing):
         v_upper = get_stat(ref_name, Percentile(self.max_percentile, axes=axes))
 
         return ensure_dtype((tensor - v_lower) / v_upper, dtype="float32")
+
+    def __post_init__(self):
+        super().__post_init__()
+        self.axes = None if self.axes is None else tuple(self.axes)  # make sure axes is Tuple[str] or None
 
 
 @dataclass
