@@ -155,9 +155,9 @@ class CombinedProcessing:
         ret = {}
         for measure in measures:
             if isinstance(measure, Mean):
-                v = tensor.mean(dims=measure.axes)
+                v = tensor.mean(dim=measure.axes)
             elif isinstance(measure, Std):
-                v = tensor.std(dims=measure.axes)
+                v = tensor.std(dim=measure.axes)
             elif isinstance(measure, Percentile):
                 v = tensor.quantile(measure.n / 100.0, dim=measure.axes)
             else:
