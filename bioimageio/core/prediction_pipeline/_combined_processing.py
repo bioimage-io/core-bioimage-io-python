@@ -73,12 +73,12 @@ class CombinedProcessing:
         if any(self._req_output_stats[s] for s in SCOPES):
             raise NotImplementedError("computing statistics for output tensors not yet implemented")
 
-        assert not any(tn in self._req_output_stats for tn in self._req_input_stats)
-        assert not any(tn in self._req_input_stats for tn in self._req_output_stats)
         self._computed_dataset_stats: Optional[Dict[str, Dict[Measure, Any]]] = None
 
         self.input_tensor_names = [ipt.name for ipt in inputs]
         self.output_tensor_names = [out.name for out in outputs]
+        assert not any(name in self.output_tensor_names for name in self.input_tensor_names)
+        assert not any(name in self.input_tensor_names for name in self.output_tensor_names)
 
     @property
     def required_input_dataset_statistics(self) -> Dict[str, Set[Measure]]:
