@@ -146,5 +146,5 @@ def create_prediction_pipeline(
     processing = CombinedProcessing(bioimageio_model.inputs, bioimageio_model.outputs)
 
     return _PredictionPipelineImpl(
-        name=bioimageio_model.name, bioimageio_model=bioimageio_model, model=model_adapter, tprocessing=processing
+        name=bioimageio_model.name, bioimageio_model=bioimageio_model, model=model_adapter, processing=processing
     )
