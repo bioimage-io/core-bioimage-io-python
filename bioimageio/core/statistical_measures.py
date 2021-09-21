@@ -20,6 +20,7 @@ class Std(Measure):
 @dataclass(frozen=True)
 class Percentile(Measure):
     n: float
+    axes: Optional[Tuple[str]] = None
 
     def __post_init__(self):
         assert self.n >= 0
