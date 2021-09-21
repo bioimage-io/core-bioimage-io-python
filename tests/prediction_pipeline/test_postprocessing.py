@@ -1,7 +1,7 @@
 import numpy as np
 import xarray as xr
 from bioimageio.core.resource_io.nodes import Postprocessing
-from bioimageio.core.prediction_pipeline._postprocessing import make_postprocessing
+from bioimageio.core.prediction_pipeline._combined_processing import make_postprocessing
 
 
 def test_binarize_postprocessing():
