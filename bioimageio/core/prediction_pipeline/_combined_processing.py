@@ -12,6 +12,7 @@ from bioimageio.spec.model.raw_nodes import PostprocessingName, PreprocessingNam
 from ._processing import (
     Binarize,
     Clip,
+    EnsureDtype,
     Processing,
     ScaleLinear,
     ScaleMeanVariance,
@@ -62,6 +63,13 @@ class CombinedProcessing:
             if out.postprocessing is not missing
         ]
 
+        # There is a difference between pre-and-postprocessing:
+        # Pre-processing always returns float32, because its output is consumed by the model.
+        # Post-processing, however, should return the dtype that is specified in the model spec.
+        # todo: cast dtype for inputs before preprocessing? or check dtype?
+        for out in outputs:
+            self._post.append(EnsureDtype(tensor_name=out.name, dtype=out.data_type))
+
         self._req_input_stats = {s: self._collect_required_stats(self._prep, s) for s in SCOPES}
         self._req_output_stats = {s: self._collect_required_stats(self._post, s) for s in SCOPES}
         if any(self._req_output_stats[s] for s in SCOPES):
@@ -84,9 +92,6 @@ class CombinedProcessing:
 
     @property
     def computed_dataset_statistics(self) -> Dict[str, Dict[Measure, Any]]:
-        if self._computed_dataset_stats is None:
-            raise RuntimeError("Set computed dataset statistics first!")
-
         return self._computed_dataset_stats
 
     def apply_preprocessing(
@@ -141,12 +146,14 @@ class CombinedProcessing:
         for proc in self._prep:
             proc.set_computed_dataset_statistics(self.computed_dataset_statistics)
 
+    @classmethod
     def compute_sample_statistics(
-        self, tensors: Dict[str, xr.DataArray], measures: Dict[str, Set[Measure]]
+        cls, tensors: Dict[str, xr.DataArray], measures: Dict[str, Set[Measure]]
     ) -> Dict[str, Dict[Measure, Any]]:
-        return {tname: self._compute_tensor_statistics(tensors[tname], ms) for tname, ms in measures.items()}
+        return {tname: cls._compute_tensor_statistics(tensors[tname], ms) for tname, ms in measures.items()}
 
-    def _compute_tensor_statistics(self, tensor: xr.DataArray, measures: Set[Measure]) -> Dict[Measure, Any]:
+    @staticmethod
+    def _compute_tensor_statistics(tensor: xr.DataArray, measures: Set[Measure]) -> Dict[Measure, Any]:
         ret = {}
         for measure in measures:
             if isinstance(measure, Mean):

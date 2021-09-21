@@ -1,17 +1,10 @@
-from dataclasses import dataclass, field
-from typing import Any, Dict, Literal, Optional, Sequence, Set, get_args
+from dataclasses import dataclass, field, fields
+from typing import Any, Dict, Literal, Optional, Sequence, Set, Union, get_args
 
 import numpy as np
 import xarray as xr
 
 from bioimageio.core.statistical_measures import Mean, Measure, Percentile, Std
-
-
-def ensure_dtype(tensor: xr.DataArray, *, dtype) -> xr.DataArray:
-    """
-    Convert array to a given datatype
-    """
-    return tensor.astype(dtype)
 
 
 @dataclass
@@ -37,7 +30,7 @@ class Processing:
 
     def set_computed_dataset_statistics(self, computed: Dict[str, Dict[Measure, Any]]):
         """helper to set computed statistics and check if they match the requirements"""
-        for tensor_name, req_measures in self.get_required_dataset_statistics():
+        for tensor_name, req_measures in self.get_required_dataset_statistics().items():
             comp_measures = computed.get(tensor_name, {})
             for req_measure in req_measures:
                 if req_measure not in comp_measures:
@@ -46,7 +39,7 @@ class Processing:
 
     def set_computed_sample_statistics(self, computed: Dict[str, Dict[Measure, Any]]):
         """helper to set computed statistics and check if they match the requirements"""
-        for tensor_name, req_measures in self.get_required_sample_statistics():
+        for tensor_name, req_measures in self.get_required_sample_statistics().items():
             comp_measures = computed.get(tensor_name, {})
             for req_measure in req_measures:
                 if req_measure not in comp_measures:
@@ -69,15 +62,35 @@ class Processing:
 
         return ret
 
+    def __call__(self, tensor: xr.DataArray) -> xr.DataArray:
+        return self.apply(tensor)
+
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
         """apply processing to named tensors"""
         raise NotImplementedError
 
     def __post_init__(self):
         """validate common kwargs by their annotations"""
-        if hasattr(self, "mode"):
-            if self.mode not in get_args(self.mode):
-                raise NotImplementedError(f"Unsupported mode {self.mode} for {self.__class__.__name__}: {self.mode}")
+        self.computed_dataset_statistics = {}
+        self.computed_sample_statistics = {}
+
+        for f in fields(self):
+            if f.name == "mode":
+                assert hasattr(self, "mode")
+                if self.mode not in get_args(f.type):
+                    raise NotImplementedError(
+                        f"Unsupported mode {self.mode} for {self.__class__.__name__}: {self.mode}"
+                    )
+
+
+#
+# helpers
+#
+def ensure_dtype(tensor: xr.DataArray, *, dtype) -> xr.DataArray:
+    """
+    Convert array to a given datatype
+    """
+    return tensor.astype(dtype)
 
 
 #
@@ -103,11 +116,19 @@ class Clip(Processing):
 
 
 @dataclass
+class EnsureDtype(Processing):
+    dtype: str
+
+    def apply(self, tensor: xr.DataArray) -> xr.DataArray:
+        return ensure_dtype(tensor, dtype=self.dtype)
+
+
+@dataclass
 class ScaleLinear(Processing):
     """scale the tensor with a fixed multiplicative and additive factor"""
 
-    gain: float
-    offset: float
+    gain: Union[float, Sequence[float]]
+    offset: Union[float, Sequence[float]]
     axes: Optional[Sequence[str]] = None
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
@@ -120,6 +141,12 @@ class ScaleLinear(Processing):
             offset = self.offset
 
         return ensure_dtype(tensor * gain + offset, dtype="float32")
+
+    def __post_init__(self):
+        super().__post_init__()
+        if self.axes is None:
+            assert isinstance(self.gain, (int, float))
+            assert isinstance(self.offset, (int, float))
 
 
 @dataclass
