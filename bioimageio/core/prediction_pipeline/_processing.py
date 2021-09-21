@@ -27,6 +27,7 @@ class Processing:
         Specifies which sample measures are required from what tensor.
         Returns: sample measures required to apply this processing indexed by <tensor_name>.
         """
+        return {}
 
     def set_computed_dataset_statistics(self, computed: Dict[str, Dict[Measure, Any]]):
         """helper to set computed statistics and check if they match the requirements"""
