@@ -53,14 +53,12 @@ class CombinedProcessing:
         self._prep = [
             KNOWN_PREPROCESSING[step.name](tensor_name=ipt.name, **step.kwargs)
             for ipt in inputs
-            for step in ipt.preprocessing
-            if ipt.preprocessing is not missing
+            for step in ipt.preprocessing or []
         ]
         self._post = [
             KNOWN_POSTPROCESSING.get(step.name)(tensor_name=out.name, **step.kwargs)
             for out in outputs
-            for step in out.postprocessing
-            if out.postprocessing is not missing
+            for step in out.postprocessing or []
         ]
 
         # There is a difference between pre-and-postprocessing:
