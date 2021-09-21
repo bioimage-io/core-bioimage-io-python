@@ -111,7 +111,7 @@ class CombinedProcessing:
         tensors = dict(zip(self.output_tensor_names, output_tensors))
         sample_stats = input_sample_statistics
         sample_stats.update(self.compute_sample_statistics(tensors, self._req_output_stats[SAMPLE]))
-        for proc in self._prep:
+        for proc in self._post:
             proc.set_computed_sample_statistics(sample_stats)
             tensors[proc.tensor_name] = proc.apply(tensors[proc.tensor_name])
 
