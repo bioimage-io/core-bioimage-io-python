@@ -57,6 +57,10 @@ def test_model(
     if len(devices) == 0:
         devices = None
     test_passed = prediction.test_model(model_rdf, weight_format=weight_format, devices=devices, decimal=decimal)
+    if test_passed:
+        print(f"Model test for {model_rdf} has passed.")
+    else:
+        print(f"Model test for {model_rdf} has FAILED!")
     ret_code = 0 if test_passed else 1
     return ret_code
 
