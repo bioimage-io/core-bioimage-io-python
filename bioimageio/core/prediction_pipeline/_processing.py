@@ -1,10 +1,15 @@
 from dataclasses import dataclass, field, fields
-from typing import Any, Dict, Literal, Optional, Sequence, Set, Union, get_args
+from typing import Any, Dict, Optional, Sequence, Set, Union
 
 import numpy as np
 import xarray as xr
 
 from bioimageio.core.statistical_measures import Mean, Measure, Percentile, Std
+
+try:
+    from typing import Literal, get_args
+except ImportError:
+    from typing_extensions import Literal, get_args  # type: ignore
 
 
 @dataclass

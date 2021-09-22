@@ -1,10 +1,8 @@
-import collections
 import warnings
 from collections import defaultdict
-from typing import Any, Dict, List, Literal, Optional, Sequence, Set, Tuple, Type
+from typing import Any, Dict, List, Optional, Sequence, Set, Tuple, Type
 
 import xarray as xr
-from marshmallow import missing
 
 from bioimageio.core.resource_io import nodes
 from bioimageio.core.statistical_measures import Mean, Measure, Percentile, Std
@@ -21,6 +19,10 @@ from ._processing import (
     ZeroMeanUnitVariance,
 )
 
+try:
+    from typing import Literal
+except ImportError:
+    from typing_extensions import Literal  # type: ignore
 
 KNOWN_PREPROCESSING: Dict[PreprocessingName, Type[Processing]] = {
     "binarize": Binarize,
