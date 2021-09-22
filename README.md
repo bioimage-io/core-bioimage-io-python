@@ -1,4 +1,4 @@
-# python-bioimage-io core
+# core-bioimage-io-python
 
 Python specific core utilities for working with the BioimageIO model zoo.
 
@@ -57,7 +57,7 @@ Run prediction:
 bioimageio predict -m <MODEL> -i <INPUT> -o <OUTPUT>
 ```
 
-This is subject to change, see https://github.com/bioimage-io/python-bioimage-io/issues/87.
+This is subject to change, see https://github.com/bioimage-io/core-bioimage-io-python/issues/87.
 
 
 ## Running network predictions:
