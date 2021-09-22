@@ -1,7 +1,7 @@
 {% set setup_py_data = load_setup_py_data() %}
 
 package:
-  name: python-bioimage-io
+  name: core-bioimage-io
   version: {{ setup_py_data['version'] }}
 
 source:
@@ -48,11 +48,11 @@ test:
 
 
 about:
-  home: https://github.com/bioimage-io/python-bioimage-io
+  home: https://github.com/bioimage-io/core-bioimage-io-python
   license: MIT
   license_family: MIT
   license_file: LICENSE
   summary: 'Tools for running BioimageIO compliant neural networks in Python.'
 
-  doc_url: https://github.com/bioimage-io/python-bioimage-io
-  dev_url: https://github.com/bioimage-io/python-bioimage-io
+  doc_url: https://github.com/bioimage-io/core-bioimage-io-python
+  dev_url: https://github.com/bioimage-io/core-bioimage-io-python

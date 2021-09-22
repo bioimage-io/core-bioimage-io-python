@@ -16,7 +16,7 @@ setup(
     description="Python functionality for the bioimage model zoo",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/bioimage-io/python-bioimage-io",
+    url="https://github.com/bioimage-io/core-bioimage-io-python",
     author="Bioimage Team",
     classifiers=[  # Optional
         "Development Status :: 3 - Alpha",
@@ -35,8 +35,8 @@ setup(
         "onnx": ["onnxruntime"],
     },
     project_urls={  # Optional
-        "Bug Reports": "https://github.com/bioimage-io/python-bioimage-io/issues",
-        "Source": "https://github.com/bioimage-io/python-bioimage-io",
+        "Bug Reports": "https://github.com/bioimage-io/core-bioimage-io-python/issues",
+        "Source": "https://github.com/bioimage-io/core-bioimage-io-python",
     },
     entry_points={"console_scripts": ["bioimageio = bioimageio.core.__main__:app"]},
 )
