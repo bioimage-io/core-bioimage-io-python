@@ -1,6 +1,6 @@
 # core-bioimage-io-python
 
-Python specific core utilities for working with the BioimageIO model zoo.
+Python specific core utilities for running models in the [BioImage Model Zoo](https://bioimage.io)
 
 ## Installation
 
