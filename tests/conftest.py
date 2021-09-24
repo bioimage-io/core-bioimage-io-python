@@ -4,7 +4,7 @@ from bioimageio.core import export_resource_package
 # test models for various frameworks
 torch_models = ["unet2d_fixed_shape", "unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
 torchscript_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
-onnx_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
+onnx_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model", "hpa_densenet"]
 tensorflow1_models = ["FruNet_model"]
 tensorflow2_models = []
 keras_models = ["FruNet_model"]
@@ -24,6 +24,9 @@ model_sources = {
     "unet2d_multi_tensor": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
         "unet2d_multi_tensor/rdf.yaml"
+    ),
+    "hpa_densenet": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/hpa-densenet/rdf.yaml"
     ),
 }
 
