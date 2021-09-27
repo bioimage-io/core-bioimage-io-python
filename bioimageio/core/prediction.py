@@ -481,7 +481,6 @@ def test_model(model_rdf: Union[URI, Path, str], weight_format=None, devices=Non
 
     Returns True if the test passes, otherwise returns False and issues a warning.
     """
-    print(model_rdf, Path(model_rdf).exists())
     model = load_resource_description(model_rdf)
     assert isinstance(model, Model)
     prediction_pipeline = create_prediction_pipeline(
