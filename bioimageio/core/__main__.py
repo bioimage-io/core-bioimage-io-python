@@ -20,12 +20,6 @@ except ImportError:
 def package(
     rdf_source: str = typer.Argument(..., help="RDF source as relative file path or URI"),
     path: Path = typer.Argument(Path() / "{src_name}-package.zip", help="Save package as"),
-    update_format: bool = typer.Option(
-        False,
-        help="Update format version to the latest version (might fail even if source adheres to an old format version)."
-        "To inform the format update the source may specify fields of future versions in "
-        "config:future:<future version>.",  # todo: add future documentation
-    ),
     weights_priority_order: Optional[List[str]] = typer.Option(
         None,
         "-wpo",
@@ -36,7 +30,9 @@ def package(
     ),
     verbose: bool = typer.Option(False, help="show traceback of exceptions"),
 ) -> int:
-    return commands.package(rdf_source, path, update_format, weights_priority_order, verbose)
+    return commands.package(
+        rdf_source=rdf_source, path=path, weights_priority_order=weights_priority_order, verbose=verbose
+    )
 
 
 package.__doc__ = commands.package.__doc__
