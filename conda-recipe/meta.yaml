@@ -1,7 +1,7 @@
 {% set setup_py_data = load_setup_py_data() %}
 
 package:
-  name: core-bioimage-io
+  name: bioimageio.core
   version: {{ setup_py_data['version'] }}
 
 source:
@@ -10,6 +10,10 @@ source:
 build:
   noarch: python
   number: 0
+  entry_points:
+    {% for ep in setup_py_data['entry_points']['console_scripts'] %}
+    - {{ ep }}
+    {% endfor %}
   script: "{{ PYTHON }} -m pip install --no-deps --ignore-installed ."
 
 requirements:
@@ -18,6 +22,8 @@ requirements:
     - pip
   run:
     - python >=3.7
+    - tqdm
+    - typer
     {% for dep in setup_py_data['install_requires'] %}
     - {{ dep.lower() }}
     {% endfor %}
