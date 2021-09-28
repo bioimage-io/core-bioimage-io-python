@@ -179,16 +179,16 @@ def _get_input_tensor(test_in, name, step, min_shape, data_range, axes, preproce
     return inputs
 
 
-def _get_output_tensor(test_out, name, reference_input, scale, offset, axes, data_range, postprocessing, halo):
+def _get_output_tensor(test_out, name, reference_tensor, scale, offset, axes, data_range, postprocessing, halo):
     shape = test_out.shape
-    if reference_input is None:
+    if reference_tensor is None:
         assert scale is None
         assert offset is None
         shape_description = shape
     else:
         assert scale is not None
         assert offset is not None
-        shape_description = {"reference_input": reference_input, "scale": scale, "offset": offset}
+        shape_description = {"reference_tensor": reference_tensor, "scale": scale, "offset": offset}
 
     axes = _get_axes(axes, test_out.ndim)
     data_range = _get_data_range(data_range, test_out.dtype)
