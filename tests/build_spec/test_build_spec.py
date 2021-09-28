@@ -6,7 +6,7 @@ import bioimageio.spec as spec
 from bioimageio.core.resource_io.io_ import load_raw_resource_description
 
 
-def _test_build_spec(path, weight_type, tensorflow_version=None):
+def _test_build_spec(path, weight_type, tensorflow_version=None, use_implicit_output_shape=False):
     from bioimageio.core.build_spec import build_model
 
     model_spec = load_raw_resource_description(path)
@@ -50,12 +50,21 @@ def _test_build_spec(path, weight_type, tensorflow_version=None):
     )
     if tensorflow_version is not None:
         kwargs["tensorflow_version"] = tensorflow_version
+    if use_implicit_output_shape:
+        kwargs["input_name"] = "input"
+        kwargs["output_reference"] = "input"
+        kwargs["output_scale"] = [1.0, 1.0, 1.0, 1.0]
+        kwargs["output_offset"] = [0.0, 0.0, 0.0, 0.0]
     raw_model = build_model(**kwargs)
     spec.model.schema.Model().dump(raw_model)
 
 
 def test_build_spec_pytorch(any_torch_model):
     _test_build_spec(any_torch_model, "pytorch_state_dict")
+
+
+def test_build_spec_implicit_output_shape(unet2d_nuclei_broad_model):
+    _test_build_spec(unet2d_nuclei_broad_model, "pytorch_state_dict", use_implicit_output_shape=True)
 
 
 def test_build_spec_torchscript(any_torchscript_model):
