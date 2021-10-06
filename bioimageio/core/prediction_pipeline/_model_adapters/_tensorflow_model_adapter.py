@@ -72,6 +72,8 @@ class TensorflowModelAdapterBase(ModelAdapter):
 
                 # run prediction
                 res = sess.run(dict(zip(out_names, out_tensors)), dict(zip(in_tensors, input_tensors)))
+                # from dict to list of tensors
+                res = [res[out] for out in out_names]
 
         return res
 
