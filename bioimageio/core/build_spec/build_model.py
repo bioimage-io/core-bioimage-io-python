@@ -100,10 +100,7 @@ def _get_weights(weight_uri, weight_type, source, root, **kwargs):
 
     elif weight_type == "onnx":
         weights = model_spec.raw_nodes.OnnxWeightsEntry(
-            source=weight_source,
-            sha256=weight_hash,
-            opset_version=kwargs.get("opset_version", 12),
-            **attachments
+            source=weight_source, sha256=weight_hash, opset_version=kwargs.get("opset_version", 12), **attachments
         )
         language = None
         framework = None
@@ -197,9 +194,7 @@ def _get_input_tensor(path, name, step, min_shape, data_range, axes, preprocessi
 
     kwargs = {}
     if preprocessing is not None:
-        kwargs["preprocessing"] = [
-            {"name": k, "kwargs": v} for k, v in preprocessing.items()
-        ]
+        kwargs["preprocessing"] = [{"name": k, "kwargs": v} for k, v in preprocessing.items()]
 
     inputs = model_spec.raw_nodes.InputTensor(
         name="input" if name is None else name,
@@ -229,9 +224,7 @@ def _get_output_tensor(path, name, reference_tensor, scale, offset, axes, data_r
 
     kwargs = {}
     if postprocessing is not None:
-        kwargs["postprocessing"] = [
-            {"name": k, "kwargs": v} for k, v in postprocessing.items()
-        ]
+        kwargs["postprocessing"] = [{"name": k, "kwargs": v} for k, v in postprocessing.items()]
     if halo is not None:
         kwargs["halo"] = halo
 
@@ -389,8 +382,9 @@ def build_model(
 
     inputs = [
         _get_input_tensor(test_in, name, step, min_shape, axes, data_range, preproc)
-        for test_in, name, step, min_shape, axes, data_range, preproc in
-        zip(test_inputs, input_name, input_step, input_min_shape, input_axes, input_data_range, preprocessing)
+        for test_in, name, step, min_shape, axes, data_range, preproc in zip(
+            test_inputs, input_name, input_step, input_min_shape, input_axes, input_data_range, preprocessing
+        )
     ]
 
     n_outputs = len(test_outputs)
@@ -405,8 +399,7 @@ def build_model(
 
     outputs = [
         _get_output_tensor(test_out, name, reference, scale, offset, axes, data_range, postproc, hal)
-        for test_out, name, reference, scale, offset, axes, data_range, postproc, hal in
-        zip(
+        for test_out, name, reference, scale, offset, axes, data_range, postproc, hal in zip(
             test_outputs,
             output_name,
             output_reference,
@@ -415,7 +408,7 @@ def build_model(
             output_axes,
             output_data_range,
             postprocessing,
-            halo
+            halo,
         )
     ]
 
@@ -449,7 +442,7 @@ def build_model(
         "source": source,
         "sha256": source_hash,
         "kwargs": model_kwargs,
-        "links": links
+        "links": links,
     }
     kwargs = {k: v for k, v in optional_kwargs.items() if v is not None}
     if dependencies is not None:
@@ -495,13 +488,13 @@ def add_weights(
     weight_uri: Union[str, Path],
     weight_type: Optional[str] = None,
     output_path: Optional[Union[str, Path]] = None,
-    **weight_kwargs
+    **weight_kwargs,
 ):
     """Add weight entry to bioimage.io model."""
     # we need to patss the weight path as abs path to avoid confusion with different root directories
-    new_weights = _get_weights(
-        Path(weight_uri).absolute(), weight_type, source=None, root=Path("."), **weight_kwargs
-    )[0]
+    new_weights = _get_weights(Path(weight_uri).absolute(), weight_type, source=None, root=Path("."), **weight_kwargs)[
+        0
+    ]
     model.weights.update(new_weights)
     if output_path is not None:
         model_package = export_resource_package(model, output_path=output_path)
