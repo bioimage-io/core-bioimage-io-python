@@ -86,6 +86,11 @@ class ModelCollectionEntry(CollectionEntry, rdf_raw_nodes.ModelCollectionEntry):
 
 
 @dataclass
+class ModelParent(Node, model_raw_nodes.ModelParent):
+    pass
+
+
+@dataclass
 class Collection(RDF, rdf_raw_nodes.Collection):
     pass
 
