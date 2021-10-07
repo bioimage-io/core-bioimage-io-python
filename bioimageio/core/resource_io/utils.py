@@ -14,9 +14,9 @@ import requests
 from marshmallow import ValidationError
 
 from bioimageio.spec.shared import fields, raw_nodes
+from bioimageio.spec.shared.common import BIOIMAGEIO_CACHE_PATH
 from bioimageio.spec.shared.utils import GenericRawNode, GenericRawRD, NodeTransformer, NodeVisitor
 from . import nodes
-from .common import BIOIMAGEIO_CACHE_PATH
 
 GenericResolvedNode = typing.TypeVar("GenericResolvedNode", bound=nodes.Node)
 GenericNode = typing.Union[GenericRawNode, GenericResolvedNode]
