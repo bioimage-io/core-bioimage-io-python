@@ -1,6 +1,5 @@
 import os
 import pathlib
-import shutil
 import warnings
 import zipfile
 from copy import deepcopy
