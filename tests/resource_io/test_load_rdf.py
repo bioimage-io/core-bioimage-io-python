@@ -18,26 +18,6 @@ def test_load_non_existing_rdf():
         load_resource_description(spec_path)
 
 
-def test_load_non_valid_rdf_name_no_suffix():
-    from bioimageio.core import load_resource_description
-
-    with NamedTemporaryFile() as f:
-        spec_path = pathlib.Path(f.name)
-
-        with pytest.raises(ValidationError):
-            load_resource_description(spec_path)
-
-
-def test_load_non_valid_rdf_name_invalid_suffix():
-    from bioimageio.core import load_resource_description
-
-    with NamedTemporaryFile(suffix=".invalid_suffix") as f:
-        spec_path = pathlib.Path(f.name)
-
-        with pytest.raises(ValidationError):
-            load_resource_description(spec_path)
-
-
 def test_load_raw_model(any_model):
     from bioimageio.core import load_raw_resource_description
 

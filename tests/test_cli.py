@@ -6,6 +6,11 @@ import pytest
 from bioimageio.core import load_resource_description
 
 
+def test_validate_model(unet2d_nuclei_broad_model):
+    ret = subprocess.run(["bioimageio", "validate", unet2d_nuclei_broad_model])
+    assert ret.returncode == 0
+
+
 def test_cli_test_model(unet2d_nuclei_broad_model):
     ret = subprocess.run(["bioimageio", "test-model", unet2d_nuclei_broad_model])
     assert ret.returncode == 0
