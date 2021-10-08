@@ -44,7 +44,7 @@ def _test_build_spec(spec_path, out_path, weight_type, tensorflow_version=None, 
         cite=cite,
         root=model_spec.root_path,
         weight_type=weight_type_,
-        output_path=out_path
+        output_path=out_path,
     )
     if tensorflow_version is not None:
         kwargs["tensorflow_version"] = tensorflow_version
