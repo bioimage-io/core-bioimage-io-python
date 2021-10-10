@@ -11,22 +11,22 @@ The `bioimageio.core` package supports various back-ends for running BioimageIO 
 * Pytorch/Torchscript:
   ```bash
   # cpu installation (if you don't have an nvidia graphics card)
-  conda install -c pytorch -c conda-forge -c ilastik-forge bioimageio.core pytorch torchvision cpuonly
+  conda install -c pytorch -c conda-forge bioimageio.core pytorch torchvision cpuonly
 
   # gpu installation
-  conda install -c pytorch -c conda-forge -c ilastik-forge bioimageio.core pytorch torchvision cudatoolkit
+  conda install -c pytorch -c conda-forge bioimageio.core pytorch torchvision cudatoolkit
   ```
 
 * Tensorflow
   ```bash
   # currently only cpu version supported
-  conda install -c conda-forge -c ilastik-forge bioimageio.core tensorflow
+  conda install -c conda-forge bioimageio.core tensorflow
   ```
 
 * ONNXRuntime
   ```bash
   # currently only cpu version supported
-  conda install -c conda-forge -c ilastik-forge bioimageio.core onnxruntime
+  conda install -c conda-forge bioimageio.core onnxruntime
   ```
 
 ### Set up Development Environment
@@ -42,27 +42,29 @@ There are different environment files that only install tensorflow or pytorch as
 
 ## Command Line
 
-You can list all the available command line options:
+`bioimageio.core` installs a command line interface for testing models and other functionality. You can list all the available commands via:
 ```
 bioimageio
 ```
 
-Test a model:
+Check that a model adheres to the model spec:
 ```
-bioimageio test -m <MODEL>
-```
-
-Run prediction:
-```
-bioimageio predict -m <MODEL> -i <INPUT> -o <OUTPUT>
+bioimageio validate <MODEL>
 ```
 
-This is subject to change, see https://github.com/bioimage-io/core-bioimage-io-python/issues/87.
+Test a model (including prediction for the test input):
+```
+bioimageio test-model -m <MODEL>
+```
 
+Run prediction for an image stored on disc:
+```
+bioimageio predict-image -m <MODEL> -i <INPUT> -o <OUTPUT>
+```
 
-## Running network predictions:
+## From python
 
-TODO
+`bioimageio.core` can be used as a python library. See the notebook [example/bioimageio-core-usage.ipynb](https://github.com/bioimage-io/core-bioimage-io-python/blob/main/example/bioimageio-core-usage.ipynb) for usage examples.
 
 ## Model Specification
 
