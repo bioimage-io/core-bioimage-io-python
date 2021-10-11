@@ -28,6 +28,13 @@ The `bioimageio.core` package supports various back-ends for running BioimageIO 
   # currently only cpu version supported
   conda install -c conda-forge bioimageio.core onnxruntime
   ```
+  
+### Via pip
+
+The package is also available via pip:
+```
+pip install bioimageio.core
+```
 
 ### Set up Development Environment
 
