@@ -361,11 +361,13 @@ def build_model(
         root: optional root path for relative paths. This can be helpful when building a spec from another model spec.
         weight_kwargs: keyword arguments for this weight type, e.g. "tensorflow_version".
     """
+    if root is None:
+        root = "."
+    root = Path(root)
+
     #
     # generate the model specific fields
     #
-    if root is not None:
-        root = Path(root)
 
     assert len(test_inputs)
     assert len(test_outputs)
