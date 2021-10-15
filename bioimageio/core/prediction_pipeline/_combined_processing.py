@@ -72,8 +72,8 @@ class CombinedProcessing:
 
         self._req_input_stats = {s: self._collect_required_stats(self._prep, s) for s in SCOPES}
         self._req_output_stats = {s: self._collect_required_stats(self._post, s) for s in SCOPES}
-        if any(self._req_output_stats[s] for s in SCOPES):
-            raise NotImplementedError("computing statistics for output tensors not yet implemented")
+        if self._req_output_stats[DATASET]:
+            raise NotImplementedError("computing statistics for output tensors per dataset is not yet implemented")
 
         self._computed_dataset_stats: Optional[Dict[str, Dict[Measure, Any]]] = None
 
@@ -111,8 +111,10 @@ class CombinedProcessing:
     ) -> Tuple[List[xr.DataArray], Dict[str, Dict[Measure, Any]]]:
         assert len(output_tensors) == len(self.output_tensor_names)
         tensors = dict(zip(self.output_tensor_names, output_tensors))
-        sample_stats = input_sample_statistics
-        sample_stats.update(self.compute_sample_statistics(tensors, self._req_output_stats[SAMPLE]))
+        sample_stats = {
+            **input_sample_statistics,
+            **self.compute_sample_statistics(tensors, self._req_output_stats[SAMPLE]),
+        }
         for proc in self._post:
             proc.set_computed_sample_statistics(sample_stats)
             tensors[proc.tensor_name] = proc.apply(tensors[proc.tensor_name])
