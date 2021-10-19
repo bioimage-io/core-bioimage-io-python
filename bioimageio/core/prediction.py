@@ -1,11 +1,9 @@
 import collections
 import os
-import traceback
-import warnings
 from copy import deepcopy
 from itertools import product
 from pathlib import Path
-from typing import Dict, List, Optional, OrderedDict, Sequence, Tuple, Union
+from typing import Dict, List, OrderedDict, Sequence, Tuple, Union
 
 import imageio
 import numpy as np
@@ -14,22 +12,12 @@ from tqdm import tqdm
 
 from bioimageio.core import load_resource_description
 from bioimageio.core.prediction_pipeline import PredictionPipeline, create_prediction_pipeline
+from bioimageio.core.resource_io.nodes import ImplicitOutputShape, InputTensor, Model, OutputTensor
+
 
 #
 # utility functions for prediction
 #
-from bioimageio.core.resource_io.nodes import (
-    ImplicitOutputShape,
-    InputTensor,
-    Model,
-    OutputTensor,
-    ResourceDescription,
-    URI,
-)
-from bioimageio.spec.model.raw_nodes import WeightsFormat
-from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
-
-
 def require_axes(im, axes):
     is_volume = "z" in axes
     # we assume images / volumes are loaded as one of
@@ -482,73 +470,3 @@ def predict_images(
             outp = [outp]
 
         _predict_sample(prediction_pipeline, inp, outp, padding, tiling)
-
-
-def test_model(
-    model_rdf: Union[URI, Path, str],
-    weight_format: Optional[WeightsFormat] = None,
-    devices: Optional[List[str]] = None,
-    decimal: int = 4,
-) -> bool:
-    """Test whether the test output(s) of a model can be reproduced.
-
-    Returns True if the test passes, otherwise returns False and issues a warning.
-    """
-    model = load_resource_description(model_rdf)
-    assert isinstance(model, Model)
-    summary = test_resource(model, weight_format=weight_format, devices=devices, decimal=decimal)
-    if summary["error"] is None:
-        return True
-    else:
-        warnings.warn(summary["error"])
-        return False
-
-
-def test_resource(
-    model_rdf: Union[RawResourceDescription, ResourceDescription, URI, Path, str],
-    *,
-    weight_format: Optional[WeightsFormat] = None,
-    devices: Optional[List[str]] = None,
-    decimal: int = 4,
-):
-    """Test RDF dynamically
-
-    Returns summary dict with "error" and "traceback" key; summary["error"] is None if no errors were encountered.
-    """
-    error: Optional[str] = None
-    tb: Optional = None
-
-    try:
-        model = load_resource_description(model_rdf)
-    except Exception as e:
-        error = str(e)
-        tb = traceback.format_tb(e.__traceback__)
-    else:
-        if isinstance(model, Model):
-            try:
-                prediction_pipeline = create_prediction_pipeline(
-                    bioimageio_model=model, devices=devices, weight_format=weight_format
-                )
-                inputs = [np.load(str(in_path)) for in_path in model.test_inputs]
-                results = predict(prediction_pipeline, inputs)
-                if isinstance(results, (np.ndarray, xr.DataArray)):
-                    results = [results]
-
-                expected = [np.load(str(out_path)) for out_path in model.test_outputs]
-                if len(results) != len(expected):
-                    error = (
-                        f"Number of outputs and number of expected outputs disagree: {len(results)} != {len(expected)}"
-                    )
-                else:
-                    for res, exp in zip(results, expected):
-                        try:
-                            np.testing.assert_array_almost_equal(res, exp, decimal=decimal)
-                        except AssertionError as e:
-                            error = f"Output and expected output disagree:\n {e}"
-            except Exception as e:
-                error = str(e)
-                tb = traceback.format_tb(e.__traceback__)
-
-    # todo: add tests for non-model resources
-
-    return {"error": error, "traceback": tb}
