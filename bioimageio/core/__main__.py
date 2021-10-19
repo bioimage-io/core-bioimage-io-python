@@ -55,7 +55,7 @@ def test_model(
     model_rdf: str = typer.Argument(
         ..., help="Path or URL to the model resource description file (rdf.yaml) or zipped model."
     ),
-    weight_format: Optional[str] = typer.Argument(None, help="The weight format to use."),
+    weight_format: Optional[WeightFormatEnum] = typer.Argument(None, help="The weight format to use."),
     devices: Optional[List[str]] = typer.Argument(None, help="Devices for running the model."),
     decimal: int = typer.Argument(4, help="The test precision."),
 ) -> int:
@@ -80,7 +80,7 @@ def test_resource(
     rdf: str = typer.Argument(
         ..., help="Path or URL to the resource description file (rdf.yaml) or zipped resource package."
     ),
-    weight_format: Optional[str] = typer.Argument(None, help="(for model only) The weight format to use."),
+    weight_format: Optional[WeightFormatEnum] = typer.Argument(None, help="(for model only) The weight format to use."),
     devices: Optional[List[str]] = typer.Argument(None, help="(for model only) Devices for running the model."),
     decimal: int = typer.Argument(4, help="(for model only) The test precision."),
 ) -> int:
