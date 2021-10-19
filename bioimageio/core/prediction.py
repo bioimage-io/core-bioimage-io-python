@@ -1,5 +1,6 @@
 import collections
 import os
+import traceback
 import warnings
 from copy import deepcopy
 from itertools import product
@@ -512,30 +513,42 @@ def test_resource(
 ):
     """Test RDF dynamically
 
-    Returns summary dict with "error" key; summary["error"] is None if no errors were encountered.
+    Returns summary dict with "error" and "traceback" key; summary["error"] is None if no errors were encountered.
     """
-    model = load_resource_description(model_rdf)
-
     error: Optional[str] = None
-    if isinstance(model, Model):
-        prediction_pipeline = create_prediction_pipeline(
-            bioimageio_model=model, devices=devices, weight_format=weight_format
-        )
-        inputs = [np.load(str(in_path)) for in_path in model.test_inputs]
-        results = predict(prediction_pipeline, inputs)
-        if isinstance(results, (np.ndarray, xr.DataArray)):
-            results = [results]
+    tb: Optional = None
 
-        expected = [np.load(str(out_path)) for out_path in model.test_outputs]
-        if len(results) != len(expected):
-            error = f"Number of outputs and number of expected outputs disagree: {len(results)} != {len(expected)}"
-        else:
-            for res, exp in zip(results, expected):
-                try:
-                    np.testing.assert_array_almost_equal(res, exp, decimal=decimal)
-                except AssertionError as e:
-                    error = f"Output and expected output disagree:\n {e}"
+    try:
+        model = load_resource_description(model_rdf)
+    except Exception as e:
+        error = str(e)
+        tb = traceback.format_tb(e.__traceback__)
+    else:
+        if isinstance(model, Model):
+            try:
+                prediction_pipeline = create_prediction_pipeline(
+                    bioimageio_model=model, devices=devices, weight_format=weight_format
+                )
+                inputs = [np.load(str(in_path)) for in_path in model.test_inputs]
+                results = predict(prediction_pipeline, inputs)
+                if isinstance(results, (np.ndarray, xr.DataArray)):
+                    results = [results]
+
+                expected = [np.load(str(out_path)) for out_path in model.test_outputs]
+                if len(results) != len(expected):
+                    error = (
+                        f"Number of outputs and number of expected outputs disagree: {len(results)} != {len(expected)}"
+                    )
+                else:
+                    for res, exp in zip(results, expected):
+                        try:
+                            np.testing.assert_array_almost_equal(res, exp, decimal=decimal)
+                        except AssertionError as e:
+                            error = f"Output and expected output disagree:\n {e}"
+            except Exception as e:
+                error = str(e)
+                tb = traceback.format_tb(e.__traceback__)
 
     # todo: add tests for non-model resources
 
-    return {"error": error}
+    return {"error": error, "traceback": tb}
