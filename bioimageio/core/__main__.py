@@ -1,3 +1,4 @@
+import enum
 import json
 import os
 from glob import glob
@@ -9,6 +10,12 @@ import typer
 
 from bioimageio.core import __version__, prediction, commands, resource_tests
 from bioimageio.spec.__main__ import app
+from bioimageio.spec.model.raw_nodes import WeightsFormat
+
+try:
+    from typing import get_args
+except ImportError:
+    from typing_extensions import get_args  # type: ignore
 
 try:
     from bioimageio.core.weight_converter import torch as torch_converter
@@ -40,6 +47,9 @@ package.__doc__ = commands.package.__doc__
 
 # if we want to use something like "choice" for the weight formats, we need to use an enum, see:
 # https://github.com/tiangolo/typer/issues/182
+WeightFormatEnum = enum.Enum("WeightFormatEnum", get_args(WeightsFormat))
+
+
 @app.command()
 def test_model(
     model_rdf: str = typer.Argument(
@@ -63,6 +73,31 @@ def test_model(
 
 
 test_model.__doc__ = resource_tests.test_model.__doc__
+
+
+@app.command()
+def test_resource(
+    rdf: str = typer.Argument(
+        ..., help="Path or URL to the resource description file (rdf.yaml) or zipped resource package."
+    ),
+    weight_format: Optional[str] = typer.Argument(None, help="(for model only) The weight format to use."),
+    devices: Optional[List[str]] = typer.Argument(None, help="(for model only) Devices for running the model."),
+    decimal: int = typer.Argument(4, help="(for model only) The test precision."),
+) -> int:
+    # this is a weird typer bug: default devices are empty tuple although they should be None
+    if len(devices) == 0:
+        devices = None
+    summary = resource_tests.test_resource(rdf, weight_format=weight_format, devices=devices, decimal=decimal)
+    if summary["error"] is None:
+        print(f"Resource test for {rdf} has passed.")
+        return 0
+    else:
+        print(f"Resource test for {rdf} has FAILED!")
+        print(summary)
+        return 1
+
+
+test_resource.__doc__ = resource_tests.test_resource.__doc__
 
 
 @app.command()
