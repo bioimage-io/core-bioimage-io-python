@@ -512,7 +512,7 @@ def test_resource(
 ):
     """Test RDF dynamically
 
-    Returns summary with "error", keys
+    Returns summary dict with "error" key; summary["error"] is None if no errors were encountered.
     """
     model = load_resource_description(model_rdf)
 
