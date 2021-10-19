@@ -40,7 +40,10 @@ def extract_resource_package(
         if (package_path / "rdf.yaml").exists():
             download = None
         else:
-            download, header = urlretrieve(str(root))
+            try:
+                download, header = urlretrieve(str(root))
+            except Exception as e:
+                raise RuntimeError(f"Failed to download {str(root)} ({e})")
 
         local_source = download
     else:
