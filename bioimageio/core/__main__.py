@@ -7,7 +7,7 @@ from typing import List, Optional
 
 import typer
 
-from bioimageio.core import __version__, prediction, commands
+from bioimageio.core import __version__, prediction, commands, resource_tests
 from bioimageio.spec.__main__ import app
 
 try:
@@ -52,16 +52,17 @@ def test_model(
     # this is a weird typer bug: default devices are empty tuple although they should be None
     if len(devices) == 0:
         devices = None
-    test_passed = prediction.test_model(model_rdf, weight_format=weight_format, devices=devices, decimal=decimal)
-    if test_passed:
+    summary = resource_tests.test_model(model_rdf, weight_format=weight_format, devices=devices, decimal=decimal)
+    if summary["error"] is None:
         print(f"Model test for {model_rdf} has passed.")
+        return 0
     else:
         print(f"Model test for {model_rdf} has FAILED!")
-    ret_code = 0 if test_passed else 1
-    return ret_code
+        print(summary)
+        return 1
 
 
-test_model.__doc__ = prediction.test_model.__doc__
+test_model.__doc__ = resource_tests.test_model.__doc__
 
 
 @app.command()
