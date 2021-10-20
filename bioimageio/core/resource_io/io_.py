@@ -10,7 +10,7 @@ from marshmallow import missing
 
 from bioimageio import spec
 from bioimageio.core.resource_io.nodes import ResourceDescription
-from bioimageio.spec.io_ import resolve_rdf_source
+from bioimageio.spec.io_ import RDF_NAMES, resolve_rdf_source
 from bioimageio.spec.shared import raw_nodes
 from bioimageio.spec.shared.common import BIOIMAGEIO_CACHE_PATH, get_class_name_from_type
 from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
@@ -37,8 +37,10 @@ def extract_resource_package(
         from urllib.request import urlretrieve
 
         package_path = cache_folder / root.scheme / root.authority / root.path.strip("/") / root.query
-        if (package_path / "rdf.yaml").exists():
-            download = None
+        for rdf_name in RDF_NAMES:
+            if (package_path / rdf_name).exists():
+                download = None
+                break
         else:
             try:
                 download, header = urlretrieve(str(root))
@@ -55,8 +57,11 @@ def extract_resource_package(
         with zipfile.ZipFile(local_source) as zf:
             zf.extractall(package_path)
 
-    if not (package_path / "rdf.yaml").exists():
-        raise FileNotFoundError(f"missing 'rdf.yaml' in {root} extracted from {download}")
+    for rdf_name in RDF_NAMES:
+        if (package_path / rdf_name).exists():
+            break
+    else:
+        raise FileNotFoundError(f"Missing 'rdf.yaml' in {root} extracted from {download}")
 
     if download is not None:
         try:
