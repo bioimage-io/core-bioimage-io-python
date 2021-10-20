@@ -40,7 +40,10 @@ def extract_resource_package(
         if (package_path / "rdf.yaml").exists():
             download = None
         else:
-            download, header = urlretrieve(str(root))
+            try:
+                download, header = urlretrieve(str(root))
+            except Exception as e:
+                raise RuntimeError(f"Failed to download {str(root)} ({e})")
 
         local_source = download
     else:
@@ -91,7 +94,7 @@ def _replace_relative_paths_for_remote_source(
 
 
 def load_raw_resource_description(
-    source: Union[dict, os.PathLike, IO, str, bytes, raw_nodes.URI]
+    source: Union[dict, os.PathLike, IO, str, bytes, raw_nodes.URI, RawResourceDescription]
 ) -> RawResourceDescription:
     """load a raw python representation from a BioImage.IO resource description file (RDF).
     Use `load_resource_description` for a more convenient representation.
@@ -102,13 +105,16 @@ def load_raw_resource_description(
     Returns:
         raw BioImage.IO resource
     """
+    if isinstance(source, RawResourceDescription):
+        return source
+
     raw_rd = spec.load_raw_resource_description(source, update_to_current_format=True)
     raw_rd = _replace_relative_paths_for_remote_source(raw_rd, raw_rd.root_path)
     return raw_rd
 
 
 def load_resource_description(
-    source: Union[RawResourceDescription, os.PathLike, str, dict, raw_nodes.URI],
+    source: Union[RawResourceDescription, ResourceDescription, os.PathLike, str, dict, raw_nodes.URI],
     *,
     weights_priority_order: Optional[Sequence[str]] = None,  # model only
 ) -> ResourceDescription:
@@ -123,6 +129,9 @@ def load_resource_description(
         BioImage.IO resource
     """
     source = deepcopy(source)
+    if isinstance(source, ResourceDescription):
+        return source
+
     raw_rd = load_raw_resource_description(source)
 
     if weights_priority_order is not None:

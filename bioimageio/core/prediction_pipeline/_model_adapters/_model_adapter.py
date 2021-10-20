@@ -58,7 +58,9 @@ def create_model_adapter(
             adapter_cls = _get_model_adapter(weight)
             return adapter_cls(bioimageio_model=bioimageio_model, devices=devices)
 
-    raise NotImplementedError(f"No supported weight_formats in {spec.weights.keys()}")
+    raise RuntimeError(
+        f"weight format {weight_format} not among weight formats listed in model: {list(spec.weights.keys())}"
+    )
 
 
 def _get_model_adapter(weight_format: str) -> Type[ModelAdapter]:

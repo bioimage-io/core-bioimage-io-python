@@ -276,9 +276,8 @@ def _download_uri_to_local_path(uri: raw_nodes.URI) -> pathlib.Path:
         local_path.parent.mkdir(parents=True, exist_ok=True)
         try:
             urlretrieve(str(uri), str(local_path))
-        except Exception:
-            logging.getLogger("download").error("Failed to download %s", uri)
-            raise
+        except Exception as e:
+            raise RuntimeError(f"Failed to download {uri} ({e})")
 
     return local_path
 

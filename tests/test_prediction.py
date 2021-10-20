@@ -9,9 +9,15 @@ from bioimageio.core.resource_io.nodes import Model
 
 
 def test_test_model(unet2d_nuclei_broad_model):
-    from bioimageio.core.prediction import test_model
+    from bioimageio.core.resource_tests import test_model
 
     assert test_model(unet2d_nuclei_broad_model)
+
+
+def test_test_resource(unet2d_nuclei_broad_model):
+    from bioimageio.core.resource_tests import test_resource
+
+    assert test_resource(unet2d_nuclei_broad_model)
 
 
 def test_predict_image(unet2d_fixed_shape_or_not, tmpdir):
