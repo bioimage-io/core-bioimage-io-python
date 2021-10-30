@@ -3,6 +3,7 @@ import pathlib
 import warnings
 import zipfile
 from copy import deepcopy
+from hashlib import sha256
 from typing import Dict, IO, Optional, Sequence, Tuple, Union
 from zipfile import ZIP_DEFLATED, ZipFile
 
@@ -33,10 +34,10 @@ def extract_resource_package(
     cache_folder = BIOIMAGEIO_CACHE_PATH / "extracted_packages"
     cache_folder.mkdir(exist_ok=True, parents=True)
 
+    package_path = cache_folder / sha256(str(root).encode("utf-8")).hexdigest()
     if isinstance(root, raw_nodes.URI):
         from urllib.request import urlretrieve
 
-        package_path = cache_folder / root.scheme / root.authority / root.path.strip("/") / root.query
         for rdf_name in RDF_NAMES:
             if (package_path / rdf_name).exists():
                 download = None
@@ -51,7 +52,6 @@ def extract_resource_package(
     else:
         download = None
         local_source = root
-        package_path = cache_folder / root.relative_to(list(root.parents)[-1])
 
     if local_source is not None:
         with zipfile.ZipFile(local_source) as zf:
