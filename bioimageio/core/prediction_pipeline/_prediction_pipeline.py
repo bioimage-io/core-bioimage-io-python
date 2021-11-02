@@ -63,6 +63,9 @@ class _PredictionPipelineImpl(PredictionPipeline):
     def __init__(
         self, *, name: str, bioimageio_model: Model, processing: CombinedProcessing, model: ModelAdapter
     ) -> None:
+        if bioimageio_model.run_mode:
+            raise NotImplementedError(f"Not yet implemented inference for run mode '{bioimageio_model.run_mode.name}'")
+
         self._name = name
         self._input_specs = bioimageio_model.inputs
         self._output_specs = bioimageio_model.outputs
