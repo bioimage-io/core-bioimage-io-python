@@ -255,9 +255,7 @@ def _get_dependencies(dependencies, root):
     else:
         manager = "conda"
         path = dependencies
-    return model_spec.raw_nodes.Dependencies(
-        manager=manager, file=_process_uri(path, root)
-    )
+    return model_spec.raw_nodes.Dependencies(manager=manager, file=_process_uri(path, root))
 
 
 def build_model(
