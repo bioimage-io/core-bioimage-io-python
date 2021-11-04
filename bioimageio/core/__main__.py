@@ -47,7 +47,10 @@ package.__doc__ = commands.package.__doc__
 
 # if we want to use something like "choice" for the weight formats, we need to use an enum, see:
 # https://github.com/tiangolo/typer/issues/182
-WeightFormatEnum = enum.Enum("WeightFormatEnum", get_args(WeightsFormat))
+WeightFormatEnum = enum.Enum("WeightFormatEnum", {wf: wf for wf in get_args(WeightsFormat)})
+# Enum with in values does not work with click.Choice: https://github.com/pallets/click/issues/784
+# so a simple Enum with auto int values is not an option:
+# WeightFormatEnum = enum.Enum("WeightFormatEnum", get_args(WeightsFormat))
 
 
 @app.command()
