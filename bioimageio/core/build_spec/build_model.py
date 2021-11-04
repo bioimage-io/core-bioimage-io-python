@@ -167,7 +167,7 @@ def _get_data_range(data_range, dtype):
         else:
             raise RuntimeError(f"Cannot derived data range for dtype {dtype}")
         data_range = (min_, max_)
-    assert isinstance(data_range, (tuple, list))
+    assert isinstance(data_range, (tuple, list)), type(data_range)
     assert len(data_range) == 2
     return data_range
 
@@ -247,6 +247,15 @@ def _build_authors(authors: List[Dict[str, str]]):
 def _build_cite(cite: Dict[str, str]):
     citation_list = [model_spec.raw_nodes.CiteEntry(text=k, url=v) for k, v in cite.items()]
     return citation_list
+
+
+def _get_dependencies(dependencies, root):
+    if ":" in dependencies:
+        manager, path = dependencies.split(":")
+    else:
+        manager = "conda"
+        path = dependencies
+    return model_spec.raw_nodes.Dependencies(manager=manager, file=_process_uri(path, root))
 
 
 def build_model(
@@ -383,7 +392,7 @@ def build_model(
     preprocessing = n_inputs * [None] if preprocessing is None else preprocessing
 
     inputs = [
-        _get_input_tensor(test_in, name, step, min_shape, axes, data_range, preproc)
+        _get_input_tensor(test_in, name, step, min_shape, data_range, axes, preproc)
         for test_in, name, step, min_shape, axes, data_range, preproc in zip(
             test_inputs, input_name, input_step, input_min_shape, input_axes, input_data_range, preprocessing
         )
@@ -422,8 +431,8 @@ def build_model(
 
     authors = _build_authors(authors)
     cite = _build_cite(cite)
-    documentation = _process_uri(documentation, root)
-    covers = [_process_uri(uri, root) for uri in covers]
+    documentation = _process_uri(documentation, root, download=True)
+    covers = [_process_uri(uri, root, download=True) for uri in covers]
 
     # parse the weights
     weights, language, framework, source, source_hash, tmp_source = _get_weights(
@@ -448,9 +457,7 @@ def build_model(
     }
     kwargs = {k: v for k, v in optional_kwargs.items() if v is not None}
     if dependencies is not None:
-        kwargs["dependencies"] = model_spec.raw_nodes.Dependencies(
-            manager="conda", file=_process_uri(dependencies, root)
-        )
+        kwargs["dependencies"] = _get_dependencies(dependencies, root)
     if parent is not None:
         assert len(parent) == 2
         kwargs["parent"] = {"uri": parent[0], "sha256": parent[1]}
