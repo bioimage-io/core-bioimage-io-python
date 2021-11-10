@@ -9,7 +9,7 @@ from typing import List, Optional
 import typer
 
 from bioimageio.core import __version__, prediction, commands, resource_tests
-from bioimageio.spec.__main__ import app
+from bioimageio.spec.__main__ import app, help_version as help_version_spec
 from bioimageio.spec.model.raw_nodes import WeightsFormat
 
 try:
@@ -21,6 +21,18 @@ try:
     from bioimageio.core.weight_converter import torch as torch_converter
 except ImportError:
     torch_converter = None
+
+
+# extend help/version string by core version
+help_version_core = f"bioimageio.core {__version__}"
+help_version = f"{help_version_spec}\n{help_version_core}"
+# prevent rewrapping with \b\n: https://click.palletsprojects.com/en/7.x/documentation/#preventing-rewrapping
+app.info.help = "\b\n" + help_version
+
+
+@app.callback()
+def callback():
+    typer.echo(help_version)
 
 
 @app.command()
@@ -47,7 +59,10 @@ package.__doc__ = commands.package.__doc__
 
 # if we want to use something like "choice" for the weight formats, we need to use an enum, see:
 # https://github.com/tiangolo/typer/issues/182
-WeightFormatEnum = enum.Enum("WeightFormatEnum", get_args(WeightsFormat))
+WeightFormatEnum = enum.Enum("WeightFormatEnum", {wf: wf for wf in get_args(WeightsFormat)})
+# Enum with in values does not work with click.Choice: https://github.com/pallets/click/issues/784
+# so a simple Enum with auto int values is not an option:
+# WeightFormatEnum = enum.Enum("WeightFormatEnum", get_args(WeightsFormat))
 
 
 @app.command()
@@ -219,5 +234,4 @@ if torch_converter is not None:
 
 
 if __name__ == "__main__":
-    print(f"bioimageio.core package version {__version__}")
     app()
