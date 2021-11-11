@@ -209,7 +209,7 @@ class ScaleRange(Processing):
         v_lower = get_stat(ref_name, Percentile(self.min_percentile, axes=axes))
         v_upper = get_stat(ref_name, Percentile(self.max_percentile, axes=axes))
 
-        return ensure_dtype((tensor - v_lower) / v_upper, dtype="float32")
+        return ensure_dtype((tensor - v_lower) / (v_upper - v_lower), dtype="float32")
 
     def __post_init__(self):
         super().__post_init__()
