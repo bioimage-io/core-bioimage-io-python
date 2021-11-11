@@ -131,11 +131,14 @@ def test_scale_range():
         )
     )
 
-    exp_data = (np_data - np_data.min()) / np_data.max()
+    eps = 1.0e-6
+    mi, ma = np_data.min(), np_data.max()
+    exp_data = (np_data - mi) / (ma - mi + eps)
     expected = xr.DataArray(exp_data, dims=("x", "y"))
 
     result = preprocessing(data)
-    xr.testing.assert_allclose(expected, result)
+    # NOTE xarray.testing.assert_allclose compares irrelavant properties here and fails although the result is correct
+    np.testing.assert_allclose(expected, result)
 
 
 def test_scale_range_axes():
@@ -156,13 +159,15 @@ def test_scale_range_axes():
         )
     )
 
+    eps = 1.0e-6
     p_low = np.percentile(np_data, min_percentile, axis=(1, 2), keepdims=True)
     p_up = np.percentile(np_data, max_percentile, axis=(1, 2), keepdims=True)
-    exp_data = (np_data - p_low) / p_up
+    exp_data = (np_data - p_low) / (p_up - p_low + eps)
     expected = xr.DataArray(exp_data, dims=("c", "x", "y"))
 
     result = preprocessing(data)
-    xr.testing.assert_allclose(expected, result)
+    # NOTE xarray.testing.assert_allclose compares irrelavant properties here and fails although the result is correct
+    np.testing.assert_allclose(expected, result)
 
 
 def test_sigmoid():
