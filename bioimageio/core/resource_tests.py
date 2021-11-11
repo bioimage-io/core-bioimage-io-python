@@ -104,8 +104,10 @@ def debug_model(
     prediction_pipeline = create_prediction_pipeline(
         bioimageio_model=model, devices=devices, weight_format=weight_format
     )
-    inputs = [xr.DataArray(np.load(str(in_path)), dims=input_spec.axes)
-              for in_path, input_spec in zip(model.test_inputs, model.inputs)]
+    inputs = [
+        xr.DataArray(np.load(str(in_path)), dims=input_spec.axes)
+        for in_path, input_spec in zip(model.test_inputs, model.inputs)
+    ]
 
     inputs_processed, stats = prediction_pipeline.preprocess(*inputs)
     outputs_raw = prediction_pipeline.predict(*inputs_processed)
@@ -113,12 +115,12 @@ def debug_model(
     if isinstance(outputs, (np.ndarray, xr.DataArray)):
         outputs = [outputs]
 
-    expected = [xr.DataArray(np.load(str(out_path)), dims=output_spec.axes)
-                for out_path, output_spec in zip(model.test_outputs, model.outputs)]
+    expected = [
+        xr.DataArray(np.load(str(out_path)), dims=output_spec.axes)
+        for out_path, output_spec in zip(model.test_outputs, model.outputs)
+    ]
     if len(outputs) != len(expected):
-        error = (
-            f"Number of outputs and number of expected outputs disagree: {len(outputs)} != {len(expected)}"
-        )
+        error = f"Number of outputs and number of expected outputs disagree: {len(outputs)} != {len(expected)}"
         print(error)
     else:
         diff = []
@@ -131,5 +133,5 @@ def debug_model(
         "outputs_raw": outputs_raw,
         "outputs": outputs,
         "expected": expected,
-        "diff": diff
+        "diff": diff,
     }
