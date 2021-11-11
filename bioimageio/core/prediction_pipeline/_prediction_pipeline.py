@@ -1,12 +1,13 @@
 import abc
 import math
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict, Any
 
 import xarray as xr
 from marshmallow import missing
 
 from bioimageio.core.resource_io import nodes
+from bioimageio.core.statistical_measures import Measure
 from ._combined_processing import CombinedProcessing
 from ._model_adapters import ModelAdapter, create_model_adapter
 from ..resource_io.nodes import InputTensor, Model, OutputTensor
@@ -94,13 +95,15 @@ class _PredictionPipelineImpl(PredictionPipeline):
         prediction = self.predict(*preprocessed)
         return self._processing.apply_postprocessing(*prediction, input_sample_statistics=sample_stats)[0]
 
-    def preprocess(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
+    def preprocess(self, *input_tensors: xr.DataArray) -> Tuple[List[xr.DataArray], Dict[str, Dict[Measure, Any]]]:
         """Apply preprocessing."""
-        return self._processing.apply_preprocessing(*input_tensors)[0]
+        return self._processing.apply_preprocessing(*input_tensors)
 
-    def postprocess(self, *input_tensors: xr.DataArray, input_sample_statistics) -> List[xr.DataArray]:
+    def postprocess(
+        self, *input_tensors: xr.DataArray, input_sample_statistics
+    ) -> Tuple[List[xr.DataArray], Dict[str, Dict[Measure, Any]]]:
         """Apply postprocessing."""
-        return self._processing.apply_postprocessing(*input_tensors, input_sample_statistics=input_sample_statistics)[0]
+        return self._processing.apply_postprocessing(*input_tensors, input_sample_statistics=input_sample_statistics)
 
     def __call__(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         return self.forward(*input_tensors)

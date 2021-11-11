@@ -1,5 +1,4 @@
 import traceback
-import warnings
 from pathlib import Path
 from typing import List, Optional, Union
 
@@ -79,3 +78,60 @@ def test_resource(
     # todo: add tests for non-model resources
 
     return {"error": error, "traceback": tb}
+
+
+def debug_model(
+    model_rdf: Union[RawResourceDescription, ResourceDescription, URI, Path, str],
+    *,
+    weight_format: Optional[WeightsFormat] = None,
+    devices: Optional[List[str]] = None,
+):
+    """Run the model test and return dict with inputs, results, expected results and intermediates.
+
+    Returns dict with tensors "inputs", "inputs_processed", "outputs_raw", "outputs", "expected" and "diff".
+    """
+    inputs: Optional = None
+    inputs_processed: Optional = None
+    outputs_raw: Optional = None
+    outputs: Optional = None
+    expected: Optional = None
+    diff: Optional = None
+
+    model = load_resource_description(model_rdf)
+    if not isinstance(model, Model):
+        raise ValueError(f"Not a bioimageio.model: {model_rdf}")
+
+    prediction_pipeline = create_prediction_pipeline(
+        bioimageio_model=model, devices=devices, weight_format=weight_format
+    )
+    inputs = [
+        xr.DataArray(np.load(str(in_path)), dims=input_spec.axes)
+        for in_path, input_spec in zip(model.test_inputs, model.inputs)
+    ]
+
+    inputs_processed, stats = prediction_pipeline.preprocess(*inputs)
+    outputs_raw = prediction_pipeline.predict(*inputs_processed)
+    outputs, _ = prediction_pipeline.postprocess(*outputs_raw, input_sample_statistics=stats)
+    if isinstance(outputs, (np.ndarray, xr.DataArray)):
+        outputs = [outputs]
+
+    expected = [
+        xr.DataArray(np.load(str(out_path)), dims=output_spec.axes)
+        for out_path, output_spec in zip(model.test_outputs, model.outputs)
+    ]
+    if len(outputs) != len(expected):
+        error = f"Number of outputs and number of expected outputs disagree: {len(outputs)} != {len(expected)}"
+        print(error)
+    else:
+        diff = []
+        for res, exp in zip(outputs, expected):
+            diff.append(res - exp)
+
+    return {
+        "inputs": inputs,
+        "inputs_processed": inputs_processed,
+        "outputs_raw": outputs_raw,
+        "outputs": outputs,
+        "expected": expected,
+        "diff": diff,
+    }
