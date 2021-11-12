@@ -17,7 +17,9 @@ def test_cli_test_model(unet2d_nuclei_broad_model):
 
 
 def test_cli_test_model_with_specific_weight_format(unet2d_nuclei_broad_model):
-    ret = subprocess.run(["bioimageio", "test-model", unet2d_nuclei_broad_model, "pytorch_state_dict"])
+    ret = subprocess.run(
+        ["bioimageio", "test-model", unet2d_nuclei_broad_model, "--weight-format", "pytorch_state_dict"]
+    )
     assert ret.returncode == 0
 
 
@@ -27,7 +29,9 @@ def test_cli_test_resource(unet2d_nuclei_broad_model):
 
 
 def test_cli_test_resource_with_specific_weight_format(unet2d_nuclei_broad_model):
-    ret = subprocess.run(["bioimageio", "test-model", unet2d_nuclei_broad_model, "pytorch_state_dict"])
+    ret = subprocess.run(
+        ["bioimageio", "test-model", unet2d_nuclei_broad_model, "--weight-format", "pytorch_state_dict"]
+    )
     assert ret.returncode == 0
 
 
