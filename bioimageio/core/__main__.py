@@ -102,7 +102,7 @@ def test_resource(
     # this is a weird typer bug: default devices are empty tuple although they should be None
     if len(devices) == 0:
         devices = None
-    summary = resource_tests.test_resource(rdf, weight_format=weight_format, devices=devices, decimal=decimal)
+    summary = resource_tests.test_resource(rdf, weight_format=weight_format.value, devices=devices, decimal=decimal)
     if summary["error"] is None:
         print(f"Resource test for {rdf} has passed.")
         return 0
