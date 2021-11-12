@@ -77,7 +77,12 @@ def test_model(
     # this is a weird typer bug: default devices are empty tuple although they should be None
     if len(devices) == 0:
         devices = None
-    summary = resource_tests.test_model(model_rdf, weight_format=weight_format.value, devices=devices, decimal=decimal)
+    summary = resource_tests.test_model(
+        model_rdf,
+        weight_format=None if weight_format is None else weight_format.value,
+        devices=devices,
+        decimal=decimal,
+    )
     if summary["error"] is None:
         print(f"Model test for {model_rdf} has passed.")
         return 0
@@ -102,7 +107,9 @@ def test_resource(
     # this is a weird typer bug: default devices are empty tuple although they should be None
     if len(devices) == 0:
         devices = None
-    summary = resource_tests.test_resource(rdf, weight_format=weight_format.value, devices=devices, decimal=decimal)
+    summary = resource_tests.test_resource(
+        rdf, weight_format=None if weight_format is None else weight_format.value, devices=devices, decimal=decimal
+    )
     if summary["error"] is None:
         print(f"Resource test for {rdf} has passed.")
         return 0
@@ -131,7 +138,7 @@ def predict_image(
     # ),
     padding: Optional[bool] = typer.Option(None, help="Whether to pad the image to a size suited for the model."),
     tiling: Optional[bool] = typer.Option(None, help="Whether to run prediction in tiling mode."),
-    weight_format: Optional[str] = typer.Option(None, help="The weight format to use."),
+    weight_format: Optional[WeightFormatEnum] = typer.Option(None, help="The weight format to use."),
     devices: Optional[List[str]] = typer.Option(None, help="Devices for running the model."),
 ) -> int:
 
@@ -145,7 +152,9 @@ def predict_image(
     # this is a weird typer bug: default devices are empty tuple although they should be None
     if len(devices) == 0:
         devices = None
-    prediction.predict_image(model_rdf, inputs, outputs, padding, tiling, weight_format, devices)
+    prediction.predict_image(
+        model_rdf, inputs, outputs, padding, tiling, None if weight_format is None else weight_format.value, devices
+    )
     return 0
 
 
@@ -169,7 +178,7 @@ def predict_images(
     # ),
     padding: Optional[bool] = typer.Option(None, help="Whether to pad the image to a size suited for the model."),
     tiling: Optional[bool] = typer.Option(None, help="Whether to run prediction in tiling mode."),
-    weight_format: Optional[str] = typer.Option(None, help="The weight format to use."),
+    weight_format: Optional[WeightFormatEnum] = typer.Option(None, help="The weight format to use."),
     devices: Optional[List[str]] = typer.Option(None, help="Devices for running the model."),
 ) -> int:
     input_files = glob(input_pattern)
@@ -194,7 +203,7 @@ def predict_images(
         output_files,
         padding=padding,
         tiling=tiling,
-        weight_format=weight_format,
+        weight_format=None if weight_format is None else weight_format.value,
         devices=devices,
         verbose=True,
     )
