@@ -16,6 +16,11 @@ def test_cli_test_model(unet2d_nuclei_broad_model):
     assert ret.returncode == 0
 
 
+def test_cli_test_model_with_specific_weight_format(unet2d_nuclei_broad_model):
+    ret = subprocess.run(["bioimageio", "test-model", unet2d_nuclei_broad_model, "pytorch_state_dict"])
+    assert ret.returncode == 0
+
+
 def test_cli_predict_image(unet2d_nuclei_broad_model, tmp_path):
     spec = load_resource_description(unet2d_nuclei_broad_model)
     in_path = spec.test_inputs[0]
