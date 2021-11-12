@@ -16,18 +16,46 @@ def test_cli_test_model(unet2d_nuclei_broad_model):
     assert ret.returncode == 0
 
 
-def test_cli_predict_image(unet2d_nuclei_broad_model, tmp_path):
-    spec = load_resource_description(unet2d_nuclei_broad_model)
+def test_cli_test_model_with_weight_format(unet2d_nuclei_broad_model):
+    ret = subprocess.run(
+        ["bioimageio", "test-model", unet2d_nuclei_broad_model, "--weight-format", "pytorch_state_dict"]
+    )
+    assert ret.returncode == 0
+
+
+def test_cli_test_resource(unet2d_nuclei_broad_model):
+    ret = subprocess.run(["bioimageio", "test-model", unet2d_nuclei_broad_model])
+    assert ret.returncode == 0
+
+
+def test_cli_test_resource_with_weight_format(unet2d_nuclei_broad_model):
+    ret = subprocess.run(
+        ["bioimageio", "test-model", unet2d_nuclei_broad_model, "--weight-format", "pytorch_state_dict"]
+    )
+    assert ret.returncode == 0
+
+
+def _test_cli_predict_image(model, tmp_path, extra_kwargs=None):
+    spec = load_resource_description(model)
     in_path = spec.test_inputs[0]
     out_path = tmp_path.with_suffix(".npy")
-    ret = subprocess.run(
-        ["bioimageio", "predict-image", unet2d_nuclei_broad_model, "--inputs", str(in_path), "--outputs", str(out_path)]
-    )
+    cmd = ["bioimageio", "predict-image", model, "--inputs", str(in_path), "--outputs", str(out_path)]
+    if extra_kwargs is not None:
+        cmd.extend(extra_kwargs)
+    ret = subprocess.run(cmd)
     assert ret.returncode == 0
     assert out_path.exists()
 
 
-def test_cli_predict_images(unet2d_nuclei_broad_model, tmp_path):
+def test_cli_predict_image(unet2d_nuclei_broad_model, tmp_path):
+    _test_cli_predict_image(unet2d_nuclei_broad_model, tmp_path)
+
+
+def test_cli_predict_image_with_weight_format(unet2d_nuclei_broad_model, tmp_path):
+    _test_cli_predict_image(unet2d_nuclei_broad_model, tmp_path, ["--weight-format", "pytorch_state_dict"])
+
+
+def _test_cli_predict_images(model, tmp_path, extra_kwargs=None):
     n_images = 3
     shape = (1, 1, 128, 128)
     expected_shape = (1, 1, 128, 128)
@@ -45,12 +73,23 @@ def test_cli_predict_images(unet2d_nuclei_broad_model, tmp_path):
         expected_outputs.append(out_folder / f"im-{i}.npy")
 
     input_pattern = str(in_folder / "*.npy")
-    ret = subprocess.run(["bioimageio", "predict-images", unet2d_nuclei_broad_model, input_pattern, str(out_folder)])
+    cmd = ["bioimageio", "predict-images", model, input_pattern, str(out_folder)]
+    if extra_kwargs is not None:
+        cmd.extend(extra_kwargs)
+    ret = subprocess.run(cmd)
     assert ret.returncode == 0
 
     for out_path in expected_outputs:
         assert out_path.exists()
         assert np.load(out_path).shape == expected_shape
+
+
+def test_cli_predict_images(unet2d_nuclei_broad_model, tmp_path):
+    _test_cli_predict_images(unet2d_nuclei_broad_model, tmp_path)
+
+
+def test_cli_predict_images_with_weight_format(unet2d_nuclei_broad_model, tmp_path):
+    _test_cli_predict_images(unet2d_nuclei_broad_model, tmp_path, ["--weight-format", "pytorch_state_dict"])
 
 
 def test_torch_to_torchscript(unet2d_nuclei_broad_model, tmp_path):

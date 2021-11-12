@@ -39,6 +39,24 @@ def test_predict_image(unet2d_fixed_shape_or_not, tmpdir):
         assert_array_almost_equal(res, exp, decimal=4)
 
 
+def test_predict_image_with_weight_format(unet2d_fixed_shape_or_not, tmpdir):
+    from bioimageio.core.prediction import predict_image
+
+    spec = load_resource_description(unet2d_fixed_shape_or_not)
+    assert isinstance(spec, Model)
+    inputs = spec.test_inputs
+
+    outputs = [Path(tmpdir) / f"out{i}.npy" for i in range(len(spec.test_outputs))]
+    predict_image(unet2d_fixed_shape_or_not, inputs, outputs, weight_format="pytorch_state_dict")
+    for out_path in outputs:
+        assert out_path.exists()
+
+    result = [np.load(str(p)) for p in outputs]
+    expected = [np.load(str(p)) for p in spec.test_outputs]
+    for res, exp in zip(result, expected):
+        assert_array_almost_equal(res, exp, decimal=4)
+
+
 def test_predict_image_with_padding(unet2d_fixed_shape_or_not, tmp_path):
     any_model = unet2d_fixed_shape_or_not  # todo: replace 'unet2d_fixed_shape_or_not' with 'any_model'
     from bioimageio.core.prediction import predict_image

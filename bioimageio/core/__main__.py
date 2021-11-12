@@ -70,14 +70,19 @@ def test_model(
     model_rdf: str = typer.Argument(
         ..., help="Path or URL to the model resource description file (rdf.yaml) or zipped model."
     ),
-    weight_format: Optional[WeightFormatEnum] = typer.Argument(None, help="The weight format to use."),
-    devices: Optional[List[str]] = typer.Argument(None, help="Devices for running the model."),
-    decimal: int = typer.Argument(4, help="The test precision."),
+    weight_format: Optional[WeightFormatEnum] = typer.Option(None, help="The weight format to use."),
+    devices: Optional[List[str]] = typer.Option(None, help="Devices for running the model."),
+    decimal: int = typer.Option(4, help="The test precision."),
 ) -> int:
     # this is a weird typer bug: default devices are empty tuple although they should be None
     if len(devices) == 0:
         devices = None
-    summary = resource_tests.test_model(model_rdf, weight_format=weight_format, devices=devices, decimal=decimal)
+    summary = resource_tests.test_model(
+        model_rdf,
+        weight_format=None if weight_format is None else weight_format.value,
+        devices=devices,
+        decimal=decimal,
+    )
     if summary["error"] is None:
         print(f"Model test for {model_rdf} has passed.")
         return 0
@@ -95,14 +100,16 @@ def test_resource(
     rdf: str = typer.Argument(
         ..., help="Path or URL to the resource description file (rdf.yaml) or zipped resource package."
     ),
-    weight_format: Optional[WeightFormatEnum] = typer.Argument(None, help="(for model only) The weight format to use."),
-    devices: Optional[List[str]] = typer.Argument(None, help="(for model only) Devices for running the model."),
-    decimal: int = typer.Argument(4, help="(for model only) The test precision."),
+    weight_format: Optional[WeightFormatEnum] = typer.Option(None, help="(for model only) The weight format to use."),
+    devices: Optional[List[str]] = typer.Option(None, help="(for model only) Devices for running the model."),
+    decimal: int = typer.Option(4, help="(for model only) The test precision."),
 ) -> int:
     # this is a weird typer bug: default devices are empty tuple although they should be None
     if len(devices) == 0:
         devices = None
-    summary = resource_tests.test_resource(rdf, weight_format=weight_format, devices=devices, decimal=decimal)
+    summary = resource_tests.test_resource(
+        rdf, weight_format=None if weight_format is None else weight_format.value, devices=devices, decimal=decimal
+    )
     if summary["error"] is None:
         print(f"Resource test for {rdf} has passed.")
         return 0
@@ -129,10 +136,10 @@ def predict_image(
     # tiling: Optional[Union[str, bool]] = typer.Argument(
     #     None, help="Padding to apply in each dimension passed as json encoded string."
     # ),
-    padding: Optional[bool] = typer.Argument(None, help="Whether to pad the image to a size suited for the model."),
-    tiling: Optional[bool] = typer.Argument(None, help="Whether to run prediction in tiling mode."),
-    weight_format: Optional[str] = typer.Argument(None, help="The weight format to use."),
-    devices: Optional[List[str]] = typer.Argument(None, help="Devices for running the model."),
+    padding: Optional[bool] = typer.Option(None, help="Whether to pad the image to a size suited for the model."),
+    tiling: Optional[bool] = typer.Option(None, help="Whether to run prediction in tiling mode."),
+    weight_format: Optional[WeightFormatEnum] = typer.Option(None, help="The weight format to use."),
+    devices: Optional[List[str]] = typer.Option(None, help="Devices for running the model."),
 ) -> int:
 
     if isinstance(padding, str):
@@ -145,7 +152,9 @@ def predict_image(
     # this is a weird typer bug: default devices are empty tuple although they should be None
     if len(devices) == 0:
         devices = None
-    prediction.predict_image(model_rdf, inputs, outputs, padding, tiling, weight_format, devices)
+    prediction.predict_image(
+        model_rdf, inputs, outputs, padding, tiling, None if weight_format is None else weight_format.value, devices
+    )
     return 0
 
 
@@ -167,10 +176,10 @@ def predict_images(
     # tiling: Optional[Union[str, bool]] = typer.Argument(
     #     None, help="Padding to apply in each dimension passed as json encoded string."
     # ),
-    padding: Optional[bool] = typer.Argument(None, help="Whether to pad the image to a size suited for the model."),
-    tiling: Optional[bool] = typer.Argument(None, help="Whether to run prediction in tiling mode."),
-    weight_format: Optional[str] = typer.Argument(None, help="The weight format to use."),
-    devices: Optional[List[str]] = typer.Argument(None, help="Devices for running the model."),
+    padding: Optional[bool] = typer.Option(None, help="Whether to pad the image to a size suited for the model."),
+    tiling: Optional[bool] = typer.Option(None, help="Whether to run prediction in tiling mode."),
+    weight_format: Optional[WeightFormatEnum] = typer.Option(None, help="The weight format to use."),
+    devices: Optional[List[str]] = typer.Option(None, help="Devices for running the model."),
 ) -> int:
     input_files = glob(input_pattern)
     input_names = [os.path.split(infile)[1] for infile in input_files]
@@ -194,7 +203,7 @@ def predict_images(
         output_files,
         padding=padding,
         tiling=tiling,
-        weight_format=weight_format,
+        weight_format=None if weight_format is None else weight_format.value,
         devices=devices,
         verbose=True,
     )
@@ -213,8 +222,8 @@ if torch_converter is not None:
         ),
         output_path: Path = typer.Argument(..., help="Where to save the onnx weights."),
         opset_version: Optional[int] = typer.Argument(12, help="Onnx opset version."),
-        use_tracing: bool = typer.Argument(True, help="Whether to use torch.jit tracing or scripting."),
-        verbose: bool = typer.Argument(True, help="Verbosity"),
+        use_tracing: bool = typer.Option(True, help="Whether to use torch.jit tracing or scripting."),
+        verbose: bool = typer.Option(True, help="Verbosity"),
     ) -> int:
         return torch_converter.convert_weights_to_onnx(model_rdf, output_path, opset_version, use_tracing, verbose)
 
@@ -226,7 +235,7 @@ if torch_converter is not None:
             ..., help="Path to the model resource description file (rdf.yaml) or zipped model."
         ),
         output_path: Path = typer.Argument(..., help="Where to save the torchscript weights."),
-        use_tracing: bool = typer.Argument(True, help="Whether to use torch.jit tracing or scripting."),
+        use_tracing: bool = typer.Option(True, help="Whether to use torch.jit tracing or scripting."),
     ) -> int:
         return torch_converter.convert_weights_to_pytorch_script(model_rdf, output_path, use_tracing)
 
