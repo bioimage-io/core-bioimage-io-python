@@ -308,18 +308,12 @@ def _get_deepimagej_preprocessing(name, kwargs, export_folder):
             for line in lines:
                 f.write(line)
 
-    preprocess = [
-        {"spec": "ij.IJ::runMacroFile",
-         "kwargs": macro}
-    ]
+    preprocess = [{"spec": "ij.IJ::runMacroFile", "kwargs": macro}]
 
     return preprocess, {"files": [macro]}
 
 
-def _get_deepimagej_config(export_folder,
-                           sample_inputs, sample_outputs,
-                           test_in_path, test_out_path,
-                           preprocessing):
+def _get_deepimagej_config(export_folder, sample_inputs, sample_outputs, test_in_path, test_out_path, preprocessing):
     if preprocessing:
         assert len(preprocessing) == 1
         name = list(preprocessing[0].keys())[0]
@@ -346,21 +340,12 @@ def _get_deepimagej_config(export_folder,
     # TODO get the pixel size info from somewhere
     test_info = {
         "inputs": [
-            {
-                "name": in_path,
-                "size": _get_size(in_path),
-                "pixel_size": {"x": 1.0, "y": 1.0, "z": 1.0}
-            } for in_path in sample_inputs
+            {"name": in_path, "size": _get_size(in_path), "pixel_size": {"x": 1.0, "y": 1.0, "z": 1.0}}
+            for in_path in sample_inputs
         ],
-        "outputs": [
-            {
-                "name": out_path,
-                "type": "image",
-                "size": _get_size(out_path)
-            } for out_path in sample_outputs
-        ],
+        "outputs": [{"name": out_path, "type": "image", "size": _get_size(out_path)} for out_path in sample_outputs],
         "memory_peak": None,
-        "runtime": None
+        "runtime": None,
     }
 
     config = {
@@ -372,7 +357,7 @@ def _get_deepimagej_config(export_folder,
         # other stuff deepimagej needs
         "pyramidal_model": False,
         "allow_tiling": True,
-        "model_keys": None
+        "model_keys": None,
     }
     return {"deepimagej": config}, attachments
 
@@ -607,19 +592,12 @@ def build_model(
         kwargs["parent"] = {"uri": parent[0], "sha256": parent[1]}
 
     if add_deepimagej_config:
-        sample_in_path, sample_out_path = _write_sample_data(test_inputs,
-                                                             test_outputs,
-                                                             root)
-        ij_config, attachments = _get_deepimagej_config(root,
-                                                        sample_in_path, sample_out_path,
-                                                        test_inputs, test_outputs,
-                                                        preprocessing)
+        sample_in_path, sample_out_path = _write_sample_data(test_inputs, test_outputs, root)
+        ij_config, attachments = _get_deepimagej_config(
+            root, sample_in_path, sample_out_path, test_inputs, test_outputs, preprocessing
+        )
         config.update(ij_config)
-        kwargs.update({
-            "sample_inputs": [sample_in_path],
-            "sample_outputs": [sample_out_path],
-            "config": config
-        })
+        kwargs.update({"sample_inputs": [sample_in_path], "sample_outputs": [sample_out_path], "config": config})
         if attachments is not None:
             kwargs.update({"attachments": attachments})
 

@@ -4,12 +4,7 @@ from bioimageio.core.resource_io.io_ import load_raw_resource_description
 
 
 def _test_build_spec(
-    spec_path,
-    out_path,
-    weight_type,
-    tensorflow_version=None,
-    use_implicit_output_shape=False,
-    for_deepimagej=True
+    spec_path, out_path, weight_type, tensorflow_version=None, use_implicit_output_shape=False, for_deepimagej=True
 ):
     from bioimageio.core.build_spec import build_model
 
