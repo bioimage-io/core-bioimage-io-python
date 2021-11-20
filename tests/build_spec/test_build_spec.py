@@ -3,7 +3,14 @@ import bioimageio.spec as spec
 from bioimageio.core.resource_io.io_ import load_raw_resource_description
 
 
-def _test_build_spec(spec_path, out_path, weight_type, tensorflow_version=None, use_implicit_output_shape=False):
+def _test_build_spec(
+    spec_path,
+    out_path,
+    weight_type,
+    tensorflow_version=None,
+    use_implicit_output_shape=False,
+    for_deepimagej=True
+):
     from bioimageio.core.build_spec import build_model
 
     model_spec = load_raw_resource_description(spec_path)
@@ -45,6 +52,7 @@ def _test_build_spec(spec_path, out_path, weight_type, tensorflow_version=None, 
         root=model_spec.root_path,
         weight_type=weight_type_,
         output_path=out_path,
+        for_deepimagej=for_deepimagej,
     )
     if tensorflow_version is not None:
         kwargs["tensorflow_version"] = tensorflow_version
@@ -89,3 +97,7 @@ def test_build_spec_tf(any_tensorflow_model, tmp_path):
 
 def test_build_spec_tfjs(any_tensorflow_js_model, tmp_path):
     _test_build_spec(any_tensorflow_js_model, tmp_path / "model.zip", "tensorflow_js", tensorflow_version="1.12")
+
+
+def test_build_spec_deepimagej(any_torchscript_model, tmp_path):
+    _test_build_spec(any_torchscript_model, tmp_path / "model.zip", "pytorch_script", for_deepimagej=True)

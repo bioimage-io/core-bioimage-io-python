@@ -5,7 +5,9 @@ from pathlib import Path
 from shutil import copyfile
 from typing import Any, Dict, List, Optional, Union, Tuple
 
+import imageio
 import numpy as np
+import requests
 
 import bioimageio.spec as spec
 import bioimageio.spec.model as model_spec
@@ -258,6 +260,146 @@ def _get_dependencies(dependencies, root):
     return model_spec.raw_nodes.Dependencies(manager=manager, file=_process_uri(path, root))
 
 
+def _get_deepimagej_preprocessing(name, kwargs, export_folder):
+    # these are the only preprocessings we currently use
+    assert name in ("scale_linear", "scale_range", "zero_mean_unit_variance")
+    if name == "scale_linear":
+        macro = "scale_linear.ijm"
+
+        replace = {"gain": kwargs["gain"], "offset": kwargs["offset"]}
+    elif name == "scale_range":
+        macro = "per_sample_scale_range.ijm"
+        replace = {"min_precentile": kwargs["min_percentile"], "max_percentile": kwargs["max_percentile"]}
+
+    elif name == "zero_mean_unit_variance":
+        mode = kwargs["mode"]
+        if mode == "fixed":
+            macro = "fixed_zero_mean_unit_variance.ijm"
+            replace = {"paramMean": kwargs["mean"], "paramStd": kwargs["std"]}
+        else:
+            macro = "zero_mean_unit_variance.ijm"
+            replace = {}
+
+    macro = f"{name}.ijm"
+    url = f"https://raw.githubusercontent.com/deepimagej/imagej-macros/master/bioimage.io/{macro}"
+
+    path = os.path.join(export_folder, macro)
+    # TODO do we use requests?
+    with requests.get(url, stream=True) as r:
+        with open(path, "w") as f:
+            f.write(r.text)
+
+    # replace the kwargs in the macro file
+    if replace:
+        lines = []
+        with open(path) as f:
+            for line in f:
+                kwarg = [kwarg for kwarg in replace if line.startswith(kwarg)]
+                if kwarg:
+                    assert len(kwarg) == 1
+                    kwarg = kwarg[0]
+                    # each kwarg should only be replaced ones
+                    val = replace.pop(kwarg)
+                    lines.append(f"{kwarg} = {val};\n")
+                else:
+                    lines.append(line)
+
+        with open(path, "w") as f:
+            for line in lines:
+                f.write(line)
+
+    preprocess = [
+        {"spec": "ij.IJ::runMacroFile",
+         "kwargs": macro}
+    ]
+
+    return preprocess, {"files": [macro]}
+
+
+def _get_deepimagej_config(export_folder,
+                           sample_inputs, sample_outputs,
+                           test_in_path, test_out_path,
+                           preprocessing):
+    if preprocessing:
+        assert len(preprocessing) == 1
+        name = list(preprocessing[0].keys())[0]
+        kwargs = preprocessing[0][name]
+        preprocess, attachments = _get_deepimagej_preprocessing(name, kwargs, export_folder)
+    else:
+        preprocess = [{"spec": None}]
+        attachments = None
+
+    # we currently don"t implement any postprocessing
+    postprocess = [{"spec": None}]
+
+    def _get_size(path):
+        # load shape and get rid of batchdim
+        shape = np.load(path).shape[1:]
+        # reverse the shape; deepij expexts xyzc
+        shape = shape[::-1]
+        # add singleton z axis if we have 2d data
+        if len(shape) == 3:
+            shape = shape[:2] + (1,) + shape[-1:]
+        assert len(shape) == 4
+        return " x ".join(map(str, shape))
+
+    # TODO get the pixel size info from somewhere
+    test_info = {
+        "inputs": [
+            {
+                "name": in_path,
+                "size": _get_size(in_path),
+                "pixel_size": {"x": 1.0, "y": 1.0, "z": 1.0}
+            } for in_path in sample_inputs
+        ],
+        "outputs": [
+            {
+                "name": out_path,
+                "type": "image",
+                "size": _get_size(out_path)
+            } for out_path in sample_outputs
+        ],
+        "memory_peak": None,
+        "runtime": None
+    }
+
+    config = {
+        "prediction": {
+            "preprocess": preprocess,
+            "postprocess": postprocess,
+        },
+        "test_information": test_info,
+        # other stuff deepimagej needs
+        "pyramidal_model": False,
+        "allow_tiling": True,
+        "model_keys": None
+    }
+    return {"deepimagej": config}, attachments
+
+
+def _write_sample_data(input_paths, output_paths, export_folder):
+
+    for i, in_path in enumerate(input_paths):
+        inp = np.load(in_path).squeeze()
+        sample_in_path = os.path.join(export_folder, f"sample_input_{i}.tif")
+        imageio.imwrite(sample_in_path, inp) if inp.ndim == 2 else imageio.volwrite(sample_in_path, inp)
+
+    for i, out_path in enumerate(output_paths):
+        outp = np.load(out_path).squeeze()
+        sample_out_path = os.path.join(export_folder, f"sample_output_{i}.tif")
+        if outp.ndim == 2:
+            imageio.imwrite(sample_out_path, outp)
+        elif outp.ndim == 3:
+            imageio.volwrite(sample_out_path, outp)
+        elif outp.ndim == 4:
+            # we need to have channel last to write 4d tifs
+            imageio.volwrite(sample_out_path, outp.T)
+        else:
+            raise RuntimeError("Only support wrting up to 4d sample data, got {outp.ndim}d.")
+
+    return os.path.split(sample_in_path)[1], os.path.split(sample_out_path)[1]
+
+
 def build_model(
     weight_uri: str,
     test_inputs: List[Union[str, Path]],
@@ -303,6 +445,7 @@ def build_model(
     dependencies: Optional[str] = None,
     links: Optional[List[str]] = None,
     root: Optional[Union[Path, str]] = None,
+    add_deepimagej_config: bool = False,
     **weight_kwargs,
 ):
     """Create a zipped bioimage.io model.
@@ -368,6 +511,7 @@ def build_model(
         config: custom configuration for this model.
         dependencies: relative path to file with dependencies for this model.
         root: optional root path for relative paths. This can be helpful when building a spec from another model spec.
+        add_deepimagej_config: add the deepimagej config to the model.
         weight_kwargs: keyword arguments for this weight type, e.g. "tensorflow_version".
     """
     if root is None:
@@ -462,6 +606,31 @@ def build_model(
         assert len(parent) == 2
         kwargs["parent"] = {"uri": parent[0], "sha256": parent[1]}
 
+    if add_deepimagej_config:
+        sample_in_path, sample_out_path = _write_sample_data(test_inputs,
+                                                             test_outputs,
+                                                             root)
+        ij_config, attachments = _get_deepimagej_config(root,
+                                                        sample_in_path, sample_out_path,
+                                                        test_inputs, test_outputs,
+                                                        preprocessing)
+        config.update(ij_config)
+        kwargs.update({
+            "sample_inputs": [sample_in_path],
+            "sample_outputs": [sample_out_path],
+            "config": config
+        })
+        if attachments is not None:
+            kwargs.update({"attachments": attachments})
+
+        if links is None:
+            links = ["deepimagej/deepimagej"]
+        else:
+            links.append("deepimagej/deepimagej")
+
+    # make sure links are unique
+    if links is not None:
+        links = list(set(links))
     try:
         model = model_spec.raw_nodes.Model(
             format_version=format_version,
