@@ -94,7 +94,8 @@ def _replace_relative_paths_for_remote_source(
     else:
         raise TypeError(root)
 
-    raw_rd.root_path = root_path
+    assert isinstance(root_path, pathlib.Path)
+    raw_rd.root_path = root_path.resolve()
     return raw_rd
 
 

@@ -32,7 +32,7 @@ class UriNodeChecker(NodeVisitor):
     """raises FileNotFoundError for unavailable URIs and paths"""
 
     def __init__(self, *, root_path: os.PathLike):
-        self.root_path = pathlib.Path(root_path)
+        self.root_path = pathlib.Path(root_path).resolve()
 
     def visit_URI(self, node: raw_nodes.URI):
         if not uri_available(node, self.root_path):
@@ -51,7 +51,7 @@ class UriNodeChecker(NodeVisitor):
 
 class UriNodeTransformer(NodeTransformer):
     def __init__(self, *, root_path: os.PathLike):
-        self.root_path = pathlib.Path(root_path)
+        self.root_path = pathlib.Path(root_path).resolve()
 
     def transform_URI(self, node: raw_nodes.URI) -> pathlib.Path:
         local_path = resolve_uri(node, root_path=self.root_path)
