@@ -100,7 +100,6 @@ def create_model_adapter(
     Note: All specific adapters should happen inside this function to prevent different framework
     initializations interfering with each other
     """
-    spec = bioimageio_model
     weights = bioimageio_model.weights
     weight_formats = get_weight_formats()
 
@@ -115,7 +114,7 @@ def create_model_adapter(
             return adapter_cls(bioimageio_model=bioimageio_model, devices=devices)
 
     raise RuntimeError(
-        f"weight format {weight_format} not among weight formats listed in model: {list(spec.weights.keys())}"
+        f"weight format {weight_format} not among weight formats listed in model: {list(bioimageio_model.weights.keys())}"
     )
 
 
