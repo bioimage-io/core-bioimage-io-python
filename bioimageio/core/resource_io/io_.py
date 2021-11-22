@@ -145,7 +145,7 @@ def load_resource_description(
                 raw_rd.weights = {wf: raw_rd.weights[wf]}
                 break
         else:
-            raise ValueError(f"Not found any of the specified weights formats ({weights_priority_order})")
+            raise ValueError(f"Not found any of the specified weights formats {weights_priority_order}")
 
     rd: ResourceDescription = resolve_raw_resource_description(raw_rd=raw_rd, nodes_module=nodes)
     assert isinstance(rd, getattr(nodes, get_class_name_from_type(raw_rd.type)))
