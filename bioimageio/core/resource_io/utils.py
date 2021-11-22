@@ -1,6 +1,5 @@
 import dataclasses
 import importlib.util
-import logging
 import os
 import pathlib
 import sys
@@ -8,7 +7,7 @@ import typing
 import warnings
 from functools import singledispatch
 from types import ModuleType
-from urllib.request import url2pathname, urlretrieve
+from urllib.request import url2pathname
 
 import requests
 from marshmallow import ValidationError
@@ -148,7 +147,7 @@ def _resolve_uri_uri_node(uri: raw_nodes.URI, root_path: os.PathLike = pathlib.P
     assert isinstance(uri, (raw_nodes.URI, nodes.URI))
     path_or_remote_uri = resolve_local_uri(uri, root_path)
     if isinstance(path_or_remote_uri, raw_nodes.URI):
-        local_path = _download_uri_to_local_path(path_or_remote_uri)
+        local_path = _download_url_to_local_path(path_or_remote_uri)
     elif isinstance(path_or_remote_uri, pathlib.Path):
         local_path = path_or_remote_uri
     else:
@@ -269,7 +268,7 @@ def download_uri_to_local_path(uri: typing.Union[raw_nodes.URI, str]) -> pathlib
     return resolve_uri(uri)
 
 
-def _download_uri_to_local_path(uri: raw_nodes.URI) -> pathlib.Path:
+def _download_url_to_local_path(uri: raw_nodes.URI) -> pathlib.Path:
     local_path = BIOIMAGEIO_CACHE_PATH / uri.scheme / uri.authority / uri.path.strip("/") / uri.query
     if local_path.exists():
         warnings.warn(f"found cached {local_path}. Skipping download of {uri}.")
