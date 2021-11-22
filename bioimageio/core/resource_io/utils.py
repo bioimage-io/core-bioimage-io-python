@@ -290,7 +290,8 @@ def _download_url_to_local_path(uri: raw_nodes.URI) -> pathlib.Path:
                     f.write(data)
             t.close()
             if total_size != 0 and t.n != total_size:
-                raise RuntimeError("Download does not have expected size.")
+                # todo: check more carefully and raise on real issue
+                warnings.warn("Download does not have expected size.")
         except Exception as e:
             raise RuntimeError(f"Failed to download {uri} ({e})")
 
