@@ -23,7 +23,7 @@ class NamedImplicitOutputShape:
         return len(self.scale)
 
 
-class PredictionPipeline(ModelAdapter):
+class PredictionPipeline(abc.ABC):
     """
     Represents model computation including preprocessing and postprocessing
     """
