@@ -24,7 +24,7 @@ def _test_device_management(model_package, weight_format):
 
     bio_model = load_resource_description(model_package)
     assert isinstance(bio_model, Model)
-    pred_pipe = create_prediction_pipeline(bioimageio_model=bio_model, weight_format=weight_format)
+    pred_pipe = create_prediction_pipeline(bioimageio_model=bio_model, weight_format=weight_format, devices=["cuda:0"])
 
     inputs = [
         xr.DataArray(np.load(str(test_tensor)), dims=tuple(spec.axes))

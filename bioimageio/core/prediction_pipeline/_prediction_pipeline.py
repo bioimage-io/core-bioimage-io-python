@@ -1,7 +1,7 @@
 import abc
 import math
 from dataclasses import dataclass
-from typing import List, Optional, Tuple, Dict, Any
+from typing import List, Optional, Sequence, Tuple, Dict, Any
 
 import xarray as xr
 from marshmallow import missing
@@ -174,7 +174,7 @@ def enforce_min_shape(min_shape, step, axes):
 
 
 def create_prediction_pipeline(
-    *, bioimageio_model: nodes.Model, devices: Optional[List[str]] = None, weight_format: Optional[str] = None
+    *, bioimageio_model: nodes.Model, devices: Optional[Sequence[str]] = None, weight_format: Optional[str] = None
 ) -> PredictionPipeline:
     """
     Creates prediction pipeline which includes:

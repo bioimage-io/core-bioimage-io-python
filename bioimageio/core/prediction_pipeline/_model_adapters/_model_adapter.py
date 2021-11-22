@@ -93,7 +93,7 @@ def get_weight_formats() -> List[str]:
 
 
 def create_model_adapter(
-    *, bioimageio_model: nodes.Model, devices=Optional[List[str]], weight_format: Optional[str] = None
+    *, bioimageio_model: nodes.Model, devices=Optional[Sequence[str]], weight_format: Optional[str] = None
 ) -> ModelAdapter:
     """
     Creates model adapter based on the passed spec
