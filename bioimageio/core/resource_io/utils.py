@@ -12,6 +12,7 @@ from urllib.request import url2pathname, urlretrieve
 
 import requests
 from marshmallow import ValidationError
+from tqdm import tqdm
 
 from bioimageio.spec.shared import fields, raw_nodes
 from bioimageio.spec.shared.common import BIOIMAGEIO_CACHE_PATH
@@ -274,8 +275,23 @@ def _download_uri_to_local_path(uri: raw_nodes.URI) -> pathlib.Path:
         warnings.warn(f"found cached {local_path}. Skipping download of {uri}.")
     else:
         local_path.parent.mkdir(parents=True, exist_ok=True)
+
         try:
-            urlretrieve(str(uri), str(local_path))
+            # download with tqdm adapted from:
+            # https://github.com/shaypal5/tqdl/blob/189f7fd07f265d29af796bee28e0893e1396d237/tqdl/core.py
+            # Streaming, so we can iterate over the response.
+            r = requests.get(str(uri), stream=True)
+            # Total size in bytes.
+            total_size = int(r.headers.get("content-length", 0))
+            block_size = 1024  # 1 Kibibyte
+            t = tqdm(total=total_size, unit="iB", unit_scale=True, desc=local_path.name)
+            with local_path.open("wb") as f:
+                for data in r.iter_content(block_size):
+                    t.update(len(data))
+                    f.write(data)
+            t.close()
+            if total_size != 0 and t.n != total_size:
+                raise RuntimeError("Download does not have expected size.")
         except Exception as e:
             raise RuntimeError(f"Failed to download {uri} ({e})")
 
