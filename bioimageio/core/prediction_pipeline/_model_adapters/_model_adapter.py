@@ -18,29 +18,69 @@ class ModelAdapter(abc.ABC):
     def __init__(self, *, bioimageio_model: nodes.Model, devices: Optional[Sequence[str]] = None):
         self.bioimageio_model = bioimageio_model
         self.default_devices = devices
+        self.loaded = False
 
-    def load(self, *, devices: Optional[Sequence[str]] = None):
+    def __enter__(self):
+        """load on entering context"""
+        assert not self.loaded
+        self.load()  # using default_devices
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        """unload on exiting context"""
+        assert self.loaded
+        self.unload()
+        return False
+
+    def load(self, *, devices: Optional[Sequence[str]] = None) -> None:
         """
+        Note: Use ModelAdapter as context to not worry about calling unload()!
         Load model onto devices. If devices is None, self.default_devices are chosen
         (which may be None as well, in which case a framework dependent default is chosen)
         """
-        return self._load(devices=devices or self.default_devices)
+        self._load(devices=devices or self.default_devices)
+        self.loaded = True
 
     @abc.abstractmethod
-    def _load(self, *, devices: Optional[Sequence[str]] = None):
+    def _load(self, *, devices: Optional[Sequence[str]] = None) -> None:
         """
         Load model onto devices. If devices is None a framework dependent default is chosen
         """
         ...
 
-    @abc.abstractmethod
     def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
+        """
+        Load model if unloaded/outside context; then run forward pass of model to get model predictions
+        """
+        if not self.loaded:
+            self.load()
+
+        assert self.loaded
+        return self._forward(*input_tensors)
+
+    @abc.abstractmethod
+    def _forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         """
         Run forward pass of model to get model predictions
         Note: model is responsible converting it's data representation to
         xarray.DataArray
         """
         ...
+
+    def unload(self):
+        """
+        Unload model from any devices, freeing their memory.
+        Note: Use ModelAdapter as context to not worry about calling unload()!
+        """
+        assert self.loaded
+        self._unload()
+        self.loaded = False
+
+    def _unload(self) -> None:
+        """
+        Implementation of unload(). Overwrite this in framework specific model adapter implementation
+        """
+        raise NotImplementedError
 
 
 def get_weight_formats() -> List[str]:

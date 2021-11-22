@@ -26,7 +26,7 @@ class PytorchModelAdapter(ModelAdapter):
 
         self._internal_output_axes = [tuple(out.axes) for out in self.bioimageio_model.outputs]
 
-    def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
+    def _forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         with torch.no_grad():
             tensors = [torch.from_numpy(ipt.data) for ipt in input_tensors]
             tensors = [t.to(self._devices[0]) for t in tensors]

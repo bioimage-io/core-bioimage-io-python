@@ -90,7 +90,7 @@ class TensorflowModelAdapterBase(ModelAdapter):
 
         return [r if isinstance(r, np.ndarray) else tf.make_ndarray(r) for r in result]
 
-    def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
+    def _forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         data = [ipt.data for ipt in input_tensors]
         if self.use_keras_api:
             result = self._forward_keras(*data)

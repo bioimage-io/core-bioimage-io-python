@@ -1,5 +1,5 @@
 import warnings
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 import keras
 import xarray as xr
@@ -17,7 +17,7 @@ class KerasModelAdapter(ModelAdapter):
         self._model = keras.models.load_model(weight_file)
         self._output_axes = [tuple(out.axes) for out in self.bioimageio_model.outputs]
 
-    def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
+    def _forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         result = self._model.predict(*input_tensors)
         if not isinstance(result, (tuple, list)):
             result = [result]

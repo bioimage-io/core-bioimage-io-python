@@ -21,7 +21,7 @@ class ONNXModelAdapter(ModelAdapter):
         if devices is not None:
             warnings.warn(f"Device management is not implemented for onnx yet, ignoring the devices {devices}")
 
-    def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
+    def _forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         assert len(input_tensors) == len(self._input_names)
         input_arrays = [ipt.data for ipt in input_tensors]
         result = self._session.run(None, dict(zip(self._input_names, input_arrays)))
