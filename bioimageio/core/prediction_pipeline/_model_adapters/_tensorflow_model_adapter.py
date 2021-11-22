@@ -9,8 +9,15 @@ import xarray as xr
 from bioimageio.core.resource_io import nodes
 from ._model_adapter import ModelAdapter
 
+try:
+    from typing import Literal
+except ImportError:
+    from typing_extensions import Literal  # type: ignore
+
 
 class TensorflowModelAdapterBase(ModelAdapter):
+    weight_format: Literal["keras_hdf5", "tensorflow_saved_model_bundle"]
+
     def require_unzipped(self, weight_file):
         if zipfile.is_zipfile(weight_file):
             out_path = weight_file.with_suffix("")
@@ -27,30 +34,28 @@ class TensorflowModelAdapterBase(ModelAdapter):
             # NOTE in tf1 the model needs to be loaded inside of the session, so we cannot preload the model
             return str(weight_file)
 
-    def __init__(self, *, bioimageio_model: nodes.Model, weight_format: str, devices: Optional[List[str]] = None):
-        self.spec = bioimageio_model
-
+    def _load(self, *, devices: Optional[List[str]] = None):
         try:
-            tf_version = self.spec.weights[weight_format].tensorflow_version.version
+            tf_version = self.bioimageio_model.weights[self.weight_format].tensorflow_version.version
         except AttributeError:
             tf_version = (1, 14, 0)
         tf_major_ver = tf_version[0]
         assert tf_major_ver in (1, 2)
-        self.use_keras_api = tf_major_ver > 1 or weight_format == "keras_hdf5"
+        self.use_keras_api = tf_major_ver > 1 or self.weight_format == KerasModelAdapter.weight_format
 
         # TODO tf device management
         if devices is not None:
             warnings.warn(f"Device management is not implemented for tensorflow yet, ignoring the devices {devices}")
 
-        weight_file = self.require_unzipped(self.spec.weights[weight_format].source)
+        weight_file = self.require_unzipped(self.bioimageio_model.weights[self.weight_format].source)
         self._model = self._load_model(weight_file)
-        self._internal_output_axes = [tuple(out.axes) for out in bioimageio_model.outputs]
+        self._internal_output_axes = [tuple(out.axes) for out in self.bioimageio_model.outputs]
 
     # TODO currently we relaod the model every time. it would be better to keep the graph and session
     # alive in between of forward passes (but then the sessions need to be properly opened / closed)
     def _forward_tf(self, *input_tensors):
-        input_keys = [ipt.name for ipt in self.spec.inputs]
-        output_keys = [out.name for out in self.spec.outputs]
+        input_keys = [ipt.name for ipt in self.bioimageio_model.inputs]
+        output_keys = [out.name for out in self.bioimageio_model.outputs]
 
         # TODO read from spec
         tag = tf.saved_model.tag_constants.SERVING
@@ -96,12 +101,8 @@ class TensorflowModelAdapterBase(ModelAdapter):
 
 
 class TensorflowModelAdapter(TensorflowModelAdapterBase):
-    def __init__(self, *, bioimageio_model: nodes.Model, devices=List[str]):
-        weight_format = "tensorflow_saved_model_bundle"
-        super().__init__(bioimageio_model=bioimageio_model, weight_format=weight_format, devices=devices)
+    weight_format = "tensorflow_saved_model_bundle"
 
 
 class KerasModelAdapter(TensorflowModelAdapterBase):
-    def __init__(self, *, bioimageio_model: nodes.Model, devices=List[str]):
-        weight_format = "keras_hdf5"
-        super().__init__(bioimageio_model=bioimageio_model, weight_format=weight_format, devices=devices)
+    weight_format = "keras_hdf5"

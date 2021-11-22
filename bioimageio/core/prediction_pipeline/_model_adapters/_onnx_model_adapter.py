@@ -5,19 +5,16 @@ from typing import List, Optional
 import onnxruntime as rt
 import xarray as xr
 
-from bioimageio.core.resource_io import nodes
 from ._model_adapter import ModelAdapter
 
 logger = logging.getLogger(__name__)
 
 
 class ONNXModelAdapter(ModelAdapter):
-    def __init__(self, *, bioimageio_model: nodes.Model, devices: Optional[List[str]] = None):
-        spec = bioimageio_model
+    def _load(self, *, devices: Optional[List[str]] = None):
+        self._internal_output_axes = [tuple(out.axes) for out in self.bioimageio_model.outputs]
 
-        self._internal_output_axes = [tuple(out.axes) for out in bioimageio_model.outputs]
-
-        self._session = rt.InferenceSession(str(spec.weights["onnx"].source))
+        self._session = rt.InferenceSession(str(self.bioimageio_model.weights["onnx"].source))
         onnx_inputs = self._session.get_inputs()
         self._input_names = [ipt.name for ipt in onnx_inputs]
 

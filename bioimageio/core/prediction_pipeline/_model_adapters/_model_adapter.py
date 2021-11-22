@@ -1,11 +1,11 @@
 import abc
-from typing import List, Optional, Type
+from typing import List, Optional, Sequence, Type
 
 import xarray as xr
 
 from bioimageio.core.resource_io import nodes
 
-#: Known weigh types in order of priority
+#: Known weight formats in order of priority
 #: First match wins
 _WEIGHT_FORMATS = ["pytorch_state_dict", "tensorflow_saved_model_bundle", "pytorch_script", "onnx", "keras_hdf5"]
 
@@ -15,8 +15,22 @@ class ModelAdapter(abc.ABC):
     Represents model *without* any preprocessing and postprocessing
     """
 
+    def __init__(self, *, bioimageio_model: nodes.Model, devices: Optional[Sequence[str]] = None):
+        self.bioimageio_model = bioimageio_model
+        self.default_devices = devices
+
+    def load(self, *, devices: Optional[Sequence[str]] = None):
+        """
+        Load model onto devices. If devices is None, self.default_devices are chosen
+        (which may be None as well, in which case a framework dependent default is chosen)
+        """
+        return self._load(devices=devices or self.default_devices)
+
     @abc.abstractmethod
-    def __init__(self, *, bioimageio_model: nodes.Model, devices=Optional[List[str]]):
+    def _load(self, *, devices: Optional[Sequence[str]] = None):
+        """
+        Load model onto devices. If devices is None a framework dependent default is chosen
+        """
         ...
 
     @abc.abstractmethod

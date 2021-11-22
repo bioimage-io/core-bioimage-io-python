@@ -9,8 +9,8 @@ from ._model_adapter import ModelAdapter
 
 
 class PytorchModelAdapter(ModelAdapter):
-    def __init__(self, *, bioimageio_model: nodes.Model, devices: Optional[List[str]] = None):
-        self._model = self.get_nn_instance(bioimageio_model)
+    def _load(self, *, devices: Optional[List[str]] = None):
+        self._model = self.get_nn_instance(self.bioimageio_model)
 
         if devices is None:
             self._devices = ["cuda" if torch.cuda.is_available() else "cpu"]
@@ -19,12 +19,12 @@ class PytorchModelAdapter(ModelAdapter):
         self._model.to(self._devices[0])
 
         assert isinstance(self._model, torch.nn.Module)
-        weights = bioimageio_model.weights.get("pytorch_state_dict")
+        weights = self.bioimageio_model.weights.get("pytorch_state_dict")
         if weights is not None and weights.source:
             state = torch.load(weights.source, map_location=self._devices[0])
             self._model.load_state_dict(state)
 
-        self._internal_output_axes = [tuple(out.axes) for out in bioimageio_model.outputs]
+        self._internal_output_axes = [tuple(out.axes) for out in self.bioimageio_model.outputs]
 
     def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         with torch.no_grad():
