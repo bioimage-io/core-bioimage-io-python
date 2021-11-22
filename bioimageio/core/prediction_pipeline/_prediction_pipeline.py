@@ -26,7 +26,16 @@ class NamedImplicitOutputShape:
 class PredictionPipeline(abc.ABC):
     """
     Represents model computation including preprocessing and postprocessing
+    Note: Ideally use the PredictionPipeline as a context manager
     """
+
+    @abc.abstractmethod
+    def __enter__(self):
+        ...
+
+    @abc.abstractmethod
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        ...
 
     @abc.abstractmethod
     def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
@@ -59,6 +68,13 @@ class PredictionPipeline(abc.ABC):
         """
         ...
 
+    @abc.abstractmethod
+    def unload(self) -> None:
+        """
+        free any device memory in use
+        """
+        ...
+
 
 class _PredictionPipelineImpl(PredictionPipeline):
     def __init__(
@@ -73,6 +89,15 @@ class _PredictionPipelineImpl(PredictionPipeline):
         self._output_specs = bioimageio_model.outputs
         self._processing = processing
         self._model: ModelAdapter = model
+
+    def __call__(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
+        return self.forward(*input_tensors)
+
+    def __enter__(self):
+        self._model.__enter__()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        return self._model.__exit__(exc_type, exc_val, exc_tb)
 
     @property
     def name(self):
@@ -106,8 +131,8 @@ class _PredictionPipelineImpl(PredictionPipeline):
         """Apply postprocessing."""
         return self._processing.apply_postprocessing(*input_tensors, input_sample_statistics=input_sample_statistics)
 
-    def __call__(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
-        return self.forward(*input_tensors)
+    def unload(self) -> None:
+        self._model.unload()
 
 
 def enforce_min_shape(min_shape, step, axes):
