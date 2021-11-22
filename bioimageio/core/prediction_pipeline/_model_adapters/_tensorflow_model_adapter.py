@@ -99,6 +99,9 @@ class TensorflowModelAdapterBase(ModelAdapter):
 
         return [xr.DataArray(r, dims=axes) for r, axes in zip(result, self._internal_output_axes)]
 
+    def _unload(self) -> None:
+        warnings.warn("Device management is not implemented for keras yet, cannot unload model")
+
 
 class TensorflowModelAdapter(TensorflowModelAdapterBase):
     weight_format = "tensorflow_saved_model_bundle"

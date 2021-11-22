@@ -29,3 +29,6 @@ class ONNXModelAdapter(ModelAdapter):
             result = []
 
         return [xr.DataArray(r, dims=axes) for r, axes in zip(result, self._internal_output_axes)]
+
+    def _unload(self) -> None:
+        warnings.warn("Device management is not implemented for onnx yet, cannot unload model")

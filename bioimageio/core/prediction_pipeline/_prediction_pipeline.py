@@ -69,6 +69,13 @@ class PredictionPipeline(abc.ABC):
         ...
 
     @abc.abstractmethod
+    def load(self) -> None:
+        """
+        optional step: load model onto devices before calling forward if not using it as context manager
+        """
+        ...
+
+    @abc.abstractmethod
     def unload(self) -> None:
         """
         free any device memory in use
@@ -94,10 +101,12 @@ class _PredictionPipelineImpl(PredictionPipeline):
         return self.forward(*input_tensors)
 
     def __enter__(self):
-        self._model.__enter__()
+        self.load()
+        return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        return self._model.__exit__(exc_type, exc_val, exc_tb)
+        self.unload()
+        return False
 
     @property
     def name(self):
@@ -131,7 +140,10 @@ class _PredictionPipelineImpl(PredictionPipeline):
         """Apply postprocessing."""
         return self._processing.apply_postprocessing(*input_tensors, input_sample_statistics=input_sample_statistics)
 
-    def unload(self) -> None:
+    def load(self):
+        self._model.load()
+
+    def unload(self):
         self._model.unload()
 
 

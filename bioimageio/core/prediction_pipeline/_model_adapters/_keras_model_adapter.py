@@ -11,11 +11,14 @@ class KerasModelAdapter(ModelAdapter):
     def _load(self, *, devices: Optional[Sequence[str]] = None) -> None:
         # TODO keras device management
         if devices is not None:
-            warnings.warn(f"Device management is not implemented for tensorflow yet, ignoring the devices {devices}")
+            warnings.warn(f"Device management is not implemented for keras yet, ignoring the devices {devices}")
 
         weight_file = self.bioimageio_model.weights["keras_hdf5"].source
         self._model = keras.models.load_model(weight_file)
         self._output_axes = [tuple(out.axes) for out in self.bioimageio_model.outputs]
+
+    def _unload(self) -> None:
+        warnings.warn("Device management is not implemented for keras yet, cannot unload model")
 
     def _forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         result = self._model.predict(*input_tensors)

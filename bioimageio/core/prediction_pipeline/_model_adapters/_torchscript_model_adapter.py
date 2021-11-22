@@ -1,3 +1,5 @@
+import gc
+import warnings
 from typing import List, Optional
 
 import numpy as np
@@ -15,6 +17,9 @@ class TorchscriptModelAdapter(ModelAdapter):
         else:
             devices = [torch.device(d) for d in devices]
 
+        if len(devices) > 1:
+            warnings.warn("Multiple devices for single torchscript model not yet implemented")
+
         self._model = torch.jit.load(weight_path)
         self._model.to(devices[0])
         self._internal_output_axes = [tuple(out.axes) for out in self.bioimageio_model.outputs]
@@ -30,3 +35,9 @@ class TorchscriptModelAdapter(ModelAdapter):
 
         assert len(result) == len(self._internal_output_axes)
         return [xr.DataArray(r, dims=axes) for r, axes in zip(result, self._internal_output_axes)]
+
+    def _unload(self) -> None:
+        self._devices = None
+        del self._model
+        gc.collect()  # deallocate memory
+        torch.cuda.empty_cache()  # release reserved memory

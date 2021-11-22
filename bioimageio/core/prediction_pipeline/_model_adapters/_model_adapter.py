@@ -72,15 +72,17 @@ class ModelAdapter(abc.ABC):
         Unload model from any devices, freeing their memory.
         Note: Use ModelAdapter as context to not worry about calling unload()!
         """
+        # implementation of non-state-machine logic in _unload()
         assert self.loaded
         self._unload()
         self.loaded = False
 
+    @abc.abstractmethod
     def _unload(self) -> None:
         """
-        Implementation of unload(). Overwrite this in framework specific model adapter implementation
+        Unload model from any devices, freeing their memory.
         """
-        raise NotImplementedError
+        ...
 
 
 def get_weight_formats() -> List[str]:
