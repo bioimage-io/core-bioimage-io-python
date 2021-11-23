@@ -61,7 +61,17 @@ def _test_predict_with_padding(model, tmp_path):
 
     spec = load_resource_description(model)
     assert isinstance(spec, Model)
-    image = np.load(str(spec.test_inputs[0]))[0, 0]
+
+    input_spec, output_spec = spec.inputs[0], spec.outputs[0]
+    channel_axis = input_spec.axes.index("c")
+    channel_first = channel_axis == 1
+    assert output_spec.shape.scale[channel_axis] == 0
+    n_channels = int(2 * output_spec.shape.offset[channel_axis])
+
+    if channel_first:
+        image = np.load(str(spec.test_inputs[0]))[0, 0]
+    else:
+        image = np.load(str(spec.test_inputs[0]))[0, ..., 0]
     original_shape = image.shape
     assert image.ndim == 2
 
@@ -72,12 +82,20 @@ def _test_predict_with_padding(model, tmp_path):
     imageio.imwrite(in_path, image)
 
     def check_result():
-        assert out_path.exists()
-        res = imageio.imread(out_path)
-        assert res.shape == image.shape
+        if n_channels == 1:
+            assert out_path.exists()
+            res = imageio.imread(out_path)
+            assert res.shape == image.shape
+        else:
+            path = str(out_path)
+            for c in range(n_channels):
+                channel_out_path = Path(path.replace(".tif", f"-c{c}.tif"))
+                assert channel_out_path.exists()
+                res = imageio.imread(channel_out_path)
+                assert res.shape == image.shape
 
     # test with dynamic padding
-    predict_image(model, in_path, out_path, padding={"x": 8, "y": 8, "mode": "dynamic"})
+    predict_image(model, in_path, out_path, padding={"x": 16, "y": 16, "mode": "dynamic"})
     check_result()
 
     # test with fixed padding
