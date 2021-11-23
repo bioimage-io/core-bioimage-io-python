@@ -11,14 +11,14 @@ torch_models = []
 torch_models_pre_3_10 = ["unet2d_fixed_shape", "unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
 torchscript_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
 onnx_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model", "hpa_densenet"]
-tensorflow1_models = ["FruNet_model", "stardist"]
+tensorflow1_models = ["stardist"]
 tensorflow2_models = []
-keras_models = ["FruNet_model"]
-tensorflow_js_models = ["FruNet_model"]
+keras_models = []
+tensorflow_js_models = []
 
 model_sources = {
-    "FruNet_model": "https://sandbox.zenodo.org/record/894498/files/rdf.yaml",
-    # "FruNet_model": "https://raw.githubusercontent.com/deepimagej/models/master/fru-net_sev_segmentation/model.yaml",
+    # TODO add unet2d_keras_tf from https://github.com/bioimage-io/spec-bioimage-io/pull/267
+    # "unet2d_keras_tf": (""),
     "unet2d_nuclei_broad_model": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
         "unet2d_nuclei_broad/rdf.yaml"
@@ -35,10 +35,12 @@ model_sources = {
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/hpa-densenet/rdf.yaml"
     ),
     "stardist": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/stardist_example_model/rdf.yaml"
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models"
+        "/stardist_example_model/rdf.yaml"
     ),
     "stardist_wrong_shape": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/stardist_example_model/rdf_wrong_shape.yaml"
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
+        "stardist_example_model/rdf_wrong_shape.yaml"
     ),
 }
 
@@ -50,7 +52,6 @@ try:
 except ImportError:
     torch = None
     torch_version = None
-
 skip_torch = torch is None
 
 try:
@@ -66,17 +67,15 @@ try:
 except ImportError:
     tensorflow = None
     tf_major_version = None
-
 skip_tensorflow = tensorflow is None
-skip_tensorflow = True  # todo: update FruNet and remove this
-skip_tensorflow_js = True  # todo: update FruNet and figure out how to test tensorflow_js weights in python
+skip_tensorflow_js = True  # TODO: add a tensorflow_js example model
 
 try:
     import keras
 except ImportError:
     keras = None
 skip_keras = keras is None
-skip_keras = True  # FruNet requires update
+skip_keras = True  # TODO add unet2d_keras_tf to have a model for keras tests
 
 # load all model packages we need for testing
 load_model_packages = set()
@@ -120,14 +119,14 @@ def unet2d_nuclei_broad_model(request):
 
 
 # written as model group to automatically skip on missing tensorflow 1
-@pytest.fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["FruNet_model"])
-def FruNet_model(request):
+@pytest.fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist_wrong_shape"])
+def stardist_wrong_shape(request):
     return pytest.model_packages[request.param]
 
 
 # written as model group to automatically skip on missing tensorflow 1
-@pytest.fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist_wrong_shape"])
-def stardist_wrong_shape(request):
+@pytest.fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist"])
+def stardist(request):
     return pytest.model_packages[request.param]
 
 
@@ -164,7 +163,9 @@ def any_tensorflow_js_model(request):
 
 
 # fixture to test with all models that should run in the current environment
-@pytest.fixture(params=load_model_packages)
+# we exclude stardist_wrong_shape here because it is not a valid model
+# and included only to test that validation for this model fails
+@pytest.fixture(params=load_model_packages - {"stardist_wrong_shape"})
 def any_model(request):
     return pytest.model_packages[request.param]
 

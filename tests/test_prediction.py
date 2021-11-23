@@ -8,20 +8,19 @@ from bioimageio.core import load_resource_description
 from bioimageio.core.resource_io.nodes import Model
 
 
-def test_test_model(unet2d_nuclei_broad_model):
+def test_test_model(any_model):
     from bioimageio.core.resource_tests import test_model
 
-    assert test_model(unet2d_nuclei_broad_model)
+    assert test_model(any_model)
 
 
-def test_test_resource(unet2d_nuclei_broad_model):
+def test_test_resource(any_model):
     from bioimageio.core.resource_tests import test_resource
 
-    assert test_resource(unet2d_nuclei_broad_model)
+    assert test_resource(any_model)
 
 
-def test_predict_image(unet2d_fixed_shape_or_not, tmpdir):
-    any_model = unet2d_fixed_shape_or_not  # todo: replace 'unet2d_fixed_shape_or_not' with 'any_model'
+def test_predict_image(any_model, tmpdir):
     from bioimageio.core.prediction import predict_image
 
     spec = load_resource_description(any_model)
@@ -92,15 +91,14 @@ def _test_predict_with_padding(model, tmp_path):
     check_result()
 
 
-# prediction with padding with the parameters above may not be suted for any model
+# prediction with padding with the parameters above may not be suited for any model
 # so we only run it for the pytorch unet2d here
 def test_predict_image_with_padding(unet2d_fixed_shape_or_not, tmp_path):
     _test_predict_with_padding(unet2d_fixed_shape_or_not, tmp_path)
 
 
-# TODO need stardist model
-# def test_predict_image_with_padding_channel_last(stardist_model, tmp_path):
-#     _test_predict_with_padding(stardist_model, tmp_path)
+def test_predict_image_with_padding_channel_last(stardist, tmp_path):
+    _test_predict_with_padding(stardist, tmp_path)
 
 
 def _test_predict_image_with_tiling(model, tmp_path):
@@ -132,13 +130,14 @@ def _test_predict_image_with_tiling(model, tmp_path):
     check_result()
 
 
+# prediction with tiling with the parameters above may not be suited for any model
+# so we only run it for the pytorch unet2d here
 def test_predict_image_with_tiling(unet2d_nuclei_broad_model, tmp_path):
     _test_predict_image_with_tiling(unet2d_nuclei_broad_model, tmp_path)
 
 
-# TODO need stardist model
-# def test_predict_image_with_tiling_channel_last(stardist_model, tmp_path):
-#     _test_predict_image_with_tiling(stardist_model, tmp_path)
+def test_predict_image_with_tiling_channel_last(stardist, tmp_path):
+    _test_predict_image_with_tiling(stardist, tmp_path)
 
 
 def test_predict_images(unet2d_nuclei_broad_model, tmp_path):

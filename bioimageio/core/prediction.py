@@ -318,6 +318,8 @@ def predict_with_tiling(prediction_pipeline: PredictionPipeline, inputs, tiling)
 
 
 def parse_padding(padding, model):
+    if padding is None:  # no padding
+        return padding
     if len(model.inputs) > 1:
         raise NotImplementedError("Padding for multiple inputs not yet implemented")
 
@@ -327,9 +329,7 @@ def parse_padding(padding, model):
     def check_padding(padding):
         assert all(k in pad_keys for k in padding.keys())
 
-    if padding is None:  # no padding
-        return padding
-    elif isinstance(padding, dict):  # pre-defined padding
+    if isinstance(padding, dict):  # pre-defined padding
         check_padding(padding)
     elif isinstance(padding, bool):  # determine padding from spec
         if padding:
@@ -351,6 +351,8 @@ def parse_padding(padding, model):
 
 
 def parse_tiling(tiling, model):
+    if tiling is None:  # no tiling
+        return tiling
     if len(model.inputs) > 1:
         raise NotImplementedError("Tiling for multiple inputs not yet implemented")
 
@@ -363,9 +365,7 @@ def parse_tiling(tiling, model):
     def check_tiling(tiling):
         assert "halo" in tiling and "tile" in tiling
 
-    if tiling is None:  # no tiling
-        return tiling
-    elif isinstance(tiling, dict):
+    if isinstance(tiling, dict):
         check_tiling(tiling)
     elif isinstance(tiling, bool):
         if tiling:
