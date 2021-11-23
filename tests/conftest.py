@@ -5,7 +5,7 @@ from bioimageio.core import export_resource_package
 torch_models = ["unet2d_fixed_shape", "unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
 torchscript_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
 onnx_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model", "hpa_densenet"]
-tensorflow1_models = ["FruNet_model"]
+tensorflow1_models = ["FruNet_model", "stardist"]
 tensorflow2_models = []
 keras_models = ["FruNet_model"]
 tensorflow_js_models = ["FruNet_model"]
@@ -27,6 +27,12 @@ model_sources = {
     ),
     "hpa_densenet": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/hpa-densenet/rdf.yaml"
+    ),
+    "stardist": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/stardist_example_model/rdf.yaml"
+    ),
+    "stardist_wrong_shape": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/stardist_example_model/rdf_wrong_shape.yaml"
     ),
 }
 
@@ -74,6 +80,7 @@ if not skip_tensorflow:
     load_model_packages |= set(tensorflow_js_models)
     if tf_major_version == 1:
         load_model_packages |= set(tensorflow1_models)
+        load_model_packages.add("stardist_wrong_shape")
     elif tf_major_version == 2:
         load_model_packages |= set(tensorflow2_models)
 
@@ -101,6 +108,12 @@ def unet2d_nuclei_broad_model(request):
 # written as model group to automatically skip on missing tensorflow 1
 @pytest.fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["FruNet_model"])
 def FruNet_model(request):
+    return pytest.model_packages[request.param]
+
+
+# written as model group to automatically skip on missing tensorflow 1
+@pytest.fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist_wrong_shape"])
+def stardist_wrong_shape(request):
     return pytest.model_packages[request.param]
 
 
