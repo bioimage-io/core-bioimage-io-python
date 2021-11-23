@@ -17,7 +17,7 @@ class TorchscriptModelAdapter(ModelAdapter):
         else:
             self.devices = [torch.device(d) for d in devices]
 
-        if len(devices) > 1:
+        if len(self.devices) > 1:
             warnings.warn("Multiple devices for single torchscript model not yet implemented")
 
         self._model = torch.jit.load(weight_path)
