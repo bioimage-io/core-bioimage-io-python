@@ -36,17 +36,12 @@ def extract_resource_package(
 
     package_path = cache_folder / sha256(str(root).encode("utf-8")).hexdigest()
     if isinstance(root, raw_nodes.URI):
-        from urllib.request import urlretrieve
-
         for rdf_name in RDF_NAMES:
             if (package_path / rdf_name).exists():
                 download = None
                 break
         else:
-            try:
-                download, header = urlretrieve(str(root))
-            except Exception as e:
-                raise RuntimeError(f"Failed to download {str(root)} ({e})")
+            download = resolve_uri(root)
 
         local_source = download
     else:
@@ -94,7 +89,8 @@ def _replace_relative_paths_for_remote_source(
     else:
         raise TypeError(root)
 
-    raw_rd.root_path = root_path
+    assert isinstance(root_path, pathlib.Path)
+    raw_rd.root_path = root_path.resolve()
     return raw_rd
 
 
@@ -145,7 +141,7 @@ def load_resource_description(
                 raw_rd.weights = {wf: raw_rd.weights[wf]}
                 break
         else:
-            raise ValueError(f"Not found any of the specified weights formats ({weights_priority_order})")
+            raise ValueError(f"Not found any of the specified weights formats {weights_priority_order}")
 
     rd: ResourceDescription = resolve_raw_resource_description(raw_rd=raw_rd, nodes_module=nodes)
     assert isinstance(rd, getattr(nodes, get_class_name_from_type(raw_rd.type)))
