@@ -57,11 +57,10 @@ def test_predict_image_with_weight_format(unet2d_fixed_shape_or_not, tmpdir):
         assert_array_almost_equal(res, exp, decimal=4)
 
 
-def test_predict_image_with_padding(unet2d_fixed_shape_or_not, tmp_path):
-    any_model = unet2d_fixed_shape_or_not  # todo: replace 'unet2d_fixed_shape_or_not' with 'any_model'
+def _test_predict_with_padding(model, tmp_path):
     from bioimageio.core.prediction import predict_image
 
-    spec = load_resource_description(any_model)
+    spec = load_resource_description(model)
     assert isinstance(spec, Model)
     image = np.load(str(spec.test_inputs[0]))[0, 0]
     original_shape = image.shape
@@ -79,24 +78,35 @@ def test_predict_image_with_padding(unet2d_fixed_shape_or_not, tmp_path):
         assert res.shape == image.shape
 
     # test with dynamic padding
-    predict_image(any_model, in_path, out_path, padding={"x": 8, "y": 8, "mode": "dynamic"})
+    predict_image(model, in_path, out_path, padding={"x": 8, "y": 8, "mode": "dynamic"})
     check_result()
 
     # test with fixed padding
     predict_image(
-        any_model, in_path, out_path, padding={"x": original_shape[0], "y": original_shape[1], "mode": "fixed"}
+        model, in_path, out_path, padding={"x": original_shape[0], "y": original_shape[1], "mode": "fixed"}
     )
     check_result()
 
     # test with automated padding
-    predict_image(any_model, in_path, out_path, padding=True)
+    predict_image(model, in_path, out_path, padding=True)
     check_result()
 
 
-def test_predict_image_with_tiling(unet2d_nuclei_broad_model, tmp_path):
+# prediction with padding with the parameters above may not be suted for any model
+# so we only run it for the pytorch unet2d here
+def test_predict_image_with_padding(unet2d_fixed_shape_or_not, tmp_path):
+    _test_predict_with_padding(unet2d_fixed_shape_or_not, tmp_path)
+
+
+# TODO need stardist model
+# def test_predict_image_with_padding_channel_last(stardist_model, tmp_path):
+#     _test_predict_with_padding(stardist_model, tmp_path)
+
+
+def _test_predict_image_with_tiling(model, tmp_path):
     from bioimageio.core.prediction import predict_image
 
-    spec = load_resource_description(unet2d_nuclei_broad_model)
+    spec = load_resource_description(model)
     assert isinstance(spec, Model)
     inputs = spec.test_inputs
     assert len(inputs) == 1
@@ -114,12 +124,21 @@ def test_predict_image_with_tiling(unet2d_nuclei_broad_model, tmp_path):
 
     # with tiling config
     tiling = {"halo": {"x": 32, "y": 32}, "tile": {"x": 256, "y": 256}}
-    predict_image(unet2d_nuclei_broad_model, inputs, [out_path], tiling=tiling)
+    predict_image(model, inputs, [out_path], tiling=tiling)
     check_result()
 
     # with tiling determined from spec
-    predict_image(unet2d_nuclei_broad_model, inputs, [out_path], tiling=True)
+    predict_image(model, inputs, [out_path], tiling=True)
     check_result()
+
+
+def test_predict_image_with_tiling(unet2d_nuclei_broad_model, tmp_path):
+    _test_predict_image_with_tiling(unet2d_nuclei_broad_model, tmp_path)
+
+
+# TODO need stardist model
+# def test_predict_image_with_tiling_channel_last(stardist_model, tmp_path):
+#     _test_predict_image_with_tiling(stardist_model, tmp_path)
 
 
 def test_predict_images(unet2d_nuclei_broad_model, tmp_path):
