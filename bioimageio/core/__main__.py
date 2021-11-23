@@ -41,6 +41,7 @@ def package(
     path: Path = typer.Argument(Path() / "{src_name}-package.zip", help="Save package as"),
     weights_priority_order: Optional[List[str]] = typer.Option(
         None,
+        "--weights-priority-order",
         "-wpo",
         help="For model packages only. "
         "If given only the first weights matching the given weight formats are included. "
@@ -49,6 +50,9 @@ def package(
     ),
     verbose: bool = typer.Option(False, help="show traceback of exceptions"),
 ) -> int:
+    # typer bug: typer returns empty tuple instead of None if weights_order_priority is not given
+    weights_priority_order = weights_priority_order or None
+
     return commands.package(
         rdf_source=rdf_source, path=path, weights_priority_order=weights_priority_order, verbose=verbose
     )

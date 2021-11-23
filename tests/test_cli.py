@@ -11,6 +11,11 @@ def test_validate_model(unet2d_nuclei_broad_model):
     assert ret.returncode == 0
 
 
+def test_cli_package(unet2d_nuclei_broad_model):
+    ret = subprocess.run(["bioimageio", "package", unet2d_nuclei_broad_model])
+    assert ret.returncode == 0
+
+
 def test_cli_test_model(unet2d_nuclei_broad_model):
     ret = subprocess.run(["bioimageio", "test-model", unet2d_nuclei_broad_model])
     assert ret.returncode == 0
