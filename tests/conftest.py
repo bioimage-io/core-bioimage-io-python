@@ -1,5 +1,10 @@
+import logging
+
 import pytest
+
 from bioimageio.core import export_resource_package
+
+logger = logging.getLogger(__name__)
 
 # test models for various frameworks
 torch_models = []
@@ -41,6 +46,7 @@ try:
     import torch
 
     torch_version = tuple(map(int, torch.__version__.split(".")[:2]))
+    logger.warning(f"detected torch version {torch_version}.x")
 except ImportError:
     torch = None
     torch_version = None
