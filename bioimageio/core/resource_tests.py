@@ -1,14 +1,22 @@
 import traceback
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional, Tuple, Union
 
+import numpy
 import numpy as np
 import xarray as xr
+from marshmallow import ValidationError
 
 from bioimageio.core import load_resource_description
 from bioimageio.core.prediction import predict
 from bioimageio.core.prediction_pipeline import create_prediction_pipeline
-from bioimageio.core.resource_io.nodes import Model, ResourceDescription, URI
+from bioimageio.core.resource_io.nodes import (
+    ImplicitOutputShape,
+    Model,
+    ParametrizedInputShape,
+    ResourceDescription,
+    URI,
+)
 from bioimageio.spec.model.raw_nodes import WeightsFormat
 from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
 
@@ -45,24 +53,85 @@ def test_resource(
     tb: Optional = None
 
     try:
-        model = load_resource_description(model_rdf)
+        rd = load_resource_description(model_rdf)
     except Exception as e:
         error = str(e)
         tb = traceback.format_tb(e.__traceback__)
     else:
-        if isinstance(model, Model):
+        if isinstance(rd, Model):
+            model = rd
             try:
-                prediction_pipeline = create_prediction_pipeline(
-                    bioimageio_model=model, devices=devices, weight_format=weight_format
-                )
                 inputs = [np.load(str(in_path)) for in_path in model.test_inputs]
-                results = predict(prediction_pipeline, inputs)
-                if isinstance(results, (np.ndarray, xr.DataArray)):
-                    results = [results]
-
                 expected = [np.load(str(out_path)) for out_path in model.test_outputs]
+
+                # check if test data shapes match their description
+                input_shapes = [ipt.shape for ipt in inputs]
+                output_shapes = [out.shape for out in expected]
+
+                def input_shape_is_valid(shape: Tuple[int, ...], shape_spec) -> bool:
+                    if isinstance(shape_spec, list):
+                        if shape != tuple(shape_spec):
+                            return False
+                    elif isinstance(shape_spec, ParametrizedInputShape):
+                        assert len(shape_spec.min) == len(shape_spec.step)
+                        if len(shape) != len(shape_spec.min):
+                            return False
+
+                        valid_shape = numpy.array(shape_spec.min)
+                        step = numpy.array(shape_spec.step)
+                        if (step == 0).all():
+                            return shape == tuple(valid_shape)
+
+                        shape = numpy.array(shape)
+                        while (shape <= valid_shape).all():
+                            if (shape == valid_shape).all():
+                                break
+
+                            shape += step
+                        else:
+                            return False
+
+                    else:
+                        raise TypeError(f"Encountered unexpected shape description of type {type(shape_spec)}")
+
+                    return True
+
+                assert len(inputs) == len(model.inputs)  # should be checked by validation
+                input_shapes = {}
+                for idx, (ipt, ipt_spec) in enumerate(zip(inputs, model.inputs)):
+                    if not input_shape_is_valid(ipt, ipt_spec.shape):
+                        raise ValidationError(
+                            f"Shape of test input {idx} '{ipt_spec.name}' does not match "
+                            f"input shape description: {ipt_spec.shape}"
+                        )
+                    input_shapes[ipt_spec.name] = ipt.shape
+
+                def output_shape_is_valid(shape: Tuple[int, ...], shape_spec) -> bool:
+                    if isinstance(shape_spec, list):
+                        return shape == tuple(shape_spec)
+                    elif isinstance(shape_spec, ImplicitOutputShape):
+                        ipt_shape = numpy.array(input_shapes[shape_spec.reference_tensor])
+                        scale = numpy.array(shape_spec.scale)
+                        offset = numpy.array(shape_spec.offset)
+                        exp_shape = numpy.round_(ipt_shape * scale) + 2 * offset
+
+                        return shape == tuple(exp_shape)
+
+                assert len(expected) == len(model.outputs)  # should be checked by validation
+                for idx, (out, out_spec) in enumerate(zip(expected, model.outputs)):
+                    if not output_shape_is_valid(out, out_spec.shape):
+                        error = (error or "") + (
+                            f"Shape of test output {idx} '{out_spec.name}' does not match "
+                            f"output shape description: {out_spec.shape}.\n"
+                        )
+
+                with create_prediction_pipeline(
+                    bioimageio_model=model, devices=devices, weight_format=weight_format
+                ) as prediction_pipeline:
+                    results = predict(prediction_pipeline, inputs)
+
                 if len(results) != len(expected):
-                    error = (
+                    error = (error or "") + (
                         f"Number of outputs and number of expected outputs disagree: {len(results)} != {len(expected)}"
                     )
                 else:
@@ -70,7 +139,7 @@ def test_resource(
                         try:
                             np.testing.assert_array_almost_equal(res, exp, decimal=decimal)
                         except AssertionError as e:
-                            error = f"Output and expected output disagree:\n {e}"
+                            error = (error or "") + f"Output and expected output disagree:\n {e}"
             except Exception as e:
                 error = str(e)
                 tb = traceback.format_tb(e.__traceback__)
