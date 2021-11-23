@@ -65,15 +65,23 @@ def _test_predict_with_padding(model, tmp_path):
     input_spec, output_spec = spec.inputs[0], spec.outputs[0]
     channel_axis = input_spec.axes.index("c")
     channel_first = channel_axis == 1
-    assert output_spec.shape.scale[channel_axis] == 0
-    n_channels = int(2 * output_spec.shape.offset[channel_axis])
 
+    image = np.load(str(spec.test_inputs[0]))
+    assert image.shape[channel_axis] == 1
     if channel_first:
-        image = np.load(str(spec.test_inputs[0]))[0, 0]
+        image = image[0, 0]
     else:
-        image = np.load(str(spec.test_inputs[0]))[0, ..., 0]
+        image = image[0, ..., 0]
     original_shape = image.shape
     assert image.ndim == 2
+
+    if isinstance(output_spec.shape, list):
+        n_channels = output_spec.shape[channel_axis]
+    else:
+        scale = output_spec.shape.scale[channel_axis]
+        offset = output_spec.shape.offset[channel_axis]
+        in_channels = 1
+        n_channels = int(2 * offset + scale * in_channels)
 
     # write the padded image
     image = image[3:-2, 1:-12]
