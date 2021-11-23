@@ -1,11 +1,17 @@
+import logging
+
 import pytest
+
 from bioimageio.core import export_resource_package
 
+logger = logging.getLogger(__name__)
+
 # test models for various frameworks
-torch_models = ["unet2d_fixed_shape", "unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
+torch_models = []
+torch_models_pre_3_10 = ["unet2d_fixed_shape", "unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
 torchscript_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
 onnx_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model", "hpa_densenet"]
-tensorflow1_models = ["FruNet_model"]
+tensorflow1_models = ["FruNet_model", "stardist"]
 tensorflow2_models = []
 keras_models = ["FruNet_model"]
 tensorflow_js_models = ["FruNet_model"]
@@ -28,12 +34,23 @@ model_sources = {
     "hpa_densenet": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/hpa-densenet/rdf.yaml"
     ),
+    "stardist": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/stardist_example_model/rdf.yaml"
+    ),
+    "stardist_wrong_shape": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/stardist_example_model/rdf_wrong_shape.yaml"
+    ),
 }
 
 try:
     import torch
+
+    torch_version = tuple(map(int, torch.__version__.split(".")[:2]))
+    logger.warning(f"detected torch version {torch_version}.x")
 except ImportError:
     torch = None
+    torch_version = None
+
 skip_torch = torch is None
 
 try:
@@ -64,6 +81,9 @@ skip_keras = True  # FruNet requires update
 # load all model packages we need for testing
 load_model_packages = set()
 if not skip_torch:
+    if torch_version < (3, 10):
+        torch_models += torch_models_pre_3_10
+
     load_model_packages |= set(torch_models + torchscript_models)
 
 if not skip_onnx:
@@ -74,6 +94,7 @@ if not skip_tensorflow:
     load_model_packages |= set(tensorflow_js_models)
     if tf_major_version == 1:
         load_model_packages |= set(tensorflow1_models)
+        load_model_packages.add("stardist_wrong_shape")
     elif tf_major_version == 2:
         load_model_packages |= set(tensorflow2_models)
 
@@ -93,7 +114,7 @@ def pytest_configure():
 #
 
 # written as model group to automatically skip on missing torch
-@pytest.fixture(params=[] if skip_torch else ["unet2d_nuclei_broad_model"])
+@pytest.fixture(params=[] if skip_torch or torch_version >= (3, 10) else ["unet2d_nuclei_broad_model"])
 def unet2d_nuclei_broad_model(request):
     return pytest.model_packages[request.param]
 
@@ -101,6 +122,12 @@ def unet2d_nuclei_broad_model(request):
 # written as model group to automatically skip on missing tensorflow 1
 @pytest.fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["FruNet_model"])
 def FruNet_model(request):
+    return pytest.model_packages[request.param]
+
+
+# written as model group to automatically skip on missing tensorflow 1
+@pytest.fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist_wrong_shape"])
+def stardist_wrong_shape(request):
     return pytest.model_packages[request.param]
 
 
@@ -146,11 +173,15 @@ def any_model(request):
 # temporary fixtures to test not with all, but only a manual selection of models
 # (models/functionality should be improved to get rid of this specific model group)
 #
-@pytest.fixture(params=[] if skip_torch else ["unet2d_nuclei_broad_model", "unet2d_fixed_shape"])
+@pytest.fixture(
+    params=[] if skip_torch or torch_version >= (3, 10) else ["unet2d_nuclei_broad_model", "unet2d_fixed_shape"]
+)
 def unet2d_fixed_shape_or_not(request):
     return pytest.model_packages[request.param]
 
 
-@pytest.fixture(params=[] if skip_torch else ["unet2d_nuclei_broad_model", "unet2d_multi_tensor"])
+@pytest.fixture(
+    params=[] if skip_torch or torch_version >= (3, 10) else ["unet2d_nuclei_broad_model", "unet2d_multi_tensor"]
+)
 def unet2d_multi_tensor_or_not(request):
     return pytest.model_packages[request.param]
