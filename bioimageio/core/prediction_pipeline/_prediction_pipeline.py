@@ -1,7 +1,7 @@
 import abc
 import math
 from dataclasses import dataclass
-from typing import List, Optional, Tuple, Dict, Any
+from typing import List, Optional, Sequence, Tuple, Dict, Any
 
 import xarray as xr
 from marshmallow import missing
@@ -23,10 +23,19 @@ class NamedImplicitOutputShape:
         return len(self.scale)
 
 
-class PredictionPipeline(ModelAdapter):
+class PredictionPipeline(abc.ABC):
     """
     Represents model computation including preprocessing and postprocessing
+    Note: Ideally use the PredictionPipeline as a context manager
     """
+
+    @abc.abstractmethod
+    def __enter__(self):
+        ...
+
+    @abc.abstractmethod
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        ...
 
     @abc.abstractmethod
     def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
@@ -59,6 +68,20 @@ class PredictionPipeline(ModelAdapter):
         """
         ...
 
+    @abc.abstractmethod
+    def load(self) -> None:
+        """
+        optional step: load model onto devices before calling forward if not using it as context manager
+        """
+        ...
+
+    @abc.abstractmethod
+    def unload(self) -> None:
+        """
+        free any device memory in use
+        """
+        ...
+
 
 class _PredictionPipelineImpl(PredictionPipeline):
     def __init__(
@@ -72,6 +95,17 @@ class _PredictionPipelineImpl(PredictionPipeline):
         self._output_specs = bioimageio_model.outputs
         self._processing = processing
         self._model: ModelAdapter = model
+
+    def __call__(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
+        return self.forward(*input_tensors)
+
+    def __enter__(self):
+        self.load()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.unload()
+        return False
 
     @property
     def name(self):
@@ -105,8 +139,11 @@ class _PredictionPipelineImpl(PredictionPipeline):
         """Apply postprocessing."""
         return self._processing.apply_postprocessing(*input_tensors, input_sample_statistics=input_sample_statistics)
 
-    def __call__(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
-        return self.forward(*input_tensors)
+    def load(self):
+        self._model.load()
+
+    def unload(self):
+        self._model.unload()
 
 
 def enforce_min_shape(min_shape, step, axes):
@@ -137,7 +174,7 @@ def enforce_min_shape(min_shape, step, axes):
 
 
 def create_prediction_pipeline(
-    *, bioimageio_model: nodes.Model, devices: Optional[List[str]] = None, weight_format: Optional[str] = None
+    *, bioimageio_model: nodes.Model, devices: Optional[Sequence[str]] = None, weight_format: Optional[str] = None
 ) -> PredictionPipeline:
     """
     Creates prediction pipeline which includes:
