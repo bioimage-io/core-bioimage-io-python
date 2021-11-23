@@ -219,7 +219,7 @@ def predict_with_tiling_impl(
         inp = input_[tile]
         # whether to pad on the right or left of the dim for the spatial dims
         # + placeholders for batch and axis dimension, where we don't pad
-        pad_right = [None, None] + [tile[ax].start == 0 for ax in input_axes if ax in "xyz"]
+        pad_right = [tile[ax].start == 0 if ax in "xyz" else None for ax in input_axes]
         return inp, pad_right
 
     # we need to use padded prediction for the individual tiles in case the
@@ -382,6 +382,8 @@ def parse_tiling(tiling, model):
                 # from shape.min and shape.step
                 shape = shape.min
             halo = output_spec.halo
+            if halo is None:
+                raise ValueError("Model does not provide a valid halo to use for tiling with default parameters")
             tiling = {
                 "halo": {ax: ha for ax, ha in zip(axes, halo) if ax in "xyz"},
                 "tile": {ax: sh for ax, sh in zip(axes, shape) if ax in "xyz"},
