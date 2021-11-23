@@ -3,6 +3,7 @@ from bioimageio.core import export_resource_package
 
 # test models for various frameworks
 torch_models = ["unet2d_fixed_shape", "unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
+torch_models_pre_3_10 = ["unet2d_multi_tensor"]
 torchscript_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
 onnx_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model", "hpa_densenet"]
 tensorflow1_models = ["FruNet_model", "stardist"]
