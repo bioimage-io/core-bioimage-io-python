@@ -350,6 +350,22 @@ def parse_padding(padding, model):
     return padding
 
 
+# simple heuristic to determine suitable shape from min and step
+def _determine_shape(min_shape, step, axes):
+    is3d = "z" in axes
+    min_len = 64 if is3d else 256
+    shape = []
+    for ax, min_ax, step_ax in zip(axes, min_shape, step):
+        if ax in "zyx":
+            len_ax = min_ax
+            while len_ax < min_len:
+                len_ax += step_ax
+            shape.append(len_ax)
+        else:
+            shape.append(min_ax)
+    return shape
+
+
 def parse_tiling(tiling, model):
     if tiling is None:  # no tiling
         return tiling
@@ -361,9 +377,15 @@ def parse_tiling(tiling, model):
 
     input_spec = model.inputs[0]
     output_spec = model.outputs[0]
+    axes = input_spec.axes
 
     def check_tiling(tiling):
         assert "halo" in tiling and "tile" in tiling
+        spatial_axes = [ax for ax in axes if ax in "xyz"]
+        halo = tiling["halo"]
+        tile = tiling["tile"]
+        assert all(halo.get(ax, 0) > 0 for ax in spatial_axes)
+        assert all(tile.get(ax, 0) > 0 for ax in spatial_axes)
 
     if isinstance(tiling, dict):
         check_tiling(tiling)
@@ -374,20 +396,21 @@ def parse_tiling(tiling, model):
             # output space and then request the corresponding input tiles
             # so we would need to apply the output scale and offset to the
             # input shape to compute the tile size and halo here
-            axes = input_spec.axes
             shape = input_spec.shape
             if not isinstance(shape, list):
-                # NOTE this might result in very small tiles.
-                # it would be good to have some heuristic to determine a suitable tilesize
-                # from shape.min and shape.step
-                shape = shape.min
+                shape = _determine_shape(shape.min, shape.step, axes)
+            assert isinstance(shape, list)
+            assert len(shape) == len(axes)
+
             halo = output_spec.halo
             if halo is None:
                 raise ValueError("Model does not provide a valid halo to use for tiling with default parameters")
+
             tiling = {
                 "halo": {ax: ha for ax, ha in zip(axes, halo) if ax in "xyz"},
                 "tile": {ax: sh for ax, sh in zip(axes, shape) if ax in "xyz"},
             }
+            check_tiling(tiling)
         else:
             tiling = None
     else:
