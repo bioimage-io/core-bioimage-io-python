@@ -356,7 +356,7 @@ def _determine_shape(min_shape, step, axes):
     min_len = 64 if is3d else 256
     shape = []
     for ax, min_ax, step_ax in zip(axes, min_shape, step):
-        if ax in "zyx":
+        if ax in "zyx" and step_ax > 0:
             len_ax = min_ax
             while len_ax < min_len:
                 len_ax += step_ax
