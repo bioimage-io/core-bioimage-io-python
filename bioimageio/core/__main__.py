@@ -1,6 +1,7 @@
 import enum
 import json
 import os
+import sys
 from glob import glob
 
 from pathlib import Path
@@ -53,9 +54,10 @@ def package(
     # typer bug: typer returns empty tuple instead of None if weights_order_priority is not given
     weights_priority_order = weights_priority_order or None
 
-    return commands.package(
+    ret_code = commands.package(
         rdf_source=rdf_source, path=path, weights_priority_order=weights_priority_order, verbose=verbose
     )
+    sys.exit(ret_code)
 
 
 package.__doc__ = commands.package.__doc__
@@ -89,11 +91,12 @@ def test_model(
     )
     if summary["error"] is None:
         print(f"Model test for {model_rdf} has passed.")
-        return 0
+        ret_code = 0
     else:
         print(f"Model test for {model_rdf} has FAILED!")
         print(summary)
-        return 1
+        ret_code = 1
+    sys.exit(ret_code)
 
 
 test_model.__doc__ = resource_tests.test_model.__doc__
@@ -116,11 +119,12 @@ def test_resource(
     )
     if summary["error"] is None:
         print(f"Resource test for {rdf} has passed.")
-        return 0
+        ret_code = 0
     else:
         print(f"Resource test for {rdf} has FAILED!")
         print(summary)
-        return 1
+        ret_code = 1
+    sys.exit(ret_code)
 
 
 test_resource.__doc__ = resource_tests.test_resource.__doc__
@@ -159,7 +163,6 @@ def predict_image(
     prediction.predict_image(
         model_rdf, inputs, outputs, padding, tiling, None if weight_format is None else weight_format.value, devices
     )
-    return 0
 
 
 predict_image.__doc__ = prediction.predict_image.__doc__
@@ -211,7 +214,6 @@ def predict_images(
         devices=devices,
         verbose=True,
     )
-    return 0
 
 
 predict_images.__doc__ = prediction.predict_images.__doc__
@@ -241,7 +243,8 @@ if torch_converter is not None:
         output_path: Path = typer.Argument(..., help="Where to save the torchscript weights."),
         use_tracing: bool = typer.Option(True, help="Whether to use torch.jit tracing or scripting."),
     ) -> int:
-        return torch_converter.convert_weights_to_pytorch_script(model_rdf, output_path, use_tracing)
+        ret_code = torch_converter.convert_weights_to_pytorch_script(model_rdf, output_path, use_tracing)
+        sys.exit(ret_code)
 
     convert_torch_weights_to_torchscript.__doc__ = torch_converter.convert_weights_to_pytorch_script.__doc__
 

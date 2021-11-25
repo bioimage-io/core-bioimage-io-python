@@ -21,6 +21,11 @@ def test_cli_test_model(unet2d_nuclei_broad_model):
     assert ret.returncode == 0
 
 
+def test_cli_test_model_fail(stardist_wrong_shape):
+    ret = subprocess.run(["bioimageio", "test-model", stardist_wrong_shape])
+    assert ret.returncode == 1
+
+
 def test_cli_test_model_with_weight_format(unet2d_nuclei_broad_model):
     ret = subprocess.run(
         ["bioimageio", "test-model", unet2d_nuclei_broad_model, "--weight-format", "pytorch_state_dict"]
