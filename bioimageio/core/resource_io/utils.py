@@ -136,7 +136,7 @@ class RawNodeTypeTransformer(NodeTransformer):
             return super().generic_transformer(node)
 
 
-@singledispatch
+@singledispatch  # todo: fix type annotations
 def resolve_source(source, root_path: os.PathLike = pathlib.Path()):
     raise TypeError(type(source))
 
@@ -190,10 +190,13 @@ def _resolve_source_list(source: list, root_path: os.PathLike = pathlib.Path()) 
     return [resolve_source(el, root_path) for el in source]
 
 
+# todo: write as singledispatch with type annotations
 def resolve_local_source(
-    source: typing.Union[str, os.PathLike, raw_nodes.URI], root_path: os.PathLike
-) -> typing.Union[pathlib.Path, raw_nodes.URI]:
-    if isinstance(source, os.PathLike) or isinstance(source, str):
+    source: typing.Union[str, os.PathLike, raw_nodes.URI, tuple, list], root_path: os.PathLike
+) -> typing.Union[pathlib.Path, raw_nodes.URI, list, tuple]:
+    if isinstance(source, (tuple, list)):
+        return type(source)([resolve_local_source(s, root_path) for s in source])
+    elif isinstance(source, os.PathLike) or isinstance(source, str):
         if isinstance(source, str):
             try:  # source as path from cwd
                 is_path_cwd = pathlib.Path(source).exists()

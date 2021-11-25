@@ -1,6 +1,7 @@
 from marshmallow import missing
 import bioimageio.spec as spec
 from bioimageio.core.resource_io.io_ import load_raw_resource_description
+from bioimageio.core.resource_io.utils import resolve_source
 
 
 def _test_build_spec(spec_path, out_path, weight_type, tensorflow_version=None, use_implicit_output_shape=False):
@@ -13,7 +14,7 @@ def _test_build_spec(spec_path, out_path, weight_type, tensorflow_version=None, 
     cite = {entry.text: entry.doi if entry.url is missing else entry.url for entry in model_spec.cite}
 
     if weight_type == "pytorch_state_dict":
-        source_path = model_spec.source.source_file.path
+        source_path = model_spec.source.source_file
         class_name = model_spec.source.callable_name
         model_source = f"{source_path}:{class_name}"
         weight_type_ = None  # the weight type can be auto-detected
@@ -24,15 +25,15 @@ def _test_build_spec(spec_path, out_path, weight_type, tensorflow_version=None, 
         model_source = None
         weight_type_ = None  # the weight type can be auto-detected
 
-    dep_file = None if model_spec.dependencies is missing else model_spec.dependencies.file.path
+    dep_file = None if model_spec.dependencies is missing else resolve_source(model_spec.dependencies.file)
     authors = [{"name": auth.name, "affiliation": auth.affiliation} for auth in model_spec.authors]
-    covers = [cover.path for cover in model_spec.covers]
+    covers = resolve_source(model_spec.covers)
     kwargs = dict(
         source=model_source,
         model_kwargs=model_spec.kwargs,
         weight_uri=weight_source,
-        test_inputs=[inp.path for inp in model_spec.test_inputs],
-        test_outputs=[outp.path for outp in model_spec.test_outputs],
+        test_inputs=resolve_source(model_spec.test_inputs),
+        test_outputs=resolve_source(model_spec.test_outputs),
         name=model_spec.name,
         description=model_spec.description,
         authors=authors,
