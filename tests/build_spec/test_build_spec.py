@@ -1,6 +1,6 @@
-from marshmallow import missing
 import bioimageio.spec as spec
-from bioimageio.core.resource_io.io_ import load_raw_resource_description
+from bioimageio.core import load_raw_resource_description, load_resource_description
+from marshmallow import missing
 
 
 def _test_build_spec(
@@ -9,7 +9,7 @@ def _test_build_spec(
     weight_type,
     tensorflow_version=None,
     use_implicit_output_shape=False,
-    for_deepimagej=True
+    add_deepimagej_config=False
 ):
     from bioimageio.core.build_spec import build_model
 
@@ -52,7 +52,7 @@ def _test_build_spec(
         root=model_spec.root_path,
         weight_type=weight_type_,
         output_path=out_path,
-        for_deepimagej=for_deepimagej,
+        add_deepimagej_config=add_deepimagej_config,
     )
     if tensorflow_version is not None:
         kwargs["tensorflow_version"] = tensorflow_version
@@ -61,8 +61,13 @@ def _test_build_spec(
         kwargs["output_reference"] = ["input"]
         kwargs["output_scale"] = [[1.0, 1.0, 1.0, 1.0]]
         kwargs["output_offset"] = [[0.0, 0.0, 0.0, 0.0]]
-    raw_model = build_model(**kwargs)
-    spec.model.schema.Model().dump(raw_model)
+
+    build_model(**kwargs)
+    assert out_path.exists()
+    loaded_model = load_resource_description(out_path)
+    if add_deepimagej_config:
+        loaded_config = loaded_model.config
+        assert "deepimagej" in loaded_config
 
 
 def test_build_spec_pytorch(any_torch_model, tmp_path):
@@ -99,5 +104,5 @@ def test_build_spec_tfjs(any_tensorflow_js_model, tmp_path):
     _test_build_spec(any_tensorflow_js_model, tmp_path / "model.zip", "tensorflow_js", tensorflow_version="1.12")
 
 
-def test_build_spec_deepimagej(any_torchscript_model, tmp_path):
-    _test_build_spec(any_torchscript_model, tmp_path / "model.zip", "pytorch_script", for_deepimagej=True)
+def test_build_spec_deepimagej(unet2d_nuclei_broad_model, tmp_path):
+    _test_build_spec(unet2d_nuclei_broad_model, tmp_path / "model.zip", "pytorch_script", add_deepimagej_config=True)
