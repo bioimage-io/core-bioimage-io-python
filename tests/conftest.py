@@ -42,6 +42,10 @@ model_sources = {
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
         "stardist_example_model/rdf_wrong_shape.yaml"
     ),
+    "stardist_wrong_shape2": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
+        "stardist_example_model/rdf_wrong_shape2.yaml"
+    ),
 }
 
 try:
@@ -94,6 +98,7 @@ if not skip_tensorflow:
     if tf_major_version == 1:
         load_model_packages |= set(tensorflow1_models)
         load_model_packages.add("stardist_wrong_shape")
+        load_model_packages.add("stardist_wrong_shape2")
     elif tf_major_version == 2:
         load_model_packages |= set(tensorflow2_models)
 
@@ -121,6 +126,12 @@ def unet2d_nuclei_broad_model(request):
 # written as model group to automatically skip on missing tensorflow 1
 @pytest.fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist_wrong_shape"])
 def stardist_wrong_shape(request):
+    return pytest.model_packages[request.param]
+
+
+# written as model group to automatically skip on missing tensorflow 1
+@pytest.fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist_wrong_shape2"])
+def stardist_wrong_shape2(request):
     return pytest.model_packages[request.param]
 
 
@@ -165,7 +176,7 @@ def any_tensorflow_js_model(request):
 # fixture to test with all models that should run in the current environment
 # we exclude stardist_wrong_shape here because it is not a valid model
 # and included only to test that validation for this model fails
-@pytest.fixture(params=load_model_packages - {"stardist_wrong_shape"})
+@pytest.fixture(params=load_model_packages - {"stardist_wrong_shape", "stardist_wrong_shape2"})
 def any_model(request):
     return pytest.model_packages[request.param]
 

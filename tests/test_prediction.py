@@ -8,18 +8,6 @@ from bioimageio.core import load_resource_description
 from bioimageio.core.resource_io.nodes import Model
 
 
-def test_test_model(any_model):
-    from bioimageio.core.resource_tests import test_model
-
-    assert test_model(any_model)
-
-
-def test_test_resource(any_model):
-    from bioimageio.core.resource_tests import test_resource
-
-    assert test_resource(any_model)
-
-
 def test_predict_image(any_model, tmpdir):
     from bioimageio.core.prediction import predict_image
 
