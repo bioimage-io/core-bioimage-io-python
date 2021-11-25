@@ -1,4 +1,5 @@
 import subprocess
+from typing import Sequence
 
 import numpy as np
 import pytest
@@ -6,43 +7,48 @@ import pytest
 from bioimageio.core import load_resource_description
 
 
+def run_subprocess(commands: Sequence[str]) -> subprocess.CompletedProcess:
+    # return subprocess.run(commands, capture_output=True)
+    return subprocess.run(commands, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding="utf-8")
+
+
 def test_validate_model(unet2d_nuclei_broad_model):
-    ret = subprocess.run(["bioimageio", "validate", unet2d_nuclei_broad_model])
-    assert ret.returncode == 0
+    ret = run_subprocess(["bioimageio", "validate", unet2d_nuclei_broad_model])
+    assert ret.returncode == 0, ret.stdout
 
 
 def test_cli_package(unet2d_nuclei_broad_model):
-    ret = subprocess.run(["bioimageio", "package", unet2d_nuclei_broad_model])
-    assert ret.returncode == 0
+    ret = run_subprocess(["bioimageio", "package", unet2d_nuclei_broad_model])
+    assert ret.returncode == 0, ret.stdout
 
 
 def test_cli_test_model(unet2d_nuclei_broad_model):
-    ret = subprocess.run(["bioimageio", "test-model", unet2d_nuclei_broad_model])
-    assert ret.returncode == 0
+    ret = run_subprocess(["bioimageio", "test-model", unet2d_nuclei_broad_model])
+    assert ret.returncode == 0, ret.stdout
 
 
 def test_cli_test_model_fail(stardist_wrong_shape):
-    ret = subprocess.run(["bioimageio", "test-model", stardist_wrong_shape])
+    ret = run_subprocess(["bioimageio", "test-model", stardist_wrong_shape])
     assert ret.returncode == 1
 
 
 def test_cli_test_model_with_weight_format(unet2d_nuclei_broad_model):
-    ret = subprocess.run(
+    ret = run_subprocess(
         ["bioimageio", "test-model", unet2d_nuclei_broad_model, "--weight-format", "pytorch_state_dict"]
     )
-    assert ret.returncode == 0
+    assert ret.returncode == 0, ret.stdout
 
 
 def test_cli_test_resource(unet2d_nuclei_broad_model):
-    ret = subprocess.run(["bioimageio", "test-model", unet2d_nuclei_broad_model])
-    assert ret.returncode == 0
+    ret = run_subprocess(["bioimageio", "test-model", unet2d_nuclei_broad_model])
+    assert ret.returncode == 0, ret.stdout
 
 
 def test_cli_test_resource_with_weight_format(unet2d_nuclei_broad_model):
-    ret = subprocess.run(
+    ret = run_subprocess(
         ["bioimageio", "test-model", unet2d_nuclei_broad_model, "--weight-format", "pytorch_state_dict"]
     )
-    assert ret.returncode == 0
+    assert ret.returncode == 0, ret.stdout
 
 
 def _test_cli_predict_image(model, tmp_path, extra_kwargs=None):
@@ -52,8 +58,8 @@ def _test_cli_predict_image(model, tmp_path, extra_kwargs=None):
     cmd = ["bioimageio", "predict-image", model, "--inputs", str(in_path), "--outputs", str(out_path)]
     if extra_kwargs is not None:
         cmd.extend(extra_kwargs)
-    ret = subprocess.run(cmd)
-    assert ret.returncode == 0
+    ret = run_subprocess(cmd)
+    assert ret.returncode == 0, ret.stdout
     assert out_path.exists()
 
 
@@ -86,8 +92,8 @@ def _test_cli_predict_images(model, tmp_path, extra_kwargs=None):
     cmd = ["bioimageio", "predict-images", model, input_pattern, str(out_folder)]
     if extra_kwargs is not None:
         cmd.extend(extra_kwargs)
-    ret = subprocess.run(cmd)
-    assert ret.returncode == 0
+    ret = run_subprocess(cmd)
+    assert ret.returncode == 0, ret.stdout
 
     for out_path in expected_outputs:
         assert out_path.exists()
@@ -104,16 +110,16 @@ def test_cli_predict_images_with_weight_format(unet2d_nuclei_broad_model, tmp_pa
 
 def test_torch_to_torchscript(unet2d_nuclei_broad_model, tmp_path):
     out_path = tmp_path.with_suffix(".pt")
-    ret = subprocess.run(
+    ret = run_subprocess(
         ["bioimageio", "convert-torch-weights-to-torchscript", str(unet2d_nuclei_broad_model), str(out_path)]
     )
-    assert ret.returncode == 0
+    assert ret.returncode == 0, ret.stdout
     assert out_path.exists()
 
 
 @pytest.mark.skipif(pytest.skip_onnx, reason="requires torch and onnx")
 def test_torch_to_onnx(unet2d_nuclei_broad_model, tmp_path):
     out_path = tmp_path.with_suffix(".onnx")
-    ret = subprocess.run(["bioimageio", "convert-torch-weights-to-onnx", str(unet2d_nuclei_broad_model), str(out_path)])
-    assert ret.returncode == 0
+    ret = run_subprocess(["bioimageio", "convert-torch-weights-to-onnx", str(unet2d_nuclei_broad_model), str(out_path)])
+    assert ret.returncode == 0, ret.stdout
     assert out_path.exists()

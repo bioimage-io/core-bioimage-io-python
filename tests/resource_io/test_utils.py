@@ -8,7 +8,7 @@ def test_resolve_import_path(tmpdir):
     tmpdir = Path(tmpdir)
     manifest_path = tmpdir / "manifest.yaml"
     manifest_path.touch()
-    source_file = nodes.URI(path="my_mod.py")
+    source_file = Path("my_mod.py")
     (tmpdir / str(source_file)).write_text("class Foo: pass", encoding="utf8")
     node = raw_nodes.ImportableSourceFile(source_file=source_file, callable_name="Foo")
     uri_transformed = utils.UriNodeTransformer(root_path=tmpdir).transform(node)
@@ -33,8 +33,8 @@ def test_all_uris_available():
     from bioimageio.core.resource_io.utils import all_uris_available
 
     not_available = {
-        "uri": raw_nodes.URI(path="non_existing_file_in/non_existing_dir/ftw"),
-        "uri_exists": raw_nodes.URI(path="."),
+        "uri": raw_nodes.URI(scheme="file", path="non_existing_file_in/non_existing_dir/ftw"),
+        "uri_exists": raw_nodes.URI(scheme="file", path="."),
     }
     assert not all_uris_available(not_available)
 

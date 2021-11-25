@@ -8,7 +8,7 @@ def _test_build_spec(spec_path, out_path, weight_type, tensorflow_version=None, 
 
     model_spec = load_raw_resource_description(spec_path)
     assert isinstance(model_spec, spec.model.raw_nodes.Model)
-    weight_source = model_spec.weights[weight_type].source.path
+    weight_source = model_spec.weights[weight_type].source
 
     cite = {entry.text: entry.doi if entry.url is missing else entry.url for entry in model_spec.cite}
 
