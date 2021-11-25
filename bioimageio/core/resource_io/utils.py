@@ -197,26 +197,21 @@ def resolve_local_source(
     if isinstance(source, (tuple, list)):
         return type(source)([resolve_local_source(s, root_path) for s in source])
     elif isinstance(source, os.PathLike) or isinstance(source, str):
-        if isinstance(source, str):
-            try:  # source as path from cwd
-                is_path_cwd = pathlib.Path(source).exists()
-            except OSError:
-                is_path_cwd = False
+        try:  # source as path from cwd
+            is_path_cwd = pathlib.Path(source).exists()
+        except OSError:
+            is_path_cwd = False
 
-            try:  # source as relative path from root_path
-                path_from_root = pathlib.Path(root_path) / source
-                is_path_rp = (path_from_root).exists()
-            except OSError:
-                is_path_rp = False
-            else:
-                if not is_path_cwd and is_path_rp:
-                    source = path_from_root
-
-            is_path = is_path_cwd or is_path_rp
+        try:  # source as relative path from root_path
+            path_from_root = pathlib.Path(root_path) / source
+            is_path_rp = (path_from_root).exists()
+        except OSError:
+            is_path_rp = False
         else:
-            is_path = True
+            if not is_path_cwd and is_path_rp:
+                source = path_from_root
 
-        if is_path:
+        if is_path_cwd or is_path_rp or isinstance(source, os.PathLike):
             return pathlib.Path(source)
 
     if isinstance(source, str):
