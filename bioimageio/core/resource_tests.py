@@ -42,26 +42,19 @@ def _validate_input_shape(shape: Tuple[int, ...], shape_spec) -> bool:
     if isinstance(shape_spec, list):
         if shape != tuple(shape_spec):
             return False
-
     elif isinstance(shape_spec, ParametrizedInputShape):
         assert len(shape_spec.min) == len(shape_spec.step)
         if len(shape) != len(shape_spec.min):
             return False
-
-        valid_shape = numpy.array(shape_spec.min)
-        step = numpy.array(shape_spec.step)
-        if (step == 0).all():
-            return shape == tuple(valid_shape)
-
-        shape = numpy.array(shape)
-        while (valid_shape <= shape).all():
-            if (shape == valid_shape).all():
-                return True
-
-            valid_shape += step
-        else:
-            return False
-
+        min_shape = shape_spec.min
+        step = shape_spec.step
+        # check if the shape is valid for all dimension by seeing if it can be reached with an integer number of steps
+        # NOTE we allow that the valid shape is reached using a different number of steps for each axis here
+        # this is usually valid because dimensions are independent in neural networks
+        is_valid = [
+            (sh - minsh) % st == 0 if st > 0 else sh == minsh for sh, st, minsh in zip(shape, step, min_shape)
+        ]
+        return all(is_valid)
     else:
         raise TypeError(f"Encountered unexpected shape description of type {type(shape_spec)}")
 
@@ -113,7 +106,7 @@ def test_resource(
                 for idx, (ipt, ipt_spec) in enumerate(zip(inputs, model.inputs)):
                     if not _validate_input_shape(tuple(ipt.shape), ipt_spec.shape):
                         raise ValidationError(
-                            f"Shape of test input {idx} '{ipt_spec.name}' does not match "
+                            f"Shape {tuple(ipt.shape)} of test input {idx} '{ipt_spec.name}' does not match "
                             f"input shape description: {ipt_spec.shape}."
                         )
                     input_shapes[ipt_spec.name] = ipt.shape
@@ -122,7 +115,7 @@ def test_resource(
                 for idx, (out, out_spec) in enumerate(zip(expected, model.outputs)):
                     if not _validate_output_shape(tuple(out.shape), out_spec.shape, input_shapes):
                         error = (error or "") + (
-                            f"Shape of test output {idx} '{out_spec.name}' does not match "
+                            f"Shape {tuple(out.shape)} of test output {idx} '{out_spec.name}' does not match "
                             f"output shape description: {out_spec.shape}."
                         )
 

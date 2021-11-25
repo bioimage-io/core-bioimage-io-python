@@ -3,7 +3,7 @@ def test_error_for_wrong_shape(stardist_wrong_shape):
 
     summary = test_model(stardist_wrong_shape)
     expected_error_message = (
-        "Shape of test output 0 'output' does not match output shape description: "
+        "Shape (1, 512, 512, 33) of test output 0 'output' does not match output shape description: "
         "ImplicitOutputShape(reference_tensor='input', "
         "scale=[1.0, 1.0, 1.0, 0.0], offset=[1.0, 1.0, 1.0, 33.0])."
     )
