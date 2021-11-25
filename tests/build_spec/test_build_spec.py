@@ -9,7 +9,7 @@ def _test_build_spec(
     weight_type,
     tensorflow_version=None,
     use_implicit_output_shape=False,
-    add_deepimagej_config=True
+    add_deepimagej_config=True,
 ):
     from bioimageio.core.build_spec import build_model
 

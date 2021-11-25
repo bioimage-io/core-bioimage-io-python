@@ -384,7 +384,6 @@ def _get_deepimagej_config(export_folder, sample_inputs, sample_outputs, pixel_s
 
 
 def _write_sample_data(input_paths, output_paths, input_axes, output_axes, export_folder):
-
     def write_im(path, im, axes):
         assert tifffile is not None, "need tifffile for writing deepimagej config"
         assert len(axes) == im.ndim
