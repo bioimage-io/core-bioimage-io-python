@@ -16,11 +16,11 @@ def package(
     verbose: bool = False,
 ) -> int:
     """Package a BioImage.IO resource described by a BioImage.IO Resource Description File (RDF)."""
-    code = validate(rdf_source, update_format=True, update_format_inner=True, verbose=verbose)
+    code = validate(rdf_source, update_format=True, update_format_inner=True)
     source_name = rdf_source.get("name") if isinstance(rdf_source, dict) else rdf_source
-    if code:
+    if code["error"]:
         print(f"Cannot package invalid BioImage.IO RDF {source_name}")
-        return code
+        return 1
 
     try:
         tmp_package_path = export_resource_package(rdf_source, weights_priority_order=weights_priority_order)
@@ -32,6 +32,13 @@ def package(
 
     try:
         rdf_local_source = resolve_uri(rdf_source)
+    except Exception as e:
+        print(f"Failed to resolve RDF source {rdf_source}: {e}")
+        if verbose:
+            traceback.print_exc()
+        return 1
+
+    try:
         path = path.with_name(path.name.format(src_name=rdf_local_source.stem))
         shutil.move(tmp_package_path, path)
     except Exception as e:

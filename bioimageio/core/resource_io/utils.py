@@ -1,6 +1,5 @@
 import dataclasses
 import importlib.util
-import logging
 import os
 import pathlib
 import sys
@@ -8,10 +7,11 @@ import typing
 import warnings
 from functools import singledispatch
 from types import ModuleType
-from urllib.request import url2pathname, urlretrieve
+from urllib.request import url2pathname
 
 import requests
 from marshmallow import ValidationError
+from tqdm import tqdm
 
 from bioimageio.spec.shared import fields, raw_nodes
 from bioimageio.spec.shared.common import BIOIMAGEIO_CACHE_PATH
@@ -31,7 +31,7 @@ class UriNodeChecker(NodeVisitor):
     """raises FileNotFoundError for unavailable URIs and paths"""
 
     def __init__(self, *, root_path: os.PathLike):
-        self.root_path = pathlib.Path(root_path)
+        self.root_path = pathlib.Path(root_path).resolve()
 
     def visit_URI(self, node: raw_nodes.URI):
         if not uri_available(node, self.root_path):
@@ -50,7 +50,7 @@ class UriNodeChecker(NodeVisitor):
 
 class UriNodeTransformer(NodeTransformer):
     def __init__(self, *, root_path: os.PathLike):
-        self.root_path = pathlib.Path(root_path)
+        self.root_path = pathlib.Path(root_path).resolve()
 
     def transform_URI(self, node: raw_nodes.URI) -> pathlib.Path:
         local_path = resolve_uri(node, root_path=self.root_path)
@@ -147,7 +147,7 @@ def _resolve_uri_uri_node(uri: raw_nodes.URI, root_path: os.PathLike = pathlib.P
     assert isinstance(uri, (raw_nodes.URI, nodes.URI))
     path_or_remote_uri = resolve_local_uri(uri, root_path)
     if isinstance(path_or_remote_uri, raw_nodes.URI):
-        local_path = _download_uri_to_local_path(path_or_remote_uri)
+        local_path = _download_url_to_local_path(path_or_remote_uri)
     elif isinstance(path_or_remote_uri, pathlib.Path):
         local_path = path_or_remote_uri
     else:
@@ -268,14 +268,30 @@ def download_uri_to_local_path(uri: typing.Union[raw_nodes.URI, str]) -> pathlib
     return resolve_uri(uri)
 
 
-def _download_uri_to_local_path(uri: raw_nodes.URI) -> pathlib.Path:
+def _download_url_to_local_path(uri: raw_nodes.URI) -> pathlib.Path:
     local_path = BIOIMAGEIO_CACHE_PATH / uri.scheme / uri.authority / uri.path.strip("/") / uri.query
     if local_path.exists():
         warnings.warn(f"found cached {local_path}. Skipping download of {uri}.")
     else:
         local_path.parent.mkdir(parents=True, exist_ok=True)
+
         try:
-            urlretrieve(str(uri), str(local_path))
+            # download with tqdm adapted from:
+            # https://github.com/shaypal5/tqdl/blob/189f7fd07f265d29af796bee28e0893e1396d237/tqdl/core.py
+            # Streaming, so we can iterate over the response.
+            r = requests.get(str(uri), stream=True)
+            # Total size in bytes.
+            total_size = int(r.headers.get("content-length", 0))
+            block_size = 1024  # 1 Kibibyte
+            t = tqdm(total=total_size, unit="iB", unit_scale=True, desc=local_path.name)
+            with local_path.open("wb") as f:
+                for data in r.iter_content(block_size):
+                    t.update(len(data))
+                    f.write(data)
+            t.close()
+            if total_size != 0 and t.n != total_size:
+                # todo: check more carefully and raise on real issue
+                warnings.warn("Download does not have expected size.")
         except Exception as e:
             raise RuntimeError(f"Failed to download {uri} ({e})")
 
