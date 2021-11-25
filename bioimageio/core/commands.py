@@ -32,6 +32,13 @@ def package(
 
     try:
         rdf_local_source = resolve_uri(rdf_source)
+    except Exception as e:
+        print(f"Failed to resolve RDF source {rdf_source}: {e}")
+        if verbose:
+            traceback.print_exc()
+        return 1
+
+    try:
         path = path.with_name(path.name.format(src_name=rdf_local_source.stem))
         shutil.move(tmp_package_path, path)
     except Exception as e:
