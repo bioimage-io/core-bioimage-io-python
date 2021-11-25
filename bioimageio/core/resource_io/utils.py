@@ -53,14 +53,14 @@ class UriNodeTransformer(NodeTransformer):
         self.root_path = pathlib.Path(root_path).resolve()
 
     def transform_URI(self, node: raw_nodes.URI) -> pathlib.Path:
-        local_path = resolve_uri(node, root_path=self.root_path)
+        local_path = resolve_source(node, root_path=self.root_path)
         return local_path
 
     def transform_ImportableSourceFile(
         self, node: raw_nodes.ImportableSourceFile
     ) -> nodes.ResolvedImportableSourceFile:
         return nodes.ResolvedImportableSourceFile(
-            source_file=resolve_uri(node.source_file, self.root_path), callable_name=node.callable_name
+            source_file=resolve_source(node.source_file, self.root_path), callable_name=node.callable_name
         )
 
     def transform_ImportableModule(self, node: raw_nodes.ImportableModule) -> nodes.LocalImportableModule:
@@ -106,7 +106,7 @@ class SourceNodeTransformer(NodeTransformer):
 
     @staticmethod
     def transform_ResolvedImportableSourceFile(node: nodes.ResolvedImportableSourceFile) -> nodes.ImportedSource:
-        module_path = resolve_uri(node.source_file)
+        module_path = resolve_source(node.source_file)
         module_name = f"module_from_source.{module_path.stem}"
         importlib_spec = importlib.util.spec_from_file_location(module_name, module_path)
         assert importlib_spec is not None
@@ -138,12 +138,12 @@ class RawNodeTypeTransformer(NodeTransformer):
 
 
 @singledispatch
-def resolve_uri(uri, root_path: os.PathLike = pathlib.Path()):
+def resolve_source(uri, root_path: os.PathLike = pathlib.Path()):
     raise TypeError(type(uri))
 
 
-@resolve_uri.register
-def _resolve_uri_uri_node(uri: raw_nodes.URI, root_path: os.PathLike = pathlib.Path()) -> pathlib.Path:
+@resolve_source.register
+def _resolve_source_uri_node(uri: raw_nodes.URI, root_path: os.PathLike = pathlib.Path()) -> pathlib.Path:
     assert isinstance(uri, (raw_nodes.URI, nodes.URI))
     path_or_remote_uri = resolve_local_uri(uri, root_path)
     if isinstance(path_or_remote_uri, raw_nodes.URI):
@@ -156,40 +156,40 @@ def _resolve_uri_uri_node(uri: raw_nodes.URI, root_path: os.PathLike = pathlib.P
     return local_path
 
 
-@resolve_uri.register
-def _resolve_uri_str(uri: str, root_path: os.PathLike = pathlib.Path()) -> pathlib.Path:
-    return resolve_uri(fields.URI().deserialize(uri), root_path)
+@resolve_source.register
+def _resolve_source_str(uri: str, root_path: os.PathLike = pathlib.Path()) -> pathlib.Path:
+    return resolve_source(fields.URI().deserialize(uri), root_path)
 
 
-@resolve_uri.register
-def _resolve_uri_path(uri: pathlib.Path, root_path: os.PathLike = pathlib.Path()) -> pathlib.Path:
+@resolve_source.register
+def _resolve_source_path(uri: pathlib.Path, root_path: os.PathLike = pathlib.Path()) -> pathlib.Path:
     if not uri.is_absolute():
         uri = pathlib.Path(root_path).absolute() / uri
 
-    return resolve_uri(uri.as_uri(), root_path)
+    return resolve_source(uri.as_uri(), root_path)
 
 
-@resolve_uri.register
-def _resolve_uri_resolved_importable_path(
+@resolve_source.register
+def _resolve_source_resolved_importable_path(
     uri: nodes.ResolvedImportableSourceFile, root_path: os.PathLike = pathlib.Path()
 ) -> nodes.ResolvedImportableSourceFile:
     return nodes.ResolvedImportableSourceFile(
-        callable_name=uri.callable_name, source_file=resolve_uri(uri.source_file, root_path)
+        callable_name=uri.callable_name, source_file=resolve_source(uri.source_file, root_path)
     )
 
 
-@resolve_uri.register
-def _resolve_uri_importable_path(
+@resolve_source.register
+def _resolve_source_importable_path(
     uri: raw_nodes.ImportableSourceFile, root_path: os.PathLike = pathlib.Path()
 ) -> nodes.ResolvedImportableSourceFile:
     return nodes.ResolvedImportableSourceFile(
-        callable_name=uri.callable_name, source_file=resolve_uri(uri.source_file, root_path)
+        callable_name=uri.callable_name, source_file=resolve_source(uri.source_file, root_path)
     )
 
 
-@resolve_uri.register
-def _resolve_uri_list(uri: list, root_path: os.PathLike = pathlib.Path()) -> typing.List[pathlib.Path]:
-    return [resolve_uri(el, root_path) for el in uri]
+@resolve_source.register
+def _resolve_source_list(uri: list, root_path: os.PathLike = pathlib.Path()) -> typing.List[pathlib.Path]:
+    return [resolve_source(el, root_path) for el in uri]
 
 
 def resolve_local_uri(
@@ -265,7 +265,7 @@ def all_uris_available(
 
 
 def download_uri_to_local_path(uri: typing.Union[raw_nodes.URI, str]) -> pathlib.Path:
-    return resolve_uri(uri)
+    return resolve_source(uri)
 
 
 def _download_url_to_local_path(uri: raw_nodes.URI) -> pathlib.Path:

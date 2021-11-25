@@ -6,7 +6,7 @@ from tempfile import NamedTemporaryFile
 import pytest
 from marshmallow import ValidationError
 
-from bioimageio.core.resource_io.utils import resolve_uri
+from bioimageio.core.resource_io.utils import resolve_source
 
 
 def test_load_non_existing_rdf():
@@ -84,4 +84,4 @@ def test_load_remote_model_with_folders():
     assert isinstance(raw_model, raw_nodes.Model)
     model = load_resource_description(rdf_url)
     assert isinstance(model, nodes.Model)
-    assert resolve_uri(raw_model.documentation) == model.documentation
+    assert resolve_source(raw_model.documentation) == model.documentation

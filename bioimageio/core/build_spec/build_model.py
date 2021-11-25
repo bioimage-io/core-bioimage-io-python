@@ -10,7 +10,7 @@ import numpy as np
 import bioimageio.spec as spec
 import bioimageio.spec.model as model_spec
 from bioimageio.core import export_resource_package, load_raw_resource_description
-from bioimageio.core.resource_io.utils import resolve_uri
+from bioimageio.core.resource_io.utils import resolve_source
 
 try:
     from typing import get_args
@@ -34,7 +34,7 @@ def _process_uri(uri: Union[str, Path], root: Path, download=False):
     elif (root / uri).exists():
         return root / uri
     elif isinstance(uri, str) and uri.startswith("http"):
-        return resolve_uri(uri, root) if download else uri
+        return resolve_source(uri, root) if download else uri
     else:
         raise ValueError(f"Invalid uri: {uri}")
 
