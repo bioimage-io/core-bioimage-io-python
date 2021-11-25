@@ -144,8 +144,7 @@ def resolve_source(uri, root_path: os.PathLike = pathlib.Path()):
 
 @resolve_source.register
 def _resolve_source_uri_node(uri: raw_nodes.URI, root_path: os.PathLike = pathlib.Path()) -> pathlib.Path:
-    assert isinstance(uri, (raw_nodes.URI, nodes.URI))
-    path_or_remote_uri = resolve_local_uri(uri, root_path)
+    path_or_remote_uri = resolve_local_source(uri, root_path)
     if isinstance(path_or_remote_uri, raw_nodes.URI):
         local_path = _download_url_to_local_path(path_or_remote_uri)
     elif isinstance(path_or_remote_uri, pathlib.Path):
@@ -192,7 +191,7 @@ def _resolve_source_list(uri: list, root_path: os.PathLike = pathlib.Path()) -> 
     return [resolve_source(el, root_path) for el in uri]
 
 
-def resolve_local_uri(
+def resolve_local_source(
     uri: typing.Union[str, os.PathLike, raw_nodes.URI], root_path: os.PathLike
 ) -> typing.Union[pathlib.Path, raw_nodes.URI]:
     if isinstance(uri, os.PathLike) or isinstance(uri, str):
@@ -241,7 +240,7 @@ def resolve_local_uri(
 
 
 def uri_available(uri: raw_nodes.URI, root_path: pathlib.Path) -> bool:
-    local_path_or_remote_uri = resolve_local_uri(uri, root_path)
+    local_path_or_remote_uri = resolve_local_source(uri, root_path)
     if isinstance(local_path_or_remote_uri, raw_nodes.URI):
         response = requests.head(str(local_path_or_remote_uri))
         available = response.status_code == 200
