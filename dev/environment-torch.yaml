@@ -14,3 +14,4 @@ dependencies:
   - xarray
   - pytorch <1.10
   - onnxruntime
+  - tifffile
