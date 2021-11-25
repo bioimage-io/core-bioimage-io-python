@@ -30,13 +30,13 @@ def test_uri_available():
 
 
 def test_all_uris_available():
-    from bioimageio.core.resource_io.utils import all_uris_available
+    from bioimageio.core.resource_io.utils import all_sources_available
 
     not_available = {
         "uri": raw_nodes.URI(scheme="file", path="non_existing_file_in/non_existing_dir/ftw"),
         "uri_exists": raw_nodes.URI(scheme="file", path="."),
     }
-    assert not all_uris_available(not_available)
+    assert not all_sources_available(not_available)
 
 
 def test_uri_node_transformer_is_ok_with_abs_path():

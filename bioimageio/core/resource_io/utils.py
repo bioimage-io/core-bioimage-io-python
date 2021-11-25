@@ -27,25 +27,24 @@ def iter_fields(node: GenericNode):
         yield field.name, getattr(node, field.name)
 
 
-class UriNodeChecker(NodeVisitor):
+class SourceNodeChecker(NodeVisitor):
     """raises FileNotFoundError for unavailable URIs and paths"""
 
     def __init__(self, *, root_path: os.PathLike):
         self.root_path = pathlib.Path(root_path).resolve()
 
-    def visit_URI(self, node: raw_nodes.URI):
-        if not uri_available(node, self.root_path):
-            raise FileNotFoundError(node)
-
-    def _visit_Path(self, leaf: pathlib.Path):
-        if not leaf.exists():
+    def _visit_source(self, leaf: typing.Union[pathlib.Path, raw_nodes.URI]):
+        if not source_available(leaf, self.root_path):
             raise FileNotFoundError(leaf)
 
+    def visit_URI(self, node: raw_nodes.URI):
+        self._visit_source(node)
+
     def visit_PosixPath(self, leaf: pathlib.PosixPath):
-        self._visit_Path(leaf)
+        self._visit_source(leaf)
 
     def visit_WindowsPath(self, leaf: pathlib.WindowsPath):
-        self._visit_Path(leaf)
+        self._visit_source(leaf)
 
 
 class UriNodeTransformer(NodeTransformer):
@@ -138,13 +137,13 @@ class RawNodeTypeTransformer(NodeTransformer):
 
 
 @singledispatch
-def resolve_source(uri, root_path: os.PathLike = pathlib.Path()):
-    raise TypeError(type(uri))
+def resolve_source(source, root_path: os.PathLike = pathlib.Path()):
+    raise TypeError(type(source))
 
 
 @resolve_source.register
-def _resolve_source_uri_node(uri: raw_nodes.URI, root_path: os.PathLike = pathlib.Path()) -> pathlib.Path:
-    path_or_remote_uri = resolve_local_source(uri, root_path)
+def _resolve_source_uri_node(source: raw_nodes.URI, root_path: os.PathLike = pathlib.Path()) -> pathlib.Path:
+    path_or_remote_uri = resolve_local_source(source, root_path)
     if isinstance(path_or_remote_uri, raw_nodes.URI):
         local_path = _download_url_to_local_path(path_or_remote_uri)
     elif isinstance(path_or_remote_uri, pathlib.Path):
@@ -156,69 +155,71 @@ def _resolve_source_uri_node(uri: raw_nodes.URI, root_path: os.PathLike = pathli
 
 
 @resolve_source.register
-def _resolve_source_str(uri: str, root_path: os.PathLike = pathlib.Path()) -> pathlib.Path:
-    return resolve_source(fields.URI().deserialize(uri), root_path)
+def _resolve_source_str(source: str, root_path: os.PathLike = pathlib.Path()) -> pathlib.Path:
+    return resolve_source(fields.Union([fields.URI(), fields.Path()]).deserialize(source), root_path)
 
 
 @resolve_source.register
-def _resolve_source_path(uri: pathlib.Path, root_path: os.PathLike = pathlib.Path()) -> pathlib.Path:
-    if not uri.is_absolute():
-        uri = pathlib.Path(root_path).absolute() / uri
+def _resolve_source_path(source: pathlib.Path, root_path: os.PathLike = pathlib.Path()) -> pathlib.Path:
+    if not source.is_absolute():
+        source = pathlib.Path(root_path).absolute() / source
 
-    return resolve_source(uri.as_uri(), root_path)
+    return source
 
 
 @resolve_source.register
 def _resolve_source_resolved_importable_path(
-    uri: nodes.ResolvedImportableSourceFile, root_path: os.PathLike = pathlib.Path()
+    source: nodes.ResolvedImportableSourceFile, root_path: os.PathLike = pathlib.Path()
 ) -> nodes.ResolvedImportableSourceFile:
     return nodes.ResolvedImportableSourceFile(
-        callable_name=uri.callable_name, source_file=resolve_source(uri.source_file, root_path)
+        callable_name=source.callable_name, source_file=resolve_source(source.source_file, root_path)
     )
 
 
 @resolve_source.register
 def _resolve_source_importable_path(
-    uri: raw_nodes.ImportableSourceFile, root_path: os.PathLike = pathlib.Path()
+    source: raw_nodes.ImportableSourceFile, root_path: os.PathLike = pathlib.Path()
 ) -> nodes.ResolvedImportableSourceFile:
     return nodes.ResolvedImportableSourceFile(
-        callable_name=uri.callable_name, source_file=resolve_source(uri.source_file, root_path)
+        callable_name=source.callable_name, source_file=resolve_source(source.source_file, root_path)
     )
 
 
 @resolve_source.register
-def _resolve_source_list(uri: list, root_path: os.PathLike = pathlib.Path()) -> typing.List[pathlib.Path]:
-    return [resolve_source(el, root_path) for el in uri]
+def _resolve_source_list(source: list, root_path: os.PathLike = pathlib.Path()) -> typing.List[pathlib.Path]:
+    return [resolve_source(el, root_path) for el in source]
 
 
 def resolve_local_source(
-    uri: typing.Union[str, os.PathLike, raw_nodes.URI], root_path: os.PathLike
+    source: typing.Union[str, os.PathLike, raw_nodes.URI], root_path: os.PathLike
 ) -> typing.Union[pathlib.Path, raw_nodes.URI]:
-    if isinstance(uri, os.PathLike) or isinstance(uri, str):
-        if isinstance(uri, str):
-            try:  # uri as relative path from cwd
-                is_path_cwd = pathlib.Path(uri).exists()
+    if isinstance(source, os.PathLike) or isinstance(source, str):
+        if isinstance(source, str):
+            try:  # source as path from cwd
+                is_path_cwd = pathlib.Path(source).exists()
             except OSError:
                 is_path_cwd = False
 
-            try:  # uri as relative path from root_path
-                path_from_root = pathlib.Path(root_path) / uri
+            try:  # source as relative path from root_path
+                path_from_root = pathlib.Path(root_path) / source
                 is_path_rp = (path_from_root).exists()
             except OSError:
                 is_path_rp = False
             else:
                 if not is_path_cwd and is_path_rp:
-                    uri = path_from_root
+                    source = path_from_root
 
             is_path = is_path_cwd or is_path_rp
         else:
             is_path = True
 
         if is_path:
-            return pathlib.Path(uri)
+            return pathlib.Path(source)
 
-    if isinstance(uri, str):
-        uri = fields.URI().deserialize(uri)
+    if isinstance(source, str):
+        uri = fields.URI().deserialize(source)
+    else:
+        uri = source
 
     assert isinstance(uri, raw_nodes.URI), uri
     if not uri.scheme:  # relative path
@@ -239,8 +240,8 @@ def resolve_local_source(
     return local_path_or_remote_uri
 
 
-def uri_available(uri: raw_nodes.URI, root_path: pathlib.Path) -> bool:
-    local_path_or_remote_uri = resolve_local_source(uri, root_path)
+def source_available(source: typing.Union[pathlib.Path, raw_nodes.URI], root_path: pathlib.Path) -> bool:
+    local_path_or_remote_uri = resolve_local_source(source, root_path)
     if isinstance(local_path_or_remote_uri, raw_nodes.URI):
         response = requests.head(str(local_path_or_remote_uri))
         available = response.status_code == 200
@@ -252,11 +253,11 @@ def uri_available(uri: raw_nodes.URI, root_path: pathlib.Path) -> bool:
     return available
 
 
-def all_uris_available(
+def all_sources_available(
     node: typing.Union[GenericNode, list, tuple, dict], root_path: os.PathLike = pathlib.Path()
 ) -> bool:
     try:
-        UriNodeChecker(root_path=root_path).visit(node)
+        SourceNodeChecker(root_path=root_path).visit(node)
     except FileNotFoundError:
         return False
     else:
