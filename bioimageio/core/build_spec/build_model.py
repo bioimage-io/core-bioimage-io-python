@@ -1,7 +1,7 @@
 import datetime
 import hashlib
 import os
-from pathlib import Path
+from pathlib import Path, WindowsPath
 from shutil import copyfile
 from typing import Any, Dict, List, Optional, Union, Tuple
 
@@ -239,11 +239,11 @@ def _build_cite(cite: Dict[str, str]):
 
 
 def _get_dependencies(dependencies, root):
-    if ":" in dependencies:
-        manager, path = dependencies.split(":")
-    else:
+    if isinstance(dependencies, Path) or ":" not in dependencies:
         manager = "conda"
-        path = dependencies
+        path = Path(dependencies)
+    else:
+        manager, path = dependencies.split(":")
     return model_spec.raw_nodes.Dependencies(manager=manager, file=resolve_source(path, root))
 
 
@@ -289,7 +289,7 @@ def build_model(
     run_mode: Optional[str] = None,
     parent: Optional[Tuple[str, str]] = None,
     config: Optional[Dict[str, Any]] = None,
-    dependencies: Optional[str] = None,
+    dependencies: Optional[Union[Path, str]] = None,
     links: Optional[List[str]] = None,
     root: Optional[Union[Path, str]] = None,
     **weight_kwargs,
