@@ -51,9 +51,7 @@ def _validate_input_shape(shape: Tuple[int, ...], shape_spec) -> bool:
         # check if the shape is valid for all dimension by seeing if it can be reached with an integer number of steps
         # NOTE we allow that the valid shape is reached using a different number of steps for each axis here
         # this is usually valid because dimensions are independent in neural networks
-        is_valid = [
-            (sh - minsh) % st == 0 if st > 0 else sh == minsh for sh, st, minsh in zip(shape, step, min_shape)
-        ]
+        is_valid = [(sh - minsh) % st == 0 if st > 0 else sh == minsh for sh, st, minsh in zip(shape, step, min_shape)]
         return all(is_valid)
     else:
         raise TypeError(f"Encountered unexpected shape description of type {type(shape_spec)}")
