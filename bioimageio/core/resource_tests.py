@@ -38,6 +38,50 @@ def test_model(
         return {"error": f"Expected RDF type Model, got {type(model)} instead.", "traceback": None}
 
 
+def _validate_input_shape(shape: Tuple[int, ...], shape_spec) -> bool:
+    if isinstance(shape_spec, list):
+        if shape != tuple(shape_spec):
+            return False
+
+    elif isinstance(shape_spec, ParametrizedInputShape):
+        assert len(shape_spec.min) == len(shape_spec.step)
+        if len(shape) != len(shape_spec.min):
+            return False
+
+        valid_shape = numpy.array(shape_spec.min)
+        step = numpy.array(shape_spec.step)
+        if (step == 0).all():
+            return shape == tuple(valid_shape)
+
+        shape = numpy.array(shape)
+        while (valid_shape <= shape).all():
+            if (shape == valid_shape).all():
+                return True
+
+            valid_shape += step
+        else:
+            return False
+
+    else:
+        raise TypeError(f"Encountered unexpected shape description of type {type(shape_spec)}")
+
+    return True
+
+
+def _validate_output_shape(shape: Tuple[int, ...], shape_spec, input_shapes) -> bool:
+    if isinstance(shape_spec, list):
+        return shape == tuple(shape_spec)
+    elif isinstance(shape_spec, ImplicitOutputShape):
+        ipt_shape = numpy.array(input_shapes[shape_spec.reference_tensor])
+        scale = numpy.array(shape_spec.scale)
+        offset = numpy.array(shape_spec.offset)
+        exp_shape = numpy.round_(ipt_shape * scale) + 2 * offset
+
+        return shape == tuple(exp_shape)
+    else:
+        raise TypeError(f"Encountered unexpected shape description of type {type(shape_spec)}")
+
+
 def test_resource(
     model_rdf: Union[RawResourceDescription, ResourceDescription, URI, Path, str],
     *,
@@ -64,65 +108,22 @@ def test_resource(
                 inputs = [np.load(str(in_path)) for in_path in model.test_inputs]
                 expected = [np.load(str(out_path)) for out_path in model.test_outputs]
 
-                # check if test data shapes match their description
-                input_shapes = [ipt.shape for ipt in inputs]
-                output_shapes = [out.shape for out in expected]
-
-                def input_shape_is_valid(shape: Tuple[int, ...], shape_spec) -> bool:
-                    if isinstance(shape_spec, list):
-                        if shape != tuple(shape_spec):
-                            return False
-                    elif isinstance(shape_spec, ParametrizedInputShape):
-                        assert len(shape_spec.min) == len(shape_spec.step)
-                        if len(shape) != len(shape_spec.min):
-                            return False
-
-                        valid_shape = numpy.array(shape_spec.min)
-                        step = numpy.array(shape_spec.step)
-                        if (step == 0).all():
-                            return shape == tuple(valid_shape)
-
-                        shape = numpy.array(shape)
-                        while (shape <= valid_shape).all():
-                            if (shape == valid_shape).all():
-                                break
-
-                            shape += step
-                        else:
-                            return False
-
-                    else:
-                        raise TypeError(f"Encountered unexpected shape description of type {type(shape_spec)}")
-
-                    return True
-
                 assert len(inputs) == len(model.inputs)  # should be checked by validation
                 input_shapes = {}
                 for idx, (ipt, ipt_spec) in enumerate(zip(inputs, model.inputs)):
-                    if not input_shape_is_valid(ipt, ipt_spec.shape):
+                    if not _validate_input_shape(tuple(ipt.shape), ipt_spec.shape):
                         raise ValidationError(
                             f"Shape of test input {idx} '{ipt_spec.name}' does not match "
-                            f"input shape description: {ipt_spec.shape}"
+                            f"input shape description: {ipt_spec.shape}."
                         )
                     input_shapes[ipt_spec.name] = ipt.shape
 
-                def output_shape_is_valid(shape: Tuple[int, ...], shape_spec) -> bool:
-                    if isinstance(shape_spec, list):
-                        return shape == tuple(shape_spec)
-                    elif isinstance(shape_spec, ImplicitOutputShape):
-                        ipt_shape = numpy.array(input_shapes[shape_spec.reference_tensor])
-                        scale = numpy.array(shape_spec.scale)
-                        offset = numpy.array(shape_spec.offset)
-                        exp_shape = numpy.round_(ipt_shape * scale) + 2 * offset
-
-                        return shape == tuple(exp_shape)
-
                 assert len(expected) == len(model.outputs)  # should be checked by validation
                 for idx, (out, out_spec) in enumerate(zip(expected, model.outputs)):
-                    if not output_shape_is_valid(out, out_spec.shape):
+                    if not _validate_output_shape(tuple(out.shape), out_spec.shape, input_shapes):
                         error = (error or "") + (
                             f"Shape of test output {idx} '{out_spec.name}' does not match "
-                            f"output shape description: {out_spec.shape}.\n"
+                            f"output shape description: {out_spec.shape}."
                         )
 
                 with create_prediction_pipeline(
