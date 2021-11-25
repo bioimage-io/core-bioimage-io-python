@@ -322,8 +322,7 @@ def _get_deepimagej_macro(name, kwargs, export_folder):
             for line in lines:
                 f.write(line)
 
-    preprocess = {"spec": "ij.IJ::runMacroFile", "kwargs": macro}
-    return preprocess
+    return {"spec": "ij.IJ::runMacroFile", "kwargs": macro}
 
 
 def _get_deepimagej_config(export_folder, sample_inputs, sample_outputs, pixel_sizes, preprocessing, postprocessing):
@@ -362,21 +361,12 @@ def _get_deepimagej_config(export_folder, sample_inputs, sample_outputs, pixel_s
 
     test_info = {
         "inputs": [
-            {
-                "name": in_path,
-                "size": get_size(in_path),
-                "pixel_size": pix_size
-            } for in_path, pix_size in zip(sample_inputs, pixel_sizes_)
+            {"name": in_path, "size": get_size(in_path), "pixel_size": pix_size}
+            for in_path, pix_size in zip(sample_inputs, pixel_sizes_)
         ],
-        "outputs": [
-            {
-                "name": out_path,
-                "type": "image",
-                "size": get_size(out_path)
-            } for out_path in sample_outputs
-        ],
+        "outputs": [{"name": out_path, "type": "image", "size": get_size(out_path)} for out_path in sample_outputs],
         "memory_peak": None,
-        "runtime": None
+        "runtime": None,
     }
 
     config = {
@@ -388,7 +378,7 @@ def _get_deepimagej_config(export_folder, sample_inputs, sample_outputs, pixel_s
         # other stuff deepimagej needs
         "pyramidal_model": False,
         "allow_tiling": True,
-        "model_keys": None
+        "model_keys": None,
     }
     return {"deepimagej": config}, attachments
 
