@@ -8,6 +8,7 @@ def _test_build_spec(spec_path, out_path, weight_type, tensorflow_version=None, 
     from bioimageio.core.build_spec import build_model
 
     model_spec = load_raw_resource_description(spec_path)
+    root = model_spec.root_path
     assert isinstance(model_spec, spec.model.raw_nodes.Model)
     weight_source = model_spec.weights[weight_type].source
 
@@ -25,15 +26,15 @@ def _test_build_spec(spec_path, out_path, weight_type, tensorflow_version=None, 
         model_source = None
         weight_type_ = None  # the weight type can be auto-detected
 
-    dep_file = None if model_spec.dependencies is missing else resolve_source(model_spec.dependencies.file)
+    dep_file = None if model_spec.dependencies is missing else resolve_source(model_spec.dependencies.file, root)
     authors = [{"name": auth.name, "affiliation": auth.affiliation} for auth in model_spec.authors]
-    covers = resolve_source(model_spec.covers)
+    covers = resolve_source(model_spec.covers, root)
     kwargs = dict(
         source=model_source,
         model_kwargs=model_spec.kwargs,
         weight_uri=weight_source,
-        test_inputs=resolve_source(model_spec.test_inputs),
-        test_outputs=resolve_source(model_spec.test_outputs),
+        test_inputs=resolve_source(model_spec.test_inputs, root),
+        test_outputs=resolve_source(model_spec.test_outputs, root),
         name=model_spec.name,
         description=model_spec.description,
         authors=authors,
