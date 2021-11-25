@@ -211,8 +211,10 @@ def resolve_local_source(
             if not is_path_cwd and is_path_rp:
                 source = path_from_root
 
-        if is_path_cwd or is_path_rp or isinstance(source, os.PathLike):
+        if is_path_cwd or is_path_rp:
             return pathlib.Path(source)
+        elif isinstance(source, os.PathLike):
+            raise FileNotFoundError(f"Could neither find {source} nor {pathlib.Path(root_path) / source}")
 
     if isinstance(source, str):
         uri = fields.URI().deserialize(source)
