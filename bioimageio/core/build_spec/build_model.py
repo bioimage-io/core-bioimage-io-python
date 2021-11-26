@@ -395,14 +395,14 @@ def _write_sample_data(input_paths, output_paths, input_axes, output_axes, expor
 
     sample_in_paths = []
     for i, (in_path, axes) in enumerate(zip(input_paths, input_axes)):
-        inp = np.load(in_path)[0]
+        inp = np.load(export_folder / in_path)[0]
         sample_in_path = export_folder / f"sample_input_{i}.tif"
         write_im(sample_in_path, inp, axes)
         sample_in_paths.append(sample_in_path)
 
     sample_out_paths = []
     for i, (out_path, axes) in enumerate(zip(output_paths, output_axes)):
-        outp = np.load(out_path)[0]
+        outp = np.load(export_folder / out_path)[0]
         sample_out_path = export_folder / f"sample_output_{i}.tif"
         write_im(sample_out_path, outp, axes)
         sample_out_paths.append(sample_out_path)
@@ -571,7 +571,7 @@ def build_model(
     preprocessing = n_inputs * [None] if preprocessing is None else preprocessing
 
     inputs = [
-        _get_input_tensor(test_in, name, step, min_shape, data_range, axes, preproc)
+        _get_input_tensor(root / test_in, name, step, min_shape, data_range, axes, preproc)
         for test_in, name, step, min_shape, axes, data_range, preproc in zip(
             test_inputs, input_name, input_step, input_min_shape, input_axes, input_data_range, preprocessing
         )
@@ -588,7 +588,7 @@ def build_model(
     halo = n_outputs * [None] if halo is None else halo
 
     outputs = [
-        _get_output_tensor(test_out, name, reference, scale, offset, axes, data_range, postproc, hal)
+        _get_output_tensor(root / test_out, name, reference, scale, offset, axes, data_range, postproc, hal)
         for test_out, name, reference, scale, offset, axes, data_range, postproc, hal in zip(
             test_outputs,
             output_name,
