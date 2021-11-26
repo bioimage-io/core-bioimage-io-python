@@ -89,7 +89,6 @@ def _get_weights(original_weight_source, weight_type, source, root, **kwargs):
     weight_types = model_spec.raw_nodes.WeightsFormat
     weight_source = _ensure_local_or_url(original_weight_source, root)
 
-    assert isinstance(weight_source, URI) or weight_source.is_relative_to(root)
     if weight_type == "pytorch_state_dict":
         # pytorch-state-dict -> we need a source
         assert source is not None
