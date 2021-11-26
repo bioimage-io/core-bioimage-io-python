@@ -1,9 +1,9 @@
 import datetime
 import hashlib
 import os
-from pathlib import Path, WindowsPath
+from pathlib import Path
 from shutil import copyfile
-from typing import Any, Dict, List, Optional, Union, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
