@@ -17,7 +17,7 @@ from bioimageio.spec.shared.common import BIOIMAGEIO_CACHE_PATH, get_class_name_
 from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
 from bioimageio.spec.shared.utils import PathToRemoteUriTransformer
 from . import nodes
-from .utils import resolve_raw_resource_description, resolve_uri
+from .utils import resolve_raw_resource_description, resolve_source
 
 serialize_raw_resource_description = spec.io_.serialize_raw_resource_description
 save_raw_resource_description = spec.io_.save_raw_resource_description
@@ -41,7 +41,7 @@ def extract_resource_package(
                 download = None
                 break
         else:
-            download = resolve_uri(root)
+            download = resolve_source(root)
 
         local_source = download
     else:
@@ -169,7 +169,7 @@ def get_local_resource_package_content(
     local_package_content = {}
     for k, v in package_content.items():
         if isinstance(v, raw_nodes.URI):
-            v = resolve_uri(v, raw_rd.root_path)
+            v = resolve_source(v, raw_rd.root_path)
         elif isinstance(v, pathlib.Path):
             v = raw_rd.root_path / v
 
