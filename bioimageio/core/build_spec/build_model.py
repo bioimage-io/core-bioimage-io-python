@@ -649,11 +649,12 @@ def build_model(
     if links is not None:
         links = list(set(links))
 
-    # cast sample inputs / outputs to uri
+    # make sure sample inputs / outputs are relative paths
+    # todo: currently this will fail for absolute paths that are not under root. should we copy the samples then?
     if sample_inputs is not None:
-        sample_inputs = resolve_local_source(sample_inputs, root)
+        sample_inputs = [p.relative_to(root) for p in resolve_local_source(sample_inputs, root)]
     if sample_outputs is not None:
-        sample_outputs = resolve_local_source(sample_outputs, root)
+        sample_outputs = [p.relative_to(root) for p in resolve_local_source(sample_outputs, root)]
 
     # optional kwargs, don't pass them if none
     optional_kwargs = {
