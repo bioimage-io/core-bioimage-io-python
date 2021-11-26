@@ -341,7 +341,7 @@ def _get_deepimagej_config(export_folder, sample_inputs, sample_outputs, pixel_s
 
     def get_size(path):
         assert tifffile is not None, "need tifffile for writing deepimagej config"
-        with tifffile.TiffFile(path) as f:
+        with tifffile.TiffFile(export_folder / path) as f:
             shape = f.asarray().shape
         # add singleton z axis if we have 2d data
         if len(shape) == 3:
@@ -373,7 +373,7 @@ def _get_deepimagej_config(export_folder, sample_inputs, sample_outputs, pixel_s
     return {"deepimagej": config}, attachments
 
 
-def _write_sample_data(input_paths, output_paths, input_axes, output_axes, export_folder):
+def _write_sample_data(input_paths, output_paths, input_axes, output_axes, export_folder: Path):
     def write_im(path, im, axes):
         assert tifffile is not None, "need tifffile for writing deepimagej config"
         assert len(axes) == im.ndim
@@ -396,18 +396,18 @@ def _write_sample_data(input_paths, output_paths, input_axes, output_axes, expor
     sample_in_paths = []
     for i, (in_path, axes) in enumerate(zip(input_paths, input_axes)):
         inp = np.load(in_path)[0]
-        sample_in_path = os.path.join(export_folder, f"sample_input_{i}.tif")
+        sample_in_path = export_folder / f"sample_input_{i}.tif"
         write_im(sample_in_path, inp, axes)
         sample_in_paths.append(sample_in_path)
 
     sample_out_paths = []
     for i, (out_path, axes) in enumerate(zip(output_paths, output_axes)):
         outp = np.load(out_path)[0]
-        sample_out_path = os.path.join(export_folder, f"sample_output_{i}.tif")
+        sample_out_path = export_folder / f"sample_output_{i}.tif"
         write_im(sample_out_path, outp, axes)
         sample_out_paths.append(sample_out_path)
 
-    return sample_in_paths, sample_out_paths
+    return [Path(p.name) for p in sample_in_paths], [Path(p.name) for p in sample_out_paths]
 
 
 def _ensure_local(source: Union[Path, URI, str, list], root: Path) -> Union[Path, URI, list]:
@@ -416,7 +416,8 @@ def _ensure_local(source: Union[Path, URI, str, list], root: Path) -> Union[Path
         return [_ensure_local(s, root) for s in source]
 
     local_source = resolve_source(source, root)
-    return resolve_source(local_source, root, root / local_source.name)
+    local_source = resolve_source(local_source, root, root / local_source.name)
+    return local_source.relative_to(root)
 
 
 def _ensure_local_or_url(source: Union[Path, URI, str, list], root: Path) -> Union[Path, URI, list]:
@@ -425,7 +426,10 @@ def _ensure_local_or_url(source: Union[Path, URI, str, list], root: Path) -> Uni
         return [_ensure_local_or_url(s, root) for s in source]
 
     local_source = resolve_local_source(source, root)
-    return resolve_local_source(local_source, root, None if isinstance(local_source, URI) else root / local_source.name)
+    local_source = resolve_local_source(
+        local_source, root, None if isinstance(local_source, URI) else root / local_source.name
+    )
+    return local_source.relative_to(root)
 
 
 def build_model(
