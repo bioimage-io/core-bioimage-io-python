@@ -1,6 +1,7 @@
 import datetime
 import hashlib
 import os
+import shutil
 from pathlib import Path
 from shutil import copyfile
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -11,6 +12,7 @@ import requests
 import bioimageio.spec as spec
 import bioimageio.spec.model as model_spec
 from bioimageio.core import export_resource_package, load_raw_resource_description
+from bioimageio.core.resource_io.nodes import URI
 from bioimageio.core.resource_io.utils import resolve_local_source, resolve_source
 
 try:
@@ -52,8 +54,8 @@ def _infer_weight_type(path):
         raise ValueError(f"Could not infer weight type from extension {ext} for weight file {path}")
 
 
-def _get_weights(weight_uri, weight_type, source, root, **kwargs):
-    weight_path = resolve_source(weight_uri, root)
+def _get_weights(original_weight_source, weight_type, source, root, **kwargs):
+    weight_path = resolve_source(original_weight_source, root)
     if weight_type is None:
         weight_type = _infer_weight_type(weight_path)
     weight_hash = _get_hash(weight_path)
@@ -65,7 +67,7 @@ def _get_weights(weight_uri, weight_type, source, root, **kwargs):
         source_file, source_class = source.replace("::", ":").split(":")
 
         # get the source path
-        source_file = resolve_source(source_file, root)
+        source_file = _ensure_local(source_file, root)
         source_hash = _get_hash(source_file)
 
         # if not relative, create local copy (otherwise this will not work)
@@ -85,7 +87,9 @@ def _get_weights(weight_uri, weight_type, source, root, **kwargs):
         attachments = {}
 
     weight_types = model_spec.raw_nodes.WeightsFormat
-    weight_source = resolve_local_source(weight_uri, root)
+    weight_source = _ensure_local_or_url(original_weight_source, root)
+
+    assert isinstance(weight_source, URI) or weight_source.is_relative_to(root)
     if weight_type == "pytorch_state_dict":
         # pytorch-state-dict -> we need a source
         assert source is not None
@@ -135,7 +139,7 @@ def _get_weights(weight_uri, weight_type, source, root, **kwargs):
 
     elif weight_type == "tensorflow_js":
         weights = model_spec.raw_nodes.TensorflowJsWeightsEntry(
-            source=weight_uri,
+            source=weight_source,
             sha256=weight_hash,
             tensorflow_version=kwargs.get("tensorflow_version", "1.15"),
             **attachments,
@@ -249,10 +253,11 @@ def _build_cite(cite: Dict[str, str]):
 def _get_dependencies(dependencies, root):
     if isinstance(dependencies, Path) or ":" not in dependencies:
         manager = "conda"
-        path = Path(dependencies)
+        path = dependencies
     else:
         manager, path = dependencies.split(":")
-    return model_spec.raw_nodes.Dependencies(manager=manager, file=resolve_source(path, root))
+
+    return model_spec.raw_nodes.Dependencies(manager=manager, file=_ensure_local(path, root))
 
 
 def _get_deepimagej_macro(name, kwargs, export_folder):
@@ -359,10 +364,7 @@ def _get_deepimagej_config(export_folder, sample_inputs, sample_outputs, pixel_s
     }
 
     config = {
-        "prediction": {
-            "preprocess": preprocess_ij,
-            "postprocess": postprocess_ij,
-        },
+        "prediction": {"preprocess": preprocess_ij, "postprocess": postprocess_ij},
         "test_information": test_info,
         # other stuff deepimagej needs
         "pyramidal_model": False,
@@ -407,6 +409,24 @@ def _write_sample_data(input_paths, output_paths, input_axes, output_axes, expor
         sample_out_paths.append(sample_out_path)
 
     return sample_in_paths, sample_out_paths
+
+
+def _ensure_local(source: Union[Path, URI, str, list], root: Path) -> Union[Path, URI, list]:
+    """ensure source is local relative path in root"""
+    if isinstance(source, list):
+        return [_ensure_local(s, root) for s in source]
+
+    local_source = resolve_source(source, root)
+    return resolve_source(local_source, root, root / local_source.name)
+
+
+def _ensure_local_or_url(source: Union[Path, URI, str, list], root: Path) -> Union[Path, URI, list]:
+    """ensure source is remote URI or local relative path in root"""
+    if isinstance(source, list):
+        return [_ensure_local_or_url(s, root) for s in source]
+
+    local_source = resolve_local_source(source, root)
+    return resolve_local_source(local_source, root, None if isinstance(local_source, URI) else root / local_source.name)
 
 
 def build_model(
@@ -536,8 +556,8 @@ def build_model(
 
     assert len(test_inputs)
     assert len(test_outputs)
-    test_inputs = resolve_local_source(test_inputs, root)
-    test_outputs = resolve_local_source(test_outputs, root)
+    test_inputs = _ensure_local_or_url(test_inputs, root)
+    test_outputs = _ensure_local_or_url(test_outputs, root)
 
     n_inputs = len(test_inputs)
     input_name = n_inputs * [None] if input_name is None else input_name
@@ -597,8 +617,8 @@ def build_model(
 
     authors = _build_authors(authors)
     cite = _build_cite(cite)
-    documentation = resolve_source(documentation, root)
-    covers = resolve_source(covers, root)
+    documentation = _ensure_local(documentation, root)
+    covers = _ensure_local(covers, root)
 
     # parse the weights
     weights, language, framework, source, source_hash, tmp_source = _get_weights(
@@ -650,11 +670,11 @@ def build_model(
         links = list(set(links))
 
     # make sure sample inputs / outputs are relative paths
-    # todo: currently this will fail for absolute paths that are not under root. should we copy the samples then?
     if sample_inputs is not None:
-        sample_inputs = [p.relative_to(root) for p in resolve_local_source(sample_inputs, root)]
+        sample_inputs = _ensure_local_or_url(sample_inputs, root)
+
     if sample_outputs is not None:
-        sample_outputs = [p.relative_to(root) for p in resolve_local_source(sample_outputs, root)]
+        sample_outputs = _ensure_local_or_url(sample_outputs, root)
 
     # optional kwargs, don't pass them if none
     optional_kwargs = {

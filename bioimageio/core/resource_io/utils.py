@@ -138,7 +138,7 @@ class RawNodeTypeTransformer(NodeTransformer):
 
 
 @singledispatch  # todo: fix type annotations
-def resolve_source(source, root_path: os.PathLike = pathlib.Path(), output: typing.Optional[os.PathLike] = None):
+def resolve_source(source, root_path: os.PathLike = pathlib.Path(), output=None):
     raise TypeError(type(source))
 
 
@@ -175,8 +175,8 @@ def _resolve_source_path(
         return source
     else:
         try:
-            shutil.copy(source, output)
-        except shutil.SameFileError:
+            shutil.copyfile(source, output)
+        except shutil.SameFileError:  # source and output are identical
             pass
         return pathlib.Path(output)
 
@@ -205,17 +205,28 @@ def _resolve_source_importable_path(
 
 @resolve_source.register
 def _resolve_source_list(
-    source: list, root_path: os.PathLike = pathlib.Path(), output: typing.Optional[os.PathLike] = None
+    source: list,
+    root_path: os.PathLike = pathlib.Path(),
+    output: typing.Optional[typing.Sequence[typing.Optional[os.PathLike]]] = None,
 ) -> typing.List[pathlib.Path]:
-    return [resolve_source(el, root_path, output) for el in source]
+    assert output is None or len(output) == len(source)
+    return [resolve_source(el, root_path, out) for el, out in zip(source, output or [None] * len(source))]
 
 
-# todo: write as singledispatch with type annotations
+def resolve_local_sources(
+    sources: typing.Sequence[typing.Union[str, os.PathLike, raw_nodes.URI]],
+    root_path: os.PathLike,
+    outputs: typing.Optional[typing.Sequence[os.PathLike]] = None,
+) -> typing.List[typing.Union[pathlib.Path, raw_nodes.URI]]:
+    assert outputs is None or len(outputs) == len(sources)
+    return [resolve_local_source(src, root_path, out) for src, out in zip(sources, outputs)]
+
+
 def resolve_local_source(
-    source: typing.Union[str, os.PathLike, raw_nodes.URI, tuple, list],
+    source: typing.Union[str, os.PathLike, raw_nodes.URI],
     root_path: os.PathLike,
     output: typing.Optional[os.PathLike] = None,
-) -> typing.Union[pathlib.Path, raw_nodes.URI, list, tuple]:
+) -> typing.Union[pathlib.Path, raw_nodes.URI]:
     if isinstance(source, (tuple, list)):
         return type(source)([resolve_local_source(s, root_path, output) for s in source])
     elif isinstance(source, os.PathLike) or isinstance(source, str):
@@ -239,7 +250,7 @@ def resolve_local_source(
                 return source
             else:
                 try:
-                    shutil.copy(source, output)
+                    shutil.copyfile(source, output)
                 except shutil.SameFileError:
                     pass
                 return pathlib.Path(output)
