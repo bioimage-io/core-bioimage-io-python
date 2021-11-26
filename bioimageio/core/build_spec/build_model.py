@@ -258,10 +258,7 @@ def _get_dependencies(dependencies, root):
 def _get_deepimagej_macro(name, kwargs, export_folder):
 
     # macros available in deepimagej
-    assert name in ("scale_linear", "scale_range", "zero_mean_unit_variance")
-    # TODO deep imagej has a binarize macro but I have no idea what it is doing
-    # assert name in ("binarize", "scale_linear", "scale_range", "zero_mean_unit_variance")
-
+    macro_names = ("binarize", "scale_linear", "scale_range", "zero_mean_unit_variance")
     if name == "scale_linear":
         macro = "scale_linear.ijm"
         replace = {"gain": kwargs["gain"], "offset": kwargs["offset"]}
@@ -279,9 +276,12 @@ def _get_deepimagej_macro(name, kwargs, export_folder):
             macro = "zero_mean_unit_variance.ijm"
             replace = {}
 
-    # elif name == "binarize":
-    #     macro = "binarize.ijm"
-    #     replace = {"", kwargs["threshold"]}
+    elif name == "binarize":
+        macro = "binarize.ijm"
+        replace = {"optimalThreshold", kwargs["threshold"]}
+
+    else:
+        raise ValueError(f"Macro {name} is not available, must be one of {macro_names}.")
 
     macro = f"{name}.ijm"
     url = f"https://raw.githubusercontent.com/deepimagej/imagej-macros/master/bioimage.io/{macro}"
