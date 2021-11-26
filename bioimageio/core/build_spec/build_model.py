@@ -3,14 +3,14 @@ import hashlib
 import os
 from pathlib import Path
 from shutil import copyfile
-from typing import Any, Dict, List, Optional, Union, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
 import bioimageio.spec as spec
 import bioimageio.spec.model as model_spec
 from bioimageio.core import export_resource_package, load_raw_resource_description
-from bioimageio.core.resource_io.utils import resolve_uri
+from bioimageio.core.resource_io.utils import resolve_local_source, resolve_source
 
 try:
     from typing import get_args
@@ -28,20 +28,9 @@ def _get_hash(path):
         return hashlib.sha256(data).hexdigest()
 
 
-def _process_uri(uri: Union[str, Path], root: Path, download=False):
-    if os.path.exists(uri):
-        return Path(uri)
-    elif (root / uri).exists():
-        return root / uri
-    elif isinstance(uri, str) and uri.startswith("http"):
-        return resolve_uri(uri, root) if download else uri
-    else:
-        raise ValueError(f"Invalid uri: {uri}")
-
-
 def _infer_weight_type(path):
     ext = os.path.splitext(path)[-1]
-    if ext in (".pt", ".torch"):
+    if ext in (".pt", ".pth", ".torch"):
         return "pytorch_state_dict"
     elif ext == ".onnx":
         return "onnx"
@@ -56,7 +45,7 @@ def _infer_weight_type(path):
 
 
 def _get_weights(weight_uri, weight_type, source, root, **kwargs):
-    weight_path = _process_uri(weight_uri, root, download=True)
+    weight_path = resolve_source(weight_uri, root)
     if weight_type is None:
         weight_type = _infer_weight_type(weight_path)
     weight_hash = _get_hash(weight_path)
@@ -68,7 +57,7 @@ def _get_weights(weight_uri, weight_type, source, root, **kwargs):
         source_file, source_class = source.replace("::", ":").split(":")
 
         # get the source path
-        source_file = _process_uri(source_file, root, download=True)
+        source_file = resolve_source(source_file, root)
         source_hash = _get_hash(source_file)
 
         # if not relative, create local copy (otherwise this will not work)
@@ -88,7 +77,7 @@ def _get_weights(weight_uri, weight_type, source, root, **kwargs):
         attachments = {}
 
     weight_types = model_spec.raw_nodes.WeightsFormat
-    weight_source = _process_uri(weight_uri, root)
+    weight_source = resolve_local_source(weight_uri, root)
     if weight_type == "pytorch_state_dict":
         # pytorch-state-dict -> we need a source
         assert source is not None
@@ -250,12 +239,12 @@ def _build_cite(cite: Dict[str, str]):
 
 
 def _get_dependencies(dependencies, root):
-    if ":" in dependencies:
-        manager, path = dependencies.split(":")
-    else:
+    if isinstance(dependencies, Path) or ":" not in dependencies:
         manager = "conda"
-        path = dependencies
-    return model_spec.raw_nodes.Dependencies(manager=manager, file=_process_uri(path, root))
+        path = Path(dependencies)
+    else:
+        manager, path = dependencies.split(":")
+    return model_spec.raw_nodes.Dependencies(manager=manager, file=resolve_source(path, root))
 
 
 def build_model(
@@ -300,7 +289,7 @@ def build_model(
     run_mode: Optional[str] = None,
     parent: Optional[Tuple[str, str]] = None,
     config: Optional[Dict[str, Any]] = None,
-    dependencies: Optional[str] = None,
+    dependencies: Optional[Union[Path, str]] = None,
     links: Optional[List[str]] = None,
     root: Optional[Union[Path, str]] = None,
     **weight_kwargs,
@@ -380,8 +369,8 @@ def build_model(
 
     assert len(test_inputs)
     assert len(test_outputs)
-    test_inputs = [_process_uri(uri, root) for uri in test_inputs]
-    test_outputs = [_process_uri(uri, root) for uri in test_outputs]
+    test_inputs = resolve_local_source(test_inputs, root)
+    test_outputs = resolve_local_source(test_outputs, root)
 
     n_inputs = len(test_inputs)
     input_name = n_inputs * [None] if input_name is None else input_name
@@ -431,8 +420,8 @@ def build_model(
 
     authors = _build_authors(authors)
     cite = _build_cite(cite)
-    documentation = _process_uri(documentation, root, download=True)
-    covers = [_process_uri(uri, root, download=True) for uri in covers]
+    documentation = resolve_source(documentation, root)
+    covers = resolve_source(covers, root)
 
     # parse the weights
     weights, language, framework, source, source_hash, tmp_source = _get_weights(

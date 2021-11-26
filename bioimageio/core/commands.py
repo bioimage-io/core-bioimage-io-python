@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import List, Optional, Union
 
 from bioimageio.core import export_resource_package
-from bioimageio.core.resource_io.utils import resolve_uri
+from bioimageio.core.resource_io.utils import resolve_source
 from bioimageio.spec.commands import validate
 from bioimageio.spec.shared.raw_nodes import URI
 
@@ -31,7 +31,7 @@ def package(
         return 1
 
     try:
-        rdf_local_source = resolve_uri(rdf_source)
+        rdf_local_source = resolve_source(rdf_source)
     except Exception as e:
         print(f"Failed to resolve RDF source {rdf_source}: {e}")
         if verbose:
