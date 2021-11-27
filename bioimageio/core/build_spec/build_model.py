@@ -68,7 +68,7 @@ def _get_weights(original_weight_source, weight_type, source, root, **kwargs):
 
         # get the source path
         source_file = _ensure_local(source_file, root)
-        source_hash = _get_hash(source_file)
+        source_hash = _get_hash(root / source_file)
 
         # if not relative, create local copy (otherwise this will not work)
         if os.path.isabs(source_file):
@@ -705,21 +705,22 @@ def build_model(
 
     try:
         model = model_spec.raw_nodes.Model(
-            format_version=format_version,
-            name=name,
-            description=description,
             authors=authors,
             cite=cite,
-            tags=tags,
-            license=license,
-            documentation=documentation,
             covers=covers,
-            timestamp=timestamp,
-            weights=weights,
+            description=description,
+            documentation=documentation,
+            format_version=format_version,
             inputs=inputs,
+            license=license,
+            name=name,
             outputs=outputs,
+            root_path=root,
+            tags=tags,
             test_inputs=test_inputs,
             test_outputs=test_outputs,
+            timestamp=timestamp,
+            weights=weights,
             **kwargs,
         )
         model_package = export_resource_package(model, output_path=output_path)
