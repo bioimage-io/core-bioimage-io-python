@@ -1,10 +1,17 @@
-from marshmallow import missing
 import bioimageio.spec as spec
-from bioimageio.core.resource_io.io_ import load_raw_resource_description
+from bioimageio.core import load_raw_resource_description, load_resource_description
 from bioimageio.core.resource_io.utils import resolve_source
+from marshmallow import missing
 
 
-def _test_build_spec(spec_path, out_path, weight_type, tensorflow_version=None, use_implicit_output_shape=False):
+def _test_build_spec(
+    spec_path,
+    out_path,
+    weight_type,
+    tensorflow_version=None,
+    use_implicit_output_shape=False,
+    add_deepimagej_config=False,
+):
     from bioimageio.core.build_spec import build_model
 
     model_spec = load_raw_resource_description(spec_path)
@@ -47,6 +54,7 @@ def _test_build_spec(spec_path, out_path, weight_type, tensorflow_version=None, 
         root=model_spec.root_path,
         weight_type=weight_type_,
         output_path=out_path,
+        add_deepimagej_config=add_deepimagej_config,
     )
     if tensorflow_version is not None:
         kwargs["tensorflow_version"] = tensorflow_version
@@ -55,8 +63,13 @@ def _test_build_spec(spec_path, out_path, weight_type, tensorflow_version=None, 
         kwargs["output_reference"] = ["input"]
         kwargs["output_scale"] = [[1.0, 1.0, 1.0, 1.0]]
         kwargs["output_offset"] = [[0.0, 0.0, 0.0, 0.0]]
-    raw_model = build_model(**kwargs)
-    spec.model.schema.Model().dump(raw_model)
+
+    build_model(**kwargs)
+    assert out_path.exists()
+    loaded_model = load_resource_description(out_path)
+    if add_deepimagej_config:
+        loaded_config = loaded_model.config
+        assert "deepimagej" in loaded_config
 
 
 def test_build_spec_pytorch(any_torch_model, tmp_path):
@@ -91,3 +104,7 @@ def test_build_spec_tf(any_tensorflow_model, tmp_path):
 
 def test_build_spec_tfjs(any_tensorflow_js_model, tmp_path):
     _test_build_spec(any_tensorflow_js_model, tmp_path / "model.zip", "tensorflow_js", tensorflow_version="1.12")
+
+
+def test_build_spec_deepimagej(unet2d_nuclei_broad_model, tmp_path):
+    _test_build_spec(unet2d_nuclei_broad_model, tmp_path / "model.zip", "pytorch_script", add_deepimagej_config=True)

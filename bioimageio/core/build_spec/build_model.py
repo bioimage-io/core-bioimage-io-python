@@ -6,16 +6,25 @@ from shutil import copyfile
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
+import requests
 
 import bioimageio.spec as spec
 import bioimageio.spec.model as model_spec
 from bioimageio.core import export_resource_package, load_raw_resource_description
+from bioimageio.core.resource_io.nodes import URI
 from bioimageio.core.resource_io.utils import resolve_local_source, resolve_source
 
 try:
     from typing import get_args
 except ImportError:
     from typing_extensions import get_args  # type: ignore
+
+# need tifffile for writing the deepimagej config
+# we probably always have this, but wrap into an ImportGuard just in case
+try:
+    import tifffile
+except ImportError:
+    tifffile = None
 
 #
 # utility functions to build the spec from python
@@ -44,8 +53,8 @@ def _infer_weight_type(path):
         raise ValueError(f"Could not infer weight type from extension {ext} for weight file {path}")
 
 
-def _get_weights(weight_uri, weight_type, source, root, **kwargs):
-    weight_path = resolve_source(weight_uri, root)
+def _get_weights(original_weight_source, weight_type, source, root, **kwargs):
+    weight_path = resolve_source(original_weight_source, root)
     if weight_type is None:
         weight_type = _infer_weight_type(weight_path)
     weight_hash = _get_hash(weight_path)
@@ -57,8 +66,8 @@ def _get_weights(weight_uri, weight_type, source, root, **kwargs):
         source_file, source_class = source.replace("::", ":").split(":")
 
         # get the source path
-        source_file = resolve_source(source_file, root)
-        source_hash = _get_hash(source_file)
+        source_file = _ensure_local(source_file, root)
+        source_hash = _get_hash(root / source_file)
 
         # if not relative, create local copy (otherwise this will not work)
         if os.path.isabs(source_file):
@@ -77,7 +86,8 @@ def _get_weights(weight_uri, weight_type, source, root, **kwargs):
         attachments = {}
 
     weight_types = model_spec.raw_nodes.WeightsFormat
-    weight_source = resolve_local_source(weight_uri, root)
+    weight_source = _ensure_local_or_url(original_weight_source, root)
+
     if weight_type == "pytorch_state_dict":
         # pytorch-state-dict -> we need a source
         assert source is not None
@@ -127,7 +137,7 @@ def _get_weights(weight_uri, weight_type, source, root, **kwargs):
 
     elif weight_type == "tensorflow_js":
         weights = model_spec.raw_nodes.TensorflowJsWeightsEntry(
-            source=weight_uri,
+            source=weight_source,
             sha256=weight_hash,
             tensorflow_version=kwargs.get("tensorflow_version", "1.15"),
             **attachments,
@@ -241,10 +251,185 @@ def _build_cite(cite: Dict[str, str]):
 def _get_dependencies(dependencies, root):
     if isinstance(dependencies, Path) or ":" not in dependencies:
         manager = "conda"
-        path = Path(dependencies)
+        path = dependencies
     else:
         manager, path = dependencies.split(":")
-    return model_spec.raw_nodes.Dependencies(manager=manager, file=resolve_source(path, root))
+
+    return model_spec.raw_nodes.Dependencies(manager=manager, file=_ensure_local(path, root))
+
+
+def _get_deepimagej_macro(name, kwargs, export_folder):
+
+    # macros available in deepimagej
+    macro_names = ("binarize", "scale_linear", "scale_range", "zero_mean_unit_variance")
+    if name == "scale_linear":
+        macro = "scale_linear.ijm"
+        replace = {"gain": kwargs["gain"], "offset": kwargs["offset"]}
+
+    elif name == "scale_range":
+        macro = "per_sample_scale_range.ijm"
+        replace = {"min_precentile": kwargs["min_percentile"], "max_percentile": kwargs["max_percentile"]}
+
+    elif name == "zero_mean_unit_variance":
+        mode = kwargs["mode"]
+        if mode == "fixed":
+            macro = "fixed_zero_mean_unit_variance.ijm"
+            replace = {"paramMean": kwargs["mean"], "paramStd": kwargs["std"]}
+        else:
+            macro = "zero_mean_unit_variance.ijm"
+            replace = {}
+
+    elif name == "binarize":
+        macro = "binarize.ijm"
+        replace = {"optimalThreshold", kwargs["threshold"]}
+
+    else:
+        raise ValueError(f"Macro {name} is not available, must be one of {macro_names}.")
+
+    macro = f"{name}.ijm"
+    url = f"https://raw.githubusercontent.com/deepimagej/imagej-macros/master/bioimage.io/{macro}"
+
+    path = os.path.join(export_folder, macro)
+    # use https://github.com/bioimage-io/core-bioimage-io-python/blob/main/bioimageio/core/resource_io/utils.py#L267
+    # instead if the implementation is update s.t. an output path is accepted
+    with requests.get(url, stream=True) as r:
+        with open(path, "w") as f:
+            f.write(r.text)
+
+    # replace the kwargs in the macro file
+    if replace:
+        lines = []
+        with open(path) as f:
+            for line in f:
+                kwarg = [kwarg for kwarg in replace if line.startswith(kwarg)]
+                if kwarg:
+                    assert len(kwarg) == 1
+                    kwarg = kwarg[0]
+                    # each kwarg should only be replaced ones
+                    val = replace.pop(kwarg)
+                    lines.append(f"{kwarg} = {val};\n")
+                else:
+                    lines.append(line)
+
+        with open(path, "w") as f:
+            for line in lines:
+                f.write(line)
+
+    return {"spec": "ij.IJ::runMacroFile", "kwargs": macro}
+
+
+def _get_deepimagej_config(export_folder, sample_inputs, sample_outputs, pixel_sizes, preprocessing, postprocessing):
+    assert len(sample_inputs) == len(sample_outputs) == 1, "deepimagej config only valid for single input/output"
+
+    if any(preproc is not None for preproc in preprocessing):
+        assert len(preprocessing) == 1
+        preprocess_ij = [_get_deepimagej_macro(name, kwargs) for name, kwargs in preprocessing[0].items()]
+        attachments = [preproc["kwargs"] for preproc in preprocess_ij]
+    else:
+        preprocess_ij = [{"spec": None}]
+        attachments = None
+
+    if any(postproc is not None for postproc in postprocessing):
+        assert len(postprocessing) == 1
+        postprocess_ij = [_get_deepimagej_macro(name, kwargs) for name, kwargs in postprocessing[0].items()]
+        if attachments is None:
+            attachments = [postproc["kwargs"] for postproc in postprocess_ij]
+        else:
+            attachments.extend([postproc["kwargs"] for postproc in postprocess_ij])
+    else:
+        postprocess_ij = [{"spec": None}]
+
+    def get_size(path):
+        assert tifffile is not None, "need tifffile for writing deepimagej config"
+        with tifffile.TiffFile(export_folder / path) as f:
+            shape = f.asarray().shape
+        # add singleton z axis if we have 2d data
+        if len(shape) == 3:
+            shape = shape[:2] + (1,) + shape[-1:]
+        assert len(shape) == 4
+        return " x ".join(map(str, shape))
+
+    # deepimagej always expexts a pixel size for the z axis
+    pixel_sizes_ = [pix_size if "z" in pix_size else dict(z=1.0, **pix_size) for pix_size in pixel_sizes]
+
+    test_info = {
+        "inputs": [
+            {"name": in_path, "size": get_size(in_path), "pixel_size": pix_size}
+            for in_path, pix_size in zip(sample_inputs, pixel_sizes_)
+        ],
+        "outputs": [{"name": out_path, "type": "image", "size": get_size(out_path)} for out_path in sample_outputs],
+        "memory_peak": None,
+        "runtime": None,
+    }
+
+    config = {
+        "prediction": {"preprocess": preprocess_ij, "postprocess": postprocess_ij},
+        "test_information": test_info,
+        # other stuff deepimagej needs
+        "pyramidal_model": False,
+        "allow_tiling": True,
+        "model_keys": None,
+    }
+    return {"deepimagej": config}, attachments
+
+
+def _write_sample_data(input_paths, output_paths, input_axes, output_axes, export_folder: Path):
+    def write_im(path, im, axes):
+        assert tifffile is not None, "need tifffile for writing deepimagej config"
+        assert len(axes) == im.ndim
+        assert im.ndim in (3, 4)
+
+        # deepimagej expects xyzc axis order
+        if im.ndim == 3:
+            assert set(axes) == {"x", "y", "c"}
+            axes_ij = "xyc"
+        else:
+            assert set(axes) == {"x", "y", "z", "c"}
+            axes_ij = "xyzc"
+
+        axis_permutation = tuple(axes_ij.index(ax) for ax in axes)
+        im = im.transpose(axis_permutation)
+
+        with tifffile.TiffWriter(path) as f:
+            f.write(im)
+
+    sample_in_paths = []
+    for i, (in_path, axes) in enumerate(zip(input_paths, input_axes)):
+        inp = np.load(export_folder / in_path)[0]
+        sample_in_path = export_folder / f"sample_input_{i}.tif"
+        write_im(sample_in_path, inp, axes)
+        sample_in_paths.append(sample_in_path)
+
+    sample_out_paths = []
+    for i, (out_path, axes) in enumerate(zip(output_paths, output_axes)):
+        outp = np.load(export_folder / out_path)[0]
+        sample_out_path = export_folder / f"sample_output_{i}.tif"
+        write_im(sample_out_path, outp, axes)
+        sample_out_paths.append(sample_out_path)
+
+    return [Path(p.name) for p in sample_in_paths], [Path(p.name) for p in sample_out_paths]
+
+
+def _ensure_local(source: Union[Path, URI, str, list], root: Path) -> Union[Path, URI, list]:
+    """ensure source is local relative path in root"""
+    if isinstance(source, list):
+        return [_ensure_local(s, root) for s in source]
+
+    local_source = resolve_source(source, root)
+    local_source = resolve_source(local_source, root, root / local_source.name)
+    return local_source.relative_to(root)
+
+
+def _ensure_local_or_url(source: Union[Path, URI, str, list], root: Path) -> Union[Path, URI, list]:
+    """ensure source is remote URI or local relative path in root"""
+    if isinstance(source, list):
+        return [_ensure_local_or_url(s, root) for s in source]
+
+    local_source = resolve_local_source(source, root)
+    local_source = resolve_local_source(
+        local_source, root, None if isinstance(local_source, URI) else root / local_source.name
+    )
+    return local_source.relative_to(root)
 
 
 def build_model(
@@ -265,8 +450,8 @@ def build_model(
     source: Optional[str] = None,
     model_kwargs: Optional[Dict[str, Union[int, float, str]]] = None,
     weight_type: Optional[str] = None,
-    sample_inputs: Optional[str] = None,
-    sample_outputs: Optional[str] = None,
+    sample_inputs: Optional[List[str]] = None,
+    sample_outputs: Optional[List[str]] = None,
     # tensor specific
     input_name: Optional[List[str]] = None,
     input_step: Optional[List[List[int]]] = None,
@@ -282,6 +467,7 @@ def build_model(
     halo: Optional[List[List[int]]] = None,
     preprocessing: Optional[List[Dict[str, Dict[str, Union[int, float, str]]]]] = None,
     postprocessing: Optional[List[Dict[str, Dict[str, Union[int, float, str]]]]] = None,
+    pixel_sizes: Optional[List[Dict[str, float]]] = None,
     # general optional
     git_repo: Optional[str] = None,
     attachments: Optional[Dict[str, Union[str, List[str]]]] = None,
@@ -292,6 +478,7 @@ def build_model(
     dependencies: Optional[Union[Path, str]] = None,
     links: Optional[List[str]] = None,
     root: Optional[Union[Path, str]] = None,
+    add_deepimagej_config: bool = False,
     **weight_kwargs,
 ):
     """Create a zipped bioimage.io model.
@@ -349,6 +536,8 @@ def build_model(
         halo: halo to be cropped from the output tensor.
         preprocessing: list of preprocessing operations for the input.
         postprocessing: list of postprocessing operations for the output.
+        pixel_sizes: the pixel sizes for the input tensors, only for spatial axes.
+            This information is currently only used by deepimagej, but will be added to the spec soon.
         git_repo: reference git repository for this model.
         attachments: list of additional files to package with the model.
         packaged_by: list of authors that have packaged this model.
@@ -357,6 +546,7 @@ def build_model(
         config: custom configuration for this model.
         dependencies: relative path to file with dependencies for this model.
         root: optional root path for relative paths. This can be helpful when building a spec from another model spec.
+        add_deepimagej_config: add the deepimagej config to the model.
         weight_kwargs: keyword arguments for this weight type, e.g. "tensorflow_version".
     """
     if root is None:
@@ -369,8 +559,8 @@ def build_model(
 
     assert len(test_inputs)
     assert len(test_outputs)
-    test_inputs = resolve_local_source(test_inputs, root)
-    test_outputs = resolve_local_source(test_outputs, root)
+    test_inputs = _ensure_local_or_url(test_inputs, root)
+    test_outputs = _ensure_local_or_url(test_outputs, root)
 
     n_inputs = len(test_inputs)
     input_name = n_inputs * [None] if input_name is None else input_name
@@ -381,7 +571,7 @@ def build_model(
     preprocessing = n_inputs * [None] if preprocessing is None else preprocessing
 
     inputs = [
-        _get_input_tensor(test_in, name, step, min_shape, data_range, axes, preproc)
+        _get_input_tensor(root / test_in, name, step, min_shape, data_range, axes, preproc)
         for test_in, name, step, min_shape, axes, data_range, preproc in zip(
             test_inputs, input_name, input_step, input_min_shape, input_axes, input_data_range, preprocessing
         )
@@ -398,7 +588,7 @@ def build_model(
     halo = n_outputs * [None] if halo is None else halo
 
     outputs = [
-        _get_output_tensor(test_out, name, reference, scale, offset, axes, data_range, postproc, hal)
+        _get_output_tensor(root / test_out, name, reference, scale, offset, axes, data_range, postproc, hal)
         for test_out, name, reference, scale, offset, axes, data_range, postproc, hal in zip(
             test_outputs,
             output_name,
@@ -412,6 +602,16 @@ def build_model(
         )
     ]
 
+    # validate the pixel sizes (currently only used by deepimagej)
+    spatial_axes = [[ax for ax in inp.axes if ax in "xyz"] for inp in inputs]
+    if pixel_sizes is None:
+        pixel_sizes = [{ax: 1.0 for ax in axes} for axes in spatial_axes]
+    else:
+        assert len(pixel_sizes) == n_inputs
+        for pix_size, axes in zip(pixel_sizes, spatial_axes):
+            assert isinstance(pixel_sizes, dict)
+            assert set(pix_size.keys()) == set(axes)
+
     #
     # generate general fields
     #
@@ -420,21 +620,72 @@ def build_model(
 
     authors = _build_authors(authors)
     cite = _build_cite(cite)
-    documentation = resolve_source(documentation, root)
-    covers = resolve_source(covers, root)
+    documentation = _ensure_local(documentation, root)
+    covers = _ensure_local(covers, root)
 
     # parse the weights
     weights, language, framework, source, source_hash, tmp_source = _get_weights(
         weight_uri, weight_type, source, root, **weight_kwargs
     )
 
+    # validate the sample inputs and outputs (if given)
+    if sample_inputs is not None:
+        assert sample_outputs is not None
+        assert len(sample_inputs) == n_inputs
+        assert len(sample_outputs) == n_outputs
+
+    # add the deepimagej config if specified
+    if add_deepimagej_config:
+        if sample_inputs is None:
+            input_axes_ij = [inp.axes[1:] for inp in inputs]
+            output_axes_ij = [out.axes[1:] for out in outputs]
+            sample_inputs, sample_outputs = _write_sample_data(
+                test_inputs, test_outputs, input_axes_ij, output_axes_ij, root
+            )
+        # deepimagej expect tifs as sample data
+        assert all(os.path.splitext(path)[1] in (".tif", ".tiff") for path in sample_inputs)
+        assert all(os.path.splitext(path)[1] in (".tif", ".tiff") for path in sample_outputs)
+
+        ij_config, ij_attachments = _get_deepimagej_config(
+            root, sample_inputs, sample_outputs, pixel_sizes, preprocessing, postprocessing
+        )
+
+        if config is None:
+            config = ij_config
+        else:
+            config.update(ij_config)
+
+        if ij_attachments is not None:
+            if attachments is None:
+                attachments = {"files": ij_attachments}
+            elif "files" not in attachments:
+                attachments["files"] = ij_attachments
+            else:
+                attachments["files"].extend(ij_attachments)
+
+        if links is None:
+            links = ["deepimagej/deepimagej"]
+        else:
+            links.append("deepimagej/deepimagej")
+
+    # make sure links are unique
+    if links is not None:
+        links = list(set(links))
+
+    # make sure sample inputs / outputs are relative paths
+    if sample_inputs is not None:
+        sample_inputs = _ensure_local_or_url(sample_inputs, root)
+
+    if sample_outputs is not None:
+        sample_outputs = _ensure_local_or_url(sample_outputs, root)
+
     # optional kwargs, don't pass them if none
     optional_kwargs = {
-        "git_repo": git_repo,
         "attachments": attachments,
+        "config": config,
+        "git_repo": git_repo,
         "packaged_by": packaged_by,
         "run_mode": run_mode,
-        "config": config,
         "sample_inputs": sample_inputs,
         "sample_outputs": sample_outputs,
         "framework": framework,
@@ -445,6 +696,7 @@ def build_model(
         "links": links,
     }
     kwargs = {k: v for k, v in optional_kwargs.items() if v is not None}
+
     if dependencies is not None:
         kwargs["dependencies"] = _get_dependencies(dependencies, root)
     if parent is not None:
@@ -453,21 +705,22 @@ def build_model(
 
     try:
         model = model_spec.raw_nodes.Model(
-            format_version=format_version,
-            name=name,
-            description=description,
             authors=authors,
             cite=cite,
-            tags=tags,
-            license=license,
-            documentation=documentation,
             covers=covers,
-            timestamp=timestamp,
-            weights=weights,
+            description=description,
+            documentation=documentation,
+            format_version=format_version,
             inputs=inputs,
+            license=license,
+            name=name,
             outputs=outputs,
+            root_path=root,
+            tags=tags,
             test_inputs=test_inputs,
             test_outputs=test_outputs,
+            timestamp=timestamp,
+            weights=weights,
             **kwargs,
         )
         model_package = export_resource_package(model, output_path=output_path)
@@ -477,6 +730,17 @@ def build_model(
         if tmp_source is not None:
             os.remove(tmp_source)
 
+    # breakpoint()
+    # debugging: for some reason this causes a validation error for the sample_input / output,
+    # although they are passed in the same format as test inputs / outputs:
+    # (Pdb) model.sample_inputs
+    # [PosixPath('/tmp/bioimageio_cache/extracted_packages/efae734f36ff8634977c9174f01c854c4e2cfc799bc92751a4558a0edd963da6/sample_input_0.tif')]
+    # (Pdb) model.sample_outputs
+    # [PosixPath('/tmp/bioimageio_cache/extracted_packages/efae734f36ff8634977c9174f01c854c4e2cfc799bc92751a4558a0edd963da6/sample_output_0.tif')]
+    # (Pdb) model.test_inputs
+    # [PosixPath('/tmp/bioimageio_cache/extracted_packages/efae734f36ff8634977c9174f01c854c4e2cfc799bc92751a4558a0edd963da6/test_input.npy')]
+    # (Pdb) model.test_outputs
+    # [PosixPath('/tmp/bioimageio_cache/extracted_packages/efae734f36ff8634977c9174f01c854c4e2cfc799bc92751a4558a0edd963da6/test_output.npy')]
     model = load_raw_resource_description(model_package)
     return model
 

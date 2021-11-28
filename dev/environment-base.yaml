@@ -15,5 +15,6 @@ dependencies:
   - pytorch
   - onnxruntime
   - tensorflow >=1.12,<2.0
+  - tifffile
   - pip:
     - keras==1.2.2
