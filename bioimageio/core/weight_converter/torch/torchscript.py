@@ -75,7 +75,13 @@ def _check_predictions(model, scripted_model, model_spec, input_data):
 def convert_weights_to_pytorch_script(
     model_spec: Union[str, Path, spec.model.raw_nodes.Model], output_path: Union[str, Path], use_tracing: bool = True
 ):
-    """Convert model weights from format 'pytorch_state_dict' to 'torchscript'."""
+    """Convert model weights from format 'pytorch_state_dict' to 'torchscript'.
+
+    Args:
+        model_spec: location of the resource for the input bioimageio model
+        output_path: where to save the torchscript weights
+        use_tracing: whether to use tracing or scripting to export the torchscript format
+    """
     if isinstance(model_spec, (str, Path)):
         model_spec = load_resource_description(Path(model_spec))
 

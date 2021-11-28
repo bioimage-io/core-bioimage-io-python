@@ -27,8 +27,8 @@ def convert_weights_to_onnx(
 ):
     """Convert model weights from format 'pytorch_state_dict' to 'onnx'.
 
-    Arguments:
-        model_yaml: location of the model.yaml file with bioimage.io spec
+    Args:
+        model_spec: location of the resource for the input bioimageio model
         output_path: where to save the onnx weights
         opset_version: onnx opset version
         use_tracing: whether to use tracing or scripting to export the onnx format
