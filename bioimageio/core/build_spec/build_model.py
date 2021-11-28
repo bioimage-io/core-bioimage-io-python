@@ -1,7 +1,6 @@
 import datetime
 import hashlib
 import os
-import shutil
 from pathlib import Path
 from shutil import copyfile
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -291,7 +290,8 @@ def _get_deepimagej_macro(name, kwargs, export_folder):
     url = f"https://raw.githubusercontent.com/deepimagej/imagej-macros/master/bioimage.io/{macro}"
 
     path = os.path.join(export_folder, macro)
-    # TODO do we use requests?
+    # use https://github.com/bioimage-io/core-bioimage-io-python/blob/main/bioimageio/core/resource_io/utils.py#L267
+    # instead if the implementation is update s.t. an output path is accepted
     with requests.get(url, stream=True) as r:
         with open(path, "w") as f:
             f.write(r.text)
