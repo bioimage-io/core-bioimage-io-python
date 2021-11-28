@@ -509,11 +509,10 @@ def predict_image(
     if len(model.outputs) != len(outputs):
         raise ValueError
 
-    prediction_pipeline = create_prediction_pipeline(
+    with create_prediction_pipeline(
         bioimageio_model=model, weight_format=weight_format, devices=devices
-    )
-
-    _predict_sample(prediction_pipeline, inputs, outputs, padding, tiling)
+    ) as prediction_pipeline:
+        _predict_sample(prediction_pipeline, inputs, outputs, padding, tiling)
 
 
 def predict_images(
@@ -542,19 +541,19 @@ def predict_images(
     model = load_resource_description(model_rdf)
     assert isinstance(model, Model)
 
-    prediction_pipeline = create_prediction_pipeline(
+    with create_prediction_pipeline(
         bioimageio_model=model, weight_format=weight_format, devices=devices
-    )
+    ) as prediction_pipeline:
 
-    prog = zip(inputs, outputs)
-    if verbose:
-        prog = tqdm(prog, total=len(inputs))
+        prog = zip(inputs, outputs)
+        if verbose:
+            prog = tqdm(prog, total=len(inputs))
 
-    for inp, outp in prog:
-        if not isinstance(inp, (tuple, list)):
-            inp = [inp]
+        for inp, outp in prog:
+            if not isinstance(inp, (tuple, list)):
+                inp = [inp]
 
-        if not isinstance(outp, (tuple, list)):
-            outp = [outp]
+            if not isinstance(outp, (tuple, list)):
+                outp = [outp]
 
-        _predict_sample(prediction_pipeline, inp, outp, padding, tiling)
+            _predict_sample(prediction_pipeline, inp, outp, padding, tiling)
