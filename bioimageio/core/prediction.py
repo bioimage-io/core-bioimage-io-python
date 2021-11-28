@@ -3,7 +3,7 @@ import os
 from copy import deepcopy
 from itertools import product
 from pathlib import Path
-from typing import Dict, List, OrderedDict, Sequence, Tuple, Union
+from typing import Dict, List, Optional, OrderedDict, Sequence, Tuple, Union
 
 import imageio
 import numpy as np
@@ -12,13 +12,15 @@ from tqdm import tqdm
 
 from bioimageio.core import load_resource_description
 from bioimageio.core.prediction_pipeline import PredictionPipeline, create_prediction_pipeline
-from bioimageio.core.resource_io.nodes import ImplicitOutputShape, InputTensor, Model, OutputTensor
+from bioimageio.core.resource_io.nodes import ImplicitOutputShape, InputTensor, Model, ResourceDescription, OutputTensor
+from bioimageio.spec.shared import raw_nodes
+from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
 
 
 #
 # utility functions for prediction
 #
-def require_axes(im, axes):
+def _require_axes(im, axes):
     is_volume = "z" in axes
     # we assume images / volumes are loaded as one of
     # yx, yxc, zyxc
@@ -47,7 +49,7 @@ def require_axes(im, axes):
     return im
 
 
-def pad(im, axes: Sequence[str], padding, pad_right=True) -> Tuple[np.ndarray, Dict[str, slice]]:
+def _pad(im, axes: Sequence[str], padding, pad_right=True) -> Tuple[np.ndarray, Dict[str, slice]]:
     assert im.ndim == len(axes), f"{im.ndim}, {len(axes)}"
 
     padding_ = deepcopy(padding)
@@ -89,19 +91,19 @@ def pad(im, axes: Sequence[str], padding, pad_right=True) -> Tuple[np.ndarray, D
     return im, crop
 
 
-def load_image(in_path, axes: Sequence[str]) -> xr.DataArray:
+def _load_image(in_path, axes: Sequence[str]) -> xr.DataArray:
     ext = os.path.splitext(in_path)[1]
     if ext == ".npy":
         im = np.load(in_path)
     else:
         is_volume = "z" in axes
         im = imageio.volread(in_path) if is_volume else imageio.imread(in_path)
-        im = require_axes(im, axes)
+        im = _require_axes(im, axes)
     return xr.DataArray(im, dims=axes)
 
 
-def load_tensors(sources, tensor_specs: List[Union[InputTensor, OutputTensor]]) -> List[xr.DataArray]:
-    return [load_image(s, sspec.axes) for s, sspec in zip(sources, tensor_specs)]
+def _load_tensors(sources, tensor_specs: List[Union[InputTensor, OutputTensor]]) -> List[xr.DataArray]:
+    return [_load_image(s, sspec.axes) for s, sspec in zip(sources, tensor_specs)]
 
 
 def _to_channel_last(image):
@@ -112,7 +114,7 @@ def _to_channel_last(image):
     return image
 
 
-def save_image(out_path, image):
+def _save_image(out_path, image):
     ext = os.path.splitext(out_path)[1]
     if ext == ".npy":
         np.save(out_path, image)
@@ -143,12 +145,12 @@ def save_image(out_path, image):
                 save_function(chan_out_path, image[..., c])
 
 
-def apply_crop(data, crop):
+def _apply_crop(data, crop):
     crop = tuple(crop[ax] for ax in data.dims)
     return data[crop]
 
 
-def get_tiling(shape, tile_shape, halo, input_axes):
+def _get_tiling(shape, tile_shape, halo, input_axes):
     assert len(shape) == len(input_axes)
 
     shape_ = [sh for sh, ax in zip(shape, input_axes) if ax in "xyz"]
@@ -189,8 +191,8 @@ def get_tiling(shape, tile_shape, halo, input_axes):
         yield outer_tile, inner_tile, local_tile
 
 
-def predict_with_tiling_impl(
-    prediction_pipeline,
+def _predict_with_tiling_impl(
+    prediction_pipeline: PredictionPipeline,
     inputs: List[xr.DataArray],
     outputs: List[xr.DataArray],
     tile_shapes: List[dict],
@@ -210,7 +212,7 @@ def predict_with_tiling_impl(
     tile_shape = tile_shapes[0]
     halo = halos[0]
 
-    tiles = get_tiling(shape=input_.shape, tile_shape=tile_shape, halo=halo, input_axes=input_.dims)
+    tiles = _get_tiling(shape=input_.shape, tile_shape=tile_shape, halo=halo, input_axes=input_.dims)
 
     assert all(isinstance(ax, str) for ax in input_.dims)
     input_axes: Tuple[str, ...] = input_.dims  # noqa
@@ -239,7 +241,16 @@ def predict_with_tiling_impl(
 #
 
 
-def predict(prediction_pipeline: PredictionPipeline, inputs) -> List[xr.DataArray]:
+def predict(
+    prediction_pipeline: PredictionPipeline,
+    inputs: Union[xr.DataArray, List[xr.DataArray], Tuple[xr.DataArray]],
+) -> List[xr.DataArray]:
+    """Run prediction for a single set of input(s) with a bioimage.io model
+
+    Args:
+        prediction_pipeline: the prediction pipeline for the input model.
+        inputs: the input(s) for this model represented as xarray data.
+    """
     if not isinstance(inputs, (tuple, list)):
         inputs = [inputs]
 
@@ -250,80 +261,13 @@ def predict(prediction_pipeline: PredictionPipeline, inputs) -> List[xr.DataArra
     return prediction_pipeline.forward(*tagged_data)
 
 
-def predict_with_padding(prediction_pipeline, inputs, padding, pad_right=True) -> List[xr.DataArray]:
-    if not isinstance(inputs, (tuple, list)):
-        inputs = [inputs]
-
-    assert len(inputs) == len(prediction_pipeline.input_specs)
-
-    if not isinstance(padding, (tuple, list)):
-        padding = [padding]
-
-    assert len(padding) == len(prediction_pipeline.input_specs)
-    inputs, crops = zip(
-        *[
-            pad(inp, spec.axes, p, pad_right=pad_right)
-            for inp, spec, p in zip(inputs, prediction_pipeline.input_specs, padding)
-        ]
-    )
-
-    result = predict(prediction_pipeline, inputs)
-    return [apply_crop(res, crop) for res, crop in zip(result, crops)]
-
-
-def predict_with_tiling(prediction_pipeline: PredictionPipeline, inputs, tiling) -> List[xr.DataArray]:
-    if not isinstance(inputs, (list, tuple)):
-        inputs = [inputs]
-
-    assert len(inputs) == len(prediction_pipeline.input_specs)
-    named_inputs: OrderedDict[str, xr.DataArray] = collections.OrderedDict(
-        **{
-            ipt_spec.name: xr.DataArray(ipt_data, dims=tuple(ipt_spec.axes))
-            for ipt_data, ipt_spec in zip(inputs, prediction_pipeline.input_specs)
-        }
-    )
-
-    outputs = []
-    for output_spec in prediction_pipeline.output_specs:
-        if isinstance(output_spec.shape, ImplicitOutputShape):
-            scale = dict(zip(output_spec.axes, output_spec.shape.scale))
-            offset = dict(zip(output_spec.axes, output_spec.shape.offset))
-
-            # for now, we only support tiling if the spatial shape doesn't change
-            # supporting this should not be so difficult, we would just need to apply the inverse
-            # to "out_shape = scale * in_shape + 2 * offset" ("in_shape = (out_shape - 2 * offset) / scale")
-            # to 'outer_tile' in 'get_tiling'
-            if any(sc != 1 for ax, sc in scale.items() if ax in "xyz") or any(
-                off != 0 for ax, off in offset.items() if ax in "xyz"
-            ):
-                raise NotImplementedError("Tiling with a different output shape is not yet supported")
-
-            ref_input = named_inputs[output_spec.shape.reference_tensor]
-            ref_input_shape = dict(zip(ref_input.dims, ref_input.shape))
-            output_shape = tuple(int(scale[ax] * ref_input_shape[ax] + 2 * offset[ax]) for ax in output_spec.axes)
-        else:
-            output_shape = tuple(output_spec.shape)
-
-        outputs.append(xr.DataArray(np.zeros(output_shape, dtype=output_spec.data_type), dims=tuple(output_spec.axes)))
-
-    predict_with_tiling_impl(
-        prediction_pipeline,
-        list(named_inputs.values()),
-        outputs,
-        tile_shapes=[tiling["tile"]],  # todo: update tiling for multiple inputs/outputs
-        halos=[tiling["halo"]],
-    )
-
-    return outputs
-
-
-def parse_padding(padding, model):
+def _parse_padding(padding, input_specs):
     if padding is None:  # no padding
         return padding
-    if len(model.inputs) > 1:
+    if len(input_specs) > 1:
         raise NotImplementedError("Padding for multiple inputs not yet implemented")
 
-    input_spec = model.inputs[0]
+    input_spec = input_specs[0]
     pad_keys = tuple(input_spec.axes) + ("mode",)
 
     def check_padding(padding):
@@ -350,6 +294,41 @@ def parse_padding(padding, model):
     return padding
 
 
+def predict_with_padding(
+    prediction_pipeline: PredictionPipeline,
+    inputs: Union[xr.DataArray, List[xr.DataArray], Tuple[xr.DataArray]],
+    padding: Union[bool, Dict[str, int]],
+    pad_right: bool = True,
+) -> List[xr.DataArray]:
+    """Run prediction with padding for a single set of input(s) with a bioimage.io model.
+
+    Args:
+        prediction_pipeline: the prediction pipeline for the input model.
+        inputs: the input(s) for this model represented as xarray data.
+        padding: the padding settings. Pass True to derive from the model spec.
+        pad_right: whether to applying padding to the right or left of the input.
+    """
+    if not padding:
+        raise ValueError
+    assert len(inputs) == len(prediction_pipeline.input_specs)
+
+    padding = _parse_padding(padding, prediction_pipeline.input_specs)
+    if not isinstance(inputs, (tuple, list)):
+        inputs = [inputs]
+    if not isinstance(padding, (tuple, list)):
+        padding = [padding]
+    assert len(padding) == len(prediction_pipeline.input_specs)
+    inputs, crops = zip(
+        *[
+            _pad(inp, spec.axes, p, pad_right=pad_right)
+            for inp, spec, p in zip(inputs, prediction_pipeline.input_specs, padding)
+        ]
+    )
+
+    result = predict(prediction_pipeline, inputs)
+    return [_apply_crop(res, crop) for res, crop in zip(result, crops)]
+
+
 # simple heuristic to determine suitable shape from min and step
 def _determine_shape(min_shape, step, axes):
     is3d = "z" in axes
@@ -366,17 +345,16 @@ def _determine_shape(min_shape, step, axes):
     return shape
 
 
-def parse_tiling(tiling, model):
+def _parse_tiling(tiling, input_specs, output_specs):
     if tiling is None:  # no tiling
         return tiling
-    if len(model.inputs) > 1:
+    if len(input_specs) > 1:
         raise NotImplementedError("Tiling for multiple inputs not yet implemented")
-
-    if len(model.outputs) > 1:
+    if len(output_specs) > 1:
         raise NotImplementedError("Tiling for multiple outputs not yet implemented")
 
-    input_spec = model.inputs[0]
-    output_spec = model.outputs[0]
+    input_spec = input_specs[0]
+    output_spec = output_specs[0]
     axes = input_spec.axes
 
     def check_tiling(tiling):
@@ -418,8 +396,106 @@ def parse_tiling(tiling, model):
     return tiling
 
 
-def predict_image(model_rdf, inputs, outputs, padding=None, tiling=None, weight_format=None, devices=None):
-    """Run prediction for a single set of inputs with a bioimage.io model."""
+def predict_with_tiling(
+    prediction_pipeline: PredictionPipeline,
+    inputs: Union[xr.DataArray, List[xr.DataArray], Tuple[xr.DataArray]],
+    tiling: Union[bool, Dict[str, Dict[str, int]]],
+) -> List[xr.DataArray]:
+    """Run prediction with tiling for a single set of input(s) with a bioimage.io model.
+
+    Args:
+        prediction_pipeline: the prediction pipeline for the input model.
+        inputs: the input(s) for this model represented as xarray data.
+        tiling: the tiling settings. Pass True to derive from the model spec.
+    """
+    if not tiling:
+        raise ValueError
+    assert len(inputs) == len(prediction_pipeline.input_specs)
+
+    tiling = _parse_tiling(tiling, prediction_pipeline.input_specs, prediction_pipeline.output_specs)
+    if not isinstance(inputs, (list, tuple)):
+        inputs = [inputs]
+    named_inputs: OrderedDict[str, xr.DataArray] = collections.OrderedDict(
+        **{
+            ipt_spec.name: xr.DataArray(ipt_data, dims=tuple(ipt_spec.axes))
+            for ipt_data, ipt_spec in zip(inputs, prediction_pipeline.input_specs)
+        }
+    )
+
+    outputs = []
+    for output_spec in prediction_pipeline.output_specs:
+        if isinstance(output_spec.shape, ImplicitOutputShape):
+            scale = dict(zip(output_spec.axes, output_spec.shape.scale))
+            offset = dict(zip(output_spec.axes, output_spec.shape.offset))
+
+            # for now, we only support tiling if the spatial shape doesn't change
+            # supporting this should not be so difficult, we would just need to apply the inverse
+            # to "out_shape = scale * in_shape + 2 * offset" ("in_shape = (out_shape - 2 * offset) / scale")
+            # to 'outer_tile' in 'get_tiling'
+            if any(sc != 1 for ax, sc in scale.items() if ax in "xyz") or any(
+                off != 0 for ax, off in offset.items() if ax in "xyz"
+            ):
+                raise NotImplementedError("Tiling with a different output shape is not yet supported")
+
+            ref_input = named_inputs[output_spec.shape.reference_tensor]
+            ref_input_shape = dict(zip(ref_input.dims, ref_input.shape))
+            output_shape = tuple(int(scale[ax] * ref_input_shape[ax] + 2 * offset[ax]) for ax in output_spec.axes)
+        else:
+            output_shape = tuple(output_spec.shape)
+
+        outputs.append(xr.DataArray(np.zeros(output_shape, dtype=output_spec.data_type), dims=tuple(output_spec.axes)))
+
+    _predict_with_tiling_impl(
+        prediction_pipeline,
+        list(named_inputs.values()),
+        outputs,
+        tile_shapes=[tiling["tile"]],  # todo: update tiling for multiple inputs/outputs
+        halos=[tiling["halo"]],
+    )
+
+    return outputs
+
+
+def _predict_sample(prediction_pipeline, inputs, outputs, padding, tiling):
+    if padding and tiling:
+        raise ValueError("Only one of padding or tiling is supported")
+
+    input_data = _load_tensors(inputs, prediction_pipeline.input_specs)
+    if padding is not None:
+        result = predict_with_padding(prediction_pipeline, input_data, padding)
+    elif tiling is not None:
+        result = predict_with_tiling(prediction_pipeline, input_data, tiling)
+    else:
+        result = predict(prediction_pipeline, input_data)
+
+    assert isinstance(result, list)
+    assert len(result) == len(outputs)
+    for res, out in zip(result, outputs):
+        _save_image(out, res)
+
+
+def predict_image(
+    model_rdf: Union[RawResourceDescription, ResourceDescription, os.PathLike, str, dict, raw_nodes.URI],
+    inputs: Union[Tuple[Path, ...], List[Path], Path],
+    outputs: Union[Tuple[Path, ...], List[Path], Path],
+    padding: Optional[Union[bool, Dict[str, int]]] = None,
+    tiling: Optional[Union[bool, Dict[str, Dict[str, int]]]] = None,
+    weight_format: Optional[str] = None,
+    devices: Optional[List[str]] = None,
+    verbose: bool = False,
+):
+    """Run prediction for a single set of input image(s) with a bioimage.io model.
+
+    Args:
+        model_rdf: the bioimageio model.
+        inputs: the filepaths for the input images.
+        outputs: the filepaths for saving the input images.
+        padding: the padding settings for prediction. By default no padding is used.
+        tiling: the tiling settings for prediction. By default no tiling is used.
+        weight_format: the weight format to use for predictions.
+        devices: the devices to use for prediction.
+        verbose: run prediction in verbose mode.
+    """
     if not isinstance(inputs, (tuple, list)):
         inputs = [inputs]
 
@@ -437,41 +513,31 @@ def predict_image(model_rdf, inputs, outputs, padding=None, tiling=None, weight_
         bioimageio_model=model, weight_format=weight_format, devices=devices
     )
 
-    padding = parse_padding(padding, model)
-    tiling = parse_tiling(tiling, model)
-
     _predict_sample(prediction_pipeline, inputs, outputs, padding, tiling)
 
 
-def _predict_sample(prediction_pipeline, inputs, outputs, padding, tiling):
-    if padding is not None and tiling is not None:
-        raise ValueError("Only one of padding or tiling is supported")
-
-    input_data = load_tensors(inputs, prediction_pipeline.input_specs)
-    if padding is not None:
-        result = predict_with_padding(prediction_pipeline, input_data, padding)
-    elif tiling is not None:
-        result = predict_with_tiling(prediction_pipeline, input_data, tiling)
-    else:
-        result = predict(prediction_pipeline, input_data)
-
-    assert isinstance(result, list)
-    assert len(result) == len(outputs)
-    for res, out in zip(result, outputs):
-        save_image(out, res)
-
-
 def predict_images(
-    model_rdf,
+    model_rdf: Union[RawResourceDescription, ResourceDescription, os.PathLike, str, dict, raw_nodes.URI],
     inputs: Sequence[Union[Tuple[Path, ...], List[Path], Path]],
     outputs: Sequence[Union[Tuple[Path, ...], List[Path], Path]],
-    padding=None,
-    tiling=None,
-    weight_format=None,
-    devices=None,
-    verbose=False,
+    padding: Optional[Union[bool, Dict[str, int]]] = None,
+    tiling: Optional[Union[bool, Dict[str, Dict[str, int]]]] = None,
+    weight_format: Optional[str] = None,
+    devices: Optional[List[str]] = None,
+    verbose: bool = False,
 ):
-    """Predict multiple inputs with a bioimage.io model."""
+    """Predict multiple input images with a bioimage.io model.
+
+    Args:
+        model_rdf: the bioimageio model.
+        inputs: the filepaths for the input images.
+        outputs: the filepaths for saving the input images.
+        padding: the padding settings for prediction. By default no padding is used.
+        tiling: the tiling settings for prediction. By default no tiling is used.
+        weight_format: the weight format to use for predictions.
+        devices: the devices to use for prediction.
+        verbose: run prediction in verbose mode.
+    """
 
     model = load_resource_description(model_rdf)
     assert isinstance(model, Model)
@@ -479,9 +545,6 @@ def predict_images(
     prediction_pipeline = create_prediction_pipeline(
         bioimageio_model=model, weight_format=weight_format, devices=devices
     )
-
-    padding = parse_padding(padding, model)
-    tiling = parse_tiling(tiling, model)
 
     prog = zip(inputs, outputs)
     if verbose:
