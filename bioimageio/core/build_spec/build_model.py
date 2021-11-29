@@ -323,7 +323,9 @@ def _get_deepimagej_config(export_folder, sample_inputs, sample_outputs, pixel_s
 
     if any(preproc is not None for preproc in preprocessing):
         assert len(preprocessing) == 1
-        preprocess_ij = [_get_deepimagej_macro(name, kwargs) for name, kwargs in preprocessing[0].items()]
+        preprocess_ij = [
+            _get_deepimagej_macro(name, kwargs, export_folder) for name, kwargs in preprocessing[0].items()
+        ]
         attachments = [preproc["kwargs"] for preproc in preprocess_ij]
     else:
         preprocess_ij = [{"spec": None}]
@@ -331,7 +333,9 @@ def _get_deepimagej_config(export_folder, sample_inputs, sample_outputs, pixel_s
 
     if any(postproc is not None for postproc in postprocessing):
         assert len(postprocessing) == 1
-        postprocess_ij = [_get_deepimagej_macro(name, kwargs) for name, kwargs in postprocessing[0].items()]
+        postprocess_ij = [
+            _get_deepimagej_macro(name, kwargs, export_folder) for name, kwargs in postprocessing[0].items()
+        ]
         if attachments is None:
             attachments = [postproc["kwargs"] for postproc in postprocess_ij]
         else:
@@ -609,7 +613,7 @@ def build_model(
     else:
         assert len(pixel_sizes) == n_inputs
         for pix_size, axes in zip(pixel_sizes, spatial_axes):
-            assert isinstance(pixel_sizes, dict)
+            assert isinstance(pix_size, dict)
             assert set(pix_size.keys()) == set(axes)
 
     #
@@ -730,17 +734,6 @@ def build_model(
         if tmp_source is not None:
             os.remove(tmp_source)
 
-    # breakpoint()
-    # debugging: for some reason this causes a validation error for the sample_input / output,
-    # although they are passed in the same format as test inputs / outputs:
-    # (Pdb) model.sample_inputs
-    # [PosixPath('/tmp/bioimageio_cache/extracted_packages/efae734f36ff8634977c9174f01c854c4e2cfc799bc92751a4558a0edd963da6/sample_input_0.tif')]
-    # (Pdb) model.sample_outputs
-    # [PosixPath('/tmp/bioimageio_cache/extracted_packages/efae734f36ff8634977c9174f01c854c4e2cfc799bc92751a4558a0edd963da6/sample_output_0.tif')]
-    # (Pdb) model.test_inputs
-    # [PosixPath('/tmp/bioimageio_cache/extracted_packages/efae734f36ff8634977c9174f01c854c4e2cfc799bc92751a4558a0edd963da6/test_input.npy')]
-    # (Pdb) model.test_outputs
-    # [PosixPath('/tmp/bioimageio_cache/extracted_packages/efae734f36ff8634977c9174f01c854c4e2cfc799bc92751a4558a0edd963da6/test_output.npy')]
     model = load_raw_resource_description(model_package)
     return model
 
