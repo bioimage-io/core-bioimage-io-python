@@ -36,6 +36,14 @@ def _test_build_spec(
     dep_file = None if model_spec.dependencies is missing else resolve_source(model_spec.dependencies.file, root)
     authors = [{"name": auth.name, "affiliation": auth.affiliation} for auth in model_spec.authors]
     covers = resolve_source(model_spec.covers, root)
+    preprocessing = [
+        None if input_.preprocessing == missing else {preproc.name: preproc.kwargs for preproc in input_.preprocessing}
+        for input_ in model_spec.inputs
+    ]
+    postprocessing = [
+        None if output.postprocessing == missing else {preproc.name: preproc.kwargs for preproc in output.preprocessing}
+        for output in model_spec.outputs
+    ]
     kwargs = dict(
         source=model_source,
         model_kwargs=model_spec.kwargs,
@@ -53,6 +61,8 @@ def _test_build_spec(
         cite=cite,
         root=model_spec.root_path,
         weight_type=weight_type_,
+        preprocessing=preprocessing,
+        postprocessing=postprocessing,
         output_path=out_path,
         add_deepimagej_config=add_deepimagej_config,
     )
@@ -63,6 +73,8 @@ def _test_build_spec(
         kwargs["output_reference"] = ["input"]
         kwargs["output_scale"] = [[1.0, 1.0, 1.0, 1.0]]
         kwargs["output_offset"] = [[0.0, 0.0, 0.0, 0.0]]
+    if add_deepimagej_config:
+        kwargs["pixel_sizes"] = [{"x": 5.0, "y": 5.0}]
 
     build_model(**kwargs)
     assert out_path.exists()
