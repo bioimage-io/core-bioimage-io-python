@@ -281,7 +281,7 @@ def _get_deepimagej_macro(name, kwargs, export_folder):
 
     elif name == "binarize":
         macro = "binarize.ijm"
-        replace = {"optimalThreshold", kwargs["threshold"]}
+        replace = {"optimalThreshold": kwargs["threshold"]}
 
     else:
         raise ValueError(f"Macro {name} is not available, must be one of {macro_names}.")
