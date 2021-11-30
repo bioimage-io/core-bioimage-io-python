@@ -80,11 +80,7 @@ def _get_weights(original_weight_source, weight_type, source, root, **kwargs):
     else:
         source_hash = None
 
-    if "weight_attachments" in kwargs:
-        attachments = {"attachments": ["weight_attachments"]}
-    else:
-        attachments = {}
-
+    attachments = {"attachments": kwargs["weight_attachments"]} if "weight_attachments" in kwargs else {}
     weight_types = model_spec.raw_nodes.WeightsFormat
     weight_source = _ensure_local_or_url(original_weight_source, root)
 
