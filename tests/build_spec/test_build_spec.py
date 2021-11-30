@@ -83,6 +83,11 @@ def _test_build_spec(
         loaded_config = loaded_model.config
         assert "deepimagej" in loaded_config
 
+    attachments = loaded_model.attachments
+    if "files" in attachments:
+        for attached_file in attachments["files"]:
+            assert attached_file.exists()
+
 
 def test_build_spec_pytorch(any_torch_model, tmp_path):
     _test_build_spec(any_torch_model, tmp_path / "model.zip", "pytorch_state_dict")
