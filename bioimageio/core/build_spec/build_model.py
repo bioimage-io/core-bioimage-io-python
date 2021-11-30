@@ -286,13 +286,15 @@ def _get_deepimagej_macro(name, kwargs, export_folder):
     else:
         raise ValueError(f"Macro {name} is not available, must be one of {macro_names}.")
 
-    macro = f"{name}.ijm"
     url = f"https://raw.githubusercontent.com/deepimagej/imagej-macros/master/bioimage.io/{macro}"
 
     path = os.path.join(export_folder, macro)
     # use https://github.com/bioimage-io/core-bioimage-io-python/blob/main/bioimageio/core/resource_io/utils.py#L267
     # instead if the implementation is update s.t. an output path is accepted
     with requests.get(url, stream=True) as r:
+        text = r.text
+        if text.startswith("4"):
+            raise RuntimeError(f"An error occured when downloading {url}: {r.text}")
         with open(path, "w") as f:
             f.write(r.text)
 
