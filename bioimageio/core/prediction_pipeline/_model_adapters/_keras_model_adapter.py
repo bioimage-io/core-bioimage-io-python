@@ -1,7 +1,10 @@
 import warnings
 from typing import List, Optional, Sequence
 
-import keras
+try:
+    from tensorflow import keras
+except Exception:
+    import keras
 import xarray as xr
 
 from ._model_adapter import ModelAdapter
