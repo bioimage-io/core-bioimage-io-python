@@ -1,6 +1,7 @@
 import warnings
 from typing import List, Optional, Sequence
 
+# by default, we use the keras integrated with tensorflow
 try:
     from tensorflow import keras
 except Exception:
