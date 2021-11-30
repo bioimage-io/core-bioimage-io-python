@@ -6,8 +6,8 @@ from typing import Callable, Dict, List, Tuple, Union
 from marshmallow import missing
 from marshmallow.utils import _Missing
 
-from bioimageio.spec.model.v0_3 import raw_nodes as model_raw_nodes
-from bioimageio.spec.rdf.v0_2 import raw_nodes as rdf_raw_nodes
+from bioimageio.spec.model import raw_nodes as model_raw_nodes
+from bioimageio.spec.rdf import raw_nodes as rdf_raw_nodes
 from bioimageio.spec.shared import raw_nodes
 
 
@@ -131,6 +131,14 @@ class OutputTensor(Node, model_raw_nodes.OutputTensor):
 
 
 @dataclass
+class ImportedSource(Node):
+    factory: Callable
+
+    def __call__(self, *args, **kwargs):
+        return self.factory(*args, **kwargs)
+
+
+@dataclass
 class _WeightsEntryBase(Node, model_raw_nodes._WeightsEntryBase):
     source: Path = missing
 
@@ -147,7 +155,7 @@ class OnnxWeightsEntry(_WeightsEntryBase, model_raw_nodes.OnnxWeightsEntry):
 
 @dataclass
 class PytorchStateDictWeightsEntry(_WeightsEntryBase, model_raw_nodes.PytorchStateDictWeightsEntry):
-    pass
+    architecture: Union[_Missing, ImportedSource] = missing
 
 
 @dataclass
@@ -176,16 +184,7 @@ WeightsEntry = Union[
 
 
 @dataclass
-class ImportedSource(Node):
-    factory: Callable
-
-    def __call__(self, *args, **kwargs):
-        return self.factory(*args, **kwargs)
-
-
-@dataclass
 class Model(model_raw_nodes.Model, RDF, Node):
-    source: Union[_Missing, ImportedSource] = missing
     test_inputs: List[Path] = missing
     test_outputs: List[Path] = missing
     weights: Dict[model_raw_nodes.WeightsFormat, WeightsEntry] = missing
