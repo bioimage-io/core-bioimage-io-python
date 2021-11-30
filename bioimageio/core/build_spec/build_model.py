@@ -53,63 +53,68 @@ def _infer_weight_type(path):
         raise ValueError(f"Could not infer weight type from extension {ext} for weight file {path}")
 
 
-def _get_weights(original_weight_source, weight_type, source, root, **kwargs):
+def _get_pytorch_state_dict_weight_kwargs(architecture, model_kwargs, root):
+    assert architecture is not None
+    tmp_archtecture = None
+
+    # if we have a ":" (or deprecated "::") this is a python file with class specified,
+    # so we can compute the hash for it
+    if ":" in architecture:
+        arch_file, arch_class = architecture.replace("::", ":").split(":")
+
+        # get the source path
+        arch_file = _ensure_local(arch_file, root)
+        arch_hash = _get_hash(root / arch_file)
+
+        # if not relative, create local copy (otherwise this will not work)
+        if os.path.isabs(arch_file):
+            copyfile(arch_file, "this_model_architecture.py")
+            arch = f"this_model_architecture.py:{arch_class}"
+            tmp_archtecture = "this_model_architecture.py"
+        else:
+            arch = f"{arch_file}:{arch_class}"
+        arch = spec.shared.fields.Importablearch().deserialize(arch)
+
+        weight_kwargs = {"architecture": arch, "architecture_sha256": arch_hash}
+
+    # otherwise this is a python class or function name
+    else:
+        weight_kwargs = {"architecture": architecture}
+
+    if model_kwargs is not None:
+        weight_kwargs["kwargs"] = model_kwargs
+
+    return weight_kwargs, tmp_archtecture
+
+
+def _get_weights(original_weight_source, weight_type, root, architecture=None, model_kwargs=None, **kwargs):
     weight_path = resolve_source(original_weight_source, root)
     if weight_type is None:
         weight_type = _infer_weight_type(weight_path)
     weight_hash = _get_hash(weight_path)
 
-    tmp_source = None
-    # if we have a ":" (or deprecated "::") this is a python file with class specified,
-    # so we can compute the hash for it
-    if source is not None and ":" in source:
-        source_file, source_class = source.replace("::", ":").split(":")
-
-        # get the source path
-        source_file = _ensure_local(source_file, root)
-        source_hash = _get_hash(root / source_file)
-
-        # if not relative, create local copy (otherwise this will not work)
-        if os.path.isabs(source_file):
-            copyfile(source_file, "this_model_architecture.py")
-            source = f"this_model_architecture.py:{source_class}"
-            tmp_source = "this_model_architecture.py"
-        else:
-            source = f"{source_file}:{source_class}"
-        source = spec.shared.fields.ImportableSource().deserialize(source)
-    else:
-        source_hash = None
-
     attachments = {"attachments": kwargs["weight_attachments"]} if "weight_attachments" in kwargs else {}
     weight_types = model_spec.raw_nodes.WeightsFormat
     weight_source = _ensure_local_or_url(original_weight_source, root)
 
+    tmp_archtecture = None
     if weight_type == "pytorch_state_dict":
-        # pytorch-state-dict -> we need a source
-        assert source is not None
+        # pytorch-state-dict -> we need an architecture definition
+        weight_kwargs, tmp_file = _get_pytorch_state_dict_weight_kwargs(architecture, model_kwargs, root)
+        weight_kwargs.update(**attachments)
         weights = model_spec.raw_nodes.PytorchStateDictWeightsEntry(
-            source=weight_source, sha256=weight_hash, **attachments
+            source=weight_source, sha256=weight_hash, **weight_kwargs
         )
-        language = "python"
-        framework = "pytorch"
 
     elif weight_type == "onnx":
         weights = model_spec.raw_nodes.OnnxWeightsEntry(
             source=weight_source, sha256=weight_hash, opset_version=kwargs.get("opset_version", 12), **attachments
         )
-        language = None
-        framework = None
 
     elif weight_type == "pytorch_script":
         weights = model_spec.raw_nodes.PytorchScriptWeightsEntry(
             source=weight_source, sha256=weight_hash, **attachments
         )
-        if source is None:
-            language = None
-            framework = None
-        else:
-            language = "python"
-            framework = "pytorch"
 
     elif weight_type == "keras_hdf5":
         weights = model_spec.raw_nodes.KerasHdf5WeightsEntry(
@@ -118,8 +123,6 @@ def _get_weights(original_weight_source, weight_type, source, root, **kwargs):
             tensorflow_version=kwargs.get("tensorflow_version", "1.15"),
             **attachments,
         )
-        language = "python"
-        framework = "tensorflow"
 
     elif weight_type == "tensorflow_saved_model_bundle":
         weights = model_spec.raw_nodes.TensorflowSavedModelBundleWeightsEntry(
@@ -128,8 +131,6 @@ def _get_weights(original_weight_source, weight_type, source, root, **kwargs):
             tensorflow_version=kwargs.get("tensorflow_version", "1.15"),
             **attachments,
         )
-        language = "python"
-        framework = "tensorflow"
 
     elif weight_type == "tensorflow_js":
         weights = model_spec.raw_nodes.TensorflowJsWeightsEntry(
@@ -138,8 +139,6 @@ def _get_weights(original_weight_source, weight_type, source, root, **kwargs):
             tensorflow_version=kwargs.get("tensorflow_version", "1.15"),
             **attachments,
         )
-        language = None
-        framework = None
 
     elif weight_type in weight_types:
         raise ValueError(f"Weight type {weight_type} is not supported yet in 'build_spec'")
@@ -147,7 +146,7 @@ def _get_weights(original_weight_source, weight_type, source, root, **kwargs):
         raise ValueError(f"Invalid weight type {weight_type}, expect one of {weight_types}")
 
     weights = {weight_type: weights}
-    return weights, language, framework, source, source_hash, tmp_source
+    return weights, tmp_archtecture
 
 
 def _get_data_range(data_range, dtype):
@@ -449,7 +448,7 @@ def build_model(
     cite: Dict[str, str],
     output_path: Union[str, Path],
     # model specific optional
-    source: Optional[str] = None,
+    architecture: Optional[str] = None,
     model_kwargs: Optional[Dict[str, Union[int, float, str]]] = None,
     weight_type: Optional[str] = None,
     sample_inputs: Optional[List[str]] = None,
@@ -626,9 +625,7 @@ def build_model(
     covers = _ensure_local(covers, root)
 
     # parse the weights
-    weights, language, framework, source, source_hash, tmp_source = _get_weights(
-        weight_uri, weight_type, source, root, **weight_kwargs
-    )
+    weights, tmp_archtecture = _get_weights(weight_uri, weight_type, root, architecture, model_kwargs, **weight_kwargs)
 
     # validate the sample inputs and outputs (if given)
     if sample_inputs is not None:
@@ -690,11 +687,6 @@ def build_model(
         "run_mode": run_mode,
         "sample_inputs": sample_inputs,
         "sample_outputs": sample_outputs,
-        "framework": framework,
-        "language": language,
-        "source": source,
-        "sha256": source_hash,
-        "kwargs": model_kwargs,
         "links": links,
     }
     kwargs = {k: v for k, v in optional_kwargs.items() if v is not None}
@@ -729,8 +721,8 @@ def build_model(
     except Exception as e:
         raise e
     finally:
-        if tmp_source is not None:
-            os.remove(tmp_source)
+        if tmp_archtecture is not None:
+            os.remove(tmp_archtecture)
 
     model = load_raw_resource_description(model_package)
     return model
@@ -744,12 +736,12 @@ def add_weights(
     **weight_kwargs,
 ):
     """Add weight entry to bioimage.io model."""
-    # we need to patss the weight path as abs path to avoid confusion with different root directories
-    new_weights = _get_weights(Path(weight_uri).absolute(), weight_type, source=None, root=Path("."), **weight_kwargs)[
-        0
-    ]
+    # we need to pass the weight path as abs path to avoid confusion with different root directories
+    new_weights, tmp_arch = _get_weights(Path(weight_uri).absolute(), weight_type, root=Path("."), **weight_kwargs)
     model.weights.update(new_weights)
     if output_path is not None:
         model_package = export_resource_package(model, output_path=output_path)
         model = load_raw_resource_description(model_package)
+    if tmp_arch is not None:
+        os.remove(tmp_arch)
     return model

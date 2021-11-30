@@ -22,15 +22,19 @@ def _test_build_spec(
     cite = {entry.text: entry.doi if entry.url is missing else entry.url for entry in model_spec.cite}
 
     if weight_type == "pytorch_state_dict":
-        source_path = model_spec.source.source_file
-        class_name = model_spec.source.callable_name
+        weight_spec = model_spec.weights["pytorch_state_dict"]
+        source_path = weight_spec.architecture.source_file
+        class_name = weight_spec.architecture.callable_name
+        model_kwargs = None if weight_spec.kwargs is missing else weight_spec.kwargs
         model_source = f"{source_path}:{class_name}"
         weight_type_ = None  # the weight type can be auto-detected
     elif weight_type == "pytorch_script":
         model_source = None
+        model_kwargs = None
         weight_type_ = "pytorch_script"  # the weight type CANNOT be auto-detcted
     else:
         model_source = None
+        model_kwargs = None
         weight_type_ = None  # the weight type can be auto-detected
 
     dep_file = None if model_spec.dependencies is missing else resolve_source(model_spec.dependencies.file, root)
@@ -45,8 +49,6 @@ def _test_build_spec(
         for output in model_spec.outputs
     ]
     kwargs = dict(
-        source=model_source,
-        model_kwargs=model_spec.kwargs,
         weight_uri=weight_source,
         test_inputs=resolve_source(model_spec.test_inputs, root),
         test_outputs=resolve_source(model_spec.test_outputs, root),
@@ -66,6 +68,11 @@ def _test_build_spec(
         output_path=out_path,
         add_deepimagej_config=add_deepimagej_config,
     )
+    # TODO names
+    if model_source is not None:
+        kwargs["source"] = model_source
+    if model_kwargs is not None:
+        kwargs["kwargs"] = model_kwargs
     if tensorflow_version is not None:
         kwargs["tensorflow_version"] = tensorflow_version
     if use_implicit_output_shape:
