@@ -200,8 +200,6 @@ def unet2d_multi_tensor_or_not(request):
     return pytest.model_packages[request.param]
 
 
-@pytest.fixture(
-    params=[] if skip_keras else ["unet2d_keras"]
-)
+@pytest.fixture(params=[] if skip_keras else ["unet2d_keras"])
 def unet2d_keras(request):
     return pytest.model_packages[request.param]

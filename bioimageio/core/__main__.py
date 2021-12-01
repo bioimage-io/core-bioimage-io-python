@@ -267,8 +267,9 @@ if keras_converter is not None:
         ret_code = keras_converter.convert_weights_to_tensorflow_saved_model_bundle(model_rdf, output_path)
         sys.exit(ret_code)
 
-    convert_keras_weights_to_tensorflow.__doc__ =\
+    convert_keras_weights_to_tensorflow.__doc__ = (
         keras_converter.convert_weights_to_tensorflow_saved_model_bundle.__doc__
+    )
 
 
 if __name__ == "__main__":

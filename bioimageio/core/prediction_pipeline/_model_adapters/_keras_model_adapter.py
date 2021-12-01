@@ -5,9 +5,11 @@ from typing import List, Optional, Sequence
 try:
     from tensorflow import keras
     import tensorflow as tf
+
     TF_VERSION = tf.__version__
 except Exception:
     import keras
+
     TF_VERSION = None
 import xarray as xr
 

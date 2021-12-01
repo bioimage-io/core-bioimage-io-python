@@ -1,5 +1,3 @@
-
-
 def test_tensorflow_converter(any_keras_model, tmp_path):
     from bioimageio.core.weight_converter.keras import convert_weights_to_tensorflow_saved_model_bundle
 

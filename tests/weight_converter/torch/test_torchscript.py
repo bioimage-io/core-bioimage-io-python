@@ -1,5 +1,3 @@
-
-
 def test_torchscript_converter(any_torch_model, tmp_path):
     from bioimageio.core.weight_converter.torch import convert_weights_to_pytorch_script
 

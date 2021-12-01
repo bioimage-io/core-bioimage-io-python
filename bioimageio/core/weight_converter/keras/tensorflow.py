@@ -20,14 +20,14 @@ def _convert_tf1(keras_weight_path, output_path, zip_weights):
 
     builder = saved_model.builder.SavedModelBuilder(output_path)
     signature = saved_model.signature_def_utils.predict_signature_def(
-        inputs={'input': keras_model.input}, outputs={'output': keras_model.output}
+        inputs={"input": keras_model.input}, outputs={"output": keras_model.output}
     )
 
     signature_def_map = {saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: signature}
 
-    builder.add_meta_graph_and_variables(keras.backend.get_session(),
-                                         [saved_model.tag_constants.SERVING],
-                                         signature_def_map=signature_def_map)
+    builder.add_meta_graph_and_variables(
+        keras.backend.get_session(), [saved_model.tag_constants.SERVING], signature_def_map=signature_def_map
+    )
     builder.save()
 
     if zip_weights:

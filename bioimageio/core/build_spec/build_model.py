@@ -86,7 +86,7 @@ def _get_weights(
     model_kwargs=None,
     tensorflow_version=None,
     opset_version=None,
-    **kwargs
+    **kwargs,
 ):
     weight_path = resolve_source(original_weight_source, root)
     if weight_type is None:
@@ -769,8 +769,7 @@ def add_weights(
     opset_version: Optional[str] = None,
     **weight_kwargs,
 ):
-    """Add weight entry to bioimage.io model.
-    """
+    """Add weight entry to bioimage.io model."""
     # we need to pass the weight path as abs path to avoid confusion with different root directories
     new_weights, tmp_arch = _get_weights(
         Path(weight_uri).absolute(),
