@@ -61,7 +61,12 @@ class CiteEntry(Node, rdf_raw_nodes.CiteEntry):
 
 
 @dataclass
-class Author(Node, rdf_raw_nodes.Author):
+class Author(Node, model_raw_nodes.Author):
+    pass
+
+
+@dataclass
+class Maintainer(Node, model_raw_nodes.Maintainer):
     pass
 
 
@@ -72,6 +77,7 @@ class Badge(Node, rdf_raw_nodes.Badge):
 
 @dataclass
 class RDF(rdf_raw_nodes.RDF, Node):
+    badges: Union[_Missing, List[Badge]] = missing
     covers: Union[_Missing, List[Path]] = missing
 
 
@@ -186,6 +192,8 @@ WeightsEntry = Union[
 
 @dataclass
 class Model(model_raw_nodes.Model, RDF, Node):
+    authors: List[Author] = missing  # type: ignore  # base RDF has List[Union[Author, str]], but should change soon
+    maintainers: Union[_Missing, List[Maintainer]] = missing
     test_inputs: List[Path] = missing
     test_outputs: List[Path] = missing
     weights: Dict[model_raw_nodes.WeightsFormat, WeightsEntry] = missing
