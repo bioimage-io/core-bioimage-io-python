@@ -36,10 +36,24 @@ class TensorflowModelAdapterBase(ModelAdapter):
 
     def _load(self, *, devices: Optional[List[str]] = None):
         try:
-            tf_version = self.bioimageio_model.weights[self.weight_format].tensorflow_version.version
+            model_tf_version = self.bioimageio_model.weights[self.weight_format].tensorflow_version.version
         except AttributeError:
-            tf_version = (1, 14, 0)
-        tf_major_ver = tf_version[0]
+            model_tf_version = None
+
+        tf_version = tf.__version__
+        tf_major_and_minor = tuple(map(int, tf_version.split(".")))[:2]
+        if model_tf_version is None:
+            warnings.warn(
+                "The model did not contain metadata about the tensorflow version used for training."
+                f"Cannot check if it is compatible with tf {tf_version}. The prediction result may be wrong."
+            )
+        elif tuple(model_tf_version[:2]) != tf_major_and_minor:
+            warnings.warn(
+                f"Model tensorflow version {model_tf_version} does not match {tf_version}."
+                "The prediction results may be wrong"
+            )
+
+        tf_major_ver = tf_major_and_minor[0]
         assert tf_major_ver in (1, 2)
         self.use_keras_api = tf_major_ver > 1 or self.weight_format == KerasModelAdapter.weight_format
 

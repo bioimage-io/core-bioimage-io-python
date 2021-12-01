@@ -4,8 +4,11 @@ from typing import List, Optional, Sequence
 # by default, we use the keras integrated with tensorflow
 try:
     from tensorflow import keras
+    import tensorflow as tf
+    TF_VERSION = tf.__version__
 except Exception:
     import keras
+    TF_VERSION = None
 import xarray as xr
 
 from ._model_adapter import ModelAdapter
@@ -13,6 +16,19 @@ from ._model_adapter import ModelAdapter
 
 class KerasModelAdapter(ModelAdapter):
     def _load(self, *, devices: Optional[Sequence[str]] = None) -> None:
+        try:
+            model_tf_version = self.bioimageio_model.weights[self.weight_format].tensorflow_version.version
+        except AttributeError:
+            model_tf_version = None
+
+        if TF_VERSION is None or model_tf_version is None:
+            warnings.warn("Could not check tensorflow versions. The prediction results may be wrong.")
+        elif tuple(model_tf_version[:2]) != tuple(map(int, TF_VERSION.split(".")))[:2]:
+            warnings.warn(
+                f"Model tensorflow version {model_tf_version} does not match {TF_VERSION}."
+                "The prediction results may be wrong"
+            )
+
         # TODO keras device management
         if devices is not None:
             warnings.warn(f"Device management is not implemented for keras yet, ignoring the devices {devices}")
