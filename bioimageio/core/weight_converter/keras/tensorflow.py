@@ -8,27 +8,36 @@ import bioimageio.spec as spec
 from bioimageio.core import load_resource_description
 
 import tensorflow
-from tensorflow import keras
+from tensorflow import saved_model
 
 
 # adapted from
 # https://github.com/deepimagej/pydeepimagej/blob/master/pydeepimagej/yaml/create_config.py#L236
 def _convert_tf1(keras_weight_path, output_path, zip_weights):
-    from tensorflow import saved_model
 
-    keras_model = keras.models.load_model(keras_weight_path)
+    def build_tf_model():
+        keras_model = keras.models.load_model(keras_weight_path)
 
-    builder = saved_model.builder.SavedModelBuilder(output_path)
-    signature = saved_model.signature_def_utils.predict_signature_def(
-        inputs={"input": keras_model.input}, outputs={"output": keras_model.output}
-    )
+        builder = saved_model.builder.SavedModelBuilder(output_path)
+        signature = saved_model.signature_def_utils.predict_signature_def(
+            inputs={"input": keras_model.input}, outputs={"output": keras_model.output}
+        )
 
-    signature_def_map = {saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: signature}
+        signature_def_map = {saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: signature}
 
-    builder.add_meta_graph_and_variables(
-        keras.backend.get_session(), [saved_model.tag_constants.SERVING], signature_def_map=signature_def_map
-    )
-    builder.save()
+        builder.add_meta_graph_and_variables(
+            keras.backend.get_session(), [saved_model.tag_constants.SERVING], signature_def_map=signature_def_map
+        )
+        builder.save()
+
+    try:
+        # try to build the tf model with the keras import from tensorflow
+        from tensorflow import keras
+        build_tf_model()
+    except Exception:
+        # if the above fails try to export with the standalone keras
+        import keras
+        build_tf_model()
 
     if zip_weights:
         zipped_model = f"{output_path}.zip"
