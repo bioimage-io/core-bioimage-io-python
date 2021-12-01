@@ -616,8 +616,10 @@ def build_model(
         documentation: relative file path to markdown documentation for this model.
         cite: citations for this model.
         output_path: where to save the zipped model package.
-        source: the file with the source code for the model architecture and the corresponding class.
+        architecture: the file with the source code for the model architecture and the corresponding class.
+            Only required for models with pytorch_state_dict weight format.
         model_kwargs: the keyword arguments for the model class.
+            Only required for models with pytorch_state_dict weight format.
         weight_type: the type of the weights.
         sample_inputs: list of sample inputs to demonstrate the model performance.
         sample_outputs: list of sample outputs corresponding to sample_inputs.
@@ -648,8 +650,9 @@ def build_model(
         root: optional root path for relative paths. This can be helpful when building a spec from another model spec.
         add_deepimagej_config: add the deepimagej config to the model.
         tensorflow_version: the tensorflow version used for training the model.
-            Needs to be passed for tensorflow or keras models.
-        opset_version: the opset version used in this model. Needs to be passed for onnx models.
+            Only requred for models with tensorflow or keras weight format.
+        opset_version: the opset version used in this model.
+            Only requred for models with onnx weight format.
         weight_kwargs: additional keyword arguments for this weight type.
     """
     if root is None:
@@ -847,36 +850,4 @@ def build_model(
             os.remove(tmp_archtecture)
 
     model = load_raw_resource_description(model_package)
-    return model
-
-
-def add_weights(
-    model,
-    weight_uri: Union[str, Path],
-    weight_type: Optional[str] = None,
-    output_path: Optional[Union[str, Path]] = None,
-    architecture: Optional[str] = None,
-    model_kwargs: Optional[Dict[str, Union[int, float, str]]] = None,
-    tensorflow_version: Optional[str] = None,
-    opset_version: Optional[str] = None,
-    **weight_kwargs,
-):
-    """Add weight entry to bioimage.io model."""
-    # we need to pass the weight path as abs path to avoid confusion with different root directories
-    new_weights, tmp_arch = _get_weights(
-        Path(weight_uri).absolute(),
-        weight_type,
-        root=Path("."),
-        architecture=architecture,
-        model_kwargs=model_kwargs,
-        tensorflow_version=tensorflow_version,
-        opset_version=opset_version,
-        **weight_kwargs,
-    )
-    model.weights.update(new_weights)
-    if output_path is not None:
-        model_package = export_resource_package(model, output_path=output_path)
-        model = load_raw_resource_description(model_package)
-    if tmp_arch is not None:
-        os.remove(tmp_arch)
     return model
