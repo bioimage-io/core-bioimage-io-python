@@ -1,13 +1,13 @@
 import pathlib
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Dict, List, Tuple, Union
+from typing import Any, Callable, Dict, List, Tuple, Union
 
 from marshmallow import missing
 from marshmallow.utils import _Missing
 
-from bioimageio.spec.model.v0_3 import raw_nodes as model_raw_nodes
-from bioimageio.spec.rdf.v0_2 import raw_nodes as rdf_raw_nodes
+from bioimageio.spec.model import raw_nodes as model_raw_nodes
+from bioimageio.spec.rdf import raw_nodes as rdf_raw_nodes
 from bioimageio.spec.shared import raw_nodes
 
 
@@ -61,7 +61,12 @@ class CiteEntry(Node, rdf_raw_nodes.CiteEntry):
 
 
 @dataclass
-class Author(Node, rdf_raw_nodes.Author):
+class Author(Node, model_raw_nodes.Author):
+    pass
+
+
+@dataclass
+class Maintainer(Node, model_raw_nodes.Maintainer):
     pass
 
 
@@ -72,6 +77,7 @@ class Badge(Node, rdf_raw_nodes.Badge):
 
 @dataclass
 class RDF(rdf_raw_nodes.RDF, Node):
+    badges: Union[_Missing, List[Badge]] = missing
     covers: Union[_Missing, List[Path]] = missing
 
 
@@ -131,38 +137,48 @@ class OutputTensor(Node, model_raw_nodes.OutputTensor):
 
 
 @dataclass
-class _WeightsEntryBase(Node, model_raw_nodes._WeightsEntryBase):
+class ImportedSource(Node):
+    factory: Callable
+
+    def __call__(self, *args, **kwargs):
+        return self.factory(*args, **kwargs)
+
+
+@dataclass
+class KerasHdf5WeightsEntry(Node, model_raw_nodes.KerasHdf5WeightsEntry):
     source: Path = missing
 
 
 @dataclass
-class KerasHdf5WeightsEntry(_WeightsEntryBase, model_raw_nodes.KerasHdf5WeightsEntry):
-    pass
+class OnnxWeightsEntry(Node, model_raw_nodes.OnnxWeightsEntry):
+    source: Path = missing
 
 
 @dataclass
-class OnnxWeightsEntry(_WeightsEntryBase, model_raw_nodes.OnnxWeightsEntry):
-    pass
+class PytorchStateDictWeightsEntry(Node, model_raw_nodes.PytorchStateDictWeightsEntry):
+    source: Path = missing
+    architecture: Union[_Missing, ImportedSource] = missing
 
 
 @dataclass
-class PytorchStateDictWeightsEntry(_WeightsEntryBase, model_raw_nodes.PytorchStateDictWeightsEntry):
-    pass
+class PytorchScriptWeightsEntry(Node, model_raw_nodes.PytorchScriptWeightsEntry):
+    source: Path = missing
 
 
 @dataclass
-class PytorchScriptWeightsEntry(_WeightsEntryBase, model_raw_nodes.PytorchScriptWeightsEntry):
-    pass
+class TensorflowJsWeightsEntry(Node, model_raw_nodes.TensorflowJsWeightsEntry):
+    source: Path = missing
 
 
 @dataclass
-class TensorflowJsWeightsEntry(_WeightsEntryBase, model_raw_nodes.TensorflowJsWeightsEntry):
-    pass
+class TensorflowSavedModelBundleWeightsEntry(Node, model_raw_nodes.TensorflowSavedModelBundleWeightsEntry):
+    source: Path = missing
 
 
 @dataclass
-class TensorflowSavedModelBundleWeightsEntry(_WeightsEntryBase, model_raw_nodes.TensorflowSavedModelBundleWeightsEntry):
-    pass
+class Attachments(Node, model_raw_nodes.Attachments):
+    files: Union[_Missing, List[Path]] = missing
+    unknown: Union[_Missing, Dict[str, Any]] = missing
 
 
 WeightsEntry = Union[
@@ -176,16 +192,9 @@ WeightsEntry = Union[
 
 
 @dataclass
-class ImportedSource(Node):
-    factory: Callable
-
-    def __call__(self, *args, **kwargs):
-        return self.factory(*args, **kwargs)
-
-
-@dataclass
 class Model(model_raw_nodes.Model, RDF, Node):
-    source: Union[_Missing, ImportedSource] = missing
+    authors: List[Author] = missing
+    maintainers: Union[_Missing, List[Maintainer]] = missing
     test_inputs: List[Path] = missing
     test_outputs: List[Path] = missing
     weights: Dict[model_raw_nodes.WeightsFormat, WeightsEntry] = missing

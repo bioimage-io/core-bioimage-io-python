@@ -1,5 +1,6 @@
 import bioimageio.spec as spec
 from bioimageio.core import load_raw_resource_description, load_resource_description
+from bioimageio.core.resource_io import nodes
 from bioimageio.core.resource_io.utils import resolve_source
 from marshmallow import missing
 
@@ -22,15 +23,17 @@ def _test_build_spec(
     cite = {entry.text: entry.doi if entry.url is missing else entry.url for entry in model_spec.cite}
 
     if weight_type == "pytorch_state_dict":
-        source_path = model_spec.source.source_file
-        class_name = model_spec.source.callable_name
-        model_source = f"{source_path}:{class_name}"
+        weight_spec = model_spec.weights["pytorch_state_dict"]
+        model_kwargs = None if weight_spec.kwargs is missing else weight_spec.kwargs
+        architecture = str(weight_spec.architecture)
         weight_type_ = None  # the weight type can be auto-detected
     elif weight_type == "pytorch_script":
-        model_source = None
+        architecture = None
+        model_kwargs = None
         weight_type_ = "pytorch_script"  # the weight type CANNOT be auto-detcted
     else:
-        model_source = None
+        architecture = None
+        model_kwargs = None
         weight_type_ = None  # the weight type can be auto-detected
 
     dep_file = None if model_spec.dependencies is missing else resolve_source(model_spec.dependencies.file, root)
@@ -45,8 +48,6 @@ def _test_build_spec(
         for output in model_spec.outputs
     ]
     kwargs = dict(
-        source=model_source,
-        model_kwargs=model_spec.kwargs,
         weight_uri=weight_source,
         test_inputs=resolve_source(model_spec.test_inputs, root),
         test_outputs=resolve_source(model_spec.test_outputs, root),
@@ -66,6 +67,11 @@ def _test_build_spec(
         output_path=out_path,
         add_deepimagej_config=add_deepimagej_config,
     )
+    # TODO names
+    if architecture is not None:
+        kwargs["architecture"] = architecture
+    if model_kwargs is not None:
+        kwargs["kwargs"] = model_kwargs
     if tensorflow_version is not None:
         kwargs["tensorflow_version"] = tensorflow_version
     if use_implicit_output_shape:
@@ -79,9 +85,15 @@ def _test_build_spec(
     build_model(**kwargs)
     assert out_path.exists()
     loaded_model = load_resource_description(out_path)
+    assert isinstance(loaded_model, nodes.Model)
     if add_deepimagej_config:
         loaded_config = loaded_model.config
         assert "deepimagej" in loaded_config
+
+    attachments = loaded_model.attachments
+    if attachments is not missing and attachments.files is not missing:
+        for attached_file in attachments["files"]:
+            assert attached_file.exists()
 
 
 def test_build_spec_pytorch(any_torch_model, tmp_path):
@@ -120,3 +132,7 @@ def test_build_spec_tfjs(any_tensorflow_js_model, tmp_path):
 
 def test_build_spec_deepimagej(unet2d_nuclei_broad_model, tmp_path):
     _test_build_spec(unet2d_nuclei_broad_model, tmp_path / "model.zip", "pytorch_script", add_deepimagej_config=True)
+
+
+# def test_build_spec_deepimagej_keras(unet2d_keras, tmp_path):
+#     _test_build_spec(unet2d_keras, tmp_path / "model.zip", "pytorch_script", add_deepimagej_config=True)

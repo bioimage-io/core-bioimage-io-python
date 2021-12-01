@@ -17,9 +17,11 @@ def test_validate_model(unet2d_nuclei_broad_model):
     assert ret.returncode == 0, ret.stdout
 
 
-def test_cli_package(unet2d_nuclei_broad_model):
-    ret = run_subprocess(["bioimageio", "package", unet2d_nuclei_broad_model])
+def test_cli_package(unet2d_nuclei_broad_model, tmp_path):
+    out_path = tmp_path / "model.zip"
+    ret = run_subprocess(["bioimageio", "package", unet2d_nuclei_broad_model, str(out_path)])
     assert ret.returncode == 0, ret.stdout
+    assert out_path.exists()
 
 
 def test_cli_test_model(unet2d_nuclei_broad_model):
