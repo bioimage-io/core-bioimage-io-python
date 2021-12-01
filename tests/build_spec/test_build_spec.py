@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import bioimageio.spec as spec
 from bioimageio.core import load_raw_resource_description, load_resource_description
 from bioimageio.core.resource_io import nodes
@@ -93,7 +95,7 @@ def _test_build_spec(
     attachments = loaded_model.attachments or {}
     if "files" in attachments:
         for attached_file in attachments["files"]:
-            assert attached_file.exists()
+            assert Path(attached_file).exists()
 
 
 def test_build_spec_pytorch(any_torch_model, tmp_path):
