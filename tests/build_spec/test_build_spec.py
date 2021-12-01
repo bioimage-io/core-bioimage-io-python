@@ -1,5 +1,6 @@
 import bioimageio.spec as spec
 from bioimageio.core import load_raw_resource_description, load_resource_description
+from bioimageio.core.resource_io import nodes
 from bioimageio.core.resource_io.utils import resolve_source
 from marshmallow import missing
 
@@ -84,11 +85,12 @@ def _test_build_spec(
     build_model(**kwargs)
     assert out_path.exists()
     loaded_model = load_resource_description(out_path)
+    assert isinstance(loaded_model, nodes.Model)
     if add_deepimagej_config:
         loaded_config = loaded_model.config
         assert "deepimagej" in loaded_config
 
-    attachments = loaded_model.attachments
+    attachments = loaded_model.attachments or {}
     if "files" in attachments:
         for attached_file in attachments["files"]:
             assert attached_file.exists()
