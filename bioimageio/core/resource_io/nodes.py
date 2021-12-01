@@ -139,38 +139,34 @@ class ImportedSource(Node):
 
 
 @dataclass
-class _WeightsEntryBase(Node, model_raw_nodes._WeightsEntryBase):
+class KerasHdf5WeightsEntry(model_raw_nodes.KerasHdf5WeightsEntry):
     source: Path = missing
 
 
 @dataclass
-class KerasHdf5WeightsEntry(_WeightsEntryBase, model_raw_nodes.KerasHdf5WeightsEntry):
-    pass
+class OnnxWeightsEntry(model_raw_nodes.OnnxWeightsEntry):
+    source: Path = missing
 
 
 @dataclass
-class OnnxWeightsEntry(_WeightsEntryBase, model_raw_nodes.OnnxWeightsEntry):
-    pass
-
-
-@dataclass
-class PytorchStateDictWeightsEntry(_WeightsEntryBase, model_raw_nodes.PytorchStateDictWeightsEntry):
+class PytorchStateDictWeightsEntry(model_raw_nodes.PytorchStateDictWeightsEntry):
+    source: Path = missing
     architecture: Union[_Missing, ImportedSource] = missing
 
 
 @dataclass
-class PytorchScriptWeightsEntry(_WeightsEntryBase, model_raw_nodes.PytorchScriptWeightsEntry):
-    pass
+class PytorchScriptWeightsEntry(model_raw_nodes.PytorchScriptWeightsEntry):
+    source: Path = missing
 
 
 @dataclass
-class TensorflowJsWeightsEntry(_WeightsEntryBase, model_raw_nodes.TensorflowJsWeightsEntry):
-    pass
+class TensorflowJsWeightsEntry(model_raw_nodes.TensorflowJsWeightsEntry):
+    source: Path = missing
 
 
 @dataclass
-class TensorflowSavedModelBundleWeightsEntry(_WeightsEntryBase, model_raw_nodes.TensorflowSavedModelBundleWeightsEntry):
-    pass
+class TensorflowSavedModelBundleWeightsEntry(model_raw_nodes.TensorflowSavedModelBundleWeightsEntry):
+    source: Path = missing
 
 
 WeightsEntry = Union[
