@@ -11,6 +11,8 @@ import tensorflow
 from tensorflow import keras
 
 
+# adapted from
+# https://github.com/deepimagej/pydeepimagej/blob/master/pydeepimagej/yaml/create_config.py#L236
 def _convert_tf1(keras_weight_path, output_path, zip_weights):
     from tensorflow import saved_model
 

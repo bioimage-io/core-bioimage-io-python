@@ -125,3 +125,10 @@ def test_torch_to_onnx(unet2d_nuclei_broad_model, tmp_path):
     ret = run_subprocess(["bioimageio", "convert-torch-weights-to-onnx", str(unet2d_nuclei_broad_model), str(out_path)])
     assert ret.returncode == 0, ret.stdout
     assert out_path.exists()
+
+
+def test_keras_to_tf(unet2d_keras, tmp_path):
+    out_path = tmp_path / "weights.zip"
+    ret = run_subprocess(["bioimageio", "convert-keras-weights-to-tensorflow", str(unet2d_keras), str(out_path)])
+    assert ret.returncode == 0, ret.stdout
+    assert out_path.exists()
