@@ -114,9 +114,7 @@ def _get_weights(
         )
 
     elif weight_type == "torchscript":
-        weights = model_spec.raw_nodes.TorchscriptWeightsEntry(
-            source=weight_source, sha256=weight_hash, **attachments
-        )
+        weights = model_spec.raw_nodes.TorchscriptWeightsEntry(source=weight_source, sha256=weight_hash, **attachments)
 
     elif weight_type == "keras_hdf5":
         if tensorflow_version is None:
