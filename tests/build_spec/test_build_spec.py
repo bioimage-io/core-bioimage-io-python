@@ -13,6 +13,7 @@ def _test_build_spec(
     opset_version=None,
     use_implicit_output_shape=False,
     add_deepimagej_config=False,
+    use_original_covers=False,
 ):
     from bioimageio.core.build_spec import build_model
 
@@ -39,7 +40,9 @@ def _test_build_spec(
 
     dep_file = None if model_spec.dependencies is missing else resolve_source(model_spec.dependencies.file, root)
     authors = [{"name": auth.name, "affiliation": auth.affiliation} for auth in model_spec.authors]
-    covers = resolve_source(model_spec.covers, root)
+
+    input_axes = [input_.axes for input_ in model_spec.inputs]
+    output_axes = [output.axes for output in model_spec.outputs]
     preprocessing = [
         None if input_.preprocessing == missing else {preproc.name: preproc.kwargs for preproc in input_.preprocessing}
         for input_ in model_spec.inputs
@@ -48,6 +51,7 @@ def _test_build_spec(
         None if output.postprocessing == missing else {preproc.name: preproc.kwargs for preproc in output.preprocessing}
         for output in model_spec.outputs
     ]
+
     kwargs = dict(
         weight_uri=weight_source,
         test_inputs=resolve_source(model_spec.test_inputs, root),
@@ -58,11 +62,12 @@ def _test_build_spec(
         tags=model_spec.tags,
         license=model_spec.license,
         documentation=model_spec.documentation,
-        covers=covers,
         dependencies=dep_file,
         cite=cite,
         root=model_spec.root_path,
         weight_type=weight_type_,
+        input_axes=input_axes,
+        output_axes=output_axes,
         preprocessing=preprocessing,
         postprocessing=postprocessing,
         output_path=out_path,
@@ -83,6 +88,8 @@ def _test_build_spec(
         kwargs["output_offset"] = [[0.0, 0.0, 0.0, 0.0]]
     if add_deepimagej_config:
         kwargs["pixel_sizes"] = [{"x": 5.0, "y": 5.0}]
+    if use_original_covers:
+        kwargs["covers"] = resolve_source(model_spec.covers, root)
 
     build_model(**kwargs)
     assert out_path.exists()
@@ -140,3 +147,8 @@ def test_build_spec_deepimagej_keras(unet2d_keras, tmp_path):
     _test_build_spec(
         unet2d_keras, tmp_path / "model.zip", "keras_hdf5", add_deepimagej_config=True, tensorflow_version="1.12"
     )
+
+
+# test with original covers
+def test_build_spec_with_original_covers(unet2d_nuclei_broad_model, tmp_path):
+    _test_build_spec(unet2d_nuclei_broad_model, tmp_path / "model.zip", "torchscript", use_original_covers=True)

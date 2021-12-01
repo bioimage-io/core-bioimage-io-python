@@ -5,6 +5,7 @@ from pathlib import Path
 from shutil import copyfile
 from typing import Any, Dict, List, Optional, Tuple, Union
 
+import imageio
 import numpy as np
 import requests
 
@@ -172,14 +173,6 @@ def _get_data_range(data_range, dtype):
     return data_range
 
 
-def _get_axes(axes, ndim):
-    if axes is None:
-        assert ndim in (2, 4, 5)
-        default_axes = {2: "bc", 4: "bcyx", 5: "bczyx"}
-        axes = default_axes[ndim]
-    return axes
-
-
 def _get_input_tensor(path, name, step, min_shape, data_range, axes, preprocessing):
     test_in = np.load(path)
     shape = test_in.shape
@@ -189,9 +182,7 @@ def _get_input_tensor(path, name, step, min_shape, data_range, axes, preprocessi
     else:
         shape_description = {"min": shape if min_shape is None else min_shape, "step": step}
 
-    axes = _get_axes(axes, test_in.ndim)
     data_range = _get_data_range(data_range, test_in.dtype)
-
     kwargs = {}
     if preprocessing is not None:
         kwargs["preprocessing"] = [{"name": k, "kwargs": v} for k, v in preprocessing.items()]
@@ -219,9 +210,7 @@ def _get_output_tensor(path, name, reference_tensor, scale, offset, axes, data_r
         assert offset is not None
         shape_description = {"reference_tensor": reference_tensor, "scale": scale, "offset": offset}
 
-    axes = _get_axes(axes, test_out.ndim)
     data_range = _get_data_range(data_range, test_out.dtype)
-
     kwargs = {}
     if postprocessing is not None:
         kwargs["postprocessing"] = [{"name": k, "kwargs": v} for k, v in postprocessing.items()]
@@ -417,6 +406,106 @@ def _write_sample_data(input_paths, output_paths, input_axes, output_axes, expor
     return [Path(p.name) for p in sample_in_paths], [Path(p.name) for p in sample_out_paths]
 
 
+# create better cover images for 3d data and non-image outputs
+def _generate_covers(in_path, out_path, input_axes, output_axes, root):
+
+    def normalize(data, axis, eps=1e-7):
+        data = data.astype('float32')
+        data -= data.min(axis=axis, keepdims=True)
+        data /= (data.max(axis=axis, keepdims=True) + eps)
+        return data
+
+    def to_image(data, data_axes):
+        assert data.ndim in (4, 5)
+
+        # transpose the data to "bczyx" / "bcyx" order
+        axes = "bczyx" if data.ndim == 5 else "bcyx"
+        assert set(data_axes) == set(axes)
+        if axes != data_axes:
+            ax_permutation = tuple(data_axes.index(ax) for ax in axes)
+            data = data.transpose(ax_permutation)
+
+        # select single image with channels from the data
+        if data.ndim == 5:
+            z0 = data.shape[2] // 2
+            data = data[0, :, z0]
+        else:
+            data = data[0, :]
+
+        # normalize the data and map to 8 bit
+        data = normalize(data, axis=(1, 2))
+        data = (data * 255).astype("uint8")
+        return data
+
+    cover_path = os.path.join(root, "cover.png")
+    input_, output = np.load(in_path), np.load(out_path)
+
+    input_ = to_image(input_, input_axes)
+    # this is not image data so we only save the input image
+    if output.ndim < 4:
+        imageio.imwrite(cover_path, input_.transpose((1, 2, 0)))
+        return [_ensure_local(cover_path, root)]
+    output = to_image(output, output_axes)
+
+    chan_in = input_.shape[0]
+    # make sure the input is rgb
+    if chan_in == 1:  # single channel -> repeat it 3 times
+        input_ = np.repeat(input_, 3, axis=0)
+    elif chan_in != 3:  # != 3 channels -> take first channe and repeat it 3 times
+        input_ = np.repeat(input_[0:1], 3, axis=0)
+
+    im_shape = input_.shape[1:]
+    if im_shape != output.shape[1:]:  # just return the input image if shapes don"t agree
+        return input_
+
+    def diagonal_split(im0, im1):
+        assert im0.shape[0] == im1.shape[0] == 3
+        n, m = im_shape
+        out = np.ones((3, n, m), dtype="uint8")
+        for c in range(3):
+            outc = np.tril(im0[c])
+            mask = outc == 0
+            outc[mask] = np.triu(im1[c])[mask]
+            out[c] = outc
+        return out
+
+    def grid_im(im0, im1):
+        ims_per_row = 3
+        n_chan = im1.shape[0]
+        n_images = n_chan + 1
+        n_rows = int(np.ceil(float(n_images) / ims_per_row))
+
+        n, m = im_shape
+        x, y = ims_per_row * n, n_rows * m
+        out = np.zeros((3, y, x))
+        images = [im0] + [np.repeat(im1[i:i+1], 3, axis=0) for i in range(n_chan)]
+
+        i, j = 0, 0
+        for im in images:
+            x0, x1 = i * n, (i + 1) * n
+            y0, y1 = j * m, (j + 1) * m
+            out[:, y0:y1, x0:x1] = im
+
+            i += 1
+            if i == ims_per_row:
+                i = 0
+                j += 1
+
+        return out
+
+    chan_out = output.shape[0]
+    if chan_out == 1:  # single prediction channel: create diagonal split
+        im = diagonal_split(input_, np.repeat(output, 3, axis=0))
+    elif chan_out == 3:  # three prediction channel: create diagonal split with rgb
+        im = diagonal_split(input_, output)
+    else:  # otherwise create grid image
+        im = grid_im(input_, output)
+
+    # to channel last
+    imageio.imwrite(cover_path, im.transpose((1, 2, 0)))
+    return [_ensure_local(cover_path, root)]
+
+
 def _ensure_local(source: Union[Path, URI, str, list], root: Path) -> Union[Path, URI, list]:
     """ensure source is local relative path in root"""
     if isinstance(source, list):
@@ -440,17 +529,18 @@ def _ensure_local_or_url(source: Union[Path, URI, str, list], root: Path) -> Uni
 
 
 def build_model(
+    # model or tensor specific and required
     weight_uri: str,
     test_inputs: List[Union[str, Path]],
     test_outputs: List[Union[str, Path]],
+    input_axes: List[str],
+    output_axes: List[str],
     # general required
     name: str,
     description: str,
     authors: List[Dict[str, str]],
     tags: List[Union[str, Path]],
-    license: str,
     documentation: Union[str, Path],
-    covers: List[str],
     cite: Dict[str, str],
     output_path: Union[str, Path],
     # model specific optional
@@ -463,19 +553,19 @@ def build_model(
     input_names: Optional[List[str]] = None,
     input_step: Optional[List[List[int]]] = None,
     input_min_shape: Optional[List[List[int]]] = None,
-    input_axes: Optional[List[str]] = None,
     input_data_range: Optional[List[List[Union[int, str]]]] = None,
     output_names: Optional[List[str]] = None,
     output_reference: Optional[List[str]] = None,
     output_scale: Optional[List[List[int]]] = None,
     output_offset: Optional[List[List[int]]] = None,
-    output_axes: Optional[List[str]] = None,
     output_data_range: Optional[List[List[Union[int, str]]]] = None,
     halo: Optional[List[List[int]]] = None,
     preprocessing: Optional[List[Dict[str, Dict[str, Union[int, float, str]]]]] = None,
     postprocessing: Optional[List[Dict[str, Dict[str, Union[int, float, str]]]]] = None,
     pixel_sizes: Optional[List[Dict[str, float]]] = None,
     # general optional
+    license: Optional[str] = None,
+    covers: Optional[List[str]] = None,
     git_repo: Optional[str] = None,
     attachments: Optional[Dict[str, Union[str, List[str]]]] = None,
     packaged_by: Optional[List[str]] = None,
@@ -501,13 +591,14 @@ def build_model(
         weight_uri="test_weights.pt",
         test_inputs=["./test_inputs"],
         test_outputs=["./test_outputs"],
+        input_axes=["bcyx"],
+        output_axes=["bcyx"],
         name="my-model",
         description="My very fancy model.",
         authors=[{"name": "John Doe", "affiliation": "My Institute"}],
         tags=["segmentation", "light sheet data"],
-        license="CC-BY",
+        license="CC-BY-4.0",
         documentation="./documentation.md",
-        covers=["./my_cover.png"],
         cite={"Architecture": "https://my_architecture.com"},
         output_path="my-model.zip"
     )
@@ -517,13 +608,13 @@ def build_model(
         weight_uri: the url or relative local file path to the weight file for this model.
         test_inputs: list of test input files stored in numpy format.
         test_outputs: list of test outputs corresponding to test_inputs, stored in numpy format.
+        input_axes: axis names of the input tensors.
+        output_axes: axiss names of the output tensors.
         name: name of this model.
         description: short description of this model.
         authors: the authors of this model.
         tags: list of tags for this model.
-        license: the license for this model.
         documentation: relative file path to markdown documentation for this model.
-        covers: list of relative file paths for cover images.
         cite: citations for this model.
         output_path: where to save the zipped model package.
         source: the file with the source code for the model architecture and the corresponding class.
@@ -534,19 +625,20 @@ def build_model(
         input_names: names of the input tensors.
         input_step: minimal valid increase of the input tensor shape.
         input_min_shape: minimal input tensor shape.
-        input_axes: axes names for the input tensor.
         input_data_range: valid data range for the input tensor.
         output_names: names of the output tensors.
         output_reference: name of the input reference tensor used to cimpute the output tensor shape.
         output_scale: multiplicative factor to compute the output tensor shape.
         output_offset: additive term to compute the output tensor shape.
-        output_axes: axes names of the output tensor.
         output_data_range: valid data range for the output tensor.
         halo: halo to be cropped from the output tensor.
         preprocessing: list of preprocessing operations for the input.
         postprocessing: list of postprocessing operations for the output.
         pixel_sizes: the pixel sizes for the input tensors, only for spatial axes.
             This information is currently only used by deepimagej, but will be added to the spec soon.
+        license: the license for this model. By default CC-BY-4.0 will be set as license.
+        covers: list of file paths for cover images.
+            By default a cover will be generated from the input and output data.
         git_repo: reference git repository for this model.
         attachments: list of additional files to package with the model.
         packaged_by: list of authors that have packaged this model.
@@ -582,7 +674,6 @@ def build_model(
 
     input_step = n_inputs * [None] if input_step is None else input_step
     input_min_shape = n_inputs * [None] if input_min_shape is None else input_min_shape
-    input_axes = n_inputs * [None] if input_axes is None else input_axes
     input_data_range = n_inputs * [None] if input_data_range is None else input_data_range
     preprocessing = n_inputs * [None] if preprocessing is None else preprocessing
 
@@ -602,7 +693,6 @@ def build_model(
     output_reference = n_outputs * [None] if output_reference is None else output_reference
     output_scale = n_outputs * [None] if output_scale is None else output_scale
     output_offset = n_outputs * [None] if output_offset is None else output_offset
-    output_axes = n_outputs * [None] if output_axes is None else output_axes
     output_data_range = n_outputs * [None] if output_data_range is None else output_data_range
     postprocessing = n_outputs * [None] if postprocessing is None else postprocessing
     halo = n_outputs * [None] if halo is None else halo
@@ -641,7 +731,12 @@ def build_model(
     authors = _build_authors(authors)
     cite = _build_cite(cite)
     documentation = _ensure_local(documentation, root)
-    covers = _ensure_local(covers, root)
+    if covers is None:
+        covers = _generate_covers(root / test_inputs[0], root / test_outputs[0], input_axes[0], output_axes[0], root)
+    else:
+        covers = _ensure_local(covers, root)
+    if license is None:
+        license = "CC-BY-4.0"
 
     # parse the weights
     weights, tmp_archtecture = _get_weights(
