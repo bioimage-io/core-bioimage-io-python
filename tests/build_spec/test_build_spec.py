@@ -67,7 +67,6 @@ def _test_build_spec(
         output_path=out_path,
         add_deepimagej_config=add_deepimagej_config,
     )
-    # TODO names
     if architecture is not None:
         kwargs["architecture"] = architecture
     if model_kwargs is not None:
@@ -134,5 +133,5 @@ def test_build_spec_deepimagej(unet2d_nuclei_broad_model, tmp_path):
     _test_build_spec(unet2d_nuclei_broad_model, tmp_path / "model.zip", "pytorch_script", add_deepimagej_config=True)
 
 
-# def test_build_spec_deepimagej_keras(unet2d_keras, tmp_path):
-#     _test_build_spec(unet2d_keras, tmp_path / "model.zip", "pytorch_script", add_deepimagej_config=True)
+def test_build_spec_deepimagej_keras(unet2d_keras, tmp_path):
+    _test_build_spec(unet2d_keras, tmp_path / "model.zip", "keras_hdf5", add_deepimagej_config=True)
