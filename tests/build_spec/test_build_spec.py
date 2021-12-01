@@ -10,6 +10,7 @@ def _test_build_spec(
     out_path,
     weight_type,
     tensorflow_version=None,
+    opset_version=None,
     use_implicit_output_shape=False,
     add_deepimagej_config=False,
 ):
@@ -73,6 +74,8 @@ def _test_build_spec(
         kwargs["kwargs"] = model_kwargs
     if tensorflow_version is not None:
         kwargs["tensorflow_version"] = tensorflow_version
+    if opset_version is not None:
+        kwargs["opset_version"] = opset_version
     if use_implicit_output_shape:
         kwargs["input_name"] = ["input"]
         kwargs["output_reference"] = ["input"]
@@ -110,7 +113,7 @@ def test_build_spec_torchscript(any_torchscript_model, tmp_path):
 
 
 def test_build_spec_onnx(any_onnx_model, tmp_path):
-    _test_build_spec(any_onnx_model, tmp_path / "model.zip", "onnx")
+    _test_build_spec(any_onnx_model, tmp_path / "model.zip", "onnx", opset_version=12)
 
 
 def test_build_spec_keras(any_keras_model, tmp_path):
@@ -134,4 +137,6 @@ def test_build_spec_deepimagej(unet2d_nuclei_broad_model, tmp_path):
 
 
 def test_build_spec_deepimagej_keras(unet2d_keras, tmp_path):
-    _test_build_spec(unet2d_keras, tmp_path / "model.zip", "keras_hdf5", add_deepimagej_config=True)
+    _test_build_spec(
+        unet2d_keras, tmp_path / "model.zip", "keras_hdf5", add_deepimagej_config=True, tensorflow_version="1.12"
+    )
