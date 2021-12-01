@@ -1,7 +1,7 @@
 import pathlib
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Dict, List, Tuple, Union
+from typing import Any, Callable, Dict, List, Tuple, Union
 
 from marshmallow import missing
 from marshmallow.utils import _Missing
@@ -177,7 +177,8 @@ class TensorflowSavedModelBundleWeightsEntry(Node, model_raw_nodes.TensorflowSav
 
 @dataclass
 class Attachments(Node, model_raw_nodes.Attachments):
-    files: List[Path] = missing
+    files: Union[_Missing, List[Path]] = missing
+    unknown: Union[_Missing, Dict[str, Any]] = missing
 
 
 WeightsEntry = Union[
@@ -192,7 +193,7 @@ WeightsEntry = Union[
 
 @dataclass
 class Model(model_raw_nodes.Model, RDF, Node):
-    authors: List[Author] = missing  # type: ignore  # base RDF has List[Union[Author, str]], but should change soon
+    authors: List[Author] = missing
     maintainers: Union[_Missing, List[Maintainer]] = missing
     test_inputs: List[Path] = missing
     test_outputs: List[Path] = missing
