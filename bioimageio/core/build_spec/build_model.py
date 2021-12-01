@@ -408,11 +408,10 @@ def _write_sample_data(input_paths, output_paths, input_axes, output_axes, expor
 
 # create better cover images for 3d data and non-image outputs
 def _generate_covers(in_path, out_path, input_axes, output_axes, root):
-
     def normalize(data, axis, eps=1e-7):
-        data = data.astype('float32')
+        data = data.astype("float32")
         data -= data.min(axis=axis, keepdims=True)
-        data /= (data.max(axis=axis, keepdims=True) + eps)
+        data /= data.max(axis=axis, keepdims=True) + eps
         return data
 
     def to_image(data, data_axes):
@@ -478,7 +477,7 @@ def _generate_covers(in_path, out_path, input_axes, output_axes, root):
         n, m = im_shape
         x, y = ims_per_row * n, n_rows * m
         out = np.zeros((3, y, x))
-        images = [im0] + [np.repeat(im1[i:i+1], 3, axis=0) for i in range(n_chan)]
+        images = [im0] + [np.repeat(im1[i : i + 1], 3, axis=0) for i in range(n_chan)]
 
         i, j = 0, 0
         for im in images:
