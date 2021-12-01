@@ -161,7 +161,7 @@ class PytorchStateDictWeightsEntry(Node, model_raw_nodes.PytorchStateDictWeights
 
 
 @dataclass
-class PytorchScriptWeightsEntry(Node, model_raw_nodes.PytorchScriptWeightsEntry):
+class TorchscriptWeightsEntry(Node, model_raw_nodes.TorchscriptWeightsEntry):
     source: Path = missing
 
 
@@ -184,10 +184,10 @@ class Attachments(Node, model_raw_nodes.Attachments):
 WeightsEntry = Union[
     KerasHdf5WeightsEntry,
     OnnxWeightsEntry,
-    PytorchScriptWeightsEntry,
     PytorchStateDictWeightsEntry,
     TensorflowJsWeightsEntry,
     TensorflowSavedModelBundleWeightsEntry,
+    TorchscriptWeightsEntry,
 ]
 
 

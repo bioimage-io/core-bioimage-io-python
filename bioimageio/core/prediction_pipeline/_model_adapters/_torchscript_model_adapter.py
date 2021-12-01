@@ -11,7 +11,7 @@ from ._model_adapter import ModelAdapter
 
 class TorchscriptModelAdapter(ModelAdapter):
     def _load(self, *, devices: Optional[List[str]] = None):
-        weight_path = str(self.bioimageio_model.weights["pytorch_script"].source.resolve())
+        weight_path = str(self.bioimageio_model.weights["torchscript"].source.resolve())
         if devices is None:
             self.devices = ["cuda" if torch.cuda.is_available() else "cpu"]
         else:

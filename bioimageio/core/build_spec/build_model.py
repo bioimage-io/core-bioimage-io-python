@@ -113,8 +113,8 @@ def _get_weights(
             source=weight_source, sha256=weight_hash, opset_version=opset_version, **attachments
         )
 
-    elif weight_type == "pytorch_script":
-        weights = model_spec.raw_nodes.PytorchScriptWeightsEntry(
+    elif weight_type == "torchscript":
+        weights = model_spec.raw_nodes.TorchscriptWeightsEntry(
             source=weight_source, sha256=weight_hash, **attachments
         )
 

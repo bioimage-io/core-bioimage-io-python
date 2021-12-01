@@ -72,7 +72,7 @@ def _check_predictions(model, scripted_model, model_spec, input_data):
             return ret
 
 
-def convert_weights_to_pytorch_script(
+def convert_weights_to_torchscript(
     model_spec: Union[str, Path, spec.model.raw_nodes.Model], output_path: Union[str, Path], use_tracing: bool = True
 ):
     """Convert model weights from format 'pytorch_state_dict' to 'torchscript'.

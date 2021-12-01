@@ -80,6 +80,7 @@ jobs:
       uses: conda-incubator/setup-miniconda@v2
       with:
         auto-update-conda: true
+        # we need mamba to resolve environment-tf
         mamba-version: "*"
         channel-priority: strict
         activate-environment: bio-core-tf

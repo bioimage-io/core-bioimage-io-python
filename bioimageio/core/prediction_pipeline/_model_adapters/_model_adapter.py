@@ -7,7 +7,7 @@ from bioimageio.core.resource_io import nodes
 
 #: Known weight formats in order of priority
 #: First match wins
-_WEIGHT_FORMATS = ["pytorch_state_dict", "tensorflow_saved_model_bundle", "pytorch_script", "onnx", "keras_hdf5"]
+_WEIGHT_FORMATS = ["pytorch_state_dict", "tensorflow_saved_model_bundle", "torchscript", "onnx", "keras_hdf5"]
 
 
 class ModelAdapter(abc.ABC):
@@ -114,7 +114,7 @@ def create_model_adapter(
             return adapter_cls(bioimageio_model=bioimageio_model, devices=devices)
 
     raise RuntimeError(
-        f"weight format {weight_format} not among weight formats listed in model: {list(bioimageio_model.weights.keys())}"
+        f"weight format {weight_format} not among formats listed in model: {list(bioimageio_model.weights.keys())}"
     )
 
 
@@ -139,7 +139,7 @@ def _get_model_adapter(weight_format: str) -> Type[ModelAdapter]:
 
         return ONNXModelAdapter
 
-    elif weight_format == "pytorch_script":
+    elif weight_format == "torchscript":
         from ._torchscript_model_adapter import TorchscriptModelAdapter
 
         return TorchscriptModelAdapter
