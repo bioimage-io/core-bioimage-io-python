@@ -14,7 +14,6 @@ from tensorflow import saved_model
 # adapted from
 # https://github.com/deepimagej/pydeepimagej/blob/master/pydeepimagej/yaml/create_config.py#L236
 def _convert_tf1(keras_weight_path, output_path, zip_weights):
-
     def build_tf_model():
         keras_model = keras.models.load_model(keras_weight_path)
 
@@ -37,6 +36,7 @@ def _convert_tf1(keras_weight_path, output_path, zip_weights):
     except Exception:
         # if the above fails try to export with the standalone keras
         import keras
+
         build_tf_model()
 
     if zip_weights:
