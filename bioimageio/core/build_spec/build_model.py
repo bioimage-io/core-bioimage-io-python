@@ -445,12 +445,12 @@ def build_model(
     sample_inputs: Optional[List[str]] = None,
     sample_outputs: Optional[List[str]] = None,
     # tensor specific
-    input_name: Optional[List[str]] = None,
+    input_names: Optional[List[str]] = None,
     input_step: Optional[List[List[int]]] = None,
     input_min_shape: Optional[List[List[int]]] = None,
     input_axes: Optional[List[str]] = None,
     input_data_range: Optional[List[List[Union[int, str]]]] = None,
-    output_name: Optional[List[str]] = None,
+    output_names: Optional[List[str]] = None,
     output_reference: Optional[List[str]] = None,
     output_scale: Optional[List[List[int]]] = None,
     output_offset: Optional[List[List[int]]] = None,
@@ -514,12 +514,12 @@ def build_model(
         weight_type: the type of the weights.
         sample_inputs: list of sample inputs to demonstrate the model performance.
         sample_outputs: list of sample outputs corresponding to sample_inputs.
-        input_name: name of the input tensor.
+        input_names: names of the input tensors.
         input_step: minimal valid increase of the input tensor shape.
         input_min_shape: minimal input tensor shape.
         input_axes: axes names for the input tensor.
         input_data_range: valid data range for the input tensor.
-        output_name: name of the output tensor.
+        output_names: names of the output tensors.
         output_reference: name of the input reference tensor used to cimpute the output tensor shape.
         output_scale: multiplicative factor to compute the output tensor shape.
         output_offset: additive term to compute the output tensor shape.
@@ -555,7 +555,11 @@ def build_model(
     test_outputs = _ensure_local_or_url(test_outputs, root)
 
     n_inputs = len(test_inputs)
-    input_name = n_inputs * [None] if input_name is None else input_name
+    if input_names is None:
+        input_names = [f"input{i}" for i in range(n_inputs)]
+    else:
+        assert len(input_names) == len(test_inputs)
+
     input_step = n_inputs * [None] if input_step is None else input_step
     input_min_shape = n_inputs * [None] if input_min_shape is None else input_min_shape
     input_axes = n_inputs * [None] if input_axes is None else input_axes
@@ -565,12 +569,16 @@ def build_model(
     inputs = [
         _get_input_tensor(root / test_in, name, step, min_shape, data_range, axes, preproc)
         for test_in, name, step, min_shape, axes, data_range, preproc in zip(
-            test_inputs, input_name, input_step, input_min_shape, input_axes, input_data_range, preprocessing
+            test_inputs, input_names, input_step, input_min_shape, input_axes, input_data_range, preprocessing
         )
     ]
 
     n_outputs = len(test_outputs)
-    output_name = n_outputs * [None] if output_name is None else output_name
+    if output_names is None:
+        output_names = [f"output{i}" for i in range(n_outputs)]
+    else:
+        assert len(output_names) == len(test_outputs)
+
     output_reference = n_outputs * [None] if output_reference is None else output_reference
     output_scale = n_outputs * [None] if output_scale is None else output_scale
     output_offset = n_outputs * [None] if output_offset is None else output_offset
@@ -583,7 +591,7 @@ def build_model(
         _get_output_tensor(root / test_out, name, reference, scale, offset, axes, data_range, postproc, hal)
         for test_out, name, reference, scale, offset, axes, data_range, postproc, hal in zip(
             test_outputs,
-            output_name,
+            output_names,
             output_reference,
             output_scale,
             output_offset,
