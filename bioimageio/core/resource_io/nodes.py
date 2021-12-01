@@ -139,34 +139,39 @@ class ImportedSource(Node):
 
 
 @dataclass
-class KerasHdf5WeightsEntry(model_raw_nodes.KerasHdf5WeightsEntry):
+class KerasHdf5WeightsEntry(Node, model_raw_nodes.KerasHdf5WeightsEntry):
     source: Path = missing
 
 
 @dataclass
-class OnnxWeightsEntry(model_raw_nodes.OnnxWeightsEntry):
+class OnnxWeightsEntry(Node, model_raw_nodes.OnnxWeightsEntry):
     source: Path = missing
 
 
 @dataclass
-class PytorchStateDictWeightsEntry(model_raw_nodes.PytorchStateDictWeightsEntry):
+class PytorchStateDictWeightsEntry(Node, model_raw_nodes.PytorchStateDictWeightsEntry):
     source: Path = missing
     architecture: Union[_Missing, ImportedSource] = missing
 
 
 @dataclass
-class PytorchScriptWeightsEntry(model_raw_nodes.PytorchScriptWeightsEntry):
+class PytorchScriptWeightsEntry(Node, model_raw_nodes.PytorchScriptWeightsEntry):
     source: Path = missing
 
 
 @dataclass
-class TensorflowJsWeightsEntry(model_raw_nodes.TensorflowJsWeightsEntry):
+class TensorflowJsWeightsEntry(Node, model_raw_nodes.TensorflowJsWeightsEntry):
     source: Path = missing
 
 
 @dataclass
-class TensorflowSavedModelBundleWeightsEntry(model_raw_nodes.TensorflowSavedModelBundleWeightsEntry):
+class TensorflowSavedModelBundleWeightsEntry(Node, model_raw_nodes.TensorflowSavedModelBundleWeightsEntry):
     source: Path = missing
+
+
+@dataclass
+class Attachments(Node, model_raw_nodes.Attachments):
+    files: List[Path] = missing
 
 
 WeightsEntry = Union[

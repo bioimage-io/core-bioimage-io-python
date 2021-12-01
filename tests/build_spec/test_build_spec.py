@@ -90,8 +90,8 @@ def _test_build_spec(
         loaded_config = loaded_model.config
         assert "deepimagej" in loaded_config
 
-    attachments = loaded_model.attachments or {}
-    if "files" in attachments:
+    attachments = loaded_model.attachments
+    if attachments is not missing and attachments.files is not missing:
         for attached_file in attachments["files"]:
             assert attached_file.exists()
 
@@ -132,3 +132,7 @@ def test_build_spec_tfjs(any_tensorflow_js_model, tmp_path):
 
 def test_build_spec_deepimagej(unet2d_nuclei_broad_model, tmp_path):
     _test_build_spec(unet2d_nuclei_broad_model, tmp_path / "model.zip", "pytorch_script", add_deepimagej_config=True)
+
+
+# def test_build_spec_deepimagej_keras(unet2d_keras, tmp_path):
+#     _test_build_spec(unet2d_keras, tmp_path / "model.zip", "pytorch_script", add_deepimagej_config=True)
