@@ -23,6 +23,11 @@ try:
 except ImportError:
     torch_converter = None
 
+try:
+    from bioimageio.core.weight_converter import keras as keras_converter
+except ImportError:
+    keras_converter = None
+
 
 # extend help/version string by core version
 help_version_core = f"bioimageio.core {__version__}"
@@ -231,7 +236,8 @@ if torch_converter is not None:
         use_tracing: bool = typer.Option(True, help="Whether to use torch.jit tracing or scripting."),
         verbose: bool = typer.Option(True, help="Verbosity"),
     ) -> int:
-        return torch_converter.convert_weights_to_onnx(model_rdf, output_path, opset_version, use_tracing, verbose)
+        ret_code = torch_converter.convert_weights_to_onnx(model_rdf, output_path, opset_version, use_tracing, verbose)
+        sys.exit(ret_code)
 
     convert_torch_weights_to_onnx.__doc__ = torch_converter.convert_weights_to_onnx.__doc__
 
@@ -247,6 +253,23 @@ if torch_converter is not None:
         sys.exit(ret_code)
 
     convert_torch_weights_to_torchscript.__doc__ = torch_converter.convert_weights_to_pytorch_script.__doc__
+
+
+if keras_converter is not None:
+
+    @app.command()
+    def convert_keras_weights_to_tensorflow(
+        model_rdf: Path = typer.Argument(
+            ..., help="Path to the model resource description file (rdf.yaml) or zipped model."
+        ),
+        output_path: Path = typer.Argument(..., help="Where to save the tensorflow weights."),
+    ) -> int:
+        ret_code = keras_converter.convert_weights_to_tensorflow_saved_model_bundle(model_rdf, output_path)
+        sys.exit(ret_code)
+
+    convert_keras_weights_to_tensorflow.__doc__ = (
+        keras_converter.convert_weights_to_tensorflow_saved_model_bundle.__doc__
+    )
 
 
 if __name__ == "__main__":

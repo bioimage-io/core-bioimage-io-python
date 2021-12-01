@@ -13,12 +13,14 @@ torchscript_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
 onnx_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model", "hpa_densenet"]
 tensorflow1_models = ["stardist"]
 tensorflow2_models = []
-keras_models = []
+keras_models = ["unet2d_keras"]
 tensorflow_js_models = []
 
 model_sources = {
-    # TODO add unet2d_keras_tf from https://github.com/bioimage-io/spec-bioimage-io/pull/267
-    # "unet2d_keras_tf": (""),
+    "unet2d_keras": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
+        "unet2d_keras_tf/rdf.yaml"
+    ),
     "unet2d_nuclei_broad_model": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
         "unet2d_nuclei_broad/rdf.yaml"
@@ -79,7 +81,6 @@ try:
 except ImportError:
     keras = None
 skip_keras = keras is None
-skip_keras = True  # TODO add unet2d_keras_tf to have a model for keras tests
 
 # load all model packages we need for testing
 load_model_packages = set()
@@ -196,4 +197,9 @@ def unet2d_fixed_shape_or_not(request):
     params=[] if skip_torch or torch_version >= (3, 10) else ["unet2d_nuclei_broad_model", "unet2d_multi_tensor"]
 )
 def unet2d_multi_tensor_or_not(request):
+    return pytest.model_packages[request.param]
+
+
+@pytest.fixture(params=[] if skip_keras else ["unet2d_keras"])
+def unet2d_keras(request):
     return pytest.model_packages[request.param]

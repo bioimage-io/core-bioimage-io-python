@@ -78,7 +78,16 @@ def _get_pytorch_state_dict_weight_kwargs(architecture, model_kwargs, root):
     return weight_kwargs, tmp_archtecture
 
 
-def _get_weights(original_weight_source, weight_type, root, architecture=None, model_kwargs=None, **kwargs):
+def _get_weights(
+    original_weight_source,
+    weight_type,
+    root,
+    architecture=None,
+    model_kwargs=None,
+    tensorflow_version=None,
+    opset_version=None,
+    **kwargs,
+):
     weight_path = resolve_source(original_weight_source, root)
     if weight_type is None:
         weight_type = _infer_weight_type(weight_path)
@@ -98,8 +107,10 @@ def _get_weights(original_weight_source, weight_type, root, architecture=None, m
         )
 
     elif weight_type == "onnx":
+        if opset_version is None:
+            raise ValueError("opset_version needs to be passed for building an onnx model")
         weights = model_spec.raw_nodes.OnnxWeightsEntry(
-            source=weight_source, sha256=weight_hash, opset_version=kwargs.get("opset_version", 12), **attachments
+            source=weight_source, sha256=weight_hash, opset_version=opset_version, **attachments
         )
 
     elif weight_type == "pytorch_script":
@@ -108,26 +119,32 @@ def _get_weights(original_weight_source, weight_type, root, architecture=None, m
         )
 
     elif weight_type == "keras_hdf5":
+        if tensorflow_version is None:
+            raise ValueError("tensorflow_version needs to be passed for building a keras model")
         weights = model_spec.raw_nodes.KerasHdf5WeightsEntry(
             source=weight_source,
             sha256=weight_hash,
-            tensorflow_version=kwargs.get("tensorflow_version", "1.15"),
+            tensorflow_version=tensorflow_version,
             **attachments,
         )
 
     elif weight_type == "tensorflow_saved_model_bundle":
+        if tensorflow_version is None:
+            raise ValueError("tensorflow_version needs to be passed for building a tensorflow model")
         weights = model_spec.raw_nodes.TensorflowSavedModelBundleWeightsEntry(
             source=weight_source,
             sha256=weight_hash,
-            tensorflow_version=kwargs.get("tensorflow_version", "1.15"),
+            tensorflow_version=tensorflow_version,
             **attachments,
         )
 
     elif weight_type == "tensorflow_js":
+        if tensorflow_version is None:
+            raise ValueError("tensorflow_version needs to be passed for building a tensorflow_js model")
         weights = model_spec.raw_nodes.TensorflowJsWeightsEntry(
             source=weight_source,
             sha256=weight_hash,
-            tensorflow_version=kwargs.get("tensorflow_version", "1.15"),
+            tensorflow_version=tensorflow_version,
             **attachments,
         )
 
@@ -471,6 +488,8 @@ def build_model(
     links: Optional[List[str]] = None,
     root: Optional[Union[Path, str]] = None,
     add_deepimagej_config: bool = False,
+    tensorflow_version: Optional[str] = None,
+    opset_version: Optional[int] = None,
     **weight_kwargs,
 ):
     """Create a zipped bioimage.io model.
@@ -539,7 +558,10 @@ def build_model(
         dependencies: relative path to file with dependencies for this model.
         root: optional root path for relative paths. This can be helpful when building a spec from another model spec.
         add_deepimagej_config: add the deepimagej config to the model.
-        weight_kwargs: keyword arguments for this weight type, e.g. "tensorflow_version".
+        tensorflow_version: the tensorflow version used for training the model.
+            Needs to be passed for tensorflow or keras models.
+        opset_version: the opset version used in this model. Needs to be passed for onnx models.
+        weight_kwargs: additional keyword arguments for this weight type.
     """
     if root is None:
         root = "."
@@ -624,7 +646,16 @@ def build_model(
     covers = _ensure_local(covers, root)
 
     # parse the weights
-    weights, tmp_archtecture = _get_weights(weight_uri, weight_type, root, architecture, model_kwargs, **weight_kwargs)
+    weights, tmp_archtecture = _get_weights(
+        weight_uri,
+        weight_type,
+        root,
+        architecture,
+        model_kwargs,
+        tensorflow_version=tensorflow_version,
+        opset_version=opset_version,
+        **weight_kwargs,
+    )
 
     # validate the sample inputs and outputs (if given)
     if sample_inputs is not None:
@@ -732,11 +763,24 @@ def add_weights(
     weight_uri: Union[str, Path],
     weight_type: Optional[str] = None,
     output_path: Optional[Union[str, Path]] = None,
+    architecture: Optional[str] = None,
+    model_kwargs: Optional[Dict[str, Union[int, float, str]]] = None,
+    tensorflow_version: Optional[str] = None,
+    opset_version: Optional[str] = None,
     **weight_kwargs,
 ):
     """Add weight entry to bioimage.io model."""
     # we need to pass the weight path as abs path to avoid confusion with different root directories
-    new_weights, tmp_arch = _get_weights(Path(weight_uri).absolute(), weight_type, root=Path("."), **weight_kwargs)
+    new_weights, tmp_arch = _get_weights(
+        Path(weight_uri).absolute(),
+        weight_type,
+        root=Path("."),
+        architecture=architecture,
+        model_kwargs=model_kwargs,
+        tensorflow_version=tensorflow_version,
+        opset_version=opset_version,
+        **weight_kwargs,
+    )
     model.weights.update(new_weights)
     if output_path is not None:
         model_package = export_resource_package(model, output_path=output_path)
