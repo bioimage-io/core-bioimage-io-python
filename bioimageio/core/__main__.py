@@ -9,7 +9,8 @@ from typing import List, Optional
 
 import typer
 
-from bioimageio.core import __version__, prediction, commands, resource_tests
+from bioimageio.core import __version__, prediction, commands, resource_tests, load_raw_resource_description
+from bioimageio.core.prediction_pipeline import get_weight_formats
 from bioimageio.spec.__main__ import app, help_version as help_version_spec
 from bioimageio.spec.model.raw_nodes import WeightsFormat
 
@@ -94,11 +95,21 @@ def test_model(
         devices=devices,
         decimal=decimal,
     )
+
+    if weight_format is None:
+        weight_formats = get_weight_formats()
+        model_weight_formats = list(load_raw_resource_description(model_rdf).weights.keys())
+        for wf in weight_formats:
+            if wf in model_weight_formats:
+                weight_format = wf
+                break
+        weight_format = "unknown" if weight_format is None else weight_format
+
     if summary["error"] is None:
-        print(f"Model test for {model_rdf} has passed.")
+        print(f"Model test for {model_rdf} using {weight_format} weight format has passed.")
         ret_code = 0
     else:
-        print(f"Model test for {model_rdf} has FAILED!")
+        print(f"Model test for {model_rdf} using {weight_format} weight format has FAILED!")
         print(summary)
         ret_code = 1
     sys.exit(ret_code)
