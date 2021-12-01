@@ -35,7 +35,7 @@ def test_prediction_pipeline_torch(any_torch_model):
 
 
 def test_prediction_pipeline_torchscript(any_torchscript_model):
-    _test_prediction_pipeline(any_torchscript_model, "pytorch_script")
+    _test_prediction_pipeline(any_torchscript_model, "torchscript")
 
 
 def test_prediction_pipeline_onnx(any_onnx_model):

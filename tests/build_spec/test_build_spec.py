@@ -28,10 +28,10 @@ def _test_build_spec(
         model_kwargs = None if weight_spec.kwargs is missing else weight_spec.kwargs
         architecture = str(weight_spec.architecture)
         weight_type_ = None  # the weight type can be auto-detected
-    elif weight_type == "pytorch_script":
+    elif weight_type == "torchscript":
         architecture = None
         model_kwargs = None
-        weight_type_ = "pytorch_script"  # the weight type CANNOT be auto-detcted
+        weight_type_ = "torchscript"  # the weight type CANNOT be auto-detcted
     else:
         architecture = None
         model_kwargs = None
@@ -109,7 +109,7 @@ def test_build_spec_implicit_output_shape(unet2d_nuclei_broad_model, tmp_path):
 
 
 def test_build_spec_torchscript(any_torchscript_model, tmp_path):
-    _test_build_spec(any_torchscript_model, tmp_path / "model.zip", "pytorch_script")
+    _test_build_spec(any_torchscript_model, tmp_path / "model.zip", "torchscript")
 
 
 def test_build_spec_onnx(any_onnx_model, tmp_path):
@@ -133,7 +133,7 @@ def test_build_spec_tfjs(any_tensorflow_js_model, tmp_path):
 
 
 def test_build_spec_deepimagej(unet2d_nuclei_broad_model, tmp_path):
-    _test_build_spec(unet2d_nuclei_broad_model, tmp_path / "model.zip", "pytorch_script", add_deepimagej_config=True)
+    _test_build_spec(unet2d_nuclei_broad_model, tmp_path / "model.zip", "torchscript", add_deepimagej_config=True)
 
 
 def test_build_spec_deepimagej_keras(unet2d_keras, tmp_path):

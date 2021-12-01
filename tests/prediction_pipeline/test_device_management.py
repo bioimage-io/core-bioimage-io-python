@@ -1,5 +1,3 @@
-from functools import wraps
-
 import numpy as np
 import pytest
 import xarray as xr
@@ -60,7 +58,7 @@ def test_device_management_torch(any_torch_model):
 
 @skip_on(TooFewDevicesException, reason="Too few devices")
 def test_device_management_torchscript(any_torchscript_model):
-    _test_device_management(any_torchscript_model, "pytorch_script")
+    _test_device_management(any_torchscript_model, "torchscript")
 
 
 @pytest.mark.skipif(pytest.skip_torch, reason="requires torch for device discovery")
