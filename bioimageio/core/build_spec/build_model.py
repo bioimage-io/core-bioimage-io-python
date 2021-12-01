@@ -13,6 +13,7 @@ import bioimageio.spec.model as model_spec
 from bioimageio.core import export_resource_package, load_raw_resource_description
 from bioimageio.core.resource_io.nodes import URI
 from bioimageio.core.resource_io.utils import resolve_local_source, resolve_source
+from bioimageio.spec.shared.raw_nodes import ImportableSourceFile, ImportableModule
 
 try:
     from typing import get_args
@@ -56,33 +57,23 @@ def _infer_weight_type(path):
 def _get_pytorch_state_dict_weight_kwargs(architecture, model_kwargs, root):
     assert architecture is not None
     tmp_archtecture = None
+    weight_kwargs = {"kwargs": model_kwargs} if model_kwargs else {}
+    arch = spec.shared.fields.ImportableSource().deserialize(architecture)
+    if isinstance(arch, ImportableSourceFile):
+        if os.path.isabs(arch.source_file):
+            tmp_archtecture = Path("this_model_architecture.py")
 
-    # if we have a ":" (or deprecated "::") this is a python file with class specified,
-    # so we can compute the hash for it
-    if ":" in architecture:
-        arch_file, arch_class = architecture.replace("::", ":").split(":")
+            copyfile(arch.source_file, root / tmp_archtecture)
+            arch = ImportableSourceFile(arch.callable_name, tmp_archtecture)
 
-        # get the source path
-        arch_file = _ensure_local(arch_file, root)
-        arch_hash = _get_hash(root / arch_file)
-
-        # if not relative, create local copy (otherwise this will not work)
-        if os.path.isabs(arch_file):
-            copyfile(arch_file, "this_model_architecture.py")
-            arch = f"this_model_architecture.py:{arch_class}"
-            tmp_archtecture = "this_model_architecture.py"
-        else:
-            arch = f"{arch_file}:{arch_class}"
-        arch = spec.shared.fields.Importablearch().deserialize(arch)
-
-        weight_kwargs = {"architecture": arch, "architecture_sha256": arch_hash}
-
-    # otherwise this is a python class or function name
+        arch_hash = _get_hash(root / arch.source_file)
+        weight_kwargs["architecture_sha256"] = arch_hash
+    elif isinstance(arch, ImportableModule):
+        pass
     else:
-        weight_kwargs = {"architecture": architecture}
+        raise NotImplementedError(arch)
 
-    if model_kwargs is not None:
-        weight_kwargs["kwargs"] = model_kwargs
+    weight_kwargs["architecture"] = arch
 
     return weight_kwargs, tmp_archtecture
 

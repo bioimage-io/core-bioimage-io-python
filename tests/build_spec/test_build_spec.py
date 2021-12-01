@@ -23,17 +23,15 @@ def _test_build_spec(
 
     if weight_type == "pytorch_state_dict":
         weight_spec = model_spec.weights["pytorch_state_dict"]
-        source_path = weight_spec.architecture.source_file
-        class_name = weight_spec.architecture.callable_name
         model_kwargs = None if weight_spec.kwargs is missing else weight_spec.kwargs
-        model_source = f"{source_path}:{class_name}"
+        architecture = str(weight_spec.architecture)
         weight_type_ = None  # the weight type can be auto-detected
     elif weight_type == "pytorch_script":
-        model_source = None
+        architecture = None
         model_kwargs = None
         weight_type_ = "pytorch_script"  # the weight type CANNOT be auto-detcted
     else:
-        model_source = None
+        architecture = None
         model_kwargs = None
         weight_type_ = None  # the weight type can be auto-detected
 
@@ -69,8 +67,8 @@ def _test_build_spec(
         add_deepimagej_config=add_deepimagej_config,
     )
     # TODO names
-    if model_source is not None:
-        kwargs["source"] = model_source
+    if architecture is not None:
+        kwargs["architecture"] = architecture
     if model_kwargs is not None:
         kwargs["kwargs"] = model_kwargs
     if tensorflow_version is not None:
