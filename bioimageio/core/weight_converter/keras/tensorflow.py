@@ -13,13 +13,13 @@ from tensorflow import saved_model
 
 # adapted from
 # https://github.com/deepimagej/pydeepimagej/blob/master/pydeepimagej/yaml/create_config.py#L236
-def _convert_tf1(keras_weight_path, output_path, zip_weights):
+def _convert_tf1(keras_weight_path, output_path, input_name, output_name, zip_weights):
     def build_tf_model():
         keras_model = keras.models.load_model(keras_weight_path)
 
         builder = saved_model.builder.SavedModelBuilder(output_path)
         signature = saved_model.signature_def_utils.predict_signature_def(
-            inputs={"input": keras_model.input}, outputs={"output": keras_model.output}
+            inputs={input_name: keras_model.input}, outputs={output_name: keras_model.output}
         )
 
         signature_def_map = {saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: signature}
@@ -98,6 +98,10 @@ def convert_weights_to_tensorflow_saved_model_bundle(
             raise RuntimeError(f"Tensorflow major versions of model {model_tf_major_ver} is not {tf_major_ver}")
 
     if tf_major_ver == 1:
-        return _convert_tf1(weight_path, str(path_), zip_weights)
+        if len(model.inputs) != 1 or len(model.outputs) != 1:
+            raise NotImplementedError(
+                "Weight conversion for models with multiple inputs or outputs is not yet implemented."
+            )
+        return _convert_tf1(weight_path, str(path_), model.inputs[0].name, model.outputs[0].name, zip_weights)
     else:
-        raise NotImplementedError
+        raise NotImplementedError("Weight conversion for tensorflow 2 is not yet implemented.")

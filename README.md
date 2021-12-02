@@ -1,12 +1,17 @@
 # core-bioimage-io-python
 
-Python specific core utilities for running models in the [BioImage Model Zoo](https://bioimage.io)
+Python specific core utilities for running models in the [BioImage Model Zoo](https://bioimage.io).
 
 ## Installation
 
 ### Via Conda
 
-The `bioimageio.core` package supports various back-ends for running BioimageIO networks:
+The `bioimageio.core` package can be installed from conda-forge via
+```
+conda install -c conda-forge bioimageio.core
+```
+if you don't install any additional deep learning libraries, you will only be able to use general convenience functionality, but not any functionality for model prediction.
+To install additional deep learning libraries use:
 
 * Pytorch/Torchscript:
   ```bash
@@ -68,6 +73,13 @@ Run prediction for an image stored on disc:
 ```
 bioimageio predict-image -m <MODEL> -i <INPUT> -o <OUTPUT>
 ```
+
+Run prediction for multiple images stored on disc:
+```
+bioimagei predict-images -m <MODEL> -i <INPUT_PATTERN> - o <OUTPUT_FOLDER>
+```
+`<INPUT_PATTERN>` is a `glob` pattern to select the desired images, e.g. `/path/to/my/images/*.tif`.
+
 
 ## From python
 
