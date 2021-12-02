@@ -42,7 +42,7 @@ def add_weights(
     # copy the weight path to the input model's root, otherwise it will
     # not be found when packaging the new model
     weight_out = os.path.join(model.root_path, Path(weight_uri).name)
-    if Path(weight_out) != Path(weight_uri):
+    if Path(weight_out).absolute() != Path(weight_uri).absolute():
         copyfile(weight_uri, weight_out)
 
     new_weights, tmp_arch = _get_weights(
