@@ -79,6 +79,7 @@ def _test_build_spec(
         postprocessing=postprocessing,
         output_path=out_path,
         add_deepimagej_config=add_deepimagej_config,
+        maintainers=[{"github_user": "jane_doe"}],
     )
     if architecture is not None:
         kwargs["architecture"] = architecture
@@ -106,6 +107,14 @@ def _test_build_spec(
         loaded_config = loaded_model.config
         assert "deepimagej" in loaded_config
 
+    if loaded_model.sample_inputs is not missing:
+        for sample in loaded_model.sample_inputs:
+            assert sample.exists()
+    if loaded_model.sample_outputs is not missing:
+        for sample in loaded_model.sample_outputs:
+            assert sample.exists()
+
+    assert loaded_model.maintainers[0].github_user == "jane_doe"
     attachments = loaded_model.attachments
     if attachments is not missing and attachments.files is not missing:
         for attached_file in attachments["files"]:

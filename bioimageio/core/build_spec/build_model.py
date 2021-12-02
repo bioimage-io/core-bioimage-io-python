@@ -229,10 +229,6 @@ def _get_output_tensor(path, name, reference_tensor, scale, offset, axes, data_r
     return outputs
 
 
-def _build_authors(authors: List[Dict[str, str]]):
-    return [model_spec.raw_nodes.Author(**a) for a in authors]
-
-
 # TODO The citation entry should be improved so that we can properly derive doi vs. url
 def _build_cite(cite: Dict[str, str]):
     citation_list = [model_spec.raw_nodes.CiteEntry(text=k, url=v) for k, v in cite.items()]
@@ -564,6 +560,7 @@ def build_model(
     postprocessing: Optional[List[Dict[str, Dict[str, Union[int, float, str]]]]] = None,
     pixel_sizes: Optional[List[Dict[str, float]]] = None,
     # general optional
+    maintainers: Optional[List[Dict[str, str]]] = None,
     license: Optional[str] = None,
     covers: Optional[List[str]] = None,
     git_repo: Optional[str] = None,
@@ -731,7 +728,7 @@ def build_model(
     format_version = get_args(model_spec.raw_nodes.FormatVersion)[-1]
     timestamp = datetime.datetime.now()
 
-    authors = _build_authors(authors)
+    authors = [model_spec.raw_nodes.Author(**a) for a in authors]
     cite = _build_cite(cite)
     documentation = _ensure_local(documentation, root)
     if covers is None:
@@ -822,6 +819,8 @@ def build_model(
     if parent is not None:
         assert len(parent) == 2
         kwargs["parent"] = {"uri": parent[0], "sha256": parent[1]}
+    if maintainers is not None:
+        kwargs["maintainers"] = [model_spec.raw_nodes.Maintainer(**m) for m in maintainers]
 
     try:
         model = model_spec.raw_nodes.Model(
