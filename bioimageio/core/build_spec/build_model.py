@@ -59,23 +59,24 @@ def _get_pytorch_state_dict_weight_kwargs(architecture, model_kwargs, root):
     assert architecture is not None
     tmp_archtecture = None
     weight_kwargs = {"kwargs": model_kwargs} if model_kwargs else {}
-    arch = spec.shared.fields.ImportableSource().deserialize(architecture)
-    if isinstance(arch, ImportableSourceFile):
-        if os.path.isabs(arch.source_file):
-            tmp_archtecture = Path("this_model_architecture.py")
+    if ":" in architecture:
+        arch_file, callable_name = architecture.replace("::", ":").split(":")
 
-            copyfile(arch.source_file, root / tmp_archtecture)
-            arch = ImportableSourceFile(arch.callable_name, tmp_archtecture)
+        # this goes haywire if we pass an absolute path, so need to copt to a tmp relative path
+        if os.path.isabs(arch_file):
+            tmp_archtecture = Path("this_model_architecture.py")
+            copyfile(arch_file, root / tmp_archtecture)
+            arch = ImportableSourceFile(callable_name, tmp_archtecture)
+        else:
+            arch = ImportableSourceFile(callable_name, Path(arch_file))
 
         arch_hash = _get_hash(root / arch.source_file)
         weight_kwargs["architecture_sha256"] = arch_hash
-    elif isinstance(arch, ImportableModule):
-        pass
     else:
-        raise NotImplementedError(arch)
+        arch = spec.shared.fields.ImportableSource().deserialize(architecture)
+        assert isinstance(arch, ImportableModule)
 
     weight_kwargs["architecture"] = arch
-
     return weight_kwargs, tmp_archtecture
 
 
