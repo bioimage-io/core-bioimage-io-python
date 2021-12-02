@@ -106,6 +106,13 @@ def _test_build_spec(
         loaded_config = loaded_model.config
         assert "deepimagej" in loaded_config
 
+    if loaded_model.sample_inputs is not missing:
+        for sample in loaded_model.sample_inputs:
+            assert sample.exists()
+    if loaded_model.sample_outputs is not missing:
+        for sample in loaded_model.sample_outputs:
+            assert sample.exists()
+
     attachments = loaded_model.attachments
     if attachments is not missing and attachments.files is not missing:
         for attached_file in attachments["files"]:
