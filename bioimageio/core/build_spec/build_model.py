@@ -803,7 +803,6 @@ def build_model(
 
     # optional kwargs, don't pass them if none
     optional_kwargs = {
-        "attachments": attachments,
         "config": config,
         "git_repo": git_repo,
         "packaged_by": packaged_by,
@@ -814,13 +813,23 @@ def build_model(
     }
     kwargs = {k: v for k, v in optional_kwargs.items() if v is not None}
 
+    if attachments is not None:
+        file_attachments = attachments.pop("files", None)
+        # this is my attempt at creating the correct attachments, but this is still not working
+        # (the attachments field is empty after serialization and the content of attachments:files is not copied)
+        # I also tried this and it doesn't work either:
+        # spec.model.schema.Attachments().load({"files": file_attachments})
+        if file_attachments is None:
+            kwargs["attachments"] = model_spec.raw_nodes.Attachments(**attachments)
+        else:
+            kwargs["attachments"] = model_spec.raw_nodes.Attachments(files=file_attachments, **attachments)
     if dependencies is not None:
         kwargs["dependencies"] = _get_dependencies(dependencies, root)
+    if maintainers is not None:
+        kwargs["maintainers"] = [model_spec.raw_nodes.Maintainer(**m) for m in maintainers]
     if parent is not None:
         assert len(parent) == 2
         kwargs["parent"] = {"uri": parent[0], "sha256": parent[1]}
-    if maintainers is not None:
-        kwargs["maintainers"] = [model_spec.raw_nodes.Maintainer(**m) for m in maintainers]
 
     try:
         model = model_spec.raw_nodes.Model(

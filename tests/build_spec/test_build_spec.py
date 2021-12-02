@@ -115,10 +115,23 @@ def _test_build_spec(
             assert sample.exists()
 
     assert loaded_model.maintainers[0].github_user == "jane_doe"
+
     attachments = loaded_model.attachments
     if attachments is not missing and attachments.files is not missing:
-        for attached_file in attachments["files"]:
+        for attached_file in attachments.files:
             assert attached_file.exists()
+
+    # make sure there is one attachment per pre/post-processing
+    if add_deepimagej_config:
+        preproc, postproc = preprocessing[0], postprocessing[0]
+        n_processing = 0
+        if preproc is not None:
+            n_processing += len(preproc)
+        if postproc is not None:
+            n_processing += len(postproc)
+        if n_processing > 0:
+            assert attachments.files is not missing
+            assert n_processing == len(attachments.files)
 
 
 def test_build_spec_pytorch(any_torch_model, tmp_path):
