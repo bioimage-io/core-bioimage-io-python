@@ -14,6 +14,7 @@ import bioimageio.spec.model as model_spec
 from bioimageio.core import export_resource_package, load_raw_resource_description
 from bioimageio.core.resource_io.nodes import URI
 from bioimageio.core.resource_io.utils import resolve_local_source, resolve_source
+from bioimageio.spec.shared import fields
 from bioimageio.spec.shared.raw_nodes import ImportableSourceFile, ImportableModule
 
 try:
@@ -60,16 +61,10 @@ def _get_pytorch_state_dict_weight_kwargs(architecture, model_kwargs, root):
     tmp_archtecture = None
     weight_kwargs = {"kwargs": model_kwargs} if model_kwargs else {}
     if ":" in architecture:
-        arch_file, callable_name = architecture.replace("::", ":").split(":")
-
-        # this goes haywire if we pass an absolute path, so need to copt to a tmp relative path
-        if os.path.isabs(arch_file):
-            tmp_archtecture = Path("this_model_architecture.py")
-            copyfile(arch_file, root / tmp_archtecture)
-            arch = ImportableSourceFile(callable_name, tmp_archtecture)
-        else:
-            arch = ImportableSourceFile(callable_name, Path(arch_file))
-
+        # note: path itself might include : for absolute paths in windows
+        *arch_file_parts, callable_name = architecture.replace("::", ":").split(":")
+        arch_file = _ensure_local(":".join(arch_file_parts), root)
+        arch = ImportableSourceFile(callable_name, arch_file)
         arch_hash = _get_hash(root / arch.source_file)
         weight_kwargs["architecture_sha256"] = arch_hash
     else:
@@ -122,30 +117,21 @@ def _get_weights(
         if tensorflow_version is None:
             raise ValueError("tensorflow_version needs to be passed for building a keras model")
         weights = model_spec.raw_nodes.KerasHdf5WeightsEntry(
-            source=weight_source,
-            sha256=weight_hash,
-            tensorflow_version=tensorflow_version,
-            **attachments,
+            source=weight_source, sha256=weight_hash, tensorflow_version=tensorflow_version, **attachments
         )
 
     elif weight_type == "tensorflow_saved_model_bundle":
         if tensorflow_version is None:
             raise ValueError("tensorflow_version needs to be passed for building a tensorflow model")
         weights = model_spec.raw_nodes.TensorflowSavedModelBundleWeightsEntry(
-            source=weight_source,
-            sha256=weight_hash,
-            tensorflow_version=tensorflow_version,
-            **attachments,
+            source=weight_source, sha256=weight_hash, tensorflow_version=tensorflow_version, **attachments
         )
 
     elif weight_type == "tensorflow_js":
         if tensorflow_version is None:
             raise ValueError("tensorflow_version needs to be passed for building a tensorflow_js model")
         weights = model_spec.raw_nodes.TensorflowJsWeightsEntry(
-            source=weight_source,
-            sha256=weight_hash,
-            tensorflow_version=tensorflow_version,
-            **attachments,
+            source=weight_source, sha256=weight_hash, tensorflow_version=tensorflow_version, **attachments
         )
 
     elif weight_type in weight_types:
@@ -363,7 +349,7 @@ def _get_deepimagej_config(export_folder, sample_inputs, sample_outputs, pixel_s
         "allow_tiling": True,
         "model_keys": None,
     }
-    return {"deepimagej": config}, attachments
+    return {"deepimagej": config}, [Path(a) for a in attachments]
 
 
 def _write_sample_data(input_paths, output_paths, input_axes, output_axes, export_folder: Path):
@@ -518,9 +504,8 @@ def _ensure_local_or_url(source: Union[Path, URI, str, list], root: Path) -> Uni
         return [_ensure_local_or_url(s, root) for s in source]
 
     local_source = resolve_local_source(source, root)
-    local_source = resolve_local_source(
-        local_source, root, None if isinstance(local_source, URI) else root / local_source.name
-    )
+    if not isinstance(local_source, URI):
+        local_source = resolve_local_source(local_source, root, root / local_source.name)
     return local_source.relative_to(root)
 
 
@@ -653,9 +638,24 @@ def build_model(
             Only requred for models with onnx weight format.
         weight_kwargs: additional keyword arguments for this weight type.
     """
+    assert architecture is None or isinstance(architecture, str)
     if root is None:
         root = "."
     root = Path(root)
+
+    if attachments is not None:
+        assert isinstance(attachments, dict)
+        if "files" in attachments:
+            afiles = attachments["files"]
+            if isinstance(afiles, str):
+                afiles = [afiles]
+
+            if isinstance(afiles, list):
+                afiles = _ensure_local_or_url(afiles, root)
+            else:
+                raise TypeError(attachments)
+
+            attachments["files"] = afiles
 
     #
     # generate the model specific fields
@@ -783,7 +783,7 @@ def build_model(
             elif "files" not in attachments:
                 attachments["files"] = ij_attachments
             else:
-                attachments["files"].extend(ij_attachments)
+                attachments["files"] = list(set(attachments["files"]) | set(ij_attachments))
 
         if links is None:
             links = ["deepimagej/deepimagej"]
@@ -803,7 +803,6 @@ def build_model(
 
     # optional kwargs, don't pass them if none
     optional_kwargs = {
-        "attachments": attachments,
         "config": config,
         "git_repo": git_repo,
         "packaged_by": packaged_by,
@@ -814,13 +813,15 @@ def build_model(
     }
     kwargs = {k: v for k, v in optional_kwargs.items() if v is not None}
 
+    if attachments is not None:
+        kwargs["attachments"] = model_spec.raw_nodes.Attachments(**attachments)
     if dependencies is not None:
         kwargs["dependencies"] = _get_dependencies(dependencies, root)
+    if maintainers is not None:
+        kwargs["maintainers"] = [model_spec.raw_nodes.Maintainer(**m) for m in maintainers]
     if parent is not None:
         assert len(parent) == 2
         kwargs["parent"] = {"uri": parent[0], "sha256": parent[1]}
-    if maintainers is not None:
-        kwargs["maintainers"] = [model_spec.raw_nodes.Maintainer(**m) for m in maintainers]
 
     try:
         model = model_spec.raw_nodes.Model(
