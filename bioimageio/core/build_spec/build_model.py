@@ -14,6 +14,7 @@ import bioimageio.spec.model as model_spec
 from bioimageio.core import export_resource_package, load_raw_resource_description
 from bioimageio.core.resource_io.nodes import URI
 from bioimageio.core.resource_io.utils import resolve_local_source, resolve_source
+from bioimageio.spec.shared import fields
 from bioimageio.spec.shared.raw_nodes import ImportableSourceFile, ImportableModule
 
 try:
@@ -363,7 +364,7 @@ def _get_deepimagej_config(export_folder, sample_inputs, sample_outputs, pixel_s
         "allow_tiling": True,
         "model_keys": None,
     }
-    return {"deepimagej": config}, attachments
+    return {"deepimagej": config}, [Path(a) for a in attachments]
 
 
 def _write_sample_data(input_paths, output_paths, input_axes, output_axes, export_folder: Path):
@@ -657,6 +658,20 @@ def build_model(
         root = "."
     root = Path(root)
 
+    if attachments is not None:
+        assert isinstance(attachments, dict)
+        if "files" in attachments:
+            afiles = attachments["files"]
+            if isinstance(afiles, str):
+                afiles = [afiles]
+
+            if isinstance(afiles, list):
+                afiles = _ensure_local_or_url(afiles, root)
+            else:
+                raise TypeError(attachments)
+
+            attachments["files"] = afiles
+
     #
     # generate the model specific fields
     #
@@ -783,7 +798,7 @@ def build_model(
             elif "files" not in attachments:
                 attachments["files"] = ij_attachments
             else:
-                attachments["files"].extend(ij_attachments)
+                attachments["files"] = list(set(attachments["files"]) | set(ij_attachments))
 
         if links is None:
             links = ["deepimagej/deepimagej"]
@@ -814,15 +829,7 @@ def build_model(
     kwargs = {k: v for k, v in optional_kwargs.items() if v is not None}
 
     if attachments is not None:
-        file_attachments = attachments.pop("files", None)
-        # this is my attempt at creating the correct attachments, but this is still not working
-        # (the attachments field is empty after serialization and the content of attachments:files is not copied)
-        # I also tried this and it doesn't work either:
-        # spec.model.schema.Attachments().load({"files": file_attachments})
-        if file_attachments is None:
-            kwargs["attachments"] = model_spec.raw_nodes.Attachments(**attachments)
-        else:
-            kwargs["attachments"] = model_spec.raw_nodes.Attachments(files=file_attachments, **attachments)
+        kwargs["attachments"] = model_spec.raw_nodes.Attachments(**attachments)
     if dependencies is not None:
         kwargs["dependencies"] = _get_dependencies(dependencies, root)
     if maintainers is not None:
