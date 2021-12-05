@@ -63,7 +63,10 @@ def _validate_output_shape(shape: Tuple[int, ...], shape_spec, input_shapes) -> 
     if isinstance(shape_spec, list):
         return shape == tuple(shape_spec)
     elif isinstance(shape_spec, ImplicitOutputShape):
-        ipt_shape = numpy.array(input_shapes[shape_spec.reference_tensor])
+        ref_tensor = shape_spec.reference_tensor
+        if ref_tensor not in input_shapes:
+            raise ValidationError(f"The reference tensor name {ref_tensor} is not in {input_shapes}")
+        ipt_shape = numpy.array(input_shapes[ref_tensor])
         scale = numpy.array(shape_spec.scale)
         offset = numpy.array(shape_spec.offset)
         exp_shape = numpy.round_(ipt_shape * scale) + 2 * offset
