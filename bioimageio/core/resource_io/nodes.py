@@ -172,7 +172,7 @@ class TensorflowSavedModelBundleWeightsEntry(Node, model_raw_nodes.TensorflowSav
 
 
 @dataclass
-class Attachments(Node, model_raw_nodes.Attachments):
+class Attachments(Node, rdf_raw_nodes.Attachments):
     files: Union[_Missing, List[Path]] = missing
     unknown: Union[_Missing, Dict[str, Any]] = missing
 
