@@ -2,7 +2,6 @@ import datetime
 import hashlib
 import os
 from pathlib import Path
-from shutil import copyfile
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import imageio
@@ -14,8 +13,7 @@ import bioimageio.spec.model as model_spec
 from bioimageio.core import export_resource_package, load_raw_resource_description
 from bioimageio.core.resource_io.nodes import URI
 from bioimageio.core.resource_io.utils import resolve_local_source, resolve_source
-from bioimageio.spec.shared import fields
-from bioimageio.spec.shared.raw_nodes import ImportableSourceFile, ImportableModule
+from bioimageio.spec.shared.raw_nodes import ImportableModule, ImportableSourceFile
 
 try:
     from typing import get_args
@@ -217,7 +215,7 @@ def _get_output_tensor(path, name, reference_tensor, scale, offset, axes, data_r
 
 # TODO The citation entry should be improved so that we can properly derive doi vs. url
 def _build_cite(cite: Dict[str, str]):
-    citation_list = [model_spec.raw_nodes.CiteEntry(text=k, url=v) for k, v in cite.items()]
+    citation_list = [spec.rdf.raw_nodes.CiteEntry(text=k, url=v) for k, v in cite.items()]
     return citation_list
 
 

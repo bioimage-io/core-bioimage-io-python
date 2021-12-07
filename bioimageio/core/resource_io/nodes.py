@@ -8,6 +8,7 @@ from marshmallow.utils import _Missing
 
 from bioimageio.spec.model import raw_nodes as model_raw_nodes
 from bioimageio.spec.rdf import raw_nodes as rdf_raw_nodes
+from bioimageio.spec.collection import raw_nodes as collection_raw_nodes
 from bioimageio.spec.shared import raw_nodes
 
 
@@ -82,13 +83,8 @@ class RDF(rdf_raw_nodes.RDF, Node):
 
 
 @dataclass
-class CollectionEntry(Node, rdf_raw_nodes.CollectionEntry):
+class CollectionEntry(Node, collection_raw_nodes.CollectionEntry):
     source: URI = missing
-
-
-@dataclass
-class ModelCollectionEntry(CollectionEntry, rdf_raw_nodes.ModelCollectionEntry):
-    download_url: URI = missing
 
 
 @dataclass
@@ -97,7 +93,7 @@ class ModelParent(Node, model_raw_nodes.ModelParent):
 
 
 @dataclass
-class Collection(RDF, rdf_raw_nodes.Collection):
+class Collection(RDF, collection_raw_nodes.Collection):
     pass
 
 
