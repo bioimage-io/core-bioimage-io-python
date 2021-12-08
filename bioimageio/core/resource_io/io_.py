@@ -96,17 +96,14 @@ def _replace_relative_paths_for_remote_source(
 
 def load_raw_resource_description(
     source: Union[dict, os.PathLike, IO, str, bytes, raw_nodes.URI, RawResourceDescription],
-    update_to_current_format: bool = True,
-    update_to_format: Optional[str] = None,
+    update_to_format: Optional[str] = "latest",
 ) -> RawResourceDescription:
     """load a raw python representation from a BioImage.IO resource description file (RDF).
     Use `load_resource_description` for a more convenient representation.
 
     Args:
         source: resource description file (RDF)
-        update_to_current_format: if True (default) attempt auto-conversion to latest format version
-            (most bioimageio.core functionality expects the latest format version for each resource)
-        update_to_format: update resource to specific major.minor format version; ignoring patch version.
+        update_to_format: update resource to specific "major.minor" or "latest" format version; ignoring patch version.
 
     Returns:
         raw BioImage.IO resource
@@ -114,9 +111,7 @@ def load_raw_resource_description(
     if isinstance(source, RawResourceDescription):
         return source
 
-    raw_rd = spec.load_raw_resource_description(
-        source, update_to_current_format=update_to_current_format, update_to_format=update_to_format
-    )
+    raw_rd = spec.load_raw_resource_description(source, update_to_format=update_to_format)
     raw_rd = _replace_relative_paths_for_remote_source(raw_rd, raw_rd.root_path)
     return raw_rd
 
@@ -191,7 +186,6 @@ def export_resource_package(
     compression: int = ZIP_DEFLATED,
     compression_level: int = 1,
     output_path: Optional[os.PathLike] = None,
-    update_to_current_format: bool = False,
     update_to_format: Optional[str] = None,
     weights_priority_order: Optional[Sequence[Union[str]]] = None,
 ) -> pathlib.Path:
@@ -203,17 +197,14 @@ def export_resource_package(
         compression_level: Compression level to use when writing files to the archive.
                            See https://docs.python.org/3/library/zipfile.html#zipfile.ZipFile
         output_path: file path to write package to
-        update_to_current_format: If True attempt auto-conversion to latest format version.
-        update_to_format: update resource to specific major.minor format version; ignoring patch version.
+        update_to_format: update resource to specific "major.minor" or "latest" format version; ignoring patch version.
         weights_priority_order: If given only the first weights format present in the model is included.
                                 If none of the prioritized weights formats is found all are included.
 
     Returns:
         path to zipped BioImage.IO package in BIOIMAGEIO_CACHE_PATH or 'output_path'
     """
-    raw_rd = load_raw_resource_description(
-        source, update_to_current_format=update_to_current_format, update_to_format=update_to_format
-    )
+    raw_rd = load_raw_resource_description(source, update_to_format=update_to_format)
     package_content = get_local_resource_package_content(raw_rd, weights_priority_order)
     if output_path is None:
         package_path = _get_tmp_package_path(raw_rd, weights_priority_order)
