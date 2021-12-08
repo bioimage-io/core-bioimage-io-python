@@ -56,7 +56,7 @@ def package(
         show_default=False,
     ),
     verbose: bool = typer.Option(False, help="show traceback of exceptions"),
-) -> int:
+):
     # typer bug: typer returns empty tuple instead of None if weights_order_priority is not given
     weights_priority_order = weights_priority_order or None
 
@@ -85,7 +85,7 @@ def test_model(
     weight_format: Optional[WeightFormatEnum] = typer.Option(None, help="The weight format to use."),
     devices: Optional[List[str]] = typer.Option(None, help="Devices for running the model."),
     decimal: int = typer.Option(4, help="The test precision."),
-) -> int:
+):
     # this is a weird typer bug: default devices are empty tuple although they should be None
     if len(devices) == 0:
         devices = None
@@ -126,7 +126,7 @@ def test_resource(
     weight_format: Optional[WeightFormatEnum] = typer.Option(None, help="(for model only) The weight format to use."),
     devices: Optional[List[str]] = typer.Option(None, help="(for model only) Devices for running the model."),
     decimal: int = typer.Option(4, help="(for model only) The test precision."),
-) -> int:
+):
     # this is a weird typer bug: default devices are empty tuple although they should be None
     if len(devices) == 0:
         devices = None
@@ -164,7 +164,7 @@ def predict_image(
     tiling: Optional[bool] = typer.Option(None, help="Whether to run prediction in tiling mode."),
     weight_format: Optional[WeightFormatEnum] = typer.Option(None, help="The weight format to use."),
     devices: Optional[List[str]] = typer.Option(None, help="Devices for running the model."),
-) -> int:
+):
 
     if isinstance(padding, str):
         padding = json.loads(padding.replace("'", '"'))
@@ -203,7 +203,7 @@ def predict_images(
     tiling: Optional[bool] = typer.Option(None, help="Whether to run prediction in tiling mode."),
     weight_format: Optional[WeightFormatEnum] = typer.Option(None, help="The weight format to use."),
     devices: Optional[List[str]] = typer.Option(None, help="Devices for running the model."),
-) -> int:
+):
     input_files = glob(input_pattern)
     input_names = [os.path.split(infile)[1] for infile in input_files]
     output_files = [os.path.join(output_folder, fname) for fname in input_names]
@@ -246,7 +246,7 @@ if torch_converter is not None:
         opset_version: Optional[int] = typer.Argument(12, help="Onnx opset version."),
         use_tracing: bool = typer.Option(True, help="Whether to use torch.jit tracing or scripting."),
         verbose: bool = typer.Option(True, help="Verbosity"),
-    ) -> int:
+    ):
         ret_code = torch_converter.convert_weights_to_onnx(model_rdf, output_path, opset_version, use_tracing, verbose)
         sys.exit(ret_code)
 
@@ -259,7 +259,7 @@ if torch_converter is not None:
         ),
         output_path: Path = typer.Argument(..., help="Where to save the torchscript weights."),
         use_tracing: bool = typer.Option(True, help="Whether to use torch.jit tracing or scripting."),
-    ) -> int:
+    ):
         ret_code = torch_converter.convert_weights_to_torchscript(model_rdf, output_path, use_tracing)
         sys.exit(ret_code)
 
@@ -274,7 +274,7 @@ if keras_converter is not None:
             ..., help="Path to the model resource description file (rdf.yaml) or zipped model."
         ),
         output_path: Path = typer.Argument(..., help="Where to save the tensorflow weights."),
-    ) -> int:
+    ):
         ret_code = keras_converter.convert_weights_to_tensorflow_saved_model_bundle(model_rdf, output_path)
         sys.exit(ret_code)
 
