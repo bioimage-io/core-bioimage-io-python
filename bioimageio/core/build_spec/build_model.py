@@ -812,7 +812,7 @@ def build_model(
     kwargs = {k: v for k, v in optional_kwargs.items() if v is not None}
 
     if attachments is not None:
-        kwargs["attachments"] = model_spec.raw_nodes.Attachments(**attachments)
+        kwargs["attachments"] = spec.rdf.raw_nodes.Attachments(**attachments)
     if dependencies is not None:
         kwargs["dependencies"] = _get_dependencies(dependencies, root)
     if maintainers is not None:
