@@ -112,7 +112,6 @@ def load_raw_resource_description(
         return source
 
     raw_rd = spec.load_raw_resource_description(source, update_to_format=update_to_format)
-    raw_rd = _replace_relative_paths_for_remote_source(raw_rd, raw_rd.root_path)
     return raw_rd
 
 

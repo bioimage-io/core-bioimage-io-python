@@ -43,20 +43,6 @@ class Dependencies(Node, raw_nodes.Dependencies):
 
 
 @dataclass
-class LocalImportableModule(Node, raw_nodes.ImportableModule):
-    """intermediate between raw_nodes.ImportableModule and nodes.ImportedSource. Used by SourceNodeTransformer"""
-
-    root_path: pathlib.Path = missing
-
-
-@dataclass
-class ResolvedImportableSourceFile(Node, raw_nodes.ImportableSourceFile):
-    """intermediate between raw_nodes.ImportableSourceFile and nodes.ImportedSource. Used by SourceNodeTransformer"""
-
-    source_file: pathlib.Path = missing
-
-
-@dataclass
 class CiteEntry(Node, rdf_raw_nodes.CiteEntry):
     pass
 
