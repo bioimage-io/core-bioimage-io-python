@@ -10,3 +10,5 @@ from .resource_io import (
     save_raw_resource_description,
     serialize_raw_resource_description,
 )
+from .prediction_pipeline import create_prediction_pipeline
+from .prediction import predict_image, predict_images
