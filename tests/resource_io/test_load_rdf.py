@@ -1,10 +1,8 @@
 import os.path
 import pathlib
 from pathlib import Path
-from tempfile import NamedTemporaryFile
 
 import pytest
-from marshmallow import ValidationError
 
 from bioimageio.core.resource_io.utils import resolve_source
 
@@ -80,7 +78,7 @@ def test_load_remote_model_with_folders():
 
     # todo: point to real model with nested folders, not this temporary sandbox one
     rdf_url = "https://sandbox.zenodo.org/record/892199/files/rdf.yaml"
-    raw_model = load_raw_resource_description(rdf_url)
+    raw_model = load_raw_resource_description(rdf_url, update_to_format="latest")
     assert isinstance(raw_model, raw_nodes.Model)
     model = load_resource_description(rdf_url)
     assert isinstance(model, nodes.Model)
