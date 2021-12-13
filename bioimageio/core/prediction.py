@@ -197,6 +197,7 @@ def _predict_with_tiling_impl(
     outputs: List[xr.DataArray],
     tile_shapes: List[dict],
     halos: List[dict],
+    verbose: bool = False,
 ):
     if len(inputs) > 1:
         raise NotImplementedError("Tiling with multiple inputs not implemented yet")
@@ -396,10 +397,12 @@ def _parse_tiling(tiling, input_specs, output_specs):
     return tiling
 
 
+# TODO enable passing anything that is numpy array compatible, e.g. a zarr array
 def predict_with_tiling(
     prediction_pipeline: PredictionPipeline,
     inputs: Union[xr.DataArray, List[xr.DataArray], Tuple[xr.DataArray]],
     tiling: Union[bool, Dict[str, Dict[str, int]]],
+    verbose: bool = False,
 ) -> List[xr.DataArray]:
     """Run prediction with tiling for a single set of input(s) with a bioimage.io model.
 
@@ -407,6 +410,7 @@ def predict_with_tiling(
         prediction_pipeline: the prediction pipeline for the input model.
         inputs: the input(s) for this model represented as xarray data.
         tiling: the tiling settings. Pass True to derive from the model spec.
+        verbose: whether to print the prediction progress.
     """
     if not tiling:
         raise ValueError
@@ -451,6 +455,7 @@ def predict_with_tiling(
         outputs,
         tile_shapes=[tiling["tile"]],  # todo: update tiling for multiple inputs/outputs
         halos=[tiling["halo"]],
+        verbose=verbose,
     )
 
     return outputs
