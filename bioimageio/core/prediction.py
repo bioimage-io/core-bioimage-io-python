@@ -225,6 +225,13 @@ def _predict_with_tiling_impl(
         pad_right = [tile[ax].start == 0 if ax in "xyz" else None for ax in input_axes]
         return inp, pad_right
 
+    if verbose:
+        shape = {ax: sh for ax, sh in zip(prediction_pipeline.input_specs[0].axes, input_.shape)}
+        n_tiles = int(np.prod([
+            np.ceil(float(shape[ax]) / tsh) for ax, tsh in tile_shape.items()
+        ]))
+        tiles = tqdm(tiles, total=n_tiles, desc="prediction with tiling")
+
     # we need to use padded prediction for the individual tiles in case the
     # border tiles don't match the requested tile shape
     padding = {ax: tile_shape[ax] + 2 * halo[ax] for ax in input_axes if ax in "xyz"}
