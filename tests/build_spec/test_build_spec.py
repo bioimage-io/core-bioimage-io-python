@@ -19,13 +19,14 @@ def _test_build_spec(
 ):
     from bioimageio.core.build_spec import build_model
 
-    model_spec = load_raw_resource_description(spec_path)
+    model_spec = load_raw_resource_description(spec_path, update_to_format="latest")
     root = model_spec.root_path
     assert isinstance(model_spec, spec.model.raw_nodes.Model)
     weight_source = model_spec.weights[weight_type].source
 
     cite = {entry.text: entry.doi if entry.url is missing else entry.url for entry in model_spec.cite}
 
+    dep_file = None
     if weight_type == "pytorch_state_dict":
         weight_spec = model_spec.weights["pytorch_state_dict"]
         model_kwargs = None if weight_spec.kwargs is missing else weight_spec.kwargs
@@ -35,6 +36,7 @@ def _test_build_spec(
             arch_path = os.path.abspath(os.path.join(root, arch_path))
             assert os.path.exists(arch_path)
             architecture = f"{arch_path}:{cls_name}"
+        dep_file = None if weight_spec.dependencies is missing else resolve_source(weight_spec.dependencies.file, root)
         weight_type_ = None  # the weight type can be auto-detected
     elif weight_type == "torchscript":
         architecture = None
@@ -45,7 +47,6 @@ def _test_build_spec(
         model_kwargs = None
         weight_type_ = None  # the weight type can be auto-detected
 
-    dep_file = None if model_spec.dependencies is missing else resolve_source(model_spec.dependencies.file, root)
     authors = [{"name": auth.name, "affiliation": auth.affiliation} for auth in model_spec.authors]
 
     input_axes = [input_.axes for input_ in model_spec.inputs]
