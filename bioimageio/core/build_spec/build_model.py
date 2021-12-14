@@ -12,8 +12,8 @@ import bioimageio.spec as spec
 import bioimageio.spec.model as model_spec
 from bioimageio.core import export_resource_package, load_raw_resource_description
 from bioimageio.core.resource_io.nodes import URI
-from bioimageio.core.resource_io.utils import resolve_local_source, resolve_source
 from bioimageio.spec.shared.raw_nodes import ImportableModule, ImportableSourceFile
+from bioimageio.spec.shared.utils import resolve_local_source, resolve_source
 
 try:
     from typing import get_args
@@ -81,6 +81,7 @@ def _get_weights(
     model_kwargs=None,
     tensorflow_version=None,
     opset_version=None,
+    dependencies=None,
     **kwargs,
 ):
     weight_path = resolve_source(original_weight_source, root)
@@ -100,6 +101,8 @@ def _get_weights(
         weights = model_spec.raw_nodes.PytorchStateDictWeightsEntry(
             source=weight_source, sha256=weight_hash, **weight_kwargs
         )
+        if dependencies is not None:
+            weight_kwargs["dependencies"] = _get_dependencies(dependencies, root)
 
     elif weight_type == "onnx":
         if opset_version is None:
@@ -745,6 +748,7 @@ def build_model(
         model_kwargs,
         tensorflow_version=tensorflow_version,
         opset_version=opset_version,
+        dependencies=dependencies,
         **weight_kwargs,
     )
 
@@ -813,8 +817,7 @@ def build_model(
 
     if attachments is not None:
         kwargs["attachments"] = spec.rdf.raw_nodes.Attachments(**attachments)
-    if dependencies is not None:
-        kwargs["dependencies"] = _get_dependencies(dependencies, root)
+
     if maintainers is not None:
         kwargs["maintainers"] = [model_spec.raw_nodes.Maintainer(**m) for m in maintainers]
     if parent is not None:

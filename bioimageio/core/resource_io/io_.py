@@ -1,119 +1,22 @@
 import os
 import pathlib
-import warnings
-import zipfile
 from copy import deepcopy
-from hashlib import sha256
-from typing import Dict, IO, Optional, Sequence, Tuple, Union
+from typing import Dict, Optional, Sequence, Union
 from zipfile import ZIP_DEFLATED, ZipFile
 
 from marshmallow import missing
 
 from bioimageio import spec
 from bioimageio.core.resource_io.nodes import ResourceDescription
-from bioimageio.spec.io_ import RDF_NAMES, resolve_rdf_source
+from bioimageio.spec import load_raw_resource_description
 from bioimageio.spec.shared import raw_nodes
 from bioimageio.spec.shared.common import BIOIMAGEIO_CACHE_PATH, get_class_name_from_type
 from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
-from bioimageio.spec.shared.utils import PathToRemoteUriTransformer
 from . import nodes
 from .utils import resolve_raw_resource_description, resolve_source
 
 serialize_raw_resource_description = spec.io_.serialize_raw_resource_description
 save_raw_resource_description = spec.io_.save_raw_resource_description
-
-
-def extract_resource_package(
-    source: Union[os.PathLike, IO, str, bytes, raw_nodes.URI]
-) -> Tuple[dict, str, pathlib.Path]:
-    """extract a zip source to BIOIMAGEIO_CACHE_PATH"""
-    source, source_name, root = resolve_rdf_source(source)
-    if isinstance(root, bytes):
-        raise NotImplementedError("package source was bytes")
-
-    cache_folder = BIOIMAGEIO_CACHE_PATH / "extracted_packages"
-    cache_folder.mkdir(exist_ok=True, parents=True)
-
-    package_path = cache_folder / sha256(str(root).encode("utf-8")).hexdigest()
-    if isinstance(root, raw_nodes.URI):
-        for rdf_name in RDF_NAMES:
-            if (package_path / rdf_name).exists():
-                download = None
-                break
-        else:
-            download = resolve_source(root)
-
-        local_source = download
-    else:
-        download = None
-        local_source = root
-
-    if local_source is not None:
-        with zipfile.ZipFile(local_source) as zf:
-            zf.extractall(package_path)
-
-    for rdf_name in RDF_NAMES:
-        if (package_path / rdf_name).exists():
-            break
-    else:
-        raise FileNotFoundError(f"Missing 'rdf.yaml' in {root} extracted from {download}")
-
-    if download is not None:
-        try:
-            os.remove(download)
-        except Exception as e:
-            warnings.warn(f"Could not remove download {download} due to {e}")
-
-    assert isinstance(package_path, pathlib.Path)
-    return source, source_name, package_path
-
-
-def _replace_relative_paths_for_remote_source(
-    raw_rd: RawResourceDescription, root: Union[pathlib.Path, raw_nodes.URI, bytes]
-) -> RawResourceDescription:
-    if isinstance(root, raw_nodes.URI):
-        # for a remote source relative paths are invalid; replace all relative file paths in source with URLs
-        warnings.warn(
-            f"changing file paths in RDF to URIs due to a remote {root.scheme} source "
-            "(may result in an invalid node)"
-        )
-        raw_rd = PathToRemoteUriTransformer(remote_source=root).transform(raw_rd)
-        root_path = pathlib.Path()  # root_path cannot be URI
-    elif isinstance(root, pathlib.Path):
-        if zipfile.is_zipfile(root):
-            _, _, root_path = extract_resource_package(root)
-        else:
-            root_path = root
-    elif isinstance(root, bytes):
-        raise NotImplementedError("root as bytes (io)")
-    else:
-        raise TypeError(root)
-
-    assert isinstance(root_path, pathlib.Path)
-    raw_rd.root_path = root_path.resolve()
-    return raw_rd
-
-
-def load_raw_resource_description(
-    source: Union[dict, os.PathLike, IO, str, bytes, raw_nodes.URI, RawResourceDescription],
-    update_to_format: Optional[str] = "latest",
-) -> RawResourceDescription:
-    """load a raw python representation from a BioImage.IO resource description file (RDF).
-    Use `load_resource_description` for a more convenient representation.
-
-    Args:
-        source: resource description file (RDF)
-        update_to_format: update resource to specific "major.minor" or "latest" format version; ignoring patch version.
-
-    Returns:
-        raw BioImage.IO resource
-    """
-    if isinstance(source, RawResourceDescription):
-        return source
-
-    raw_rd = spec.load_raw_resource_description(source, update_to_format=update_to_format)
-    raw_rd = _replace_relative_paths_for_remote_source(raw_rd, raw_rd.root_path)
-    return raw_rd
 
 
 def load_resource_description(
@@ -152,7 +55,9 @@ def load_resource_description(
 
 
 def get_local_resource_package_content(
-    source: RawResourceDescription, weights_priority_order: Optional[Sequence[Union[str]]]
+    source: RawResourceDescription,
+    weights_priority_order: Optional[Sequence[Union[str]]],
+    update_to_format: Optional[str] = None,
 ) -> Dict[str, Union[pathlib.Path, str]]:
     """
 
@@ -160,12 +65,13 @@ def get_local_resource_package_content(
         source: raw resource description
         weights_priority_order: If given only the first weights format present in the model is included.
                                 If none of the prioritized weights formats is found all are included.
+        update_to_format: update resource to specific major.minor format version; ignoring patch version.
 
     Returns:
         Package content of local file paths or text content keyed by file names.
 
     """
-    raw_rd = load_raw_resource_description(source)
+    raw_rd = load_raw_resource_description(source, update_to_format=update_to_format)
     package_content = spec.get_resource_package_content(raw_rd, weights_priority_order=weights_priority_order)
 
     local_package_content = {}
@@ -205,7 +111,9 @@ def export_resource_package(
         path to zipped BioImage.IO package in BIOIMAGEIO_CACHE_PATH or 'output_path'
     """
     raw_rd = load_raw_resource_description(source, update_to_format=update_to_format)
-    package_content = get_local_resource_package_content(raw_rd, weights_priority_order)
+    package_content = get_local_resource_package_content(
+        raw_rd, weights_priority_order, update_to_format=update_to_format
+    )
     if output_path is None:
         package_path = _get_tmp_package_path(raw_rd, weights_priority_order)
     else:
