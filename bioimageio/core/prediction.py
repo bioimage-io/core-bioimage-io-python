@@ -193,6 +193,7 @@ def _get_tiling(shape, tile_shape, halo, input_axes):
 
 def _predict_with_tiling_impl(
     prediction_pipeline: PredictionPipeline,
+    # TODO this can be anything with a numpy-like interface
     inputs: List[xr.DataArray],
     outputs: List[xr.DataArray],
     tile_shapes: List[dict],
@@ -218,6 +219,9 @@ def _predict_with_tiling_impl(
     assert all(isinstance(ax, str) for ax in input_.dims)
     input_axes: Tuple[str, ...] = input_.dims  # noqa
 
+    # TODO need to adapt this that it supports out of core.
+    # maybe xarray dask integration would help?
+    # https://xarray.pydata.org/en/stable/user-guide/dask.html
     def load_tile(tile):
         inp = input_[tile]
         # whether to pad on the right or left of the dim for the spatial dims
@@ -405,10 +409,15 @@ def _parse_tiling(tiling, input_specs, output_specs):
 
 
 # TODO enable passing anything that is numpy array compatible, e.g. a zarr array
+# Maybe use xarray dask integration? See https://xarray.pydata.org/en/stable/user-guide/dask.html
+# TODO how do we do this with typing?
 def predict_with_tiling(
     prediction_pipeline: PredictionPipeline,
+    # TODO needs to be list, use Sequence instead of List / Tuple, allow numpy like
     inputs: Union[xr.DataArray, List[xr.DataArray], Tuple[xr.DataArray]],
     tiling: Union[bool, Dict[str, Dict[str, int]]],
+    # TODO Sequence, allow numpy like
+    outputs: Optional[Union[List[xr.DataArray]]] = None,
     verbose: bool = False,
 ) -> List[xr.DataArray]:
     """Run prediction with tiling for a single set of input(s) with a bioimage.io model.
@@ -417,6 +426,7 @@ def predict_with_tiling(
         prediction_pipeline: the prediction pipeline for the input model.
         inputs: the input(s) for this model represented as xarray data.
         tiling: the tiling settings. Pass True to derive from the model spec.
+        outputs: optional output arrays.
         verbose: whether to print the prediction progress.
     """
     if not tiling:
@@ -433,28 +443,44 @@ def predict_with_tiling(
         }
     )
 
-    outputs = []
-    for output_spec in prediction_pipeline.output_specs:
-        if isinstance(output_spec.shape, ImplicitOutputShape):
-            scale = dict(zip(output_spec.axes, output_spec.shape.scale))
-            offset = dict(zip(output_spec.axes, output_spec.shape.offset))
+    if outputs is None:
+        outputs = []
+        for output_spec in prediction_pipeline.output_specs:
+            if isinstance(output_spec.shape, ImplicitOutputShape):
+                scale = dict(zip(output_spec.axes, output_spec.shape.scale))
+                offset = dict(zip(output_spec.axes, output_spec.shape.offset))
 
-            # for now, we only support tiling if the spatial shape doesn't change
-            # supporting this should not be so difficult, we would just need to apply the inverse
-            # to "out_shape = scale * in_shape + 2 * offset" ("in_shape = (out_shape - 2 * offset) / scale")
-            # to 'outer_tile' in 'get_tiling'
-            if any(sc != 1 for ax, sc in scale.items() if ax in "xyz") or any(
-                off != 0 for ax, off in offset.items() if ax in "xyz"
-            ):
-                raise NotImplementedError("Tiling with a different output shape is not yet supported")
+                # for now, we only support tiling if the spatial shape doesn't change
+                # supporting this should not be so difficult, we would just need to apply the inverse
+                # to "out_shape = scale * in_shape + 2 * offset" ("in_shape = (out_shape - 2 * offset) / scale")
+                # to 'outer_tile' in 'get_tiling'
+                if any(sc != 1 for ax, sc in scale.items() if ax in "xyz") or any(
+                    off != 0 for ax, off in offset.items() if ax in "xyz"
+                ):
+                    raise NotImplementedError("Tiling with a different output shape is not yet supported")
 
-            ref_input = named_inputs[output_spec.shape.reference_tensor]
-            ref_input_shape = dict(zip(ref_input.dims, ref_input.shape))
-            output_shape = tuple(int(scale[ax] * ref_input_shape[ax] + 2 * offset[ax]) for ax in output_spec.axes)
-        else:
-            output_shape = tuple(output_spec.shape)
+                ref_input = named_inputs[output_spec.shape.reference_tensor]
+                ref_input_shape = dict(zip(ref_input.dims, ref_input.shape))
+                output_shape = tuple(int(scale[ax] * ref_input_shape[ax] + 2 * offset[ax]) for ax in output_spec.axes)
+            else:
+                output_shape = tuple(output_spec.shape)
 
-        outputs.append(xr.DataArray(np.zeros(output_shape, dtype=output_spec.data_type), dims=tuple(output_spec.axes)))
+            outputs.append(
+                xr.DataArray(np.zeros(output_shape, dtype=output_spec.data_type), dims=tuple(output_spec.axes))
+            )
+    elif len(outputs) != len(prediction_pipeline.output_specs):
+        raise ValueError(
+            f"Number of outputs are incompatible: expected {len(prediction_pipeline.output_specs)}, got {len(outputs)}"
+        )
+    else:
+        # eventually we need to fully validate the output shape against the spec, for now we only
+        # support a single output of same spatial shape as the (single) input
+        if len(outputs) != len(inputs):
+            raise NotImplementedError("Tiling with a different number of inputs and outputs is not yet supported")
+        spatial_in_shape = tuple(sh for ax, sh in zip(prediction_pipeline.input_specs[0].axes, inputs[0].shape))
+        spatial_out_shape = tuple(sh for ax, sh in zip(prediction_pipeline.output_specs[0].axes, outputs[0].shape))
+        if spatial_in_shape != spatial_out_shape:
+            raise NotImplementedError("Tiling with a different output shape is not yet supported")
 
     _predict_with_tiling_impl(
         prediction_pipeline,
