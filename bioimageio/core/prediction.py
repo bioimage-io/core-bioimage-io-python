@@ -231,9 +231,7 @@ def _predict_with_tiling_impl(
 
     if verbose:
         shape = {ax: sh for ax, sh in zip(prediction_pipeline.input_specs[0].axes, input_.shape)}
-        n_tiles = int(np.prod([
-            np.ceil(float(shape[ax]) / tsh) for ax, tsh in tile_shape.items()
-        ]))
+        n_tiles = int(np.prod([np.ceil(float(shape[ax]) / tsh) for ax, tsh in tile_shape.items()]))
         tiles = tqdm(tiles, total=n_tiles, desc="prediction with tiling")
 
     # we need to use padded prediction for the individual tiles in case the
