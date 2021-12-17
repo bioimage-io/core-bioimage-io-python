@@ -31,7 +31,9 @@ def test_model(
 
     Returns summary dict with "error" and "traceback" key; summary["error"] is None if no errors were encountered.
     """
-    model = load_resource_description(model_rdf)
+    model = load_resource_description(
+        model_rdf, weights_priority_order=None if weight_format is None else [weight_format]
+    )
     if isinstance(model, Model):
         return test_resource(model, weight_format=weight_format, devices=devices, decimal=decimal)
     else:
@@ -91,7 +93,9 @@ def test_resource(
     tb: Optional = None
 
     try:
-        rd = load_resource_description(model_rdf)
+        rd = load_resource_description(
+            model_rdf, weights_priority_order=None if weight_format is None else [weight_format]
+        )
     except Exception as e:
         error = str(e)
         tb = traceback.format_tb(e.__traceback__)
@@ -161,7 +165,9 @@ def debug_model(
     expected: Optional = None
     diff: Optional = None
 
-    model = load_resource_description(model_rdf)
+    model = load_resource_description(
+        model_rdf, weights_priority_order=None if weight_format is None else [weight_format]
+    )
     if not isinstance(model, Model):
         raise ValueError(f"Not a bioimageio.model: {model_rdf}")
 
