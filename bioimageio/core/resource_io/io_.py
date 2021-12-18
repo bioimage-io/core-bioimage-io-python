@@ -40,7 +40,7 @@ def load_resource_description(
 
     raw_rd = load_raw_resource_description(source, update_to_format="latest")
 
-    if weights_priority_order is not None:
+    if raw_rd.type == "model" and weights_priority_order is not None:
         for wf in weights_priority_order:
             if wf in raw_rd.weights:
                 raw_rd.weights = {wf: raw_rd.weights[wf]}
