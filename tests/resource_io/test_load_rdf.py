@@ -70,16 +70,17 @@ def test_load_model_with_rel_str_source(unet2d_nuclei_broad_model):
     assert model
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires pytorch")
-def test_load_remote_model_with_folders():
+@pytest.mark.skipif(True, reason="No suitable test model available yet")
+def test_load_remote_rdf_with_folders():
     from bioimageio.core import load_resource_description, load_raw_resource_description
     from bioimageio.core.resource_io import nodes
     from bioimageio.spec.model import raw_nodes
 
-    # todo: point to real model with nested folders, not this temporary sandbox one
-    rdf_url = "https://sandbox.zenodo.org/record/892199/files/rdf.yaml"
-    raw_model = load_raw_resource_description(rdf_url, update_to_format="latest")
+    rdf_doi = "<doi to rdf with local folders>"
+    raw_model = load_raw_resource_description(rdf_doi, update_to_format="latest")
     assert isinstance(raw_model, raw_nodes.Model)
-    model = load_resource_description(rdf_url)
+    model = load_resource_description(rdf_doi)
     assert isinstance(model, nodes.Model)
+
+    # test for field value with folder, e.g.
     assert resolve_source(raw_model.documentation) == model.documentation
