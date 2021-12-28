@@ -451,9 +451,7 @@ def predict_with_tiling(
         else:
             output_shape = tuple(output_spec.shape)
 
-        outputs.append(
-            xr.DataArray(np.zeros(output_shape, dtype=output_spec.data_type), dims=tuple(output_spec.axes))
-        )
+        outputs.append(xr.DataArray(np.zeros(output_shape, dtype=output_spec.data_type), dims=tuple(output_spec.axes)))
 
     _predict_with_tiling_impl(
         prediction_pipeline,
