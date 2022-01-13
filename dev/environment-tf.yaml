@@ -14,5 +14,4 @@ dependencies:
   - xarray
   - tensorflow >1.14,<2.0
   - tifffile
-  - pip:
-    - keras==1.2.2
+  - keras

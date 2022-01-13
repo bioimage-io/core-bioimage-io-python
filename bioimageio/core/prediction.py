@@ -166,14 +166,14 @@ def _get_tiling(shape, tile_shape, halo, input_axes):
         positions = [sp * tsh for sp, tsh in zip(start_point, tile_shape_)]
 
         outer_tile = {
-            ax: slice(max(pos - ha, 0), min(pos + tsh + ha, sh))
-            for ax, pos, tsh, sh, ha in zip(spatial_axes, positions, tile_shape_, shape_, halo_)
+            ax: slice(pos, min(pos + tsh, sh)) for ax, pos, tsh, sh in zip(spatial_axes, positions, tile_shape_, shape_)
         }
         outer_tile["b"] = slice(None)
         outer_tile["c"] = slice(None)
 
         inner_tile = {
-            ax: slice(pos, min(pos + tsh, sh)) for ax, pos, tsh, sh in zip(spatial_axes, positions, tile_shape_, shape_)
+            ax: slice(pos + ha, min(pos + tsh - ha, sh))
+            for ax, pos, tsh, sh, ha in zip(spatial_axes, positions, tile_shape_, shape_, halo_)
         }
         inner_tile["b"] = slice(None)
         inner_tile["c"] = slice(None)
@@ -232,7 +232,7 @@ def _predict_with_tiling_impl(
 
     # we need to use padded prediction for the individual tiles in case the
     # border tiles don't match the requested tile shape
-    padding = {ax: tile_shape[ax] + 2 * halo[ax] for ax in input_axes if ax in "xyz"}
+    padding = {ax: tile_shape[ax] for ax in input_axes if ax in "xyz"}
     padding["mode"] = "fixed"
     for outer_tile, inner_tile, local_tile in tiles:
         inp, pad_right = load_tile(outer_tile)
