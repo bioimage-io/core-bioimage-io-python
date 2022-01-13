@@ -77,18 +77,35 @@ def _test_predict_with_padding(model, tmp_path):
     out_path = tmp_path / "out.tif"
     imageio.imwrite(in_path, image)
 
+    if hasattr(output_spec.shape, "scale"):
+        scale = dict(zip(output_spec.axes, output_spec.shape.scale))
+        offset = dict(zip(output_spec.axes, output_spec.shape.offset))
+        spatial_axes = [ax for ax in output_spec.axes if ax in "xyz"]
+        network_resizes = any(sc != 1 for ax, sc in scale.items() if ax in spatial_axes) or any(
+            off != 0 for ax, off in offset.items() if ax in spatial_axes
+        )
+    else:
+        network_resizes = False
+
+    if network_resizes:
+        exp_shape = tuple(
+            int(sh * scale[ax] + 2 * offset[ax]) for sh, ax in zip(image.shape, spatial_axes)
+        )
+    else:
+        exp_shape = image.shape
+
     def check_result():
         if n_channels == 1:
             assert out_path.exists()
             res = imageio.imread(out_path)
-            assert res.shape == image.shape
+            assert res.shape == exp_shape
         else:
             path = str(out_path)
             for c in range(n_channels):
                 channel_out_path = Path(path.replace(".tif", f"-c{c}.tif"))
                 assert channel_out_path.exists()
                 res = imageio.imread(channel_out_path)
-                assert res.shape == image.shape
+                assert res.shape == exp_shape
 
     # test with dynamic padding
     predict_image(model, in_path, out_path, padding={"x": 16, "y": 16, "mode": "dynamic"})
@@ -109,6 +126,11 @@ def _test_predict_with_padding(model, tmp_path):
 # so we only run it for the pytorch unet2d here
 def test_predict_image_with_padding(unet2d_fixed_shape_or_not, tmp_path):
     _test_predict_with_padding(unet2d_fixed_shape_or_not, tmp_path)
+
+
+# and with different output shape
+def test_predict_image_with_padding_diff_output_shape(unet2d_diff_output_shape, tmp_path):
+    _test_predict_with_padding(unet2d_diff_output_shape, tmp_path)
 
 
 def test_predict_image_with_padding_channel_last(stardist, tmp_path):

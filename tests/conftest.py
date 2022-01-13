@@ -8,7 +8,9 @@ logger = logging.getLogger(__name__)
 
 # test models for various frameworks
 torch_models = []
-torch_models_pre_3_10 = ["unet2d_fixed_shape", "unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
+torch_models_pre_3_10 = [
+    "unet2d_fixed_shape", "unet2d_multi_tensor", "unet2d_nuclei_broad_model", "unet2d_diff_output_shape"
+]
 torchscript_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
 onnx_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model", "hpa_densenet"]
 tensorflow1_models = ["stardist"]
@@ -32,6 +34,10 @@ model_sources = {
     "unet2d_multi_tensor": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
         "unet2d_multi_tensor/rdf.yaml"
+    ),
+    "unet2d_diff_output_shape": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
+        "unet2d_diff_output_shape/rdf.yaml"
     ),
     "hpa_densenet": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/hpa-densenet/rdf.yaml"
@@ -121,6 +127,12 @@ def pytest_configure():
 # written as model group to automatically skip on missing torch
 @pytest.fixture(params=[] if skip_torch or torch_version >= (3, 10) else ["unet2d_nuclei_broad_model"])
 def unet2d_nuclei_broad_model(request):
+    return pytest.model_packages[request.param]
+
+
+# written as model group to automatically skip on missing torch
+@pytest.fixture(params=[] if skip_torch or torch_version >= (3, 10) else ["unet2d_diff_output_shape"])
+def unet2d_diff_output_shape(request):
     return pytest.model_packages[request.param]
 
 

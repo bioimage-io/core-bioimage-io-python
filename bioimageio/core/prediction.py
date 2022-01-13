@@ -318,6 +318,16 @@ def predict_with_padding(
         raise ValueError
     assert len(inputs) == len(prediction_pipeline.input_specs)
 
+    output_spec = prediction_pipeline.output_specs[0]
+    if hasattr(output_spec.shape, "scale"):
+        scale = dict(zip(output_spec.axes, output_spec.shape.scale))
+        offset = dict(zip(output_spec.axes, output_spec.shape.offset))
+        network_resizes = any(sc != 1 for ax, sc in scale.items() if ax in "xyz") or any(
+            off != 0 for ax, off in offset.items() if ax in "xyz"
+        )
+    else:
+        network_resizes = False
+
     padding = _parse_padding(padding, prediction_pipeline.input_specs)
     if not isinstance(inputs, (tuple, list)):
         inputs = [inputs]
@@ -330,8 +340,13 @@ def predict_with_padding(
             for inp, spec, p in zip(inputs, prediction_pipeline.input_specs, padding)
         ]
     )
-
     result = predict(prediction_pipeline, inputs)
+    if network_resizes:
+        crops = tuple({
+            ax: slice(
+                int(crp.start * scale[ax] + 2 * offset[ax]), int(crp.stop * scale[ax] + 2 * offset[ax])
+            ) if ax in "xyz" else crp for ax, crp in crop.items()
+        } for crop in crops)
     return [_apply_crop(res, crop) for res, crop in zip(result, crops)]
 
 
@@ -436,10 +451,6 @@ def predict_with_tiling(
             scale = dict(zip(output_spec.axes, output_spec.shape.scale))
             offset = dict(zip(output_spec.axes, output_spec.shape.offset))
 
-            # for now, we only support tiling if the spatial shape doesn't change
-            # supporting this should not be so difficult, we would just need to apply the inverse
-            # to "out_shape = scale * in_shape + 2 * offset" ("in_shape = (out_shape - 2 * offset) / scale")
-            # to 'outer_tile' in 'get_tiling'
             if any(sc != 1 for ax, sc in scale.items() if ax in "xyz") or any(
                 off != 0 for ax, off in offset.items() if ax in "xyz"
             ):
