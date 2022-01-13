@@ -88,9 +88,7 @@ def _test_predict_with_padding(model, tmp_path):
         network_resizes = False
 
     if network_resizes:
-        exp_shape = tuple(
-            int(sh * scale[ax] + 2 * offset[ax]) for sh, ax in zip(image.shape, spatial_axes)
-        )
+        exp_shape = tuple(int(sh * scale[ax] + 2 * offset[ax]) for sh, ax in zip(image.shape, spatial_axes))
     else:
         exp_shape = image.shape
 

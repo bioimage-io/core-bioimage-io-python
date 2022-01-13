@@ -342,11 +342,15 @@ def predict_with_padding(
     )
     result = predict(prediction_pipeline, inputs)
     if network_resizes:
-        crops = tuple({
-            ax: slice(
-                int(crp.start * scale[ax] + 2 * offset[ax]), int(crp.stop * scale[ax] + 2 * offset[ax])
-            ) if ax in "xyz" else crp for ax, crp in crop.items()
-        } for crop in crops)
+        crops = tuple(
+            {
+                ax: slice(int(crp.start * scale[ax] + 2 * offset[ax]), int(crp.stop * scale[ax] + 2 * offset[ax]))
+                if ax in "xyz"
+                else crp
+                for ax, crp in crop.items()
+            }
+            for crop in crops
+        )
     return [_apply_crop(res, crop) for res, crop in zip(result, crops)]
 
 

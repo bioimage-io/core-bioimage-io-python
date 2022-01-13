@@ -9,7 +9,10 @@ logger = logging.getLogger(__name__)
 # test models for various frameworks
 torch_models = []
 torch_models_pre_3_10 = [
-    "unet2d_fixed_shape", "unet2d_multi_tensor", "unet2d_nuclei_broad_model", "unet2d_diff_output_shape"
+    "unet2d_fixed_shape",
+    "unet2d_multi_tensor",
+    "unet2d_nuclei_broad_model",
+    "unet2d_diff_output_shape",
 ]
 torchscript_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
 onnx_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model", "hpa_densenet"]
