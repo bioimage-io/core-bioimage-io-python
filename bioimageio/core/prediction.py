@@ -236,7 +236,10 @@ def _predict_with_tiling_impl(
             tile = {
                 ax: slice(
                     max(0, int((til.start - 2 * offset[ax]) / scale[ax])), int((til.stop - 2 * offset[ax]) / scale[ax])
-                ) if ax in "xyz" else til for ax, til in tile.items()
+                )
+                if ax in "xyz"
+                else til
+                for ax, til in tile.items()
             }
         inp = input_[tile]
         # whether to pad on the right or left of the dim for the spatial dims
