@@ -219,7 +219,25 @@ def _predict_with_tiling_impl(
     assert all(isinstance(ax, str) for ax in input_.dims)
     input_axes: Tuple[str, ...] = input_.dims  # noqa
 
+    # check if the network resizes the input shape
+    output_spec = prediction_pipeline.output_specs[0]
+    if hasattr(output_spec.shape, "scale"):
+        scale = dict(zip(output_spec.axes, output_spec.shape.scale))
+        offset = dict(zip(output_spec.axes, output_spec.shape.offset))
+        network_resizes = any(sc != 1 for ax, sc in scale.items() if ax in "xyz") or any(
+            off != 0 for ax, off in offset.items() if ax in "xyz"
+        )
+    else:
+        network_resizes = False
+
     def load_tile(tile):
+        # if the output shape is different from the input shape, apply the inverse shape transform to the tile
+        if network_resizes:
+            tile = {
+                ax: slice(
+                    max(0, int((til.start - 2 * offset[ax]) / scale[ax])), int((til.stop - 2 * offset[ax]) / scale[ax])
+                ) if ax in "xyz" else til for ax, til in tile.items()
+            }
         inp = input_[tile]
         # whether to pad on the right or left of the dim for the spatial dims
         # + placeholders for batch and axis dimension, where we don't pad
@@ -234,6 +252,9 @@ def _predict_with_tiling_impl(
     # we need to use padded prediction for the individual tiles in case the
     # border tiles don't match the requested tile shape
     padding = {ax: tile_shape[ax] for ax in input_axes if ax in "xyz"}
+    # if the output shape is different from the input shape, apply the inverse shape transform to the padding
+    if network_resizes:
+        padding = {ax: int((pad - 2 * offset[ax]) / scale[ax]) for ax, pad in padding.items()}
     padding["mode"] = "fixed"
     for outer_tile, inner_tile, local_tile in tiles:
         inp, pad_right = load_tile(outer_tile)
@@ -241,6 +262,11 @@ def _predict_with_tiling_impl(
         assert len(out) == 1
         out = out[0]
         output[inner_tile] = out[local_tile]
+        # try:
+        #     output[inner_tile] = out[local_tile]
+        # except ValueError as err:
+        #     print(err)
+        #     breakpoint()
 
 
 #
@@ -342,16 +368,25 @@ def predict_with_padding(
         ]
     )
     result = predict(prediction_pipeline, inputs)
+
     if network_resizes:
-        crops = tuple(
-            {
+        resized_crops = []
+        for crop, inp in zip(crops, inputs):
+            # normalize the crop to handle None in start or stop values
+            crop = {
+                ax: slice(0 if crp.start is None else crp.start, sh if crp.stop is None else crp.stop)
+                for (ax, crp), sh in zip(crop.items(), inp.shape)
+            }
+            # resize the start and stop value of the crop
+            resized_crop = {
                 ax: slice(int(crp.start * scale[ax] + 2 * offset[ax]), int(crp.stop * scale[ax] + 2 * offset[ax]))
                 if ax in "xyz"
                 else crp
                 for ax, crp in crop.items()
             }
-            for crop in crops
-        )
+            resized_crops.append(resized_crop)
+        crops = tuple(resized_crops)
+
     return [_apply_crop(res, crop) for res, crop in zip(result, crops)]
 
 
@@ -455,12 +490,6 @@ def predict_with_tiling(
         if isinstance(output_spec.shape, ImplicitOutputShape):
             scale = dict(zip(output_spec.axes, output_spec.shape.scale))
             offset = dict(zip(output_spec.axes, output_spec.shape.offset))
-
-            if any(sc != 1 for ax, sc in scale.items() if ax in "xyz") or any(
-                off != 0 for ax, off in offset.items() if ax in "xyz"
-            ):
-                raise NotImplementedError("Tiling with a different output shape is not yet supported")
-
             ref_input = named_inputs[output_spec.shape.reference_tensor]
             ref_input_shape = dict(zip(ref_input.dims, ref_input.shape))
             output_shape = tuple(int(scale[ax] * ref_input_shape[ax] + 2 * offset[ax]) for ax in output_spec.axes)

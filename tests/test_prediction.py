@@ -135,7 +135,7 @@ def test_predict_image_with_padding_channel_last(stardist, tmp_path):
     _test_predict_with_padding(stardist, tmp_path)
 
 
-def _test_predict_image_with_tiling(model, tmp_path, exp_mean_deviation):
+def _test_predict_image_with_tiling(model, tmp_path, exp_mean_deviation, tiling=None):
     from bioimageio.core.prediction import predict_image
 
     spec = load_resource_description(model)
@@ -157,7 +157,8 @@ def _test_predict_image_with_tiling(model, tmp_path, exp_mean_deviation):
         assert mean_deviation <= exp_mean_deviation
 
     # with tiling config
-    tiling = {"halo": {"x": 32, "y": 32}, "tile": {"x": 256, "y": 256}}
+    if tiling is None:
+        tiling = {"halo": {"x": 32, "y": 32}, "tile": {"x": 256, "y": 256}}
     predict_image(model, inputs, [out_path], tiling=tiling)
     check_result()
 
@@ -174,6 +175,12 @@ def test_predict_image_with_tiling(unet2d_nuclei_broad_model, tmp_path):
 
 def test_predict_image_with_tiling_channel_last(stardist, tmp_path):
     _test_predict_image_with_tiling(stardist, tmp_path, 0.13)
+
+
+# and the model with smaller output shape
+def test_predict_image_with_tiling_diff_output_shape(unet2d_diff_output_shape, tmp_path):
+    tiling = {"halo": {"x": 16, "y": 16}, "tile": {"x": 128, "y": 128}}
+    _test_predict_image_with_tiling(unet2d_diff_output_shape, tmp_path, 0.012, tiling=tiling)
 
 
 def test_predict_images(unet2d_nuclei_broad_model, tmp_path):
