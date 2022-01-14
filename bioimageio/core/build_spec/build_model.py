@@ -438,8 +438,10 @@ def _generate_covers(in_path, out_path, input_axes, output_axes, root):
         input_ = np.repeat(input_[0:1], 3, axis=0)
 
     im_shape = input_.shape[1:]
-    if im_shape != output.shape[1:]:  # just return the input image if shapes don"t agree
-        return input_
+    # we just save the input image if the shapes don't agree
+    if im_shape != output.shape[1:]:
+        imageio.imwrite(cover_path, input_.transpose((1, 2, 0)))
+        return [_ensure_local(cover_path, root)]
 
     def diagonal_split(im0, im1):
         assert im0.shape[0] == im1.shape[0] == 3
