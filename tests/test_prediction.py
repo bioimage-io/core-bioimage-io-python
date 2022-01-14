@@ -135,7 +135,7 @@ def test_predict_image_with_padding_channel_last(stardist, tmp_path):
     _test_predict_with_padding(stardist, tmp_path)
 
 
-def _test_predict_image_with_tiling(model, tmp_path):
+def _test_predict_image_with_tiling(model, tmp_path, exp_mean_deviation):
     from bioimageio.core.prediction import predict_image
 
     spec = load_resource_description(model)
@@ -150,9 +150,11 @@ def _test_predict_image_with_tiling(model, tmp_path):
         assert out_path.exists()
         res = np.load(out_path)
         assert res.shape == exp.shape
-        # mean deviation should be smaller 0.1
+        # check that the mean deviation is smaller than the expected value
+        # note that we can't use array_almost_equal here, because the numerical differences
+        # between tiled and normal prediction are too large
         mean_deviation = np.abs(res - exp).mean()
-        assert mean_deviation < 0.1
+        assert mean_deviation <= exp_mean_deviation
 
     # with tiling config
     tiling = {"halo": {"x": 32, "y": 32}, "tile": {"x": 256, "y": 256}}
@@ -167,11 +169,11 @@ def _test_predict_image_with_tiling(model, tmp_path):
 # prediction with tiling with the parameters above may not be suited for any model
 # so we only run it for the pytorch unet2d here
 def test_predict_image_with_tiling(unet2d_nuclei_broad_model, tmp_path):
-    _test_predict_image_with_tiling(unet2d_nuclei_broad_model, tmp_path)
+    _test_predict_image_with_tiling(unet2d_nuclei_broad_model, tmp_path, 0.012)
 
 
 def test_predict_image_with_tiling_channel_last(stardist, tmp_path):
-    _test_predict_image_with_tiling(stardist, tmp_path)
+    _test_predict_image_with_tiling(stardist, tmp_path, 0.13)
 
 
 def test_predict_images(unet2d_nuclei_broad_model, tmp_path):

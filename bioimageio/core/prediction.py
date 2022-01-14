@@ -155,28 +155,29 @@ def _get_tiling(shape, tile_shape, halo, input_axes):
 
     shape_ = [sh for sh, ax in zip(shape, input_axes) if ax in "xyz"]
     spatial_axes = [ax for ax in input_axes if ax in "xyz"]
-    tile_shape_ = [tile_shape[ax] for ax in spatial_axes]
+    inner_tile_shape_ = [tile_shape[ax] - 2 * halo[ax] for ax in spatial_axes]
     halo_ = [halo[ax] for ax in spatial_axes]
-    assert len(shape_) == len(tile_shape_) == len(spatial_axes) == len(halo_)
+    assert len(shape_) == len(inner_tile_shape_) == len(spatial_axes) == len(halo_)
 
-    ranges = [range(sh // tsh if sh % tsh == 0 else sh // tsh + 1) for sh, tsh in zip(shape_, tile_shape_)]
+    ranges = [range(sh // tsh if sh % tsh == 0 else sh // tsh + 1) for sh, tsh in zip(shape_, inner_tile_shape_)]
     start_points = product(*ranges)
 
     for start_point in start_points:
-        positions = [sp * tsh for sp, tsh in zip(start_point, tile_shape_)]
-
-        outer_tile = {
-            ax: slice(pos, min(pos + tsh, sh)) for ax, pos, tsh, sh in zip(spatial_axes, positions, tile_shape_, shape_)
-        }
-        outer_tile["b"] = slice(None)
-        outer_tile["c"] = slice(None)
+        positions = [sp * tsh for sp, tsh in zip(start_point, inner_tile_shape_)]
 
         inner_tile = {
-            ax: slice(pos + ha, min(pos + tsh - ha, sh))
-            for ax, pos, tsh, sh, ha in zip(spatial_axes, positions, tile_shape_, shape_, halo_)
+            ax: slice(pos, min(pos + tsh, sh))
+            for ax, pos, tsh, sh in zip(spatial_axes, positions, inner_tile_shape_, shape_)
         }
         inner_tile["b"] = slice(None)
         inner_tile["c"] = slice(None)
+
+        outer_tile = {
+            ax: slice(max(pos - ha, 0), min(pos + tsh + ha, sh))
+            for ax, pos, tsh, sh, ha in zip(spatial_axes, positions, inner_tile_shape_, shape_, halo_)
+        }
+        outer_tile["b"] = slice(None)
+        outer_tile["c"] = slice(None)
 
         local_tile = {
             ax: slice(
