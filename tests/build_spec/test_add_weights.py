@@ -1,4 +1,6 @@
+import os
 from bioimageio.core import export_resource_package, load_raw_resource_description, load_resource_description
+from bioimageio.core.resource_tests import test_model as _test_model
 
 
 def _test_add_weights(model, tmp_path, base_weights, added_weights, **kwargs):
@@ -27,6 +29,13 @@ def _test_add_weights(model, tmp_path, base_weights, added_weights, **kwargs):
     assert set(new_rdf.weights.keys()) == {base_weights, added_weights}
     for weight in new_rdf.weights.values():
         assert weight.source.exists()
+
+    test_res = _test_model(out_path, added_weights)
+    test_res = _test_model(out_path)
+    assert test_res["error"] is None
+
+    # make sure the weights were cleaned from the cwd
+    assert not os.path.exists(os.path.split(weight_path)[1])
 
 
 def test_add_torchscript(unet2d_nuclei_broad_model, tmp_path):

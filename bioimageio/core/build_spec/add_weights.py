@@ -63,6 +63,13 @@ def add_weights(
     except Exception as e:
         raise e
     finally:
+        # clean up tmp files
+        os.remove(weight_out)
         if tmp_arch is not None:
             os.remove(tmp_arch)
+        # for some reason the weights are also copied to the cwd.
+        # not sure why this happens, but it needs to be cleaned up, unless these are the input weigths
+        weights_cwd = Path(os.path.split(weight_uri)[1])
+        if weights_cwd.exists() and weights_cwd.absolute() != Path(weight_uri).absolute():
+            os.remove(weights_cwd)
     return model
