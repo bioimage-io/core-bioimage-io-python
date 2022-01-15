@@ -3,6 +3,7 @@ import bioimageio.spec as spec
 from bioimageio.core import load_raw_resource_description, load_resource_description
 from bioimageio.core.resource_io import nodes
 from bioimageio.core.resource_io.utils import resolve_source
+from bioimageio.core.resource_tests import test_model as _test_model
 from marshmallow import missing
 
 
@@ -81,17 +82,19 @@ def _test_build_spec(
         output_path=out_path,
         add_deepimagej_config=add_deepimagej_config,
         maintainers=[{"github_user": "jane_doe"}],
+        input_names=[inp.name for inp in model_spec.inputs],
+        output_names=[out.name for out in model_spec.outputs],
     )
     if architecture is not None:
         kwargs["architecture"] = architecture
     if model_kwargs is not None:
-        kwargs["kwargs"] = model_kwargs
+        kwargs["model_kwargs"] = model_kwargs
     if tensorflow_version is not None:
         kwargs["tensorflow_version"] = tensorflow_version
     if opset_version is not None:
         kwargs["opset_version"] = opset_version
     if use_implicit_output_shape:
-        kwargs["input_name"] = ["input"]
+        kwargs["input_names"] = ["input"]
         kwargs["output_reference"] = ["input"]
         kwargs["output_scale"] = [[1.0, 1.0, 1.0, 1.0]]
         kwargs["output_offset"] = [[0.0, 0.0, 0.0, 0.0]]
@@ -133,6 +136,10 @@ def _test_build_spec(
         if n_processing > 0:
             assert attachments.files is not missing
             assert n_processing == len(attachments.files)
+
+    # test inference for the model to ensure that the weights were written correctly
+    test_res = _test_model(out_path)
+    assert test_res["error"] is None
 
 
 def test_build_spec_pytorch(any_torch_model, tmp_path):
