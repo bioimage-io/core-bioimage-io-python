@@ -64,7 +64,8 @@ def add_weights(
         raise e
     finally:
         # clean up tmp files
-        os.remove(weight_out)
+        if Path(weight_out).absolute() != Path(weight_uri).absolute():
+            os.remove(weight_out)
         if tmp_arch is not None:
             os.remove(tmp_arch)
         # for some reason the weights are also copied to the cwd.
