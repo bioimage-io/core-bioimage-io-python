@@ -5,6 +5,7 @@ import sys
 from glob import glob
 
 from pathlib import Path
+from pprint import pprint
 from typing import List, Optional
 
 import typer
@@ -110,7 +111,7 @@ def test_model(
         ret_code = 0
     else:
         print(f"Model test for {model_rdf} using {weight_format} weight format has FAILED!")
-        print(summary)
+        pprint(summary)
         ret_code = 1
     sys.exit(ret_code)
 
@@ -138,7 +139,7 @@ def test_resource(
         ret_code = 0
     else:
         print(f"Resource test for {rdf} has FAILED!")
-        print(summary)
+        pprint(summary)
         ret_code = 1
     sys.exit(ret_code)
 
