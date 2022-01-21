@@ -63,7 +63,7 @@ class Badge(Node, rdf_raw_nodes.Badge):
 
 
 @dataclass
-class RDF(rdf_raw_nodes.RDF, Node):
+class RDF(rdf_raw_nodes.RDF, ResourceDescription):
     badges: Union[_Missing, List[Badge]] = missing
     covers: Union[_Missing, List[Path]] = missing
 
@@ -79,7 +79,7 @@ class ModelParent(Node, model_raw_nodes.ModelParent):
 
 
 @dataclass
-class Collection(RDF, collection_raw_nodes.Collection):
+class Collection(collection_raw_nodes.Collection, RDF):
     pass
 
 
@@ -174,7 +174,7 @@ WeightsEntry = Union[
 
 
 @dataclass
-class Model(model_raw_nodes.Model, RDF, Node):
+class Model(model_raw_nodes.Model, RDF):
     authors: List[Author] = missing
     maintainers: Union[_Missing, List[Maintainer]] = missing
     test_inputs: List[Path] = missing
