@@ -121,6 +121,7 @@ def _test_build_spec(
     assert loaded_model.maintainers[0].github_user == "jane_doe"
 
     attachments = loaded_model.attachments
+    assert not hasattr(attachments, "unknown")
     if attachments is not missing and attachments.files is not missing:
         for attached_file in attachments.files:
             assert attached_file.exists()
