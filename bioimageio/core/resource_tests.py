@@ -91,6 +91,7 @@ def test_resource(
     """
     error: Optional[str] = None
     tb: Optional = None
+    test_name: Optional[str] = None
 
     try:
         rd = load_resource_description(
@@ -101,6 +102,7 @@ def test_resource(
         tb = traceback.format_tb(e.__traceback__)
     else:
         if isinstance(rd, Model):
+            test_name = "reproduced test outputs from test inputs"
             model = rd
             try:
                 inputs = [np.load(str(in_path)) for in_path in model.test_inputs]
@@ -145,7 +147,7 @@ def test_resource(
 
     # todo: add tests for non-model resources
 
-    return {"error": error, "traceback": tb}
+    return {"error": error, "traceback": tb, "name": test_name}
 
 
 def debug_model(
