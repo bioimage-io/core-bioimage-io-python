@@ -294,8 +294,10 @@ def _get_deepimagej_macro(name, kwargs, export_folder):
     return {"spec": "ij.IJ::runMacroFile", "kwargs": macro}
 
 
-def _get_deepimagej_config(export_folder, sample_inputs, sample_outputs, pixel_sizes, preprocessing, postprocessing):
-    assert len(sample_inputs) == len(sample_outputs) == 1, "deepimagej config only valid for single input/output"
+def _get_deepimagej_config(
+    export_folder, test_inputs, test_outputs, input_axes, output_axes, pixel_sizes, preprocessing, postprocessing
+):
+    assert len(test_inputs) == len(test_outputs) == 1, "deepimagej config only valid for single input/output"
 
     if any(preproc is not None for preproc in preprocessing):
         assert len(preprocessing) == 1
@@ -319,15 +321,21 @@ def _get_deepimagej_config(export_folder, sample_inputs, sample_outputs, pixel_s
     else:
         postprocess_ij = [{"spec": None}]
 
-    def get_size(path):
-        assert tifffile is not None, "need tifffile for writing deepimagej config"
-        with tifffile.TiffFile(export_folder / path) as f:
-            shape = f.asarray().shape
-        # add singleton z/c axis
-        if len(shape) == 2:
-            shape = (1,) + shape + (1,)
-        elif len(shape) == 3:
-            shape = shape[:2] + (1,) + shape[-1:]
+    def get_size(fname, axes):
+        shape = np.load(export_folder / fname).shape
+        assert len(shape) == len(axes)
+        shape = [sh for sh, ax in zip(shape, axes) if ax != "b"]
+        axes = [ax for ax in axes if ax != "b"]
+        # the shape for deepij is always given as xyzc
+        if len(shape) == 3:
+            axes_ij = "xyc"
+        else:
+            axes_ij = "xyzc"
+        assert set(axes) == set(axes_ij)
+        axis_permutation = [axes_ij.index(ax) for ax in axes]
+        shape = [shape[permut] for permut in axis_permutation]
+        if len(shape) == 3:
+            shape = shape[:2] + [1] + shape[-1:]
         assert len(shape) == 4
         return " x ".join(map(str, shape))
 
@@ -336,10 +344,10 @@ def _get_deepimagej_config(export_folder, sample_inputs, sample_outputs, pixel_s
 
     test_info = {
         "inputs": [
-            {"name": in_path, "size": get_size(in_path), "pixel_size": pix_size}
-            for in_path, pix_size in zip(sample_inputs, pixel_sizes_)
+            {"name": in_path, "size": get_size(in_path, axes), "pixel_size": pix_size}
+            for in_path, axes, pix_size in zip(test_inputs, input_axes, pixel_sizes_)
         ],
-        "outputs": [{"name": out_path, "type": "image", "size": get_size(out_path)} for out_path in sample_outputs],
+        "outputs": [{"name": out_path, "type": "image", "size": get_size(out_path, axes)} for out_path, axes in zip(test_outputs, output_axes)],
         "memory_peak": None,
         "runtime": None,
     }
@@ -786,7 +794,7 @@ def build_model(
         assert all(os.path.splitext(path)[1] in (".tif", ".tiff") for path in sample_outputs)
 
         ij_config, ij_attachments = _get_deepimagej_config(
-            root, sample_inputs, sample_outputs, pixel_sizes, preprocessing, postprocessing
+            root, test_inputs, test_outputs, input_axes, output_axes, pixel_sizes, preprocessing, postprocessing
         )
 
         if config is None:
