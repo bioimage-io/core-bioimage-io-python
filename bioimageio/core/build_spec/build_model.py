@@ -393,6 +393,9 @@ def _write_sample_data(input_paths, output_paths, input_axes, output_axes, pixel
         else:
             spatial_axes = list(set(axes_ij) - set(["c"]))
             resolution = tuple(1.0 / pixel_size[ax] for ax in spatial_axes)
+        # does not work for double
+        if np.dtype(im.dtype) == np.dtype("float64"):
+            im = im.astype("float32")
         tifffile.imsave(path, im, imagej=True, resolution=resolution)
 
     sample_in_paths = []
