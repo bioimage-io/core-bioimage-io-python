@@ -323,8 +323,10 @@ def _get_deepimagej_config(export_folder, sample_inputs, sample_outputs, pixel_s
         assert tifffile is not None, "need tifffile for writing deepimagej config"
         with tifffile.TiffFile(export_folder / path) as f:
             shape = f.asarray().shape
-        # add singleton z axis if we have 2d data
-        if len(shape) == 3:
+        # add singleton z/c axis
+        if len(shape) == 2:
+            shape = (1,) + shape + (1,)
+        elif len(shape) == 3:
             shape = shape[:2] + (1,) + shape[-1:]
         assert len(shape) == 4
         return " x ".join(map(str, shape))
@@ -353,31 +355,42 @@ def _get_deepimagej_config(export_folder, sample_inputs, sample_outputs, pixel_s
     return {"deepimagej": config}, [Path(a) for a in attachments]
 
 
-def _write_sample_data(input_paths, output_paths, input_axes, output_axes, export_folder: Path):
-    def write_im(path, im, axes):
+def _write_sample_data(input_paths, output_paths, input_axes, output_axes, pixel_sizes, export_folder: Path):
+
+    def write_im(path, im, axes, pixel_size=None):
         assert tifffile is not None, "need tifffile for writing deepimagej config"
         assert len(axes) == im.ndim
         assert im.ndim in (3, 4)
 
-        # deepimagej expects xyzc axis order
+        # convert the image to expects (Z)CYX axis order
         if im.ndim == 3:
             assert set(axes) == {"x", "y", "c"}
-            axes_ij = "xyc"
+            axes_ij = "cyx"
         else:
             assert set(axes) == {"x", "y", "z", "c"}
-            axes_ij = "xyzc"
+            axes_ij = "zcyx"
 
         axis_permutation = tuple(axes_ij.index(ax) for ax in axes)
         im = im.transpose(axis_permutation)
+        # expand to TZCYXS
+        if len(axes_ij) == 2:  # add singleton z axis
+            im = im[None, None, ..., None]
+        else:
+            im = im[None, ..., None]
 
-        with tifffile.TiffWriter(path) as f:
-            f.write(im)
+        if pixel_size is None:
+            resolution = None
+        else:
+            spatial_axes = list(set(axes_ij) - set(["c"]))
+            resolution = tuple(1.0 / pixel_size[ax] for ax in spatial_axes)
+        tifffile.imsave(path, im, imagej=True, resolution=resolution)
 
     sample_in_paths = []
     for i, (in_path, axes) in enumerate(zip(input_paths, input_axes)):
         inp = np.load(export_folder / in_path)[0]
         sample_in_path = export_folder / f"sample_input_{i}.tif"
-        write_im(sample_in_path, inp, axes)
+        pixel_size = None if pixel_sizes is None else pixel_sizes[i]
+        write_im(sample_in_path, inp, axes, pixel_size)
         sample_in_paths.append(sample_in_path)
 
     sample_out_paths = []
@@ -766,7 +779,7 @@ def build_model(
             input_axes_ij = [inp.axes[1:] for inp in inputs]
             output_axes_ij = [out.axes[1:] for out in outputs]
             sample_inputs, sample_outputs = _write_sample_data(
-                test_inputs, test_outputs, input_axes_ij, output_axes_ij, root
+                test_inputs, test_outputs, input_axes_ij, output_axes_ij, pixel_sizes, root
             )
         # deepimagej expect tifs as sample data
         assert all(os.path.splitext(path)[1] in (".tif", ".tiff") for path in sample_inputs)
