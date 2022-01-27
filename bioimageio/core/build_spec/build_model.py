@@ -347,7 +347,10 @@ def _get_deepimagej_config(
             {"name": in_path, "size": get_size(in_path, axes), "pixel_size": pix_size}
             for in_path, axes, pix_size in zip(test_inputs, input_axes, pixel_sizes_)
         ],
-        "outputs": [{"name": out_path, "type": "image", "size": get_size(out_path, axes)} for out_path, axes in zip(test_outputs, output_axes)],
+        "outputs": [
+            {"name": out_path, "type": "image", "size": get_size(out_path, axes)}
+            for out_path, axes in zip(test_outputs, output_axes)
+        ],
         "memory_peak": None,
         "runtime": None,
     }
@@ -364,7 +367,6 @@ def _get_deepimagej_config(
 
 
 def _write_sample_data(input_paths, output_paths, input_axes, output_axes, pixel_sizes, export_folder: Path):
-
     def write_im(path, im, axes, pixel_size=None):
         assert tifffile is not None, "need tifffile for writing deepimagej config"
         assert len(axes) == im.ndim
