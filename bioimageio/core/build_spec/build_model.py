@@ -3,6 +3,7 @@ import hashlib
 import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
+from warnings import warn
 
 import imageio
 import numpy as np
@@ -73,6 +74,22 @@ def _get_pytorch_state_dict_weight_kwargs(architecture, model_kwargs, root):
     return weight_kwargs, tmp_archtecture
 
 
+def _get_attachments(attachments, root):
+    assert isinstance(attachments, dict)
+    if "files" in attachments:
+        afiles = attachments["files"]
+        if isinstance(afiles, str):
+            afiles = [afiles]
+
+        if isinstance(afiles, list):
+            afiles = _ensure_local_or_url(afiles, root)
+        else:
+            raise TypeError(attachments)
+
+        attachments["files"] = afiles
+    return attachments
+
+
 def _get_weights(
     original_weight_source,
     weight_type,
@@ -81,67 +98,94 @@ def _get_weights(
     model_kwargs=None,
     tensorflow_version=None,
     opset_version=None,
+    pytorch_version=None,
     dependencies=None,
-    **kwargs,
+    attachments=None,
 ):
     weight_path = resolve_source(original_weight_source, root)
     if weight_type is None:
         weight_type = _infer_weight_type(weight_path)
     weight_hash = _get_hash(weight_path)
 
-    attachments = {"attachments": kwargs["weight_attachments"]} if "weight_attachments" in kwargs else {}
     weight_types = model_spec.raw_nodes.WeightsFormat
     weight_source = _ensure_local_or_url(original_weight_source, root)
+
+    weight_kwargs = {"source": weight_source, "sha256": weight_hash}
+    if attachments is not None:
+        weight_kwargs["attachments"] = _get_attachments(attachments, root)
+    if dependencies is not None:
+        weight_kwargs["dependencies"] = _get_dependencies(dependencies, root)
 
     tmp_archtecture = None
     if weight_type == "pytorch_state_dict":
         # pytorch-state-dict -> we need an architecture definition
-        weight_kwargs, tmp_file = _get_pytorch_state_dict_weight_kwargs(architecture, model_kwargs, root)
-        weight_kwargs.update(**attachments)
-        weights = model_spec.raw_nodes.PytorchStateDictWeightsEntry(
-            source=weight_source, sha256=weight_hash, **weight_kwargs
-        )
-        if dependencies is not None:
-            weight_kwargs["dependencies"] = _get_dependencies(dependencies, root)
+        pytorch_weight_kwargs, tmp_file = _get_pytorch_state_dict_weight_kwargs(architecture, model_kwargs, root)
+        weight_kwargs.update(**pytorch_weight_kwargs)
+        if pytorch_version is not None:
+            weight_kwargs["pytorch_version"] = pytorch_version
+        elif dependencies is None:
+            warn(
+                "You are building a pytorch model but have neither passed dependencies nor the pytorch_version."
+                "It may not be possible to create an environmnet where your model can be used."
+            )
+        weights = model_spec.raw_nodes.PytorchStateDictWeightsEntry(**weight_kwargs)
 
     elif weight_type == "onnx":
-        if opset_version is None:
-            raise ValueError("opset_version needs to be passed for building an onnx model")
-        weights = model_spec.raw_nodes.OnnxWeightsEntry(
-            source=weight_source, sha256=weight_hash, opset_version=opset_version, **attachments
-        )
+        if opset_version is not None:
+            weight_kwargs["opset_version"] = opset_version
+        elif dependencies is None:
+            warn(
+                "You are building an onnx model but have neither passed dependencies nor the opset_version."
+                "It may not be possible to create an environmnet where your model can be used."
+            )
+        weights = model_spec.raw_nodes.OnnxWeightsEntry(**weight_kwargs)
 
     elif weight_type == "torchscript":
-        weights = model_spec.raw_nodes.TorchscriptWeightsEntry(source=weight_source, sha256=weight_hash, **attachments)
+        if pytorch_version is not None:
+            weight_kwargs["pytorch_version"] = pytorch_version
+        elif dependencies is None:
+            warn(
+                "You are building a pytorch model but have neither passed dependencies nor the pytorch_version."
+                "It may not be possible to create an environmnet where your model can be used."
+            )
+        weights = model_spec.raw_nodes.TorchscriptWeightsEntry(**weight_kwargs)
 
     elif weight_type == "keras_hdf5":
-        if tensorflow_version is None:
-            raise ValueError("tensorflow_version needs to be passed for building a keras model")
-        weights = model_spec.raw_nodes.KerasHdf5WeightsEntry(
-            source=weight_source, sha256=weight_hash, tensorflow_version=tensorflow_version, **attachments
-        )
+        if tensorflow_version is not None:
+            weight_kwargs["tensorflow_version"] = tensorflow_version
+        elif dependencies is None:
+            warn(
+                "You are building a keras model but have neither passed dependencies nor the tensorflow_version."
+                "It may not be possible to create an environmnet where your model can be used."
+            )
+        weights = model_spec.raw_nodes.KerasHdf5WeightsEntry(**weight_kwargs)
 
     elif weight_type == "tensorflow_saved_model_bundle":
-        if tensorflow_version is None:
-            raise ValueError("tensorflow_version needs to be passed for building a tensorflow model")
-        weights = model_spec.raw_nodes.TensorflowSavedModelBundleWeightsEntry(
-            source=weight_source, sha256=weight_hash, tensorflow_version=tensorflow_version, **attachments
-        )
+        if tensorflow_version is not None:
+            weight_kwargs["tensorflow_version"] = tensorflow_version
+        elif dependencies is None:
+            warn(
+                "You are building a tensorflow model but have neither passed dependencies nor the tensorflow_version."
+                "It may not be possible to create an environmnet where your model can be used."
+            )
+        weights = model_spec.raw_nodes.TensorflowSavedModelBundleWeightsEntry(**weight_kwargs)
 
     elif weight_type == "tensorflow_js":
-        if tensorflow_version is None:
-            raise ValueError("tensorflow_version needs to be passed for building a tensorflow_js model")
-        weights = model_spec.raw_nodes.TensorflowJsWeightsEntry(
-            source=weight_source, sha256=weight_hash, tensorflow_version=tensorflow_version, **attachments
-        )
+        if tensorflow_version is not None:
+            weight_kwargs["tensorflow_version"] = tensorflow_version
+        elif dependencies is None:
+            warn(
+                "You are building a tensorflow model but have neither passed dependencies nor the tensorflow_version."
+                "It may not be possible to create an environmnet where your model can be used."
+            )
+        weights = model_spec.raw_nodes.TensorflowJsWeightsEntry(**weight_kwargs)
 
     elif weight_type in weight_types:
         raise ValueError(f"Weight type {weight_type} is not supported yet in 'build_spec'")
     else:
         raise ValueError(f"Invalid weight type {weight_type}, expect one of {weight_types}")
 
-    weights = {weight_type: weights}
-    return weights, tmp_archtecture
+    return {weight_type: weights}, tmp_archtecture
 
 
 def _get_data_range(data_range, dtype):
@@ -563,7 +607,8 @@ def build_model(
     add_deepimagej_config: bool = False,
     tensorflow_version: Optional[str] = None,
     opset_version: Optional[int] = None,
-    **weight_kwargs,
+    pytorch_version: Optional[str] = None,
+    weight_attachments: Optional[Dict[str, Union[str, List[str]]]] = None,
 ):
     """Create a zipped bioimage.io model.
 
@@ -635,11 +680,10 @@ def build_model(
         dependencies: relative path to file with dependencies for this model.
         root: optional root path for relative paths. This can be helpful when building a spec from another model spec.
         add_deepimagej_config: add the deepimagej config to the model.
-        tensorflow_version: the tensorflow version used for training the model.
-            Only requred for models with tensorflow or keras weight format.
-        opset_version: the opset version used in this model.
-            Only requred for models with onnx weight format.
-        weight_kwargs: additional keyword arguments for this weight type.
+        tensorflow_version: the tensorflow version for this model. Only for tensorflow or keras weights.
+        opset_version: the opset version for this model. Only for onnx weights.
+        pytorch_version: the pytorch version for this model. Only for pytoch_state_dict or torchscript weights.
+        weight_attachments: extra weight specific attachments.
     """
     assert architecture is None or isinstance(architecture, str)
     if root is None:
@@ -647,18 +691,7 @@ def build_model(
     root = Path(root)
 
     if attachments is not None:
-        assert isinstance(attachments, dict)
-        if "files" in attachments:
-            afiles = attachments["files"]
-            if isinstance(afiles, str):
-                afiles = [afiles]
-
-            if isinstance(afiles, list):
-                afiles = _ensure_local_or_url(afiles, root)
-            else:
-                raise TypeError(attachments)
-
-            attachments["files"] = afiles
+        attachments = _get_attachments(attachments, root)
 
     #
     # generate the model specific fields
@@ -750,8 +783,9 @@ def build_model(
         model_kwargs,
         tensorflow_version=tensorflow_version,
         opset_version=opset_version,
+        pytorch_version=pytorch_version,
         dependencies=dependencies,
-        **weight_kwargs,
+        attachments=weight_attachments,
     )
 
     # validate the sample inputs and outputs (if given)

@@ -27,9 +27,9 @@ def _test_build_spec(
 
     cite = {entry.text: entry.doi if entry.url is missing else entry.url for entry in model_spec.cite}
 
-    dep_file = None
+    weight_spec = model_spec.weights[weight_type]
+    dep_file = None if weight_spec.dependencies is missing else resolve_source(weight_spec.dependencies.file, root)
     if weight_type == "pytorch_state_dict":
-        weight_spec = model_spec.weights["pytorch_state_dict"]
         model_kwargs = None if weight_spec.kwargs is missing else weight_spec.kwargs
         architecture = str(weight_spec.architecture)
         if use_absoloute_arch_path:
@@ -37,12 +37,11 @@ def _test_build_spec(
             arch_path = os.path.abspath(os.path.join(root, arch_path))
             assert os.path.exists(arch_path)
             architecture = f"{arch_path}:{cls_name}"
-        dep_file = None if weight_spec.dependencies is missing else resolve_source(weight_spec.dependencies.file, root)
         weight_type_ = None  # the weight type can be auto-detected
     elif weight_type == "torchscript":
         architecture = None
         model_kwargs = None
-        weight_type_ = "torchscript"  # the weight type CANNOT be auto-detcted
+        weight_type_ = "torchscript"  # the weight type CANNOT be auto-detected
     else:
         architecture = None
         model_kwargs = None
