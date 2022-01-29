@@ -413,30 +413,30 @@ def _get_deepimagej_config(
 def _write_sample_data(input_paths, output_paths, input_axes, output_axes, pixel_sizes, export_folder: Path):
     def write_im(path, im, axes, pixel_size=None):
         assert tifffile is not None, "need tifffile for writing deepimagej config"
-        assert len(axes) == im.ndim
-        assert im.ndim in (3, 4)
+        assert len(axes) == im.ndim, f"{len(axes), {im.ndim}}"
+        assert im.ndim in (4, 5)
 
         # convert the image to expects (Z)CYX axis order
         if im.ndim == 3:
-            assert set(axes) == {"x", "y", "c"}
-            axes_ij = "cyx"
+            assert set(axes) == {"b", "x", "y", "c"}
+            axes_ij = "cyxb"
         else:
-            assert set(axes) == {"x", "y", "z", "c"}
-            axes_ij = "zcyx"
+            assert set(axes) == {"b", "x", "y", "z", "c"}
+            axes_ij = "zcyxb"
 
-        axis_permutation = tuple(axes_ij.index(ax) for ax in axes)
+        axis_permutation = tuple(axes.index(ax) for ax in axes_ij)
         im = im.transpose(axis_permutation)
         # expand to TZCYXS
-        if len(axes_ij) == 2:  # add singleton z axis
-            im = im[None, None, ..., None]
-        else:
-            im = im[None, ..., None]
+        if len(axes_ij) == 2:  # add singleton t and z axis
+            im = im[None, None]
+        else:  # add singeton z axis
+            im = im[None]
 
         if pixel_size is None:
             resolution = None
         else:
-            spatial_axes = list(set(axes_ij) - set(["c"]))
-            resolution = tuple(1.0 / pixel_size[ax] for ax in spatial_axes)
+            spatial_axes = list(set(axes_ij) - set("bc"))
+            resolution = tuple(1.0 / pixel_size[ax] for ax in axes_ij if ax in spatial_axes)
         # does not work for double
         if np.dtype(im.dtype) == np.dtype("float64"):
             im = im.astype("float32")
@@ -444,7 +444,7 @@ def _write_sample_data(input_paths, output_paths, input_axes, output_axes, pixel
 
     sample_in_paths = []
     for i, (in_path, axes) in enumerate(zip(input_paths, input_axes)):
-        inp = np.load(export_folder / in_path)[0]
+        inp = np.load(export_folder / in_path)
         sample_in_path = export_folder / f"sample_input_{i}.tif"
         pixel_size = None if pixel_sizes is None else pixel_sizes[i]
         write_im(sample_in_path, inp, axes, pixel_size)
@@ -452,7 +452,7 @@ def _write_sample_data(input_paths, output_paths, input_axes, output_axes, pixel
 
     sample_out_paths = []
     for i, (out_path, axes) in enumerate(zip(output_paths, output_axes)):
-        outp = np.load(export_folder / out_path)[0]
+        outp = np.load(export_folder / out_path)
         sample_out_path = export_folder / f"sample_output_{i}.tif"
         write_im(sample_out_path, outp, axes)
         sample_out_paths.append(sample_out_path)
