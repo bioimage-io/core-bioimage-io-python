@@ -414,20 +414,20 @@ def _write_sample_data(input_paths, output_paths, input_axes, output_axes, pixel
     def write_im(path, im, axes, pixel_size=None):
         assert tifffile is not None, "need tifffile for writing deepimagej config"
         assert len(axes) == im.ndim, f"{len(axes), {im.ndim}}"
-        assert im.ndim in (4, 5)
+        assert im.ndim in (4, 5), f"{im.ndim}"
 
         # convert the image to expects (Z)CYX axis order
-        if im.ndim == 3:
-            assert set(axes) == {"b", "x", "y", "c"}
+        if im.ndim == 4:
+            assert set(axes) == {"b", "x", "y", "c"}, f"{axes}"
             axes_ij = "cyxb"
         else:
-            assert set(axes) == {"b", "x", "y", "z", "c"}
+            assert set(axes) == {"b", "x", "y", "z", "c"}, f"{axes}"
             axes_ij = "zcyxb"
 
         axis_permutation = tuple(axes.index(ax) for ax in axes_ij)
         im = im.transpose(axis_permutation)
         # expand to TZCYXS
-        if len(axes_ij) == 2:  # add singleton t and z axis
+        if len(axes_ij) == 4:  # add singleton t and z axis
             im = im[None, None]
         else:  # add singeton z axis
             im = im[None]
@@ -823,10 +823,8 @@ def build_model(
     # add the deepimagej config if specified
     if add_deepimagej_config:
         if sample_inputs is None:
-            input_axes_ij = [inp.axes[1:] for inp in inputs]
-            output_axes_ij = [out.axes[1:] for out in outputs]
             sample_inputs, sample_outputs = _write_sample_data(
-                test_inputs, test_outputs, input_axes_ij, output_axes_ij, pixel_sizes, root
+                test_inputs, test_outputs, input_axes, output_axes, pixel_sizes, root
             )
         # deepimagej expect tifs as sample data
         assert all(os.path.splitext(path)[1] in (".tif", ".tiff") for path in sample_inputs)
