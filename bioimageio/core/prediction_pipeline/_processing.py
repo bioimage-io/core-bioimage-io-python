@@ -250,7 +250,7 @@ class ZeroMeanUnitVariance(Processing):
             mean, std = self.mean, self.std
         elif self.mode == "per_sample":
             if axes:
-                mean, std = tensor.mean(axes), tensor.std(axes)
+                mean, std = Mean(axes).compute(tensor), Std(axes).compute(tensor)
             else:
                 mean, std = tensor.mean(), tensor.std()
         elif self.mode == "per_dataset":
