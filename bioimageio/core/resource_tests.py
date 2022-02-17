@@ -7,7 +7,7 @@ import numpy as np
 import xarray as xr
 from marshmallow import ValidationError
 
-from bioimageio.core import load_resource_description
+from bioimageio.core import __version__ as bioimageio_core_version, load_resource_description
 from bioimageio.core.prediction import predict
 from bioimageio.core.prediction_pipeline import create_prediction_pipeline
 from bioimageio.core.resource_io.nodes import (
@@ -17,6 +17,7 @@ from bioimageio.core.resource_io.nodes import (
     ResourceDescription,
     URI,
 )
+from bioimageio.spec import __version__ as bioimageio_spec_version
 from bioimageio.spec.model.raw_nodes import WeightsFormat
 from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
 
@@ -87,11 +88,11 @@ def test_resource(
 ):
     """Test RDF dynamically
 
-    Returns summary dict with "error" and "traceback" key; summary["error"] is None if no errors were encountered.
+    Returns: summary dict with keys: name, status, error, traceback, bioimageio_spec_version, bioimageio_core_version
     """
     error: Optional[str] = None
     tb: Optional = None
-    test_name: Optional[str] = None
+    test_name: str = "load resource description"
 
     try:
         rd = load_resource_description(
@@ -147,7 +148,14 @@ def test_resource(
 
     # todo: add tests for non-model resources
 
-    return {"error": error, "traceback": tb, "name": test_name}
+    return dict(
+        name=test_name,
+        status="passed" if error is None else "failed",
+        error=error,
+        traceback=tb,
+        bioimageio_spec_version=bioimageio_spec_version,
+        bioimageio_core_version=bioimageio_core_version,
+    )
 
 
 def debug_model(
