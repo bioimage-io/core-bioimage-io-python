@@ -158,16 +158,7 @@ class CombinedProcessing:
     def _compute_tensor_statistics(tensor: xr.DataArray, measures: Set[Measure]) -> Dict[Measure, Any]:
         ret = {}
         for measure in measures:
-            if isinstance(measure, Mean):
-                v = tensor.mean(dim=measure.axes)
-            elif isinstance(measure, Std):
-                v = tensor.std(dim=measure.axes)
-            elif isinstance(measure, Percentile):
-                v = tensor.quantile(measure.n / 100.0, dim=measure.axes)
-            else:
-                raise NotImplementedError(measure)
-
-            ret[measure] = v
+            ret[measure] = measure.compute(tensor)
 
         return ret
 
