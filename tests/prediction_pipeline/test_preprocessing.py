@@ -43,6 +43,21 @@ def test_zero_mean_unit_variance_preprocessing():
     xr.testing.assert_allclose(expected, result)
 
 
+def test_zero_mean_unit_variance_preprocessing_fixed():
+    from bioimageio.core.prediction_pipeline._processing import ZeroMeanUnitVariance
+
+    preprocessing = ZeroMeanUnitVariance(
+        "data_name", mode="fixed", axes=["y"], mean=[1, 4, 7], std=[0.81650, 0.81650, 0.81650]
+    )
+    data = xr.DataArray(np.arange(9).reshape((1, 1, 3, 3)), dims=("b", "c", "x", "y"))
+    expected = xr.DataArray(
+        np.array([[-1.224743, 0.0, 1.224743], [-1.224743, 0.0, 1.224743], [-1.224743, 0.0, 1.224743]])[None, None],
+        dims=("b", "c", "x", "y"),
+    )
+    result = preprocessing(data)
+    xr.testing.assert_allclose(expected, result)
+
+
 def test_zero_mean_unit_across_axes():
     from bioimageio.core.prediction_pipeline._processing import ZeroMeanUnitVariance
 
