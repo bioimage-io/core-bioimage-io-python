@@ -41,7 +41,9 @@ def _get_hash(path):
 
 def _infer_weight_type(path):
     ext = os.path.splitext(path)[-1]
-    if ext in (".pt", ".pth", ".torch"):
+    if ext == ".pt":
+        return "torchscript"
+    if ext in (".pth", ".torch"):
         return "pytorch_state_dict"
     elif ext == ".onnx":
         return "onnx"
