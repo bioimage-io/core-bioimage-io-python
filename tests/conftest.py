@@ -1,10 +1,13 @@
 import logging
+import warnings
 
 import pytest
 
 from bioimageio.core import export_resource_package
+from bioimageio.spec import __version__ as bioimageio_spec_version
 
 logger = logging.getLogger(__name__)
+warnings.warn(f"testing with bioimageio.spec {bioimageio_spec_version}")
 
 # test models for various frameworks
 torch_models = []
