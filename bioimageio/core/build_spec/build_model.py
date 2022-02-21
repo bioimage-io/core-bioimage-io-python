@@ -14,7 +14,7 @@ import bioimageio.spec.model as model_spec
 from bioimageio.core import export_resource_package, load_raw_resource_description
 from bioimageio.core.resource_io.nodes import URI
 from bioimageio.spec.shared.raw_nodes import ImportableModule, ImportableSourceFile
-from bioimageio.spec.shared.utils import resolve_local_source, resolve_source
+from bioimageio.spec.shared import resolve_local_source, resolve_source
 
 try:
     from typing import get_args

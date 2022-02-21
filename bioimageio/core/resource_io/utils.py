@@ -6,16 +6,14 @@ import sys
 import typing
 from types import ModuleType
 
-from bioimageio.spec.shared import raw_nodes
-from bioimageio.spec.shared.utils import (
+from bioimageio.spec.shared import raw_nodes, resolve_source, source_available
+from bioimageio.spec.shared.node_transformer import (
     GenericRawNode,
     GenericRawRD,
     GenericResolvedNode,
     NodeTransformer,
     NodeVisitor,
     UriNodeTransformer,
-    resolve_source,
-    source_available,
 )
 from . import nodes
 
