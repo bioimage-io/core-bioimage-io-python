@@ -217,7 +217,7 @@ def _get_input_tensor(path, name, step, min_shape, data_range, axes, preprocessi
     data_range = _get_data_range(data_range, test_in.dtype)
     kwargs = {}
     if preprocessing is not None:
-        kwargs["preprocessing"] = [{"name": k, "kwargs": v} for k, v in preprocessing.items()]
+        kwargs["preprocessing"] = preprocessing
 
     inputs = model_spec.raw_nodes.InputTensor(
         name="input" if name is None else name,
@@ -245,7 +245,7 @@ def _get_output_tensor(path, name, reference_tensor, scale, offset, axes, data_r
     data_range = _get_data_range(data_range, test_out.dtype)
     kwargs = {}
     if postprocessing is not None:
-        kwargs["postprocessing"] = [{"name": k, "kwargs": v} for k, v in postprocessing.items()]
+        kwargs["postprocessing"] = postprocessing
     if halo is not None:
         kwargs["halo"] = halo
 
@@ -353,7 +353,7 @@ def _get_deepimagej_config(
     if any(preproc is not None for preproc in preprocessing):
         assert len(preprocessing) == 1
         preprocess_ij = [
-            _get_deepimagej_macro(name, kwargs, export_folder) for name, kwargs in preprocessing[0].items()
+            _get_deepimagej_macro(preproc["name"], preproc["kwargs"], export_folder) for preproc in preprocessing[0]
         ]
         attachments = [preproc["kwargs"] for preproc in preprocess_ij]
     else:
@@ -363,7 +363,7 @@ def _get_deepimagej_config(
     if any(postproc is not None for postproc in postprocessing):
         assert len(postprocessing) == 1
         postprocess_ij = [
-            _get_deepimagej_macro(name, kwargs, export_folder) for name, kwargs in postprocessing[0].items()
+            _get_deepimagej_macro(postproc["name"], postproc["kwargs"], export_folder) for postproc in postprocessing[0]
         ]
         if attachments is None:
             attachments = [postproc["kwargs"] for postproc in postprocess_ij]
@@ -621,8 +621,8 @@ def build_model(
     output_offset: Optional[List[List[int]]] = None,
     output_data_range: Optional[List[List[Union[int, str]]]] = None,
     halo: Optional[List[List[int]]] = None,
-    preprocessing: Optional[List[Dict[str, Dict[str, Union[int, float, str]]]]] = None,
-    postprocessing: Optional[List[Dict[str, Dict[str, Union[int, float, str]]]]] = None,
+    preprocessing: Optional[List[List[Dict[str, Dict[str, Union[int, float, str]]]]]] = None,
+    postprocessing: Optional[List[List[Dict[str, Dict[str, Union[int, float, str]]]]]] = None,
     pixel_sizes: Optional[List[Dict[str, float]]] = None,
     # general optional
     maintainers: Optional[List[Dict[str, str]]] = None,
