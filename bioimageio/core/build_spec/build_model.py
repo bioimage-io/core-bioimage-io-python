@@ -260,9 +260,16 @@ def _get_output_tensor(path, name, reference_tensor, scale, offset, axes, data_r
     return outputs
 
 
-# TODO The citation entry should be improved so that we can properly derive doi vs. url
-def _build_cite(cite: Dict[str, str]):
-    citation_list = [spec.rdf.raw_nodes.CiteEntry(text=k, url=v) for k, v in cite.items()]
+def _build_cite(cite: List[Dict[str, str]]):
+    citation_list = []
+    for entry in cite:
+        if "doi" in entry:
+            spec_entry = spec.rdf.raw_nodes.CiteEntry(text=entry["text"], doi=entry["doi"])
+        elif "url" in entry:
+            spec_entry = spec.rdf.raw_nodes.CiteEntry(text=entry["text"], url=entry["url"])
+        else:
+            raise ValueError(f"Expect one of doi or url in citation enrty {entry}")
+        citation_list.append(spec_entry)
     return citation_list
 
 
@@ -595,7 +602,7 @@ def build_model(
     authors: List[Dict[str, str]],
     tags: List[Union[str, Path]],
     documentation: Union[str, Path],
-    cite: Dict[str, str],
+    cite: List[Dict[str, str]],
     output_path: Union[str, Path],
     # model specific optional
     architecture: Optional[str] = None,
@@ -655,7 +662,7 @@ def build_model(
         tags=["segmentation", "light sheet data"],
         license="CC-BY-4.0",
         documentation="./documentation.md",
-        cite={"Architecture": "https://my_architecture.com"},
+        cite=[{"text": "Ronneberger et al. U-Net", "doi": "10.1007/978-3-319-24574-4_28"}],
         output_path="my-model.zip"
     )
     ```
@@ -671,7 +678,7 @@ def build_model(
         authors: the authors of this model.
         tags: list of tags for this model.
         documentation: relative file path to markdown documentation for this model.
-        cite: citations for this model.
+        cite: references for this model.
         output_path: where to save the zipped model package.
         architecture: the file with the source code for the model architecture and the corresponding class.
             Only required for models with pytorch_state_dict weight format.

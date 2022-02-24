@@ -25,7 +25,17 @@ def _test_build_spec(
     assert isinstance(model_spec, spec.model.raw_nodes.Model)
     weight_source = model_spec.weights[weight_type].source
 
-    cite = {entry.text: entry.doi if entry.url is missing else entry.url for entry in model_spec.cite}
+    cite = []
+    for entry in model_spec.cite:
+        entry_ = {"text": entry.text}
+        has_url = entry.url is not missing
+        has_doi = entry.doi is not missing
+        assert has_url != has_doi
+        if has_doi:
+            entry_["doi"] = entry.doi
+        else:
+            entry_["url"] = entry.url
+        cite.append(entry_)
 
     weight_spec = model_spec.weights[weight_type]
     dep_file = None if weight_spec.dependencies is missing else resolve_source(weight_spec.dependencies.file, root)
