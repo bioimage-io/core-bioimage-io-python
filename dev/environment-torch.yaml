@@ -4,7 +4,7 @@ channels:
   - defaults
 dependencies:
   - black
-  - bioimageio.spec
+  - bioimageio.spec >=0.4.4
   - conda-build
   - h5py >=2.10,<2.11
   - mypy
