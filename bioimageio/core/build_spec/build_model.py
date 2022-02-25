@@ -632,7 +632,7 @@ def build_model(
     attachments: Optional[Dict[str, Union[str, List[str]]]] = None,
     packaged_by: Optional[List[str]] = None,
     run_mode: Optional[str] = None,
-    parent: Optional[Tuple[str, str]] = None,
+    parent: Optional[Dict[str, str]] = None,
     config: Optional[Dict[str, Any]] = None,
     dependencies: Optional[Union[Path, str]] = None,
     links: Optional[List[str]] = None,
@@ -708,7 +708,7 @@ def build_model(
         attachments: list of additional files to package with the model.
         packaged_by: list of authors that have packaged this model.
         run_mode: custom run mode for this model.
-        parent: id of the parent model from which this model is derived and sha256 of the corresponding weight file.
+        parent: id of the parent model from which this model is derived and sha256 of the corresponding rdf file.
         config: custom configuration for this model.
         dependencies: relative path to file with dependencies for this model.
         root: optional root path for relative paths. This can be helpful when building a spec from another model spec.
@@ -889,7 +889,7 @@ def build_model(
         kwargs["maintainers"] = [model_spec.raw_nodes.Maintainer(**m) for m in maintainers]
     if parent is not None:
         assert len(parent) == 2
-        kwargs["parent"] = {"uri": parent[0], "sha256": parent[1]}
+        kwargs["parent"] = parent
 
     try:
         model = model_spec.raw_nodes.Model(
