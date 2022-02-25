@@ -632,7 +632,7 @@ def build_model(
     attachments: Optional[Dict[str, Union[str, List[str]]]] = None,
     packaged_by: Optional[List[str]] = None,
     run_mode: Optional[str] = None,
-    parent: Optional[Tuple[str, str]] = None,
+    parent: Optional[Dict[str, str]] = None,
     config: Optional[Dict[str, Any]] = None,
     dependencies: Optional[Union[Path, str]] = None,
     links: Optional[List[str]] = None,
@@ -709,7 +709,7 @@ def build_model(
         attachments: list of additional files to package with the model.
         packaged_by: list of authors that have packaged this model.
         run_mode: custom run mode for this model.
-        parent: id of the parent model from which this model is derived and sha256 of the corresponding weight file.
+        parent: id of the parent model from which this model is derived and sha256 of the corresponding rdf file.
         config: custom configuration for this model.
         dependencies: relative path to file with dependencies for this model.
         training_data: the training data for this model, either id for a bioimageio dataset or a dataset spec.
@@ -892,7 +892,7 @@ def build_model(
 
     if parent is not None:
         assert len(parent) == 2
-        kwargs["parent"] = {"uri": parent[0], "sha256": parent[1]}
+        kwargs["parent"] = parent
 
     if training_data is not None:
         if "id" in training_data:
