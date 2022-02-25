@@ -17,6 +17,7 @@ def _test_build_spec(
     add_deepimagej_config=False,
     use_original_covers=False,
     use_absoloute_arch_path=False,
+    training_data=None,
 ):
     from bioimageio.core.build_spec import build_model
 
@@ -115,6 +116,8 @@ def _test_build_spec(
         kwargs["pixel_sizes"] = [{"x": 5.0, "y": 5.0}]
     if use_original_covers:
         kwargs["covers"] = resolve_source(model_spec.covers, root)
+    if training_data is not None:
+        kwargs["training_data"] = training_data
 
     build_model(**kwargs)
     assert out_path.exists()
@@ -191,6 +194,21 @@ def test_build_spec_tfjs(any_tensorflow_js_model, tmp_path):
 
 def test_build_spec_deepimagej(unet2d_nuclei_broad_model, tmp_path):
     _test_build_spec(unet2d_nuclei_broad_model, tmp_path / "model.zip", "torchscript", add_deepimagej_config=True)
+
+
+def test_build_spec_training_data1(unet2d_nuclei_broad_model, tmp_path):
+    training_data = {"id": "ilastik/stradist_dsb_training_data"}
+    _test_build_spec(unet2d_nuclei_broad_model, tmp_path / "model.zip", "torchscript", training_data=training_data)
+
+
+def test_build_spec_training_data2(unet2d_nuclei_broad_model, tmp_path):
+    training_data = {
+        "type": "dataset",
+        "name": "nucleus-training-data",
+        "description": "stardist nucleus training data",
+        "source": "https://github.com/stardist/stardist/releases/download/0.1.0/dsb2018.zip",
+    }
+    _test_build_spec(unet2d_nuclei_broad_model, tmp_path / "model.zip", "torchscript", training_data=training_data)
 
 
 def test_build_spec_deepimagej_keras(unet2d_keras, tmp_path):

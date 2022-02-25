@@ -636,6 +636,7 @@ def build_model(
     config: Optional[Dict[str, Any]] = None,
     dependencies: Optional[Union[Path, str]] = None,
     links: Optional[List[str]] = None,
+    training_data: Optional[Dict[str, str]] = None,
     root: Optional[Union[Path, str]] = None,
     add_deepimagej_config: bool = False,
     tensorflow_version: Optional[str] = None,
@@ -711,6 +712,7 @@ def build_model(
         parent: id of the parent model from which this model is derived and sha256 of the corresponding weight file.
         config: custom configuration for this model.
         dependencies: relative path to file with dependencies for this model.
+        training_data: the training data for this model, either id for a bioimageio dataset or a dataset spec.
         root: optional root path for relative paths. This can be helpful when building a spec from another model spec.
         add_deepimagej_config: add the deepimagej config to the model.
         tensorflow_version: the tensorflow version for this model. Only for tensorflow or keras weights.
@@ -887,9 +889,13 @@ def build_model(
 
     if maintainers is not None:
         kwargs["maintainers"] = [model_spec.raw_nodes.Maintainer(**m) for m in maintainers]
+
     if parent is not None:
         assert len(parent) == 2
         kwargs["parent"] = {"uri": parent[0], "sha256": parent[1]}
+
+    if training_data is not None:
+        kwargs["training_data"] = training_data
 
     try:
         model = model_spec.raw_nodes.Model(
