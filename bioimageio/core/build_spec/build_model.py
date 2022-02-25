@@ -217,7 +217,7 @@ def _get_input_tensor(path, name, step, min_shape, data_range, axes, preprocessi
     data_range = _get_data_range(data_range, test_in.dtype)
     kwargs = {}
     if preprocessing is not None:
-        kwargs["preprocessing"] = [{"name": k, "kwargs": v} for k, v in preprocessing.items()]
+        kwargs["preprocessing"] = preprocessing
 
     inputs = model_spec.raw_nodes.InputTensor(
         name="input" if name is None else name,
@@ -245,7 +245,7 @@ def _get_output_tensor(path, name, reference_tensor, scale, offset, axes, data_r
     data_range = _get_data_range(data_range, test_out.dtype)
     kwargs = {}
     if postprocessing is not None:
-        kwargs["postprocessing"] = [{"name": k, "kwargs": v} for k, v in postprocessing.items()]
+        kwargs["postprocessing"] = postprocessing
     if halo is not None:
         kwargs["halo"] = halo
 
@@ -260,9 +260,16 @@ def _get_output_tensor(path, name, reference_tensor, scale, offset, axes, data_r
     return outputs
 
 
-# TODO The citation entry should be improved so that we can properly derive doi vs. url
-def _build_cite(cite: Dict[str, str]):
-    citation_list = [spec.rdf.raw_nodes.CiteEntry(text=k, url=v) for k, v in cite.items()]
+def _build_cite(cite: List[Dict[str, str]]):
+    citation_list = []
+    for entry in cite:
+        if "doi" in entry:
+            spec_entry = spec.rdf.raw_nodes.CiteEntry(text=entry["text"], doi=entry["doi"])
+        elif "url" in entry:
+            spec_entry = spec.rdf.raw_nodes.CiteEntry(text=entry["text"], url=entry["url"])
+        else:
+            raise ValueError(f"Expect one of doi or url in citation enrty {entry}")
+        citation_list.append(spec_entry)
     return citation_list
 
 
@@ -346,7 +353,7 @@ def _get_deepimagej_config(
     if any(preproc is not None for preproc in preprocessing):
         assert len(preprocessing) == 1
         preprocess_ij = [
-            _get_deepimagej_macro(name, kwargs, export_folder) for name, kwargs in preprocessing[0].items()
+            _get_deepimagej_macro(preproc["name"], preproc["kwargs"], export_folder) for preproc in preprocessing[0]
         ]
         attachments = [preproc["kwargs"] for preproc in preprocess_ij]
     else:
@@ -356,7 +363,7 @@ def _get_deepimagej_config(
     if any(postproc is not None for postproc in postprocessing):
         assert len(postprocessing) == 1
         postprocess_ij = [
-            _get_deepimagej_macro(name, kwargs, export_folder) for name, kwargs in postprocessing[0].items()
+            _get_deepimagej_macro(postproc["name"], postproc["kwargs"], export_folder) for postproc in postprocessing[0]
         ]
         if attachments is None:
             attachments = [postproc["kwargs"] for postproc in postprocess_ij]
@@ -595,7 +602,7 @@ def build_model(
     authors: List[Dict[str, str]],
     tags: List[Union[str, Path]],
     documentation: Union[str, Path],
-    cite: Dict[str, str],
+    cite: List[Dict[str, str]],
     output_path: Union[str, Path],
     # model specific optional
     architecture: Optional[str] = None,
@@ -614,8 +621,8 @@ def build_model(
     output_offset: Optional[List[List[int]]] = None,
     output_data_range: Optional[List[List[Union[int, str]]]] = None,
     halo: Optional[List[List[int]]] = None,
-    preprocessing: Optional[List[Dict[str, Dict[str, Union[int, float, str]]]]] = None,
-    postprocessing: Optional[List[Dict[str, Dict[str, Union[int, float, str]]]]] = None,
+    preprocessing: Optional[List[List[Dict[str, Dict[str, Union[int, float, str]]]]]] = None,
+    postprocessing: Optional[List[List[Dict[str, Dict[str, Union[int, float, str]]]]]] = None,
     pixel_sizes: Optional[List[Dict[str, float]]] = None,
     # general optional
     maintainers: Optional[List[Dict[str, str]]] = None,
@@ -625,7 +632,7 @@ def build_model(
     attachments: Optional[Dict[str, Union[str, List[str]]]] = None,
     packaged_by: Optional[List[str]] = None,
     run_mode: Optional[str] = None,
-    parent: Optional[Tuple[str, str]] = None,
+    parent: Optional[Dict[str, str]] = None,
     config: Optional[Dict[str, Any]] = None,
     dependencies: Optional[Union[Path, str]] = None,
     links: Optional[List[str]] = None,
@@ -655,7 +662,7 @@ def build_model(
         tags=["segmentation", "light sheet data"],
         license="CC-BY-4.0",
         documentation="./documentation.md",
-        cite={"Architecture": "https://my_architecture.com"},
+        cite=[{"text": "Ronneberger et al. U-Net", "doi": "10.1007/978-3-319-24574-4_28"}],
         output_path="my-model.zip"
     )
     ```
@@ -671,7 +678,7 @@ def build_model(
         authors: the authors of this model.
         tags: list of tags for this model.
         documentation: relative file path to markdown documentation for this model.
-        cite: citations for this model.
+        cite: references for this model.
         output_path: where to save the zipped model package.
         architecture: the file with the source code for the model architecture and the corresponding class.
             Only required for models with pytorch_state_dict weight format.
@@ -701,7 +708,7 @@ def build_model(
         attachments: list of additional files to package with the model.
         packaged_by: list of authors that have packaged this model.
         run_mode: custom run mode for this model.
-        parent: id of the parent model from which this model is derived and sha256 of the corresponding weight file.
+        parent: id of the parent model from which this model is derived and sha256 of the corresponding rdf file.
         config: custom configuration for this model.
         dependencies: relative path to file with dependencies for this model.
         root: optional root path for relative paths. This can be helpful when building a spec from another model spec.
@@ -882,7 +889,7 @@ def build_model(
         kwargs["maintainers"] = [model_spec.raw_nodes.Maintainer(**m) for m in maintainers]
     if parent is not None:
         assert len(parent) == 2
-        kwargs["parent"] = {"uri": parent[0], "sha256": parent[1]}
+        kwargs["parent"] = parent
 
     try:
         model = model_spec.raw_nodes.Model(
