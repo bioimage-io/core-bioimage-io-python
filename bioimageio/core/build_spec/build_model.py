@@ -895,7 +895,15 @@ def build_model(
         kwargs["parent"] = {"uri": parent[0], "sha256": parent[1]}
 
     if training_data is not None:
-        kwargs["training_data"] = training_data
+        if "id" in training_data:
+            msg = f"If training data is specified via 'id' no other keys are allowed, got {training_data}"
+            assert len(training_data) == 1, msg
+            kwargs["training_data"] = training_data
+        else:
+            if "type" not in training_data:
+                training_data["type"] = "dataset"
+            if "format_version" not in training_data:
+                training_data["format_version"] = spec.dataset.format_version
 
     try:
         model = model_spec.raw_nodes.Model(
