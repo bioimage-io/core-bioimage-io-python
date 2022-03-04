@@ -891,7 +891,6 @@ def build_model(
         kwargs["maintainers"] = [model_spec.raw_nodes.Maintainer(**m) for m in maintainers]
 
     if parent is not None:
-        assert len(parent) == 2
         kwargs["parent"] = parent
 
     if training_data is not None:
