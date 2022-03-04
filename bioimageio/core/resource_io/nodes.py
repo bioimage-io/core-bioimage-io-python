@@ -74,6 +74,11 @@ class CollectionEntry(Node, collection_raw_nodes.CollectionEntry):
 
 
 @dataclass
+class LinkedDataset(Node, model_raw_nodes.LinkedDataset):
+    pass
+
+
+@dataclass
 class ModelParent(Node, model_raw_nodes.ModelParent):
     pass
 
