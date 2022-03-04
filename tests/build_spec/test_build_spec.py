@@ -18,6 +18,7 @@ def _test_build_spec(
     use_original_covers=False,
     use_absoloute_arch_path=False,
     training_data=None,
+    parent=None,
 ):
     from bioimageio.core.build_spec import build_model
 
@@ -118,6 +119,8 @@ def _test_build_spec(
         kwargs["covers"] = resolve_source(model_spec.covers, root)
     if training_data is not None:
         kwargs["training_data"] = training_data
+    if parent is not None:
+        kwargs["parent"] = parent
 
     build_model(**kwargs)
     assert out_path.exists()
@@ -209,6 +212,16 @@ def test_build_spec_training_data2(unet2d_nuclei_broad_model, tmp_path):
         "source": "https://github.com/stardist/stardist/releases/download/0.1.0/dsb2018.zip",
     }
     _test_build_spec(unet2d_nuclei_broad_model, tmp_path / "model.zip", "torchscript", training_data=training_data)
+
+
+def test_build_spec_parent1(unet2d_nuclei_broad_model, tmp_path):
+    parent = {"uri": "https:/my-parent-model.org"}
+    _test_build_spec(unet2d_nuclei_broad_model, tmp_path / "model.zip", "torchscript", parent=parent)
+
+
+def test_build_spec_parent2(unet2d_nuclei_broad_model, tmp_path):
+    parent = {"id": "10.5281/zenodo.5764892"}
+    _test_build_spec(unet2d_nuclei_broad_model, tmp_path / "model.zip", "torchscript", parent=parent)
 
 
 def test_build_spec_deepimagej_keras(unet2d_keras, tmp_path):
