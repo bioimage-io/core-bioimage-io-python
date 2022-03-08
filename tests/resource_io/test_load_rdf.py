@@ -70,6 +70,16 @@ def test_load_model_with_rel_str_source(unet2d_nuclei_broad_model):
     assert model
 
 
+@pytest.mark.skipif(pytest.skip_torch, reason="remote model is a pytorch model")
+def test_load_remote_rdf():
+    from bioimageio.core import load_resource_description
+    from bioimageio.core.resource_io import nodes
+
+    remote_rdf = "https://zenodo.org/api/files/63b44f05-a187-4fc9-81c8-c4568535531b/rdf.yaml"
+    model = load_resource_description(remote_rdf)
+    assert isinstance(model, nodes.Model)
+
+
 @pytest.mark.skipif(True, reason="No suitable test model available yet")
 def test_load_remote_rdf_with_folders():
     from bioimageio.core import load_resource_description, load_raw_resource_description
