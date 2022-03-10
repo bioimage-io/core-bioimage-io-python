@@ -185,7 +185,7 @@ class ScaleRange(Processing):
             axes = None
 
         v_lower = self.get_computed_statistics(ref_name, Percentile(self.min_percentile, axes=axes))
-        v_upper = get_stat(ref_name, Percentile(self.max_percentile, axes=axes))
+        v_upper = self.get_computed_statistics(ref_name, Percentile(self.max_percentile, axes=axes))
 
         return ensure_dtype((tensor - v_lower) / (v_upper - v_lower + self.eps), dtype="float32")
 
