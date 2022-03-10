@@ -6,15 +6,16 @@ import xarray as xr
 from marshmallow import missing
 
 from bioimageio.core.resource_io import nodes
-from bioimageio.core.statistical_measures import Measure
+from bioimageio.core.statistical_measures import Measure, MeasureValue
 from ._combined_processing import CombinedProcessing
 from ._model_adapters import ModelAdapter, create_model_adapter
+from ._processing import TensorName
 from ..resource_io.nodes import InputTensor, Model, OutputTensor
 
 
 @dataclass
 class NamedImplicitOutputShape:
-    reference_input: str = missing
+    reference_input: TensorName = missing
     scale: List[Tuple[str, float]] = missing
     offset: List[Tuple[str, int]] = missing
 
@@ -128,13 +129,15 @@ class _PredictionPipelineImpl(PredictionPipeline):
         prediction = self.predict(*preprocessed)
         return self._processing.apply_postprocessing(*prediction, input_sample_statistics=sample_stats)[0]
 
-    def preprocess(self, *input_tensors: xr.DataArray) -> Tuple[List[xr.DataArray], Dict[str, Dict[Measure, Any]]]:
+    def preprocess(
+        self, *input_tensors: xr.DataArray
+    ) -> Tuple[List[xr.DataArray], Dict[TensorName, Dict[Measure, MeasureValue]]]:
         """Apply preprocessing."""
         return self._processing.apply_preprocessing(*input_tensors)
 
     def postprocess(
         self, *input_tensors: xr.DataArray, input_sample_statistics
-    ) -> Tuple[List[xr.DataArray], Dict[str, Dict[Measure, Any]]]:
+    ) -> Tuple[List[xr.DataArray], Dict[TensorName, Dict[Measure, MeasureValue]]]:
         """Apply postprocessing."""
         return self._processing.apply_postprocessing(*input_tensors, input_sample_statistics=input_sample_statistics)
 

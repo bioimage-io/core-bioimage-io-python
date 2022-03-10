@@ -7,7 +7,7 @@ from typing import Dict, Hashable, Iterator, List, Mapping, Optional, Sequence, 
 import numpy
 import xarray as xr
 
-from bioimageio.core.prediction_pipeline._processing import TensorName
+from bioimageio.core.prediction_pipeline import TensorName
 from bioimageio.core.statistical_measures import Mean, Measure, Percentile, Std, Var
 
 try:
