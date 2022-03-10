@@ -21,3 +21,6 @@ def skip_on(exception: Type[Exception], reason: str):
         return wrapper
 
     return decorator_func
+
+
+TensorName = str

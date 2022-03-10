@@ -1,16 +1,16 @@
 import abc
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Dict, List, Optional, Sequence, Tuple
 
 import xarray as xr
 from marshmallow import missing
 
 from bioimageio.core.resource_io import nodes
+from bioimageio.core.resource_io.nodes import InputTensor, Model, OutputTensor
 from bioimageio.core.statistical_measures import Measure, MeasureValue
+from bioimageio.core.utils import TensorName
 from ._combined_processing import CombinedProcessing
 from ._model_adapters import ModelAdapter, create_model_adapter
-from ._processing import TensorName
-from ..resource_io.nodes import InputTensor, Model, OutputTensor
 
 
 @dataclass

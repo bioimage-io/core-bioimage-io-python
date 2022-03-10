@@ -8,6 +8,7 @@ import xarray as xr
 from bioimageio.core.measure_groups import MeanVarStd, PercentileGroup
 from bioimageio.core.resource_io import nodes
 from bioimageio.core.statistical_measures import Mean, Measure, MeasureValue, Percentile, Std, Var
+from bioimageio.core.utils import TensorName
 from ._processing import (
     DatasetMode,
     EnsureDtype,
@@ -17,7 +18,6 @@ from ._processing import (
     PER_SAMPLE,
     Processing,
     SampleMode,
-    TensorName,
 )
 
 try:

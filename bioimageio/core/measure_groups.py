@@ -7,8 +7,8 @@ from typing import Dict, Hashable, Iterator, List, Mapping, Optional, Sequence, 
 import numpy
 import xarray as xr
 
-from bioimageio.core.prediction_pipeline import TensorName
 from bioimageio.core.statistical_measures import Mean, Measure, Percentile, Std, Var
+from .utils import TensorName
 
 try:
     import crick
@@ -60,7 +60,7 @@ class MeanVarStd(MeasureGroup):
             self.n = n = n_a + n_b
             self.mean = (n_a * mean_a + n_b * mean_b) / n
             d = mean_b - mean_a
-            self.m2 = m2_a + m2_b + d**2 * n_a * n_b / n
+            self.m2 = m2_a + m2_b + d ** 2 * n_a * n_b / n
 
     def finalize(self) -> Dict[Measure, MeasureValue]:
         var = self.m2 / self.n
