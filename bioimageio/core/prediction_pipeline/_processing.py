@@ -174,16 +174,13 @@ class ScaleRange(Processing):
     reference_tensor: Optional[TensorName] = None
 
     def get_required_statistics(self) -> Dict[Mode, Dict[TensorName, Set[Measure]]]:
-        measures = {Percentile(self.min_percentile, axes=self.axes), Percentile(self.max_percentile, axes=self.axes)}
+        axes = None if self.axes is None else tuple(self.axes)
+        measures = {Percentile(self.min_percentile, axes=axes), Percentile(self.max_percentile, axes=axes)}
         return {self.mode: {self.reference_tensor or self.tensor_name: measures}}
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
         ref_name = self.reference_tensor or self.tensor_name
-        if self.axes:
-            axes = tuple(self.axes)
-        else:
-            axes = None
-
+        axes = None if self.axes is None else tuple(self.axes)
         v_lower = self.get_computed_statistics(ref_name, Percentile(self.min_percentile, axes=axes))
         v_upper = self.get_computed_statistics(ref_name, Percentile(self.max_percentile, axes=axes))
 
@@ -209,7 +206,8 @@ class ZeroMeanUnitVariance(Processing):
     eps: float = 1.0e-6
 
     def get_required_statistics(self) -> Dict[Mode, Dict[TensorName, Set[Measure]]]:
-        return {self.mode: {self.tensor_name: {Mean(axes=self.axes), Std(axes=self.axes)}}}
+        axes = None if self.axes is None else tuple(self.axes)
+        return {self.mode: {self.tensor_name: {Mean(axes=axes), Std(axes=axes)}}}
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
         axes = None if self.axes is None else tuple(self.axes)
