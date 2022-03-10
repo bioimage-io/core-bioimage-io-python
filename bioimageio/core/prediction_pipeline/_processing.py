@@ -87,10 +87,10 @@ class Processing:
                 raise TypeError(f"missing required argument {f.name}")
 
             if f.name == "mode":
-                if self.mode not in get_args(f.type):
-                    raise NotImplementedError(
-                        f"Unsupported mode {self.mode} for {self.__class__.__name__}: {self.mode}"
-                    )
+                # mode is always annotated as literals
+                valid_modes = sum([get_args(inner) for inner in get_args(f.type)], start=tuple())
+                if self.mode not in valid_modes:
+                    raise NotImplementedError(f"Unsupported mode {self.mode} for {self.__class__.__name__}")
 
 
 #
@@ -166,7 +166,7 @@ class ScaleMeanVariance(Processing):
 
 @dataclass
 class ScaleRange(Processing):
-    mode: Literal["per_sample", "per_dataset"] = "per_sample"
+    mode: Literal[SampleMode, DatasetMode] = PER_SAMPLE
     axes: Optional[Sequence[str]] = None
     min_percentile: float = 0.0
     max_percentile: float = 100.0
