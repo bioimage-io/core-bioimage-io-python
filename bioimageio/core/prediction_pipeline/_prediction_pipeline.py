@@ -1,7 +1,6 @@
 import abc
-import math
 from dataclasses import dataclass
-from typing import List, Optional, Sequence, Tuple, Dict, Any
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import xarray as xr
 from marshmallow import missing
