@@ -1,10 +1,11 @@
+import typing
 import warnings
 from collections import defaultdict
-from typing import Any, DefaultDict, Dict, List, Optional, Sequence, Set, Tuple
+from typing import DefaultDict, Dict, List, Optional, Sequence, Set, Tuple
 
-import typing
 import xarray as xr
 
+from bioimageio.core.measure_groups import MeanVarStd, PercentileGroup
 from bioimageio.core.resource_io import nodes
 from bioimageio.core.statistical_measures import Mean, Measure, MeasureValue, Percentile, Std, Var
 from ._processing import (
@@ -18,7 +19,6 @@ from ._processing import (
     SampleMode,
     TensorName,
 )
-from ..parallel_measures import MeanVarStd, PercentileGroup
 
 try:
     from typing import Literal
