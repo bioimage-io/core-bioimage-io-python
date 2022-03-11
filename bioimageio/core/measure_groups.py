@@ -105,7 +105,7 @@ class MeanPercentiles(MeasureGroup):
         return {Percentile(n=n, axes=self.axes): e for n, e in zip(self.ns, self.estimates)}
 
 
-class TDigestPercentiles(MeasureGroup):
+class CrickPercentiles(MeasureGroup):
     digest: Optional[Union["crick.TDigest", List["crick.TDigest"]]]
     dims: Optional[Tuple[Hashable, ...]]
     indices: Optional[Iterator[Tuple[int, ...]]]
@@ -166,9 +166,9 @@ class TDigestPercentiles(MeasureGroup):
 
 
 if crick is None:
-    PercentileGroup: Union[Type[MeanPercentiles], Type[TDigestPercentiles]] = MeanPercentiles
+    PercentileGroup: Union[Type[MeanPercentiles], Type[CrickPercentiles]] = MeanPercentiles
 else:
-    PercentileGroup = TDigestPercentiles
+    PercentileGroup = CrickPercentiles
 
 
 def get_measure_groups(
