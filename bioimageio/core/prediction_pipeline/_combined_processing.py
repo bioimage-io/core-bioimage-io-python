@@ -143,7 +143,7 @@ class CombinedProcessing:
     def compute_dataset_statistics(
         cls, dataset: typing.Iterable[Dict[TensorName, xr.DataArray]], measures: Dict[TensorName, Set[Measure]]
     ) -> Dict[TensorName, Dict[Measure, MeasureValue]]:
-        measure_groups = get_measure_groups(measures)
+        measure_groups = get_measure_groups(measures, mode=PER_DATASET)
 
         for s in dataset:
             for mg in measure_groups:

@@ -9,7 +9,7 @@ import numpy
 import xarray as xr
 
 from bioimageio.core.statistical_measures import Mean, Measure, Percentile, Std, Var
-from .utils import DatasetMode, SampleMode, TensorName
+from .utils import DatasetMode, PER_DATASET, SampleMode, TensorName
 
 try:
     import crick
@@ -175,6 +175,9 @@ def get_measure_groups(
     measures: Dict[TensorName, Set[Measure]], mode: Literal[SampleMode, DatasetMode]
 ) -> List[MeasureGroup]:
     """find a list of MeasureGroups to compute measures efficiently"""
+
+    if mode != PER_DATASET:
+        raise NotImplementedError(mode)
 
     mean_var_std_groups = set()
     percentile_groups = defaultdict(list)
