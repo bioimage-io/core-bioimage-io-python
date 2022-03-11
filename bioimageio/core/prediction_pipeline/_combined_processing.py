@@ -5,9 +5,9 @@ from typing import DefaultDict, Dict, List, Optional, Sequence, Set, Tuple
 
 import xarray as xr
 
-from bioimageio.core.measure_groups import MeanVarStd, PercentileGroup
+from bioimageio.core.measure_groups import get_measure_groups
 from bioimageio.core.resource_io import nodes
-from bioimageio.core.statistical_measures import Mean, Measure, MeasureValue, Percentile, Std, Var
+from bioimageio.core.statistical_measures import Measure, MeasureValue
 from bioimageio.core.utils import TensorName
 from ._processing import (
     DatasetMode,
@@ -143,25 +143,7 @@ class CombinedProcessing:
     def compute_dataset_statistics(
         cls, dataset: typing.Iterable[Dict[TensorName, xr.DataArray]], measures: Dict[TensorName, Set[Measure]]
     ) -> Dict[TensorName, Dict[Measure, MeasureValue]]:
-
-        # find MeasureGroups to compute dataset statistics in batches
-        mean_var_std_groups = set()
-        percentile_groups = defaultdict(list)
-        for tn, ms in measures.items():
-            for m in ms:
-                if isinstance(m, (Mean, Var, Std)):
-                    mean_var_std_groups.add((tn, m.axes))
-                elif isinstance(m, Percentile):
-                    percentile_groups[(tn, m.axes)].append(m.n)
-                else:
-                    raise NotImplementedError(f"Computing datasets statistics for {m} not yet implemented")
-
-        measure_groups = []
-        for (tn, axes) in mean_var_std_groups:
-            measure_groups.append(MeanVarStd(tensor_name=tn, axes=axes))
-
-        for (tn, axes), ns in percentile_groups.items():
-            measure_groups.append(PercentileGroup(tensor_name=tn, axes=axes, ns=ns))
+        measure_groups = get_measure_groups(measures)
 
         for s in dataset:
             for mg in measure_groups:

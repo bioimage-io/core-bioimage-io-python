@@ -5,22 +5,13 @@ import numpy as np
 import xarray as xr
 
 from bioimageio.core.statistical_measures import Mean, Measure, Percentile, Std
+from bioimageio.core.utils import DatasetMode, FIXED, Mode, PER_DATASET, PER_SAMPLE, SampleMode
 from bioimageio.spec.model.raw_nodes import PostprocessingName, PreprocessingName
 
 try:
     from typing import Literal, get_args
 except ImportError:
     from typing_extensions import Literal, get_args  # type: ignore
-
-FixedMode = Literal["fixed"]
-SampleMode = Literal["per_sample"]
-DatasetMode = Literal["per_dataset"]
-Mode = Literal[FixedMode, SampleMode, DatasetMode]
-
-FIXED: FixedMode = "fixed"
-PER_SAMPLE: SampleMode = "per_sample"
-PER_DATASET: DatasetMode = "per_dataset"
-MODES: Set[Mode] = {FIXED, PER_SAMPLE, PER_DATASET}
 
 
 def _get_fixed(

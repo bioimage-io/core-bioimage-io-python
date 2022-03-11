@@ -1,5 +1,5 @@
 from functools import wraps
-from typing import Type
+from typing import Literal, Set, Type
 
 
 def skip_on(exception: Type[Exception], reason: str):
@@ -24,3 +24,12 @@ def skip_on(exception: Type[Exception], reason: str):
 
 
 TensorName = str
+FixedMode = Literal["fixed"]
+SampleMode = Literal["per_sample"]
+DatasetMode = Literal["per_dataset"]
+Mode = Literal[FixedMode, SampleMode, DatasetMode]
+
+FIXED: FixedMode = "fixed"
+PER_SAMPLE: SampleMode = "per_sample"
+PER_DATASET: DatasetMode = "per_dataset"
+MODES: Set[Mode] = {FIXED, PER_SAMPLE, PER_DATASET}

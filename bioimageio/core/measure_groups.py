@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import warnings
+from collections import defaultdict
 from itertools import product
-from typing import Dict, Hashable, Iterator, List, Mapping, Optional, Sequence, Tuple, Type, Union
+from typing import Dict, Hashable, Iterator, List, Literal, Mapping, Optional, Sequence, Set, Tuple, Type, Union
 
 import numpy
 import xarray as xr
 
 from bioimageio.core.statistical_measures import Mean, Measure, Percentile, Std, Var
-from .utils import TensorName
+from .utils import DatasetMode, SampleMode, TensorName
 
 try:
     import crick
@@ -19,6 +20,8 @@ MeasureValue = xr.DataArray
 
 
 class MeasureGroup:
+    """group of measures for more efficient computation of multiple measures"""
+
     def reset(self):
         raise NotImplementedError
 
@@ -166,3 +169,29 @@ if crick is None:
     PercentileGroup: Union[Type[MeanPercentiles], Type[TDigestPercentiles]] = MeanPercentiles
 else:
     PercentileGroup = TDigestPercentiles
+
+
+def get_measure_groups(
+    measures: Dict[TensorName, Set[Measure]], mode: Literal[SampleMode, DatasetMode]
+) -> List[MeasureGroup]:
+    """find a list of MeasureGroups to compute measures efficiently"""
+
+    mean_var_std_groups = set()
+    percentile_groups = defaultdict(list)
+    for tn, ms in measures.items():
+        for m in ms:
+            if isinstance(m, (Mean, Var, Std)):
+                mean_var_std_groups.add((tn, m.axes))
+            elif isinstance(m, Percentile):
+                percentile_groups[(tn, m.axes)].append(m.n)
+            else:
+                raise NotImplementedError(f"Computing datasets statistics for {m} not yet implemented")
+
+    measure_groups = []
+    for (tn, axes) in mean_var_std_groups:
+        measure_groups.append(MeanVarStd(tensor_name=tn, axes=axes))
+
+    for (tn, axes), ns in percentile_groups.items():
+        measure_groups.append(PercentileGroup(tensor_name=tn, axes=axes, ns=ns))
+
+    return measure_groups
