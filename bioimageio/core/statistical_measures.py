@@ -17,7 +17,7 @@ class Measure:
 
 @dataclass(frozen=True)
 class Mean(Measure):
-    axes: Optional[Tuple[str]] = None
+    axes: Optional[Tuple[str, ...]] = None
 
     def compute(self, tensor: xr.DataArray) -> xr.DataArray:
         return tensor.mean(dim=self.axes)
@@ -25,7 +25,7 @@ class Mean(Measure):
 
 @dataclass(frozen=True)
 class Std(Measure):
-    axes: Optional[Tuple[str]] = None
+    axes: Optional[Tuple[str, ...]] = None
 
     def compute(self, tensor: xr.DataArray) -> xr.DataArray:
         return tensor.std(dim=self.axes)
@@ -33,7 +33,7 @@ class Std(Measure):
 
 @dataclass(frozen=True)
 class Var(Measure):
-    axes: Optional[Tuple[str]] = None
+    axes: Optional[Tuple[str, ...]] = None
 
     def compute(self, tensor: xr.DataArray) -> xr.DataArray:
         return tensor.var(dim=self.axes)
@@ -42,7 +42,7 @@ class Var(Measure):
 @dataclass(frozen=True)
 class Percentile(Measure):
     n: float
-    axes: Optional[Tuple[str]] = None
+    axes: Optional[Tuple[str, ...]] = None
 
     def __post_init__(self):
         assert self.n >= 0
