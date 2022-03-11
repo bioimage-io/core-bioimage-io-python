@@ -48,13 +48,16 @@ class MeanVarStd(MeasureGroup):
         self.m2 = None
 
     def update_with_sample(self, sample: Dict[TensorName, xr.DataArray]):
-        tensor = sample[self.tensor_name]
+        tensor = sample[self.tensor_name].astype(numpy.float64, copy=False)
         mean_b = tensor.mean(dim=self.axes)
+        assert mean_b.dtype is numpy.float64
         n_b = numpy.prod(tensor.shape) / numpy.prod(mean_b.shape)  # reduced voxel count
         m2_b = ((tensor - mean_b) ** 2).sum(dim=self.axes)
+        assert m2_b.dtype is numpy.float64
         if self.n == 0:
             assert self.m2 is None
             self.n = n_b
+            self.mean = mean_b
             self.m2 = m2_b
         else:
             n_a = self.n
@@ -62,8 +65,10 @@ class MeanVarStd(MeasureGroup):
             m2_a = self.m2
             self.n = n = n_a + n_b
             self.mean = (n_a * mean_a + n_b * mean_b) / n
+            assert self.mean.dtype is numpy.float64
             d = mean_b - mean_a
             self.m2 = m2_a + m2_b + d ** 2 * n_a * n_b / n
+            assert self.m2.dtype is numpy.float64
 
     def finalize(self) -> Dict[Measure, MeasureValue]:
         var = self.m2 / self.n
@@ -89,7 +94,7 @@ class MeanPercentiles(MeasureGroup):
 
     def update_with_sample(self, sample: Dict[TensorName, xr.DataArray]):
         tensor = sample[self.tensor_name]
-        sample_estimates = tensor.quantile(self.qs, dim=self.axes)
+        sample_estimates = tensor.quantile(self.qs, dim=self.axes).astype(numpy.float64, copy=False)
 
         n = numpy.prod(tensor.shape) / numpy.prod(sample_estimates.shape[1:])  # reduced voxel count
 
@@ -97,6 +102,7 @@ class MeanPercentiles(MeasureGroup):
             self.estimates = sample_estimates
         else:
             self.estimates = (self.count * self.estimates + n * sample_estimates) / (self.count + n)
+            assert self.estimates.dtype is numpy.float64
 
         self.count += n
 
