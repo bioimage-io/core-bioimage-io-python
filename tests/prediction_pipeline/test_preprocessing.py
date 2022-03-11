@@ -2,6 +2,8 @@ import numpy as np
 import xarray as xr
 
 from bioimageio.core.prediction_pipeline._combined_processing import CombinedProcessing
+from bioimageio.core.statistical_measures import Mean, Std
+from bioimageio.core.utils import PER_SAMPLE
 
 
 def test_scale_linear():
@@ -27,8 +29,13 @@ def test_scale_linear_no_channel():
 def test_zero_mean_unit_variance_preprocessing():
     from bioimageio.core.prediction_pipeline._processing import ZeroMeanUnitVariance
 
-    preprocessing = ZeroMeanUnitVariance("data_name")
     data = xr.DataArray(np.arange(9).reshape(3, 3), dims=("x", "y"))
+
+    preprocessing = ZeroMeanUnitVariance("data_name", mode=PER_SAMPLE)
+    preprocessing.set_computed_statistics(
+        computed={"data_name": {Mean(): data.mean(), Std(): data.std()}}, mode=PER_SAMPLE
+    )
+
     expected = xr.DataArray(
         np.array(
             [
@@ -61,8 +68,16 @@ def test_zero_mean_unit_variance_preprocessing_fixed():
 def test_zero_mean_unit_across_axes():
     from bioimageio.core.prediction_pipeline._processing import ZeroMeanUnitVariance
 
-    preprocessing = ZeroMeanUnitVariance("data_name", axes=("x", "y"))
     data = xr.DataArray(np.arange(18).reshape((2, 3, 3)), dims=("c", "x", "y"))
+
+    axes = ("x", "y")
+    preprocessing = ZeroMeanUnitVariance("data_name", axes=axes, mode=PER_SAMPLE)
+    mean = Mean(axes=axes)
+    std = Std(axes=axes)
+    preprocessing.set_computed_statistics(
+        computed={"data_name": {mean: mean.compute(data), std: std.compute(data)}}, mode=PER_SAMPLE
+    )
+
     expected = xr.DataArray(
         np.array(
             [
@@ -116,8 +131,14 @@ def test_clip_preprocessing():
 def test_combination_of_preprocessing_steps_with_dims_specified():
     from bioimageio.core.prediction_pipeline._processing import ZeroMeanUnitVariance
 
-    preprocessing = ZeroMeanUnitVariance("data_name", axes=("x", "y"))
     data = xr.DataArray(np.arange(18).reshape((2, 3, 3)), dims=("c", "x", "y"))
+    axes = ("x", "y")
+    preprocessing = ZeroMeanUnitVariance("data_name", axes=axes, mode=PER_SAMPLE)
+    mean = Mean(axes=axes)
+    std = Std(axes=axes)
+    preprocessing.set_computed_statistics(
+        computed={"data_name": {mean: mean.compute(data), std: std.compute(data)}}, mode=PER_SAMPLE
+    )
 
     expected = xr.DataArray(
         np.array(
@@ -140,10 +161,11 @@ def test_scale_range():
     preprocessing = ScaleRange("data_name")
     np_data = np.arange(9).reshape(3, 3).astype("float32")
     data = xr.DataArray(np_data, dims=("x", "y"))
-    preprocessing.set_computed_sample_statistics(
+    preprocessing.set_computed_statistics(
         CombinedProcessing.compute_sample_statistics(
-            {"data_name": data}, preprocessing.get_required_sample_statistics()
-        )
+            {"data_name": data}, preprocessing.get_required_statistics()[PER_SAMPLE]
+        ),
+        mode=PER_SAMPLE,
     )
 
     eps = 1.0e-6
@@ -168,10 +190,11 @@ def test_scale_range_axes():
     np_data = np.arange(18).reshape((2, 3, 3)).astype("float32")
     data = xr.DataArray(np_data, dims=("c", "x", "y"))
 
-    preprocessing.set_computed_sample_statistics(
+    preprocessing.set_computed_statistics(
         CombinedProcessing.compute_sample_statistics(
-            {"data_name": data}, preprocessing.get_required_sample_statistics()
-        )
+            {"data_name": data}, preprocessing.get_required_statistics()[PER_SAMPLE]
+        ),
+        mode=PER_SAMPLE,
     )
 
     eps = 1.0e-6
