@@ -59,7 +59,7 @@ class CombinedProcessing:
     def apply_preprocessing(self, tensors: Sample, computed_measures: ComputedMeasures) -> None:
         for proc in self._prep:
             for mode, mode_stats in computed_measures.items():
-                proc.set_computed_statistics(mode_stats, mode=mode)
+                proc.set_computed_measures(mode_stats, mode=mode)
 
             tensors[proc.tensor_name] = proc.apply(tensors[proc.tensor_name])
 
@@ -70,7 +70,7 @@ class CombinedProcessing:
     ) -> None:
         for proc in self._post:
             for mode, mode_stats in stats.items():
-                proc.set_computed_statistics(mode_stats, mode=mode)
+                proc.set_computed_measures(mode_stats, mode=mode)
 
             tensors[proc.tensor_name] = proc.apply(tensors[proc.tensor_name])
 
@@ -106,7 +106,7 @@ class CombinedProcessing:
     #
     #     # set dataset statistics for each processing step
     #     for proc in self._prep:
-    #         proc.set_computed_statistics(computed, mode=PER_DATASET)
+    #         proc.set_computed_measures(computed, mode=PER_DATASET)
     #
     #     self._computed_dataset_statistics = computed
 
@@ -114,7 +114,7 @@ class CombinedProcessing:
     def _collect_required_stats(proc: Sequence[Processing]) -> RequiredMeasures:
         ret = {}
         for p in proc:
-            req = p.get_required_statistics()
+            req = p.get_required_measure()
             for tn, ms in req.items():
                 stats[tn].update(ms)
 

@@ -40,14 +40,14 @@ class Processing:
     computed_statistics: Dict[Mode, Dict[TensorName, Dict[Measure, xr.DataArray]]] = field(default_factory=dict)
     mode: Mode = FIXED
 
-    def get_required_statistics(self) -> RequiredMeasures:
+    def get_required_measure(self) -> RequiredMeasures:
         """
         Returns: required measures per tensor for the given scope.
         """
         return {}
 
-    def set_computed_statistics(self, computed: Dict[TensorName, Dict[Measure, xr.DataArray]], *, mode: Mode):
-        for tensor_name, req_measures in self.get_required_statistics().get(mode, {}).items():
+    def set_computed_measures(self, computed: Dict[TensorName, Dict[Measure, xr.DataArray]], *, mode: Mode):
+        for tensor_name, req_measures in self.get_required_measure().get(mode, {}).items():
             comp_measures = computed.get(tensor_name, {})
             for req_measure in req_measures:
                 if req_measure not in comp_measures:
@@ -55,7 +55,7 @@ class Processing:
 
         self.computed_statistics[mode] = computed
 
-    def get_computed_statistics(self, tensor_name: TensorName, measure: Measure, *, mode: Optional[Mode] = None):
+    def get_computed_measure(self, tensor_name: TensorName, measure: Measure, *, mode: Optional[Mode] = None):
         """helper to unpack self.computed_statistics"""
         ret = self.computed_statistics.get(mode or self.mode, {}).get(tensor_name, {}).get(measure)
         if ret is None:
@@ -164,7 +164,7 @@ class ScaleRange(Processing):
     eps: float = 1e-6
     reference_tensor: Optional[TensorName] = None
 
-    def get_required_statistics(self) -> RequiredMeasures:
+    def get_required_measure(self) -> RequiredMeasures:
         axes = None if self.axes is None else tuple(self.axes)
         measures = {Percentile(self.min_percentile, axes=axes), Percentile(self.max_percentile, axes=axes)}
         return {self.mode: {self.reference_tensor or self.tensor_name: measures}}
@@ -172,8 +172,8 @@ class ScaleRange(Processing):
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
         ref_name = self.reference_tensor or self.tensor_name
         axes = None if self.axes is None else tuple(self.axes)
-        v_lower = self.get_computed_statistics(ref_name, Percentile(self.min_percentile, axes=axes))
-        v_upper = self.get_computed_statistics(ref_name, Percentile(self.max_percentile, axes=axes))
+        v_lower = self.get_computed_measure(ref_name, Percentile(self.min_percentile, axes=axes))
+        v_upper = self.get_computed_measure(ref_name, Percentile(self.max_percentile, axes=axes))
 
         return ensure_dtype((tensor - v_lower) / (v_upper - v_lower + self.eps), dtype="float32")
 
@@ -196,7 +196,7 @@ class ZeroMeanUnitVariance(Processing):
     axes: Optional[Sequence[str]] = None
     eps: float = 1.0e-6
 
-    def get_required_statistics(self) -> RequiredMeasures:
+    def get_required_measure(self) -> RequiredMeasures:
         axes = None if self.axes is None else tuple(self.axes)
         return {self.mode: {self.tensor_name: {Mean(axes=axes), Std(axes=axes)}}}
 
@@ -208,8 +208,8 @@ class ZeroMeanUnitVariance(Processing):
             std = _get_fixed(self.std, tensor, axes)
         elif self.mode in (PER_SAMPLE, PER_DATASET):
             assert self.mean is None and self.std is None
-            mean = self.get_computed_statistics(self.tensor_name, Mean(axes), mode=self.mode)
-            std = self.get_computed_statistics(self.tensor_name, Std(axes), mode=self.mode)
+            mean = self.get_computed_measure(self.tensor_name, Mean(axes), mode=self.mode)
+            std = self.get_computed_measure(self.tensor_name, Std(axes), mode=self.mode)
         else:
             raise ValueError(self.mode)
 

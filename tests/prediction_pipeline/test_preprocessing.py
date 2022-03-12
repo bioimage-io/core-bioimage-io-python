@@ -32,7 +32,7 @@ def test_zero_mean_unit_variance_preprocessing():
     data = xr.DataArray(np.arange(9).reshape(3, 3), dims=("x", "y"))
 
     preprocessing = ZeroMeanUnitVariance("data_name", mode=PER_SAMPLE)
-    preprocessing.set_computed_statistics(
+    preprocessing.set_computed_measures(
         computed={"data_name": {Mean(): data.mean(), Std(): data.std()}}, mode=PER_SAMPLE
     )
 
@@ -74,7 +74,7 @@ def test_zero_mean_unit_across_axes():
     preprocessing = ZeroMeanUnitVariance("data_name", axes=axes, mode=PER_SAMPLE)
     mean = Mean(axes=axes)
     std = Std(axes=axes)
-    preprocessing.set_computed_statistics(
+    preprocessing.set_computed_measures(
         computed={"data_name": {mean: mean.compute(data), std: std.compute(data)}}, mode=PER_SAMPLE
     )
 
@@ -136,7 +136,7 @@ def test_combination_of_preprocessing_steps_with_dims_specified():
     preprocessing = ZeroMeanUnitVariance("data_name", axes=axes, mode=PER_SAMPLE)
     mean = Mean(axes=axes)
     std = Std(axes=axes)
-    preprocessing.set_computed_statistics(
+    preprocessing.set_computed_measures(
         computed={"data_name": {mean: mean.compute(data), std: std.compute(data)}}, mode=PER_SAMPLE
     )
 
@@ -161,9 +161,9 @@ def test_scale_range():
     preprocessing = ScaleRange("data_name")
     np_data = np.arange(9).reshape(3, 3).astype("float32")
     data = xr.DataArray(np_data, dims=("x", "y"))
-    preprocessing.set_computed_statistics(
+    preprocessing.set_computed_measures(
         CombinedProcessing.compute_sample_statistics(
-            {"data_name": data}, preprocessing.get_required_statistics()[PER_SAMPLE]
+            {"data_name": data}, preprocessing.get_required_measure()[PER_SAMPLE]
         ),
         mode=PER_SAMPLE,
     )
@@ -190,9 +190,9 @@ def test_scale_range_axes():
     np_data = np.arange(18).reshape((2, 3, 3)).astype("float32")
     data = xr.DataArray(np_data, dims=("c", "x", "y"))
 
-    preprocessing.set_computed_statistics(
+    preprocessing.set_computed_measures(
         CombinedProcessing.compute_sample_statistics(
-            {"data_name": data}, preprocessing.get_required_statistics()[PER_SAMPLE]
+            {"data_name": data}, preprocessing.get_required_measure()[PER_SAMPLE]
         ),
         mode=PER_SAMPLE,
     )
