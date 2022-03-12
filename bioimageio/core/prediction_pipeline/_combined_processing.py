@@ -1,19 +1,9 @@
-from collections import defaultdict
-from typing import DefaultDict, Dict, List, Optional, Sequence, Set
+from typing import Dict, List, Optional, Sequence
 
 from bioimageio.core.resource_io import nodes
 from bioimageio.core.statistical_measures import Measure, MeasureValue
 from ._processing import EnsureDtype, KNOWN_POSTPROCESSING, KNOWN_PREPROCESSING, Processing
-from ._utils import (
-    ComputedMeasures,
-    DatasetMode,
-    PER_DATASET,
-    PER_SAMPLE,
-    RequiredMeasures,
-    Sample,
-    SampleMode,
-    TensorName,
-)
+from ._utils import ComputedMeasures, PER_DATASET, PER_SAMPLE, RequiredMeasures, Sample, TensorName
 
 try:
     from typing import Literal
@@ -58,20 +48,12 @@ class CombinedProcessing:
 
     def apply_preprocessing(self, tensors: Sample, computed_measures: ComputedMeasures) -> None:
         for proc in self._prep:
-            for mode, mode_stats in computed_measures.items():
-                proc.set_computed_measures(mode_stats, mode=mode)
-
+            proc.set_computed_measures(computed_measures)
             tensors[proc.tensor_name] = proc.apply(tensors[proc.tensor_name])
 
-    def apply_postprocessing(
-        self,
-        tensors: Sample,
-        stats: Dict[Literal[SampleMode, DatasetMode], Dict[TensorName, Dict[Measure, MeasureValue]]],
-    ) -> None:
+    def apply_postprocessing(self, tensors: Sample, computed_measures: ComputedMeasures) -> None:
         for proc in self._post:
-            for mode, mode_stats in stats.items():
-                proc.set_computed_measures(mode_stats, mode=mode)
-
+            proc.set_computed_measures(computed_measures)
             tensors[proc.tensor_name] = proc.apply(tensors[proc.tensor_name])
 
     # def compute_and_set_required_dataset_statistics(
@@ -112,10 +94,13 @@ class CombinedProcessing:
 
     @staticmethod
     def _collect_required_stats(proc: Sequence[Processing]) -> RequiredMeasures:
-        ret = {}
+        ret: RequiredMeasures = {PER_SAMPLE: {}, PER_DATASET: {}}
         for p in proc:
-            req = p.get_required_measure()
-            for tn, ms in req.items():
-                stats[tn].update(ms)
+            for mode, ms_per_mode in p.get_required_measures().items():
+                for tn, ms_per_tn in ms_per_mode.items():
+                    if tn not in ret[mode]:
+                        ret[mode][tn] = set()
 
-        return dict(stats)
+                    ret[mode][tn].update(ms_per_tn)
+
+        return ret

@@ -6,7 +6,7 @@ import xarray as xr
 
 from bioimageio.core.statistical_measures import Mean, Measure, Percentile, Std
 from bioimageio.spec.model.raw_nodes import PostprocessingName, PreprocessingName
-from ._utils import DatasetMode, FIXED, Mode, PER_DATASET, PER_SAMPLE, RequiredMeasures, SampleMode
+from ._utils import ComputedMeasures, DatasetMode, FIXED, Mode, PER_DATASET, PER_SAMPLE, RequiredMeasures, SampleMode
 
 try:
     from typing import Literal, get_args
@@ -37,27 +37,26 @@ class Processing:
 
     tensor_name: str
     # todo: in python>=3.10 we should use dataclasses.KW_ONLY instead of MISSING (see child classes) to make inheritance work properly
-    computed_statistics: Dict[Mode, Dict[TensorName, Dict[Measure, xr.DataArray]]] = field(default_factory=dict)
+    computed_measures: ComputedMeasures = field(default_factory=dict)
     mode: Mode = FIXED
 
-    def get_required_measure(self) -> RequiredMeasures:
-        """
-        Returns: required measures per tensor for the given scope.
-        """
+    def get_required_measures(self) -> RequiredMeasures:
         return {}
 
-    def set_computed_measures(self, computed: Dict[TensorName, Dict[Measure, xr.DataArray]], *, mode: Mode):
-        for tensor_name, req_measures in self.get_required_measure().get(mode, {}).items():
-            comp_measures = computed.get(tensor_name, {})
-            for req_measure in req_measures:
-                if req_measure not in comp_measures:
-                    raise ValueError(f"Missing required {req_measure} for {tensor_name} {mode}.")
+    def set_computed_measures(self, computed: ComputedMeasures):
+        # check if computed contains all required measures
+        for mode, req_per_mode in self.get_required_measures().items():
+            for tn, req_per_tn in req_per_mode.items():
+                comp_measures = computed.get(mode, {}).get(tn, {})
+                for req_measure in req_per_tn:
+                    if req_measure not in comp_measures:
+                        raise ValueError(f"Missing required {req_measure} for {tn} {mode}.")
 
-        self.computed_statistics[mode] = computed
+        self.computed_measures = computed
 
     def get_computed_measure(self, tensor_name: TensorName, measure: Measure, *, mode: Optional[Mode] = None):
-        """helper to unpack self.computed_statistics"""
-        ret = self.computed_statistics.get(mode or self.mode, {}).get(tensor_name, {}).get(measure)
+        """helper to unpack self.computed_measures"""
+        ret = self.computed_measures.get(mode or self.mode, {}).get(tensor_name, {}).get(measure)
         if ret is None:
             raise RuntimeError(f"Missing computed {measure} for {tensor_name} {mode}.")
 
@@ -164,7 +163,7 @@ class ScaleRange(Processing):
     eps: float = 1e-6
     reference_tensor: Optional[TensorName] = None
 
-    def get_required_measure(self) -> RequiredMeasures:
+    def get_required_measures(self) -> RequiredMeasures:
         axes = None if self.axes is None else tuple(self.axes)
         measures = {Percentile(self.min_percentile, axes=axes), Percentile(self.max_percentile, axes=axes)}
         return {self.mode: {self.reference_tensor or self.tensor_name: measures}}
@@ -196,7 +195,7 @@ class ZeroMeanUnitVariance(Processing):
     axes: Optional[Sequence[str]] = None
     eps: float = 1.0e-6
 
-    def get_required_measure(self) -> RequiredMeasures:
+    def get_required_measures(self) -> RequiredMeasures:
         axes = None if self.axes is None else tuple(self.axes)
         return {self.mode: {self.tensor_name: {Mean(axes=axes), Std(axes=axes)}}}
 

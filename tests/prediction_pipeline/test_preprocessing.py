@@ -163,7 +163,7 @@ def test_scale_range():
     data = xr.DataArray(np_data, dims=("x", "y"))
     preprocessing.set_computed_measures(
         CombinedProcessing.compute_sample_statistics(
-            {"data_name": data}, preprocessing.get_required_measure()[PER_SAMPLE]
+            {"data_name": data}, preprocessing.get_required_measures()[PER_SAMPLE]
         ),
         mode=PER_SAMPLE,
     )
@@ -192,7 +192,7 @@ def test_scale_range_axes():
 
     preprocessing.set_computed_measures(
         CombinedProcessing.compute_sample_statistics(
-            {"data_name": data}, preprocessing.get_required_measure()[PER_SAMPLE]
+            {"data_name": data}, preprocessing.get_required_measures()[PER_SAMPLE]
         ),
         mode=PER_SAMPLE,
     )
