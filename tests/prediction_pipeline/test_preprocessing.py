@@ -1,10 +1,8 @@
 import numpy as np
 import xarray as xr
 
-from bioimageio.core.prediction_pipeline._combined_processing import CombinedProcessing
 from bioimageio.core.prediction_pipeline._measure_groups import compute_measures
 from bioimageio.core.prediction_pipeline._utils import PER_SAMPLE
-from bioimageio.core.statistical_measures import Mean, Std
 
 
 def test_scale_linear():

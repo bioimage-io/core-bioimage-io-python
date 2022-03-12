@@ -1,22 +1,12 @@
 from dataclasses import dataclass, field, fields
-from typing import Iterator, Mapping, Optional, Sequence, Type, Union
+from typing import Mapping, Optional, Sequence, Type, Union
 
 import numpy as np
 import xarray as xr
 
 from bioimageio.core.statistical_measures import Mean, Measure, Percentile, Std
 from bioimageio.spec.model.raw_nodes import PostprocessingName, PreprocessingName
-from ._utils import (
-    ComputedMeasures,
-    DatasetMode,
-    FIXED,
-    Mode,
-    PER_DATASET,
-    PER_SAMPLE,
-    RequiredMeasures,
-    Sample,
-    SampleMode,
-)
+from ._utils import ComputedMeasures, DatasetMode, FIXED, Mode, PER_DATASET, PER_SAMPLE, RequiredMeasures, SampleMode
 
 try:
     from typing import Literal, get_args, TypedDict
