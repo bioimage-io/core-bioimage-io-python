@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections
 import warnings
 from collections import defaultdict
 from itertools import product
@@ -199,14 +200,14 @@ class MeanPercentiles(DatasetMeasureGroup):
 
 
 class CrickPercentiles(DatasetMeasureGroup):
-    digest: Optional[Union["crick.TDigest", List["crick.TDigest"]]]
+    digest: Optional[List["crick.TDigest"]]
     dims: Optional[Tuple[Hashable, ...]]
     indices: Optional[Iterator[Tuple[int, ...]]]
-    reduce_all_axes: bool
     shape: Optional[Tuple[int, ...]]
 
     def __init__(self, tensor_name: TensorName, axes: Optional[Tuple[str]], ns: Sequence[float]):
         assert all(0 <= n <= 100 for n in ns)
+        assert axes is None or "_percentiles" not in axes
         warnings.warn(f"Computing dataset percentiles with experimental 'crick' library.")
         self.ns = ns
         self.qs = [n / 100 for n in ns]
@@ -221,43 +222,31 @@ class CrickPercentiles(DatasetMeasureGroup):
         self.shape = None
 
     def _initialize(self, tensor_sizes: Mapping[Hashable, int]):
-        reduce_all_axes = self.axes is None
-        if reduce_all_axes:
-            out_sizes = None
-        else:
-            out_sizes = {d: s for d, s in tensor_sizes.items() if d not in self.axes}
-            if not out_sizes:
-                out_sizes = None
-                reduce_all_axes = True
+        out_sizes = collections.OrderedDict(_percentiles=len(self.ns))
+        if self.axes is not None:
+            for d, s in tensor_sizes.items():
+                if d not in self.axes:
+                    out_sizes[d] = s
 
-        if reduce_all_axes:
-            self.digest = crick.TDigest()
-        else:
-            self.dims, self.shape = zip(*out_sizes.items())
-            self.digest = [crick.TDigest() for _ in range(numpy.prod(self.shape))]
-            self.indices = product(*map(range, self.shape))
+        self.dims, self.shape = zip(*out_sizes.items())
+        self.digest = [crick.TDigest() for _ in range(int(numpy.prod(self.shape[1:])))]
+        self.indices = product(*map(range, self.shape[1:]))
 
     def update_with_sample(self, sample: Dict[TensorName, xr.DataArray]):
         tensor = sample[self.tensor_name]
+        assert "_percentiles" not in tensor.dims
         if self.digest is None:
             self._initialize(tensor.sizes)
+            assert self.digest is not None
 
-        assert self.digest is not None
-        if isinstance(self.digest, list):
-            for i, idx in enumerate(self.indices):
-                self.digest[i].update(tensor.isel(dict(zip(self.dims, idx))))
-        else:
-            self.digest.update(tensor)
+        for i, idx in enumerate(self.indices):
+            self.digest[i].update(tensor.isel(dict(zip(self.dims[1:], idx))))
 
     def finalize(self) -> Dict[TensorName, Dict[Measure, MeasureValue]]:
-        if isinstance(self.digest, list):
-            vs = [[d.quantile(q) for d in self.digest] for q in self.qs]
-        else:
-            vs = [self.digest.quantile(q) for q in self.qs]
-
+        vs = numpy.asarray([[d.quantile(q) for d in self.digest] for q in self.qs]).reshape(self.shape)
         return {
             self.tensor_name: {
-                Percentile(n=n, axes=self.axes): xr.DataArray(v, dims=self.dims) for n, v in zip(self.ns, vs)
+                Percentile(n=n, axes=self.axes): xr.DataArray(v, dims=self.dims[1:]) for n, v in zip(self.ns, vs)
             }
         }
 
@@ -281,7 +270,7 @@ class SingleMeasureAsGroup(SampleMeasureGroup):
 
 def get_measure_groups(
     measures: Dict[TensorName, Set[Measure]], mode: Literal[SampleMode, DatasetMode]
-) -> List[MeasureGroup]:
+) -> List[Union[SampleMeasureGroup, DatasetMeasureGroup]]:
     """find a list of MeasureGroups to compute measures efficiently"""
 
     measure_groups = []
@@ -301,6 +290,7 @@ def get_measure_groups(
             else:
                 raise NotImplementedError(f"Computing statistics for {m} {mode} not yet implemented")
 
+    # add all mean measures that are not included in a mean/var/std group
     for (tn, m) in means:
         if (tn, m.axes) not in mean_var_std_groups:
             # compute only mean
