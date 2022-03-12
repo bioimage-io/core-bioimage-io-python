@@ -43,10 +43,10 @@ class SampleMeasureGroup:
 class DatasetMeasureGroup:
     """group of measures for more efficient computation of multiple measures per dataset"""
 
-    def reset(self):
+    def reset(self) -> None:
         raise NotImplementedError
 
-    def update_with_sample(self, sample: Dict[TensorName, xr.DataArray]):
+    def update_with_sample(self, sample: Dict[TensorName, xr.DataArray]) -> None:
         raise NotImplementedError
 
     def finalize(self) -> Dict[TensorName, Dict[Measure, MeasureValue]]:
@@ -58,6 +58,7 @@ class MeasureGroup(SampleMeasureGroup, DatasetMeasureGroup):
 
 
 class DatasetMean(DatasetMeasureGroup):
+    n: int
     mean: Optional[xr.DataArray]
 
     def __init__(self, tensor_name: TensorName, axes: Optional[Tuple[int]]):
@@ -72,7 +73,7 @@ class DatasetMean(DatasetMeasureGroup):
     def update_with_sample(self, sample: Dict[TensorName, xr.DataArray]):
         tensor = sample[self.tensor_name].astype(numpy.float64, copy=False)
         mean_b = tensor.mean(dim=self.axes)
-        assert mean_b.dtype is numpy.float64
+        assert mean_b.dtype == numpy.float64
         n_b = numpy.prod(tensor.shape) / numpy.prod(mean_b.shape)  # reduced voxel count
         if self.n == 0:
             assert self.mean is None
@@ -83,7 +84,7 @@ class DatasetMean(DatasetMeasureGroup):
             mean_a = self.mean
             self.n = n = n_a + n_b
             self.mean = (n_a * mean_a + n_b * mean_b) / n
-            assert self.mean.dtype is numpy.float64
+            assert self.mean.dtype == numpy.float64
 
     def finalize(self) -> Dict[TensorName, Dict[Measure, MeasureValue]]:
         return {self.tensor_name: {Mean(axes=self.axes): self.mean}}
@@ -115,10 +116,10 @@ class MeanVarStd(MeasureGroup):
     def update_with_sample(self, sample: Dict[TensorName, xr.DataArray]):
         tensor = sample[self.tensor_name].astype(numpy.float64, copy=False)
         mean_b = tensor.mean(dim=self.axes)
-        assert mean_b.dtype is numpy.float64
+        assert mean_b.dtype == numpy.float64
         n_b = numpy.prod(tensor.shape) / numpy.prod(mean_b.shape)  # reduced voxel count
         m2_b = ((tensor - mean_b) ** 2).sum(dim=self.axes)
-        assert m2_b.dtype is numpy.float64
+        assert m2_b.dtype == numpy.float64
         if self.n == 0:
             assert self.mean is None
             assert self.m2 is None
@@ -131,10 +132,10 @@ class MeanVarStd(MeasureGroup):
             m2_a = self.m2
             self.n = n = n_a + n_b
             self.mean = (n_a * mean_a + n_b * mean_b) / n
-            assert self.mean.dtype is numpy.float64
+            assert self.mean.dtype == numpy.float64
             d = mean_b - mean_a
             self.m2 = m2_a + m2_b + d ** 2 * n_a * n_b / n
-            assert self.m2.dtype is numpy.float64
+            assert self.m2.dtype == numpy.float64
 
     def finalize(self) -> Dict[TensorName, Dict[Measure, MeasureValue]]:
         var = self.m2 / self.n
@@ -187,7 +188,7 @@ class MeanPercentiles(DatasetMeasureGroup):
             self.estimates = sample_estimates
         else:
             self.estimates = (self.count * self.estimates + n * sample_estimates) / (self.count + n)
-            assert self.estimates.dtype is numpy.float64
+            assert self.estimates.dtype == numpy.float64
 
         self.count += n
 
@@ -197,7 +198,7 @@ class MeanPercentiles(DatasetMeasureGroup):
         return {Percentile(n=n, axes=self.axes): e for n, e in zip(self.ns, self.estimates)}
 
 
-class CrickPercentiles(MeasureGroup):
+class CrickPercentiles(DatasetMeasureGroup):
     digest: Optional[Union["crick.TDigest", List["crick.TDigest"]]]
     dims: Optional[Tuple[Hashable, ...]]
     indices: Optional[Iterator[Tuple[int, ...]]]
@@ -248,13 +249,17 @@ class CrickPercentiles(MeasureGroup):
         else:
             self.digest.update(tensor)
 
-    def finalize(self) -> Dict[Measure, MeasureValue]:
+    def finalize(self) -> Dict[TensorName, Dict[Measure, MeasureValue]]:
         if isinstance(self.digest, list):
             vs = [[d.quantile(q) for d in self.digest] for q in self.qs]
         else:
             vs = [self.digest.quantile(q) for q in self.qs]
 
-        return {Percentile(n=n, axes=self.axes): xr.DataArray(v, dims=self.dims) for n, v in zip(self.ns, vs)}
+        return {
+            self.tensor_name: {
+                Percentile(n=n, axes=self.axes): xr.DataArray(v, dims=self.dims) for n, v in zip(self.ns, vs)
+            }
+        }
 
 
 if crick is None:
