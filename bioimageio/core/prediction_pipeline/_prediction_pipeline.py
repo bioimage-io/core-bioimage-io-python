@@ -125,7 +125,17 @@ class _PredictionPipelineImpl(PredictionPipeline):
 
     def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         """Apply preprocessing, run prediction and apply postprocessing."""
+        tensors = dict(zip([ipt.name for ipt in self.input_specs], input_tensors))
+
+        sample_stats = self.compute_sample_statistics(tensors, self._processing.req_input_stats[PER_SAMPLE])
+
         preprocessed, sample_stats = self._processing.apply_preprocessing(*input_tensors)
+
+        sample_stats = {
+            **input_sample_statistics,
+            **self.compute_sample_statistics(tensors, self.req_output_stats[PER_SAMPLE]),
+        }
+
         prediction = self.predict(*preprocessed)
         return self._processing.apply_postprocessing(*prediction, input_sample_statistics=sample_stats)[0]
 

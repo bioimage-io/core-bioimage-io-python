@@ -1,23 +1,18 @@
-import typing
-import warnings
 from collections import defaultdict
-from typing import DefaultDict, Dict, List, Optional, Sequence, Set, Tuple
+from typing import DefaultDict, Dict, List, Optional, Sequence, Set
 
-import xarray as xr
-
-from bioimageio.core.measure_groups import get_measure_groups
 from bioimageio.core.resource_io import nodes
 from bioimageio.core.statistical_measures import Measure, MeasureValue
-from bioimageio.core.utils import TensorName
-from ._processing import (
+from ._processing import EnsureDtype, KNOWN_POSTPROCESSING, KNOWN_PREPROCESSING, Processing
+from ._utils import (
+    ComputedMeasures,
     DatasetMode,
-    EnsureDtype,
-    KNOWN_POSTPROCESSING,
-    KNOWN_PREPROCESSING,
     PER_DATASET,
     PER_SAMPLE,
-    Processing,
+    RequiredMeasures,
+    Sample,
     SampleMode,
+    TensorName,
 )
 
 try:
@@ -46,12 +41,8 @@ class CombinedProcessing:
         for out in outputs:
             self._post.append(EnsureDtype(tensor_name=out.name, dtype=out.data_type))
 
-        self.req_input_stats: Dict[Literal[SampleMode, DatasetMode], Dict[TensorName, Set[Measure]]] = {
-            s: self._collect_required_stats(self._prep, s) for s in [PER_SAMPLE, PER_DATASET]
-        }
-        self.req_output_stats: Dict[Literal[SampleMode, DatasetMode], Dict[TensorName, Set[Measure]]] = {
-            s: self._collect_required_stats(self._post, s) for s in [PER_SAMPLE, PER_DATASET]
-        }
+        self.req_input_stats: RequiredMeasures = self._collect_required_stats(self._prep)
+        self.req_output_stats: RequiredMeasures = self._collect_required_stats(self._post)
         if self.req_output_stats[PER_DATASET]:
             raise NotImplementedError("computing statistics for output tensors per dataset is not yet implemented")
 
@@ -65,113 +56,65 @@ class CombinedProcessing:
         assert not any(name in self.output_tensor_names for name in self.input_tensor_names)
         assert not any(name in self.input_tensor_names for name in self.output_tensor_names)
 
-    def _require_computed_dataset_statistics(self):
-        if self._computed_dataset_statistics is None:
-            raise RuntimeError(
-                "Missing computed dataset statistics, call 'set_computed_dataset_statistics or "
-                "'compute_and_set_required_dataset_statistics' first."
-            )
-
-    def apply_preprocessing(
-        self, *input_tensors: xr.DataArray
-    ) -> Tuple[List[xr.DataArray], Dict[TensorName, Dict[Measure, MeasureValue]]]:
-        assert len(input_tensors) == len(self.input_tensor_names)
-        self._require_computed_dataset_statistics()
-
-        tensors = dict(zip(self.input_tensor_names, input_tensors))
-        sample_stats = self.compute_sample_statistics(tensors, self.req_input_stats[PER_SAMPLE])
+    def apply_preprocessing(self, tensors: Sample, computed_measures: ComputedMeasures) -> None:
         for proc in self._prep:
-            proc.set_computed_statistics(sample_stats, mode=PER_SAMPLE)
-            tensors[proc.tensor_name] = proc.apply(tensors[proc.tensor_name])
+            for mode, mode_stats in computed_measures.items():
+                proc.set_computed_statistics(mode_stats, mode=mode)
 
-        return [tensors[tn] for tn in self.input_tensor_names], sample_stats
+            tensors[proc.tensor_name] = proc.apply(tensors[proc.tensor_name])
 
     def apply_postprocessing(
-        self, *output_tensors: xr.DataArray, input_sample_statistics: Dict[TensorName, Dict[Measure, MeasureValue]]
-    ) -> Tuple[List[xr.DataArray], Dict[TensorName, Dict[Measure, MeasureValue]]]:
-        assert len(output_tensors) == len(self.output_tensor_names)
-        self._require_computed_dataset_statistics()
-
-        tensors = dict(zip(self.output_tensor_names, output_tensors))
-        sample_stats = {
-            **input_sample_statistics,
-            **self.compute_sample_statistics(tensors, self.req_output_stats[PER_SAMPLE]),
-        }
+        self,
+        tensors: Sample,
+        stats: Dict[Literal[SampleMode, DatasetMode], Dict[TensorName, Dict[Measure, MeasureValue]]],
+    ) -> None:
         for proc in self._post:
-            proc.set_computed_statistics(sample_stats, mode=PER_SAMPLE)
+            for mode, mode_stats in stats.items():
+                proc.set_computed_statistics(mode_stats, mode=mode)
+
             tensors[proc.tensor_name] = proc.apply(tensors[proc.tensor_name])
 
-        return [tensors[tn] for tn in self.output_tensor_names], sample_stats
+    # def compute_and_set_required_dataset_statistics(
+    #     self, dataset: Iterable[Sample]
+    # ) -> None:
+    #     if self.req_output_stats[PER_DATASET]:
+    #         raise NotImplementedError("computing statistics for output tensors per dataset is not yet implemented")
+    #
+    #     computed = self.compute_dataset_statistics(dataset, self.req_input_stats[PER_DATASET])
+    #     self.set_computed_dataset_statistics(computed)
 
-    def compute_and_set_required_dataset_statistics(
-        self, dataset: typing.Iterable[Dict[TensorName, xr.DataArray]]
-    ) -> None:
-        if self.req_output_stats[PER_DATASET]:
-            raise NotImplementedError("computing statistics for output tensors per dataset is not yet implemented")
+    # def set_computed_dataset_statistics(self, computed: Dict[TensorName, Dict[Measure, MeasureValue]]):
+    #     """
+    #     This method sets the externally computed dataset statistics.
+    #     Which statistics are expected is specified by the `required_dataset_statistics` property.
+    #     """
+    #     # always expect input tensor statistics
+    #     for tensor_name, req_measures in self.req_input_stats[PER_DATASET]:
+    #         comp_measures = computed.get(tensor_name, {})
+    #         for req_measure in req_measures:
+    #             if req_measure not in comp_measures:
+    #                 raise ValueError(f"Missing required measure {req_measure} for input tensor {tensor_name}")
+    #
+    #     # as output tensor statistics may initially not be available, we only warn about their absence
+    #     output_statistics_missing = False
+    #     for tensor_name, req_measures in self.req_output_stats[PER_DATASET]:
+    #         comp_measures = computed.get(tensor_name, {})
+    #         for req_measure in req_measures:
+    #             if req_measure not in comp_measures:
+    #                 output_statistics_missing = True
+    #                 warnings.warn(f"Missing required measure {req_measure} for output tensor {tensor_name}")
+    #
+    #     # set dataset statistics for each processing step
+    #     for proc in self._prep:
+    #         proc.set_computed_statistics(computed, mode=PER_DATASET)
+    #
+    #     self._computed_dataset_statistics = computed
 
-        computed = self.compute_dataset_statistics(dataset, self.req_input_stats[PER_DATASET])
-        self.set_computed_dataset_statistics(computed)
-
-    def set_computed_dataset_statistics(self, computed: Dict[TensorName, Dict[Measure, MeasureValue]]):
-        """
-        This method sets the externally computed dataset statistics.
-        Which statistics are expected is specified by the `required_dataset_statistics` property.
-        """
-        # always expect input tensor statistics
-        for tensor_name, req_measures in self.req_input_stats[PER_DATASET]:
-            comp_measures = computed.get(tensor_name, {})
-            for req_measure in req_measures:
-                if req_measure not in comp_measures:
-                    raise ValueError(f"Missing required measure {req_measure} for input tensor {tensor_name}")
-
-        # as output tensor statistics may initially not be available, we only warn about their absence
-        output_statistics_missing = False
-        for tensor_name, req_measures in self.req_output_stats[PER_DATASET]:
-            comp_measures = computed.get(tensor_name, {})
-            for req_measure in req_measures:
-                if req_measure not in comp_measures:
-                    output_statistics_missing = True
-                    warnings.warn(f"Missing required measure {req_measure} for output tensor {tensor_name}")
-
-        # set dataset statistics for each processing step
-        for proc in self._prep:
-            proc.set_computed_statistics(computed, mode=PER_DATASET)
-
-        self._computed_dataset_statistics = computed
-
-    @classmethod
-    def compute_dataset_statistics(
-        cls, dataset: typing.Iterable[Dict[TensorName, xr.DataArray]], measures: Dict[TensorName, Set[Measure]]
-    ) -> Dict[TensorName, Dict[Measure, MeasureValue]]:
-        measure_groups = get_measure_groups(measures, mode=PER_DATASET)
-
-        for s in dataset:
-            for mg in measure_groups:
-                mg.update_with_sample(s)
-
+    @staticmethod
+    def _collect_required_stats(proc: Sequence[Processing]) -> RequiredMeasures:
         ret = {}
-        for mg in measure_groups:
-            ret.update(mg.finalize())
-
-        return ret
-
-    @classmethod
-    def compute_sample_statistics(
-        cls, tensors: Dict[TensorName, xr.DataArray], measures: Dict[TensorName, Set[Measure]]
-    ) -> Dict[TensorName, Dict[Measure, MeasureValue]]:
-        return {tname: cls._compute_tensor_statistics(tensors[tname], ms) for tname, ms in measures.items()}
-
-    @staticmethod
-    def _compute_tensor_statistics(tensor: xr.DataArray, measures: Set[Measure]) -> Dict[Measure, MeasureValue]:
-        return {m: m.compute(tensor) for m in measures}
-
-    @staticmethod
-    def _collect_required_stats(
-        proc: Sequence[Processing], mode: Literal[SampleMode, DatasetMode]
-    ) -> Dict[TensorName, Set[Measure]]:
-        stats: DefaultDict[TensorName, Set[Measure]] = defaultdict(set)
         for p in proc:
-            req = p.get_required_statistics().get(mode, {})
+            req = p.get_required_statistics()
             for tn, ms in req.items():
                 stats[tn].update(ms)
 

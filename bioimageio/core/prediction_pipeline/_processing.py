@@ -5,8 +5,8 @@ import numpy as np
 import xarray as xr
 
 from bioimageio.core.statistical_measures import Mean, Measure, Percentile, Std
-from bioimageio.core.utils import DatasetMode, FIXED, Mode, PER_DATASET, PER_SAMPLE, SampleMode
 from bioimageio.spec.model.raw_nodes import PostprocessingName, PreprocessingName
+from ._utils import DatasetMode, FIXED, Mode, PER_DATASET, PER_SAMPLE, RequiredMeasures, SampleMode
 
 try:
     from typing import Literal, get_args
@@ -40,7 +40,7 @@ class Processing:
     computed_statistics: Dict[Mode, Dict[TensorName, Dict[Measure, xr.DataArray]]] = field(default_factory=dict)
     mode: Mode = FIXED
 
-    def get_required_statistics(self) -> Dict[Mode, Dict[TensorName, Set[Measure]]]:
+    def get_required_statistics(self) -> RequiredMeasures:
         """
         Returns: required measures per tensor for the given scope.
         """
@@ -164,7 +164,7 @@ class ScaleRange(Processing):
     eps: float = 1e-6
     reference_tensor: Optional[TensorName] = None
 
-    def get_required_statistics(self) -> Dict[Mode, Dict[TensorName, Set[Measure]]]:
+    def get_required_statistics(self) -> RequiredMeasures:
         axes = None if self.axes is None else tuple(self.axes)
         measures = {Percentile(self.min_percentile, axes=axes), Percentile(self.max_percentile, axes=axes)}
         return {self.mode: {self.reference_tensor or self.tensor_name: measures}}
@@ -196,7 +196,7 @@ class ZeroMeanUnitVariance(Processing):
     axes: Optional[Sequence[str]] = None
     eps: float = 1.0e-6
 
-    def get_required_statistics(self) -> Dict[Mode, Dict[TensorName, Set[Measure]]]:
+    def get_required_statistics(self) -> RequiredMeasures:
         axes = None if self.axes is None else tuple(self.axes)
         return {self.mode: {self.tensor_name: {Mean(axes=axes), Std(axes=axes)}}}
 

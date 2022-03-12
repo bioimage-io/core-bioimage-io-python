@@ -7,9 +7,9 @@ import pytest
 import xarray as xr
 
 from bioimageio.core import statistical_measures
-from bioimageio.core.measure_groups import get_measure_groups
+from bioimageio.core.prediction_pipeline._measure_groups import get_measure_groups
+from bioimageio.core.prediction_pipeline._utils import PER_DATASET, PER_SAMPLE
 from bioimageio.core.statistical_measures import Mean, Percentile, Std, Var
-from bioimageio.core.utils import PER_DATASET, PER_SAMPLE
 
 
 @pytest.mark.parametrize("name_axes", product(["mean", "var", "std"], [None, ("x", "y")]))
@@ -78,7 +78,7 @@ def test_measure_groups(measures_mode):
             else:
                 raise NotImplementedError(mode)
 
-    groups = get_measure_groups(measures, mode=mode)
+    groups = get_measure_groups({mode: measures})[mode]
     actual = {}
     for g in groups:
         if mode == PER_SAMPLE:
