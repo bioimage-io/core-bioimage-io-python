@@ -1,17 +1,27 @@
 from dataclasses import dataclass, field, fields
-from typing import Dict, Mapping, Optional, Sequence, Set, Type, Union
+from typing import Iterator, Mapping, Optional, Sequence, Type, Union
 
 import numpy as np
 import xarray as xr
 
 from bioimageio.core.statistical_measures import Mean, Measure, Percentile, Std
 from bioimageio.spec.model.raw_nodes import PostprocessingName, PreprocessingName
-from ._utils import ComputedMeasures, DatasetMode, FIXED, Mode, PER_DATASET, PER_SAMPLE, RequiredMeasures, SampleMode
+from ._utils import (
+    ComputedMeasures,
+    DatasetMode,
+    FIXED,
+    Mode,
+    PER_DATASET,
+    PER_SAMPLE,
+    RequiredMeasures,
+    Sample,
+    SampleMode,
+)
 
 try:
-    from typing import Literal, get_args
+    from typing import Literal, get_args, TypedDict
 except ImportError:
-    from typing_extensions import Literal, get_args  # type: ignore
+    from typing_extensions import Literal, get_args, TypedDict  # type: ignore
 
 
 def _get_fixed(
@@ -216,21 +226,27 @@ class ZeroMeanUnitVariance(Processing):
         return ensure_dtype(tensor, dtype="float32")
 
 
-KNOWN_PREPROCESSING: Mapping[PreprocessingName, Type[Processing]] = {
-    "binarize": Binarize,
-    "clip": Clip,
-    "scale_linear": ScaleLinear,
-    "scale_range": ScaleRange,
-    "sigmoid": Sigmoid,
-    "zero_mean_unit_variance": ZeroMeanUnitVariance,
-}
+_KnownProcessing = TypedDict(
+    "_KnownProcessing",
+    dict(pre=Mapping[PreprocessingName, Type[Processing]], post=Mapping[PostprocessingName, Type[Processing]]),
+)
 
-KNOWN_POSTPROCESSING: Mapping[PostprocessingName, Type[Processing]] = {
-    "binarize": Binarize,
-    "clip": Clip,
-    "scale_linear": ScaleLinear,
-    "scale_mean_variance": ScaleMeanVariance,
-    "scale_range": ScaleRange,
-    "sigmoid": Sigmoid,
-    "zero_mean_unit_variance": ZeroMeanUnitVariance,
-}
+KNOWN_PROCESSING: _KnownProcessing = dict(
+    pre={
+        "binarize": Binarize,
+        "clip": Clip,
+        "scale_linear": ScaleLinear,
+        "scale_range": ScaleRange,
+        "sigmoid": Sigmoid,
+        "zero_mean_unit_variance": ZeroMeanUnitVariance,
+    },
+    post={
+        "binarize": Binarize,
+        "clip": Clip,
+        "scale_linear": ScaleLinear,
+        "scale_mean_variance": ScaleMeanVariance,
+        "scale_range": ScaleRange,
+        "sigmoid": Sigmoid,
+        "zero_mean_unit_variance": ZeroMeanUnitVariance,
+    },
+)

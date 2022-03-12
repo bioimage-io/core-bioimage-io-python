@@ -10,7 +10,7 @@ import numpy
 import xarray as xr
 
 from bioimageio.core.statistical_measures import Mean, Measure, Percentile, Std, Var
-from ._utils import PER_DATASET, PER_SAMPLE, RequiredMeasures, Sample, TensorName
+from ._utils import ComputedMeasures, PER_DATASET, PER_SAMPLE, RequiredMeasures, Sample, TensorName
 
 try:
     from typing import Literal, TypedDict
@@ -48,7 +48,9 @@ class DatasetMeasureGroup:
         raise NotImplementedError
 
 
-MeasureGroups = TypedDict("MeasureGroups", {PER_SAMPLE: SampleMeasureGroup, PER_DATASET: DatasetMeasureGroup})
+MeasureGroups = TypedDict(
+    "MeasureGroups", {PER_SAMPLE: Sequence[SampleMeasureGroup], PER_DATASET: Sequence[DatasetMeasureGroup]}
+)
 
 
 class DatasetMean(DatasetMeasureGroup):
@@ -81,7 +83,10 @@ class DatasetMean(DatasetMeasureGroup):
             assert self.mean.dtype == numpy.float64
 
     def finalize(self) -> Dict[TensorName, Dict[Measure, MeasureValue]]:
-        return {self.tensor_name: {Mean(axes=self.axes): self.mean}}
+        if self.n == 0:
+            return {}
+        else:
+            return {self.tensor_name: {Mean(axes=self.axes): self.mean}}
 
 
 class MeanVarStd(SampleMeasureGroup, DatasetMeasureGroup):
@@ -132,14 +137,17 @@ class MeanVarStd(SampleMeasureGroup, DatasetMeasureGroup):
             assert self.m2.dtype == numpy.float64
 
     def finalize(self) -> Dict[TensorName, Dict[Measure, MeasureValue]]:
-        var = self.m2 / self.n
-        return {
-            self.tensor_name: {
-                Mean(axes=self.axes): self.mean,
-                Var(axes=self.axes): var,
-                Std(axes=self.axes): xr.ufuncs.sqrt(var),
+        if self.n == 0:
+            return {}
+        else:
+            var = self.m2 / self.n
+            return {
+                self.tensor_name: {
+                    Mean(axes=self.axes): self.mean,
+                    Var(axes=self.axes): var,
+                    Std(axes=self.axes): xr.ufuncs.sqrt(var),
+                }
             }
-        }
 
 
 class SamplePercentiles(SampleMeasureGroup):
@@ -157,7 +165,7 @@ class SamplePercentiles(SampleMeasureGroup):
 
 
 class MeanPercentiles(DatasetMeasureGroup):
-    count: int
+    n: int
     estimates: Optional[xr.DataArray]
 
     def __init__(self, tensor_name: TensorName, axes: Optional[Tuple[str]], ns: Sequence[float]):
@@ -169,7 +177,7 @@ class MeanPercentiles(DatasetMeasureGroup):
         self.reset()
 
     def reset(self):
-        self.count = 0
+        self.n = 0
         self.estimates = None
 
     def update_with_sample(self, sample: Sample):
@@ -178,18 +186,20 @@ class MeanPercentiles(DatasetMeasureGroup):
 
         n = numpy.prod(tensor.shape) / numpy.prod(sample_estimates.shape[1:])  # reduced voxel count
 
-        if self.count == 0:
+        if self.n == 0:
             self.estimates = sample_estimates
         else:
-            self.estimates = (self.count * self.estimates + n * sample_estimates) / (self.count + n)
+            self.estimates = (self.n * self.estimates + n * sample_estimates) / (self.n + n)
             assert self.estimates.dtype == numpy.float64
 
-        self.count += n
+        self.n += n
 
     def finalize(self) -> Dict[Percentile, MeasureValue]:
-        warnings.warn(f"Computed dataset percentiles naively by averaging percentiles of samples.")
-        assert self.estimates is not None
-        return {Percentile(n=n, axes=self.axes): e for n, e in zip(self.ns, self.estimates)}
+        if self.n == 0:
+            return {}
+        else:
+            warnings.warn(f"Computed dataset percentiles naively by averaging percentiles of samples.")
+            return {Percentile(n=n, axes=self.axes): e for n, e in zip(self.ns, self.estimates)}
 
 
 class CrickPercentiles(DatasetMeasureGroup):
@@ -236,12 +246,15 @@ class CrickPercentiles(DatasetMeasureGroup):
             self.digest[i].update(tensor.isel(dict(zip(self.dims[1:], idx))))
 
     def finalize(self) -> Dict[TensorName, Dict[Measure, MeasureValue]]:
-        vs = numpy.asarray([[d.quantile(q) for d in self.digest] for q in self.qs]).reshape(self.shape)
-        return {
-            self.tensor_name: {
-                Percentile(n=n, axes=self.axes): xr.DataArray(v, dims=self.dims[1:]) for n, v in zip(self.ns, vs)
+        if self.digest is None:
+            return {}
+        else:
+            vs = numpy.asarray([[d.quantile(q) for d in self.digest] for q in self.qs]).reshape(self.shape)
+            return {
+                self.tensor_name: {
+                    Percentile(n=n, axes=self.axes): xr.DataArray(v, dims=self.dims[1:]) for n, v in zip(self.ns, vs)
+                }
             }
-        }
 
 
 if crick is None:
@@ -264,7 +277,7 @@ class SingleMeasureAsGroup(SampleMeasureGroup):
 def get_measure_groups(measures: RequiredMeasures) -> MeasureGroups:
     """find a list of MeasureGroups to compute measures efficiently"""
 
-    measure_groups = defaultdict(list)
+    measure_groups = {PER_SAMPLE: [], PER_DATASET: []}
     means: Set[Tuple[TensorName, Mean]] = set()
     mean_var_std_groups: Set[Tuple[TensorName, Optional[Tuple[str, ...]]]] = set()
     percentile_groups: DefaultDict[Tuple[TensorName, Optional[Tuple[str, ...]]], List[float]] = defaultdict(list)
@@ -304,4 +317,26 @@ def get_measure_groups(measures: RequiredMeasures) -> MeasureGroups:
             else:
                 raise NotImplementedError(mode)
 
-    return dict(measure_groups)
+    return measure_groups
+
+
+def compute_measures(
+    measures: RequiredMeasures, *, sample: Optional[Sample] = None, dataset: Iterator[Sample] = tuple()
+) -> ComputedMeasures:
+    ms_groups = get_measure_groups(measures)
+    ret = {PER_SAMPLE: {}, PER_DATASET: {}}
+    if sample is not None:
+        for mg in ms_groups[PER_SAMPLE]:
+            assert isinstance(mg, SampleMeasureGroup)
+            ret[PER_SAMPLE].update(mg.compute(sample))
+
+    for sample in dataset:
+        for mg in ms_groups[PER_DATASET]:
+            assert isinstance(mg, DatasetMeasureGroup)
+            mg.update_with_sample(sample)
+
+    for mg in ms_groups[PER_DATASET]:
+        assert isinstance(mg, DatasetMeasureGroup)
+        ret[PER_DATASET].update(mg.finalize())
+
+    return ret

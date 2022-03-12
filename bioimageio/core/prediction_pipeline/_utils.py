@@ -1,9 +1,8 @@
-from typing import Dict, Set, TYPE_CHECKING
+from typing import Dict, Set
 
+import xarray as xr
 
-if TYPE_CHECKING:
-    import xarray as xr
-    from bioimageio.core.statistical_measures import Measure, MeasureValue
+from bioimageio.core.statistical_measures import Measure, MeasureValue
 
 try:
     from typing import Literal
