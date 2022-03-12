@@ -100,5 +100,4 @@ def test_measure_groups(measures_mode):
 
     for k in expected.keys():
         assert k in actual
-        print(expected[k], actual[k])
         numpy.testing.assert_array_almost_equal(expected[k].data, actual[k].data, decimal=2)
