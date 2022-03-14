@@ -76,10 +76,10 @@ class StatsState:
     def compute_measures(self) -> ComputedMeasures:
         assert self.last_sample is not None, "call 'update_with_sample' first!"
         ret = {PER_SAMPLE: {}, PER_DATASET: {}}
-        for mg in self.measure_groups:
+        for mg in self.measure_groups[PER_SAMPLE]:
             ret[PER_SAMPLE].update(mg.compute(self.last_sample))
 
         for mg in self.measure_groups[PER_DATASET]:
-            ret[PER_DATASET].update(mg.finalize(self.last_sample))
+            ret[PER_DATASET].update(mg.finalize())
 
         return ret

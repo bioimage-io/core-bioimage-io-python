@@ -33,7 +33,7 @@ class CombinedProcessing:
                 raise NotImplementedError(t)
 
             for step in steps:
-                KNOWN_PROCESSING[proc_prefix][step.name](tensor_name=t.name, **step.kwargs)
+                self._procs.append(KNOWN_PROCESSING[proc_prefix][step.name](tensor_name=t.name, **step.kwargs))
 
         # There is a difference between pre-and-postprocessing:
         # Pre-processing always returns float32, because its output is consumed by the model.
