@@ -388,7 +388,7 @@ def _parse_tiling(tiling, input_specs, output_specs):
         spatial_axes = [ax for ax in axes if ax in "xyz"]
         halo = tiling["halo"]
         tile = tiling["tile"]
-        assert all(halo.get(ax, 0) > 0 for ax in spatial_axes)
+        assert all(halo.get(ax, 0) >= 0 for ax in spatial_axes)
         assert all(tile.get(ax, 0) > 0 for ax in spatial_axes)
 
     if isinstance(tiling, dict):
@@ -408,7 +408,7 @@ def _parse_tiling(tiling, input_specs, output_specs):
 
             halo = output_spec.halo
             if halo is None:
-                raise ValueError("Model does not provide a valid halo to use for tiling with default parameters")
+                halo = [0] * len(axes)
 
             tiling = {
                 "halo": {ax: ha for ax, ha in zip(axes, halo) if ax in "xyz"},
