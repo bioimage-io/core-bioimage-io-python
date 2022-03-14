@@ -77,8 +77,8 @@ class Processing:
                 raise TypeError(f"missing required argument {f.name}")
 
             if f.name == "mode":
-                # mode is always annotated as literals
-                valid_modes = sum([get_args(inner) for inner in get_args(f.type)], start=tuple())
+                # mode is always annotated as literals (or literals of literals)
+                valid_modes = sum([get_args(inner) for inner in get_args(f.type)], start=tuple()) + get_args(f.type)
                 if self.mode not in valid_modes:
                     raise NotImplementedError(f"Unsupported mode {self.mode} for {self.__class__.__name__}")
 
