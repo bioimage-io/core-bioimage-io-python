@@ -3,7 +3,7 @@ import os
 from copy import deepcopy
 from itertools import product
 from pathlib import Path
-from typing import Dict, Iterator, List, Optional, OrderedDict, Sequence, Tuple, Union
+from typing import Dict, Iterator, List, NamedTuple, Optional, OrderedDict, Sequence, Tuple, Union
 
 import imageio
 import numpy as np
@@ -150,9 +150,15 @@ def _apply_crop(data, crop):
     return data[crop]
 
 
+class TileDef(NamedTuple):
+    outer: Dict[str, slice]
+    inner: Dict[str, slice]
+    local: Dict[str, slice]
+
+
 def get_tiling(
     shape: Sequence[int], tile_shape: Dict[str, int], halo: Dict[str, int], input_axes: Sequence[str]
-) -> Iterator[Tuple[Dict[str, slice], Dict[str, slice], Dict[str, slice]]]:
+) -> Iterator[TileDef]:
     assert len(shape) == len(input_axes)
 
     shape_ = [sh for sh, ax in zip(shape, input_axes) if ax in "xyz"]
@@ -191,7 +197,7 @@ def get_tiling(
         local_tile["b"] = slice(None)
         local_tile["c"] = slice(None)
 
-        yield outer_tile, inner_tile, local_tile
+        yield TileDef(outer_tile, inner_tile, local_tile)
 
 
 def _predict_with_tiling_impl(
