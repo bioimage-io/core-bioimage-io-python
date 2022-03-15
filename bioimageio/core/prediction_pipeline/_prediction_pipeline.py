@@ -163,7 +163,7 @@ def create_prediction_pipeline(
     bioimageio_model: nodes.Model,
     devices: Optional[Sequence[str]] = None,
     weight_format: Optional[str] = None,
-    dataset: Iterable[Sequence[xr.DataArray]] = tuple(),
+    dataset_for_initial_statistics: Iterable[Sequence[xr.DataArray]] = tuple(),
     update_dataset_stats_after_n_samples: Optional[int] = None,
     update_dataset_stats_for_n_samples: int = 100,
 ) -> PredictionPipeline:
@@ -182,7 +182,7 @@ def create_prediction_pipeline(
     preprocessing = CombinedProcessing(bioimageio_model.inputs)
 
     def sample_dataset():
-        for tensors in dataset:
+        for tensors in dataset_for_initial_statistics:
             yield dict(zip([ipt.name for ipt in bioimageio_model.inputs], tensors))
 
     ipt_stats = StatsState(
