@@ -228,7 +228,7 @@ def _predict_with_tiling_impl(
 
     if verbose:
         shape = {ax: sh for ax, sh in zip(prediction_pipeline.input_specs[0].axes, input_.shape)}
-        n_tiles = int(np.prod([np.ceil(float(shape[ax]) / tsh) for ax, tsh in tile_shape.items()]))
+        n_tiles = int(np.prod([np.ceil(float(shape[ax]) / (tsh - 2 * halo[ax])) for ax, tsh in tile_shape.items()]))
         tiles = tqdm(tiles, total=n_tiles, desc="prediction with tiling")
 
     # we need to use padded prediction for the individual tiles in case the
@@ -388,7 +388,7 @@ def _parse_tiling(tiling, input_specs, output_specs):
         spatial_axes = [ax for ax in axes if ax in "xyz"]
         halo = tiling["halo"]
         tile = tiling["tile"]
-        assert all(halo.get(ax, 0) > 0 for ax in spatial_axes)
+        assert all(halo.get(ax, 0) >= 0 for ax in spatial_axes)
         assert all(tile.get(ax, 0) > 0 for ax in spatial_axes)
 
     if isinstance(tiling, dict):
@@ -408,7 +408,8 @@ def _parse_tiling(tiling, input_specs, output_specs):
 
             halo = output_spec.halo
             if halo is None:
-                raise ValueError("Model does not provide a valid halo to use for tiling with default parameters")
+                halo = [0] * len(axes)
+            assert len(halo) == len(axes)
 
             tiling = {
                 "halo": {ax: ha for ax, ha in zip(axes, halo) if ax in "xyz"},
@@ -465,7 +466,21 @@ def predict_with_tiling(
             ref_input_shape = dict(zip(ref_input.dims, ref_input.shape))
             output_shape = tuple(int(scale[ax] * ref_input_shape[ax] + 2 * offset[ax]) for ax in output_spec.axes)
         else:
-            output_shape = tuple(output_spec.shape)
+            if len(inputs) > 1:
+                raise NotImplementedError
+            input_spec = prediction_pipeline.input_specs[0]
+            if input_spec.axes != output_spec.axes:
+                raise NotImplementedError("Tiling with a different output shape is not yet supported")
+            out_axes = output_spec.axes
+            fixed_shape = tuple(output_spec.shape)
+            if not all(fixed_shape[out_axes.index(ax)] == tile_shape for ax, tile_shape in tiling["tile"].items()):
+                raise NotImplementedError("Tiling with a different output shape is not yet supported")
+
+            output_shape = list(inputs[0].shape)
+            chan_id = out_axes.index("c")
+            if fixed_shape[chan_id] != output_shape[chan_id]:
+                output_shape[chan_id] = fixed_shape[chan_id]
+            output_shape = tuple(output_shape)
 
         outputs.append(xr.DataArray(np.zeros(output_shape, dtype=output_spec.data_type), dims=tuple(output_spec.axes)))
 

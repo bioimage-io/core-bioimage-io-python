@@ -66,7 +66,7 @@ bioimageio validate <MODEL>
 
 Test a model (including prediction for the test input):
 ```
-bioimageio test-model -m <MODEL>
+bioimageio test-model <MODEL>
 ```
 
 Run prediction for an image stored on disc:
