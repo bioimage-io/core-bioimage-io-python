@@ -3,7 +3,7 @@ import os
 from copy import deepcopy
 from itertools import product
 from pathlib import Path
-from typing import Dict, List, Optional, OrderedDict, Sequence, Tuple, Union
+from typing import Dict, Iterator, List, Optional, OrderedDict, Sequence, Tuple, Union
 
 import imageio
 import numpy as np
@@ -150,7 +150,9 @@ def _apply_crop(data, crop):
     return data[crop]
 
 
-def _get_tiling(shape, tile_shape, halo, input_axes):
+def get_tiling(
+    shape: Sequence[int], tile_shape: Dict[str, int], halo: Dict[str, int], input_axes: Sequence[str]
+) -> Iterator[Tuple[Dict[str, slice], Dict[str, slice], Dict[str, slice]]]:
     assert len(shape) == len(input_axes)
 
     shape_ = [sh for sh, ax in zip(shape, input_axes) if ax in "xyz"]
@@ -194,10 +196,10 @@ def _get_tiling(shape, tile_shape, halo, input_axes):
 
 def _predict_with_tiling_impl(
     prediction_pipeline: PredictionPipeline,
-    inputs: List[xr.DataArray],
-    outputs: List[xr.DataArray],
-    tile_shapes: List[dict],
-    halos: List[dict],
+    inputs: Sequence[xr.DataArray],
+    outputs: Sequence[xr.DataArray],
+    tile_shapes: Sequence[Dict[str, int]],
+    halos: Sequence[Dict[str, int]],
     verbose: bool = False,
 ):
     if len(inputs) > 1:
@@ -214,7 +216,7 @@ def _predict_with_tiling_impl(
     tile_shape = tile_shapes[0]
     halo = halos[0]
 
-    tiles = _get_tiling(shape=input_.shape, tile_shape=tile_shape, halo=halo, input_axes=input_.dims)
+    tiles = get_tiling(shape=input_.shape, tile_shape=tile_shape, halo=halo, input_axes=input_.dims)
 
     assert all(isinstance(ax, str) for ax in input_.dims)
     input_axes: Tuple[str, ...] = input_.dims  # noqa
