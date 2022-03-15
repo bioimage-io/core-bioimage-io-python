@@ -146,33 +146,6 @@ class _PredictionPipelineImpl(PredictionPipeline):
         self._model.unload()
 
 
-def enforce_min_shape(min_shape, step, axes):
-    """Hack: pick a bigger shape than min shape
-
-    Some models come with super tiny minimal shapes, that make the processing
-    too slow. While dryrun is not implemented, we'll "guess" a sensible shape
-    and hope it will fit into memory.
-
-    """
-    MIN_SIZE_2D = 256
-    MIN_SIZE_3D = 64
-
-    assert len(min_shape) == len(step) == len(axes)
-
-    spacial_increments = sum(i != 0 for i, a in zip(step, axes) if a in "xyz")
-    if spacial_increments > 2:
-        target_size = MIN_SIZE_3D
-    else:
-        target_size = MIN_SIZE_2D
-
-    factors = [math.ceil((target_size - s) / i) for s, i, a in zip(min_shape, step, axes) if a in "xyz"]
-    if sum(f > 0 for f in factors) == 0:
-        return min_shape
-
-    m = max(factors)
-    return [s + i * m for s, i in zip(min_shape, step)]
-
-
 def create_prediction_pipeline(
     *, bioimageio_model: nodes.Model, devices: Optional[Sequence[str]] = None, weight_format: Optional[str] = None
 ) -> PredictionPipeline:

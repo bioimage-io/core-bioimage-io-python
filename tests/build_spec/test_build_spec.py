@@ -17,6 +17,8 @@ def _test_build_spec(
     add_deepimagej_config=False,
     use_original_covers=False,
     use_absoloute_arch_path=False,
+    training_data=None,
+    parent=None,
 ):
     from bioimageio.core.build_spec import build_model
 
@@ -25,11 +27,21 @@ def _test_build_spec(
     assert isinstance(model_spec, spec.model.raw_nodes.Model)
     weight_source = model_spec.weights[weight_type].source
 
-    cite = {entry.text: entry.doi if entry.url is missing else entry.url for entry in model_spec.cite}
+    cite = []
+    for entry in model_spec.cite:
+        entry_ = {"text": entry.text}
+        has_url = entry.url is not missing
+        has_doi = entry.doi is not missing
+        assert has_url != has_doi
+        if has_doi:
+            entry_["doi"] = entry.doi
+        else:
+            entry_["url"] = entry.url
+        cite.append(entry_)
 
-    dep_file = None
+    weight_spec = model_spec.weights[weight_type]
+    dep_file = None if weight_spec.dependencies is missing else resolve_source(weight_spec.dependencies.file, root)
     if weight_type == "pytorch_state_dict":
-        weight_spec = model_spec.weights["pytorch_state_dict"]
         model_kwargs = None if weight_spec.kwargs is missing else weight_spec.kwargs
         architecture = str(weight_spec.architecture)
         if use_absoloute_arch_path:
@@ -37,12 +49,11 @@ def _test_build_spec(
             arch_path = os.path.abspath(os.path.join(root, arch_path))
             assert os.path.exists(arch_path)
             architecture = f"{arch_path}:{cls_name}"
-        dep_file = None if weight_spec.dependencies is missing else resolve_source(weight_spec.dependencies.file, root)
         weight_type_ = None  # the weight type can be auto-detected
     elif weight_type == "torchscript":
         architecture = None
         model_kwargs = None
-        weight_type_ = "torchscript"  # the weight type CANNOT be auto-detcted
+        weight_type_ = "torchscript"  # the weight type CANNOT be auto-detected
     else:
         architecture = None
         model_kwargs = None
@@ -53,11 +64,15 @@ def _test_build_spec(
     input_axes = [input_.axes for input_ in model_spec.inputs]
     output_axes = [output.axes for output in model_spec.outputs]
     preprocessing = [
-        None if input_.preprocessing == missing else {preproc.name: preproc.kwargs for preproc in input_.preprocessing}
+        None
+        if input_.preprocessing is missing
+        else [{"name": preproc.name, "kwargs": preproc.kwargs} for preproc in input_.preprocessing]
         for input_ in model_spec.inputs
     ]
     postprocessing = [
-        None if output.postprocessing == missing else {preproc.name: preproc.kwargs for preproc in output.preprocessing}
+        None
+        if output.postprocessing is missing
+        else [{"name": preproc.name, "kwargs": preproc.kwargs} for preproc in output.preprocessing]
         for output in model_spec.outputs
     ]
 
@@ -102,6 +117,10 @@ def _test_build_spec(
         kwargs["pixel_sizes"] = [{"x": 5.0, "y": 5.0}]
     if use_original_covers:
         kwargs["covers"] = resolve_source(model_spec.covers, root)
+    if training_data is not None:
+        kwargs["training_data"] = training_data
+    if parent is not None:
+        kwargs["parent"] = parent
 
     build_model(**kwargs)
     assert out_path.exists()
@@ -178,6 +197,31 @@ def test_build_spec_tfjs(any_tensorflow_js_model, tmp_path):
 
 def test_build_spec_deepimagej(unet2d_nuclei_broad_model, tmp_path):
     _test_build_spec(unet2d_nuclei_broad_model, tmp_path / "model.zip", "torchscript", add_deepimagej_config=True)
+
+
+def test_build_spec_training_data1(unet2d_nuclei_broad_model, tmp_path):
+    training_data = {"id": "ilastik/stradist_dsb_training_data"}
+    _test_build_spec(unet2d_nuclei_broad_model, tmp_path / "model.zip", "torchscript", training_data=training_data)
+
+
+def test_build_spec_training_data2(unet2d_nuclei_broad_model, tmp_path):
+    training_data = {
+        "type": "dataset",
+        "name": "nucleus-training-data",
+        "description": "stardist nucleus training data",
+        "source": "https://github.com/stardist/stardist/releases/download/0.1.0/dsb2018.zip",
+    }
+    _test_build_spec(unet2d_nuclei_broad_model, tmp_path / "model.zip", "torchscript", training_data=training_data)
+
+
+def test_build_spec_parent1(unet2d_nuclei_broad_model, tmp_path):
+    parent = {"uri": "https:/my-parent-model.org"}
+    _test_build_spec(unet2d_nuclei_broad_model, tmp_path / "model.zip", "torchscript", parent=parent)
+
+
+def test_build_spec_parent2(unet2d_nuclei_broad_model, tmp_path):
+    parent = {"id": "10.5281/zenodo.5764892"}
+    _test_build_spec(unet2d_nuclei_broad_model, tmp_path / "model.zip", "torchscript", parent=parent)
 
 
 def test_build_spec_deepimagej_keras(unet2d_keras, tmp_path):

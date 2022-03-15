@@ -177,6 +177,10 @@ def test_predict_image_with_tiling_channel_last(stardist, tmp_path):
     _test_predict_image_with_tiling(stardist, tmp_path, 0.13)
 
 
+def test_predict_image_with_tiling_fixed_output_shape(unet2d_fixed_shape, tmp_path):
+    _test_predict_image_with_tiling(unet2d_fixed_shape, tmp_path, 0.025)
+
+
 # and the model with smaller output shape
 def test_predict_image_with_tiling_diff_output_shape(unet2d_diff_output_shape, tmp_path):
     tiling = {"halo": {"x": 16, "y": 16}, "tile": {"x": 128, "y": 128}}

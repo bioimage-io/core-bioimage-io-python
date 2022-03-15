@@ -12,6 +12,18 @@ except ImportError:
     from typing_extensions import Literal, get_args  # type: ignore
 
 
+def _get_fixed(
+    fixed: Union[float, Sequence[float]], tensor: xr.DataArray, axes: Optional[Sequence[str]]
+) -> Union[float, xr.DataArray]:
+    if axes is None:
+        return fixed
+
+    fixed_shape = tuple(s for d, s in tensor.sizes.items() if d not in axes)
+    fixed_dims = tuple(d for d in tensor.dims if d not in axes)
+    fixed = np.array(fixed).reshape(fixed_shape)
+    return xr.DataArray(fixed, dims=fixed_dims)
+
+
 @dataclass
 class Processing:
     """base class for all Pre- and Postprocessing transformations"""
@@ -226,8 +238,8 @@ class Sigmoid(Processing):
 @dataclass
 class ZeroMeanUnitVariance(Processing):
     mode: Literal["fixed", "per_sample", "per_dataset"] = "per_sample"
-    mean: Optional[float] = None
-    std: Optional[float] = None
+    mean: Optional[Union[float, Sequence[float]]] = None
+    std: Optional[Union[float, Sequence[float]]] = None
     axes: Optional[Sequence[str]] = None
     eps: float = 1.0e-6
 
@@ -247,12 +259,11 @@ class ZeroMeanUnitVariance(Processing):
         axes = None if self.axes is None else tuple(self.axes)
         if self.mode == "fixed":
             assert self.mean is not None and self.std is not None
-            mean, std = self.mean, self.std
+            mean = _get_fixed(self.mean, tensor, axes)
+            std = _get_fixed(self.std, tensor, axes)
         elif self.mode == "per_sample":
-            if axes:
-                mean, std = tensor.mean(axes), tensor.std(axes)
-            else:
-                mean, std = tensor.mean(), tensor.std()
+            mean = Mean(axes).compute(tensor)
+            std = Std(axes).compute(tensor)
         elif self.mode == "per_dataset":
             mean = self.get_computed_dataset_statistics(self.tensor_name, Mean(axes))
             std = self.get_computed_dataset_statistics(self.tensor_name, Std(axes))

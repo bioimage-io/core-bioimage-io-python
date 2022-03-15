@@ -6,16 +6,14 @@ import sys
 import typing
 from types import ModuleType
 
-from bioimageio.spec.shared import raw_nodes
-from bioimageio.spec.shared.utils import (
+from bioimageio.spec.shared import raw_nodes, resolve_source, source_available
+from bioimageio.spec.shared.node_transformer import (
     GenericRawNode,
     GenericRawRD,
     GenericResolvedNode,
     NodeTransformer,
     NodeVisitor,
     UriNodeTransformer,
-    resolve_source,
-    source_available,
 )
 from . import nodes
 
@@ -70,12 +68,6 @@ class SourceNodeTransformer(NodeTransformer):
         return nodes.ImportedSource(factory=getattr(module, node.callable_name))
 
     @staticmethod
-    def transform_ImportableModule(node):
-        raise RuntimeError(
-            "Encountered raw_nodes.ImportableModule in _SourceNodeTransformer. Apply _UriNodeTransformer first!"
-        )
-
-    @staticmethod
     def transform_ResolvedImportableSourceFile(node: raw_nodes.ResolvedImportableSourceFile) -> nodes.ImportedSource:
         module_path = resolve_source(node.source_file)
         module_name = f"module_from_source.{module_path.stem}"
@@ -84,12 +76,6 @@ class SourceNodeTransformer(NodeTransformer):
         dep = importlib.util.module_from_spec(importlib_spec)
         importlib_spec.loader.exec_module(dep)  # type: ignore  # todo: possible to use "loader.load_module"?
         return nodes.ImportedSource(factory=getattr(dep, node.callable_name))
-
-    @staticmethod
-    def transform_ImportablePath(node):
-        raise RuntimeError(
-            "Encountered raw_nodes.ImportableSourceFile in _SourceNodeTransformer. Apply _UriNodeTransformer first!"
-        )
 
 
 class RawNodeTypeTransformer(NodeTransformer):
@@ -119,9 +105,11 @@ def all_sources_available(
         return True
 
 
-def resolve_raw_resource_description(raw_rd: GenericRawRD, nodes_module: typing.Any) -> GenericResolvedNode:
-    """resolve all uris and sources"""
-    rd = UriNodeTransformer(root_path=raw_rd.root_path).transform(raw_rd)
+def resolve_raw_resource_description(
+    raw_rd: GenericRawRD, nodes_module: typing.Any, uri_only_if_in_package: bool = True
+) -> GenericResolvedNode:
+    """resolve all uris and paths (that are included when packaging)"""
+    rd = UriNodeTransformer(root_path=raw_rd.root_path, uri_only_if_in_package=uri_only_if_in_package).transform(raw_rd)
     rd = SourceNodeTransformer().transform(rd)
     rd = RawNodeTypeTransformer(nodes_module).transform(rd)
     return rd

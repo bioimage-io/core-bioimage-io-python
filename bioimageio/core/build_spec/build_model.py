@@ -3,6 +3,7 @@ import hashlib
 import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
+from warnings import warn
 
 import imageio
 import numpy as np
@@ -13,7 +14,7 @@ import bioimageio.spec.model as model_spec
 from bioimageio.core import export_resource_package, load_raw_resource_description
 from bioimageio.core.resource_io.nodes import URI
 from bioimageio.spec.shared.raw_nodes import ImportableModule, ImportableSourceFile
-from bioimageio.spec.shared.utils import resolve_local_source, resolve_source
+from bioimageio.spec.shared import resolve_local_source, resolve_source
 
 try:
     from typing import get_args
@@ -73,6 +74,22 @@ def _get_pytorch_state_dict_weight_kwargs(architecture, model_kwargs, root):
     return weight_kwargs, tmp_archtecture
 
 
+def _get_attachments(attachments, root):
+    assert isinstance(attachments, dict)
+    if "files" in attachments:
+        afiles = attachments["files"]
+        if isinstance(afiles, str):
+            afiles = [afiles]
+
+        if isinstance(afiles, list):
+            afiles = _ensure_local_or_url(afiles, root)
+        else:
+            raise TypeError(attachments)
+
+        attachments["files"] = afiles
+    return attachments
+
+
 def _get_weights(
     original_weight_source,
     weight_type,
@@ -81,67 +98,94 @@ def _get_weights(
     model_kwargs=None,
     tensorflow_version=None,
     opset_version=None,
+    pytorch_version=None,
     dependencies=None,
-    **kwargs,
+    attachments=None,
 ):
     weight_path = resolve_source(original_weight_source, root)
     if weight_type is None:
         weight_type = _infer_weight_type(weight_path)
     weight_hash = _get_hash(weight_path)
 
-    attachments = {"attachments": kwargs["weight_attachments"]} if "weight_attachments" in kwargs else {}
     weight_types = model_spec.raw_nodes.WeightsFormat
     weight_source = _ensure_local_or_url(original_weight_source, root)
+
+    weight_kwargs = {"source": weight_source, "sha256": weight_hash}
+    if attachments is not None:
+        weight_kwargs["attachments"] = _get_attachments(attachments, root)
+    if dependencies is not None:
+        weight_kwargs["dependencies"] = _get_dependencies(dependencies, root)
 
     tmp_archtecture = None
     if weight_type == "pytorch_state_dict":
         # pytorch-state-dict -> we need an architecture definition
-        weight_kwargs, tmp_file = _get_pytorch_state_dict_weight_kwargs(architecture, model_kwargs, root)
-        weight_kwargs.update(**attachments)
-        weights = model_spec.raw_nodes.PytorchStateDictWeightsEntry(
-            source=weight_source, sha256=weight_hash, **weight_kwargs
-        )
-        if dependencies is not None:
-            weight_kwargs["dependencies"] = _get_dependencies(dependencies, root)
+        pytorch_weight_kwargs, tmp_file = _get_pytorch_state_dict_weight_kwargs(architecture, model_kwargs, root)
+        weight_kwargs.update(**pytorch_weight_kwargs)
+        if pytorch_version is not None:
+            weight_kwargs["pytorch_version"] = pytorch_version
+        elif dependencies is None:
+            warn(
+                "You are building a pytorch model but have neither passed dependencies nor the pytorch_version."
+                "It may not be possible to create an environmnet where your model can be used."
+            )
+        weights = model_spec.raw_nodes.PytorchStateDictWeightsEntry(**weight_kwargs)
 
     elif weight_type == "onnx":
-        if opset_version is None:
-            raise ValueError("opset_version needs to be passed for building an onnx model")
-        weights = model_spec.raw_nodes.OnnxWeightsEntry(
-            source=weight_source, sha256=weight_hash, opset_version=opset_version, **attachments
-        )
+        if opset_version is not None:
+            weight_kwargs["opset_version"] = opset_version
+        elif dependencies is None:
+            warn(
+                "You are building an onnx model but have neither passed dependencies nor the opset_version."
+                "It may not be possible to create an environmnet where your model can be used."
+            )
+        weights = model_spec.raw_nodes.OnnxWeightsEntry(**weight_kwargs)
 
     elif weight_type == "torchscript":
-        weights = model_spec.raw_nodes.TorchscriptWeightsEntry(source=weight_source, sha256=weight_hash, **attachments)
+        if pytorch_version is not None:
+            weight_kwargs["pytorch_version"] = pytorch_version
+        elif dependencies is None:
+            warn(
+                "You are building a pytorch model but have neither passed dependencies nor the pytorch_version."
+                "It may not be possible to create an environmnet where your model can be used."
+            )
+        weights = model_spec.raw_nodes.TorchscriptWeightsEntry(**weight_kwargs)
 
     elif weight_type == "keras_hdf5":
-        if tensorflow_version is None:
-            raise ValueError("tensorflow_version needs to be passed for building a keras model")
-        weights = model_spec.raw_nodes.KerasHdf5WeightsEntry(
-            source=weight_source, sha256=weight_hash, tensorflow_version=tensorflow_version, **attachments
-        )
+        if tensorflow_version is not None:
+            weight_kwargs["tensorflow_version"] = tensorflow_version
+        elif dependencies is None:
+            warn(
+                "You are building a keras model but have neither passed dependencies nor the tensorflow_version."
+                "It may not be possible to create an environmnet where your model can be used."
+            )
+        weights = model_spec.raw_nodes.KerasHdf5WeightsEntry(**weight_kwargs)
 
     elif weight_type == "tensorflow_saved_model_bundle":
-        if tensorflow_version is None:
-            raise ValueError("tensorflow_version needs to be passed for building a tensorflow model")
-        weights = model_spec.raw_nodes.TensorflowSavedModelBundleWeightsEntry(
-            source=weight_source, sha256=weight_hash, tensorflow_version=tensorflow_version, **attachments
-        )
+        if tensorflow_version is not None:
+            weight_kwargs["tensorflow_version"] = tensorflow_version
+        elif dependencies is None:
+            warn(
+                "You are building a tensorflow model but have neither passed dependencies nor the tensorflow_version."
+                "It may not be possible to create an environmnet where your model can be used."
+            )
+        weights = model_spec.raw_nodes.TensorflowSavedModelBundleWeightsEntry(**weight_kwargs)
 
     elif weight_type == "tensorflow_js":
-        if tensorflow_version is None:
-            raise ValueError("tensorflow_version needs to be passed for building a tensorflow_js model")
-        weights = model_spec.raw_nodes.TensorflowJsWeightsEntry(
-            source=weight_source, sha256=weight_hash, tensorflow_version=tensorflow_version, **attachments
-        )
+        if tensorflow_version is not None:
+            weight_kwargs["tensorflow_version"] = tensorflow_version
+        elif dependencies is None:
+            warn(
+                "You are building a tensorflow model but have neither passed dependencies nor the tensorflow_version."
+                "It may not be possible to create an environmnet where your model can be used."
+            )
+        weights = model_spec.raw_nodes.TensorflowJsWeightsEntry(**weight_kwargs)
 
     elif weight_type in weight_types:
         raise ValueError(f"Weight type {weight_type} is not supported yet in 'build_spec'")
     else:
         raise ValueError(f"Invalid weight type {weight_type}, expect one of {weight_types}")
 
-    weights = {weight_type: weights}
-    return weights, tmp_archtecture
+    return {weight_type: weights}, tmp_archtecture
 
 
 def _get_data_range(data_range, dtype):
@@ -173,7 +217,7 @@ def _get_input_tensor(path, name, step, min_shape, data_range, axes, preprocessi
     data_range = _get_data_range(data_range, test_in.dtype)
     kwargs = {}
     if preprocessing is not None:
-        kwargs["preprocessing"] = [{"name": k, "kwargs": v} for k, v in preprocessing.items()]
+        kwargs["preprocessing"] = preprocessing
 
     inputs = model_spec.raw_nodes.InputTensor(
         name="input" if name is None else name,
@@ -201,7 +245,7 @@ def _get_output_tensor(path, name, reference_tensor, scale, offset, axes, data_r
     data_range = _get_data_range(data_range, test_out.dtype)
     kwargs = {}
     if postprocessing is not None:
-        kwargs["postprocessing"] = [{"name": k, "kwargs": v} for k, v in postprocessing.items()]
+        kwargs["postprocessing"] = postprocessing
     if halo is not None:
         kwargs["halo"] = halo
 
@@ -216,9 +260,16 @@ def _get_output_tensor(path, name, reference_tensor, scale, offset, axes, data_r
     return outputs
 
 
-# TODO The citation entry should be improved so that we can properly derive doi vs. url
-def _build_cite(cite: Dict[str, str]):
-    citation_list = [spec.rdf.raw_nodes.CiteEntry(text=k, url=v) for k, v in cite.items()]
+def _build_cite(cite: List[Dict[str, str]]):
+    citation_list = []
+    for entry in cite:
+        if "doi" in entry:
+            spec_entry = spec.rdf.raw_nodes.CiteEntry(text=entry["text"], doi=entry["doi"])
+        elif "url" in entry:
+            spec_entry = spec.rdf.raw_nodes.CiteEntry(text=entry["text"], url=entry["url"])
+        else:
+            raise ValueError(f"Expect one of doi or url in citation enrty {entry}")
+        citation_list.append(spec_entry)
     return citation_list
 
 
@@ -294,13 +345,15 @@ def _get_deepimagej_macro(name, kwargs, export_folder):
     return {"spec": "ij.IJ::runMacroFile", "kwargs": macro}
 
 
-def _get_deepimagej_config(export_folder, sample_inputs, sample_outputs, pixel_sizes, preprocessing, postprocessing):
-    assert len(sample_inputs) == len(sample_outputs) == 1, "deepimagej config only valid for single input/output"
+def _get_deepimagej_config(
+    export_folder, test_inputs, test_outputs, input_axes, output_axes, pixel_sizes, preprocessing, postprocessing
+):
+    assert len(test_inputs) == len(test_outputs) == 1, "deepimagej config only valid for single input/output"
 
     if any(preproc is not None for preproc in preprocessing):
         assert len(preprocessing) == 1
         preprocess_ij = [
-            _get_deepimagej_macro(name, kwargs, export_folder) for name, kwargs in preprocessing[0].items()
+            _get_deepimagej_macro(preproc["name"], preproc["kwargs"], export_folder) for preproc in preprocessing[0]
         ]
         attachments = [preproc["kwargs"] for preproc in preprocess_ij]
     else:
@@ -310,7 +363,7 @@ def _get_deepimagej_config(export_folder, sample_inputs, sample_outputs, pixel_s
     if any(postproc is not None for postproc in postprocessing):
         assert len(postprocessing) == 1
         postprocess_ij = [
-            _get_deepimagej_macro(name, kwargs, export_folder) for name, kwargs in postprocessing[0].items()
+            _get_deepimagej_macro(postproc["name"], postproc["kwargs"], export_folder) for postproc in postprocessing[0]
         ]
         if attachments is None:
             attachments = [postproc["kwargs"] for postproc in postprocess_ij]
@@ -319,13 +372,21 @@ def _get_deepimagej_config(export_folder, sample_inputs, sample_outputs, pixel_s
     else:
         postprocess_ij = [{"spec": None}]
 
-    def get_size(path):
-        assert tifffile is not None, "need tifffile for writing deepimagej config"
-        with tifffile.TiffFile(export_folder / path) as f:
-            shape = f.asarray().shape
-        # add singleton z axis if we have 2d data
+    def get_size(fname, axes):
+        shape = np.load(export_folder / fname).shape
+        assert len(shape) == len(axes)
+        shape = [sh for sh, ax in zip(shape, axes) if ax != "b"]
+        axes = [ax for ax in axes if ax != "b"]
+        # the shape for deepij is always given as xyzc
         if len(shape) == 3:
-            shape = shape[:2] + (1,) + shape[-1:]
+            axes_ij = "xyc"
+        else:
+            axes_ij = "xyzc"
+        assert set(axes) == set(axes_ij)
+        axis_permutation = [axes_ij.index(ax) for ax in axes]
+        shape = [shape[permut] for permut in axis_permutation]
+        if len(shape) == 3:
+            shape = shape[:2] + [1] + shape[-1:]
         assert len(shape) == 4
         return " x ".join(map(str, shape))
 
@@ -334,10 +395,13 @@ def _get_deepimagej_config(export_folder, sample_inputs, sample_outputs, pixel_s
 
     test_info = {
         "inputs": [
-            {"name": in_path, "size": get_size(in_path), "pixel_size": pix_size}
-            for in_path, pix_size in zip(sample_inputs, pixel_sizes_)
+            {"name": in_path, "size": get_size(in_path, axes), "pixel_size": pix_size}
+            for in_path, axes, pix_size in zip(test_inputs, input_axes, pixel_sizes_)
         ],
-        "outputs": [{"name": out_path, "type": "image", "size": get_size(out_path)} for out_path in sample_outputs],
+        "outputs": [
+            {"name": out_path, "type": "image", "size": get_size(out_path, axes)}
+            for out_path, axes in zip(test_outputs, output_axes)
+        ],
         "memory_peak": None,
         "runtime": None,
     }
@@ -353,36 +417,49 @@ def _get_deepimagej_config(export_folder, sample_inputs, sample_outputs, pixel_s
     return {"deepimagej": config}, [Path(a) for a in attachments]
 
 
-def _write_sample_data(input_paths, output_paths, input_axes, output_axes, export_folder: Path):
-    def write_im(path, im, axes):
+def _write_sample_data(input_paths, output_paths, input_axes, output_axes, pixel_sizes, export_folder: Path):
+    def write_im(path, im, axes, pixel_size=None):
         assert tifffile is not None, "need tifffile for writing deepimagej config"
-        assert len(axes) == im.ndim
-        assert im.ndim in (3, 4)
+        assert len(axes) == im.ndim, f"{len(axes), {im.ndim}}"
+        assert im.ndim in (4, 5), f"{im.ndim}"
 
-        # deepimagej expects xyzc axis order
-        if im.ndim == 3:
-            assert set(axes) == {"x", "y", "c"}
-            axes_ij = "xyc"
+        # convert the image to expects (Z)CYX axis order
+        if im.ndim == 4:
+            assert set(axes) == {"b", "x", "y", "c"}, f"{axes}"
+            axes_ij = "cyxb"
         else:
-            assert set(axes) == {"x", "y", "z", "c"}
-            axes_ij = "xyzc"
+            assert set(axes) == {"b", "x", "y", "z", "c"}, f"{axes}"
+            axes_ij = "zcyxb"
 
-        axis_permutation = tuple(axes_ij.index(ax) for ax in axes)
+        axis_permutation = tuple(axes.index(ax) for ax in axes_ij)
         im = im.transpose(axis_permutation)
+        # expand to TZCYXS
+        if len(axes_ij) == 4:  # add singleton t and z axis
+            im = im[None, None]
+        else:  # add singeton z axis
+            im = im[None]
 
-        with tifffile.TiffWriter(path) as f:
-            f.write(im)
+        if pixel_size is None:
+            resolution = None
+        else:
+            spatial_axes = list(set(axes_ij) - set("bc"))
+            resolution = tuple(1.0 / pixel_size[ax] for ax in axes_ij if ax in spatial_axes)
+        # does not work for double
+        if np.dtype(im.dtype) == np.dtype("float64"):
+            im = im.astype("float32")
+        tifffile.imsave(path, im, imagej=True, resolution=resolution)
 
     sample_in_paths = []
     for i, (in_path, axes) in enumerate(zip(input_paths, input_axes)):
-        inp = np.load(export_folder / in_path)[0]
+        inp = np.load(export_folder / in_path)
         sample_in_path = export_folder / f"sample_input_{i}.tif"
-        write_im(sample_in_path, inp, axes)
+        pixel_size = None if pixel_sizes is None else pixel_sizes[i]
+        write_im(sample_in_path, inp, axes, pixel_size)
         sample_in_paths.append(sample_in_path)
 
     sample_out_paths = []
     for i, (out_path, axes) in enumerate(zip(output_paths, output_axes)):
-        outp = np.load(export_folder / out_path)[0]
+        outp = np.load(export_folder / out_path)
         sample_out_path = export_folder / f"sample_output_{i}.tif"
         write_im(sample_out_path, outp, axes)
         sample_out_paths.append(sample_out_path)
@@ -525,7 +602,7 @@ def build_model(
     authors: List[Dict[str, str]],
     tags: List[Union[str, Path]],
     documentation: Union[str, Path],
-    cite: Dict[str, str],
+    cite: List[Dict[str, str]],
     output_path: Union[str, Path],
     # model specific optional
     architecture: Optional[str] = None,
@@ -544,8 +621,8 @@ def build_model(
     output_offset: Optional[List[List[int]]] = None,
     output_data_range: Optional[List[List[Union[int, str]]]] = None,
     halo: Optional[List[List[int]]] = None,
-    preprocessing: Optional[List[Dict[str, Dict[str, Union[int, float, str]]]]] = None,
-    postprocessing: Optional[List[Dict[str, Dict[str, Union[int, float, str]]]]] = None,
+    preprocessing: Optional[List[List[Dict[str, Dict[str, Union[int, float, str]]]]]] = None,
+    postprocessing: Optional[List[List[Dict[str, Dict[str, Union[int, float, str]]]]]] = None,
     pixel_sizes: Optional[List[Dict[str, float]]] = None,
     # general optional
     maintainers: Optional[List[Dict[str, str]]] = None,
@@ -555,15 +632,17 @@ def build_model(
     attachments: Optional[Dict[str, Union[str, List[str]]]] = None,
     packaged_by: Optional[List[str]] = None,
     run_mode: Optional[str] = None,
-    parent: Optional[Tuple[str, str]] = None,
+    parent: Optional[Dict[str, str]] = None,
     config: Optional[Dict[str, Any]] = None,
     dependencies: Optional[Union[Path, str]] = None,
     links: Optional[List[str]] = None,
+    training_data: Optional[Dict[str, str]] = None,
     root: Optional[Union[Path, str]] = None,
     add_deepimagej_config: bool = False,
     tensorflow_version: Optional[str] = None,
     opset_version: Optional[int] = None,
-    **weight_kwargs,
+    pytorch_version: Optional[str] = None,
+    weight_attachments: Optional[Dict[str, Union[str, List[str]]]] = None,
 ):
     """Create a zipped bioimage.io model.
 
@@ -584,7 +663,7 @@ def build_model(
         tags=["segmentation", "light sheet data"],
         license="CC-BY-4.0",
         documentation="./documentation.md",
-        cite={"Architecture": "https://my_architecture.com"},
+        cite=[{"text": "Ronneberger et al. U-Net", "doi": "10.1007/978-3-319-24574-4_28"}],
         output_path="my-model.zip"
     )
     ```
@@ -600,7 +679,7 @@ def build_model(
         authors: the authors of this model.
         tags: list of tags for this model.
         documentation: relative file path to markdown documentation for this model.
-        cite: citations for this model.
+        cite: references for this model.
         output_path: where to save the zipped model package.
         architecture: the file with the source code for the model architecture and the corresponding class.
             Only required for models with pytorch_state_dict weight format.
@@ -630,16 +709,16 @@ def build_model(
         attachments: list of additional files to package with the model.
         packaged_by: list of authors that have packaged this model.
         run_mode: custom run mode for this model.
-        parent: id of the parent model from which this model is derived and sha256 of the corresponding weight file.
+        parent: id of the parent model from which this model is derived and sha256 of the corresponding rdf file.
         config: custom configuration for this model.
         dependencies: relative path to file with dependencies for this model.
+        training_data: the training data for this model, either id for a bioimageio dataset or a dataset spec.
         root: optional root path for relative paths. This can be helpful when building a spec from another model spec.
         add_deepimagej_config: add the deepimagej config to the model.
-        tensorflow_version: the tensorflow version used for training the model.
-            Only requred for models with tensorflow or keras weight format.
-        opset_version: the opset version used in this model.
-            Only requred for models with onnx weight format.
-        weight_kwargs: additional keyword arguments for this weight type.
+        tensorflow_version: the tensorflow version for this model. Only for tensorflow or keras weights.
+        opset_version: the opset version for this model. Only for onnx weights.
+        pytorch_version: the pytorch version for this model. Only for pytoch_state_dict or torchscript weights.
+        weight_attachments: extra weight specific attachments.
     """
     assert architecture is None or isinstance(architecture, str)
     if root is None:
@@ -647,18 +726,7 @@ def build_model(
     root = Path(root)
 
     if attachments is not None:
-        assert isinstance(attachments, dict)
-        if "files" in attachments:
-            afiles = attachments["files"]
-            if isinstance(afiles, str):
-                afiles = [afiles]
-
-            if isinstance(afiles, list):
-                afiles = _ensure_local_or_url(afiles, root)
-            else:
-                raise TypeError(attachments)
-
-            attachments["files"] = afiles
+        attachments = _get_attachments(attachments, root)
 
     #
     # generate the model specific fields
@@ -750,8 +818,9 @@ def build_model(
         model_kwargs,
         tensorflow_version=tensorflow_version,
         opset_version=opset_version,
+        pytorch_version=pytorch_version,
         dependencies=dependencies,
-        **weight_kwargs,
+        attachments=weight_attachments,
     )
 
     # validate the sample inputs and outputs (if given)
@@ -763,17 +832,15 @@ def build_model(
     # add the deepimagej config if specified
     if add_deepimagej_config:
         if sample_inputs is None:
-            input_axes_ij = [inp.axes[1:] for inp in inputs]
-            output_axes_ij = [out.axes[1:] for out in outputs]
             sample_inputs, sample_outputs = _write_sample_data(
-                test_inputs, test_outputs, input_axes_ij, output_axes_ij, root
+                test_inputs, test_outputs, input_axes, output_axes, pixel_sizes, root
             )
         # deepimagej expect tifs as sample data
         assert all(os.path.splitext(path)[1] in (".tif", ".tiff") for path in sample_inputs)
         assert all(os.path.splitext(path)[1] in (".tif", ".tiff") for path in sample_outputs)
 
         ij_config, ij_attachments = _get_deepimagej_config(
-            root, sample_inputs, sample_outputs, pixel_sizes, preprocessing, postprocessing
+            root, test_inputs, test_outputs, input_axes, output_axes, pixel_sizes, preprocessing, postprocessing
         )
 
         if config is None:
@@ -822,9 +889,20 @@ def build_model(
 
     if maintainers is not None:
         kwargs["maintainers"] = [model_spec.raw_nodes.Maintainer(**m) for m in maintainers]
+
     if parent is not None:
-        assert len(parent) == 2
-        kwargs["parent"] = {"uri": parent[0], "sha256": parent[1]}
+        kwargs["parent"] = parent
+
+    if training_data is not None:
+        if "id" in training_data:
+            msg = f"If training data is specified via 'id' no other keys are allowed, got {training_data}"
+            assert len(training_data) == 1, msg
+            kwargs["training_data"] = training_data
+        else:
+            if "type" not in training_data:
+                training_data["type"] = "dataset"
+            if "format_version" not in training_data:
+                training_data["format_version"] = spec.dataset.format_version
 
     try:
         model = model_spec.raw_nodes.Model(

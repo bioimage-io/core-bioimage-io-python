@@ -7,7 +7,7 @@ import numpy as np
 import xarray as xr
 from marshmallow import ValidationError
 
-from bioimageio.core import load_resource_description
+from bioimageio.core import __version__ as bioimageio_core_version, load_resource_description
 from bioimageio.core.prediction import predict
 from bioimageio.core.prediction_pipeline import create_prediction_pipeline
 from bioimageio.core.resource_io.nodes import (
@@ -17,6 +17,7 @@ from bioimageio.core.resource_io.nodes import (
     ResourceDescription,
     URI,
 )
+from bioimageio.spec import __version__ as bioimageio_spec_version
 from bioimageio.spec.model.raw_nodes import WeightsFormat
 from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
 
@@ -29,15 +30,34 @@ def test_model(
 ) -> dict:
     """Test whether the test output(s) of a model can be reproduced.
 
-    Returns summary dict with "error" and "traceback" key; summary["error"] is None if no errors were encountered.
+    Returns: summary dict with keys: name, status, error, traceback, bioimageio_spec_version, bioimageio_core_version
     """
-    model = load_resource_description(
-        model_rdf, weights_priority_order=None if weight_format is None else [weight_format]
-    )
+    # todo: reuse more of 'test_resource'
+    tb = None
+    try:
+        model = load_resource_description(
+            model_rdf, weights_priority_order=None if weight_format is None else [weight_format]
+        )
+    except Exception as e:
+        model = None
+        error = str(e)
+        tb = traceback.format_tb(e.__traceback__)
+    else:
+        error = None
+
     if isinstance(model, Model):
         return test_resource(model, weight_format=weight_format, devices=devices, decimal=decimal)
     else:
-        return {"error": f"Expected RDF type Model, got {type(model)} instead.", "traceback": None}
+        error = error or f"Expected RDF type Model, got {type(model)} instead."
+
+    return dict(
+        name="reproduced test outputs from test inputs",
+        status="failed",
+        error=error,
+        traceback=tb,
+        bioimageio_spec_version=bioimageio_spec_version,
+        bioimageio_core_version=bioimageio_core_version,
+    )
 
 
 def _validate_input_shape(shape: Tuple[int, ...], shape_spec) -> bool:
@@ -79,7 +99,7 @@ def _validate_output_shape(shape: Tuple[int, ...], shape_spec, input_shapes) -> 
 
 
 def test_resource(
-    model_rdf: Union[RawResourceDescription, ResourceDescription, URI, Path, str],
+    rdf: Union[RawResourceDescription, ResourceDescription, URI, Path, str],
     *,
     weight_format: Optional[WeightsFormat] = None,
     devices: Optional[List[str]] = None,
@@ -87,20 +107,20 @@ def test_resource(
 ):
     """Test RDF dynamically
 
-    Returns summary dict with "error" and "traceback" key; summary["error"] is None if no errors were encountered.
+    Returns: summary dict with keys: name, status, error, traceback, bioimageio_spec_version, bioimageio_core_version
     """
     error: Optional[str] = None
     tb: Optional = None
+    test_name: str = "load resource description"
 
     try:
-        rd = load_resource_description(
-            model_rdf, weights_priority_order=None if weight_format is None else [weight_format]
-        )
+        rd = load_resource_description(rdf, weights_priority_order=None if weight_format is None else [weight_format])
     except Exception as e:
         error = str(e)
         tb = traceback.format_tb(e.__traceback__)
     else:
         if isinstance(rd, Model):
+            test_name = "reproduced test outputs from test inputs"
             model = rd
             try:
                 inputs = [np.load(str(in_path)) for in_path in model.test_inputs]
@@ -145,7 +165,14 @@ def test_resource(
 
     # todo: add tests for non-model resources
 
-    return {"error": error, "traceback": tb}
+    return dict(
+        name=test_name,
+        status="passed" if error is None else "failed",
+        error=error,
+        traceback=tb,
+        bioimageio_spec_version=bioimageio_spec_version,
+        bioimageio_core_version=bioimageio_core_version,
+    )
 
 
 def debug_model(

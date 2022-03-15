@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 from shutil import copyfile
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Union, List
 
 from bioimageio.core import export_resource_package, load_raw_resource_description
 from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
@@ -18,7 +18,8 @@ def add_weights(
     model_kwargs: Optional[Dict[str, Union[int, float, str]]] = None,
     tensorflow_version: Optional[str] = None,
     opset_version: Optional[str] = None,
-    **weight_kwargs,
+    pytorch_version: Optional[str] = None,
+    attachments: Optional[Dict[str, Union[str, List[str]]]] = None,
 ):
     """Add weight entry to bioimage.io model.
 
@@ -31,11 +32,10 @@ def add_weights(
             Only required for models with pytorch_state_dict weight format.
         model_kwargs: the keyword arguments for the model class.
             Only required for models with pytorch_state_dict weight format.
-        tensorflow_version: the tensorflow version used for training the model.
-            Only requred for models with tensorflow or keras weight format.
-        opset_version: the opset version used in this model.
-            Only requred for models with onnx weight format.
-        weight_kwargs: additional keyword arguments for the weight.
+        tensorflow_version: the tensorflow version for this model. Only for tensorflow or keras weights.
+        opset_version: the opset version for this model. Only for onnx weights.
+        pytorch_version: the pytorch version for this model. Only for pytoch_state_dict or torchscript weights.
+        attachments: extra weight specific attachments.
     """
     model = load_raw_resource_description(model)
 
@@ -53,7 +53,8 @@ def add_weights(
         model_kwargs=model_kwargs,
         tensorflow_version=tensorflow_version,
         opset_version=opset_version,
-        **weight_kwargs,
+        pytorch_version=pytorch_version,
+        attachments=attachments,
     )
     model.weights.update(new_weights)
 
