@@ -126,6 +126,7 @@ def pytest_configure():
 # model groups of the form any_<weight format>_model that include all models providing a specific weight format
 #
 
+
 @pytest.fixture(params=[] if skip_torch else torch_models)
 def any_torch_model(request):
     return pytest.model_packages[request.param]
