@@ -471,12 +471,13 @@ def predict_with_tiling(
             input_spec = prediction_pipeline.input_specs[0]
             if input_spec.axes != output_spec.axes:
                 raise NotImplementedError("Tiling with a different output shape is not yet supported")
+            out_axes = output_spec.axes
             fixed_shape = tuple(output_spec.shape)
-            if not all(fsh == tsh for fsh, tsh, ax in zip(fixed_shape, tiling["tile"], input_spec.axes) if ax != "c"):
+            if not all(fixed_shape[out_axes.index(ax)] == tile_shape for ax, tile_shape in tiling["tile"].items()):
                 raise NotImplementedError("Tiling with a different output shape is not yet supported")
 
             output_shape = list(inputs[0].shape)
-            chan_id = output_spec.axes.index("c")
+            chan_id = out_axes.index("c")
             if fixed_shape[chan_id] != output_shape[chan_id]:
                 output_shape[chan_id] = fixed_shape[chan_id]
             output_shape = tuple(output_shape)

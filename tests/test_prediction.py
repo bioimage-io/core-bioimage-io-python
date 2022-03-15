@@ -176,9 +176,8 @@ def test_predict_image_with_tiling_channel_last(stardist, tmp_path):
     _test_predict_image_with_tiling(stardist, tmp_path, 0.13)
 
 
-# FIXME need to update the weights to newer pytorch versions
-# def test_predict_image_with_tiling_fixed_output_shape(unet2d_fixed_shape, tmp_path):
-#     _test_predict_image_with_tiling(unet2d_fixed_shape, tmp_path, 0.012)
+def test_predict_image_with_tiling_fixed_output_shape(unet2d_fixed_shape, tmp_path):
+    _test_predict_image_with_tiling(unet2d_fixed_shape, tmp_path, 0.025)
 
 
 def test_predict_images(unet2d_nuclei_broad_model, tmp_path):
