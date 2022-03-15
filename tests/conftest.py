@@ -10,8 +10,7 @@ logger = logging.getLogger(__name__)
 warnings.warn(f"testing with bioimageio.spec {bioimageio_spec_version}")
 
 # test models for various frameworks
-torch_models = []
-torch_models_pre_3_10 = [
+torch_models = [
     "unet2d_fixed_shape",
     "unet2d_multi_tensor",
     "unet2d_nuclei_broad_model",
@@ -97,9 +96,6 @@ skip_keras = keras is None
 # load all model packages we need for testing
 load_model_packages = set()
 if not skip_torch:
-    if torch_version < (3, 10):
-        torch_models += torch_models_pre_3_10
-
     load_model_packages |= set(torch_models + torchscript_models)
 
 if not skip_onnx:
@@ -129,35 +125,6 @@ def pytest_configure():
 #
 # model groups of the form any_<weight format>_model that include all models providing a specific weight format
 #
-
-# written as model group to automatically skip on missing torch
-@pytest.fixture(params=[] if skip_torch or torch_version >= (3, 10) else ["unet2d_nuclei_broad_model"])
-def unet2d_nuclei_broad_model(request):
-    return pytest.model_packages[request.param]
-
-
-# written as model group to automatically skip on missing torch
-@pytest.fixture(params=[] if skip_torch or torch_version >= (3, 10) else ["unet2d_diff_output_shape"])
-def unet2d_diff_output_shape(request):
-    return pytest.model_packages[request.param]
-
-
-# written as model group to automatically skip on missing tensorflow 1
-@pytest.fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist_wrong_shape"])
-def stardist_wrong_shape(request):
-    return pytest.model_packages[request.param]
-
-
-# written as model group to automatically skip on missing tensorflow 1
-@pytest.fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist_wrong_shape2"])
-def stardist_wrong_shape2(request):
-    return pytest.model_packages[request.param]
-
-
-# written as model group to automatically skip on missing tensorflow 1
-@pytest.fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist"])
-def stardist(request):
-    return pytest.model_packages[request.param]
 
 
 @pytest.fixture(params=[] if skip_torch else torch_models)
@@ -200,19 +167,22 @@ def any_model(request):
     return pytest.model_packages[request.param]
 
 
+# TODO it would be nice to just generate fixtures for all the individual models dynamically
 #
 # temporary fixtures to test not with all, but only a manual selection of models
 # (models/functionality should be improved to get rid of this specific model group)
 #
+
+
 @pytest.fixture(
-    params=[] if skip_torch or torch_version >= (3, 10) else ["unet2d_nuclei_broad_model", "unet2d_fixed_shape"]
+    params=[] if skip_torch else ["unet2d_nuclei_broad_model", "unet2d_fixed_shape"]
 )
 def unet2d_fixed_shape_or_not(request):
     return pytest.model_packages[request.param]
 
 
 @pytest.fixture(
-    params=[] if skip_torch or torch_version >= (3, 10) else ["unet2d_nuclei_broad_model", "unet2d_multi_tensor"]
+    params=[] if skip_torch else ["unet2d_nuclei_broad_model", "unet2d_multi_tensor"]
 )
 def unet2d_multi_tensor_or_not(request):
     return pytest.model_packages[request.param]
@@ -220,4 +190,40 @@ def unet2d_multi_tensor_or_not(request):
 
 @pytest.fixture(params=[] if skip_keras else ["unet2d_keras"])
 def unet2d_keras(request):
+    return pytest.model_packages[request.param]
+
+
+# written as model group to automatically skip on missing torch
+@pytest.fixture(params=[] if skip_torch else ["unet2d_nuclei_broad_model"])
+def unet2d_nuclei_broad_model(request):
+    return pytest.model_packages[request.param]
+
+
+# written as model group to automatically skip on missing torch
+@pytest.fixture(params=[] if skip_torch else ["unet2d_diff_output_shape"])
+def unet2d_diff_output_shape(request):
+    return pytest.model_packages[request.param]
+
+
+# written as model group to automatically skip on missing torch
+@pytest.fixture(params=[] if skip_torch else ["unet2d_fixed_shape"])
+def unet2d_fixed_shape(request):
+    return pytest.model_packages[request.param]
+
+
+# written as model group to automatically skip on missing tensorflow 1
+@pytest.fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist_wrong_shape"])
+def stardist_wrong_shape(request):
+    return pytest.model_packages[request.param]
+
+
+# written as model group to automatically skip on missing tensorflow 1
+@pytest.fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist_wrong_shape2"])
+def stardist_wrong_shape2(request):
+    return pytest.model_packages[request.param]
+
+
+# written as model group to automatically skip on missing tensorflow 1
+@pytest.fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist"])
+def stardist(request):
     return pytest.model_packages[request.param]
