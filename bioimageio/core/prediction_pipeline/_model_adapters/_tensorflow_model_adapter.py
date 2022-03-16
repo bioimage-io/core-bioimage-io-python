@@ -6,7 +6,6 @@ import numpy as np
 import tensorflow as tf
 import xarray as xr
 
-from bioimageio.core.resource_io import nodes
 from ._model_adapter import ModelAdapter
 
 try:
