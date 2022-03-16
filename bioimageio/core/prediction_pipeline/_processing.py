@@ -78,7 +78,10 @@ class Processing:
 
             if f.name == "mode":
                 # mode is always annotated as literals (or literals of literals)
-                valid_modes = sum([get_args(inner) for inner in get_args(f.type)], start=tuple()) + get_args(f.type)
+                valid_modes = get_args(f.type)
+                for inner in get_args(f.type):
+                    valid_modes += get_args(inner)
+
                 if self.mode not in valid_modes:
                     raise NotImplementedError(f"Unsupported mode {self.mode} for {self.__class__.__name__}")
 
