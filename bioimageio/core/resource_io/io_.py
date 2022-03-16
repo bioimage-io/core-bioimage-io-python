@@ -143,7 +143,7 @@ def _get_tmp_package_path(raw_rd: RawResourceDescription, weights_priority_order
     if BIOIMAGEIO_NO_CACHE:
         tmp_dir = TemporaryDirectory()
         no_cache_tmp_list.append(tmp_dir)
-        return pathlib.Path(tmp_dir.name)
+        return pathlib.Path(tmp_dir.name) / "file"
 
     package_file_name = _get_package_base_name(raw_rd, weights_priority_order)
     cache_folder = BIOIMAGEIO_CACHE_PATH / "packages"
