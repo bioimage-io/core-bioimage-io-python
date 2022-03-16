@@ -134,7 +134,7 @@ class MeanVarStd(SampleMeasureGroup, DatasetMeasureGroup):
             self.mean = (n_a * mean_a + n_b * mean_b) / n
             assert self.mean.dtype == numpy.float64
             d = mean_b - mean_a
-            self.m2 = m2_a + m2_b + d**2 * n_a * n_b / n
+            self.m2 = m2_a + m2_b + d ** 2 * n_a * n_b / n
             assert self.m2.dtype == numpy.float64
 
     def finalize(self) -> Dict[TensorName, Dict[Measure, MeasureValue]]:
@@ -195,12 +195,12 @@ class MeanPercentiles(DatasetMeasureGroup):
 
         self.n += n
 
-    def finalize(self) -> Dict[Percentile, MeasureValue]:
+    def finalize(self) -> Dict[TensorName, Dict[Percentile, MeasureValue]]:
         if self.n == 0:
             return {}
         else:
             warnings.warn(f"Computed dataset percentiles naively by averaging percentiles of samples.")
-            return {Percentile(n=n, axes=self.axes): e for n, e in zip(self.ns, self.estimates)}
+            return {self.tensor_name: {Percentile(n=n, axes=self.axes): e for n, e in zip(self.ns, self.estimates)}}
 
 
 class CrickPercentiles(DatasetMeasureGroup):

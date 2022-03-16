@@ -1,9 +1,10 @@
-from typing import Iterable, Optional
+from typing import Dict, Iterable, Optional
 
 from tqdm import tqdm
 
-from ._measure_groups import MeasureGroups, get_measure_groups
-from ._utils import ComputedMeasures, PER_DATASET, PER_SAMPLE, RequiredMeasures, Sample
+from bioimageio.core.statistical_measures import Measure
+from ._measure_groups import MeasureGroups, MeasureValue, get_measure_groups
+from ._utils import ComputedMeasures, PER_DATASET, PER_SAMPLE, RequiredMeasures, Sample, TensorName
 
 try:
     from typing import Literal
@@ -19,6 +20,7 @@ class StatsState:
     measure_groups: MeasureGroups
     _n_start: int
     _n_stop: int
+    _final_dataset_stats: Optional[Dict[TensorName, Dict[Measure, MeasureValue]]]
 
     def __init__(
         self,
@@ -26,7 +28,7 @@ class StatsState:
         *,
         dataset: Iterable[Sample] = tuple(),
         update_dataset_stats_after_n_samples: Optional[int] = None,
-        update_dataset_stats_for_n_samples: int = 100,
+        update_dataset_stats_for_n_samples: int = float("inf"),
     ):
         """iterates over dataset to compute dataset statistics (if required). The resulting dataset statistics are further updated with each new sample. A sample in this context may be a mini-batch.
 
@@ -48,6 +50,7 @@ class StatsState:
     def reset(self, dataset: Iterable[Sample]):
         self.sample_count = 0
         self.last_sample = None
+        self._final_dataset_stats = None
         self.measure_groups = get_measure_groups(self.required_measures)
 
         len_dataset = 0
@@ -74,12 +77,21 @@ class StatsState:
             mg.update_with_sample(sample)
 
     def compute_measures(self) -> ComputedMeasures:
-        assert self.last_sample is not None, "call 'update_with_sample' first!"
         ret = {PER_SAMPLE: {}, PER_DATASET: {}}
-        for mg in self.measure_groups[PER_SAMPLE]:
-            ret[PER_SAMPLE].update(mg.compute(self.last_sample))
+        if self.last_sample is not None:
+            for mg in self.measure_groups[PER_SAMPLE]:
+                ret[PER_SAMPLE].update(mg.compute(self.last_sample))
 
-        for mg in self.measure_groups[PER_DATASET]:
-            ret[PER_DATASET].update(mg.finalize())
+        if self._final_dataset_stats is None:
+            dataset_stats = {}
+            for mg in self.measure_groups[PER_DATASET]:
+                dataset_stats.update(mg.finalize())
 
+            if self.sample_count > self._n_stop:
+                # stop recomputing final dataset statistics
+                self._final_dataset_stats = dataset_stats
+        else:
+            dataset_stats = self._final_dataset_stats
+
+        ret[PER_DATASET] = dataset_stats
         return ret

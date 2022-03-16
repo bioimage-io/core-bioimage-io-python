@@ -10,7 +10,7 @@ from bioimageio.core.resource_io.nodes import InputTensor, Model, OutputTensor
 from ._combined_processing import CombinedProcessing
 from ._model_adapters import ModelAdapter, create_model_adapter
 from ._stat_state import StatsState
-from ._utils import TensorName
+from ._utils import ComputedMeasures, Sample, TensorName
 
 
 @dataclass
@@ -134,12 +134,17 @@ class _PredictionPipelineImpl(PredictionPipeline):
         """Predict input_tensor with the model without applying pre/postprocessing."""
         return self._model.forward(*input_tensors)
 
+    def apply_preprocessing(self, sample: Sample) -> ComputedMeasures:
+        """apply preprocessing in-place"""
+        self._ipt_stats.update_with_sample(sample)
+        computed_measures = self._ipt_stats.compute_measures()
+        self._preprocessing.apply(sample, computed_measures)
+        return computed_measures
+
     def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         """Apply preprocessing, run prediction and apply postprocessing."""
         input_sample = dict(zip([ipt.name for ipt in self.input_specs], input_tensors))
-        self._ipt_stats.update_with_sample(input_sample)
-        computed_measures = self._ipt_stats.compute_measures()
-        self._preprocessing.apply(input_sample, computed_measures)
+        computed_measures = self.apply_preprocessing(input_sample)
 
         prediction_tensors = self.predict(*list(input_sample.values()))
         prediction = dict(zip([out.name for out in self.output_specs], prediction_tensors))
@@ -165,7 +170,7 @@ def create_prediction_pipeline(
     weight_format: Optional[str] = None,
     dataset_for_initial_statistics: Iterable[Sequence[xr.DataArray]] = tuple(),
     update_dataset_stats_after_n_samples: Optional[int] = None,
-    update_dataset_stats_for_n_samples: int = 100,
+    update_dataset_stats_for_n_samples: int = float("inf"),
 ) -> PredictionPipeline:
     """
     Creates prediction pipeline which includes:
