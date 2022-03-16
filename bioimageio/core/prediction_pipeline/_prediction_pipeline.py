@@ -134,7 +134,7 @@ class _PredictionPipelineImpl(PredictionPipeline):
         """Predict input_tensor with the model without applying pre/postprocessing."""
         return self._model.forward(*input_tensors)
 
-    def apply_preprocessing(self, sample: Sample, computed_measures: ComputedMeasures):
+    def apply_preprocessing(self, sample: Sample, computed_measures: ComputedMeasures) -> None:
         """apply preprocessing in-place"""
         self._ipt_stats.update_with_sample(sample)
         for mode, stats in self._ipt_stats.compute_measures().items():

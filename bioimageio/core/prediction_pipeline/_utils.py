@@ -7,7 +7,7 @@ from bioimageio.core.statistical_measures import Measure, MeasureValue
 try:
     from typing import Literal
 except ImportError:
-    from typing import Literal  # type: ignore
+    from typing_extensions import Literal  # type: ignore
 
 TensorName = str
 FixedMode = Literal["fixed"]
