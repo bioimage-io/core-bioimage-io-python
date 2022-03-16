@@ -134,25 +134,35 @@ class _PredictionPipelineImpl(PredictionPipeline):
         """Predict input_tensor with the model without applying pre/postprocessing."""
         return self._model.forward(*input_tensors)
 
-    def apply_preprocessing(self, sample: Sample) -> ComputedMeasures:
+    def apply_preprocessing(self, sample: Sample, computed_measures: ComputedMeasures):
         """apply preprocessing in-place"""
         self._ipt_stats.update_with_sample(sample)
-        computed_measures = self._ipt_stats.compute_measures()
+        for mode, stats in self._ipt_stats.compute_measures().items():
+            if mode not in computed_measures:
+                computed_measures[mode] = {}
+            computed_measures[mode].update(stats)
+
         self._preprocessing.apply(sample, computed_measures)
-        return computed_measures
+
+    def apply_postprocessing(self, sample: Sample, computed_measures: ComputedMeasures) -> None:
+        """apply postprocessing in-place"""
+        self._out_stats.update_with_sample(sample)
+        for mode, stats in self._out_stats.compute_measures().items():
+            if mode not in computed_measures:
+                computed_measures[mode] = {}
+            computed_measures[mode].update(stats)
+
+        self._postprocessing.apply(sample, computed_measures)
 
     def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         """Apply preprocessing, run prediction and apply postprocessing."""
         input_sample = dict(zip([ipt.name for ipt in self.input_specs], input_tensors))
-        computed_measures = self.apply_preprocessing(input_sample)
+        computed_measures = {}
+        self.apply_preprocessing(input_sample, computed_measures)
 
         prediction_tensors = self.predict(*list(input_sample.values()))
         prediction = dict(zip([out.name for out in self.output_specs], prediction_tensors))
-        self._out_stats.update_with_sample(prediction)
-        for mode, out_stats in self._out_stats.compute_measures().items():
-            computed_measures[mode].update(out_stats)
-
-        self._postprocessing.apply(prediction, computed_measures)
+        self.apply_postprocessing(prediction, computed_measures)
 
         return [prediction[tn] for tn in [out.name for out in self.output_specs]]
 
