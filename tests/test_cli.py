@@ -1,3 +1,4 @@
+import os
 import subprocess
 from typing import Sequence
 
@@ -7,9 +8,9 @@ import pytest
 from bioimageio.core import load_resource_description
 
 
-def run_subprocess(commands: Sequence[str]) -> subprocess.CompletedProcess:
+def run_subprocess(commands: Sequence[str], **kwargs) -> subprocess.CompletedProcess:
     # return subprocess.run(commands, capture_output=True)
-    return subprocess.run(commands, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding="utf-8")
+    return subprocess.run(commands, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding="utf-8", **kwargs)
 
 
 def test_validate_model(unet2d_nuclei_broad_model):
@@ -22,6 +23,13 @@ def test_cli_package(unet2d_nuclei_broad_model, tmp_path):
     ret = run_subprocess(["bioimageio", "package", unet2d_nuclei_broad_model, str(out_path)])
     assert ret.returncode == 0, ret.stdout
     assert out_path.exists()
+
+
+def test_cli_package_wo_cache(unet2d_nuclei_broad_model):
+    env = os.environ.copy()
+    env["BIOIMAGEIO_NO_CACHE"] = "True"
+    ret = run_subprocess(["bioimageio", "package", unet2d_nuclei_broad_model], env=env)
+    assert ret.returncode == 0, ret.stdout
 
 
 def test_cli_test_model(unet2d_nuclei_broad_model):
