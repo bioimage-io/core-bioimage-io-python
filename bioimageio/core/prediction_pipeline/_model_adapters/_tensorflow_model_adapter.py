@@ -5,8 +5,8 @@ from typing import List, Optional
 import numpy as np
 import tensorflow as tf
 import xarray as xr
+from marshmallow import missing
 
-from bioimageio.core.resource_io import nodes
 from ._model_adapter import ModelAdapter
 
 try:
@@ -35,10 +35,11 @@ class TensorflowModelAdapterBase(ModelAdapter):
             return str(weight_file)
 
     def _load(self, *, devices: Optional[List[str]] = None):
-        try:
-            model_tf_version = self.bioimageio_model.weights[self.weight_format].tensorflow_version.version
-        except AttributeError:
+        model_tf_version = self.bioimageio_model.weights[self.weight_format].tensorflow_version
+        if model_tf_version is missing:
             model_tf_version = None
+        else:
+            model_tf_version = (int(model_tf_version.major), int(model_tf_version.minor))
 
         tf_version = tf.__version__
         tf_major_and_minor = tuple(map(int, tf_version.split(".")))[:2]

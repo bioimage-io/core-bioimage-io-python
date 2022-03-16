@@ -1,5 +1,6 @@
 import warnings
 from typing import List, Optional, Sequence
+from marshmallow import missing
 
 # by default, we use the keras integrated with tensorflow
 try:
@@ -18,10 +19,11 @@ from ._model_adapter import ModelAdapter
 
 class KerasModelAdapter(ModelAdapter):
     def _load(self, *, devices: Optional[Sequence[str]] = None) -> None:
-        try:
-            model_tf_version = self.bioimageio_model.weights[self.weight_format].tensorflow_version.version
-        except AttributeError:
+        model_tf_version = self.bioimageio_model.weights["keras_hdf5"].tensorflow_version
+        if model_tf_version is missing:
             model_tf_version = None
+        else:
+            model_tf_version = (int(model_tf_version.major), int(model_tf_version.minor))
 
         if TF_VERSION is None or model_tf_version is None:
             warnings.warn("Could not check tensorflow versions. The prediction results may be wrong.")

@@ -93,7 +93,7 @@ def convert_weights_to_tensorflow_saved_model_bundle(
     weight_path = str(weight_spec.source)
 
     if weight_spec.tensorflow_version:
-        model_tf_major_ver = weight_spec.tensorflow_version.version[0]
+        model_tf_major_ver = int(weight_spec.tensorflow_version.major)
         if model_tf_major_ver != tf_major_ver:
             raise RuntimeError(f"Tensorflow major versions of model {model_tf_major_ver} is not {tf_major_ver}")
 
