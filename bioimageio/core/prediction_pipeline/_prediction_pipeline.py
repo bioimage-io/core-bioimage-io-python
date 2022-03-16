@@ -135,7 +135,7 @@ class _PredictionPipelineImpl(PredictionPipeline):
         return self._model.forward(*input_tensors)
 
     def apply_preprocessing(self, sample: Sample, computed_measures: ComputedMeasures) -> None:
-        """apply preprocessing in-place"""
+        """apply preprocessing in-place, also updates given computed_measures"""
         self._ipt_stats.update_with_sample(sample)
         for mode, stats in self._ipt_stats.compute_measures().items():
             if mode not in computed_measures:
@@ -145,7 +145,7 @@ class _PredictionPipelineImpl(PredictionPipeline):
         self._preprocessing.apply(sample, computed_measures)
 
     def apply_postprocessing(self, sample: Sample, computed_measures: ComputedMeasures) -> None:
-        """apply postprocessing in-place"""
+        """apply postprocessing in-place, also updates given computed_measures"""
         self._out_stats.update_with_sample(sample)
         for mode, stats in self._out_stats.compute_measures().items():
             if mode not in computed_measures:
@@ -155,7 +155,9 @@ class _PredictionPipelineImpl(PredictionPipeline):
         self._postprocessing.apply(sample, computed_measures)
 
     def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
-        """Apply preprocessing, run prediction and apply postprocessing."""
+        """Apply preprocessing, run prediction and apply postprocessing.
+        Note: The preprocessing might change input_tensors in-pace.
+        """
         input_sample = dict(zip([ipt.name for ipt in self.input_specs], input_tensors))
         computed_measures = {}
         self.apply_preprocessing(input_sample, computed_measures)
