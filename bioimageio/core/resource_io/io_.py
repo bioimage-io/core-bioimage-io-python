@@ -1,6 +1,7 @@
 import os
 import pathlib
 from copy import deepcopy
+from tempfile import TemporaryDirectory
 from typing import Dict, Optional, Sequence, Union
 from zipfile import ZIP_DEFLATED, ZipFile
 
@@ -10,7 +11,12 @@ from bioimageio import spec
 from bioimageio.core.resource_io.nodes import ResourceDescription
 from bioimageio.spec import load_raw_resource_description
 from bioimageio.spec.shared import raw_nodes
-from bioimageio.spec.shared.common import BIOIMAGEIO_CACHE_PATH, get_class_name_from_type
+from bioimageio.spec.shared.common import (
+    BIOIMAGEIO_CACHE_PATH,
+    BIOIMAGEIO_USE_CACHE,
+    get_class_name_from_type,
+    no_cache_tmp_list,
+)
 from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
 from . import nodes
 from .utils import resolve_raw_resource_description, resolve_source
@@ -134,21 +140,26 @@ def _get_package_base_name(raw_rd: RawResourceDescription, weights_priority_orde
 
 
 def _get_tmp_package_path(raw_rd: RawResourceDescription, weights_priority_order: Optional[Sequence[str]]):
-    package_file_name = _get_package_base_name(raw_rd, weights_priority_order)
+    if BIOIMAGEIO_USE_CACHE:
+        package_file_name = _get_package_base_name(raw_rd, weights_priority_order)
+        cache_folder = BIOIMAGEIO_CACHE_PATH / "packages"
+        cache_folder.mkdir(exist_ok=True, parents=True)
 
-    cache_folder = BIOIMAGEIO_CACHE_PATH / "packages"
-    cache_folder.mkdir(exist_ok=True, parents=True)
-    package_path = (cache_folder / package_file_name).with_suffix(".zip")
-    max_cached_packages_with_same_name = 100
-    for p in range(max_cached_packages_with_same_name):
-        if package_path.exists():
-            package_path = (cache_folder / f"{package_file_name}p{p}").with_suffix(".zip")
+        package_path = (cache_folder / package_file_name).with_suffix(".zip")
+        max_cached_packages_with_same_name = 100
+        for p in range(max_cached_packages_with_same_name):
+            if package_path.exists():
+                package_path = (cache_folder / f"{package_file_name}p{p}").with_suffix(".zip")
+            else:
+                break
         else:
-            break
+            raise FileExistsError(
+                f"Already caching {max_cached_packages_with_same_name} versions of {cache_folder / package_file_name}!"
+            )
     else:
-        raise FileExistsError(
-            f"Already caching {max_cached_packages_with_same_name} versions of {cache_folder / package_file_name}!"
-        )
+        tmp_dir = TemporaryDirectory()
+        no_cache_tmp_list.append(tmp_dir)
+        package_path = pathlib.Path(tmp_dir.name) / "file"
 
     return package_path
 
