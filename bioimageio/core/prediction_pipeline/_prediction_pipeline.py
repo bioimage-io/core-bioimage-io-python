@@ -176,8 +176,8 @@ class _PredictionPipelineImpl(PredictionPipeline):
 
 
 def create_prediction_pipeline(
-    *,
     bioimageio_model: nodes.Model,
+    *,
     devices: Optional[Sequence[str]] = None,
     weight_format: Optional[str] = None,
     dataset_for_initial_statistics: Iterable[Sequence[xr.DataArray]] = tuple(),
