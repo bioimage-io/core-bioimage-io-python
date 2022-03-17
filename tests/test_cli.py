@@ -27,7 +27,7 @@ def test_cli_package(unet2d_nuclei_broad_model, tmp_path):
 
 def test_cli_package_wo_cache(unet2d_nuclei_broad_model):
     env = os.environ.copy()
-    env["BIOIMAGEIO_NO_CACHE"] = "True"
+    env["BIOIMAGEIO_USE_CACHE"] = "false"
     ret = run_subprocess(["bioimageio", "package", unet2d_nuclei_broad_model], env=env)
     assert ret.returncode == 0, ret.stdout
 

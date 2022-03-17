@@ -13,7 +13,7 @@ from bioimageio.spec import load_raw_resource_description
 from bioimageio.spec.shared import raw_nodes
 from bioimageio.spec.shared.common import (
     BIOIMAGEIO_CACHE_PATH,
-    BIOIMAGEIO_NO_CACHE,
+    BIOIMAGEIO_USE_CACHE,
     get_class_name_from_type,
     no_cache_tmp_list,
 )
@@ -140,26 +140,26 @@ def _get_package_base_name(raw_rd: RawResourceDescription, weights_priority_orde
 
 
 def _get_tmp_package_path(raw_rd: RawResourceDescription, weights_priority_order: Optional[Sequence[str]]):
-    if BIOIMAGEIO_NO_CACHE:
+    if BIOIMAGEIO_USE_CACHE:
+        package_file_name = _get_package_base_name(raw_rd, weights_priority_order)
+        cache_folder = BIOIMAGEIO_CACHE_PATH / "packages"
+        cache_folder.mkdir(exist_ok=True, parents=True)
+
+        package_path = (cache_folder / package_file_name).with_suffix(".zip")
+        max_cached_packages_with_same_name = 100
+        for p in range(max_cached_packages_with_same_name):
+            if package_path.exists():
+                package_path = (cache_folder / f"{package_file_name}p{p}").with_suffix(".zip")
+            else:
+                break
+        else:
+            raise FileExistsError(
+                f"Already caching {max_cached_packages_with_same_name} versions of {cache_folder / package_file_name}!"
+            )
+    else:
         tmp_dir = TemporaryDirectory()
         no_cache_tmp_list.append(tmp_dir)
-        return pathlib.Path(tmp_dir.name) / "file"
-
-    package_file_name = _get_package_base_name(raw_rd, weights_priority_order)
-    cache_folder = BIOIMAGEIO_CACHE_PATH / "packages"
-    cache_folder.mkdir(exist_ok=True, parents=True)
-
-    package_path = (cache_folder / package_file_name).with_suffix(".zip")
-    max_cached_packages_with_same_name = 100
-    for p in range(max_cached_packages_with_same_name):
-        if package_path.exists():
-            package_path = (cache_folder / f"{package_file_name}p{p}").with_suffix(".zip")
-        else:
-            break
-    else:
-        raise FileExistsError(
-            f"Already caching {max_cached_packages_with_same_name} versions of {cache_folder / package_file_name}!"
-        )
+        package_path = pathlib.Path(tmp_dir.name) / "file"
 
     return package_path
 
