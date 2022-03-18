@@ -9,7 +9,6 @@ from bioimageio.core import load_resource_description
 
 
 def run_subprocess(commands: Sequence[str], **kwargs) -> subprocess.CompletedProcess:
-    # return subprocess.run(commands, capture_output=True)
     return subprocess.run(commands, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding="utf-8", **kwargs)
 
 

@@ -12,8 +12,6 @@ def test_postprocessing_dtype():
     np_data = np.random.rand(*shape)
     data = xr.DataArray(np_data, dims=axes)
 
-    inputs = []
-
     threshold = 0.5
     exp = xr.DataArray(np_data > threshold, dims=axes)
 
@@ -27,10 +25,10 @@ def test_postprocessing_dtype():
                 postprocessing=[nodes.Postprocessing("binarize", dict(threshold=threshold))],
             )
         ]
-        com_proc = CombinedProcessing(inputs, outputs)
+        com_proc = CombinedProcessing(outputs)
 
-        res, _ = com_proc.apply_postprocessing(data, input_sample_statistics={})
-        assert len(res) == 1
-        res = res[0]
+        sample = {"out1": data}
+        com_proc.apply(sample, {})
+        res = sample["out1"]
         assert np.dtype(res.dtype) == np.dtype(dtype)
         xr.testing.assert_allclose(res, exp.astype(dtype))

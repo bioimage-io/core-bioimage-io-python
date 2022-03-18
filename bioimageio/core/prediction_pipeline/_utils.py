@@ -1,9 +1,25 @@
-def has_batch_dim(axes: str) -> bool:
-    try:
-        index = axes.index("b")
-    except ValueError:
-        return False
-    else:
-        if index != 0:
-            raise ValueError("Batch dimension is only supported in first position")
-        return True
+from typing import Dict, Set
+
+import xarray as xr
+
+from bioimageio.core.statistical_measures import Measure, MeasureValue
+
+try:
+    from typing import Literal
+except ImportError:
+    from typing_extensions import Literal  # type: ignore
+
+TensorName = str
+FixedMode = Literal["fixed"]
+SampleMode = Literal["per_sample"]
+DatasetMode = Literal["per_dataset"]
+Mode = Literal[FixedMode, SampleMode, DatasetMode]
+
+FIXED: FixedMode = "fixed"
+PER_SAMPLE: SampleMode = "per_sample"
+PER_DATASET: DatasetMode = "per_dataset"
+MODES: Set[Mode] = {FIXED, PER_SAMPLE, PER_DATASET}
+
+Sample = Dict[TensorName, xr.DataArray]
+RequiredMeasures = Dict[Literal[SampleMode, DatasetMode], Dict[TensorName, Set[Measure]]]
+ComputedMeasures = Dict[Literal[SampleMode, DatasetMode], Dict[TensorName, Dict[Measure, MeasureValue]]]

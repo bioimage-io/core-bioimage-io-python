@@ -1,21 +1,21 @@
 import abc
-import math
 from dataclasses import dataclass
-from typing import List, Optional, Sequence, Tuple, Dict, Any
+from typing import Iterable, List, Optional, Sequence, Tuple
 
 import xarray as xr
 from marshmallow import missing
 
 from bioimageio.core.resource_io import nodes
-from bioimageio.core.statistical_measures import Measure
+from bioimageio.core.resource_io.nodes import InputTensor, Model, OutputTensor
 from ._combined_processing import CombinedProcessing
 from ._model_adapters import ModelAdapter, create_model_adapter
-from ..resource_io.nodes import InputTensor, Model, OutputTensor
+from ._stat_state import StatsState
+from ._utils import ComputedMeasures, Sample, TensorName
 
 
 @dataclass
 class NamedImplicitOutputShape:
-    reference_input: str = missing
+    reference_input: TensorName = missing
     scale: List[Tuple[str, float]] = missing
     offset: List[Tuple[str, int]] = missing
 
@@ -85,7 +85,15 @@ class PredictionPipeline(abc.ABC):
 
 class _PredictionPipelineImpl(PredictionPipeline):
     def __init__(
-        self, *, name: str, bioimageio_model: Model, processing: CombinedProcessing, model: ModelAdapter
+        self,
+        *,
+        name: str,
+        bioimageio_model: Model,
+        preprocessing: CombinedProcessing,
+        postprocessing: CombinedProcessing,
+        ipt_stats: StatsState,
+        out_stats: StatsState,
+        model: ModelAdapter,
     ) -> None:
         if bioimageio_model.run_mode:
             raise NotImplementedError(f"Not yet implemented inference for run mode '{bioimageio_model.run_mode.name}'")
@@ -93,7 +101,10 @@ class _PredictionPipelineImpl(PredictionPipeline):
         self._name = name
         self._input_specs = bioimageio_model.inputs
         self._output_specs = bioimageio_model.outputs
-        self._processing = processing
+        self._preprocessing = preprocessing
+        self._postprocessing = postprocessing
+        self._ipt_stats = ipt_stats
+        self._out_stats = out_stats
         self._model: ModelAdapter = model
 
     def __call__(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
@@ -123,21 +134,39 @@ class _PredictionPipelineImpl(PredictionPipeline):
         """Predict input_tensor with the model without applying pre/postprocessing."""
         return self._model.forward(*input_tensors)
 
+    def apply_preprocessing(self, sample: Sample, computed_measures: ComputedMeasures) -> None:
+        """apply preprocessing in-place, also updates given computed_measures"""
+        self._ipt_stats.update_with_sample(sample)
+        for mode, stats in self._ipt_stats.compute_measures().items():
+            if mode not in computed_measures:
+                computed_measures[mode] = {}
+            computed_measures[mode].update(stats)
+
+        self._preprocessing.apply(sample, computed_measures)
+
+    def apply_postprocessing(self, sample: Sample, computed_measures: ComputedMeasures) -> None:
+        """apply postprocessing in-place, also updates given computed_measures"""
+        self._out_stats.update_with_sample(sample)
+        for mode, stats in self._out_stats.compute_measures().items():
+            if mode not in computed_measures:
+                computed_measures[mode] = {}
+            computed_measures[mode].update(stats)
+
+        self._postprocessing.apply(sample, computed_measures)
+
     def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
-        """Apply preprocessing, run prediction and apply postprocessing."""
-        preprocessed, sample_stats = self._processing.apply_preprocessing(*input_tensors)
-        prediction = self.predict(*preprocessed)
-        return self._processing.apply_postprocessing(*prediction, input_sample_statistics=sample_stats)[0]
+        """Apply preprocessing, run prediction and apply postprocessing.
+        Note: The preprocessing might change input_tensors in-pace.
+        """
+        input_sample = dict(zip([ipt.name for ipt in self.input_specs], input_tensors))
+        computed_measures = {}
+        self.apply_preprocessing(input_sample, computed_measures)
 
-    def preprocess(self, *input_tensors: xr.DataArray) -> Tuple[List[xr.DataArray], Dict[str, Dict[Measure, Any]]]:
-        """Apply preprocessing."""
-        return self._processing.apply_preprocessing(*input_tensors)
+        prediction_tensors = self.predict(*list(input_sample.values()))
+        prediction = dict(zip([out.name for out in self.output_specs], prediction_tensors))
+        self.apply_postprocessing(prediction, computed_measures)
 
-    def postprocess(
-        self, *input_tensors: xr.DataArray, input_sample_statistics
-    ) -> Tuple[List[xr.DataArray], Dict[str, Dict[Measure, Any]]]:
-        """Apply postprocessing."""
-        return self._processing.apply_postprocessing(*input_tensors, input_sample_statistics=input_sample_statistics)
+        return [prediction[tn] for tn in [out.name for out in self.output_specs]]
 
     def load(self):
         self._model.load()
@@ -147,20 +176,52 @@ class _PredictionPipelineImpl(PredictionPipeline):
 
 
 def create_prediction_pipeline(
-    *, bioimageio_model: nodes.Model, devices: Optional[Sequence[str]] = None, weight_format: Optional[str] = None
+    bioimageio_model: nodes.Model,
+    *,
+    devices: Optional[Sequence[str]] = None,
+    weight_format: Optional[str] = None,
+    dataset_for_initial_statistics: Iterable[Sequence[xr.DataArray]] = tuple(),
+    update_dataset_stats_after_n_samples: Optional[int] = None,
+    update_dataset_stats_for_n_samples: int = float("inf"),
 ) -> PredictionPipeline:
     """
     Creates prediction pipeline which includes:
+    * computation of input statistics
     * preprocessing
     * model prediction
+    * computation of output statistics
     * postprocessing
     """
     model_adapter: ModelAdapter = create_model_adapter(
         bioimageio_model=bioimageio_model, devices=devices, weight_format=weight_format
     )
 
-    processing = CombinedProcessing(bioimageio_model.inputs, bioimageio_model.outputs)
+    preprocessing = CombinedProcessing(bioimageio_model.inputs)
+
+    def sample_dataset():
+        for tensors in dataset_for_initial_statistics:
+            yield dict(zip([ipt.name for ipt in bioimageio_model.inputs], tensors))
+
+    ipt_stats = StatsState(
+        preprocessing.required_measures,
+        dataset=sample_dataset(),
+        update_dataset_stats_after_n_samples=update_dataset_stats_after_n_samples,
+        update_dataset_stats_for_n_samples=update_dataset_stats_for_n_samples,
+    )
+    postprocessing = CombinedProcessing(bioimageio_model.outputs)
+    out_stats = StatsState(
+        postprocessing.required_measures,
+        dataset=tuple(),
+        update_dataset_stats_after_n_samples=0,
+        update_dataset_stats_for_n_samples=ipt_stats.sample_count + update_dataset_stats_for_n_samples,
+    )
 
     return _PredictionPipelineImpl(
-        name=bioimageio_model.name, bioimageio_model=bioimageio_model, model=model_adapter, processing=processing
+        name=bioimageio_model.name,
+        bioimageio_model=bioimageio_model,
+        model=model_adapter,
+        preprocessing=preprocessing,
+        postprocessing=postprocessing,
+        ipt_stats=ipt_stats,
+        out_stats=out_stats,
     )

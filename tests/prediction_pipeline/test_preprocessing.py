@@ -1,7 +1,8 @@
 import numpy as np
 import xarray as xr
 
-from bioimageio.core.prediction_pipeline._combined_processing import CombinedProcessing
+from bioimageio.core.prediction_pipeline._measure_groups import compute_measures
+from bioimageio.core.prediction_pipeline._utils import PER_SAMPLE
 
 
 def test_scale_linear():
@@ -27,8 +28,13 @@ def test_scale_linear_no_channel():
 def test_zero_mean_unit_variance_preprocessing():
     from bioimageio.core.prediction_pipeline._processing import ZeroMeanUnitVariance
 
-    preprocessing = ZeroMeanUnitVariance("data_name")
     data = xr.DataArray(np.arange(9).reshape(3, 3), dims=("x", "y"))
+
+    preprocessing = ZeroMeanUnitVariance("data_name", mode=PER_SAMPLE)
+    required = preprocessing.get_required_measures()
+    computed = compute_measures(required, sample={"data_name": data})
+    preprocessing.set_computed_measures(computed)
+
     expected = xr.DataArray(
         np.array(
             [
@@ -61,8 +67,14 @@ def test_zero_mean_unit_variance_preprocessing_fixed():
 def test_zero_mean_unit_across_axes():
     from bioimageio.core.prediction_pipeline._processing import ZeroMeanUnitVariance
 
-    preprocessing = ZeroMeanUnitVariance("data_name", axes=("x", "y"))
     data = xr.DataArray(np.arange(18).reshape((2, 3, 3)), dims=("c", "x", "y"))
+
+    axes = ("x", "y")
+    preprocessing = ZeroMeanUnitVariance("data_name", axes=axes, mode=PER_SAMPLE)
+    required = preprocessing.get_required_measures()
+    computed = compute_measures(required, sample={"data_name": data})
+    preprocessing.set_computed_measures(computed)
+
     expected = xr.DataArray(
         np.array(
             [
@@ -116,8 +128,12 @@ def test_clip_preprocessing():
 def test_combination_of_preprocessing_steps_with_dims_specified():
     from bioimageio.core.prediction_pipeline._processing import ZeroMeanUnitVariance
 
-    preprocessing = ZeroMeanUnitVariance("data_name", axes=("x", "y"))
     data = xr.DataArray(np.arange(18).reshape((2, 3, 3)), dims=("c", "x", "y"))
+    axes = ("x", "y")
+    preprocessing = ZeroMeanUnitVariance("data_name", axes=axes, mode=PER_SAMPLE)
+    required = preprocessing.get_required_measures()
+    computed = compute_measures(required, sample={"data_name": data})
+    preprocessing.set_computed_measures(computed)
 
     expected = xr.DataArray(
         np.array(
@@ -140,11 +156,9 @@ def test_scale_range():
     preprocessing = ScaleRange("data_name")
     np_data = np.arange(9).reshape(3, 3).astype("float32")
     data = xr.DataArray(np_data, dims=("x", "y"))
-    preprocessing.set_computed_sample_statistics(
-        CombinedProcessing.compute_sample_statistics(
-            {"data_name": data}, preprocessing.get_required_sample_statistics()
-        )
-    )
+    required = preprocessing.get_required_measures()
+    computed = compute_measures(required, sample={"data_name": data})
+    preprocessing.set_computed_measures(computed)
 
     eps = 1.0e-6
     mi, ma = np_data.min(), np_data.max()
@@ -168,11 +182,9 @@ def test_scale_range_axes():
     np_data = np.arange(18).reshape((2, 3, 3)).astype("float32")
     data = xr.DataArray(np_data, dims=("c", "x", "y"))
 
-    preprocessing.set_computed_sample_statistics(
-        CombinedProcessing.compute_sample_statistics(
-            {"data_name": data}, preprocessing.get_required_sample_statistics()
-        )
-    )
+    required = preprocessing.get_required_measures()
+    computed = compute_measures(required, sample={"data_name": data})
+    preprocessing.set_computed_measures(computed)
 
     eps = 1.0e-6
     p_low = np.percentile(np_data, min_percentile, axis=(1, 2), keepdims=True)

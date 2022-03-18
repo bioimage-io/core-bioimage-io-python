@@ -1,15 +1,17 @@
 from dataclasses import dataclass, field, fields
-from typing import Any, Dict, Optional, Sequence, Set, Union
+from typing import Mapping, Optional, Sequence, Type, Union
 
 import numpy as np
 import xarray as xr
 
 from bioimageio.core.statistical_measures import Mean, Measure, Percentile, Std
+from bioimageio.spec.model.raw_nodes import PostprocessingName, PreprocessingName
+from ._utils import ComputedMeasures, DatasetMode, FIXED, Mode, PER_DATASET, PER_SAMPLE, RequiredMeasures, SampleMode
 
 try:
-    from typing import Literal, get_args
+    from typing import Literal, get_args, TypedDict
 except ImportError:
-    from typing_extensions import Literal, get_args  # type: ignore
+    from typing_extensions import Literal, get_args, TypedDict  # type: ignore
 
 
 def _get_fixed(
@@ -24,59 +26,39 @@ def _get_fixed(
     return xr.DataArray(fixed, dims=fixed_dims)
 
 
+TensorName = str
+
+MISSING = "MISSING"
+
+
 @dataclass
 class Processing:
     """base class for all Pre- and Postprocessing transformations"""
 
     tensor_name: str
-    computed_dataset_statistics: Dict[str, Dict[Measure, Any]] = field(init=False)
-    computed_sample_statistics: Dict[str, Dict[Measure, Any]] = field(init=False)
+    # todo: in python>=3.10 we should use dataclasses.KW_ONLY instead of MISSING (see child classes) to make inheritance work properly
+    computed_measures: ComputedMeasures = field(default_factory=dict)
+    mode: Mode = FIXED
 
-    def get_required_dataset_statistics(self) -> Dict[str, Set[Measure]]:
-        """
-        Specifies which dataset measures are required from what tensor.
-        Returns: dataset measures required to apply this processing indexed by <tensor_name>.
-        """
+    def get_required_measures(self) -> RequiredMeasures:
         return {}
 
-    def get_required_sample_statistics(self) -> Dict[str, Set[Measure]]:
-        """
-        Specifies which sample measures are required from what tensor.
-        Returns: sample measures required to apply this processing indexed by <tensor_name>.
-        """
-        return {}
+    def set_computed_measures(self, computed: ComputedMeasures):
+        # check if computed contains all required measures
+        for mode, req_per_mode in self.get_required_measures().items():
+            for tn, req_per_tn in req_per_mode.items():
+                comp_measures = computed.get(mode, {}).get(tn, {})
+                for req_measure in req_per_tn:
+                    if req_measure not in comp_measures:
+                        raise ValueError(f"Missing required {req_measure} for {tn} {mode}.")
 
-    def set_computed_dataset_statistics(self, computed: Dict[str, Dict[Measure, Any]]):
-        """helper to set computed statistics and check if they match the requirements"""
-        for tensor_name, req_measures in self.get_required_dataset_statistics().items():
-            comp_measures = computed.get(tensor_name, {})
-            for req_measure in req_measures:
-                if req_measure not in comp_measures:
-                    raise ValueError(f"Missing required measure {req_measure} for {tensor_name}")
-        self.computed_dataset_statistics = computed
+        self.computed_measures = computed
 
-    def set_computed_sample_statistics(self, computed: Dict[str, Dict[Measure, Any]]):
-        """helper to set computed statistics and check if they match the requirements"""
-        for tensor_name, req_measures in self.get_required_sample_statistics().items():
-            comp_measures = computed.get(tensor_name, {})
-            for req_measure in req_measures:
-                if req_measure not in comp_measures:
-                    raise ValueError(f"Missing required measure {req_measure} for {tensor_name}")
-        self.computed_sample_statistics = computed
-
-    def get_computed_dataset_statistics(self, tensor_name: str, measure: Measure):
-        """helper to unpack self.computed_dataset_statistics"""
-        ret = self.computed_dataset_statistics.get(tensor_name, {}).get(measure)
+    def get_computed_measure(self, tensor_name: TensorName, measure: Measure, *, mode: Optional[Mode] = None):
+        """helper to unpack self.computed_measures"""
+        ret = self.computed_measures.get(mode or self.mode, {}).get(tensor_name, {}).get(measure)
         if ret is None:
-            raise RuntimeError(f"Missing computed {measure} for {tensor_name} dataset.")
-
-        return ret
-
-    def get_computed_sample_statistics(self, tensor_name: str, measure: Measure):
-        """helper to unpack self.computed_sample_statistics"""
-        ret = self.computed_sample_statistics.get(tensor_name, {}).get(measure)
-        if ret is None:
-            raise RuntimeError(f"Missing computed {measure} for {tensor_name} sample.")
+            raise RuntimeError(f"Missing computed {measure} for {tensor_name} {mode}.")
 
         return ret
 
@@ -84,21 +66,24 @@ class Processing:
         return self.apply(tensor)
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
-        """apply processing to named tensors"""
+        """apply processing"""
         raise NotImplementedError
 
     def __post_init__(self):
-        """validate common kwargs by their annotations"""
-        self.computed_dataset_statistics = {}
-        self.computed_sample_statistics = {}
-
+        # validate common kwargs by their annotations
         for f in fields(self):
+            # check MISSING
+            if getattr(self, f.name) is MISSING:
+                raise TypeError(f"missing required argument {f.name}")
+
             if f.name == "mode":
-                assert hasattr(self, "mode")
-                if self.mode not in get_args(f.type):
-                    raise NotImplementedError(
-                        f"Unsupported mode {self.mode} for {self.__class__.__name__}: {self.mode}"
-                    )
+                # mode is always annotated as literals (or literals of literals)
+                valid_modes = get_args(f.type)
+                for inner in get_args(f.type):
+                    valid_modes += get_args(inner)
+
+                if self.mode not in valid_modes:
+                    raise NotImplementedError(f"Unsupported mode {self.mode} for {self.__class__.__name__}")
 
 
 #
@@ -118,7 +103,7 @@ def ensure_dtype(tensor: xr.DataArray, *, dtype) -> xr.DataArray:
 
 @dataclass
 class Binarize(Processing):
-    threshold: float
+    threshold: float = MISSING  # make dataclass inheritance work for py<3.10 by using an explicit MISSING value.
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
         return ensure_dtype(tensor > self.threshold, dtype="float32")
@@ -126,8 +111,8 @@ class Binarize(Processing):
 
 @dataclass
 class Clip(Processing):
-    min: float
-    max: float
+    min: float = MISSING
+    max: float = MISSING
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
         return ensure_dtype(tensor.clip(min=self.min, max=self.max), dtype="float32")
@@ -135,7 +120,7 @@ class Clip(Processing):
 
 @dataclass
 class EnsureDtype(Processing):
-    dtype: str
+    dtype: str = MISSING
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
         return ensure_dtype(tensor, dtype=self.dtype)
@@ -145,8 +130,8 @@ class EnsureDtype(Processing):
 class ScaleLinear(Processing):
     """scale the tensor with a fixed multiplicative and additive factor"""
 
-    gain: Union[float, Sequence[float]]
-    offset: Union[float, Sequence[float]]
+    gain: Union[float, Sequence[float]] = MISSING
+    offset: Union[float, Sequence[float]] = MISSING
     axes: Optional[Sequence[str]] = None
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
@@ -174,53 +159,23 @@ class ScaleMeanVariance(Processing):
 
 @dataclass
 class ScaleRange(Processing):
-    mode: Literal["per_sample", "per_dataset"] = "per_sample"
+    mode: Literal[SampleMode, DatasetMode] = PER_SAMPLE
     axes: Optional[Sequence[str]] = None
     min_percentile: float = 0.0
     max_percentile: float = 100.0
     eps: float = 1e-6
-    reference_tensor: Optional[str] = None
+    reference_tensor: Optional[TensorName] = None
 
-    def get_required_dataset_statistics(self) -> Dict[str, Set[Measure]]:
-        if self.mode == "per_sample":
-            return {}
-        elif self.mode == "per_dataset":
-            measures = {
-                Percentile(self.min_percentile, axes=self.axes),
-                Percentile(self.max_percentile, axes=self.axes),
-            }
-            return {self.reference_tensor or self.tensor_name: measures}
-        else:
-            raise ValueError(self.mode)
-
-    def get_required_sample_statistics(self) -> Dict[str, Set[Measure]]:
-        if self.mode == "per_sample":
-            measures = {
-                Percentile(self.min_percentile, axes=self.axes),
-                Percentile(self.max_percentile, axes=self.axes),
-            }
-            return {self.reference_tensor or self.tensor_name: measures}
-        elif self.mode == "per_dataset":
-            return {}
-        else:
-            raise ValueError(self.mode)
+    def get_required_measures(self) -> RequiredMeasures:
+        axes = None if self.axes is None else tuple(self.axes)
+        measures = {Percentile(self.min_percentile, axes=axes), Percentile(self.max_percentile, axes=axes)}
+        return {self.mode: {self.reference_tensor or self.tensor_name: measures}}
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
         ref_name = self.reference_tensor or self.tensor_name
-        if self.axes:
-            axes = tuple(self.axes)
-        else:
-            axes = None
-
-        if self.mode == "per_sample":
-            get_stat = self.get_computed_sample_statistics
-        elif self.mode == "per_dataset":
-            get_stat = self.get_computed_dataset_statistics
-        else:
-            raise ValueError(self.mode)
-
-        v_lower = get_stat(ref_name, Percentile(self.min_percentile, axes=axes))
-        v_upper = get_stat(ref_name, Percentile(self.max_percentile, axes=axes))
+        axes = None if self.axes is None else tuple(self.axes)
+        v_lower = self.get_computed_measure(ref_name, Percentile(self.min_percentile, axes=axes))
+        v_upper = self.get_computed_measure(ref_name, Percentile(self.max_percentile, axes=axes))
 
         return ensure_dtype((tensor - v_lower) / (v_upper - v_lower + self.eps), dtype="float32")
 
@@ -237,38 +192,54 @@ class Sigmoid(Processing):
 
 @dataclass
 class ZeroMeanUnitVariance(Processing):
-    mode: Literal["fixed", "per_sample", "per_dataset"] = "per_sample"
+    mode: Mode = PER_SAMPLE
     mean: Optional[Union[float, Sequence[float]]] = None
     std: Optional[Union[float, Sequence[float]]] = None
     axes: Optional[Sequence[str]] = None
     eps: float = 1.0e-6
 
-    def get_required_dataset_statistics(self) -> Dict[str, Set[Measure]]:
-        if self.mode == "per_dataset":
-            return {self.tensor_name: {Mean(), Std()}}
-        else:
-            return {}
-
-    def get_required_sample_statistics(self) -> Dict[str, Set[Measure]]:
-        if self.mode == "per_sample":
-            return {self.tensor_name: {Mean(), Std()}}
-        else:
-            return {}
+    def get_required_measures(self) -> RequiredMeasures:
+        axes = None if self.axes is None else tuple(self.axes)
+        return {self.mode: {self.tensor_name: {Mean(axes=axes), Std(axes=axes)}}}
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
         axes = None if self.axes is None else tuple(self.axes)
-        if self.mode == "fixed":
+        if self.mode == FIXED:
             assert self.mean is not None and self.std is not None
             mean = _get_fixed(self.mean, tensor, axes)
             std = _get_fixed(self.std, tensor, axes)
-        elif self.mode == "per_sample":
-            mean = Mean(axes).compute(tensor)
-            std = Std(axes).compute(tensor)
-        elif self.mode == "per_dataset":
-            mean = self.get_computed_dataset_statistics(self.tensor_name, Mean(axes))
-            std = self.get_computed_dataset_statistics(self.tensor_name, Std(axes))
+        elif self.mode in (PER_SAMPLE, PER_DATASET):
+            assert self.mean is None and self.std is None
+            mean = self.get_computed_measure(self.tensor_name, Mean(axes), mode=self.mode)
+            std = self.get_computed_measure(self.tensor_name, Std(axes), mode=self.mode)
         else:
             raise ValueError(self.mode)
 
         tensor = (tensor - mean) / (std + self.eps)
         return ensure_dtype(tensor, dtype="float32")
+
+
+_KnownProcessing = TypedDict(
+    "_KnownProcessing",
+    dict(pre=Mapping[PreprocessingName, Type[Processing]], post=Mapping[PostprocessingName, Type[Processing]]),
+)
+
+KNOWN_PROCESSING: _KnownProcessing = dict(
+    pre={
+        "binarize": Binarize,
+        "clip": Clip,
+        "scale_linear": ScaleLinear,
+        "scale_range": ScaleRange,
+        "sigmoid": Sigmoid,
+        "zero_mean_unit_variance": ZeroMeanUnitVariance,
+    },
+    post={
+        "binarize": Binarize,
+        "clip": Clip,
+        "scale_linear": ScaleLinear,
+        "scale_mean_variance": ScaleMeanVariance,
+        "scale_range": ScaleRange,
+        "sigmoid": Sigmoid,
+        "zero_mean_unit_variance": ZeroMeanUnitVariance,
+    },
+)
