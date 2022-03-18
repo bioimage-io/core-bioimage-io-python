@@ -199,8 +199,11 @@ class ZeroMeanUnitVariance(Processing):
     eps: float = 1.0e-6
 
     def get_required_measures(self) -> RequiredMeasures:
-        axes = None if self.axes is None else tuple(self.axes)
-        return {self.mode: {self.tensor_name: {Mean(axes=axes), Std(axes=axes)}}}
+        if self.mode == FIXED:
+            return {}
+        else:
+            axes = None if self.axes is None else tuple(self.axes)
+            return {self.mode: {self.tensor_name: {Mean(axes=axes), Std(axes=axes)}}}
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
         axes = None if self.axes is None else tuple(self.axes)
