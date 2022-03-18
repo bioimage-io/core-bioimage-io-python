@@ -58,7 +58,6 @@ def convert_weights_to_onnx(
                 output_path,
                 verbose=verbose,
                 opset_version=opset_version,
-                example_outputs=expected_outputs,
             )
         else:
             raise NotImplementedError
