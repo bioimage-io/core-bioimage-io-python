@@ -6,12 +6,12 @@ dependencies:
   - black
   - bioimageio.spec >=0.4.4
   - conda-build
-  - h5py >=2.10,<2.11
+  - h5py
   - mypy
   - pip
   - pytest
   - python >=3.7
   - xarray
-  - pytorch <1.10
+  - pytorch
   - onnxruntime
   - tifffile
