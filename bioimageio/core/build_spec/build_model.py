@@ -2,7 +2,7 @@ import datetime
 import hashlib
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 from warnings import warn
 
 import imageio
@@ -15,6 +15,7 @@ from bioimageio.core import export_resource_package, load_raw_resource_descripti
 from bioimageio.core.resource_io.nodes import URI
 from bioimageio.spec.shared.raw_nodes import ImportableModule, ImportableSourceFile
 from bioimageio.spec.shared import resolve_local_source, resolve_source
+from .util import replace_values
 
 try:
     from typing import get_args
@@ -346,7 +347,15 @@ def _get_deepimagej_macro(name, kwargs, export_folder):
 
 
 def _get_deepimagej_config(
-    export_folder, test_inputs, test_outputs, input_axes, output_axes, pixel_sizes, preprocessing, postprocessing
+    export_folder,
+    test_inputs,
+    test_outputs,
+    input_axes,
+    output_axes,
+    pixel_sizes,
+    preprocessing,
+    postprocessing,
+    overwrite_config,
 ):
     assert len(test_inputs) == len(test_outputs) == 1, "deepimagej config only valid for single input/output"
 
@@ -414,6 +423,8 @@ def _get_deepimagej_config(
         "allow_tiling": True,
         "model_keys": None,
     }
+    if overwrite_config is not None:
+        config = replace_values(config, overwrite_config)
     return {"deepimagej": config}, [Path(a) for a in attachments]
 
 
@@ -643,6 +654,7 @@ def build_model(
     opset_version: Optional[int] = None,
     pytorch_version: Optional[str] = None,
     weight_attachments: Optional[Dict[str, Union[str, List[str]]]] = None,
+    overwrite_deepimagej_config: Optional[Dict[str, Any]] = None,
 ):
     """Create a zipped bioimage.io model.
 
@@ -719,6 +731,7 @@ def build_model(
         opset_version: the opset version for this model. Only for onnx weights.
         pytorch_version: the pytorch version for this model. Only for pytoch_state_dict or torchscript weights.
         weight_attachments: extra weight specific attachments.
+        overwrite_deepimagej_config: dictionary to overwrite fields in the deepimagej config.
     """
     assert architecture is None or isinstance(architecture, str)
     if root is None:
@@ -840,7 +853,15 @@ def build_model(
         assert all(os.path.splitext(path)[1] in (".tif", ".tiff") for path in sample_outputs)
 
         ij_config, ij_attachments = _get_deepimagej_config(
-            root, test_inputs, test_outputs, input_axes, output_axes, pixel_sizes, preprocessing, postprocessing
+            root,
+            test_inputs,
+            test_outputs,
+            input_axes,
+            output_axes,
+            pixel_sizes,
+            preprocessing,
+            postprocessing,
+            overwrite_deepimagej_config,
         )
 
         if config is None:

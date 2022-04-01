@@ -19,6 +19,7 @@ def _test_build_spec(
     use_absoloute_arch_path=False,
     training_data=None,
     parent=None,
+    overwrite_deepimagej_config=None,
 ):
     from bioimageio.core.build_spec import build_model
 
@@ -96,6 +97,7 @@ def _test_build_spec(
         postprocessing=postprocessing,
         output_path=out_path,
         add_deepimagej_config=add_deepimagej_config,
+        overwrite_deepimagej_config=overwrite_deepimagej_config,
         maintainers=[{"github_user": "jane_doe"}],
         input_names=[inp.name for inp in model_spec.inputs],
         output_names=[out.name for out in model_spec.outputs],
@@ -196,7 +198,9 @@ def test_build_spec_tfjs(any_tensorflow_js_model, tmp_path):
 
 
 def test_build_spec_deepimagej(unet2d_nuclei_broad_model, tmp_path):
-    _test_build_spec(unet2d_nuclei_broad_model, tmp_path / "model.zip", "torchscript", add_deepimagej_config=True)
+    overwrite = {"postprocess": "custom-postprocessing.ijm"}
+    _test_build_spec(unet2d_nuclei_broad_model, tmp_path / "model.zip", "torchscript",
+                     add_deepimagej_config=True, overwrite_deepimagej_config=overwrite)
 
 
 def test_build_spec_training_data1(unet2d_nuclei_broad_model, tmp_path):
