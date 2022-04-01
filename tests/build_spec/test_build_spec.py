@@ -199,8 +199,13 @@ def test_build_spec_tfjs(any_tensorflow_js_model, tmp_path):
 
 def test_build_spec_deepimagej(unet2d_nuclei_broad_model, tmp_path):
     overwrite = {"postprocess": "custom-postprocessing.ijm"}
-    _test_build_spec(unet2d_nuclei_broad_model, tmp_path / "model.zip", "torchscript",
-                     add_deepimagej_config=True, overwrite_deepimagej_config=overwrite)
+    _test_build_spec(
+        unet2d_nuclei_broad_model,
+        tmp_path / "model.zip",
+        "torchscript",
+        add_deepimagej_config=True,
+        overwrite_deepimagej_config=overwrite,
+    )
 
 
 def test_build_spec_training_data1(unet2d_nuclei_broad_model, tmp_path):
