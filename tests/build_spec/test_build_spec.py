@@ -1,10 +1,10 @@
-import os
+from marshmallow import missing
+
 import bioimageio.spec as spec
 from bioimageio.core import load_raw_resource_description, load_resource_description
 from bioimageio.core.resource_io import nodes
 from bioimageio.core.resource_io.utils import resolve_source
 from bioimageio.core.resource_tests import test_model as _test_model
-from marshmallow import missing
 
 
 def _test_build_spec(
@@ -16,7 +16,6 @@ def _test_build_spec(
     use_implicit_output_shape=False,
     add_deepimagej_config=False,
     use_original_covers=False,
-    use_absoloute_arch_path=False,
     training_data=None,
     parent=None,
 ):
@@ -44,11 +43,6 @@ def _test_build_spec(
     if weight_type == "pytorch_state_dict":
         model_kwargs = None if weight_spec.kwargs is missing else weight_spec.kwargs
         architecture = str(weight_spec.architecture)
-        if use_absoloute_arch_path:
-            arch_path, cls_name = architecture.split(":")
-            arch_path = os.path.abspath(os.path.join(root, arch_path))
-            assert os.path.exists(arch_path)
-            architecture = f"{arch_path}:{cls_name}"
         weight_type_ = None  # the weight type can be auto-detected
     elif weight_type == "torchscript":
         architecture = None
@@ -233,10 +227,3 @@ def test_build_spec_deepimagej_keras(unet2d_keras, tmp_path):
 # test with original covers
 def test_build_spec_with_original_covers(unet2d_nuclei_broad_model, tmp_path):
     _test_build_spec(unet2d_nuclei_broad_model, tmp_path / "model.zip", "torchscript", use_original_covers=True)
-
-
-# test with absolute path for the architecture file
-def test_build_spec_abs_arch_path(unet2d_nuclei_broad_model, tmp_path):
-    _test_build_spec(
-        unet2d_nuclei_broad_model, tmp_path / "model.zip", "pytorch_state_dict", use_absoloute_arch_path=True
-    )
