@@ -15,6 +15,6 @@ dependencies:
   - pytorch
   - onnxruntime
   - tensorflow >=1.12,<2.0
-  - tifffile
+  - tifffile <=2022.4.8  # pin fixes Syntax error; see https://github.com/bioimage-io/core-bioimage-io-python/pull/259
   - pip:
     - keras==1.2.2

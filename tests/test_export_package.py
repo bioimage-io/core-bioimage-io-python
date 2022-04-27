@@ -37,6 +37,7 @@ def test_package_with_folder(unet2d_nuclei_broad_model):
         # alter package to have its documentation in a nested folder
         doc = model.documentation
         assert doc is not missing
+        doc = doc.relative_to(model.root_path)
         assert not doc.is_absolute()
         new_doc = Path("nested") / "folder" / doc
         (package_folder / new_doc).parent.mkdir(parents=True)
@@ -55,5 +56,5 @@ def test_package_with_folder(unet2d_nuclei_broad_model):
         # load altered package
         reloaded_model = load_raw_resource_description(altered_package_folder / "rdf.yaml")
         assert isinstance(reloaded_model, raw_nodes.Model)
-        assert reloaded_model.documentation == new_doc
-        assert (altered_package_folder / reloaded_model.documentation).exists()
+        assert reloaded_model.documentation.as_posix().endswith(new_doc.as_posix())
+        assert reloaded_model.documentation.exists()
