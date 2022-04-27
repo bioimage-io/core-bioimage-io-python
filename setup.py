@@ -25,7 +25,15 @@ setup(
         "Programming Language :: Python :: 3.8",
     ],
     packages=find_namespace_packages(exclude=["tests"]),  # Required
-    install_requires=["bioimageio.spec>=0.4.5", "imageio>=2.5", "numpy", "ruamel.yaml", "tqdm", "xarray"],
+    install_requires=[
+        "bioimageio.spec>=0.4.5",
+        "imageio>=2.5",
+        "numpy",
+        "ruamel.yaml",
+        "tqdm",
+        "xarray",
+        "tifffile<=2022.4.8",  # fixes Syntax error; see https://github.com/bioimage-io/core-bioimage-io-python/pull/259
+    ],
     include_package_data=True,
     extras_require={
         "test": ["pytest", "black", "mypy"],
