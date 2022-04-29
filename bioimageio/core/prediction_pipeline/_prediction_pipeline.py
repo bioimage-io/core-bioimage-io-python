@@ -183,6 +183,7 @@ def create_prediction_pipeline(
     dataset_for_initial_statistics: Iterable[Sequence[xr.DataArray]] = tuple(),
     update_dataset_stats_after_n_samples: Optional[int] = None,
     update_dataset_stats_for_n_samples: int = float("inf"),
+    model_adapter: Optional[ModelAdapter] = None,
 ) -> PredictionPipeline:
     """
     Creates prediction pipeline which includes:
@@ -192,7 +193,7 @@ def create_prediction_pipeline(
     * computation of output statistics
     * postprocessing
     """
-    model_adapter: ModelAdapter = create_model_adapter(
+    model_adapter: ModelAdapter = model_adapter or create_model_adapter(
         bioimageio_model=bioimageio_model, devices=devices, weight_format=weight_format
     )
 
