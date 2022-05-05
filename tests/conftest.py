@@ -32,6 +32,10 @@ model_sources = {
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
         "unet2d_nuclei_broad/rdf.yaml"
     ),
+    "unet2d_expand_output_shape": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
+        "unet2d_nuclei_broad/rdf_expand_output_shape.yaml"
+    ),
     "unet2d_fixed_shape": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
         "unet2d_fixed_shape/rdf.yaml"
@@ -202,6 +206,12 @@ def unet2d_nuclei_broad_model(request):
 # written as model group to automatically skip on missing torch
 @pytest.fixture(params=[] if skip_torch else ["unet2d_diff_output_shape"])
 def unet2d_diff_output_shape(request):
+    return pytest.model_packages[request.param]
+
+
+# written as model group to automatically skip on missing torch
+@pytest.fixture(params=[] if skip_torch else ["unet2d_expand_output_shape"])
+def unet2d_expand_output_shape(request):
     return pytest.model_packages[request.param]
 
 
