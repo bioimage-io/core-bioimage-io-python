@@ -14,7 +14,7 @@ from bioimageio.core.resource_io.nodes import InputTensor, OutputTensor
 
 
 def transform_input_image(image: np.ndarray, tensor_axes: str, image_axes: Optional[str] = None):
-    """Transform input image to adhere to the axes spec defined by a bioimage.io model.
+    """Transform input image into output tensor with desired axes.
 
     Args:
         image: the input image
@@ -51,22 +51,21 @@ def _drop_axis_default(axis_name, axis_len):
     return axis_len // 2 if axis_name in "zyx" else 0
 
 
-def transform_output_image(tensor: np.ndarray, spec, output_axes: str, drop_function=_drop_axis_default):
-    """Transform output tensor to image with the desired axes.
+def transform_output_tensor(tensor: np.ndarray, tensor_axes: str, output_axes: str, drop_function=_drop_axis_default):
+    """Transform output tensor into image with desired axes.
 
     Args:
-        tensor the output tensor
-        spec: bioimageio model spec
+        tensor: the output tensor
+        tensor_axes: bioimageio model spec
         output_axes: the desired output axes
         drop_function: function that determines how to drop unwanted axes
     """
-    axes = spec["axes"]
-    shape = {ax_name: sh for ax_name, sh in zip(axes, tensor.shape)}
-    if len(axes) != tensor.ndim:
-        raise ValueError(f"Number of axes {len(axes)} and dimension of tensor {tensor.ndim} don't match")
-    output = DataArray(tensor, dims=tuple(axes))
+    if len(tensor_axes) != tensor.ndim:
+        raise ValueError(f"Number of axes {len(tensor_axes)} and dimension of tensor {tensor.ndim} don't match")
+    shape = {ax_name: sh for ax_name, sh in zip(tensor_axes, tensor.shape)}
+    output = DataArray(tensor, dims=tuple(tensor_axes))
     # drop unwanted axes
-    drop_axis_names = tuple(set(axes) - set(output_axes))
+    drop_axis_names = tuple(set(tensor_axes) - set(output_axes))
     drop_axes = {ax_name: drop_function(ax_name, shape[ax_name]) for ax_name in drop_axis_names}
     output = output[drop_axes]
     # transpose to the desired axis order
