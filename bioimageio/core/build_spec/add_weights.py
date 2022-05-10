@@ -38,6 +38,11 @@ def add_weights(
         attachments: extra weight specific attachments.
     """
     model = load_raw_resource_description(model)
+    if not isinstance(model.root_path, Path):
+        # ensure model is available locally
+        model = load_raw_resource_description(export_resource_package(model))
+
+    assert isinstance(model.root_path, Path), model.root_path
 
     # copy the weight path to the input model's root, otherwise it will
     # not be found when packaging the new model
