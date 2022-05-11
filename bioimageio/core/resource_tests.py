@@ -1,3 +1,4 @@
+import os
 import traceback
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
@@ -8,6 +9,7 @@ import xarray as xr
 from marshmallow import ValidationError
 
 from bioimageio.core import __version__ as bioimageio_core_version, load_resource_description
+from bioimageio.core.common import TestSummary
 from bioimageio.core.prediction import predict
 from bioimageio.core.prediction_pipeline import create_prediction_pipeline
 from bioimageio.core.resource_io.nodes import (
@@ -17,6 +19,7 @@ from bioimageio.core.resource_io.nodes import (
     ResourceDescription,
     URI,
 )
+from bioimageio.core.resource_io.utils import SourceNodeChecker
 from bioimageio.spec import __version__ as bioimageio_spec_version
 from bioimageio.spec.model.raw_nodes import WeightsFormat
 from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
@@ -98,13 +101,37 @@ def _validate_output_shape(shape: Tuple[int, ...], shape_spec, input_shapes) -> 
         raise TypeError(f"Encountered unexpected shape description of type {type(shape_spec)}")
 
 
+def test_resource_urls(rdf: ResourceDescription) -> TestSummary:
+    assert isinstance(rdf, ResourceDescription)
+    try:
+        SourceNodeChecker(root_path=rdf.root_path).visit(rdf)
+    except FileNotFoundError as e:
+        error = str(e)
+        tb = traceback.format_tb(e.__traceback__)
+    else:
+        error = None
+        tb = None
+
+    return dict(
+        name="All URLs and paths available.",
+        status="passed" if error is None else "failed",
+        error=error,
+        traceback=tb,
+        bioimageio_spec_version=bioimageio_spec_version,
+        bioimageio_core_version=bioimageio_core_version,
+        nested_errors=None,
+        source_name=rdf.id if hasattr(rdf, "id") else rdf.name,
+        warnings={},
+    )
+
+
 def test_resource(
     rdf: Union[RawResourceDescription, ResourceDescription, URI, Path, str],
     *,
     weight_format: Optional[WeightsFormat] = None,
     devices: Optional[List[str]] = None,
     decimal: int = 4,
-):
+) -> TestSummary:
     """Test RDF dynamically
 
     Returns: summary dict with keys: name, status, error, traceback, bioimageio_spec_version, bioimageio_core_version
@@ -112,6 +139,13 @@ def test_resource(
     error: Optional[str] = None
     tb: Optional = None
     test_name: str = "load resource description"
+
+    if isinstance(rdf, (URI, os.PathLike)):
+        source_name = rdf
+    elif isinstance(rdf, str):
+        source_name = rdf[:120]
+    else:
+        source_name = rdf.id if hasattr(rdf, "id") else rdf.name
 
     try:
         rd = load_resource_description(rdf, weights_priority_order=None if weight_format is None else [weight_format])
@@ -172,6 +206,8 @@ def test_resource(
         traceback=tb,
         bioimageio_spec_version=bioimageio_spec_version,
         bioimageio_core_version=bioimageio_core_version,
+        warnings={},
+        source_name=source_name,
     )
 
 
