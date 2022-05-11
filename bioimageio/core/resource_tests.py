@@ -1,4 +1,5 @@
 import os
+import re
 import traceback
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
@@ -22,6 +23,7 @@ from bioimageio.core.resource_io.nodes import (
 from bioimageio.core.resource_io.utils import SourceNodeChecker
 from bioimageio.spec import __version__ as bioimageio_spec_version
 from bioimageio.spec.model.raw_nodes import WeightsFormat
+from bioimageio.spec.shared import resolve_source
 from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
 
 
@@ -30,7 +32,7 @@ def test_model(
     weight_format: Optional[WeightsFormat] = None,
     devices: Optional[List[str]] = None,
     decimal: int = 4,
-) -> dict:
+) -> List[TestSummary]:
     """Test whether the test output(s) of a model can be reproduced.
 
     Returns: summary dict with keys: name, status, error, traceback, bioimageio_spec_version, bioimageio_core_version
@@ -53,14 +55,16 @@ def test_model(
     else:
         error = error or f"Expected RDF type Model, got {type(model)} instead."
 
-    return dict(
-        name="reproduced test outputs from test inputs",
-        status="failed",
-        error=error,
-        traceback=tb,
-        bioimageio_spec_version=bioimageio_spec_version,
-        bioimageio_core_version=bioimageio_core_version,
-    )
+    return [
+        dict(
+            name="reproduced test outputs from test inputs",
+            status="failed",
+            error=error,
+            traceback=tb,
+            bioimageio_spec_version=bioimageio_spec_version,
+            bioimageio_core_version=bioimageio_core_version,
+        )
+    ]
 
 
 def _validate_input_shape(shape: Tuple[int, ...], shape_spec) -> bool:
@@ -101,10 +105,10 @@ def _validate_output_shape(shape: Tuple[int, ...], shape_spec, input_shapes) -> 
         raise TypeError(f"Encountered unexpected shape description of type {type(shape_spec)}")
 
 
-def test_resource_urls(rdf: ResourceDescription) -> TestSummary:
-    assert isinstance(rdf, ResourceDescription)
+def test_resource_urls(rd: ResourceDescription) -> TestSummary:
+    assert isinstance(rd, ResourceDescription)
     try:
-        SourceNodeChecker(root_path=rdf.root_path).visit(rdf)
+        SourceNodeChecker(root_path=rd.root_path).visit(rd)
     except FileNotFoundError as e:
         error = str(e)
         tb = traceback.format_tb(e.__traceback__)
@@ -120,8 +124,28 @@ def test_resource_urls(rdf: ResourceDescription) -> TestSummary:
         bioimageio_spec_version=bioimageio_spec_version,
         bioimageio_core_version=bioimageio_core_version,
         nested_errors=None,
-        source_name=rdf.id if hasattr(rdf, "id") else rdf.name,
+        source_name=rd.id if hasattr(rd, "id") else rd.name,
         warnings={},
+    )
+
+
+def test_model_documentation(rd: ResourceDescription) -> TestSummary:
+    assert isinstance(rd, Model)
+    doc_path: Path = resolve_source(rd.documentation, root_path=rd.root_path)
+    doc = doc_path.read_text()
+    wrn = ""
+    if not re.fullmatch("#.*[vV]alidation", doc):
+        wrn = "No '# Validation' (sub)section found."
+
+    return dict(
+        name="Test documentation completeness.",
+        status="passed",
+        error=None,
+        traceback=None,
+        bioimageio_spec_version=bioimageio_spec_version,
+        bioimageio_core_version=bioimageio_core_version,
+        source_name=rd.id if hasattr(rd, "id") else rd.name,
+        warnings={"documentation": wrn} if wrn else {},
     )
 
 
@@ -131,11 +155,12 @@ def test_resource(
     weight_format: Optional[WeightsFormat] = None,
     devices: Optional[List[str]] = None,
     decimal: int = 4,
-) -> TestSummary:
+) -> List[TestSummary]:
     """Test RDF dynamically
 
     Returns: summary dict with keys: name, status, error, traceback, bioimageio_spec_version, bioimageio_core_version
     """
+    ret: List[TestSummary] = []
     error: Optional[str] = None
     tb: Optional = None
     test_name: str = "load resource description"
@@ -154,6 +179,7 @@ def test_resource(
         tb = traceback.format_tb(e.__traceback__)
     else:
         if isinstance(rd, Model):
+            ret.append(test_model_documentation(rd))
             test_name = "reproduced test outputs from test inputs"
             model = rd
             try:
@@ -197,18 +223,23 @@ def test_resource(
                 error = str(e)
                 tb = traceback.format_tb(e.__traceback__)
 
-    # todo: add tests for non-model resources
+        ret.append(test_resource_urls(rd))
 
-    return dict(
-        name=test_name,
-        status="passed" if error is None else "failed",
-        error=error,
-        traceback=tb,
-        bioimageio_spec_version=bioimageio_spec_version,
-        bioimageio_core_version=bioimageio_core_version,
-        warnings={},
-        source_name=source_name,
+    # list main resource test first
+    ret.insert(
+        0,
+        dict(
+            name=test_name,
+            status="passed" if error is None else "failed",
+            error=error,
+            traceback=tb,
+            bioimageio_spec_version=bioimageio_spec_version,
+            bioimageio_core_version=bioimageio_core_version,
+            warnings={},
+            source_name=source_name,
+        ),
     )
+    return ret
 
 
 def debug_model(
