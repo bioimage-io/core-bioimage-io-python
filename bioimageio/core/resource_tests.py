@@ -134,7 +134,7 @@ def test_model_documentation(rd: ResourceDescription) -> TestSummary:
     doc_path: Path = resolve_source(rd.documentation, root_path=rd.root_path)
     doc = doc_path.read_text()
     wrn = ""
-    if not re.fullmatch("#.*[vV]alidation", doc):
+    if not re.match("#.*[vV]alidation", doc):
         wrn = "No '# Validation' (sub)section found."
 
     return dict(
