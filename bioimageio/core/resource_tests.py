@@ -166,7 +166,7 @@ def test_resource(
     test_name: str = "load resource description"
 
     if isinstance(rdf, (URI, os.PathLike)):
-        source_name = rdf
+        source_name = str(rdf)
     elif isinstance(rdf, str):
         source_name = rdf[:120]
     else:
