@@ -2,6 +2,7 @@ import enum
 import json
 import os
 import sys
+import warnings
 from glob import glob
 
 from pathlib import Path
@@ -22,12 +23,16 @@ except ImportError:
     from typing_extensions import get_args  # type: ignore
 
 try:
-    from bioimageio.core.weight_converter import torch as torch_converter
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from bioimageio.core.weight_converter import torch as torch_converter
 except ImportError:
     torch_converter = None
 
 try:
-    from bioimageio.core.weight_converter import keras as keras_converter
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from bioimageio.core.weight_converter import keras as keras_converter
 except ImportError:
     keras_converter = None
 
