@@ -34,38 +34,10 @@ def test_model(
     devices: Optional[List[str]] = None,
     decimal: int = 4,
 ) -> List[TestSummary]:
-    """Test whether the test output(s) of a model can be reproduced.
-
-    Returns: summary dict with keys: name, status, error, traceback, bioimageio_spec_version, bioimageio_core_version
-    """
-    # todo: reuse more of 'test_resource'
-    tb = None
-    try:
-        model = load_resource_description(
-            model_rdf, weights_priority_order=None if weight_format is None else [weight_format]
-        )
-    except Exception as e:
-        model = None
-        error = str(e)
-        tb = traceback.format_tb(e.__traceback__)
-    else:
-        error = None
-
-    if isinstance(model, Model):
-        return test_resource(model, weight_format=weight_format, devices=devices, decimal=decimal)
-    else:
-        error = error or f"Expected RDF type Model, got {type(model)} instead."
-
-    return [
-        dict(
-            name="reproduced test outputs from test inputs",
-            status="failed",
-            error=error,
-            traceback=tb,
-            bioimageio_spec_version=bioimageio_spec_version,
-            bioimageio_core_version=bioimageio_core_version,
-        )
-    ]
+    """Test whether the test output(s) of a model can be reproduced."""
+    return test_resource(
+        model_rdf, weight_format=weight_format, devices=devices, decimal=decimal, expected_type="model"
+    )
 
 
 def _validate_input_shape(shape: Tuple[int, ...], shape_spec) -> bool:
@@ -248,12 +220,24 @@ def _test_load_resource(
     return rd, load_summary
 
 
+def _test_expected_resource_type(rd: ResourceDescription, expected_type: str) -> TestSummary:
+    has_expected_type = rd.type == expected_type
+    return dict(
+        name="has expected resource type",
+        status="passed" if has_expected_type else "failed",
+        error=f"expected type {expected_type}, found {rd.type}",
+        traceback=None,
+        source_name=rd.id if hasattr(rd, "id") else rd.name,
+    )
+
+
 def test_resource(
     rdf: Union[RawResourceDescription, ResourceDescription, URI, Path, str],
     *,
     weight_format: Optional[WeightsFormat] = None,
     devices: Optional[List[str]] = None,
     decimal: int = 4,
+    expected_type: Optional[str] = None,
 ) -> List[TestSummary]:
     """Test RDF dynamically
 
@@ -262,6 +246,9 @@ def test_resource(
     rd, load_test = _test_load_resource(rdf, weight_format)
     tests: List[TestSummary] = [load_test]
     if rd is not None:
+        if expected_type is not None:
+            tests.append(_test_expected_resource_type(rd, expected_type))
+
         tests.append(_test_resource_urls(rd))
 
     if isinstance(rd, Model):
