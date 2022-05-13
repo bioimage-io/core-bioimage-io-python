@@ -98,7 +98,7 @@ def _test_resource_urls(rd: ResourceDescription) -> TestSummary:
         bioimageio_spec_version=bioimageio_spec_version,
         bioimageio_core_version=bioimageio_core_version,
         nested_errors=None,
-        source_name=rd.id if hasattr(rd, "id") else rd.name,
+        source_name=rd.id or rd.id or rd.name if hasattr(rd, "id") else rd.name,
         warnings={"SourceNodeChecker": [str(w.message) for w in all_warnings]} if all_warnings else {},
     )
 
@@ -120,7 +120,7 @@ def _test_model_documentation(rd: ResourceDescription) -> TestSummary:
             traceback=None,
             bioimageio_spec_version=bioimageio_spec_version,
             bioimageio_core_version=bioimageio_core_version,
-            source_name=rd.id if hasattr(rd, "id") else rd.name,
+            source_name=rd.id or rd.name if hasattr(rd, "id") else rd.name,
             warnings={"documentation": wrn} if wrn else {},
         )
 
@@ -176,7 +176,7 @@ def _test_model_inference(model: Model, weight_format: str, devices: Optional[Li
         bioimageio_spec_version=bioimageio_spec_version,
         bioimageio_core_version=bioimageio_core_version,
         warnings={},
-        source_name=model.id,
+        source_name=model.id or model.name,
     )
 
 
@@ -227,7 +227,7 @@ def _test_expected_resource_type(rd: ResourceDescription, expected_type: str) ->
         status="passed" if has_expected_type else "failed",
         error=f"expected type {expected_type}, found {rd.type}",
         traceback=None,
-        source_name=rd.id if hasattr(rd, "id") else rd.name,
+        source_name=rd.id or rd.name if hasattr(rd, "id") else rd.name,
     )
 
 
