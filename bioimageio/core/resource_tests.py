@@ -25,6 +25,7 @@ from bioimageio.core.resource_io.utils import SourceNodeChecker
 from bioimageio.spec import __version__ as bioimageio_spec_version
 from bioimageio.spec.model.raw_nodes import WeightsFormat
 from bioimageio.spec.shared import resolve_source
+from bioimageio.spec.shared.common import ValidationWarning
 from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
 
 
@@ -126,6 +127,8 @@ def _test_model_documentation(rd: ResourceDescription) -> TestSummary:
 
 
 def _test_model_inference(model: Model, weight_format: str, devices: Optional[List[str]], decimal: int) -> TestSummary:
+    error: Optional[str] = None
+    tb: Optional = None
     with warnings.catch_warnings(record=True) as all_warnings:
         try:
             inputs = [np.load(str(in_path)) for in_path in model.test_inputs]
@@ -175,7 +178,7 @@ def _test_model_inference(model: Model, weight_format: str, devices: Optional[Li
         traceback=tb,
         bioimageio_spec_version=bioimageio_spec_version,
         bioimageio_core_version=bioimageio_core_version,
-        warnings={},
+        warnings=ValidationWarning.get_warning_summary(all_warnings),
         source_name=model.id or model.name,
     )
 
