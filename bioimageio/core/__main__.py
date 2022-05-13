@@ -142,6 +142,7 @@ def test_model(
         devices=devices,
         decimal=decimal,
     )
+    print(f"\ntesting model {model_rdf}...")
     ret_code = _log_test_summaries(summaries, f"\n{{icon}} Model {model_rdf} {{result}}")
     sys.exit(ret_code)
 
@@ -164,6 +165,7 @@ def test_resource(
     summaries = resource_tests.test_resource(
         rdf, weight_format=None if weight_format is None else weight_format.value, devices=devices, decimal=decimal
     )
+    print(f"\ntesting {rdf}...")
     ret_code = _log_test_summaries(summaries, f"{{icon}} Resource test for {rdf} has {{result}}")
     sys.exit(ret_code)
 
