@@ -129,20 +129,23 @@ def _predict_with_tiling_impl(
 
 def predict(
     prediction_pipeline: PredictionPipeline,
-    inputs: Union[xr.DataArray, List[xr.DataArray], Tuple[xr.DataArray]],
+    inputs: Union[
+        xr.DataArray, List[xr.DataArray], Tuple[xr.DataArray], np.ndarray, List[np.ndarray], Tuple[np.ndarray]
+    ],
 ) -> List[xr.DataArray]:
     """Run prediction for a single set of input(s) with a bioimage.io model
 
     Args:
         prediction_pipeline: the prediction pipeline for the input model.
-        inputs: the input(s) for this model represented as xarray data.
+        inputs: the input(s) for this model represented as xarray data or numpy nd array.
     """
     if not isinstance(inputs, (tuple, list)):
         inputs = [inputs]
 
     assert len(inputs) == len(prediction_pipeline.input_specs)
     tagged_data = [
-        xr.DataArray(ipt, dims=ipt_spec.axes) for ipt, ipt_spec in zip(inputs, prediction_pipeline.input_specs)
+        ipt if isinstance(ipt, xr.DataArray) else xr.DataArray(ipt, dims=ipt_spec.axes)
+        for ipt, ipt_spec in zip(inputs, prediction_pipeline.input_specs)
     ]
     return prediction_pipeline.forward(*tagged_data)
 
