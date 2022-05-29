@@ -8,6 +8,7 @@ from warnings import warn
 import imageio
 import numpy as np
 import requests
+import tifffile
 
 import bioimageio.spec as spec
 import bioimageio.spec.model as model_spec
@@ -21,12 +22,6 @@ try:
 except ImportError:
     from typing_extensions import get_args  # type: ignore
 
-# need tifffile for writing the deepimagej config
-# we probably always have this, but wrap into an ImportGuard just in case
-try:
-    import tifffile
-except ImportError:
-    tifffile = None
 
 #
 # utility functions to build the spec from python
@@ -419,7 +414,6 @@ def _get_deepimagej_config(
 
 def _write_sample_data(input_paths, output_paths, input_axes, output_axes, pixel_sizes, export_folder: Path):
     def write_im(path, im, axes, pixel_size=None):
-        assert tifffile is not None, "need tifffile for writing deepimagej config"
         assert len(axes) == im.ndim, f"{len(axes), {im.ndim}}"
         assert im.ndim in (4, 5), f"{im.ndim}"
 
