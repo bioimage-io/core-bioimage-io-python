@@ -420,10 +420,10 @@ def _write_sample_data(input_paths, output_paths, input_axes, output_axes, pixel
         # convert the image to expects (Z)CYX axis order
         if im.ndim == 4:
             assert set(axes) == {"b", "x", "y", "c"}, f"{axes}"
-            axes_ij = "cyxb"
+            axes_ij = "bcyx"
         else:
             assert set(axes) == {"b", "x", "y", "z", "c"}, f"{axes}"
-            axes_ij = "zcyxb"
+            axes_ij = "bzcyx"
 
         axis_permutation = tuple(axes.index(ax) for ax in axes_ij)
         im = im.transpose(axis_permutation)
