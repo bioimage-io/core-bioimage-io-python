@@ -441,7 +441,7 @@ def _write_sample_data(input_paths, output_paths, input_axes, output_axes, pixel
         # does not work for double
         if np.dtype(im.dtype) == np.dtype("float64"):
             im = im.astype("float32")
-        tifffile.imsave(path, im, imagej=True, resolution=resolution)
+        tifffile.imwrite(path, im, imagej=True, resolution=resolution)
 
     sample_in_paths = []
     for i, (in_path, axes) in enumerate(zip(input_paths, input_axes)):
