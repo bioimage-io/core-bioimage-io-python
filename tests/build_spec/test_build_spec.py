@@ -99,7 +99,7 @@ def _test_build_spec(
     print("**********************************************")
     print(model_spec.name)
     print(model_spec.root_path)
-    print(model_spec.test_inputs)
+    print(model_spec.rdf_source)
     if architecture is not None:
         kwargs["architecture"] = architecture
     if model_kwargs is not None:
