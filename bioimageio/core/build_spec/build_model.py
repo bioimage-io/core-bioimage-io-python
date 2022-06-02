@@ -2,7 +2,7 @@ import datetime
 import hashlib
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 from warnings import warn
 
 import imageio
@@ -424,22 +424,20 @@ def _write_sample_data(input_paths, output_paths, input_axes, output_axes, pixel
         else:
             assert set(axes) == {"b", "x", "y", "z", "c"}, f"{axes}"
             resolution_axes_ij = "bzcyx"
-        
+
         def addMissingAxes(im_axes):
             needed_axes = ["b", "c", "x", "y", "z", "s"]
             for ax in needed_axes:
-                if not ax in im_axes:
+                if ax not in im_axes:
                     im_axes += ax
             return im_axes
-        
+
         axes_ij = "bzcyxs"
         # Expand the image to ImageJ dimensions
-        im = np.expand_dims(im, axis=tuple(range(len(axes),len(axes_ij))))
-
+        im = np.expand_dims(im, axis=tuple(range(len(axes), len(axes_ij))))
 
         axis_permutation = tuple(addMissingAxes(axes).index(ax) for ax in axes_ij)
         im = im.transpose(axis_permutation)
-        
 
         if pixel_size is None:
             resolution = None
