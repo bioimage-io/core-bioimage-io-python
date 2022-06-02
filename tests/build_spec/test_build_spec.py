@@ -94,6 +94,10 @@ def _test_build_spec(
         input_names=[inp.name for inp in model_spec.inputs],
         output_names=[out.name for out in model_spec.outputs],
     )
+    print("**********************************************")
+    print("**********************************************")
+    print("**********************************************")
+    print(name)
     if architecture is not None:
         kwargs["architecture"] = architecture
     if model_kwargs is not None:
