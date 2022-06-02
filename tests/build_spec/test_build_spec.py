@@ -97,7 +97,7 @@ def _test_build_spec(
     print("**********************************************")
     print("**********************************************")
     print("**********************************************")
-    print(name)
+    print(model_spec.name)
     if architecture is not None:
         kwargs["architecture"] = architecture
     if model_kwargs is not None:
