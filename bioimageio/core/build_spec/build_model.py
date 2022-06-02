@@ -420,28 +420,36 @@ def _write_sample_data(input_paths, output_paths, input_axes, output_axes, pixel
         # convert the image to expects (Z)CYX axis order
         if im.ndim == 4:
             assert set(axes) == {"b", "x", "y", "c"}, f"{axes}"
-            axes_ij = "cyxb"
+            resolution_axes_ij = "cyxb"
         else:
             assert set(axes) == {"b", "x", "y", "z", "c"}, f"{axes}"
-            axes_ij = "zcyxb"
+            resolution_axes_ij = "bzcyx"
+        
+        def addMissingAxes(im_axes):
+            needed_axes = ["b", "c", "x", "y", "z", "s"]
+            for ax in needed_axes:
+                if not ax in im_axes:
+                    im_axes += ax
+            return im_axes
+        
+        axes_ij = "bzcyxs"
+        # Expand the image to ImageJ dimensions
+        im = np.expand_dims(im, axis=tuple(range(len(axes),len(axes_ij))))
 
-        axis_permutation = tuple(axes.index(ax) for ax in axes_ij)
+
+        axis_permutation = tuple(addMissingAxes(axes).index(ax) for ax in axes_ij)
         im = im.transpose(axis_permutation)
-        # expand to TZCYXS
-        if len(axes_ij) == 4:  # add singleton t and z axis
-            im = im[None, None]
-        else:  # add singeton z axis
-            im = im[None]
+        
 
         if pixel_size is None:
             resolution = None
         else:
-            spatial_axes = list(set(axes_ij) - set("bc"))
-            resolution = tuple(1.0 / pixel_size[ax] for ax in axes_ij if ax in spatial_axes)
+            spatial_axes = list(set(resolution_axes_ij) - set("bc"))
+            resolution = tuple(1.0 / pixel_size[ax] for ax in resolution_axes_ij if ax in spatial_axes)
         # does not work for double
         if np.dtype(im.dtype) == np.dtype("float64"):
             im = im.astype("float32")
-        tifffile.imsave(path, im, imagej=True, resolution=resolution)
+        tifffile.imwrite(path, im, imagej=True, resolution=resolution)
 
     sample_in_paths = []
     for i, (in_path, axes) in enumerate(zip(input_paths, input_axes)):
