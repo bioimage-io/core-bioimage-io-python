@@ -187,7 +187,7 @@ class ScaleRange(Processing):
 @dataclass
 class Sigmoid(Processing):
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
-        return 1.0 / (1.0 + np.ufuncs.exp(-tensor))
+        return 1.0 / (1.0 + np.exp(-tensor))
 
 
 @dataclass
