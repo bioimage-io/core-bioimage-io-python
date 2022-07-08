@@ -105,7 +105,7 @@ class MeanVarStd(SampleMeasureGroup, DatasetMeasureGroup):
         c = tensor - mean
         n = tensor.size if self.axes is None else numpy.prod([tensor.sizes[d] for d in self.axes])
         var = xr.dot(c, c, dims=self.axes) / n
-        std = xr.ufuncs.sqrt(var)
+        std = numpy.sqrt(var)
         return {self.tensor_name: {Mean(axes=self.axes): mean, Var(axes=self.axes): var, Std(axes=self.axes): std}}
 
     def reset(self):
@@ -146,7 +146,7 @@ class MeanVarStd(SampleMeasureGroup, DatasetMeasureGroup):
                 self.tensor_name: {
                     Mean(axes=self.axes): self.mean,
                     Var(axes=self.axes): var,
-                    Std(axes=self.axes): xr.ufuncs.sqrt(var),
+                    Std(axes=self.axes): numpy.sqrt(var),
                 }
             }
 
