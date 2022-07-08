@@ -41,7 +41,7 @@ def test_model(
     )
 
 
-def _validate_input_shape(shape: Tuple[int, ...], shape_spec) -> bool:
+def check_input_shape(shape: Tuple[int, ...], shape_spec) -> bool:
     if isinstance(shape_spec, list):
         if shape != tuple(shape_spec):
             return False
@@ -62,7 +62,7 @@ def _validate_input_shape(shape: Tuple[int, ...], shape_spec) -> bool:
     return True
 
 
-def _validate_output_shape(shape: Tuple[int, ...], shape_spec, input_shapes) -> bool:
+def check_output_shape(shape: Tuple[int, ...], shape_spec, input_shapes) -> bool:
     if isinstance(shape_spec, list):
         return shape == tuple(shape_spec)
     elif isinstance(shape_spec, ImplicitOutputShape):

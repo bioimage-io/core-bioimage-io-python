@@ -32,7 +32,7 @@ setup(
         "ruamel.yaml",
         "tqdm",
         "xarray",
-        "tifffile<=2022.4.8",  # fixes Syntax error; see https://github.com/bioimage-io/core-bioimage-io-python/pull/259
+        "tifffile"
     ],
     include_package_data=True,
     extras_require={

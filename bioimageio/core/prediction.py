@@ -186,7 +186,7 @@ def _parse_padding(padding, input_specs):
 def predict_with_padding(
     prediction_pipeline: PredictionPipeline,
     inputs: Union[xr.DataArray, List[xr.DataArray], Tuple[xr.DataArray]],
-    padding: Union[bool, Dict[str, int]],
+    padding: Union[bool, Dict[str, int]] = True,
     pad_right: bool = True,
 ) -> List[xr.DataArray]:
     """Run prediction with padding for a single set of input(s) with a bioimage.io model.
@@ -308,7 +308,7 @@ def _parse_tiling(tiling, input_specs, output_specs):
 def predict_with_tiling(
     prediction_pipeline: PredictionPipeline,
     inputs: Union[xr.DataArray, List[xr.DataArray], Tuple[xr.DataArray]],
-    tiling: Union[bool, Dict[str, Dict[str, int]]],
+    tiling: Union[bool, Dict[str, Dict[str, int]]] = True,
     verbose: bool = False,
 ) -> List[xr.DataArray]:
     """Run prediction with tiling for a single set of input(s) with a bioimage.io model.

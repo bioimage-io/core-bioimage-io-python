@@ -11,4 +11,5 @@ from .resource_io import (
     serialize_raw_resource_description,
 )
 from .prediction_pipeline import create_prediction_pipeline
-from .prediction import predict_image, predict_images
+from .prediction import predict_image, predict_images, predict_with_padding, predict_with_tiling
+from .resource_tests import check_input_shape, check_output_shape, test_resource
