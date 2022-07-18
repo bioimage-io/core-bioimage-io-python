@@ -19,7 +19,7 @@ from bioimageio.spec.shared.common import (
 )
 from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
 from . import nodes
-from .utils import resolve_raw_resource_description, resolve_source
+from .utils import resolve_raw_node, resolve_source
 
 serialize_raw_resource_description = spec.io_.serialize_raw_resource_description
 save_raw_resource_description = spec.io_.save_raw_resource_description
@@ -54,7 +54,7 @@ def load_resource_description(
         else:
             raise ValueError(f"Not found any of the specified weights formats {weights_priority_order}")
 
-    rd: ResourceDescription = resolve_raw_resource_description(raw_rd=raw_rd, nodes_module=nodes)
+    rd: ResourceDescription = resolve_raw_node(raw_rd=raw_rd, nodes_module=nodes)
     assert isinstance(rd, getattr(nodes, get_class_name_from_type(raw_rd.type)))
 
     return rd

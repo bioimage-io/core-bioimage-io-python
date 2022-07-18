@@ -1,12 +1,15 @@
 import abc
-from typing import List, Optional, Sequence, Type
+from typing import List, Optional, Sequence, Type, Union
 
 import xarray as xr
 
+from bioimageio.core import load_resource_description
 from bioimageio.core.resource_io import nodes
 
 #: Known weight formats in order of priority
 #: First match wins
+from bioimageio.spec.model import raw_nodes
+
 _WEIGHT_FORMATS = ["pytorch_state_dict", "tensorflow_saved_model_bundle", "torchscript", "onnx", "keras_hdf5"]
 
 
@@ -15,10 +18,23 @@ class ModelAdapter(abc.ABC):
     Represents model *without* any preprocessing and postprocessing
     """
 
-    def __init__(self, *, bioimageio_model: nodes.Model, devices: Optional[Sequence[str]] = None):
-        self.bioimageio_model = bioimageio_model
+    def __init__(
+        self, *, bioimageio_model: Union[nodes.Model, raw_nodes.Model], devices: Optional[Sequence[str]] = None
+    ):
+        self.bioimageio_model = self._prepare_model(bioimageio_model)
         self.default_devices = devices
         self.loaded = False
+
+    @staticmethod
+    def _prepare_model(bioimageio_model):
+        """the (raw) model node is prepared (here: loaded as non-raw model node) for the model adapter to be ready
+        for operation.
+        Note: To write a model adapter that uses the raw model node one can overwrite this method.
+        """
+        if isinstance(bioimageio_model, nodes.Model):
+            return bioimageio_model
+        else:
+            return load_resource_description(bioimageio_model)
 
     def __enter__(self):
         """load on entering context"""
@@ -93,7 +109,10 @@ def get_weight_formats() -> List[str]:
 
 
 def create_model_adapter(
-    *, bioimageio_model: nodes.Model, devices=Optional[Sequence[str]], weight_format: Optional[str] = None
+    *,
+    bioimageio_model: Union[nodes.Model, raw_nodes.Model],
+    devices=Optional[Sequence[str]],
+    weight_format: Optional[str] = None,
 ) -> ModelAdapter:
     """
     Creates model adapter based on the passed spec
@@ -105,7 +124,7 @@ def create_model_adapter(
 
     if weight_format is not None:
         if weight_format not in weight_formats:
-            raise ValueError(f"Weight format {weight_format} is not in supported formats {_WEIGHT_FORMATS}")
+            raise ValueError(f"Weight format {weight_format} is not in supported formats {weight_formats}")
         weight_formats = [weight_format]
 
     for weight in weight_formats:

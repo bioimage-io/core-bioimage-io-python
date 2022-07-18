@@ -1,16 +1,18 @@
 import abc
 from dataclasses import dataclass
-from typing import Iterable, List, Optional, Sequence, Tuple
+from typing import Iterable, List, Optional, Sequence, Tuple, Union
 
 import xarray as xr
 from marshmallow import missing
 
 from bioimageio.core.resource_io import nodes
-from bioimageio.core.resource_io.nodes import InputTensor, Model, OutputTensor
+from bioimageio.spec.model import raw_nodes
 from ._combined_processing import CombinedProcessing
 from ._model_adapters import ModelAdapter, create_model_adapter
 from ._stat_state import StatsState
 from ._utils import ComputedMeasures, Sample, TensorName
+from .. import load_resource_description
+from ..resource_io.utils import resolve_raw_node
 
 
 @dataclass
@@ -54,7 +56,7 @@ class PredictionPipeline(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def input_specs(self) -> List[InputTensor]:
+    def input_specs(self) -> List[nodes.InputTensor]:
         """
         specs of inputs
         """
@@ -62,7 +64,7 @@ class PredictionPipeline(abc.ABC):
 
     @property
     @abc.abstractmethod
-    def output_specs(self) -> List[OutputTensor]:
+    def output_specs(self) -> List[nodes.OutputTensor]:
         """
         specs of outputs
         """
@@ -88,7 +90,7 @@ class _PredictionPipelineImpl(PredictionPipeline):
         self,
         *,
         name: str,
-        bioimageio_model: Model,
+        bioimageio_model: Union[nodes.Model, raw_nodes.Model],
         preprocessing: CombinedProcessing,
         postprocessing: CombinedProcessing,
         ipt_stats: StatsState,
@@ -99,8 +101,14 @@ class _PredictionPipelineImpl(PredictionPipeline):
             raise NotImplementedError(f"Not yet implemented inference for run mode '{bioimageio_model.run_mode.name}'")
 
         self._name = name
-        self._input_specs = bioimageio_model.inputs
-        self._output_specs = bioimageio_model.outputs
+        if isinstance(bioimageio_model, nodes.Model):
+            self._input_specs = bioimageio_model.inputs
+            self._output_specs = bioimageio_model.outputs
+        else:
+            assert isinstance(bioimageio_model, raw_nodes.Model)
+            self._input_specs = [resolve_raw_node(s, nodes) for s in bioimageio_model.inputs]
+            self._output_specs = [resolve_raw_node(s, nodes) for s in bioimageio_model.outputs]
+
         self._preprocessing = preprocessing
         self._postprocessing = postprocessing
         self._ipt_stats = ipt_stats
@@ -176,7 +184,7 @@ class _PredictionPipelineImpl(PredictionPipeline):
 
 
 def create_prediction_pipeline(
-    bioimageio_model: nodes.Model,
+    bioimageio_model: Union[nodes.Model, raw_nodes.Model],
     *,
     devices: Optional[Sequence[str]] = None,
     weight_format: Optional[str] = None,
@@ -196,8 +204,16 @@ def create_prediction_pipeline(
     model_adapter: ModelAdapter = model_adapter or create_model_adapter(
         bioimageio_model=bioimageio_model, devices=devices, weight_format=weight_format
     )
+    if isinstance(bioimageio_model, nodes.Model):
+        ipts = bioimageio_model.inputs
+        outs = bioimageio_model.outputs
 
-    preprocessing = CombinedProcessing(bioimageio_model.inputs)
+    else:
+        assert isinstance(bioimageio_model, raw_nodes.Model)
+        ipts = [resolve_raw_node(s, nodes) for s in bioimageio_model.inputs]
+        outs = [resolve_raw_node(s, nodes) for s in bioimageio_model.outputs]
+
+    preprocessing = CombinedProcessing(ipts)
 
     def sample_dataset():
         for tensors in dataset_for_initial_statistics:
@@ -209,7 +225,7 @@ def create_prediction_pipeline(
         update_dataset_stats_after_n_samples=update_dataset_stats_after_n_samples,
         update_dataset_stats_for_n_samples=update_dataset_stats_for_n_samples,
     )
-    postprocessing = CombinedProcessing(bioimageio_model.outputs)
+    postprocessing = CombinedProcessing(outs)
     out_stats = StatsState(
         postprocessing.required_measures,
         dataset=tuple(),
