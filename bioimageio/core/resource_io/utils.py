@@ -9,7 +9,6 @@ from types import ModuleType
 from bioimageio.spec.shared import raw_nodes, resolve_source, source_available
 from bioimageio.spec.shared.node_transformer import (
     GenericRawNode,
-    GenericRawRD,
     GenericResolvedNode,
     NodeTransformer,
     NodeVisitor,
@@ -105,8 +104,8 @@ def all_sources_available(
         return True
 
 
-def resolve_raw_resource_description(
-    raw_rd: GenericRawRD, nodes_module: typing.Any, uri_only_if_in_package: bool = True
+def resolve_raw_node(
+    raw_rd: GenericRawNode, nodes_module: typing.Any, uri_only_if_in_package: bool = True
 ) -> GenericResolvedNode:
     """resolve all uris and paths (that are included when packaging)"""
     rd = UriNodeTransformer(root_path=raw_rd.root_path, uri_only_if_in_package=uri_only_if_in_package).transform(raw_rd)
