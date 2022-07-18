@@ -137,7 +137,7 @@ def _test_model_inference(model: Model, weight_format: str, devices: Optional[Li
             assert len(inputs) == len(model.inputs)  # should be checked by validation
             input_shapes = {}
             for idx, (ipt, ipt_spec) in enumerate(zip(inputs, model.inputs)):
-                if not _validate_input_shape(tuple(ipt.shape), ipt_spec.shape):
+                if not check_input_shape(tuple(ipt.shape), ipt_spec.shape):
                     raise ValidationError(
                         f"Shape {tuple(ipt.shape)} of test input {idx} '{ipt_spec.name}' does not match "
                         f"input shape description: {ipt_spec.shape}."
@@ -146,7 +146,7 @@ def _test_model_inference(model: Model, weight_format: str, devices: Optional[Li
 
             assert len(expected) == len(model.outputs)  # should be checked by validation
             for idx, (out, out_spec) in enumerate(zip(expected, model.outputs)):
-                if not _validate_output_shape(tuple(out.shape), out_spec.shape, input_shapes):
+                if not check_output_shape(tuple(out.shape), out_spec.shape, input_shapes):
                     error = (error or "") + (
                         f"Shape {tuple(out.shape)} of test output {idx} '{out_spec.name}' does not match "
                         f"output shape description: {out_spec.shape}."
