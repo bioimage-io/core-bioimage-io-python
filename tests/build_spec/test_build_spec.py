@@ -152,7 +152,7 @@ def _test_build_spec(
 
     # test inference for the model to ensure that the weights were written correctly
     test_res = _test_model(out_path)
-    assert test_res["error"] is None
+    assert all([s["status"] == "passed" for s in test_res])
 
 
 def test_build_spec_pytorch(any_torch_model, tmp_path):
@@ -209,7 +209,7 @@ def test_build_spec_training_data2(unet2d_nuclei_broad_model, tmp_path):
 
 
 def test_build_spec_parent1(unet2d_nuclei_broad_model, tmp_path):
-    parent = {"uri": "https:/my-parent-model.org"}
+    parent = {"uri": "https://doi.org/10.5281/zenodo.5764892"}
     _test_build_spec(unet2d_nuclei_broad_model, tmp_path / "model.zip", "torchscript", parent=parent)
 
 

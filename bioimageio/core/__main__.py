@@ -2,15 +2,17 @@ import enum
 import json
 import os
 import sys
+import warnings
 from glob import glob
 
 from pathlib import Path
-from pprint import pprint
+from pprint import pformat, pprint
 from typing import List, Optional
 
 import typer
 
 from bioimageio.core import __version__, prediction, commands, resource_tests, load_raw_resource_description
+from bioimageio.core.common import TestSummary
 from bioimageio.core.prediction_pipeline import get_weight_formats
 from bioimageio.spec.__main__ import app, help_version as help_version_spec
 from bioimageio.spec.model.raw_nodes import WeightsFormat
@@ -21,12 +23,16 @@ except ImportError:
     from typing_extensions import get_args  # type: ignore
 
 try:
-    from bioimageio.core.weight_converter import torch as torch_converter
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from bioimageio.core.weight_converter import torch as torch_converter
 except ImportError:
     torch_converter = None
 
 try:
-    from bioimageio.core.weight_converter import keras as keras_converter
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        from bioimageio.core.weight_converter import keras as keras_converter
 except ImportError:
     keras_converter = None
 
@@ -78,6 +84,46 @@ WeightFormatEnum = enum.Enum("WeightFormatEnum", {wf: wf for wf in get_args(Weig
 # WeightFormatEnum = enum.Enum("WeightFormatEnum", get_args(WeightsFormat))
 
 
+def _log_test_summaries(summaries: List[TestSummary], msg: str):
+    # todo: improve logging of multiple test summaries
+    ret_code = 0
+    for summary in summaries:
+        print(f"{summary['name']}: {summary['status']}")
+        if summary["status"] != "passed":
+            s = {
+                k: v
+                for k, v in summary.items()
+                if k not in ("name", "status", "bioimageio_spec_version", "bioimageio_core_version")
+            }
+            tb = s.pop("traceback")
+            if tb:
+                print("traceback:")
+                print("".join(tb))
+
+            def show_part(part, show):
+                if show:
+                    line = f"{part}: "
+                    print(line + pformat(show, width=min(80, 120 - len(line))).replace("\n", " " * len(line) + "\n"))
+
+            for part in ["error", "warnings", "source_name"]:
+                show_part(part, s.pop(part, None))
+
+            for part in sorted(s.keys()):
+                show_part(part, s[part])
+
+            ret_code = 1
+
+    if ret_code:
+        result = "FAILED!"
+        icon = "❌"
+    else:
+        result = "passed."
+        icon = "✔️"
+
+    print(msg.format(icon=icon, result=result))
+    return ret_code
+
+
 @app.command()
 def test_model(
     model_rdf: str = typer.Argument(
@@ -88,31 +134,16 @@ def test_model(
     decimal: int = typer.Option(4, help="The test precision."),
 ):
     # this is a weird typer bug: default devices are empty tuple although they should be None
-    if len(devices) == 0:
-        devices = None
-    summary = resource_tests.test_model(
+    devices = devices or None
+
+    summaries = resource_tests.test_model(
         model_rdf,
         weight_format=None if weight_format is None else weight_format.value,
         devices=devices,
         decimal=decimal,
     )
-
-    if weight_format is None:
-        weight_formats = get_weight_formats()
-        model_weight_formats = list(load_raw_resource_description(model_rdf).weights.keys())
-        for wf in weight_formats:
-            if wf in model_weight_formats:
-                weight_format = wf
-                break
-        weight_format = "unknown" if weight_format is None else weight_format
-
-    if summary["error"] is None:
-        print(f"Model test for {model_rdf} using {weight_format} weight format has passed.")
-        ret_code = 0
-    else:
-        print(f"Model test for {model_rdf} using {weight_format} weight format has FAILED!")
-        pprint(summary)
-        ret_code = 1
+    print(f"\ntesting model {model_rdf}...")
+    ret_code = _log_test_summaries(summaries, f"\n{{icon}} Model {model_rdf} {{result}}")
     sys.exit(ret_code)
 
 
@@ -131,16 +162,11 @@ def test_resource(
     # this is a weird typer bug: default devices are empty tuple although they should be None
     if len(devices) == 0:
         devices = None
-    summary = resource_tests.test_resource(
+    summaries = resource_tests.test_resource(
         rdf, weight_format=None if weight_format is None else weight_format.value, devices=devices, decimal=decimal
     )
-    if summary["error"] is None:
-        print(f"Resource test for {rdf} has passed.")
-        ret_code = 0
-    else:
-        print(f"Resource test for {rdf} has FAILED!")
-        pprint(summary)
-        ret_code = 1
+    print(f"\ntesting {rdf}...")
+    ret_code = _log_test_summaries(summaries, f"{{icon}} Resource test for {rdf} has {{result}}")
     sys.exit(ret_code)
 
 

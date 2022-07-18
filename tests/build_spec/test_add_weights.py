@@ -31,8 +31,11 @@ def _test_add_weights(model, tmp_path, base_weights, added_weights, **kwargs):
         assert weight.source.exists()
 
     test_res = _test_model(out_path, added_weights)
+    failed = [s for s in test_res if s["status"] != "passed"]
+    assert not failed, failed
     test_res = _test_model(out_path)
-    assert test_res["error"] is None
+    failed = [s for s in test_res if s["status"] != "passed"]
+    assert not failed, failed
 
     # make sure the weights were cleaned from the cwd
     assert not os.path.exists(os.path.split(weight_path)[1])

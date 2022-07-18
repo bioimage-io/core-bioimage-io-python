@@ -1,4 +1,7 @@
+import os
+import re
 import traceback
+import warnings
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
@@ -8,6 +11,7 @@ import xarray as xr
 from marshmallow import ValidationError
 
 from bioimageio.core import __version__ as bioimageio_core_version, load_resource_description
+from bioimageio.core.common import TestSummary
 from bioimageio.core.prediction import predict
 from bioimageio.core.prediction_pipeline import create_prediction_pipeline
 from bioimageio.core.resource_io.nodes import (
@@ -17,8 +21,11 @@ from bioimageio.core.resource_io.nodes import (
     ResourceDescription,
     URI,
 )
+from bioimageio.core.resource_io.utils import SourceNodeChecker
 from bioimageio.spec import __version__ as bioimageio_spec_version
 from bioimageio.spec.model.raw_nodes import WeightsFormat
+from bioimageio.spec.shared import resolve_source
+from bioimageio.spec.shared.common import ValidationWarning
 from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
 
 
@@ -27,36 +34,10 @@ def test_model(
     weight_format: Optional[WeightsFormat] = None,
     devices: Optional[List[str]] = None,
     decimal: int = 4,
-) -> dict:
-    """Test whether the test output(s) of a model can be reproduced.
-
-    Returns: summary dict with keys: name, status, error, traceback, bioimageio_spec_version, bioimageio_core_version
-    """
-    # todo: reuse more of 'test_resource'
-    tb = None
-    try:
-        model = load_resource_description(
-            model_rdf, weights_priority_order=None if weight_format is None else [weight_format]
-        )
-    except Exception as e:
-        model = None
-        error = str(e)
-        tb = traceback.format_tb(e.__traceback__)
-    else:
-        error = None
-
-    if isinstance(model, Model):
-        return test_resource(model, weight_format=weight_format, devices=devices, decimal=decimal)
-    else:
-        error = error or f"Expected RDF type Model, got {type(model)} instead."
-
-    return dict(
-        name="reproduced test outputs from test inputs",
-        status="failed",
-        error=error,
-        traceback=tb,
-        bioimageio_spec_version=bioimageio_spec_version,
-        bioimageio_core_version=bioimageio_core_version,
+) -> List[TestSummary]:
+    """Test whether the test output(s) of a model can be reproduced."""
+    return test_resource(
+        model_rdf, weight_format=weight_format, devices=devices, decimal=decimal, expected_type="model"
     )
 
 
@@ -98,81 +79,186 @@ def check_output_shape(shape: Tuple[int, ...], shape_spec, input_shapes) -> bool
         raise TypeError(f"Encountered unexpected shape description of type {type(shape_spec)}")
 
 
+def _test_resource_urls(rd: ResourceDescription) -> TestSummary:
+    assert isinstance(rd, ResourceDescription)
+    with warnings.catch_warnings(record=True) as all_warnings:
+        try:
+            SourceNodeChecker(root_path=rd.root_path).visit(rd)
+        except FileNotFoundError as e:
+            error = str(e)
+            tb = traceback.format_tb(e.__traceback__)
+        else:
+            error = None
+            tb = None
+
+    return dict(
+        name="All URLs and paths available",
+        status="passed" if error is None else "failed",
+        error=error,
+        traceback=tb,
+        bioimageio_spec_version=bioimageio_spec_version,
+        bioimageio_core_version=bioimageio_core_version,
+        nested_errors=None,
+        source_name=rd.id or rd.id or rd.name if hasattr(rd, "id") else rd.name,
+        warnings={"SourceNodeChecker": [str(w.message) for w in all_warnings]} if all_warnings else {},
+    )
+
+
+def _test_model_documentation(rd: ResourceDescription) -> TestSummary:
+    assert isinstance(rd, Model)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        doc_path: Path = resolve_source(rd.documentation, root_path=rd.root_path)
+        doc = doc_path.read_text()
+        wrn = ""
+        if not re.match("#.*[vV]alidation", doc):
+            wrn = "No '# Validation' (sub)section found."
+
+        return dict(
+            name="Test documentation completeness.",
+            status="passed",
+            error=None,
+            traceback=None,
+            bioimageio_spec_version=bioimageio_spec_version,
+            bioimageio_core_version=bioimageio_core_version,
+            source_name=rd.id or rd.name if hasattr(rd, "id") else rd.name,
+            warnings={"documentation": wrn} if wrn else {},
+        )
+
+
+def _test_model_inference(model: Model, weight_format: str, devices: Optional[List[str]], decimal: int) -> TestSummary:
+    error: Optional[str] = None
+    tb: Optional = None
+    with warnings.catch_warnings(record=True) as all_warnings:
+        try:
+            inputs = [np.load(str(in_path)) for in_path in model.test_inputs]
+            expected = [np.load(str(out_path)) for out_path in model.test_outputs]
+
+            assert len(inputs) == len(model.inputs)  # should be checked by validation
+            input_shapes = {}
+            for idx, (ipt, ipt_spec) in enumerate(zip(inputs, model.inputs)):
+                if not check_input_shape(tuple(ipt.shape), ipt_spec.shape):
+                    raise ValidationError(
+                        f"Shape {tuple(ipt.shape)} of test input {idx} '{ipt_spec.name}' does not match "
+                        f"input shape description: {ipt_spec.shape}."
+                    )
+                input_shapes[ipt_spec.name] = ipt.shape
+
+            assert len(expected) == len(model.outputs)  # should be checked by validation
+            for idx, (out, out_spec) in enumerate(zip(expected, model.outputs)):
+                if not check_output_shape(tuple(out.shape), out_spec.shape, input_shapes):
+                    error = (error or "") + (
+                        f"Shape {tuple(out.shape)} of test output {idx} '{out_spec.name}' does not match "
+                        f"output shape description: {out_spec.shape}."
+                    )
+
+            with create_prediction_pipeline(
+                bioimageio_model=model, devices=devices, weight_format=weight_format
+            ) as prediction_pipeline:
+                results = predict(prediction_pipeline, inputs)
+
+            if len(results) != len(expected):
+                error = (error or "") + (
+                    f"Number of outputs and number of expected outputs disagree: {len(results)} != {len(expected)}"
+                )
+            else:
+                for res, exp in zip(results, expected):
+                    try:
+                        np.testing.assert_array_almost_equal(res, exp, decimal=decimal)
+                    except AssertionError as e:
+                        error = (error or "") + f"Output and expected output disagree:\n {e}"
+        except Exception as e:
+            error = str(e)
+            tb = traceback.format_tb(e.__traceback__)
+
+    return dict(
+        name="reproduce test outputs from test inputs",
+        status="passed" if error is None else "failed",
+        error=error,
+        traceback=tb,
+        bioimageio_spec_version=bioimageio_spec_version,
+        bioimageio_core_version=bioimageio_core_version,
+        warnings=ValidationWarning.get_warning_summary(all_warnings),
+        source_name=model.id or model.name,
+    )
+
+
+def _test_load_resource(
+    rdf: Union[RawResourceDescription, ResourceDescription, URI, Path, str],
+    weight_format: Optional[WeightsFormat] = None,
+) -> Tuple[Optional[ResourceDescription], TestSummary]:
+    if isinstance(rdf, (URI, os.PathLike)):
+        source_name = str(rdf)
+    elif isinstance(rdf, str):
+        source_name = rdf[:120]
+    else:
+        source_name = rdf.id if hasattr(rdf, "id") else rdf.name
+
+    main_test_warnings = []
+    try:
+        with warnings.catch_warnings(record=True) as all_warnings:
+            rd = load_resource_description(
+                rdf, weights_priority_order=None if weight_format is None else [weight_format]
+            )
+
+            main_test_warnings += list(all_warnings)
+    except Exception as e:
+        error: Optional[str] = str(e)
+        tb: Optional = traceback.format_tb(e.__traceback__)
+    else:
+        error = None
+        tb = None
+
+    load_summary = dict(
+        name="load resource description",
+        status="passed" if error is None else "failed",
+        error=error,
+        traceback=tb,
+        bioimageio_spec_version=bioimageio_spec_version,
+        bioimageio_core_version=bioimageio_core_version,
+        warnings={},
+        source_name=source_name,
+    )
+
+    return rd, load_summary
+
+
+def _test_expected_resource_type(rd: ResourceDescription, expected_type: str) -> TestSummary:
+    has_expected_type = rd.type == expected_type
+    return dict(
+        name="has expected resource type",
+        status="passed" if has_expected_type else "failed",
+        error=f"expected type {expected_type}, found {rd.type}",
+        traceback=None,
+        source_name=rd.id or rd.name if hasattr(rd, "id") else rd.name,
+    )
+
+
 def test_resource(
     rdf: Union[RawResourceDescription, ResourceDescription, URI, Path, str],
     *,
     weight_format: Optional[WeightsFormat] = None,
     devices: Optional[List[str]] = None,
     decimal: int = 4,
-):
+    expected_type: Optional[str] = None,
+) -> List[TestSummary]:
     """Test RDF dynamically
 
     Returns: summary dict with keys: name, status, error, traceback, bioimageio_spec_version, bioimageio_core_version
     """
-    error: Optional[str] = None
-    tb: Optional = None
-    test_name: str = "load resource description"
+    rd, load_test = _test_load_resource(rdf, weight_format)
+    tests: List[TestSummary] = [load_test]
+    if rd is not None:
+        if expected_type is not None:
+            tests.append(_test_expected_resource_type(rd, expected_type))
 
-    try:
-        rd = load_resource_description(rdf, weights_priority_order=None if weight_format is None else [weight_format])
-    except Exception as e:
-        error = str(e)
-        tb = traceback.format_tb(e.__traceback__)
-    else:
-        if isinstance(rd, Model):
-            test_name = "reproduced test outputs from test inputs"
-            model = rd
-            try:
-                inputs = [np.load(str(in_path)) for in_path in model.test_inputs]
-                expected = [np.load(str(out_path)) for out_path in model.test_outputs]
+        tests.append(_test_resource_urls(rd))
 
-                assert len(inputs) == len(model.inputs)  # should be checked by validation
-                input_shapes = {}
-                for idx, (ipt, ipt_spec) in enumerate(zip(inputs, model.inputs)):
-                    if not check_input_shape(tuple(ipt.shape), ipt_spec.shape):
-                        raise ValidationError(
-                            f"Shape {tuple(ipt.shape)} of test input {idx} '{ipt_spec.name}' does not match "
-                            f"input shape description: {ipt_spec.shape}."
-                        )
-                    input_shapes[ipt_spec.name] = ipt.shape
+    if isinstance(rd, Model):
+        tests.append(_test_model_documentation(rd))
+        tests.append(_test_model_inference(rd, weight_format, devices, decimal))
 
-                assert len(expected) == len(model.outputs)  # should be checked by validation
-                for idx, (out, out_spec) in enumerate(zip(expected, model.outputs)):
-                    if not check_output_shape(tuple(out.shape), out_spec.shape, input_shapes):
-                        error = (error or "") + (
-                            f"Shape {tuple(out.shape)} of test output {idx} '{out_spec.name}' does not match "
-                            f"output shape description: {out_spec.shape}."
-                        )
-
-                with create_prediction_pipeline(
-                    bioimageio_model=model, devices=devices, weight_format=weight_format
-                ) as prediction_pipeline:
-                    results = predict(prediction_pipeline, inputs)
-
-                if len(results) != len(expected):
-                    error = (error or "") + (
-                        f"Number of outputs and number of expected outputs disagree: {len(results)} != {len(expected)}"
-                    )
-                else:
-                    for res, exp in zip(results, expected):
-                        try:
-                            np.testing.assert_array_almost_equal(res, exp, decimal=decimal)
-                        except AssertionError as e:
-                            error = (error or "") + f"Output and expected output disagree:\n {e}"
-            except Exception as e:
-                error = str(e)
-                tb = traceback.format_tb(e.__traceback__)
-
-    # todo: add tests for non-model resources
-
-    return dict(
-        name=test_name,
-        status="passed" if error is None else "failed",
-        error=error,
-        traceback=tb,
-        bioimageio_spec_version=bioimageio_spec_version,
-        bioimageio_core_version=bioimageio_core_version,
-    )
+    return tests
 
 
 def debug_model(
