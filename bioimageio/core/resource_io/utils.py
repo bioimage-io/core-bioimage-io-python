@@ -28,7 +28,7 @@ class SourceNodeChecker(NodeVisitor):
     """raises FileNotFoundError for unavailable URIs and paths"""
 
     def __init__(self, *, root_path: os.PathLike):
-        self.root_path = pathlib.Path(root_path).resolve()
+        self.root_path = root_path if isinstance(root_path, raw_nodes.URI) else pathlib.Path(root_path).resolve()
 
     def _visit_source(self, leaf: typing.Union[pathlib.Path, raw_nodes.URI]):
         if not source_available(leaf, self.root_path):
