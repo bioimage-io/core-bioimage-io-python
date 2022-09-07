@@ -228,7 +228,7 @@ def _test_expected_resource_type(rd: ResourceDescription, expected_type: str) ->
     return dict(
         name="has expected resource type",
         status="passed" if has_expected_type else "failed",
-        error=f"expected type {expected_type}, found {rd.type}",
+        error=None if has_expected_type else f"expected type {expected_type}, found {rd.type}",
         traceback=None,
         source_name=rd.id or rd.name if hasattr(rd, "id") else rd.name,
     )

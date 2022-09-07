@@ -56,3 +56,14 @@ def test_validation_section_warning(unet2d_nuclei_broad_model, tmp_path: pathlib
     assert summary["name"] == "Test documentation completeness."
     assert summary["warnings"] == {}
     assert summary["status"] == "passed"
+
+
+def test_issue289():
+    """test for failure case from https://github.com/bioimage-io/core-bioimage-io-python/issues/289"""
+    import bioimageio.core
+    from bioimageio.core.resource_tests import test_model
+
+    doi = "10.5281/zenodo.6287342"
+    model_resource = bioimageio.core.load_resource_description(doi)
+    test_result = test_model(model_resource)
+    assert all([t["status"] == "passed" for t in test_result])
