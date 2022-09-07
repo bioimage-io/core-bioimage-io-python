@@ -66,4 +66,4 @@ def test_issue289():
     doi = "10.5281/zenodo.6287342"
     model_resource = bioimageio.core.load_resource_description(doi)
     test_result = test_model(model_resource)
-    assert all(t["status"] == "success" for t in test_result)
+    assert all([t["status"] == "passed" for t in test_result])
