@@ -38,7 +38,7 @@ setup(
     extras_require={
         "test": ["pytest", "black", "mypy"],
         "dev": ["pre-commit"],
-        "pytorch": ["pytorch>=1.6", "torchvision", "cudatoolkit>=10.1"],
+        "pytorch": ["torch>=1.6", "torchvision"],
         "tensorflow": ["tensorflow"],
         "onnx": ["onnxruntime"],
     },
