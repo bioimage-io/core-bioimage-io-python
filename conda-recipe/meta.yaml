@@ -28,8 +28,13 @@ requirements:
     - {{ dep.lower() }}
     {% endfor %}
   run_constrained:
+    - cudatoolkit>=10.1
     {% for dep in setup_py_data['extras_require']['pytorch'] %}
+      {% if dep.startswith('torch>=') %}  # pip: torch  -> conda: pytorch
+    - py{{ dep.lower() }}
+      {% else %}
     - {{ dep.lower() }}
+      {% endif %}
     {% endfor %}
     {% for dep in setup_py_data['extras_require']['onnx'] %}
     - {{ dep.lower() }}
