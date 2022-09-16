@@ -1,5 +1,7 @@
 import pathlib
 
+import pytest
+
 
 def test_error_for_wrong_shape(stardist_wrong_shape):
     from bioimageio.core.resource_tests import test_model
@@ -58,6 +60,7 @@ def test_validation_section_warning(unet2d_nuclei_broad_model, tmp_path: pathlib
     assert summary["status"] == "passed"
 
 
+@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
 def test_issue289():
     """test for failure case from https://github.com/bioimage-io/core-bioimage-io-python/issues/289"""
     import bioimageio.core
