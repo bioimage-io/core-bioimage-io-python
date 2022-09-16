@@ -82,7 +82,7 @@ jobs:
         auto-update-conda: true
         # we need mamba to resolve environment-tf
         mamba-version: "*"
-        channel-priority: strict
+        channel-priority: flexible
         activate-environment: bio-core-tf
         environment-file: dev/environment-tf.yaml
         python-version: ${{ matrix.python-version }}
