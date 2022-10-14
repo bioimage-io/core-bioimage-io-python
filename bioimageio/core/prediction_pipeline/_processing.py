@@ -1,3 +1,7 @@
+"""Here pre- and postprocessing operations are implemented according to their definitions in bioimageio.spec:
+see https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/preprocessing_spec_latest.md
+and https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/postprocessing_spec_latest.md
+"""
 from dataclasses import dataclass, field, fields
 from typing import Mapping, Optional, Sequence, Type, Union
 
@@ -33,7 +37,7 @@ MISSING = "MISSING"
 
 @dataclass
 class Processing:
-    """base class for all Pre- and Postprocessing transformations"""
+    """base class for all Pre- and Postprocessing transformations."""
 
     tensor_name: str
     # todo: in python>=3.10 we should use dataclasses.KW_ONLY instead of MISSING (see child classes) to make inheritance work properly
@@ -103,11 +107,7 @@ def ensure_dtype(tensor: xr.DataArray, *, dtype) -> xr.DataArray:
 
 @dataclass
 class Binarize(Processing):
-    """'output = tensor > threshold' (returns float array)
-
-    Args:
-        threshold : threshold.
-    """
+    """'output = tensor > threshold' (note: returns float array)."""
 
     threshold: float = MISSING  # make dataclass inheritance work for py<3.10 by using an explicit MISSING value.
 
@@ -117,7 +117,7 @@ class Binarize(Processing):
 
 @dataclass
 class Clip(Processing):
-    """Limit tensor values to [min, max]"""
+    """Limit tensor values to [min, max]."""
 
     min: float = MISSING
     max: float = MISSING
@@ -128,6 +128,8 @@ class Clip(Processing):
 
 @dataclass
 class EnsureDtype(Processing):
+    """Helper Processing to cast dtype if needed."""
+
     dtype: str = MISSING
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
@@ -136,7 +138,7 @@ class EnsureDtype(Processing):
 
 @dataclass
 class ScaleLinear(Processing):
-    """scale the tensor with a fixed multiplicative and additive factor"""
+    """Scale the tensor with a fixed multiplicative and additive factor."""
 
     gain: Union[float, Sequence[float]] = MISSING
     offset: Union[float, Sequence[float]] = MISSING
@@ -162,6 +164,8 @@ class ScaleLinear(Processing):
 
 @dataclass
 class ScaleMeanVariance(Processing):
+    """Scale the tensor s.t. its mean and variance match a reference tensor."""
+
     mode: Literal[SampleMode, DatasetMode] = PER_SAMPLE
     reference_tensor: TensorName = MISSING
     axes: Optional[Sequence[str]] = None
@@ -190,6 +194,8 @@ class ScaleMeanVariance(Processing):
 
 @dataclass
 class ScaleRange(Processing):
+    """Scale with percentiles."""
+
     mode: Literal[SampleMode, DatasetMode] = PER_SAMPLE
     axes: Optional[Sequence[str]] = None
     min_percentile: float = 0.0
@@ -217,12 +223,16 @@ class ScaleRange(Processing):
 
 @dataclass
 class Sigmoid(Processing):
+    """1 / (1 + e^(-tensor))."""
+
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
         return 1.0 / (1.0 + np.exp(-tensor))
 
 
 @dataclass
 class ZeroMeanUnitVariance(Processing):
+    """normalize to zero mean, unit variance."""
+
     mode: Mode = PER_SAMPLE
     mean: Optional[Union[float, Sequence[float]]] = None
     std: Optional[Union[float, Sequence[float]]] = None
