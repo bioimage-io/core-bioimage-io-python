@@ -162,7 +162,30 @@ class ScaleLinear(Processing):
 
 @dataclass
 class ScaleMeanVariance(Processing):
-    ...
+    mode: Literal[SampleMode, DatasetMode] = PER_SAMPLE
+    reference_tensor: TensorName = MISSING
+    axes: Optional[Sequence[str]] = None
+    eps: float = 1e-6
+
+    def get_required_measures(self) -> RequiredMeasures:
+        axes = None if self.axes is None else tuple(self.axes)
+        return {
+            self.mode: {
+                self.tensor_name: {Mean(axes=axes), Std(axes=axes)},
+                self.reference_tensor: {Mean(axes=axes), Std(axes=axes)},
+            }
+        }
+
+    def apply(self, tensor: xr.DataArray) -> xr.DataArray:
+        axes = None if self.axes is None else tuple(self.axes)
+        assert self.mode in (PER_SAMPLE, PER_DATASET)
+        mean = self.get_computed_measure(self.tensor_name, Mean(axes), mode=self.mode)
+        std = self.get_computed_measure(self.tensor_name, Std(axes), mode=self.mode)
+        ref_mean = self.get_computed_measure(self.reference_tensor, Mean(axes), mode=self.mode)
+        ref_std = self.get_computed_measure(self.reference_tensor, Std(axes), mode=self.mode)
+
+        tensor = (tensor - mean) / (std + self.eps) * (ref_std + self.eps) + ref_mean
+        return ensure_dtype(tensor, dtype="float32")
 
 
 @dataclass
