@@ -35,9 +35,9 @@ class CombinedProcessing:
             for step in steps:
                 self._procs.append(KNOWN_PROCESSING[proc_prefix][step.name](tensor_name=t.name, **step.kwargs))
 
-        # There is a difference between pre-and-postprocessing:
-        # Pre-processing always returns float32, because its output is consumed by the model.
-        # Post-processing, however, should return the dtype that is specified in the model spec.
+        # There is a difference between pre-and postprocessing:
+        # Preprocessing always returns float32, because its output is consumed by the model.
+        # Postprocessing, however, should return the dtype that is specified in the model spec.
         # todo: cast dtype for inputs before preprocessing? or check dtype?
         if proc_prefix == POST:
             for t in tensor_specs:

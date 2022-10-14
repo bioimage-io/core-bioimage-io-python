@@ -103,6 +103,12 @@ def ensure_dtype(tensor: xr.DataArray, *, dtype) -> xr.DataArray:
 
 @dataclass
 class Binarize(Processing):
+    """'output = tensor > threshold' (returns float array)
+
+    Args:
+        threshold : threshold.
+    """
+
     threshold: float = MISSING  # make dataclass inheritance work for py<3.10 by using an explicit MISSING value.
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
@@ -111,6 +117,8 @@ class Binarize(Processing):
 
 @dataclass
 class Clip(Processing):
+    """Limit tensor values to [min, max]"""
+
     min: float = MISSING
     max: float = MISSING
 
