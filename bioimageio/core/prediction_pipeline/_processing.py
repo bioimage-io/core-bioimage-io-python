@@ -93,16 +93,6 @@ class Processing:
 
 
 #
-# helpers
-#
-def ensure_dtype(tensor: xr.DataArray, *, dtype) -> xr.DataArray:
-    """
-    Convert array to a given datatype
-    """
-    return tensor.astype(dtype)
-
-
-#
 # Pre- and Postprocessing implementations
 #
 
@@ -129,12 +119,12 @@ class AssertDtype(Processing):
 
 @dataclass
 class Binarize(Processing):
-    """'output = tensor > threshold' (note: returns float array)."""
+    """'output = tensor > threshold'."""
 
     threshold: float = MISSING  # make dataclass inheritance work for py<3.10 by using an explicit MISSING value.
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
-        return ensure_dtype(tensor > self.threshold, dtype="float32")
+        return tensor > self.threshold
 
 
 @dataclass
@@ -145,7 +135,7 @@ class Clip(Processing):
     max: float = MISSING
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
-        return ensure_dtype(tensor.clip(min=self.min, max=self.max), dtype="float32")
+        return tensor.clip(min=self.min, max=self.max)
 
 
 @dataclass
@@ -155,7 +145,7 @@ class EnsureDtype(Processing):
     dtype: str = MISSING
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
-        return ensure_dtype(tensor, dtype=self.dtype)
+        return tensor.astype(self.dtype)
 
 
 @dataclass
@@ -175,7 +165,7 @@ class ScaleLinear(Processing):
             gain = self.gain
             offset = self.offset
 
-        return ensure_dtype(tensor * gain + offset, dtype="float32")
+        return tensor * gain + offset
 
     def __post_init__(self):
         super().__post_init__()
@@ -210,8 +200,7 @@ class ScaleMeanVariance(Processing):
         ref_mean = self.get_computed_measure(self.reference_tensor, Mean(axes), mode=self.mode)
         ref_std = self.get_computed_measure(self.reference_tensor, Std(axes), mode=self.mode)
 
-        tensor = (tensor - mean) / (std + self.eps) * (ref_std + self.eps) + ref_mean
-        return ensure_dtype(tensor, dtype="float32")
+        return (tensor - mean) / (std + self.eps) * (ref_std + self.eps) + ref_mean
 
 
 @dataclass
@@ -236,7 +225,7 @@ class ScaleRange(Processing):
         v_lower = self.get_computed_measure(ref_name, Percentile(self.min_percentile, axes=axes))
         v_upper = self.get_computed_measure(ref_name, Percentile(self.max_percentile, axes=axes))
 
-        return ensure_dtype((tensor - v_lower) / (v_upper - v_lower + self.eps), dtype="float32")
+        return (tensor - v_lower) / (v_upper - v_lower + self.eps)
 
     def __post_init__(self):
         super().__post_init__()
@@ -281,8 +270,7 @@ class ZeroMeanUnitVariance(Processing):
         else:
             raise ValueError(self.mode)
 
-        tensor = (tensor - mean) / (std + self.eps)
-        return ensure_dtype(tensor, dtype="float32")
+        return (tensor - mean) / (std + self.eps)
 
 
 _KnownProcessing = TypedDict(

@@ -59,14 +59,14 @@ class CombinedProcessing:
         combine_tensors = {}
         for ts in tensor_specs:
             # There is a difference between pre-and postprocessing:
-            # Preprocessing always returns float32, because its output is consumed by the model.
-            # Postprocessing, however, should return the dtype that is specified in the model spec.
-            # todo: cast dtype for inputs before preprocessing? or check dtype?
+            # After preprocessing we ensure float32, because the output is consumed by the model.
+            # After postprocessing the dtype that is specified in the model spec needs to be ensured.
             assert ts.name not in combine_tensors
             if isinstance(ts, nodes.InputTensor):
                 # todo: assert nodes.InputTensor.dtype with assert_dtype_before?
+                # todo: in the long run we do not want to limit model inputs to float32...
                 combine_tensors[ts.name] = TensorProcessingInfo(
-                    [Processing(p.name, kwargs=p.kwargs) for p in ts.preprocessing]
+                    [Processing(p.name, kwargs=p.kwargs) for p in ts.preprocessing], ensure_dtype_after="float32"
                 )
             elif isinstance(ts, nodes.OutputTensor):
                 combine_tensors[ts.name] = TensorProcessingInfo(
