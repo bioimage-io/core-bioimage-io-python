@@ -25,7 +25,7 @@ def test_postprocessing_dtype():
                 postprocessing=[nodes.Postprocessing("binarize", dict(threshold=threshold))],
             )
         ]
-        com_proc = CombinedProcessing(outputs)
+        com_proc = CombinedProcessing.from_tensor_specs(outputs)
 
         sample = {"out1": data}
         com_proc.apply(sample, {})
