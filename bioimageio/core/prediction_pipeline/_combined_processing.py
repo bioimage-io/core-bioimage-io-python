@@ -66,11 +66,12 @@ class CombinedProcessing:
                 # todo: assert nodes.InputTensor.dtype with assert_dtype_before?
                 # todo: in the long run we do not want to limit model inputs to float32...
                 combine_tensors[ts.name] = TensorProcessingInfo(
-                    [ProcessingInfo(p.name, kwargs=p.kwargs) for p in ts.preprocessing], ensure_dtype_after="float32"
+                    [ProcessingInfo(p.name, kwargs=p.kwargs) for p in ts.preprocessing or []],
+                    ensure_dtype_after="float32",
                 )
             elif isinstance(ts, nodes.OutputTensor):
                 combine_tensors[ts.name] = TensorProcessingInfo(
-                    [ProcessingInfo(p.name, kwargs=p.kwargs) for p in ts.postprocessing],
+                    [ProcessingInfo(p.name, kwargs=p.kwargs) for p in ts.postprocessing or []],
                     ensure_dtype_after=ts.data_type,
                 )
             else:
