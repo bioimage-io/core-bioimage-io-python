@@ -12,14 +12,14 @@ except ImportError:
 
 
 @dataclasses.dataclass
-class Processing:
+class ProcessingInfo:
     name: str
     kwargs: Dict[str, Any]
 
 
 @dataclasses.dataclass
 class TensorProcessingInfo:
-    processing_steps: List[Processing]
+    processing_steps: List[ProcessingInfo]
     assert_dtype_before: Optional[Union[str, Sequence[str]]] = None  # throw AssertionError if data type doesn't match
     ensure_dtype_before: Optional[str] = None  # cast data type if needed
     assert_dtype_after: Optional[Union[str, Sequence[str]]] = None  # throw AssertionError if data type doesn't match
@@ -66,11 +66,11 @@ class CombinedProcessing:
                 # todo: assert nodes.InputTensor.dtype with assert_dtype_before?
                 # todo: in the long run we do not want to limit model inputs to float32...
                 combine_tensors[ts.name] = TensorProcessingInfo(
-                    [Processing(p.name, kwargs=p.kwargs) for p in ts.preprocessing], ensure_dtype_after="float32"
+                    [ProcessingInfo(p.name, kwargs=p.kwargs) for p in ts.preprocessing], ensure_dtype_after="float32"
                 )
             elif isinstance(ts, nodes.OutputTensor):
                 combine_tensors[ts.name] = TensorProcessingInfo(
-                    [Processing(p.name, kwargs=p.kwargs) for p in ts.postprocessing],
+                    [ProcessingInfo(p.name, kwargs=p.kwargs) for p in ts.postprocessing],
                     ensure_dtype_after=ts.data_type,
                 )
             else:
