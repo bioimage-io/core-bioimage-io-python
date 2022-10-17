@@ -2,9 +2,11 @@
 see https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/preprocessing_spec_latest.md
 and https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/postprocessing_spec_latest.md
 """
-from dataclasses import dataclass, field, fields
-from typing import Mapping, Optional, Sequence, Type, Union
+import numbers
+from dataclasses import InitVar, dataclass, field, fields
+from typing import List, Mapping, Optional, Sequence, Tuple, Type, Union
 
+import numpy
 import numpy as np
 import xarray as xr
 
@@ -103,6 +105,26 @@ def ensure_dtype(tensor: xr.DataArray, *, dtype) -> xr.DataArray:
 #
 # Pre- and Postprocessing implementations
 #
+
+
+@dataclass
+class AssertDtype(Processing):
+    """Helper Processing to assert dtype."""
+
+    dtype: Union[str, Sequence[str]] = MISSING
+    assert_with: Tuple[Type[numpy.dtype], ...] = field(init=False)
+
+    def __post_init__(self):
+        if isinstance(self.dtype, str):
+            dtype = [self.dtype]
+        else:
+            dtype = self.dtype
+
+        self.assert_with = tuple(type(numpy.dtype(dt)) for dt in dtype)
+
+    def apply(self, tensor: xr.DataArray) -> xr.DataArray:
+        assert isinstance(tensor.dtype, self.assert_with)
+        return tensor
 
 
 @dataclass

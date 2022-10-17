@@ -1,8 +1,8 @@
 import dataclasses
-from typing import Dict, Iterable, List, NamedTuple, Optional, Sequence, TypedDict, Union
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from bioimageio.core.resource_io import nodes
-from ._processing import EnsureDtype, KNOWN_PROCESSING, Processing, TensorName
+from ._processing import AssertDtype, EnsureDtype, KNOWN_PROCESSING, Processing, TensorName
 from ._utils import ComputedMeasures, PER_DATASET, PER_SAMPLE, RequiredMeasures, Sample
 
 try:
@@ -12,10 +12,18 @@ except ImportError:
 
 
 @dataclasses.dataclass
+class Processing:
+    name: str
+    kwargs: Dict[str, Any]
+
+
+@dataclasses.dataclass
 class TensorProcessingInfo:
-    processing_steps: Union[List[nodes.Preprocessing], List[nodes.Postprocessing]]
-    data_type_before: Optional[str] = None
-    data_type_after: Optional[str] = None
+    processing_steps: List[Processing]
+    assert_dtype_before: Optional[Union[str, Sequence[str]]] = None  # throw AssertionError if data type doesn't match
+    ensure_dtype_before: Optional[str] = None  # cast data type if needed
+    assert_dtype_after: Optional[Union[str, Sequence[str]]] = None  # throw AssertionError if data type doesn't match
+    ensure_dtype_after: Optional[str] = None  # throw AssertionError if data type doesn't match
 
 
 class CombinedProcessing:
@@ -26,16 +34,22 @@ class CombinedProcessing:
 
         # ensure all tensors have correct data type before any processing
         for tensor_name, info in combine_tensors.items():
-            if info.data_type_before is not None:
-                self._procs.append(EnsureDtype(tensor_name=tensor_name, dtype=info.data_type_before))
+            if info.assert_dtype_before is not None:
+                self._procs.append(AssertDtype(tensor_name=tensor_name, dtype=info.assert_dtype_before))
+
+            if info.ensure_dtype_before is not None:
+                self._procs.append(EnsureDtype(tensor_name=tensor_name, dtype=info.ensure_dtype_before))
 
         for tensor_name, info in combine_tensors.items():
             for step in info.processing_steps:
                 self._procs.append(known[step.name](tensor_name=tensor_name, **step.kwargs))
 
+            if info.assert_dtype_after is not None:
+                self._procs.append(AssertDtype(tensor_name=tensor_name, dtype=info.assert_dtype_after))
+
             # ensure tensor has correct data type right after its processing
-            if info.data_type_after is not None:
-                self._procs.append(EnsureDtype(tensor_name=tensor_name, dtype=info.data_type_after))
+            if info.ensure_dtype_after is not None:
+                self._procs.append(EnsureDtype(tensor_name=tensor_name, dtype=info.ensure_dtype_after))
 
         self.required_measures: RequiredMeasures = self._collect_required_measures(self._procs)
         self.tensor_names = list(combine_tensors)
@@ -50,10 +64,15 @@ class CombinedProcessing:
             # todo: cast dtype for inputs before preprocessing? or check dtype?
             assert ts.name not in combine_tensors
             if isinstance(ts, nodes.InputTensor):
-                # todo: move preprocessing ensure_dtype here as data_type_after
-                combine_tensors[ts.name] = TensorProcessingInfo(ts.preprocessing)
+                # todo: assert nodes.InputTensor.dtype with assert_dtype_before?
+                combine_tensors[ts.name] = TensorProcessingInfo(
+                    [Processing(p.name, kwargs=p.kwargs) for p in ts.preprocessing]
+                )
             elif isinstance(ts, nodes.OutputTensor):
-                combine_tensors[ts.name] = TensorProcessingInfo(ts.postprocessing, None, ts.data_type)
+                combine_tensors[ts.name] = TensorProcessingInfo(
+                    [Processing(p.name, kwargs=p.kwargs) for p in ts.postprocessing],
+                    ensure_dtype_after=ts.data_type,
+                )
             else:
                 raise NotImplementedError(type(ts))
 
