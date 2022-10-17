@@ -12,14 +12,14 @@ except ImportError:
 
 
 @dataclasses.dataclass
-class ProcessingInfo:
+class ProcessingInfoStep:
     name: str
     kwargs: Dict[str, Any]
 
 
 @dataclasses.dataclass
-class TensorProcessingInfo:
-    processing_steps: List[ProcessingInfo]
+class ProcessingInfo:
+    steps: List[ProcessingInfoStep]
     assert_dtype_before: Optional[Union[str, Sequence[str]]] = None  # throw AssertionError if data type doesn't match
     ensure_dtype_before: Optional[str] = None  # cast data type if needed
     assert_dtype_after: Optional[Union[str, Sequence[str]]] = None  # throw AssertionError if data type doesn't match
@@ -27,7 +27,7 @@ class TensorProcessingInfo:
 
 
 class CombinedProcessing:
-    def __init__(self, combine_tensors: Dict[TensorName, TensorProcessingInfo]):
+    def __init__(self, combine_tensors: Dict[TensorName, ProcessingInfo]):
         self._procs = []
         known = dict(KNOWN_PROCESSING["pre"])
         known.update(KNOWN_PROCESSING["post"])
@@ -41,7 +41,7 @@ class CombinedProcessing:
                 self._procs.append(EnsureDtype(tensor_name=tensor_name, dtype=info.ensure_dtype_before))
 
         for tensor_name, info in combine_tensors.items():
-            for step in info.processing_steps:
+            for step in info.steps:
                 self._procs.append(known[step.name](tensor_name=tensor_name, **step.kwargs))
 
             if info.assert_dtype_after is not None:
@@ -65,13 +65,13 @@ class CombinedProcessing:
             if isinstance(ts, nodes.InputTensor):
                 # todo: assert nodes.InputTensor.dtype with assert_dtype_before?
                 # todo: in the long run we do not want to limit model inputs to float32...
-                combine_tensors[ts.name] = TensorProcessingInfo(
-                    [ProcessingInfo(p.name, kwargs=p.kwargs) for p in ts.preprocessing or []],
+                combine_tensors[ts.name] = ProcessingInfo(
+                    [ProcessingInfoStep(p.name, kwargs=p.kwargs) for p in ts.preprocessing or []],
                     ensure_dtype_after="float32",
                 )
             elif isinstance(ts, nodes.OutputTensor):
-                combine_tensors[ts.name] = TensorProcessingInfo(
-                    [ProcessingInfo(p.name, kwargs=p.kwargs) for p in ts.postprocessing or []],
+                combine_tensors[ts.name] = ProcessingInfo(
+                    [ProcessingInfoStep(p.name, kwargs=p.kwargs) for p in ts.postprocessing or []],
                     ensure_dtype_after=ts.data_type,
                 )
             else:
