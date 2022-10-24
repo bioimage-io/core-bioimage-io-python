@@ -3,6 +3,7 @@ import os
 from itertools import product
 from pathlib import Path
 from typing import Dict, Iterator, List, NamedTuple, Optional, OrderedDict, Sequence, Tuple, Union
+from fractions import Fraction
 
 import numpy as np
 import xarray as xr
@@ -26,15 +27,21 @@ class TileDef(NamedTuple):
     inner: Dict[str, slice]
     local: Dict[str, slice]
 
-
 def get_tiling(
-    shape: Sequence[int], tile_shape: Dict[str, int], halo: Dict[str, int], input_axes: Sequence[str]
+    shape: Sequence[int], tile_shape: Dict[str, int], halo: Dict[str, int], input_axes: Sequence[str], scaling: Dict[str, float]
 ) -> Iterator[TileDef]:
+    # outer_tile is the "input" tile, inner_tile is the "output" tile with the halo removed
+    # tile_shape is the shape of the outer_tile
     assert len(shape) == len(input_axes)
+    scaling = {ax: Fraction(sc).limit_denominator() for ax, sc in scaling.items()}
 
     shape_ = [sh for sh, ax in zip(shape, input_axes) if ax in "xyz"]
     spatial_axes = [ax for ax in input_axes if ax in "xyz"]
     inner_tile_shape_ = [tile_shape[ax] - 2 * halo[ax] for ax in spatial_axes]
+    scaling_ = [scaling[ax] for ax in spatial_axes]
+    assert all([sh % fr.denominator == 0 for sh, fr in zip(shape_, scaling_)])
+    assert all([ish % fr.denominator == 0 for ish, fr in zip(inner_tile_shape_, scaling_)])
+    inner_tile_shape_scaled_ = [int(ish *fr) for ish, fr in zip(inner_tile_shape_, scaling_)]
     halo_ = [halo[ax] for ax in spatial_axes]
     assert len(shape_) == len(inner_tile_shape_) == len(spatial_axes) == len(halo_)
 
@@ -45,8 +52,8 @@ def get_tiling(
         positions = [sp * tsh for sp, tsh in zip(start_point, inner_tile_shape_)]
 
         inner_tile = {
-            ax: slice(pos, min(pos + tsh, sh))
-            for ax, pos, tsh, sh in zip(spatial_axes, positions, inner_tile_shape_, shape_)
+            ax: slice(int(pos*fr), int(min(pos + tsh, sh)*fr))
+            for ax, pos, tsh, sh, fr in zip(spatial_axes, positions, inner_tile_shape_, shape_, scaling_)
         }
         inner_tile["b"] = slice(None)
         inner_tile["c"] = slice(None)
@@ -60,8 +67,8 @@ def get_tiling(
 
         local_tile = {
             ax: slice(
-                inner_tile[ax].start - outer_tile[ax].start,
-                -(outer_tile[ax].stop - inner_tile[ax].stop) if outer_tile[ax].stop != inner_tile[ax].stop else None,
+                inner_tile[ax].start - int(outer_tile[ax].start * scaling[ax]),
+                -(int(outer_tile[ax].stop * scaling[ax]) - inner_tile[ax].stop) if int(outer_tile[ax].stop * scaling[ax]) != inner_tile[ax].stop else None,
             )
             for ax in spatial_axes
         }
@@ -77,6 +84,7 @@ def _predict_with_tiling_impl(
     outputs: Sequence[xr.DataArray],
     tile_shapes: Sequence[Dict[str, int]],
     halos: Sequence[Dict[str, int]],
+    scales: Sequence[Dict[str, Tuple[int, int]]],
     verbose: bool = False,
 ):
     if len(inputs) > 1:
@@ -92,8 +100,9 @@ def _predict_with_tiling_impl(
     output = outputs[0]
     tile_shape = tile_shapes[0]
     halo = halos[0]
+    scaling = scales[0]
 
-    tiles = get_tiling(shape=input_.shape, tile_shape=tile_shape, halo=halo, input_axes=input_.dims)
+    tiles = get_tiling(shape=input_.shape, tile_shape=tile_shape, halo=halo, input_axes=input_.dims, scaling=scaling)
 
     assert all(isinstance(ax, str) for ax in input_.dims)
     input_axes: Tuple[str, ...] = input_.dims  # noqa
@@ -270,8 +279,10 @@ def _parse_tiling(tiling, input_specs, output_specs):
         spatial_axes = [ax for ax in axes if ax in "xyz"]
         halo = tiling["halo"]
         tile = tiling["tile"]
+        scale = tiling.get("scale", dict())
         assert all(halo.get(ax, 0) >= 0 for ax in spatial_axes)
         assert all(tile.get(ax, 0) > 0 for ax in spatial_axes)
+        assert all(scale.get(ax, 1.0) > 0 for ax in spatial_axes)
 
     if isinstance(tiling, dict):
         check_tiling(tiling)
@@ -288,6 +299,14 @@ def _parse_tiling(tiling, input_specs, output_specs):
             assert isinstance(shape, list)
             assert len(shape) == len(axes)
 
+            scale = None
+            output_shape = output_spec.shape
+            if not isinstance(output_shape, list):
+                scale = output_shape.scale
+            else:
+                scale = [1.0] * len(axes)
+            assert len(scale) == len(axes)
+
             halo = output_spec.halo
             if halo is None:
                 halo = [0] * len(axes)
@@ -296,6 +315,7 @@ def _parse_tiling(tiling, input_specs, output_specs):
             tiling = {
                 "halo": {ax: ha for ax, ha in zip(axes, halo) if ax in "xyz"},
                 "tile": {ax: sh for ax, sh in zip(axes, shape) if ax in "xyz"},
+                "scale": {ax: sc for ax, sc in zip(axes, scale) if ax in "xyz"},
             }
             check_tiling(tiling)
         else:
@@ -342,7 +362,8 @@ def predict_with_tiling(
             if any(sc != 1 for ax, sc in scale.items() if ax in "xyz") or any(
                 off != 0 for ax, off in offset.items() if ax in "xyz"
             ):
-                raise NotImplementedError("Tiling with a different output shape is not yet supported")
+                pass
+                # raise NotImplementedError("Tiling with a different output shape is not yet supported")
 
             ref_input = named_inputs[output_spec.shape.reference_tensor]
             ref_input_shape = dict(zip(ref_input.dims, ref_input.shape))
@@ -372,6 +393,7 @@ def predict_with_tiling(
         outputs,
         tile_shapes=[tiling["tile"]],  # todo: update tiling for multiple inputs/outputs
         halos=[tiling["halo"]],
+        scales=[tiling["scale"]],
         verbose=verbose,
     )
 

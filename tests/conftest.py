@@ -15,6 +15,7 @@ torch_models = [
     "unet2d_multi_tensor",
     "unet2d_nuclei_broad_model",
     "unet2d_diff_output_shape",
+    "shape_change",
 ]
 torchscript_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
 onnx_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model", "hpa_densenet"]
@@ -22,6 +23,17 @@ tensorflow1_models = ["stardist"]
 tensorflow2_models = []
 keras_models = ["unet2d_keras"]
 tensorflow_js_models = []
+
+
+# torch_models = [
+#     "shape_change",
+# ]
+# torchscript_models = []
+# onnx_models = []
+# tensorflow1_models = []
+# tensorflow2_models = []
+# keras_models = []
+# tensorflow_js_models = []
 
 model_sources = {
     "unet2d_keras": (
@@ -63,6 +75,9 @@ model_sources = {
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
         "stardist_example_model/rdf_wrong_shape2.yaml"
     ),
+    "shape_change": (
+        "/home/skar/Work/Code/Packages/core-bioimage-io-python/shape_change_model.yaml"
+    )
 }
 
 try:
