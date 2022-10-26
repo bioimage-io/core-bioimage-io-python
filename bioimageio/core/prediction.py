@@ -27,8 +27,13 @@ class TileDef(NamedTuple):
     inner: Dict[str, slice]
     local: Dict[str, slice]
 
+
 def get_tiling(
-    shape: Sequence[int], tile_shape: Dict[str, int], halo: Dict[str, int], input_axes: Sequence[str], scaling: Dict[str, float]
+    shape: Sequence[int],
+    tile_shape: Dict[str, int],
+    halo: Dict[str, int],
+    input_axes: Sequence[str],
+    scaling: Dict[str, float],
 ) -> Iterator[TileDef]:
     # outer_tile is the "input" tile, inner_tile is the "output" tile with the halo removed
     # tile_shape is the shape of the outer_tile
