@@ -367,12 +367,6 @@ def predict_with_tiling(
             scale = dict(zip(output_spec.axes, output_spec.shape.scale))
             offset = dict(zip(output_spec.axes, output_spec.shape.offset))
 
-            if any(sc != 1 for ax, sc in scale.items() if ax in "xyz") or any(
-                off != 0 for ax, off in offset.items() if ax in "xyz"
-            ):
-                pass
-                # raise NotImplementedError("Tiling with a different output shape is not yet supported")
-
             ref_input = named_inputs[output_spec.shape.reference_tensor]
             ref_input_shape = dict(zip(ref_input.dims, ref_input.shape))
             output_shape = tuple(int(scale[ax] * ref_input_shape[ax] + 2 * offset[ax]) for ax in output_spec.axes)
