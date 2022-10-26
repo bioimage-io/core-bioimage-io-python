@@ -56,7 +56,7 @@ def get_tiling(
         positions = [sp * tsh for sp, tsh in zip(start_point, inner_tile_shape_)]
 
         inner_tile = {
-            ax: slice(int(pos*fr), int(min(pos + tsh, sh)*fr))
+            ax: slice(int(pos * fr), int(min(pos + tsh, sh) * fr))
             for ax, pos, tsh, sh, fr in zip(spatial_axes, positions, inner_tile_shape_, shape_, scaling_)
         }
         inner_tile["b"] = slice(None)
@@ -72,7 +72,9 @@ def get_tiling(
         local_tile = {
             ax: slice(
                 inner_tile[ax].start - int(outer_tile[ax].start * scaling[ax]),
-                -(int(outer_tile[ax].stop * scaling[ax]) - inner_tile[ax].stop) if int(outer_tile[ax].stop * scaling[ax]) != inner_tile[ax].stop else None,
+                -(int(outer_tile[ax].stop * scaling[ax]) - inner_tile[ax].stop)
+                if int(outer_tile[ax].stop * scaling[ax]) != inner_tile[ax].stop
+                else None,
             )
             for ax in spatial_axes
         }
