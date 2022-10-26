@@ -46,7 +46,6 @@ def get_tiling(
     scaling_ = [scaling[ax] for ax in spatial_axes]
     assert all([sh % fr.denominator == 0 for sh, fr in zip(shape_, scaling_)])
     assert all([ish % fr.denominator == 0 for ish, fr in zip(inner_tile_shape_, scaling_)])
-    inner_tile_shape_scaled_ = [int(ish *fr) for ish, fr in zip(inner_tile_shape_, scaling_)]
     halo_ = [halo[ax] for ax in spatial_axes]
     assert len(shape_) == len(inner_tile_shape_) == len(spatial_axes) == len(halo_)
 
