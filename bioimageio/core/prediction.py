@@ -293,41 +293,44 @@ def _parse_tiling(tiling, input_specs, output_specs):
         scale = tiling.get("scale", dict())
         assert all(halo.get(ax, 0) >= 0 for ax in spatial_axes)
         assert all(tile.get(ax, 0) > 0 for ax in spatial_axes)
-        assert all(scale.get(ax, 1.0) > 0 for ax in spatial_axes)
+        assert all(scale.get(ax, 1) > 0 for ax in spatial_axes)
 
-    if isinstance(tiling, dict):
+    if isinstance(tiling, dict) or (isinstance(tiling, bool) and tiling):
+        # NOTE we assume here that shape in input and output are the same
+        # for different input and output shapes, we should actually tile in the
+        # output space and then request the corresponding input tiles
+        # so we would need to apply the output scale and offset to the
+        # input shape to compute the tile size and halo here
+        shape = input_spec.shape
+        if not isinstance(shape, list):
+            shape = _determine_shape(shape.min, shape.step, axes)
+        assert isinstance(shape, list)
+        assert len(shape) == len(axes)
+
+        scale = None
+        output_shape = output_spec.shape
+        scale = output_shape.scale
+        assert len(scale) == len(axes)
+
+        halo = output_spec.halo
+        if halo is None:
+            halo = [0] * len(axes)
+        assert len(halo) == len(axes)
+
+        default_tiling = {
+            "halo": {ax: ha for ax, ha in zip(axes, halo) if ax in "xyz"},
+            "tile": {ax: sh for ax, sh in zip(axes, shape) if ax in "xyz"},
+            "scale": {ax: sc for ax, sc in zip(axes, scale) if ax in "xyz"},
+        }
+
+        # override metadata defaults with provided dict
+        if isinstance(tiling, dict):
+            for key in ["halo", "tile", "scale"]:
+                default_tiling.update(tiling.get(key, dict()))
+        tiling = default_tiling
         check_tiling(tiling)
-    elif isinstance(tiling, bool):
-        if tiling:
-            # NOTE we assume here that shape in input and output are the same
-            # for different input and output shapes, we should actually tile in the
-            # output space and then request the corresponding input tiles
-            # so we would need to apply the output scale and offset to the
-            # input shape to compute the tile size and halo here
-            shape = input_spec.shape
-            if not isinstance(shape, list):
-                shape = _determine_shape(shape.min, shape.step, axes)
-            assert isinstance(shape, list)
-            assert len(shape) == len(axes)
-
-            scale = None
-            output_shape = output_spec.shape
-                scale = output_shape.scale
-            assert len(scale) == len(axes)
-
-            halo = output_spec.halo
-            if halo is None:
-                halo = [0] * len(axes)
-            assert len(halo) == len(axes)
-
-            tiling = {
-                "halo": {ax: ha for ax, ha in zip(axes, halo) if ax in "xyz"},
-                "tile": {ax: sh for ax, sh in zip(axes, shape) if ax in "xyz"},
-                "scale": {ax: sc for ax, sc in zip(axes, scale) if ax in "xyz"},
-            }
-            check_tiling(tiling)
-        else:
-            tiling = None
+    elif isinstance(tiling, bool) and not tiling:
+        tiling = None
     else:
         raise ValueError(f"Invalid argument for tiling: {tiling}")
     return tiling
