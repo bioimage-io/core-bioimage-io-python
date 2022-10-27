@@ -30,6 +30,7 @@ class PytorchModelAdapter(ModelAdapter):
             state = torch.load(weights.source, map_location=self._devices[0])
             self._model.load_state_dict(state)
 
+        self._model.eval()
         self._internal_output_axes = [tuple(out.axes) for out in self.bioimageio_model.outputs]
 
     def _forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
