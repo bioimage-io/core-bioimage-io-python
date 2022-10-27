@@ -2,6 +2,7 @@ import os
 import re
 import traceback
 import warnings
+from copy import deepcopy
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
@@ -271,7 +272,7 @@ def debug_model(
 
     Returns dict with tensors "inputs", "inputs_processed", "outputs_raw", "outputs", "expected" and "diff".
     """
-    inputs: Optional = None
+    inputs_raw: Optional = None
     inputs_processed: Optional = None
     outputs_raw: Optional = None
     outputs: Optional = None
@@ -291,10 +292,20 @@ def debug_model(
         xr.DataArray(np.load(str(in_path)), dims=input_spec.axes)
         for in_path, input_spec in zip(model.test_inputs, model.inputs)
     ]
+    input_dict = {input_spec.name: input for input_spec, input in zip(model.inputs, inputs)}
 
-    inputs_processed, stats = prediction_pipeline.preprocess(*inputs)
+    # keep track of the non-processed inputs
+    inputs_raw = [deepcopy(input) for input in inputs]
+
+    computed_measures = {}
+
+    prediction_pipeline.apply_preprocessing(input_dict, computed_measures)
+    inputs_processed = list(input_dict.values())
     outputs_raw = prediction_pipeline.predict(*inputs_processed)
-    outputs, _ = prediction_pipeline.postprocess(*outputs_raw, input_sample_statistics=stats)
+    output_dict = {output_spec.name: deepcopy(output) for output_spec, output in zip(model.outputs, outputs_raw)}
+    prediction_pipeline.apply_postprocessing(output_dict, computed_measures)
+    outputs = list(output_dict.values())
+
     if isinstance(outputs, (np.ndarray, xr.DataArray)):
         outputs = [outputs]
 
@@ -311,7 +322,7 @@ def debug_model(
             diff.append(res - exp)
 
     return {
-        "inputs": inputs,
+        "inputs": inputs_raw,
         "inputs_processed": inputs_processed,
         "outputs_raw": outputs_raw,
         "outputs": outputs,
