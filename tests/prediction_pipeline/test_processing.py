@@ -1,6 +1,8 @@
 import dataclasses
 
+import numpy as np
 import pytest
+import xarray as xr
 
 from bioimageio.core.prediction_pipeline._processing import KNOWN_PROCESSING
 from bioimageio.core.prediction_pipeline._utils import FIXED
@@ -9,6 +11,20 @@ try:
     from typing import get_args
 except ImportError:
     from typing_extensions import get_args  # type: ignore
+
+
+def test_assert_dtype():
+    from bioimageio.core.prediction_pipeline._processing import AssertDtype
+
+    proc = AssertDtype("test_tensor", dtype="uint8")
+    tensor = xr.DataArray(np.zeros((1,), dtype="uint8"), dims=tuple("c"))
+    out = proc(tensor)
+    assert out is tensor
+
+    tensor = tensor.astype("uint16")
+    with pytest.raises(AssertionError):
+        out = proc(tensor)
+        assert out is tensor
 
 
 @pytest.mark.parametrize(

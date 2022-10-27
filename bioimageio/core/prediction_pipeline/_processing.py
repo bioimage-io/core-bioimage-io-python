@@ -1,6 +1,12 @@
-from dataclasses import dataclass, field, fields
-from typing import Mapping, Optional, Sequence, Type, Union
+"""Here pre- and postprocessing operations are implemented according to their definitions in bioimageio.spec:
+see https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/preprocessing_spec_latest.md
+and https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/postprocessing_spec_latest.md
+"""
+import numbers
+from dataclasses import InitVar, dataclass, field, fields
+from typing import List, Mapping, Optional, Sequence, Tuple, Type, Union
 
+import numpy
 import numpy as np
 import xarray as xr
 
@@ -33,7 +39,7 @@ MISSING = "MISSING"
 
 @dataclass
 class Processing:
-    """base class for all Pre- and Postprocessing transformations"""
+    """base class for all Pre- and Postprocessing transformations."""
 
     tensor_name: str
     # todo: in python>=3.10 we should use dataclasses.KW_ONLY instead of MISSING (see child classes) to make inheritance work properly
@@ -87,48 +93,64 @@ class Processing:
 
 
 #
-# helpers
-#
-def ensure_dtype(tensor: xr.DataArray, *, dtype) -> xr.DataArray:
-    """
-    Convert array to a given datatype
-    """
-    return tensor.astype(dtype)
-
-
-#
 # Pre- and Postprocessing implementations
 #
 
 
 @dataclass
+class AssertDtype(Processing):
+    """Helper Processing to assert dtype."""
+
+    dtype: Union[str, Sequence[str]] = MISSING
+    assert_with: Tuple[Type[numpy.dtype], ...] = field(init=False)
+
+    def __post_init__(self):
+        if isinstance(self.dtype, str):
+            dtype = [self.dtype]
+        else:
+            dtype = self.dtype
+
+        self.assert_with = tuple(type(numpy.dtype(dt)) for dt in dtype)
+
+    def apply(self, tensor: xr.DataArray) -> xr.DataArray:
+        assert isinstance(tensor.dtype, self.assert_with)
+        return tensor
+
+
+@dataclass
 class Binarize(Processing):
+    """'output = tensor > threshold'."""
+
     threshold: float = MISSING  # make dataclass inheritance work for py<3.10 by using an explicit MISSING value.
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
-        return ensure_dtype(tensor > self.threshold, dtype="float32")
+        return tensor > self.threshold
 
 
 @dataclass
 class Clip(Processing):
+    """Limit tensor values to [min, max]."""
+
     min: float = MISSING
     max: float = MISSING
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
-        return ensure_dtype(tensor.clip(min=self.min, max=self.max), dtype="float32")
+        return tensor.clip(min=self.min, max=self.max)
 
 
 @dataclass
 class EnsureDtype(Processing):
+    """Helper Processing to cast dtype if needed."""
+
     dtype: str = MISSING
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
-        return ensure_dtype(tensor, dtype=self.dtype)
+        return tensor.astype(self.dtype)
 
 
 @dataclass
 class ScaleLinear(Processing):
-    """scale the tensor with a fixed multiplicative and additive factor"""
+    """Scale the tensor with a fixed multiplicative and additive factor."""
 
     gain: Union[float, Sequence[float]] = MISSING
     offset: Union[float, Sequence[float]] = MISSING
@@ -143,7 +165,7 @@ class ScaleLinear(Processing):
             gain = self.gain
             offset = self.offset
 
-        return ensure_dtype(tensor * gain + offset, dtype="float32")
+        return tensor * gain + offset
 
     def __post_init__(self):
         super().__post_init__()
@@ -154,11 +176,37 @@ class ScaleLinear(Processing):
 
 @dataclass
 class ScaleMeanVariance(Processing):
-    ...
+    """Scale the tensor s.t. its mean and variance match a reference tensor."""
+
+    mode: Literal[SampleMode, DatasetMode] = PER_SAMPLE
+    reference_tensor: TensorName = MISSING
+    axes: Optional[Sequence[str]] = None
+    eps: float = 1e-6
+
+    def get_required_measures(self) -> RequiredMeasures:
+        axes = None if self.axes is None else tuple(self.axes)
+        return {
+            self.mode: {
+                self.tensor_name: {Mean(axes=axes), Std(axes=axes)},
+                self.reference_tensor: {Mean(axes=axes), Std(axes=axes)},
+            }
+        }
+
+    def apply(self, tensor: xr.DataArray) -> xr.DataArray:
+        axes = None if self.axes is None else tuple(self.axes)
+        assert self.mode in (PER_SAMPLE, PER_DATASET)
+        mean = self.get_computed_measure(self.tensor_name, Mean(axes), mode=self.mode)
+        std = self.get_computed_measure(self.tensor_name, Std(axes), mode=self.mode)
+        ref_mean = self.get_computed_measure(self.reference_tensor, Mean(axes), mode=self.mode)
+        ref_std = self.get_computed_measure(self.reference_tensor, Std(axes), mode=self.mode)
+
+        return (tensor - mean) / (std + self.eps) * (ref_std + self.eps) + ref_mean
 
 
 @dataclass
 class ScaleRange(Processing):
+    """Scale with percentiles."""
+
     mode: Literal[SampleMode, DatasetMode] = PER_SAMPLE
     axes: Optional[Sequence[str]] = None
     min_percentile: float = 0.0
@@ -177,7 +225,7 @@ class ScaleRange(Processing):
         v_lower = self.get_computed_measure(ref_name, Percentile(self.min_percentile, axes=axes))
         v_upper = self.get_computed_measure(ref_name, Percentile(self.max_percentile, axes=axes))
 
-        return ensure_dtype((tensor - v_lower) / (v_upper - v_lower + self.eps), dtype="float32")
+        return (tensor - v_lower) / (v_upper - v_lower + self.eps)
 
     def __post_init__(self):
         super().__post_init__()
@@ -186,12 +234,16 @@ class ScaleRange(Processing):
 
 @dataclass
 class Sigmoid(Processing):
+    """1 / (1 + e^(-tensor))."""
+
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
         return 1.0 / (1.0 + np.exp(-tensor))
 
 
 @dataclass
 class ZeroMeanUnitVariance(Processing):
+    """normalize to zero mean, unit variance."""
+
     mode: Mode = PER_SAMPLE
     mean: Optional[Union[float, Sequence[float]]] = None
     std: Optional[Union[float, Sequence[float]]] = None
@@ -218,8 +270,7 @@ class ZeroMeanUnitVariance(Processing):
         else:
             raise ValueError(self.mode)
 
-        tensor = (tensor - mean) / (std + self.eps)
-        return ensure_dtype(tensor, dtype="float32")
+        return (tensor - mean) / (std + self.eps)
 
 
 _KnownProcessing = TypedDict(

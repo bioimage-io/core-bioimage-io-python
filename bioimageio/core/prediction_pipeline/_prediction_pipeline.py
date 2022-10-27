@@ -213,7 +213,7 @@ def create_prediction_pipeline(
         ipts = [resolve_raw_node(s, nodes) for s in bioimageio_model.inputs]
         outs = [resolve_raw_node(s, nodes) for s in bioimageio_model.outputs]
 
-    preprocessing = CombinedProcessing(ipts)
+    preprocessing = CombinedProcessing.from_tensor_specs(ipts)
 
     def sample_dataset():
         for tensors in dataset_for_initial_statistics:
@@ -225,7 +225,7 @@ def create_prediction_pipeline(
         update_dataset_stats_after_n_samples=update_dataset_stats_after_n_samples,
         update_dataset_stats_for_n_samples=update_dataset_stats_for_n_samples,
     )
-    postprocessing = CombinedProcessing(outs)
+    postprocessing = CombinedProcessing.from_tensor_specs(outs)
     out_stats = StatsState(
         postprocessing.required_measures,
         dataset=tuple(),

@@ -1,7 +1,8 @@
-from typing import List, Optional, Sequence, Union
+import dataclasses
+from typing import Any, Dict, List, Optional, Sequence, Union
 
 from bioimageio.core.resource_io import nodes
-from ._processing import EnsureDtype, KNOWN_PROCESSING, Processing
+from ._processing import AssertDtype, EnsureDtype, KNOWN_PROCESSING, Processing, TensorName
 from ._utils import ComputedMeasures, PER_DATASET, PER_SAMPLE, RequiredMeasures, Sample
 
 try:
@@ -10,44 +11,78 @@ except ImportError:
     from typing_extensions import Literal  # type: ignore
 
 
+@dataclasses.dataclass
+class ProcessingInfoStep:
+    name: str
+    kwargs: Dict[str, Any]
+
+
+@dataclasses.dataclass
+class ProcessingInfo:
+    steps: List[ProcessingInfoStep]
+    assert_dtype_before: Optional[Union[str, Sequence[str]]] = None  # throw AssertionError if data type doesn't match
+    ensure_dtype_before: Optional[str] = None  # cast data type if needed
+    assert_dtype_after: Optional[Union[str, Sequence[str]]] = None  # throw AssertionError if data type doesn't match
+    ensure_dtype_after: Optional[str] = None  # throw AssertionError if data type doesn't match
+
+
 class CombinedProcessing:
-    def __init__(self, tensor_specs: Union[List[nodes.InputTensor], List[nodes.OutputTensor]]):
-        PRE: Literal["pre"] = "pre"
-        POST: Literal["post"] = "post"
-        proc_prefix: Optional[Literal["pre", "post"]] = None
+    def __init__(self, combine_tensors: Dict[TensorName, ProcessingInfo]):
         self._procs = []
-        for t in tensor_specs:
-            if isinstance(t, nodes.InputTensor):
-                steps = t.preprocessing or []
-                if proc_prefix is not None and proc_prefix != PRE:
-                    raise ValueError(f"Invalid mixed input/output tensor specs: {tensor_specs}")
+        known = dict(KNOWN_PROCESSING["pre"])
+        known.update(KNOWN_PROCESSING["post"])
 
-                proc_prefix = PRE
-            elif isinstance(t, nodes.OutputTensor):
-                steps = t.postprocessing or []
-                if proc_prefix is not None and proc_prefix != POST:
-                    raise ValueError(f"Invalid mixed input/output tensor specs: {tensor_specs}")
+        # ensure all tensors have correct data type before any processing
+        for tensor_name, info in combine_tensors.items():
+            if info.assert_dtype_before is not None:
+                self._procs.append(AssertDtype(tensor_name=tensor_name, dtype=info.assert_dtype_before))
 
-                proc_prefix = POST
-            else:
-                raise NotImplementedError(t)
+            if info.ensure_dtype_before is not None:
+                self._procs.append(EnsureDtype(tensor_name=tensor_name, dtype=info.ensure_dtype_before))
 
-            for step in steps:
-                self._procs.append(KNOWN_PROCESSING[proc_prefix][step.name](tensor_name=t.name, **step.kwargs))
+        for tensor_name, info in combine_tensors.items():
+            for step in info.steps:
+                self._procs.append(known[step.name](tensor_name=tensor_name, **step.kwargs))
 
-        # There is a difference between pre-and-postprocessing:
-        # Pre-processing always returns float32, because its output is consumed by the model.
-        # Post-processing, however, should return the dtype that is specified in the model spec.
-        # todo: cast dtype for inputs before preprocessing? or check dtype?
-        if proc_prefix == POST:
-            for t in tensor_specs:
-                self._procs.append(EnsureDtype(tensor_name=t.name, dtype=t.data_type))
+            if info.assert_dtype_after is not None:
+                self._procs.append(AssertDtype(tensor_name=tensor_name, dtype=info.assert_dtype_after))
+
+            # ensure tensor has correct data type right after its processing
+            if info.ensure_dtype_after is not None:
+                self._procs.append(EnsureDtype(tensor_name=tensor_name, dtype=info.ensure_dtype_after))
 
         self.required_measures: RequiredMeasures = self._collect_required_measures(self._procs)
-        if proc_prefix == POST and self.required_measures[PER_DATASET]:
-            raise NotImplementedError("computing statistics for output tensors per dataset is not yet implemented")
+        self.tensor_names = list(combine_tensors)
 
-        self.tensor_names = [t.name for t in tensor_specs]
+    @classmethod
+    def from_tensor_specs(cls, tensor_specs: List[Union[nodes.InputTensor, nodes.OutputTensor]]):
+        combine_tensors = {}
+        for ts in tensor_specs:
+            # There is a difference between pre-and postprocessing:
+            # After preprocessing we ensure float32, because the output is consumed by the model.
+            # After postprocessing the dtype that is specified in the model spec needs to be ensured.
+            assert ts.name not in combine_tensors
+            if isinstance(ts, nodes.InputTensor):
+                # todo: assert nodes.InputTensor.dtype with assert_dtype_before?
+                # todo: in the long run we do not want to limit model inputs to float32...
+                combine_tensors[ts.name] = ProcessingInfo(
+                    [ProcessingInfoStep(p.name, kwargs=p.kwargs) for p in ts.preprocessing or []],
+                    ensure_dtype_after="float32",
+                )
+            elif isinstance(ts, nodes.OutputTensor):
+                combine_tensors[ts.name] = ProcessingInfo(
+                    [ProcessingInfoStep(p.name, kwargs=p.kwargs) for p in ts.postprocessing or []],
+                    ensure_dtype_after=ts.data_type,
+                )
+            else:
+                raise NotImplementedError(type(ts))
+
+        inst = cls(combine_tensors)
+        for ts in tensor_specs:
+            if isinstance(ts, nodes.OutputTensor) and ts.name in inst.required_measures[PER_DATASET]:
+                raise NotImplementedError("computing statistics for output tensors per dataset is not yet implemented")
+
+        return inst
 
     def apply(self, sample: Sample, computed_measures: ComputedMeasures) -> None:
         for proc in self._procs:
