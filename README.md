@@ -83,7 +83,11 @@ bioimagei predict-images -m <MODEL> -i <INPUT_PATTERN> - o <OUTPUT_FOLDER>
 
 ## From python
 
-`bioimageio.core` can be used as a python library. See the notebook [example/bioimageio-core-usage.ipynb](https://github.com/bioimage-io/core-bioimage-io-python/blob/main/example/bioimageio-core-usage.ipynb) for usage examples.
+`bioimageio.core` is a python library that implements loading models, running prediction with them and more.
+To get an overview of this functionality, check out the example notebooks:
+- [example/model_usage](https://github.com/bioimage-io/core-bioimage-io-python/blob/main/example/model_usage.ipynb) for how to load models and run prediction with them
+- [example/model_creation](https://github.com/bioimage-io/core-bioimage-io-python/blob/main/example/model_creation.ipynb) for how to create bioimage.io compatible model packages
+- [example/dataset_statistics_demo](https://github.com/bioimage-io/core-bioimage-io-python/blob/main/example/dataset_statistics_demo.ipynb) for how to use the dataset statistics for advanced pre-and-postprocessing
 
 ## Model Specification
 
