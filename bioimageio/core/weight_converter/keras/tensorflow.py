@@ -58,6 +58,7 @@ def _convert_tf1(keras_weight_path, output_path, input_name, output_name, zip_we
     except Exception:
         # if the above fails try to export with the standalone keras
         import keras
+
         build_tf_model()
 
     if zip_weights:
