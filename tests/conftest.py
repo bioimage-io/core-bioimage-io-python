@@ -19,8 +19,8 @@ torch_models = [
 torchscript_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
 onnx_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model", "hpa_densenet"]
 tensorflow1_models = ["stardist"]
-tensorflow2_models = ["unet_2d_keras_tf2"]
-keras_models = ["unet2d_keras", "unet_2d_keras_tf2"]
+tensorflow2_models = ["unet2d_keras_tf2"]
+keras_models = ["unet2d_keras", "unet2d_keras_tf2"]
 tensorflow_js_models = []
 
 model_sources = {
