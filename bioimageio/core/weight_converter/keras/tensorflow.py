@@ -11,6 +11,28 @@ import tensorflow
 from tensorflow import saved_model
 
 
+def _zip_weights(output_path):
+    zipped_model = f"{output_path}.zip"
+    # zip the weights
+    file_paths = []
+    for folder_names, subfolder, filenames in os.walk(os.path.join(output_path)):
+        for filename in filenames:
+            # create complete filepath of file in directory
+            file_paths.append(os.path.join(folder_names, filename))
+
+    with ZipFile(zipped_model, "w") as zip_obj:
+        for f in file_paths:
+            # Add file to zip
+            zip_obj.write(f, os.path.relpath(f, output_path))
+
+    try:
+        shutil.rmtree(output_path)
+    except Exception:
+        print("TensorFlow bundled model was not removed after compression")
+
+    return zipped_model
+
+
 # adapted from
 # https://github.com/deepimagej/pydeepimagej/blob/master/pydeepimagej/yaml/create_config.py#L236
 def _convert_tf1(keras_weight_path, output_path, input_name, output_name, zip_weights):
@@ -36,30 +58,30 @@ def _convert_tf1(keras_weight_path, output_path, input_name, output_name, zip_we
     except Exception:
         # if the above fails try to export with the standalone keras
         import keras
-
         build_tf_model()
 
     if zip_weights:
-        zipped_model = f"{output_path}.zip"
-        # zip the weights
-        file_paths = []
-        for folder_names, subfolder, filenames in os.walk(os.path.join(output_path)):
-            for filename in filenames:
-                # create complete filepath of file in directory
-                file_paths.append(os.path.join(folder_names, filename))
+        output_path = _zip_weights(output_path)
+    print("TensorFlow model exported to", output_path)
 
-        with ZipFile(zipped_model, "w") as zip_obj:
-            for f in file_paths:
-                # Add file to zip
-                zip_obj.write(f, os.path.relpath(f, output_path))
+    return 0
 
-        try:
-            shutil.rmtree(output_path)
-        except Exception:
-            print("TensorFlow bundled model was not removed after compression")
-        print("TensorFlow model exported to", zipped_model)
-    else:
-        print("TensorFlow model exported to", output_path)
+
+def _convert_tf2(keras_weight_path, output_path, zip_weights):
+    try:
+        # try to build the tf model with the keras import from tensorflow
+        from tensorflow import keras
+    except Exception:
+        # if the above fails try to export with the standalone keras
+        import keras
+
+    model = keras.models.load_model(keras_weight_path)
+    tensorflow.saved_model.save(model, output_path)
+
+    if zip_weights:
+        output_path = _zip_weights(output_path)
+    print("TensorFlow model exported to", output_path)
+
     return 0
 
 
@@ -104,4 +126,4 @@ def convert_weights_to_tensorflow_saved_model_bundle(
             )
         return _convert_tf1(weight_path, str(path_), model.inputs[0].name, model.outputs[0].name, zip_weights)
     else:
-        raise NotImplementedError("Weight conversion for tensorflow 2 is not yet implemented.")
+        return _convert_tf2(weight_path, str(path_), zip_weights)
