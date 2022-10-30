@@ -76,7 +76,7 @@ def _convert_tf2(keras_weight_path, output_path, zip_weights):
         import keras
 
     model = keras.models.load_model(keras_weight_path)
-    tensorflow.saved_model.save(model, output_path)
+    keras.models.save_model(model, output_path)
 
     if zip_weights:
         output_path = _zip_weights(output_path)

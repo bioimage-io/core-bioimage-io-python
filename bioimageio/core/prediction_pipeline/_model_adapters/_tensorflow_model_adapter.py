@@ -97,9 +97,14 @@ class TensorflowModelAdapterBase(ModelAdapter):
 
         return res
 
-    def _forward_keras(self, input_tensors):
+    def _forward_keras(self, *input_tensors):
         tf_tensor = [tf.convert_to_tensor(ipt) for ipt in input_tensors]
-        result = self._model.forward(*tf_tensor)
+
+        try:
+            result = self._model.forward(*tf_tensor)
+        except AttributeError:
+            result = self._model.predict(*tf_tensor)
+
         if not isinstance(result, (tuple, list)):
             result = [result]
 
