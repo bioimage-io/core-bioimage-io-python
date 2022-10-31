@@ -194,7 +194,7 @@ def unet2d_multi_tensor_or_not(request):
     return pytest.model_packages[request.param]
 
 
-@pytest.fixture(params=[] if skip_keras else ["unet2d_keras"])
+@pytest.fixture(params=[] if skip_keras else ["unet2d_keras" if tf_major_version == 1 else "unet2d_keras_tf2"])
 def unet2d_keras(request):
     return pytest.model_packages[request.param]
 
