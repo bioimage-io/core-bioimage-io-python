@@ -20,7 +20,8 @@ torchscript_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
 onnx_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model", "hpa_densenet"]
 tensorflow1_models = ["stardist"]
 tensorflow2_models = ["unet2d_keras_tf2"]
-keras_models = ["unet2d_keras", "unet2d_keras_tf2"]
+keras_tf1_models = ["unet2d_keras"]
+keras_tf2_models = ["unet2d_keras_tf2"]
 tensorflow_js_models = []
 
 model_sources = {
@@ -110,13 +111,14 @@ if not skip_onnx:
     load_model_packages |= set(onnx_models)
 
 if not skip_tensorflow:
-    load_model_packages |= set(keras_models)
     load_model_packages |= set(tensorflow_js_models)
     if tf_major_version == 1:
+        load_model_packages |= set(keras_tf1_models)
         load_model_packages |= set(tensorflow1_models)
         load_model_packages.add("stardist_wrong_shape")
         load_model_packages.add("stardist_wrong_shape2")
     elif tf_major_version == 2:
+        load_model_packages |= set(keras_tf2_models)
         load_model_packages |= set(tensorflow2_models)
 
 
@@ -157,7 +159,7 @@ def any_tensorflow_model(request):
         return pytest.model_packages[name]
 
 
-@pytest.fixture(params=[] if skip_keras else keras_models)
+@pytest.fixture(params=[] if skip_keras else (set(keras_tf1_models) | set(keras_tf2_models)))
 def any_keras_model(request):
     return pytest.model_packages[request.param]
 
@@ -182,16 +184,12 @@ def any_model(request):
 #
 
 
-@pytest.fixture(
-    params=[] if skip_torch else ["unet2d_nuclei_broad_model", "unet2d_fixed_shape"]
-)
+@pytest.fixture(params=[] if skip_torch else ["unet2d_nuclei_broad_model", "unet2d_fixed_shape"])
 def unet2d_fixed_shape_or_not(request):
     return pytest.model_packages[request.param]
 
 
-@pytest.fixture(
-    params=[] if skip_torch else ["unet2d_nuclei_broad_model", "unet2d_multi_tensor"]
-)
+@pytest.fixture(params=[] if skip_torch else ["unet2d_nuclei_broad_model", "unet2d_multi_tensor"])
 def unet2d_multi_tensor_or_not(request):
     return pytest.model_packages[request.param]
 
