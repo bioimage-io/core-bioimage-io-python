@@ -96,12 +96,6 @@ except ImportError:
 skip_tensorflow = tensorflow is None
 skip_tensorflow_js = True  # TODO: add a tensorflow_js example model
 
-try:
-    import keras
-except ImportError:
-    keras = None
-skip_keras = keras is None
-
 # load all model packages we need for testing
 load_model_packages = set()
 if not skip_torch:
@@ -152,14 +146,12 @@ def any_onnx_model(request):
     return pytest.model_packages[request.param]
 
 
-@pytest.fixture(params=[] if skip_tensorflow else (set(tensorflow1_models) | set(tensorflow2_models)))
+@pytest.fixture(params=[] if skip_tensorflow else tensorflow1_models if tf_major_version == 1 else tensorflow2_models)
 def any_tensorflow_model(request):
-    name = request.param
-    if (tf_major_version == 1 and name in tensorflow1_models) or (tf_major_version == 2 and name in tensorflow2_models):
-        return pytest.model_packages[name]
+    return pytest.model_packages[request.param]
 
 
-@pytest.fixture(params=[] if skip_keras else (set(keras_tf1_models) | set(keras_tf2_models)))
+@pytest.fixture(params=[] if skip_tensorflow else keras_tf1_models if tf_major_version == 1 else keras_tf2_models)
 def any_keras_model(request):
     return pytest.model_packages[request.param]
 
@@ -194,7 +186,7 @@ def unet2d_multi_tensor_or_not(request):
     return pytest.model_packages[request.param]
 
 
-@pytest.fixture(params=[] if skip_keras else ["unet2d_keras" if tf_major_version == 1 else "unet2d_keras_tf2"])
+@pytest.fixture(params=[] if skip_tensorflow else ["unet2d_keras" if tf_major_version == 1 else "unet2d_keras_tf2"])
 def unet2d_keras(request):
     return pytest.model_packages[request.param]
 
