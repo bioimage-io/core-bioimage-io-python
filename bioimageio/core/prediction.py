@@ -242,7 +242,10 @@ def predict_with_padding(
     if network_resizes:
         crops = tuple(
             {
-                ax: slice(int(crp.start * scale[ax] + 2 * offset[ax]), int(crp.stop * scale[ax] + 2 * offset[ax]))
+                ax: slice(
+                    crp.start if crp.start is None else int(crp.start * scale[ax] + 2 * offset[ax]),
+                    crp.stop if crp.stop is None else int(crp.stop * scale[ax] + 2 * offset[ax]),
+                )
                 if ax in "xyz"
                 else crp
                 for ax, crp in crop.items()
