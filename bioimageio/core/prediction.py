@@ -333,7 +333,7 @@ def _parse_tiling(tiling, input_specs, output_specs):
         tiling = default_tiling
         check_tiling(tiling)
     elif isinstance(tiling, bool) and not tiling:
-        tiling = None
+        raise NotImplementedError("Should be unreachable")
     else:
         raise ValueError(f"Invalid argument for tiling: {tiling}")
     return tiling
@@ -354,7 +354,7 @@ def predict_with_tiling(
         verbose: whether to print the prediction progress.
     """
     if not tiling:
-        raise ValueError
+        raise ValueError("cannot call predict_with_tiling with tiling=False")
     assert len(inputs) == len(prediction_pipeline.input_specs)
 
     tiling = _parse_tiling(tiling, prediction_pipeline.input_specs, prediction_pipeline.output_specs)
