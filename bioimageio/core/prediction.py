@@ -281,7 +281,7 @@ def _parse_tiling(tiling, input_specs, output_specs):
 
     input_spec = input_specs[0]
     output_spec = output_specs[0]
-    assert not isinstance(output_spec, list), (
+    assert not isinstance(output_spec.shape, list), (
         "When predicting with tiling, output shape must be "
         "implicitly defined by input shape, otherwise relationship between "
         "input and output shapes per tile cannot be known."
