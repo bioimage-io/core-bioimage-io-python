@@ -25,16 +25,6 @@ keras_models = ["unet2d_keras"]
 tensorflow_js_models = []
 
 
-# torch_models = [
-#     "shape_change",
-# ]
-# torchscript_models = []
-# onnx_models = []
-# tensorflow1_models = []
-# tensorflow2_models = []
-# keras_models = []
-# tensorflow_js_models = []
-
 model_sources = {
     "unet2d_keras": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
@@ -76,7 +66,8 @@ model_sources = {
         "stardist_example_model/rdf_wrong_shape2.yaml"
     ),
     "shape_change": (
-        "/home/skar/Work/Code/Packages/core-bioimage-io-python/shape_change_model.yaml"
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
+        "upsample_test_model/shape_change_model.yaml"
     )
 }
 
