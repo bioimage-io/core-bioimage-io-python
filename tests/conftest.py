@@ -227,6 +227,12 @@ def unet2d_fixed_shape(request):
     return pytest.model_packages[request.param]
 
 
+# written as model group to automatically skip on missing torch
+@pytest.fixture(params=[] if skip_torch else ["shape_change"])
+def shape_change_model(request):
+    return pytest.model_packages[request.param]
+
+
 # written as model group to automatically skip on missing tensorflow 1
 @pytest.fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist_wrong_shape"])
 def stardist_wrong_shape(request):
