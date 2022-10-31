@@ -316,7 +316,7 @@ def _parse_tiling(tiling, input_specs, output_specs):
         assert len(scale) == len(axes)
 
         halo = output_spec.halo
-        if halo is None:
+        if not isinstance(halo, list):
             halo = [0] * len(axes)
         assert len(halo) == len(axes)
 
