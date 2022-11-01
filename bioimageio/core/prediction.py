@@ -281,11 +281,13 @@ def _parse_tiling(tiling, input_specs, output_specs):
 
     input_spec = input_specs[0]
     output_spec = output_specs[0]
-    assert not isinstance(output_spec.shape, list), (
-        "When predicting with tiling, output shape must be "
-        "implicitly defined by input shape, otherwise relationship between "
-        "input and output shapes per tile cannot be known."
-    )
+    if isinstance(output_spec.shape, list):
+        assert isinstance(input_spec.shape, list) and input_spec.shape == output_spec.shape, (
+            "When predicting with tiling, output_shape and input_shape must either be specified "
+            "explictly and must be identical, or output_shape must be"
+            "implicitly defined by input_shape, otherwise relationship between "
+            "input and output shapes per tile cannot be known."
+        )
     axes = input_spec.axes
 
     def check_tiling(tiling):
@@ -312,7 +314,7 @@ def _parse_tiling(tiling, input_specs, output_specs):
 
         scale = None
         output_shape = output_spec.shape
-        scale = output_shape.scale
+        scale = [1.0] * len(output_spec.shape) if isinstance(output_shape, list) else output_shape.scale
         assert len(scale) == len(axes)
 
         halo = output_spec.halo
