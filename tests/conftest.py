@@ -67,7 +67,7 @@ model_sources = {
     ),
     "shape_change": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
-        "upsample_test_model/shape_change_model.yaml"
+        "upsample_test_model/rdf.yaml"
     )
 }
 
