@@ -15,6 +15,7 @@ torch_models = [
     "unet2d_multi_tensor",
     "unet2d_nuclei_broad_model",
     "unet2d_diff_output_shape",
+    "shape_change",
 ]
 torchscript_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
 onnx_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model", "hpa_densenet"]
@@ -23,6 +24,7 @@ tensorflow2_models = ["unet2d_keras_tf2"]
 keras_tf1_models = ["unet2d_keras"]
 keras_tf2_models = ["unet2d_keras_tf2"]
 tensorflow_js_models = []
+
 
 model_sources = {
     "unet2d_keras": (
@@ -68,6 +70,10 @@ model_sources = {
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
         "stardist_example_model/rdf_wrong_shape2.yaml"
     ),
+    "shape_change": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
+        "upsample_test_model/rdf.yaml"
+    )
 }
 
 try:
@@ -212,6 +218,12 @@ def unet2d_expand_output_shape(request):
 # written as model group to automatically skip on missing torch
 @pytest.fixture(params=[] if skip_torch else ["unet2d_fixed_shape"])
 def unet2d_fixed_shape(request):
+    return pytest.model_packages[request.param]
+
+
+# written as model group to automatically skip on missing torch
+@pytest.fixture(params=[] if skip_torch else ["shape_change"])
+def shape_change_model(request):
     return pytest.model_packages[request.param]
 
 
