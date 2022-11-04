@@ -6,6 +6,8 @@ import sys
 import typing
 from types import ModuleType
 
+from marshmallow import missing
+
 from bioimageio.spec.shared import raw_nodes, resolve_source, source_available
 from bioimageio.spec.shared.node_transformer import (
     GenericRawNode,
@@ -85,7 +87,9 @@ class RawNodeTypeTransformer(NodeTransformer):
     def generic_transformer(self, node: GenericRawNode) -> GenericResolvedNode:
         if isinstance(node, raw_nodes.RawNode):
             resolved_data = {
-                field.name: self.transform(getattr(node, field.name)) for field in dataclasses.fields(node)
+                field.name: self.transform(getattr(node, field.name))
+                for field in dataclasses.fields(node)
+                if getattr(node, field.name) is not missing  # exclude missing fields to respect for node defaults
             }
             resolved_node_type: typing.Type[GenericResolvedNode] = getattr(self.nodes, node.__class__.__name__)
             return resolved_node_type(**resolved_data)  # type: ignore
