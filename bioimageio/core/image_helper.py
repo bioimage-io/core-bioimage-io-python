@@ -112,10 +112,10 @@ def load_tensors(sources, tensor_specs: List[Union[InputTensor, OutputTensor]]) 
     return [load_image(s, sspec.axes) for s, sspec in zip(sources, tensor_specs)]
 
 
-def save_image(out_path, image):
-    ext = os.path.splitext(out_path)[1]
+def save_image(out_path: os.PathLike, image):
+    ext = os.path.splitext(str(out_path))[1]
     if ext == ".npy":
-        np.save(out_path, image)
+        np.save(str(out_path), image)
     else:
         is_volume = "z" in image.dims
 
