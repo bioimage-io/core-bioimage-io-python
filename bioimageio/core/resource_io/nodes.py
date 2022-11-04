@@ -8,7 +8,7 @@ from marshmallow.utils import _Missing
 
 from bioimageio.spec.collection import raw_nodes as collection_raw_nodes
 from bioimageio.spec.dataset import raw_nodes as dataset_raw_nodes
-from bioimageio.spec.model import raw_nodes as model_raw_nodes
+from bioimageio.spec.model.v0_4 import raw_nodes as model_raw_nodes
 from bioimageio.spec.rdf import raw_nodes as rdf_raw_nodes
 from bioimageio.spec.shared import raw_nodes
 from bioimageio.spec.workflow import raw_nodes as workflow_raw_nodes
@@ -150,7 +150,7 @@ class ImportedSource(Node):
 
 
 @dataclass
-class WeightsEntryBase(model_raw_nodes.WeightsEntryBase):
+class WeightsEntryBase(model_raw_nodes._WeightsEntryBase):
     dependencies: Union[_Missing, Dependencies] = missing
 
 
@@ -259,8 +259,8 @@ class Step(Node, workflow_raw_nodes.Step):
 
 @dataclass
 class Workflow(workflow_raw_nodes.Workflow, RDF):
-    inputs: List[InputSpec] = missing
-    options: List[OptionSpec] = missing
-    outputs: List[OutputSpec] = missing
+    inputs_spec: List[InputSpec] = missing
+    options_spec: List[OptionSpec] = missing
+    outputs_spec: List[OutputSpec] = missing
     steps: List[Step] = missing
     test_steps: List[Step] = missing
