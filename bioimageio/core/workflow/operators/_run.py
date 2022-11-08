@@ -1,5 +1,6 @@
+from dataclasses import dataclass
 from os import PathLike
-from typing import Any, Dict, IO, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, Generator, IO, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import xarray as xr
@@ -45,32 +46,64 @@ def run_workflow(
     rdf_source: Union[dict, PathLike, IO, str, bytes, raw_nodes.URI, RawResourceDescription],
     inputs: Sequence = tuple(),
     options: Dict[str, Any] = None,
-) -> Sequence:
-    return _run_workflow(rdf_source, test_steps=False, inputs=inputs, options=options)
+) -> tuple:
+    outputs = tuple()
+    for state in _iterate_workflow_steps_impl(rdf_source, test_steps=False, inputs=inputs, options=options):
+        outputs = state.outputs
+
+    return outputs
 
 
 def run_workflow_test(
     rdf_source: Union[dict, PathLike, IO, str, bytes, raw_nodes.URI, RawResourceDescription],
-) -> Sequence:
-    return _run_workflow(rdf_source, test_steps=True)
+) -> tuple:
+    outputs = tuple()
+    for state in _iterate_workflow_steps_impl(rdf_source, test_steps=True):
+        outputs = state.outputs
+
+    return outputs
 
 
-def _run_workflow(
+@dataclass
+class WorkflowState:
+    wf_inputs: Dict[str, Any]
+    wf_options: Dict[str, Any]
+    inputs: tuple
+    outputs: tuple
+    named_outputs: Dict[str, Any]
+
+
+def iterate_workflow_steps(
+    rdf_source: Union[dict, PathLike, IO, str, bytes, raw_nodes.URI, RawResourceDescription],
+    *,
+    inputs: Sequence = tuple(),
+    options: Dict[str, Any] = None,
+) -> Generator[WorkflowState]:
+    yield from _iterate_workflow_steps_impl(rdf_source, inputs=inputs, options=options, test_steps=False)
+
+
+def iterate_test_workflow_steps(
+    rdf_source: Union[dict, PathLike, IO, str, bytes, raw_nodes.URI, RawResourceDescription]
+) -> Generator[WorkflowState]:
+    yield from _iterate_workflow_steps_impl(rdf_source, test_steps=True)
+
+
+def _iterate_workflow_steps_impl(
     rdf_source: Union[dict, PathLike, IO, str, bytes, raw_nodes.URI, RawResourceDescription],
     *,
     test_steps: bool,
     inputs: Sequence = tuple(),
     options: Dict[str, Any] = None,
-) -> Tuple:
+) -> Generator[WorkflowState]:
     import bioimageio.core.workflow.operators as ops
 
     workflow = load_resource_description(rdf_source)
     assert isinstance(workflow, nodes.Workflow)
-    wf_options = {opt.name: opt.default for opt in workflow.options_spec}
+    wf_options: Dict[str, Any] = {opt.name: opt.default for opt in workflow.options_spec}
     if test_steps:
         assert not inputs
         assert not options
-        wf_inputs = {}
+        wf_inputs: Dict[str, Any] = {}
         steps = workflow.test_steps
     else:
         if not len(workflow.inputs_spec) == len(inputs):
@@ -115,7 +148,7 @@ def _run_workflow(
 
     # implicit inputs to a step are the outputs of the previous step.
     # For the first step these are the workflow inputs.
-    outputs = inputs
+    outputs = tuple(inputs)
     for step in steps:
         if not hasattr(ops, step.op):
             raise NotImplementedError(f"{step.op} not implemented in {ops}")
@@ -124,8 +157,9 @@ def _run_workflow(
         if step.inputs is missing:
             inputs = outputs
         else:
-            inputs = [map_ref(ipt) for ipt in step.inputs]
+            inputs = tuple(map_ref(ipt) for ipt in step.inputs)
 
+        assert isinstance(inputs, tuple)
         options = {k: map_ref(v) for k, v in (step.options or {}).items()}
         outputs = op(*inputs, **options)
         if not isinstance(outputs, tuple):
@@ -141,6 +175,9 @@ def _run_workflow(
 
             named_outputs.update({f"{step.id}.outputs.{out_name}": out for out_name, out in zip(step.outputs, outputs)})
 
+        yield WorkflowState(
+            wf_inputs=wf_inputs, wf_options=wf_options, inputs=inputs, outputs=outputs, named_outputs=named_outputs
+        )
     if len(workflow.outputs_spec) != len(outputs):
         raise ValueError(f"Expected {len(workflow.outputs_spec)} outputs from last step, but got {len(outputs)}.")
 
@@ -156,7 +193,10 @@ def _run_workflow(
         else:
             return xr.DataArray(tensor, dims=spec_axes)
 
-    return [
+    outputs = tuple(
         tensor_as_xr(out, out_spec.axes) if out_spec.type == "tensor" else out
         for out_spec, out in zip(workflow.outputs_spec, outputs)
-    ]
+    )
+    yield WorkflowState(
+        wf_inputs=wf_inputs, wf_options=wf_options, inputs=inputs, outputs=outputs, named_outputs=named_outputs
+    )
