@@ -52,7 +52,7 @@ def test_output_shape_with_offset():
   halo: [0, 0, 8, 16, 16]
   name: output0
   shape:
-    offset: [0, 1, 0, 0, 0]  # fixed channel diff
+    offset: [0, 0.5, 0, 0, 0]  # fixed channel diff
     reference_tensor: raw
     scale: [1, 1, 1, 1, 1] 
     """
