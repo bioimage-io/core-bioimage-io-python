@@ -6,10 +6,12 @@ from typing import Any, Callable, Dict, List, Tuple, Union
 from marshmallow import missing
 from marshmallow.utils import _Missing
 
-from bioimageio.spec.model import raw_nodes as model_raw_nodes
-from bioimageio.spec.rdf import raw_nodes as rdf_raw_nodes
 from bioimageio.spec.collection import raw_nodes as collection_raw_nodes
+from bioimageio.spec.dataset import raw_nodes as dataset_raw_nodes
+from bioimageio.spec.model.v0_4 import raw_nodes as model_raw_nodes
+from bioimageio.spec.rdf import raw_nodes as rdf_raw_nodes
 from bioimageio.spec.shared import raw_nodes
+from bioimageio.spec.workflow import raw_nodes as workflow_raw_nodes
 
 
 @dataclass
@@ -48,12 +50,12 @@ class CiteEntry(Node, rdf_raw_nodes.CiteEntry):
 
 
 @dataclass
-class Author(Node, model_raw_nodes.Author):
+class Author(Node, rdf_raw_nodes.Author):
     pass
 
 
 @dataclass
-class Maintainer(Node, model_raw_nodes.Maintainer):
+class Maintainer(Node, rdf_raw_nodes.Maintainer):
     pass
 
 
@@ -63,14 +65,33 @@ class Badge(Node, rdf_raw_nodes.Badge):
 
 
 @dataclass
+class Attachments(Node, rdf_raw_nodes.Attachments):
+    files: Union[_Missing, List[Path]] = missing
+    unknown: Union[_Missing, Dict[str, Any]] = missing
+
+
+@dataclass
 class RDF(rdf_raw_nodes.RDF, ResourceDescription):
+    authors: Union[_Missing, List[Author]] = missing
+    attachments: Union[_Missing, Attachments] = missing
     badges: Union[_Missing, List[Badge]] = missing
-    covers: Union[_Missing, List[Path]] = missing
+    cite: Union[_Missing, List[CiteEntry]] = missing
+    maintainers: Union[_Missing, List[Maintainer]] = missing
 
 
 @dataclass
 class CollectionEntry(Node, collection_raw_nodes.CollectionEntry):
     source: URI = missing
+
+
+@dataclass
+class Collection(collection_raw_nodes.Collection, RDF):
+    collection: List[CollectionEntry] = missing
+
+
+@dataclass
+class Dataset(Node, dataset_raw_nodes.Dataset):
+    pass
 
 
 @dataclass
@@ -80,11 +101,6 @@ class LinkedDataset(Node, model_raw_nodes.LinkedDataset):
 
 @dataclass
 class ModelParent(Node, model_raw_nodes.ModelParent):
-    pass
-
-
-@dataclass
-class Collection(collection_raw_nodes.Collection, RDF):
     pass
 
 
@@ -106,6 +122,7 @@ class Postprocessing(Node, model_raw_nodes.Postprocessing):
 @dataclass
 class InputTensor(Node, model_raw_nodes.InputTensor):
     axes: Tuple[str, ...] = missing
+    preprocessing: Union[_Missing, List[Preprocessing]] = missing
 
     def __post_init__(self):
         super().__post_init__()
@@ -116,6 +133,7 @@ class InputTensor(Node, model_raw_nodes.InputTensor):
 @dataclass
 class OutputTensor(Node, model_raw_nodes.OutputTensor):
     axes: Tuple[str, ...] = missing
+    postprocessing: Union[_Missing, List[Postprocessing]] = missing
 
     def __post_init__(self):
         super().__post_init__()
@@ -132,40 +150,39 @@ class ImportedSource(Node):
 
 
 @dataclass
-class KerasHdf5WeightsEntry(Node, model_raw_nodes.KerasHdf5WeightsEntry):
+class WeightsEntryBase(model_raw_nodes._WeightsEntryBase):
+    dependencies: Union[_Missing, Dependencies] = missing
+
+
+@dataclass
+class KerasHdf5WeightsEntry(WeightsEntryBase, model_raw_nodes.KerasHdf5WeightsEntry):
     source: Path = missing
 
 
 @dataclass
-class OnnxWeightsEntry(Node, model_raw_nodes.OnnxWeightsEntry):
+class OnnxWeightsEntry(WeightsEntryBase, model_raw_nodes.OnnxWeightsEntry):
     source: Path = missing
 
 
 @dataclass
-class PytorchStateDictWeightsEntry(Node, model_raw_nodes.PytorchStateDictWeightsEntry):
+class PytorchStateDictWeightsEntry(WeightsEntryBase, model_raw_nodes.PytorchStateDictWeightsEntry):
     source: Path = missing
     architecture: Union[_Missing, ImportedSource] = missing
 
 
 @dataclass
-class TorchscriptWeightsEntry(Node, model_raw_nodes.TorchscriptWeightsEntry):
+class TorchscriptWeightsEntry(WeightsEntryBase, model_raw_nodes.TorchscriptWeightsEntry):
     source: Path = missing
 
 
 @dataclass
-class TensorflowJsWeightsEntry(Node, model_raw_nodes.TensorflowJsWeightsEntry):
+class TensorflowJsWeightsEntry(WeightsEntryBase, model_raw_nodes.TensorflowJsWeightsEntry):
     source: Path = missing
 
 
 @dataclass
-class TensorflowSavedModelBundleWeightsEntry(Node, model_raw_nodes.TensorflowSavedModelBundleWeightsEntry):
+class TensorflowSavedModelBundleWeightsEntry(WeightsEntryBase, model_raw_nodes.TensorflowSavedModelBundleWeightsEntry):
     source: Path = missing
-
-
-@dataclass
-class Attachments(Node, rdf_raw_nodes.Attachments):
-    files: Union[_Missing, List[Path]] = missing
-    unknown: Union[_Missing, Dict[str, Any]] = missing
 
 
 WeightsEntry = Union[
@@ -180,8 +197,70 @@ WeightsEntry = Union[
 
 @dataclass
 class Model(model_raw_nodes.Model, RDF):
-    authors: List[Author] = missing
-    maintainers: Union[_Missing, List[Maintainer]] = missing
+    inputs: List[InputTensor] = missing
+    outputs: List[OutputTensor] = missing
+    parent: Union[_Missing, ModelParent] = missing
+    run_mode: Union[_Missing, RunMode] = missing
     test_inputs: List[Path] = missing
     test_outputs: List[Path] = missing
+    training_data: Union[_Missing, Dataset, LinkedDataset] = missing
     weights: Dict[model_raw_nodes.WeightsFormat, WeightsEntry] = missing
+
+
+@dataclass
+class Axis(Node, workflow_raw_nodes.Axis):
+    pass
+
+
+@dataclass
+class BatchAxis(Node, workflow_raw_nodes.BatchAxis):
+    pass
+
+
+@dataclass
+class ChannelAxis(Node, workflow_raw_nodes.ChannelAxis):
+    pass
+
+
+@dataclass
+class IndexAxis(Node, workflow_raw_nodes.IndexAxis):
+    pass
+
+
+@dataclass
+class SpaceAxis(Node, workflow_raw_nodes.SpaceAxis):
+    pass
+
+
+@dataclass
+class TimeAxis(Node, workflow_raw_nodes.TimeAxis):
+    pass
+
+
+@dataclass
+class InputSpec(Node, workflow_raw_nodes.InputSpec):
+    pass
+
+
+@dataclass
+class OptionSpec(Node, workflow_raw_nodes.OptionSpec):
+    pass
+
+
+@dataclass
+class OutputSpec(Node, workflow_raw_nodes.OutputSpec):
+    pass
+
+
+@dataclass
+class Step(Node, workflow_raw_nodes.Step):
+    pass
+
+
+@dataclass
+class Workflow(workflow_raw_nodes.Workflow, RDF):
+    inputs_spec: List[InputSpec] = missing
+    options_spec: List[OptionSpec] = missing
+    outputs_spec: List[OutputSpec] = missing
+    steps: List[Step] = missing
+    test_steps: List[Step] = missing
