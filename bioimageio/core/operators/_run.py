@@ -150,7 +150,7 @@ def get_output_rois(
     input_overlaps: Dict[str, Dict[int, int]],
     input_paddings: Dict[str, Dict[str, Tuple[int, int]]],
     ipt_by_name: Dict[str, raw_nodes.InputTensor],
-):
+) -> Tuple[Sequence[Tuple[int, int]], Sequence[Tuple[int, int]]]:
     if isinstance(out.shape, raw_nodes.ImplicitOutputShape):
         scale = np.array([1.0 if s is None else s for s in out.shape.scale])
         offset: Sequence[float] = out.shape.offset
@@ -167,7 +167,7 @@ def get_output_rois(
         ref_input_padding_dict = {}
 
     # effective halo to be trimmed from output. (only for space and time dims)
-    effective_halo: List[Tuple[int, int]] = []
+    output_chunk_roi: List[Tuple[int, int]] = []
     for i, a in enumerate(out.axes):
         if a in ("b", "batch"):
             errors_in = (["halo"] if eff_halo_float[i] else []) + (["offset"] if offset[i] else [])
@@ -184,19 +184,15 @@ def get_output_rois(
         else:
             raise NotImplementedError(a)
 
-        effective_halo.append(get_asymmetric_halolike(eff_halo_float[i]))
-
-    output_chunk_roi = tuple_roi_to_slices(effective_halo)
+        output_chunk_roi.append(get_asymmetric_halolike(eff_halo_float[i]))
 
     # undo input padding for the resulting final output tensor
     # also trim any negative offset, which we padded for each chunk
-    output_trim = []
+    output_roi = []
     for a, s, off in zip(out.axes, scale, offset):
         p0, p1 = ref_input_padding_dict.get(a, (0, 0))
         off0, off1 = get_asymmetric_halolike(-min(off, 0))
-        output_trim.append((math.ceil(p0 * s + off0), math.ceil(p1 * s + off1)))
-
-    output_roi = tuple_roi_to_slices(output_trim)
+        output_roi.append((math.ceil(p0 * s + off0), math.ceil(p1 * s + off1)))
 
     return output_chunk_roi, output_roi
 
@@ -341,12 +337,40 @@ def run_model_inference_with_chunking(
         name=(model.config or {}).get("bioimageio", {}).get("nickname") or f"model_{model.id}",
         adjust_chunks=adjust_chunks,
         model_adapter=model_adapter,
-        output_chunk_roi=output_chunk_roi,
+        output_chunk_roi=tuple_roi_to_slices(output_chunk_roi),
     )
 
-    res = result[output_roi]
-    # todo: rechunk depending on output_roi to account for offset
-    # res = res.rechunk()
+    corrected_chunks = []
+    rechunk = False
+    for i, (s, roi) in enumerate(zip(result.shape, output_roi)):
+        c = result.chunks[i]
+        assert s == sum(c), (s, c)
+        if sum(roi):
+            c = list(c)
+            r0 = roi[0]
+            while r0 >= c[0]:
+                r0 -= c[0]
+                c = c[1:]
+                if not c:
+                    raise ValueError(f"Trimming too much from output {result.shape} with roi {output_roi}")
+
+            c[0] -= r0
+
+            r1 = roi[1]
+            while r1 >= c[-1]:
+                r1 -= c[-1]
+                c = c[:-1]
+                if not c:
+                    raise ValueError(f"Trimming too much from output {result.shape} with roi {output_roi}")
+
+            c[-1] -= r1
+
+        corrected_chunks.append(c)
+
+    res = result[tuple_roi_to_slices(output_roi)]
+    if rechunk:
+        res = res.rechunk(corrected_chunks)
+
     return [xr.DataArray(res, dims=tuple(out.axes))]
 
 
