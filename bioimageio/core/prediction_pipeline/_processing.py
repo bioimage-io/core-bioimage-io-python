@@ -2,9 +2,8 @@
 see https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/preprocessing_spec_latest.md
 and https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/postprocessing_spec_latest.md
 """
-import numbers
-from dataclasses import InitVar, dataclass, field, fields
-from typing import List, Mapping, Optional, Sequence, Tuple, Type, Union
+from dataclasses import dataclass, field, fields
+from typing import Mapping, Optional, Sequence, Tuple, Type, Union
 
 import numpy
 import numpy as np

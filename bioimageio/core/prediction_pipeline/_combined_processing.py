@@ -28,30 +28,30 @@ class ProcessingInfo:
 
 class CombinedProcessing:
     def __init__(self, combine_tensors: Dict[TensorName, ProcessingInfo]):
-        self._procs = []
+        self.procs = []
         known = dict(KNOWN_PROCESSING["pre"])
         known.update(KNOWN_PROCESSING["post"])
 
         # ensure all tensors have correct data type before any processing
         for tensor_name, info in combine_tensors.items():
             if info.assert_dtype_before is not None:
-                self._procs.append(AssertDtype(tensor_name=tensor_name, dtype=info.assert_dtype_before))
+                self.procs.append(AssertDtype(tensor_name=tensor_name, dtype=info.assert_dtype_before))
 
             if info.ensure_dtype_before is not None:
-                self._procs.append(EnsureDtype(tensor_name=tensor_name, dtype=info.ensure_dtype_before))
+                self.procs.append(EnsureDtype(tensor_name=tensor_name, dtype=info.ensure_dtype_before))
 
         for tensor_name, info in combine_tensors.items():
             for step in info.steps:
-                self._procs.append(known[step.name](tensor_name=tensor_name, **step.kwargs))
+                self.procs.append(known[step.name](tensor_name=tensor_name, **step.kwargs))
 
             if info.assert_dtype_after is not None:
-                self._procs.append(AssertDtype(tensor_name=tensor_name, dtype=info.assert_dtype_after))
+                self.procs.append(AssertDtype(tensor_name=tensor_name, dtype=info.assert_dtype_after))
 
             # ensure tensor has correct data type right after its processing
             if info.ensure_dtype_after is not None:
-                self._procs.append(EnsureDtype(tensor_name=tensor_name, dtype=info.ensure_dtype_after))
+                self.procs.append(EnsureDtype(tensor_name=tensor_name, dtype=info.ensure_dtype_after))
 
-        self.required_measures: RequiredMeasures = self._collect_required_measures(self._procs)
+        self.required_measures: RequiredMeasures = self._collect_required_measures(self.procs)
         self.tensor_names = list(combine_tensors)
 
     @classmethod
@@ -85,7 +85,7 @@ class CombinedProcessing:
         return inst
 
     def apply(self, sample: Sample, computed_measures: ComputedMeasures) -> None:
-        for proc in self._procs:
+        for proc in self.procs:
             proc.set_computed_measures(computed_measures)
             sample[proc.tensor_name] = proc.apply(sample[proc.tensor_name])
 

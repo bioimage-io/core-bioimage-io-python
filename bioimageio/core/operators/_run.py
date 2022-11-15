@@ -1,29 +1,21 @@
 import math
 import warnings
 from collections import defaultdict
-from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
-from contextlib import ExitStack
 from dataclasses import dataclass
-from functools import partial
 from os import PathLike
 from typing import Any, Dict, Generator, IO, List, Optional, Sequence, Tuple, Union
 
-import dask
-import dask.bag as db
 import dask.array as da
-import dask.dataframe as dd
 import numpy as np
-import pandas as pd
 import xarray as xr
-
-from bioimageio.core.prediction_pipeline._model_adapters import ModelAdapter, create_model_adapter
-
-
 from marshmallow import missing
 
 from bioimageio.core import load_resource_description
 from bioimageio.core.prediction_pipeline import create_prediction_pipeline
+from bioimageio.core.prediction_pipeline._combined_processing import CombinedProcessing
+from bioimageio.core.prediction_pipeline._model_adapters import ModelAdapter, create_model_adapter
 from bioimageio.core.resource_io import nodes
+from bioimageio.core.resource_io.utils import resolve_raw_node
 from bioimageio.spec import load_raw_resource_description
 from bioimageio.spec.model import raw_nodes
 from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
@@ -40,15 +32,6 @@ except ImportError:
 
 
 BoundaryMode = Literal["reflect"]
-
-# def get_model_gufunc_signature(model: raw_nodes.Model) -> str:
-#     ipt_sig = ",".join(f"({','.join(ipt.name + '_' + a for a in ipt.axes)})" for ipt in model.inputs)
-#     out_sig_parts = []
-#     for out in model.outputs:
-#         if isinstance( out.shape, ImplicitOutputShape):
-#
-#     print(ipts)
-#     return ipts
 
 
 def transpose_seq(seq, seq_axes, desired_axes, default):
@@ -140,9 +123,9 @@ def get_asymmetric_halolike(value: float) -> Tuple[int, int]:
     assert value >= 0
     if value % 1:
         assert value % 0.5 == 0
-        return (math.floor(value), math.ceil(value))
+        return math.floor(value), math.ceil(value)
     else:
-        return (int(value), int(value))
+        return int(value), int(value)
 
 
 def get_output_rois(
@@ -198,7 +181,6 @@ def get_output_rois(
 
 
 def forward(*tensors, model_adapter: ModelAdapter, output_chunk_roi: Tuple[slice, ...]):
-    print("forward", [t.shape for t in tensors])
     assert len(model_adapter.bioimageio_model.inputs) == len(tensors), (
         len(model_adapter.bioimageio_model.inputs),
         len(tensors),
@@ -206,49 +188,87 @@ def forward(*tensors, model_adapter: ModelAdapter, output_chunk_roi: Tuple[slice
     tensors = [xr.DataArray(t, dims=tuple(ipt.axes)) for ipt, t, in zip(model_adapter.bioimageio_model.inputs, tensors)]
     output = model_adapter.forward(*tensors)[0]  # todo: allow more than 1 output
     cropped_output = output[output_chunk_roi]
-    print("model out", output.shape, "cropped", cropped_output.shape)
     return cropped_output
 
 
-def run_model_inference_with_chunking(
+def get_corrected_chunks(chunks: Dict[int, Sequence[int]], shape: Sequence[int], roi: Sequence[Tuple[int, int]]):
+    corrected_chunks = []
+    rechunk = False
+    for i, (s, roi) in enumerate(zip(shape, roi)):
+        c = chunks[i]
+        assert s == sum(c), (s, c)
+        if sum(roi):
+            c = list(c)
+            r0 = roi[0]
+            while r0 >= c[0]:
+                r0 -= c[0]
+                c = c[1:]
+                if not c:
+                    raise ValueError(f"Trimming too much from output {shape} with roi {roi}")
+
+            c[0] -= r0
+
+            r1 = roi[1]
+            while r1 >= c[-1]:
+                r1 -= c[-1]
+                c = c[:-1]
+                if not c:
+                    raise ValueError(f"Trimming too much from output {shape} with roi {roi}")
+
+            c[-1] -= r1
+
+        corrected_chunks.append(c)
+    return corrected_chunks, rechunk
+
+
+def run_model_inference(
     rdf_source: Union[dict, PathLike, IO, str, bytes, raw_nodes.URI, RawResourceDescription],
     *tensors: xr.DataArray,
-    chunks: Optional[Sequence[Dict[str, int]]] = None,
     enable_preprocessing: bool = True,
     enable_postprocessing: bool = True,
     devices: Sequence[str] = ("cpu",),
+    tiles: Union[None, Literal["auto"], Sequence[Dict[str, int]]] = "auto",
     boundary_mode: Union[
         BoundaryMode,
         Sequence[BoundaryMode],
     ] = "reflect",
 ) -> List[xr.DataArray]:
-    """run model inference with tiling
-
-    pre- and postprocessing are run with the same chunks as the model inference.
-    For better performance disable pre-/postprocessing here and call it as a separate operators.
+    """run model inference
 
     Returns:
         list: model outputs
     """
+    if tiles is None:
+        return run_model_inference_without_tiling(
+            rdf_source,
+            *tensors,
+            enable_preprocessing=enable_preprocessing,
+            enable_postprocessing=enable_postprocessing,
+            devices=devices,
+        )
     model: raw_nodes.Model = load_raw_resource_description(rdf_source, update_to_format="latest")  # noqa
     if len(model.outputs) > 1:
         raise NotImplementedError("More than one model output not yet implemented")
 
     assert isinstance(model, raw_nodes.Model)
     # always remove pre-/postprocessing, but save it if enabled
-    preprocessing = []
+    # todo: improve pre- and postprocessing!
+    preprocessing = CombinedProcessing.from_tensor_specs(
+        [resolve_raw_node(ipt, nodes, root_path=model.root_path) for ipt in model.inputs]
+    )
     for ipt in model.inputs:
-        if enable_preprocessing:
-            preprocessing.append(ipt.preprocessing)
-
         ipt.preprocessing = missing
 
-    postprocessing = []
+    postprocessing = CombinedProcessing.from_tensor_specs(
+        [resolve_raw_node(out, nodes, root_path=model.root_path) for out in model.outputs]
+    )
     for out in model.outputs:
-        if enable_postprocessing:
-            postprocessing.append(out.postprocessing)
-
         out.postprocessing = missing
+
+    if preprocessing.procs:
+        sample = {ipt.name: t for ipt, t in zip(model.inputs, tensors)}
+        preprocessing.apply(sample, {})
+        tensors = [sample[ipt.name] for ipt in model.inputs]
 
     # transpose tensors to match ipt spec
     assert len(tensors) == len(model.inputs)
@@ -256,8 +276,10 @@ def run_model_inference_with_chunking(
     if isinstance(boundary_mode, str):
         boundary_mode = [boundary_mode] * len(tensors)
 
-    if chunks is None:
+    if tiles is "auto":
         chunks = [get_default_input_chunk(ipt) for ipt in model.inputs]
+    else:
+        chunks = tiles
 
     # the input tensors need an adapted chunking due to halo and offset
     actual_chunks, overlap_depths, paddings = zip(
@@ -294,13 +316,14 @@ def run_model_inference_with_chunking(
         ipt_by_name = {ipt.name: ipt for ipt in model.inputs}
         ipt_axes = ipt_by_name[out.shape.reference_tensor].axes
         ipt_shape = transpose_seq(ipt_shape, ipt_axes, out.axes, 0)
-        out_scale = np.array([0.0 if s is None else s for s in out.shape.scale])
+        out_scale = [0.0 if s is None else s for s in out.shape.scale]
         out_offset = np.array(out.shape.offset)
         out_shape_float = ipt_shape * out_scale + 2 * out_offset
         assert (out_shape_float == out_shape_float.astype(int)).all(), out_shape_float
         out_shape: Sequence[int] = out_shape_float.astype(int)
     else:
         out_shape = out.shape
+        out_scale = [1.0] * len(out_shape)
         ipt_axes = []
 
     # set up da.blockwise to orchestrate tiled forward
@@ -331,55 +354,32 @@ def run_model_inference_with_chunking(
         *inputs_sequence,
         new_axes=new_axes,
         dtype=np.dtype(out.data_type),
-        # meta=xr.DataArray(np.empty(out_shape, dtype=np.dtype(out.data_type)), dims=tuple(out.axes)),
-        meta=np.empty(out_shape, dtype=np.dtype(out.data_type)),
-        # align_arrays=False,
+        meta=np.empty((), dtype=np.dtype(out.data_type)),
         name=(model.config or {}).get("bioimageio", {}).get("nickname") or f"model_{model.id}",
         adjust_chunks=adjust_chunks,
-        model_adapter=model_adapter,
-        output_chunk_roi=tuple_roi_to_slices(output_chunk_roi),
+        **dict(model_adapter=model_adapter, output_chunk_roi=tuple_roi_to_slices(output_chunk_roi)),
     )
 
-    corrected_chunks = []
-    rechunk = False
-    for i, (s, roi) in enumerate(zip(result.shape, output_roi)):
-        c = result.chunks[i]
-        assert s == sum(c), (s, c)
-        if sum(roi):
-            c = list(c)
-            r0 = roi[0]
-            while r0 >= c[0]:
-                r0 -= c[0]
-                c = c[1:]
-                if not c:
-                    raise ValueError(f"Trimming too much from output {result.shape} with roi {output_roi}")
-
-            c[0] -= r0
-
-            r1 = roi[1]
-            while r1 >= c[-1]:
-                r1 -= c[-1]
-                c = c[:-1]
-                if not c:
-                    raise ValueError(f"Trimming too much from output {result.shape} with roi {output_roi}")
-
-            c[-1] -= r1
-
-        corrected_chunks.append(c)
-
+    corrected_chunks, rechunk = get_corrected_chunks(result.chunks, result.shape, output_roi)
     res = result[tuple_roi_to_slices(output_roi)]
     if rechunk:
         res = res.rechunk(corrected_chunks)
 
-    return [xr.DataArray(res, dims=tuple(out.axes))]
+    outputs = [xr.DataArray(res, dims=tuple(out.axes))]
+    if preprocessing.procs:
+        sample = {out.name: t for out, t in zip(model.outputs, outputs)}
+        postprocessing.apply(sample, {})
+        outputs = [sample[out.name] for out in model.outputs]
+
+    return outputs
 
 
-def run_model_inference(
+def run_model_inference_without_tiling(
     rdf_source: Union[dict, PathLike, IO, str, bytes, raw_nodes.URI, RawResourceDescription],
     *tensors: xr.DataArray,
     enable_preprocessing: bool = True,
     enable_postprocessing: bool = True,
-    devices: Optional[Sequence[str]] = None,
+    devices: Optional[Sequence[str]] = ("cpu",),
 ) -> List[xr.DataArray]:
     """run model inference
 
