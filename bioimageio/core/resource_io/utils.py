@@ -109,10 +109,15 @@ def all_sources_available(
 
 
 def resolve_raw_node(
-    raw_rd: GenericRawNode, nodes_module: typing.Any, uri_only_if_in_package: bool = True
+    raw_rd: GenericRawNode,
+    nodes_module: typing.Any,
+    uri_only_if_in_package: bool = True,
+    root_path: typing.Optional[pathlib.Path] = None,
 ) -> GenericResolvedNode:
     """resolve all uris and paths (that are included when packaging)"""
-    rd = UriNodeTransformer(root_path=raw_rd.root_path, uri_only_if_in_package=uri_only_if_in_package).transform(raw_rd)
+    rd = UriNodeTransformer(
+        root_path=root_path or raw_rd.root_path, uri_only_if_in_package=uri_only_if_in_package
+    ).transform(raw_rd)
     rd = SourceNodeTransformer().transform(rd)
     rd = RawNodeTypeTransformer(nodes_module).transform(rd)
     return rd

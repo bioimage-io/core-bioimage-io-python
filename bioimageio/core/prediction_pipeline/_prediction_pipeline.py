@@ -106,8 +106,12 @@ class _PredictionPipelineImpl(PredictionPipeline):
             self._output_specs = bioimageio_model.outputs
         else:
             assert isinstance(bioimageio_model, raw_nodes.Model)
-            self._input_specs = [resolve_raw_node(s, nodes) for s in bioimageio_model.inputs]
-            self._output_specs = [resolve_raw_node(s, nodes) for s in bioimageio_model.outputs]
+            self._input_specs = [
+                resolve_raw_node(s, nodes, root_path=bioimageio_model.root_path) for s in bioimageio_model.inputs
+            ]
+            self._output_specs = [
+                resolve_raw_node(s, nodes, root_path=bioimageio_model.root_path) for s in bioimageio_model.outputs
+            ]
 
         self._preprocessing = preprocessing
         self._postprocessing = postprocessing
@@ -207,11 +211,10 @@ def create_prediction_pipeline(
     if isinstance(bioimageio_model, nodes.Model):
         ipts = bioimageio_model.inputs
         outs = bioimageio_model.outputs
-
     else:
         assert isinstance(bioimageio_model, raw_nodes.Model)
-        ipts = [resolve_raw_node(s, nodes) for s in bioimageio_model.inputs]
-        outs = [resolve_raw_node(s, nodes) for s in bioimageio_model.outputs]
+        ipts = [resolve_raw_node(s, nodes, root_path=bioimageio_model.root_path) for s in bioimageio_model.inputs]
+        outs = [resolve_raw_node(s, nodes, root_path=bioimageio_model.root_path) for s in bioimageio_model.outputs]
 
     preprocessing = CombinedProcessing.from_tensor_specs(ipts)
 

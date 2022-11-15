@@ -105,7 +105,7 @@ def load_image(in_path, axes: Sequence[str]) -> DataArray:
         is_volume = "z" in axes
         im = imageio.volread(in_path) if is_volume else imageio.imread(in_path)
         im = transform_input_image(im, axes)
-    return DataArray(im, dims=axes)
+    return DataArray(im, dims=tuple(axes))
 
 
 def load_tensors(sources, tensor_specs: List[Union[InputTensor, OutputTensor]]) -> List[DataArray]:
