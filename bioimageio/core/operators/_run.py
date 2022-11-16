@@ -38,9 +38,15 @@ def transpose_seq(seq, seq_axes, desired_axes, default):
     return np.array([default if ia not in seq_axes else seq[seq_axes.index(ia)] for ia in desired_axes])
 
 
-def correct_chunk(
+def get_chunk(
     chunk, ipt: raw_nodes.InputTensor, outputs: Sequence[raw_nodes.OutputTensor], tensor
 ) -> Tuple[Dict[str, int], Dict[int, int], Dict[str, Tuple[int, int]]]:
+    """correct chunk to account for offset and halo
+
+    Returns:
+        corrected chunk: to tile the input array with
+        overlap: overlap of corrected chunks (yields original chunks)
+    """
     ipt_shape = np.array([chunk[a] for a in ipt.axes], dtype=int)
     referencing_outputs = [
         ot
@@ -180,18 +186,19 @@ def get_output_rois(
     return output_chunk_roi, output_roi
 
 
-def forward(*tensors, model_adapter: ModelAdapter, output_chunk_roi: Tuple[slice, ...]):
+def forward(*tensors, model_adapter: ModelAdapter, output_tile_roi: Tuple[slice, ...]):
+    """helper to cast dask array chunks to xr.DataArray and apply a roi to the output"""
     assert len(model_adapter.bioimageio_model.inputs) == len(tensors), (
         len(model_adapter.bioimageio_model.inputs),
         len(tensors),
     )
     tensors = [xr.DataArray(t, dims=tuple(ipt.axes)) for ipt, t, in zip(model_adapter.bioimageio_model.inputs, tensors)]
     output = model_adapter.forward(*tensors)[0]  # todo: allow more than 1 output
-    cropped_output = output[output_chunk_roi]
-    return cropped_output
+    return output[output_tile_roi]
 
 
 def get_corrected_chunks(chunks: Dict[int, Sequence[int]], shape: Sequence[int], roi: Sequence[Tuple[int, int]]):
+    """adapt `chunks` chunking `shape` for `shape[roi]`"""
     corrected_chunks = []
     rechunk = False
     for i, (s, roi) in enumerate(zip(shape, roi)):
@@ -253,22 +260,21 @@ def run_model_inference(
     assert isinstance(model, raw_nodes.Model)
     # always remove pre-/postprocessing, but save it if enabled
     # todo: improve pre- and postprocessing!
-    preprocessing = CombinedProcessing.from_tensor_specs(
-        [resolve_raw_node(ipt, nodes, root_path=model.root_path) for ipt in model.inputs]
-    )
-    for ipt in model.inputs:
-        ipt.preprocessing = missing
 
-    postprocessing = CombinedProcessing.from_tensor_specs(
-        [resolve_raw_node(out, nodes, root_path=model.root_path) for out in model.outputs]
-    )
-    for out in model.outputs:
-        out.postprocessing = missing
-
-    if preprocessing.procs:
+    if enable_preprocessing:
+        preprocessing = CombinedProcessing.from_tensor_specs(
+            [resolve_raw_node(ipt, nodes, root_path=model.root_path) for ipt in model.inputs]
+        )
         sample = {ipt.name: t for ipt, t in zip(model.inputs, tensors)}
         preprocessing.apply(sample, {})
         tensors = [sample[ipt.name] for ipt in model.inputs]
+
+    if enable_postprocessing:
+        postprocessing = CombinedProcessing.from_tensor_specs(
+            [resolve_raw_node(out, nodes, root_path=model.root_path) for out in model.outputs]
+        )
+    else:
+        postprocessing = None
 
     # transpose tensors to match ipt spec
     assert len(tensors) == len(model.inputs)
@@ -276,16 +282,14 @@ def run_model_inference(
     if isinstance(boundary_mode, str):
         boundary_mode = [boundary_mode] * len(tensors)
 
-    if tiles is "auto":
-        chunks = [get_default_input_chunk(ipt) for ipt in model.inputs]
-    else:
-        chunks = tiles
+    if tiles == "auto":
+        tiles = [get_default_input_chunk(ipt) for ipt in model.inputs]
 
-    # the input tensors need an adapted chunking due to halo and offset
-    actual_chunks, overlap_depths, paddings = zip(
-        *(correct_chunk(c, ipt, model.outputs, t) for c, ipt, t in zip(chunks, model.inputs, tensors))
+    # calculate chunking of the input tensors from tiles taking halo and offset into account
+    chunks, overlap_depths, paddings = zip(
+        *(get_chunk(c, ipt, model.outputs, t) for c, ipt, t in zip(tiles, model.inputs, tensors))
     )
-    actual_chunks_by_name = {ipt.name: c for ipt, c in zip(model.inputs, actual_chunks)}
+    chunks_by_name = {ipt.name: c for ipt, c in zip(model.inputs, chunks)}
     padded_input_tensor_shapes = {
         ipt.name: [ts + sum(p[a]) for ts, a in zip(t.shape, ipt.axes)]
         for ipt, t, p in zip(model.inputs, tensors, paddings)
@@ -294,10 +298,10 @@ def run_model_inference(
     # note: da.overlap.overlap or da.overlap.map_overlap equivalents are not yet available in xarray
     tensors = [
         da.overlap.overlap(t.pad(p, mode=bm).chunk(c).data, depth=d, boundary=bm)
-        for t, c, d, p, bm in zip(tensors, actual_chunks, overlap_depths, paddings, boundary_mode)
+        for t, c, d, p, bm in zip(tensors, chunks, overlap_depths, paddings, boundary_mode)
     ]
 
-    output_chunk_roi, output_roi = get_output_rois(
+    output_tile_roi, output_roi = get_output_rois(
         model.outputs[0],
         input_overlaps={ipt.name: d for ipt, d in zip(model.inputs, overlap_depths)},
         input_paddings={ipt.name: p for ipt, p in zip(model.inputs, paddings)},
@@ -336,9 +340,7 @@ def run_model_inference(
         elif a in ipt_axes:
             axis_name = f"{out.shape.reference_tensor}_{a}"
             out_ind.append(axis_name)
-            adjust_chunks[axis_name] = (
-                lambda _, aa=a, scc=sc: actual_chunks_by_name[out.shape.reference_tensor][aa] * scc
-            )
+            adjust_chunks[axis_name] = lambda _, aa=a, scc=sc: chunks_by_name[out.shape.reference_tensor][aa] * scc
         else:
             out_ind.append(f"{out.name}_{a}")
             new_axes[f"{out.name}_{a}"] = s
@@ -357,7 +359,7 @@ def run_model_inference(
         meta=np.empty((), dtype=np.dtype(out.data_type)),
         name=(model.config or {}).get("bioimageio", {}).get("nickname") or f"model_{model.id}",
         adjust_chunks=adjust_chunks,
-        **dict(model_adapter=model_adapter, output_chunk_roi=tuple_roi_to_slices(output_chunk_roi)),
+        **dict(model_adapter=model_adapter, output_tile_roi=tuple_roi_to_slices(output_tile_roi)),
     )
 
     corrected_chunks, rechunk = get_corrected_chunks(result.chunks, result.shape, output_roi)
@@ -366,7 +368,8 @@ def run_model_inference(
         res = res.rechunk(corrected_chunks)
 
     outputs = [xr.DataArray(res, dims=tuple(out.axes))]
-    if preprocessing.procs:
+    if enable_postprocessing:
+        assert postprocessing is not None
         sample = {out.name: t for out, t in zip(model.outputs, outputs)}
         postprocessing.apply(sample, {})
         outputs = [sample[out.name] for out in model.outputs]
@@ -388,7 +391,7 @@ def run_model_inference_without_tiling(
     """
     model = load_raw_resource_description(rdf_source, update_to_format="latest")
     assert isinstance(model, raw_nodes.Model)
-    # remove pre-/postprocessing if specified
+    # remove pre-/postprocessing if not enabled
     if not enable_preprocessing:
         for ipt in model.inputs:
             if ipt.preprocessing:
