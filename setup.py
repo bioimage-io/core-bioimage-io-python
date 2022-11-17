@@ -25,15 +25,7 @@ setup(
         "Programming Language :: Python :: 3.8",
     ],
     packages=find_namespace_packages(exclude=["tests"]),  # Required
-    install_requires=[
-        "bioimageio.spec==0.4.8.*",
-        "imageio>=2.5",
-        "numpy",
-        "ruamel.yaml",
-        "tqdm",
-        "xarray",
-        "tifffile"
-    ],
+    install_requires=["bioimageio.spec==0.4.8.*", "imageio>=2.5", "numpy", "ruamel.yaml", "tqdm", "xarray", "tifffile"],
     include_package_data=True,
     extras_require={
         "test": ["pytest", "black", "mypy"],
@@ -41,6 +33,7 @@ setup(
         "pytorch": ["torch>=1.6", "torchvision"],
         "tensorflow": ["tensorflow"],
         "onnx": ["onnxruntime"],
+        "contrib_a": ["dask"],
     },
     project_urls={  # Optional
         "Bug Reports": "https://github.com/bioimage-io/core-bioimage-io-python/issues",
