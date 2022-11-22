@@ -1,5 +1,11 @@
 repos:
-  - repo: https://github.com/ambv/black
-    rev: stable
-    hooks:
-    - id: black
+- repo: https://github.com/ambv/black
+  rev: stable
+  hooks:
+  - id: black
+- repo: https://github.com/pre-commit/mirrors-mypy
+  rev: v0.991
+  hooks:
+  - id: mypy
+    additional_dependencies: [types-requests]
+    args: [--install-types, --non-interactive, --explicit-package-bases, --check-untyped-defs]
