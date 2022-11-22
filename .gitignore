@@ -1,8 +1,9 @@
-build/
-dist/
-.idea/
-*.egg-info/
-cache
 **/tmp
-.tox/
+*.egg-info/
 *.pyc
+.idea/
+.mypy_cache/
+.tox/
+build/
+cache
+dist/
