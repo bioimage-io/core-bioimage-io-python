@@ -142,3 +142,19 @@ jobs:
       run: |
         conda install -n base -c conda-forge conda-build pip -y
         conda build -c conda-forge conda-recipe
+
+  generate_workflow_rdfs:  # todo: move to contrib repo
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.9
+    - name: Install dependencies
+      # todo: use mamba envs
+      run: |
+        pip install . dask
+    - name: Generate workflow RDFs
+      run: python scripts/generate_workflow_rdfs.py  contrib_a
