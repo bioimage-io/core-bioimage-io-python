@@ -1,5 +1,6 @@
+import collections
 from os import PathLike
-from typing import Dict, IO, List, Optional, Sequence, Tuple, Union
+from typing import Dict, IO, List, Optional, OrderedDict, Sequence, Tuple, Union
 
 import dask.array as da
 import numpy as np
@@ -41,24 +42,40 @@ def forward(*tensors, model_adapter: ModelAdapter, output_tile_roi: Tuple[slice,
     return output[output_tile_roi]
 
 
-def run_model_inference_with_dask(
-    rdf_source: Union[dict, PathLike, IO, str, bytes, raw_nodes.URI, RawResourceDescription],
-    *tensors: xr.DataArray,
-    enable_preprocessing: bool = True,
-    enable_postprocessing: bool = True,
-    devices: Sequence[str] = ("cpu",),
-    tiles: Optional[Sequence[Dict[str, int]]] = None,
+async def run_model_inference_with_dask(
+    model_rdf: Union[str, PathLike, dict, IO, bytes, raw_nodes.URI, RawResourceDescription],
+    tensors: Sequence[xr.DataArray],
     boundary_mode: Union[
         BoundaryMode,
         Sequence[BoundaryMode],
     ] = "reflect",
-) -> List[xr.DataArray]:
-    """run model inference
+    enable_preprocessing: bool = True,
+    enable_postprocessing: bool = True,
+    devices: Sequence[str] = ("cpu",),
+    tiles: Optional[Sequence[Dict[str, int]]] = None,
+) -> OrderedDict[str, xr.DataArray]:
+    """run model inference using chunked dask arrays for tiling
+
+    To run inference on arbitrary input tensors, they are chunked such that with halo and offset all inputs to the
+    model have `tiles` shape.
+
+    .. code-block:: yaml
+    authors: [{name: Fynn Beuttenmüller, github_user: fynnbe}]
+    cite: [{text: BioImage.IO, url: "https://doi.org/10.1101/2022.06.07.495102"}]
+
+    Args:
+        model_rdf: the (source/raw) model RDF that describes the model to be used for inference
+        tensors: model input tensors
+        boundary_mode: How to pad missing values.
+        enable_preprocessing: If true, apply the preprocessing specified in the model RDF
+        enable_postprocessing: If true, apply the postprocessing specified in the model RDF
+        devices: devices to use for inference (device management is handled by the created model adapter)
+        tiles: Defaults to using an estimated tile sizes based on the model RDF.
 
     Returns:
-        list: model outputs
+        outputs. named model outputs
     """
-    model: raw_nodes.Model = load_raw_resource_description(rdf_source, update_to_format="latest")  # noqa
+    model: raw_nodes.Model = load_raw_resource_description(model_rdf, update_to_format="latest")  # noqa
     if len(model.outputs) > 1:
         raise NotImplementedError("More than one model output not yet implemented")
 
@@ -172,11 +189,11 @@ def run_model_inference_with_dask(
     if rechunk:
         res = res.rechunk(corrected_chunks)
 
-    outputs = [xr.DataArray(res, dims=tuple(out.axes))]
+    outputs = collections.OrderedDict({out.name: xr.DataArray(res, dims=tuple(out.axes))})
     if enable_postprocessing:
         assert postprocessing is not None
-        sample = {out.name: t for out, t in zip(model.outputs, outputs)}
+        sample = {name: t for name, t in outputs.items()}
         postprocessing.apply(sample, {})
-        outputs = [sample[out.name] for out in model.outputs]
+        outputs = collections.OrderedDict({out.name: sample[out.name] for out in model.outputs})
 
     return outputs

@@ -55,7 +55,7 @@ class PytorchModelAdapter(ModelAdapter):
     def get_nn_instance(model_node: nodes.Model, **kwargs):
         weight_spec = model_node.weights.get("pytorch_state_dict")
         assert weight_spec is not None
-        assert isinstance(weight_spec.architecture, nodes.ImportedSource)
+        assert isinstance(weight_spec.architecture, nodes.ImportedCallable)
         model_kwargs = weight_spec.kwargs
         joined_kwargs = {} if model_kwargs is missing else dict(model_kwargs)
         joined_kwargs.update(kwargs)

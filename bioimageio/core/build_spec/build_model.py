@@ -14,7 +14,7 @@ import bioimageio.spec as spec
 import bioimageio.spec.model as model_spec
 from bioimageio.core import export_resource_package, load_raw_resource_description
 from bioimageio.core.resource_io.nodes import URI
-from bioimageio.spec.shared.raw_nodes import ImportableModule, ImportableSourceFile
+from bioimageio.spec.shared.raw_nodes import CallableFromModule, CallableFromSourceFile
 from bioimageio.spec.shared import resolve_local_source, resolve_source
 
 try:
@@ -58,12 +58,12 @@ def _get_pytorch_state_dict_weight_kwargs(architecture, model_kwargs, root):
         # note: path itself might include : for absolute paths in windows
         *arch_file_parts, callable_name = architecture.replace("::", ":").split(":")
         arch_file = _ensure_local(":".join(arch_file_parts), root)
-        arch = ImportableSourceFile(callable_name, arch_file)
+        arch = CallableFromSourceFile(callable_name, arch_file)
         arch_hash = _get_hash(root / arch.source_file)
         weight_kwargs["architecture_sha256"] = arch_hash
     else:
-        arch = spec.shared.fields.ImportableSource().deserialize(architecture)
-        assert isinstance(arch, ImportableModule)
+        arch = spec.shared.fields.CallableSource().deserialize(architecture)
+        assert isinstance(arch, CallableFromModule)
 
     weight_kwargs["architecture"] = arch
     return weight_kwargs, tmp_archtecture

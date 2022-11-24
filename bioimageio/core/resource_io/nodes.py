@@ -142,7 +142,7 @@ class OutputTensor(Node, model_raw_nodes.OutputTensor):
 
 
 @dataclass
-class ImportedSource(Node):
+class ImportedCallable(Node):
     factory: Callable
 
     def __call__(self, *args, **kwargs):
@@ -167,7 +167,7 @@ class OnnxWeightsEntry(WeightsEntryBase, model_raw_nodes.OnnxWeightsEntry):
 @dataclass
 class PytorchStateDictWeightsEntry(WeightsEntryBase, model_raw_nodes.PytorchStateDictWeightsEntry):
     source: Path = missing
-    architecture: Union[_Missing, ImportedSource] = missing
+    architecture: Union[_Missing, ImportedCallable] = missing
 
 
 @dataclass
@@ -213,54 +213,27 @@ class Axis(Node, workflow_raw_nodes.Axis):
 
 
 @dataclass
-class BatchAxis(Node, workflow_raw_nodes.BatchAxis):
+class Parameter(Node, workflow_raw_nodes.Parameter):
+    axes: Union[_Missing, List[Axis], workflow_raw_nodes.ArbitraryAxes] = missing
+
+
+@dataclass
+class Input(Parameter, workflow_raw_nodes.Input):
     pass
 
 
 @dataclass
-class ChannelAxis(Node, workflow_raw_nodes.ChannelAxis):
+class Option(Parameter, workflow_raw_nodes.Option):
     pass
 
 
 @dataclass
-class IndexAxis(Node, workflow_raw_nodes.IndexAxis):
-    pass
-
-
-@dataclass
-class SpaceAxis(Node, workflow_raw_nodes.SpaceAxis):
-    pass
-
-
-@dataclass
-class TimeAxis(Node, workflow_raw_nodes.TimeAxis):
-    pass
-
-
-@dataclass
-class InputSpec(Node, workflow_raw_nodes.InputSpec):
-    pass
-
-
-@dataclass
-class OptionSpec(Node, workflow_raw_nodes.OptionSpec):
-    pass
-
-
-@dataclass
-class OutputSpec(Node, workflow_raw_nodes.OutputSpec):
-    pass
-
-
-@dataclass
-class Step(Node, workflow_raw_nodes.Step):
+class Output(Parameter, workflow_raw_nodes.Output):
     pass
 
 
 @dataclass
 class Workflow(workflow_raw_nodes.Workflow, RDF):
-    inputs_spec: List[InputSpec] = missing
-    options_spec: List[OptionSpec] = missing
-    outputs_spec: List[OutputSpec] = missing
-    steps: List[Step] = missing
-    test_steps: List[Step] = missing
+    inputs_spec: List[Input] = missing
+    options_spec: List[Option] = missing
+    outputs_spec: List[Output] = missing
