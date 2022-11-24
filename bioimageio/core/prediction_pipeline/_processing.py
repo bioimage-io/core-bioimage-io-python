@@ -2,9 +2,9 @@
 see https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/preprocessing_spec_latest.md
 and https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/postprocessing_spec_latest.md
 """
-import numbers
-from dataclasses import InitVar, dataclass, field, fields
-from typing import List, Mapping, Optional, Sequence, Tuple, Type, Union
+import collections
+from dataclasses import dataclass, field, fields
+from typing import Mapping, Optional, Sequence, Set, Tuple, Type, Union
 
 import numpy
 import numpy as np
@@ -24,11 +24,16 @@ def _get_fixed(
     fixed: Union[float, Sequence[float]], tensor: xr.DataArray, axes: Optional[Sequence[str]]
 ) -> Union[float, xr.DataArray]:
     if axes is None:
-        return fixed
+        if isinstance(fixed, float):
+            return fixed
+        elif isinstance(fixed, collections.Sequence):
+            raise TypeError(f"Sequence of fixed values requires axes. Either use scalar fixed value or specify axes.")
+        else:
+            raise TypeError(type(fixed))
 
     fixed_shape = tuple(s for d, s in tensor.sizes.items() if d not in axes)
     fixed_dims = tuple(d for d in tensor.dims if d not in axes)
-    fixed = np.array(fixed).reshape(fixed_shape)
+    fixed = np.array(fixed).reshape(fixed_shape)  # type: ignore[assignment]
     return xr.DataArray(fixed, dims=fixed_dims)
 
 
@@ -62,7 +67,9 @@ class Processing:
 
     def get_computed_measure(self, tensor_name: TensorName, measure: Measure, *, mode: Optional[Mode] = None):
         """helper to unpack self.computed_measures"""
-        ret = self.computed_measures.get(mode or self.mode, {}).get(tensor_name, {}).get(measure)
+        mo = mode or self.mode
+        assert mo != "fixed"
+        ret = self.computed_measures.get(mo, {}).get(tensor_name, {}).get(measure)
         if ret is None:
             raise RuntimeError(f"Missing computed {measure} for {tensor_name} {mode}.")
 
@@ -106,7 +113,7 @@ class AssertDtype(Processing):
 
     def __post_init__(self):
         if isinstance(self.dtype, str):
-            dtype = [self.dtype]
+            dtype: Sequence[str] = [self.dtype]
         else:
             dtype = self.dtype
 
@@ -121,7 +128,8 @@ class AssertDtype(Processing):
 class Binarize(Processing):
     """'output = tensor > threshold'."""
 
-    threshold: float = MISSING  # make dataclass inheritance work for py<3.10 by using an explicit MISSING value.
+    # make dataclass inheritance work for py<3.10 by using an explicit MISSING value.
+    threshold: float = MISSING  # type: ignore[assignment]
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
         return tensor > self.threshold
@@ -131,8 +139,8 @@ class Binarize(Processing):
 class Clip(Processing):
     """Limit tensor values to [min, max]."""
 
-    min: float = MISSING
-    max: float = MISSING
+    min: float = MISSING  # type: ignore[assignment]
+    max: float = MISSING  # type: ignore[assignment]
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
         return tensor.clip(min=self.min, max=self.max)
@@ -152,18 +160,24 @@ class EnsureDtype(Processing):
 class ScaleLinear(Processing):
     """Scale the tensor with a fixed multiplicative and additive factor."""
 
-    gain: Union[float, Sequence[float]] = MISSING
-    offset: Union[float, Sequence[float]] = MISSING
+    gain: Union[float, Sequence[float]] = MISSING  # type: ignore[assignment]
+    offset: Union[float, Sequence[float]] = MISSING  # type: ignore[assignment]
     axes: Optional[Sequence[str]] = None
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
-        scale_axes = tuple(ax for ax in tensor.dims if (ax not in self.axes and ax != "b"))
-        if scale_axes:
-            gain = xr.DataArray(np.atleast_1d(self.gain), dims=scale_axes)
-            offset = xr.DataArray(np.atleast_1d(self.offset), dims=scale_axes)
+        if self.axes is not None:
+            scale_axes = tuple(ax for ax in tensor.dims if (ax not in self.axes and ax != "b"))
+            gain: Union[float, xr.DataArray] = xr.DataArray(np.atleast_1d(self.gain), dims=scale_axes)
+            offset: Union[float, xr.DataArray] = xr.DataArray(np.atleast_1d(self.offset), dims=scale_axes)
         else:
-            gain = self.gain
-            offset = self.offset
+            if not isinstance(self.gain, (float, int)):
+                raise TypeError(f"axes: None; expected gain to be a scalar, but got type {type(self.gain)}")
+
+            if not isinstance(self.offset, (float, int)):
+                raise TypeError(f"axes: None; expected offset to be a scalar, but got type {type(self.offset)}")
+
+            gain = float(self.gain)
+            offset = float(self.offset)
 
         return tensor * gain + offset
 
@@ -216,7 +230,12 @@ class ScaleRange(Processing):
 
     def get_required_measures(self) -> RequiredMeasures:
         axes = None if self.axes is None else tuple(self.axes)
-        measures = {Percentile(self.min_percentile, axes=axes), Percentile(self.max_percentile, axes=axes)}
+        # todo: not sure why leaving out 'Set[Measure]' here (==Set[Percentile]) gives mypy error,
+        #  as Percentile inherits from Measure...?  mypy bug?
+        measures: Set[Measure] = {
+            Percentile(self.min_percentile, axes=axes),
+            Percentile(self.max_percentile, axes=axes),
+        }
         return {self.mode: {self.reference_tensor or self.tensor_name: measures}}
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
@@ -273,10 +292,10 @@ class ZeroMeanUnitVariance(Processing):
         return (tensor - mean) / (std + self.eps)
 
 
-_KnownProcessing = TypedDict(
-    "_KnownProcessing",
-    dict(pre=Mapping[PreprocessingName, Type[Processing]], post=Mapping[PostprocessingName, Type[Processing]]),
-)
+class _KnownProcessing(TypedDict):
+    pre: Mapping[PreprocessingName, Type[Processing]]
+    post: Mapping[PostprocessingName, Type[Processing]]
+
 
 KNOWN_PROCESSING: _KnownProcessing = dict(
     pre={

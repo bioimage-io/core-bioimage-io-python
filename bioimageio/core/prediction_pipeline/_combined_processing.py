@@ -28,7 +28,7 @@ class ProcessingInfo:
 
 class CombinedProcessing:
     def __init__(self, combine_tensors: Dict[TensorName, ProcessingInfo]):
-        self._procs = []
+        self._procs: List[Processing] = []
         known = dict(KNOWN_PROCESSING["pre"])
         known.update(KNOWN_PROCESSING["post"])
 

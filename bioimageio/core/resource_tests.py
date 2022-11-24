@@ -86,8 +86,8 @@ def _test_resource_urls(rd: ResourceDescription) -> TestSummary:
         try:
             SourceNodeChecker(root_path=rd.root_path).visit(rd)
         except FileNotFoundError as e:
-            error = str(e)
-            tb = traceback.format_tb(e.__traceback__)
+            error: Optional[str] = str(e)
+            tb: Optional[List[str]] = traceback.format_tb(e.__traceback__)
         else:
             error = None
             tb = None

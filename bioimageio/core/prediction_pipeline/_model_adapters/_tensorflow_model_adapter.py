@@ -1,6 +1,6 @@
 import warnings
 import zipfile
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 import numpy as np
 import tensorflow as tf
@@ -17,6 +17,7 @@ except ImportError:
 
 class TensorflowModelAdapterBase(ModelAdapter):
     weight_format: Literal["keras_hdf5", "tensorflow_saved_model_bundle"]
+    use_keras_api: bool
 
     def require_unzipped(self, weight_file):
         if zipfile.is_zipfile(weight_file):
@@ -31,10 +32,10 @@ class TensorflowModelAdapterBase(ModelAdapter):
         if self.use_keras_api:
             return tf.keras.models.load_model(weight_file)
         else:
-            # NOTE in tf1 the model needs to be loaded inside of the session, so we cannot preload the model
+            # NOTE in tf1 the model needs to be loaded inside the session, so we cannot preload the model
             return str(weight_file)
 
-    def _load(self, *, devices: Optional[List[str]] = None):
+    def _load(self, *, devices: Optional[Sequence[str]] = None):
         model_tf_version = self.bioimageio_model.weights[self.weight_format].tensorflow_version
         if model_tf_version is missing:
             model_tf_version = None

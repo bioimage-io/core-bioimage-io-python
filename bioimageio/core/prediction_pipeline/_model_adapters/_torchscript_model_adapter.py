@@ -1,6 +1,6 @@
 import gc
 import warnings
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 import numpy as np
 import torch
@@ -10,10 +10,12 @@ from ._model_adapter import ModelAdapter
 
 
 class TorchscriptModelAdapter(ModelAdapter):
-    def _load(self, *, devices: Optional[List[str]] = None):
+    def _load(self, *, devices: Optional[Sequence[str]] = None):
         weight_path = str(self.bioimageio_model.weights["torchscript"].source.resolve())
         if devices is None:
-            self.devices = ["cuda" if torch.cuda.is_available() else "cpu"]
+            self.devices: List[torch.device] = [
+                torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+            ]
         else:
             self.devices = [torch.device(d) for d in devices]
 

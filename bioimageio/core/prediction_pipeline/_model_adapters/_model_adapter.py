@@ -170,7 +170,7 @@ def _get_model_adapter(weight_format: str) -> Type[ModelAdapter]:
         try:
             from ._keras_model_adapter import KerasModelAdapter
         except ImportError:
-            from ._tensorflow_model_adapter import KerasModelAdapter
+            from ._tensorflow_model_adapter import KerasModelAdapter  # type: ignore[no-redef]
 
         return KerasModelAdapter
 

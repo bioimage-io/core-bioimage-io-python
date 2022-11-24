@@ -4,7 +4,7 @@ import collections
 import warnings
 from collections import defaultdict
 from itertools import product
-from typing import DefaultDict, Dict, Hashable, Iterator, List, Mapping, Optional, Sequence, Set, Tuple, Type, Union
+from typing import DefaultDict, Dict, Iterable, List, Mapping, Optional, Sequence, Set, Tuple, Type, Union
 
 import numpy
 import xarray as xr
@@ -18,7 +18,7 @@ except ImportError:
     from typing_extensions import Literal, TypedDict  # type: ignore
 
 try:
-    import crick
+    import crick  # type: ignore
 except ImportError:
     crick = None
 
@@ -48,17 +48,17 @@ class DatasetMeasureGroup:
         raise NotImplementedError
 
 
-MeasureGroups = TypedDict(
-    "MeasureGroups", {PER_SAMPLE: Sequence[SampleMeasureGroup], PER_DATASET: Sequence[DatasetMeasureGroup]}
-)
+class MeasureGroups(TypedDict):
+    per_sample: List[SampleMeasureGroup]
+    per_dataset: List[DatasetMeasureGroup]
 
 
 class DatasetMean(DatasetMeasureGroup):
     n: int
     mean: Optional[xr.DataArray]
 
-    def __init__(self, tensor_name: TensorName, axes: Optional[Tuple[int]]):
-        self.axes: Optional[Tuple[str]] = axes
+    def __init__(self, tensor_name: TensorName, axes: Optional[Tuple[str, ...]]):
+        self.axes = axes
         self.tensor_name = tensor_name
         self.reset()
 
@@ -76,16 +76,19 @@ class DatasetMean(DatasetMeasureGroup):
             self.n = n_b
             self.mean = mean_b
         else:
+            assert self.mean is not None
             n_a = self.n
             mean_a = self.mean
             self.n = n = n_a + n_b
             self.mean = (n_a * mean_a + n_b * mean_b) / n
+            assert self.mean is not None
             assert self.mean.dtype == numpy.float64
 
     def finalize(self) -> Dict[TensorName, Dict[Measure, MeasureValue]]:
         if self.n == 0:
             return {}
         else:
+            assert self.mean is not None
             return {self.tensor_name: {Mean(axes=self.axes): self.mean}}
 
 
@@ -94,8 +97,8 @@ class MeanVarStd(SampleMeasureGroup, DatasetMeasureGroup):
     mean: Optional[xr.DataArray]
     m2: Optional[xr.DataArray]
 
-    def __init__(self, tensor_name: TensorName, axes: Optional[Tuple[int]]):
-        self.axes: Optional[Tuple[str]] = axes
+    def __init__(self, tensor_name: TensorName, axes: Optional[Tuple[str, ...]]):
+        self.axes = axes
         self.tensor_name = tensor_name
         self.reset()
 
@@ -128,19 +131,22 @@ class MeanVarStd(SampleMeasureGroup, DatasetMeasureGroup):
             self.m2 = m2_b
         else:
             n_a = self.n
+            assert self.mean is not None
             mean_a = self.mean
             m2_a = self.m2
             self.n = n = n_a + n_b
             self.mean = (n_a * mean_a + n_b * mean_b) / n
-            assert self.mean.dtype == numpy.float64
+            assert self.mean is not None and self.mean.dtype == numpy.float64
             d = mean_b - mean_a
             self.m2 = m2_a + m2_b + d ** 2 * n_a * n_b / n
-            assert self.m2.dtype == numpy.float64
+            assert self.m2 is not None and self.m2.dtype == numpy.float64
 
-    def finalize(self) -> Dict[TensorName, Dict[Measure, MeasureValue]]:
+    def finalize(self) -> Dict[TensorName, Dict[Union[Mean, Var, Std], MeasureValue]]:  # type: ignore[override]
         if self.n == 0:
             return {}
         else:
+            assert self.mean is not None
+            assert self.m2 is not None
             var = self.m2 / self.n
             return {
                 self.tensor_name: {
@@ -152,7 +158,7 @@ class MeanVarStd(SampleMeasureGroup, DatasetMeasureGroup):
 
 
 class SamplePercentiles(SampleMeasureGroup):
-    def __init__(self, tensor_name: TensorName, axes: Optional[Tuple[str]], ns: Sequence[float]):
+    def __init__(self, tensor_name: TensorName, axes: Optional[Tuple[str, ...]], ns: Sequence[float]):
         assert all(0 <= n <= 100 for n in ns)
         self.ns = ns
         self.qs = [n / 100 for n in ns]
@@ -169,7 +175,7 @@ class MeanPercentiles(DatasetMeasureGroup):
     n: int
     estimates: Optional[xr.DataArray]
 
-    def __init__(self, tensor_name: TensorName, axes: Optional[Tuple[str]], ns: Sequence[float]):
+    def __init__(self, tensor_name: TensorName, axes: Optional[Tuple[str, ...]], ns: Sequence[float]):
         assert all(0 <= n <= 100 for n in ns)
         self.ns = ns
         self.qs = [n / 100 for n in ns]
@@ -185,31 +191,33 @@ class MeanPercentiles(DatasetMeasureGroup):
         tensor = sample[self.tensor_name]
         sample_estimates = tensor.quantile(self.qs, dim=self.axes).astype(numpy.float64, copy=False)
 
-        n = numpy.prod(tensor.shape) / numpy.prod(sample_estimates.shape[1:])  # reduced voxel count
+        n = numpy.prod(tensor.shape) // numpy.prod(sample_estimates.shape[1:])  # reduced voxel count
 
         if self.n == 0:
             self.estimates = sample_estimates
         else:
+            assert self.estimates is not None
             self.estimates = (self.n * self.estimates + n * sample_estimates) / (self.n + n)
             assert self.estimates.dtype == numpy.float64
 
-        self.n += n
+        self.n += int(n)
 
-    def finalize(self) -> Dict[TensorName, Dict[Percentile, MeasureValue]]:
+    def finalize(self) -> Dict[TensorName, Dict[Percentile, MeasureValue]]:  # type: ignore[override]
         if self.n == 0:
             return {}
         else:
+            assert self.estimates is not None
             warnings.warn(f"Computed dataset percentiles naively by averaging percentiles of samples.")
             return {self.tensor_name: {Percentile(n=n, axes=self.axes): e for n, e in zip(self.ns, self.estimates)}}
 
 
 class CrickPercentiles(DatasetMeasureGroup):
     digest: Optional[List["crick.TDigest"]]
-    dims: Optional[Tuple[Hashable, ...]]
-    indices: Optional[Iterator[Tuple[int, ...]]]
+    dims: Optional[Tuple[str, ...]]
+    indices: Optional[Iterable[Tuple[int, ...]]]
     shape: Optional[Tuple[int, ...]]
 
-    def __init__(self, tensor_name: TensorName, axes: Optional[Tuple[str]], ns: Sequence[float]):
+    def __init__(self, tensor_name: TensorName, axes: Optional[Tuple[str, ...]], ns: Sequence[float]):
         assert all(0 <= n <= 100 for n in ns)
         assert axes is None or "_percentiles" not in axes
         warnings.warn(f"Computing dataset percentiles with experimental 'crick' library.")
@@ -225,7 +233,7 @@ class CrickPercentiles(DatasetMeasureGroup):
         self.indices = None
         self.shape = None
 
-    def _initialize(self, tensor_sizes: Mapping[Hashable, int]):
+    def _initialize(self, tensor_sizes: Mapping[str, int]):
         out_sizes = collections.OrderedDict(_percentiles=len(self.ns))
         if self.axes is not None:
             for d, s in tensor_sizes.items():
@@ -240,9 +248,11 @@ class CrickPercentiles(DatasetMeasureGroup):
         tensor = sample[self.tensor_name]
         assert "_percentiles" not in tensor.dims
         if self.digest is None:
-            self._initialize(tensor.sizes)
+            self._initialize({str(k): v for k, v in tensor.sizes.items()})
             assert self.digest is not None
 
+        assert self.indices is not None
+        assert self.dims is not None
         for i, idx in enumerate(self.indices):
             self.digest[i].update(tensor.isel(dict(zip(self.dims[1:], idx))))
 
@@ -250,6 +260,8 @@ class CrickPercentiles(DatasetMeasureGroup):
         if self.digest is None:
             return {}
         else:
+            assert self.shape is not None
+            assert self.dims is not None
             vs = numpy.asarray([[d.quantile(q) for d in self.digest] for q in self.qs]).reshape(self.shape)
             return {
                 self.tensor_name: {
@@ -278,7 +290,7 @@ class SingleMeasureAsGroup(SampleMeasureGroup):
 def get_measure_groups(measures: RequiredMeasures) -> MeasureGroups:
     """find a list of MeasureGroups to compute measures efficiently"""
 
-    measure_groups = {PER_SAMPLE: [], PER_DATASET: []}
+    measure_groups: MeasureGroups = {PER_SAMPLE: [], PER_DATASET: []}
     means: Set[Tuple[TensorName, Mean]] = set()
     mean_var_std_groups: Set[Tuple[TensorName, Optional[Tuple[str, ...]]]] = set()
     percentile_groups: DefaultDict[Tuple[TensorName, Optional[Tuple[str, ...]]], List[float]] = defaultdict(list)
@@ -322,22 +334,22 @@ def get_measure_groups(measures: RequiredMeasures) -> MeasureGroups:
 
 
 def compute_measures(
-    measures: RequiredMeasures, *, sample: Optional[Sample] = None, dataset: Iterator[Sample] = tuple()
+    measures: RequiredMeasures, *, sample: Optional[Sample] = None, dataset: Iterable[Sample] = tuple()
 ) -> ComputedMeasures:
     ms_groups = get_measure_groups(measures)
-    ret = {PER_SAMPLE: {}, PER_DATASET: {}}
+    ret: ComputedMeasures = {PER_SAMPLE: {}, PER_DATASET: {}}
     if sample is not None:
-        for mg in ms_groups[PER_SAMPLE]:
-            assert isinstance(mg, SampleMeasureGroup)
-            ret[PER_SAMPLE].update(mg.compute(sample))
+        for smg in ms_groups[PER_SAMPLE]:
+            assert isinstance(smg, SampleMeasureGroup)
+            ret[PER_SAMPLE].update(smg.compute(sample))
 
     for sample in dataset:
-        for mg in ms_groups[PER_DATASET]:
-            assert isinstance(mg, DatasetMeasureGroup)
-            mg.update_with_sample(sample)
+        for dmg in ms_groups[PER_DATASET]:
+            assert isinstance(dmg, DatasetMeasureGroup)
+            dmg.update_with_sample(sample)
 
-    for mg in ms_groups[PER_DATASET]:
-        assert isinstance(mg, DatasetMeasureGroup)
-        ret[PER_DATASET].update(mg.finalize())
+    for dmg in ms_groups[PER_DATASET]:
+        assert isinstance(dmg, DatasetMeasureGroup)
+        ret[PER_DATASET].update(dmg.finalize())
 
     return ret

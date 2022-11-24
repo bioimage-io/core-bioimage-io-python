@@ -190,7 +190,7 @@ def _get_data_range(data_range, dtype):
         # for floating point numbers we assume valid range from -inf to inf
         elif np.issubdtype(np.dtype(dtype), np.floating):
             min_, max_ = -np.inf, np.inf
-        elif np.issubdtype(np.dtype(dtype), np.bool):
+        elif np.issubdtype(np.dtype(dtype), np.bool):  # type: ignore[attr-defined]
             min_, max_ = 0, 1
         else:
             raise RuntimeError(f"Cannot derived data range for dtype {dtype}")
@@ -323,10 +323,10 @@ def _get_deepimagej_macro(name, kwargs, export_folder):
         lines = []
         with open(path) as f:
             for line in f:
-                kwarg = [kwarg for kwarg in replace if line.startswith(kwarg)]
-                if kwarg:
-                    assert len(kwarg) == 1
-                    kwarg = kwarg[0]
+                kwargs = [kwarg for kwarg in replace if line.startswith(kwarg)]
+                if kwargs:
+                    assert len(kwargs) == 1
+                    kwarg = kwargs[0]
                     # each kwarg should only be replaced ones
                     val = replace.pop(kwarg)
                     lines.append(f"{kwarg} = {val};\n")

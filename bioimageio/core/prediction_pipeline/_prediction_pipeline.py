@@ -11,7 +11,6 @@ from ._combined_processing import CombinedProcessing
 from ._model_adapters import ModelAdapter, create_model_adapter
 from ._stat_state import StatsState
 from ._utils import ComputedMeasures, Sample, TensorName
-from .. import load_resource_description
 from ..resource_io.utils import resolve_raw_node
 
 
@@ -167,7 +166,7 @@ class _PredictionPipelineImpl(PredictionPipeline):
         Note: The preprocessing might change input_tensors in-pace.
         """
         input_sample = dict(zip([ipt.name for ipt in self.input_specs], input_tensors))
-        computed_measures = {}
+        computed_measures: ComputedMeasures = {}
         self.apply_preprocessing(input_sample, computed_measures)
 
         prediction_tensors = self.predict(*list(input_sample.values()))
@@ -190,7 +189,7 @@ def create_prediction_pipeline(
     weight_format: Optional[str] = None,
     dataset_for_initial_statistics: Iterable[Sequence[xr.DataArray]] = tuple(),
     update_dataset_stats_after_n_samples: Optional[int] = None,
-    update_dataset_stats_for_n_samples: int = float("inf"),
+    update_dataset_stats_for_n_samples: Union[int, float] = float("inf"),
     model_adapter: Optional[ModelAdapter] = None,
 ) -> PredictionPipeline:
     """
@@ -201,7 +200,7 @@ def create_prediction_pipeline(
     * computation of output statistics
     * postprocessing
     """
-    model_adapter: ModelAdapter = model_adapter or create_model_adapter(
+    model: ModelAdapter = model_adapter or create_model_adapter(
         bioimageio_model=bioimageio_model, devices=devices, weight_format=weight_format
     )
     if isinstance(bioimageio_model, nodes.Model):
@@ -236,7 +235,7 @@ def create_prediction_pipeline(
     return _PredictionPipelineImpl(
         name=bioimageio_model.name,
         bioimageio_model=bioimageio_model,
-        model=model_adapter,
+        model=model,
         preprocessing=preprocessing,
         postprocessing=postprocessing,
         ipt_stats=ipt_stats,

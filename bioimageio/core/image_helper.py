@@ -13,7 +13,7 @@ from bioimageio.core.resource_io.nodes import InputTensor, OutputTensor
 #
 
 
-def transform_input_image(image: np.ndarray, tensor_axes: str, image_axes: Optional[str] = None):
+def transform_input_image(image: np.ndarray, tensor_axes: Sequence[str], image_axes: Optional[str] = None):
     """Transform input image into output tensor with desired axes.
 
     Args:

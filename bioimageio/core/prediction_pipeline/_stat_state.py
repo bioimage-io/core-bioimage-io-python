@@ -1,4 +1,4 @@
-from typing import Dict, Iterable, Optional
+from typing import Dict, Iterable, Optional, Union
 
 from tqdm import tqdm
 
@@ -18,8 +18,8 @@ class StatsState:
     sample_count: int
     last_sample: Optional[Sample]
     measure_groups: MeasureGroups
-    _n_start: int
-    _n_stop: int
+    _n_start: Union[int, float]
+    _n_stop: Union[int, float]
     _final_dataset_stats: Optional[Dict[TensorName, Dict[Measure, MeasureValue]]]
 
     def __init__(
@@ -28,7 +28,7 @@ class StatsState:
         *,
         dataset: Iterable[Sample] = tuple(),
         update_dataset_stats_after_n_samples: Optional[int] = None,
-        update_dataset_stats_for_n_samples: int = float("inf"),
+        update_dataset_stats_for_n_samples: Union[int, float] = float("inf"),
     ):
         """iterates over dataset to compute dataset statistics (if required). The resulting dataset statistics are further updated with each new sample. A sample in this context may be a mini-batch.
 
@@ -77,15 +77,15 @@ class StatsState:
             mg.update_with_sample(sample)
 
     def compute_measures(self) -> ComputedMeasures:
-        ret = {PER_SAMPLE: {}, PER_DATASET: {}}
+        ret: ComputedMeasures = {PER_SAMPLE: {}, PER_DATASET: {}}
         if self.last_sample is not None:
-            for mg in self.measure_groups[PER_SAMPLE]:
-                ret[PER_SAMPLE].update(mg.compute(self.last_sample))
+            for smg in self.measure_groups[PER_SAMPLE]:
+                ret[PER_SAMPLE].update(smg.compute(self.last_sample))
 
         if self._final_dataset_stats is None:
             dataset_stats = {}
-            for mg in self.measure_groups[PER_DATASET]:
-                dataset_stats.update(mg.finalize())
+            for dmg in self.measure_groups[PER_DATASET]:
+                dataset_stats.update(dmg.finalize())
 
             if self.sample_count > self._n_stop:
                 # stop recomputing final dataset statistics

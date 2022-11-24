@@ -1,6 +1,6 @@
 import logging
 import warnings
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 import onnxruntime as rt
 import xarray as xr
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 
 class ONNXModelAdapter(ModelAdapter):
-    def _load(self, *, devices: Optional[List[str]] = None):
+    def _load(self, *, devices: Optional[Sequence[str]] = None):
         self._internal_output_axes = [tuple(out.axes) for out in self.bioimageio_model.outputs]
 
         self._session = rt.InferenceSession(str(self.bioimageio_model.weights["onnx"].source))

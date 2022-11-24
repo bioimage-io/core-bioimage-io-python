@@ -1,6 +1,6 @@
 import gc
 import warnings
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 import torch
 import xarray as xr
@@ -11,11 +11,13 @@ from ._model_adapter import ModelAdapter
 
 
 class PytorchModelAdapter(ModelAdapter):
-    def _load(self, *, devices: Optional[List[str]] = None):
+    def _load(self, *, devices: Optional[Sequence[str]] = None):
         self._model = self.get_nn_instance(self.bioimageio_model)
 
         if devices is None:
-            self._devices = ["cuda" if torch.cuda.is_available() else "cpu"]
+            self._devices: Optional[List[torch.device]] = [
+                torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+            ]
         else:
             self._devices = [torch.device(d) for d in devices]
 
@@ -34,6 +36,7 @@ class PytorchModelAdapter(ModelAdapter):
         self._internal_output_axes = [tuple(out.axes) for out in self.bioimageio_model.outputs]
 
     def _forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
+        assert self._devices is not None
         with torch.no_grad():
             tensors = [torch.from_numpy(ipt.data) for ipt in input_tensors]
             tensors = [t.to(self._devices[0]) for t in tensors]
