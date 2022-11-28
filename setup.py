@@ -23,6 +23,7 @@ setup(
         "Intended Audience :: Developers",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
     ],
     packages=find_namespace_packages(exclude=["tests"]),  # Required
     install_requires=["bioimageio.spec==0.4.8.*", "imageio>=2.5", "numpy", "ruamel.yaml", "tqdm", "xarray", "tifffile"],
