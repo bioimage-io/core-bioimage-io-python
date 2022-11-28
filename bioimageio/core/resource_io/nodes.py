@@ -240,6 +240,6 @@ class Output(Parameter, workflow_raw_nodes.Output):
 
 @dataclass
 class Workflow(workflow_raw_nodes.Workflow, RDF):
-    inputs_spec: List[Input] = missing
-    options_spec: List[Option] = missing
-    outputs_spec: List[Output] = missing
+    inputs: List[Input] = missing
+    options: List[Option] = missing
+    outputs: List[Output] = missing
