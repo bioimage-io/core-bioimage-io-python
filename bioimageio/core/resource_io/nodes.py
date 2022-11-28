@@ -209,12 +209,18 @@ class Model(model_raw_nodes.Model, RDF):
 
 @dataclass
 class Axis(Node, workflow_raw_nodes.Axis):
-    pass
+    name: Union[str, List[str]] = missing
+
+    def __post_init__(self):
+        if self.name is missing:
+            self.name = self.type
+
+        super().__post_init__()
 
 
 @dataclass
 class Parameter(Node, workflow_raw_nodes.Parameter):
-    axes: Union[_Missing, List[Axis], workflow_raw_nodes.ArbitraryAxes] = missing
+    axes: Union[_Missing, List[Axis], workflow_raw_nodes.UnknownAxes] = missing
 
 
 @dataclass
