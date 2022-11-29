@@ -138,7 +138,7 @@ class MeanVarStd(SampleMeasureGroup, DatasetMeasureGroup):
             self.mean = (n_a * mean_a + n_b * mean_b) / n
             assert self.mean is not None and self.mean.dtype == numpy.float64
             d = mean_b - mean_a
-            self.m2 = m2_a + m2_b + d ** 2 * n_a * n_b / n
+            self.m2 = m2_a + m2_b + d**2 * n_a * n_b / n
             assert self.m2 is not None and self.m2.dtype == numpy.float64
 
     def finalize(self) -> Dict[TensorName, Dict[Union[Mean, Var, Std], MeasureValue]]:  # type: ignore[override]
