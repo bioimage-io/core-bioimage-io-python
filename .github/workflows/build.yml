@@ -43,9 +43,6 @@ jobs:
     - name: pytest-base-bioimage-spec-conda
       shell: bash -l {0}
       run: pytest --disable-pytest-warnings
-    - name: Install MyPy
-      if: matrix.python-version==3.9
-      run: pip install mypy
     - name: MyPy
       if: matrix.python-version==3.9
       run: |
@@ -76,9 +73,6 @@ jobs:
     - name: pytest-base-bioimage-spec-main
       shell: bash -l {0}
       run: pytest --disable-pytest-warnings
-    - name: Install MyPy
-      if: matrix.python-version==3.9
-      run: pip install mypy
     - name: MyPy
       if: matrix.python-version==3.9
       run: |
