@@ -1,3 +1,4 @@
+# type: ignore
 import collections
 import os
 from fractions import Fraction
