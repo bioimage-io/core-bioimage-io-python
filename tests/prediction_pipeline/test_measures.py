@@ -78,7 +78,7 @@ def test_measure_groups(measures_mode):
             else:
                 raise NotImplementedError(mode)
 
-    groups = get_measure_groups({mode: measures})[mode]
+    groups = get_measure_groups({mode: measures})[mode]  # type: ignore[literal-required]
     actual = {}
     for g in groups:
         if mode == PER_SAMPLE:

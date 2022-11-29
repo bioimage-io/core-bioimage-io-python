@@ -11,9 +11,9 @@ from bioimageio.core.resource_tests import test_model as _test_model
 try:
     import tensorflow
 except ImportError:
-    tf_version = None
+    tf_version: Optional[str] = None
 else:
-    tf_version: Optional[str] = ".".join(tensorflow.__version__.split(".")[:2])
+    tf_version = ".".join(tensorflow.__version__.split(".")[:2])
 
 
 def _test_build_spec(

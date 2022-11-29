@@ -5,17 +5,16 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 from warnings import warn
 
+import bioimageio.spec as spec
+import bioimageio.spec.model as model_spec
 import imageio
 import numpy as np
 import requests
 import tifffile
-
-import bioimageio.spec as spec
-import bioimageio.spec.model as model_spec
 from bioimageio.core import export_resource_package, load_raw_resource_description
 from bioimageio.core.resource_io.nodes import URI
-from bioimageio.spec.shared.raw_nodes import ImportableModule, ImportableSourceFile
 from bioimageio.spec.shared import resolve_local_source, resolve_source
+from bioimageio.spec.shared.raw_nodes import ImportableModule, ImportableSourceFile
 
 try:
     from typing import get_args
@@ -454,6 +453,8 @@ def _write_sample_data(input_paths, output_paths, input_axes, output_axes, pixel
         write_im(sample_in_path, inp, axes, pixel_size)
         sample_in_paths.append(sample_in_path)
 
+    assert sample_in_paths
+
     sample_out_paths = []
     for i, (out_path, axes) in enumerate(zip(output_paths, output_axes)):
         outp = np.load(export_folder / out_path)
@@ -461,6 +462,7 @@ def _write_sample_data(input_paths, output_paths, input_axes, output_axes, pixel
         write_im(sample_out_path, outp, axes)
         sample_out_paths.append(sample_out_path)
 
+    assert sample_out_paths
     return [Path(p.name) for p in sample_in_paths], [Path(p.name) for p in sample_out_paths]
 
 
@@ -609,17 +611,17 @@ def build_model(
     sample_outputs: Optional[List[str]] = None,
     # tensor specific
     input_names: Optional[List[str]] = None,
-    input_step: Optional[List[List[int]]] = None,
-    input_min_shape: Optional[List[List[int]]] = None,
-    input_data_range: Optional[List[List[Union[int, str]]]] = None,
+    input_step: Optional[List[Optional[List[int]]]] = None,
+    input_min_shape: Optional[List[Optional[List[int]]]] = None,
+    input_data_range: Optional[List[Optional[List[Union[int, str]]]]] = None,
     output_names: Optional[List[str]] = None,
-    output_reference: Optional[List[str]] = None,
-    output_scale: Optional[List[List[int]]] = None,
-    output_offset: Optional[List[List[int]]] = None,
-    output_data_range: Optional[List[List[Union[int, str]]]] = None,
-    halo: Optional[List[List[int]]] = None,
-    preprocessing: Optional[List[List[Dict[str, Dict[str, Union[int, float, str]]]]]] = None,
-    postprocessing: Optional[List[List[Dict[str, Dict[str, Union[int, float, str]]]]]] = None,
+    output_reference: Optional[List[Optional[str]]] = None,
+    output_scale: Optional[List[Optional[List[int]]]] = None,
+    output_offset: Optional[List[Optional[List[int]]]] = None,
+    output_data_range: Optional[List[Optional[List[Union[int, str]]]]] = None,
+    halo: Optional[List[Optional[List[int]]]] = None,
+    preprocessing: Optional[List[Optional[List[Dict[str, Dict[str, Union[int, float, str]]]]]]] = None,
+    postprocessing: Optional[List[Optional[List[Dict[str, Dict[str, Union[int, float, str]]]]]]] = None,
     pixel_sizes: Optional[List[Dict[str, float]]] = None,
     # general optional
     maintainers: Optional[List[Dict[str, str]]] = None,
@@ -731,19 +733,37 @@ def build_model(
 
     assert len(test_inputs)
     assert len(test_outputs)
-    test_inputs = _ensure_local_or_url(test_inputs, root)
-    test_outputs = _ensure_local_or_url(test_outputs, root)
+    checked_test_inputs = _ensure_local_or_url(test_inputs, root)
+    assert isinstance(checked_test_inputs, list)
+    test_inputs = checked_test_inputs
+    checked_test_outputs = _ensure_local_or_url(test_outputs, root)
+    assert isinstance(checked_test_outputs, list)
+    test_outputs = checked_test_outputs
 
     n_inputs = len(test_inputs)
+
+    if input_data_range is None:
+        input_data_range = n_inputs * [None]  # type: ignore[assignment]
+
+    if input_min_shape is None:
+        input_min_shape = n_inputs * [None]  # type: ignore[assignment]
+
     if input_names is None:
         input_names = [f"input{i}" for i in range(n_inputs)]
     else:
         assert len(input_names) == len(test_inputs)
 
-    input_step = n_inputs * [None] if input_step is None else input_step
-    input_min_shape = n_inputs * [None] if input_min_shape is None else input_min_shape
-    input_data_range = n_inputs * [None] if input_data_range is None else input_data_range
-    preprocessing = n_inputs * [None] if preprocessing is None else preprocessing
+    if input_step is None:
+        input_step = n_inputs * [None]  # type: ignore[assignment]
+
+    if preprocessing is None:
+        preprocessing = n_inputs * [None]  # type: ignore[assignment]
+
+    assert input_data_range is not None
+    assert input_min_shape is not None
+    assert input_names is not None
+    assert input_step is not None
+    assert preprocessing is not None
 
     inputs = [
         _get_input_tensor(root / test_in, name, step, min_shape, data_range, axes, preproc)
@@ -753,21 +773,41 @@ def build_model(
     ]
 
     n_outputs = len(test_outputs)
+
+    if output_data_range is None:
+        output_data_range = n_outputs * [None]  # type: ignore[assignment]
+
+    if halo is None:
+        halo = n_outputs * [None]  # type: ignore[assignment]
+
     if output_names is None:
         output_names = [f"output{i}" for i in range(n_outputs)]
     else:
         assert len(output_names) == len(test_outputs)
 
-    output_reference = n_outputs * [None] if output_reference is None else output_reference
-    output_scale = n_outputs * [None] if output_scale is None else output_scale
-    output_offset = n_outputs * [None] if output_offset is None else output_offset
-    output_data_range = n_outputs * [None] if output_data_range is None else output_data_range
-    postprocessing = n_outputs * [None] if postprocessing is None else postprocessing
-    halo = n_outputs * [None] if halo is None else halo
+    if output_offset is None:
+        output_offset = n_outputs * [None]  # type: ignore[assignment]
+
+    if output_reference is None:
+        output_reference = n_outputs * [None]  # type: ignore[assignment]
+
+    if output_scale is None:
+        output_scale = n_outputs * [None]  # type: ignore[assignment]
+
+    if postprocessing is None:
+        postprocessing = n_outputs * [None]  # type: ignore[assignment]
+
+    assert halo is not None
+    assert output_data_range is not None
+    assert output_names is not None
+    assert output_offset is not None
+    assert output_reference is not None
+    assert output_scale is not None
+    assert postprocessing is not None
 
     outputs = [
         _get_output_tensor(root / test_out, name, reference, scale, offset, axes, data_range, postproc, hal)
-        for test_out, name, reference, scale, offset, axes, data_range, postproc, hal in zip(
+        for test_out, name, reference, scale, offset, axes, data_range, postproc, hal in zip(  # type: ignore[misc]
             test_outputs,
             output_names,
             output_reference,
@@ -798,11 +838,15 @@ def build_model(
 
     authors = [model_spec.raw_nodes.Author(**a) for a in authors]
     cite = _build_cite(cite)
-    documentation = _ensure_local(documentation, root)
+    local_documentation = _ensure_local(documentation, root)
+    assert isinstance(local_documentation, Path)
     if covers is None:
         covers = _generate_covers(root / test_inputs[0], root / test_outputs[0], input_axes[0], output_axes[0], root)
     else:
-        covers = _ensure_local(covers, root)
+        _local_covers = _ensure_local(covers, root)
+        assert isinstance(_local_covers, list)
+        covers = _local_covers
+
     if license is None:
         license = "CC-BY-4.0"
 
@@ -833,8 +877,8 @@ def build_model(
                 test_inputs, test_outputs, input_axes, output_axes, pixel_sizes, root
             )
         # deepimagej expect tifs as sample data
-        assert all(os.path.splitext(path)[1] in (".tif", ".tiff") for path in sample_inputs)
-        assert all(os.path.splitext(path)[1] in (".tif", ".tiff") for path in sample_outputs)
+        assert all(Path(p).suffix in (".tif", ".tiff") for p in sample_inputs or [])
+        assert all(Path(p).suffix in (".tif", ".tiff") for p in sample_outputs or [])
 
         ij_config, ij_attachments = _get_deepimagej_config(
             root, test_inputs, test_outputs, input_axes, output_axes, pixel_sizes, preprocessing, postprocessing
@@ -864,10 +908,14 @@ def build_model(
 
     # make sure sample inputs / outputs are relative paths
     if sample_inputs is not None:
-        sample_inputs = _ensure_local_or_url(sample_inputs, root)
+        checked_sample_inputs = _ensure_local_or_url(sample_inputs, root)
+        assert isinstance(checked_sample_inputs, list)
+        sample_inputs = checked_sample_inputs
 
     if sample_outputs is not None:
-        sample_outputs = _ensure_local_or_url(sample_outputs, root)
+        checked_sample_outputs = _ensure_local_or_url(sample_outputs, root)
+        assert isinstance(checked_sample_outputs, list)
+        sample_outputs = checked_sample_outputs
 
     # optional kwargs, don't pass them if none
     optional_kwargs = {
@@ -907,7 +955,7 @@ def build_model(
             cite=cite,
             covers=covers,
             description=description,
-            documentation=documentation,
+            documentation=local_documentation,
             format_version=format_version,
             inputs=inputs,
             license=license,
@@ -921,7 +969,7 @@ def build_model(
             weights=weights,
             **kwargs,
         )
-        model_package = export_resource_package(model, output_path=output_path)
+        model_package = export_resource_package(model, output_path=Path(output_path))
     except Exception as e:
         raise e
     finally:

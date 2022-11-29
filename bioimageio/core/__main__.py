@@ -4,16 +4,13 @@ import os
 import sys
 import warnings
 from glob import glob
-
 from pathlib import Path
-from pprint import pformat, pprint
+from pprint import pformat
 from typing import List, Optional
 
 import typer
-
-from bioimageio.core import __version__, prediction, commands, resource_tests, load_raw_resource_description
+from bioimageio.core import __version__, commands, prediction, resource_tests
 from bioimageio.core.common import TestSummary
-from bioimageio.core.prediction_pipeline import get_weight_formats
 from bioimageio.spec.__main__ import app, help_version as help_version_spec
 from bioimageio.spec.model.raw_nodes import WeightsFormat
 
@@ -27,14 +24,14 @@ try:
         warnings.simplefilter("ignore")
         from bioimageio.core.weight_converter import torch as torch_converter
 except ImportError:
-    torch_converter = None
+    torch_converter = None  # type: ignore[assignment]
 
 try:
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         from bioimageio.core.weight_converter import keras as keras_converter
 except ImportError:
-    keras_converter = None
+    keras_converter = None  # type: ignore[assignment]
 
 
 # extend help/version string by core version
@@ -78,7 +75,7 @@ package.__doc__ = commands.package.__doc__
 
 # if we want to use something like "choice" for the weight formats, we need to use an enum, see:
 # https://github.com/tiangolo/typer/issues/182
-WeightFormatEnum = enum.Enum("WeightFormatEnum", {wf: wf for wf in get_args(WeightsFormat)})
+WeightFormatEnum = enum.Enum("WeightFormatEnum", {wf: wf for wf in get_args(WeightsFormat)})  # type: ignore[misc]
 # Enum with in values does not work with click.Choice: https://github.com/pallets/click/issues/784
 # so a simple Enum with auto int values is not an option:
 # WeightFormatEnum = enum.Enum("WeightFormatEnum", get_args(WeightsFormat))
@@ -159,9 +156,10 @@ def test_resource(
     devices: Optional[List[str]] = typer.Option(None, help="(for model only) Devices for running the model."),
     decimal: int = typer.Option(4, help="(for model only) The test precision."),
 ):
-    # this is a weird typer bug: default devices are empty tuple although they should be None
-    if len(devices) == 0:
+    # this is a weird typer bug: default devices are empty tuple, although they should be None
+    if not devices:
         devices = None
+
     summaries = resource_tests.test_resource(
         rdf, weight_format=None if weight_format is None else weight_format.value, devices=devices, decimal=decimal
     )
@@ -200,9 +198,10 @@ def predict_image(
         tiling = json.loads(tiling.replace("'", '"'))
         assert isinstance(tiling, dict)
 
-    # this is a weird typer bug: default devices are empty tuple although they should be None
-    if len(devices) == 0:
+    # this is a weird typer bug: default devices are empty tuple, although they should be None
+    if not devices:
         devices = None
+
     prediction.predict_image(
         model_rdf, inputs, outputs, padding, tiling, None if weight_format is None else weight_format.value, devices
     )
@@ -231,11 +230,14 @@ def predict_images(
     weight_format: Optional[WeightFormatEnum] = typer.Option(None, help="The weight format to use."),
     devices: Optional[List[str]] = typer.Option(None, help="Devices for running the model."),
 ):
-    input_files = glob(input_pattern)
+    input_files = [Path(p) for p in glob(input_pattern)]
     input_names = [os.path.split(infile)[1] for infile in input_files]
-    output_files = [os.path.join(output_folder, fname) for fname in input_names]
+    output_files = [Path(output_folder) / fname for fname in input_names]
     if output_extension is not None:
-        output_files = [f"{os.path.splitext(outfile)[0]}{output_extension}" for outfile in output_files]
+        if not output_extension.startswith("."):
+            output_extension = "." + output_extension
+
+        output_files = [outfile.with_suffix(output_extension) for outfile in output_files]
 
     if isinstance(padding, str):
         padding = json.loads(padding.replace("'", '"'))
@@ -244,9 +246,10 @@ def predict_images(
         tiling = json.loads(tiling.replace("'", '"'))
         assert isinstance(tiling, dict)
 
-    # this is a weird typer bug: default devices are empty tuple although they should be None
-    if len(devices) == 0:
+    # this is a weird typer bug: default devices are empty tuple, although they should be None
+    if not devices:
         devices = None
+
     prediction.predict_images(
         model_rdf,
         input_files,

@@ -1,8 +1,9 @@
+# mypy: disable-error-code=attr-defined
 import logging
 import warnings
+from typing import List, Optional
 
 import pytest
-
 from bioimageio.core import export_resource_package
 from bioimageio.spec import __version__ as bioimageio_spec_version
 
@@ -23,7 +24,7 @@ tensorflow1_models = ["stardist"]
 tensorflow2_models = ["unet2d_keras_tf2"]
 keras_tf1_models = ["unet2d_keras"]
 keras_tf2_models = ["unet2d_keras_tf2"]
-tensorflow_js_models = []
+tensorflow_js_models: List[str] = []
 
 
 model_sources = {
@@ -73,16 +74,16 @@ model_sources = {
     "shape_change": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
         "upsample_test_model/rdf.yaml"
-    )
+    ),
 }
 
 try:
     import torch
 
-    torch_version = tuple(map(int, torch.__version__.split(".")[:2]))
+    torch_version: Optional[Tuple[int, int]] = tuple(map(int, torch.__version__.split(".")[:2]))
     logger.warning(f"detected torch version {torch_version}.x")
 except ImportError:
-    torch = None
+    torch = None  # type: ignore[assignment]
     torch_version = None
 skip_torch = torch is None
 
@@ -95,9 +96,9 @@ skip_onnx = onnxruntime is None
 try:
     import tensorflow
 
-    tf_major_version = int(tensorflow.__version__.split(".")[0])
+    tf_major_version: Optional[int] = int(tensorflow.__version__.split(".")[0])
 except ImportError:
-    tensorflow = None
+    tensorflow = None  # type: ignore[assignment]
     tf_major_version = None
 skip_tensorflow = tensorflow is None
 skip_tensorflow_js = True  # TODO: add a tensorflow_js example model

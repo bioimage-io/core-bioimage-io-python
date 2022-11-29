@@ -70,7 +70,7 @@ def test_load_model_with_rel_str_source(unet2d_nuclei_broad_model):
     assert model
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="remote model is a pytorch model")
+@pytest.mark.skipif(pytest.skip_torch, reason="remote model is a pytorch model")  # type: ignore[attr-defined]
 def test_load_remote_rdf():
     from bioimageio.core import load_resource_description
     from bioimageio.core.resource_io import nodes

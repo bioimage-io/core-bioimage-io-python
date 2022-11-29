@@ -1,17 +1,17 @@
 import collections
 import os
+from fractions import Fraction
 from itertools import product
 from pathlib import Path
-from typing import Dict, Iterator, List, NamedTuple, Optional, OrderedDict, Sequence, Tuple, Union
-from fractions import Fraction
+from typing import Dict, Iterable, Iterator, List, NamedTuple, Optional, OrderedDict, Sequence, Tuple, TypedDict, Union
 
 import numpy as np
 import xarray as xr
 from tqdm import tqdm
 
-from bioimageio.core import image_helper
-from bioimageio.core import load_resource_description
+from bioimageio.core import image_helper, load_resource_description
 from bioimageio.core.prediction_pipeline import PredictionPipeline, create_prediction_pipeline
+from bioimageio.core.resource_io import nodes
 from bioimageio.core.resource_io.nodes import ImplicitOutputShape, Model, ResourceDescription
 from bioimageio.spec.shared import raw_nodes
 from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
@@ -28,6 +28,12 @@ class TileDef(NamedTuple):
     local: Dict[str, slice]
 
 
+class TilingConfig(TypedDict):
+    halo: Dict[str, int]
+    tile: Dict[str, int]
+    scale: Dict[str, int]  # todo: mark as not required: typing_extensions.NotRequired (typing py 3.11)
+
+
 def get_tiling(
     shape: Sequence[int],
     tile_shape: Dict[str, int],
@@ -38,12 +44,12 @@ def get_tiling(
     # outer_tile is the "input" tile, inner_tile is the "output" tile with the halo removed
     # tile_shape is the shape of the outer_tile
     assert len(shape) == len(input_axes)
-    scaling = {ax: Fraction(sc).limit_denominator() for ax, sc in scaling.items()}
-
+    scaling_fr = {ax: Fraction(sc).limit_denominator() for ax, sc in scaling.items()}
+    del scaling
     shape_ = [sh for sh, ax in zip(shape, input_axes) if ax in "xyz"]
     spatial_axes = [ax for ax in input_axes if ax in "xyz"]
     inner_tile_shape_ = [tile_shape[ax] - 2 * halo[ax] for ax in spatial_axes]
-    scaling_ = [scaling[ax] for ax in spatial_axes]
+    scaling_ = [scaling_fr[ax] for ax in spatial_axes]
     assert all([sh % fr.denominator == 0 for sh, fr in zip(shape_, scaling_)])
     assert all([ish % fr.denominator == 0 for ish, fr in zip(inner_tile_shape_, scaling_)])
     halo_ = [halo[ax] for ax in spatial_axes]
@@ -71,9 +77,9 @@ def get_tiling(
 
         local_tile = {
             ax: slice(
-                inner_tile[ax].start - int(outer_tile[ax].start * scaling[ax]),
-                -(int(outer_tile[ax].stop * scaling[ax]) - inner_tile[ax].stop)
-                if int(outer_tile[ax].stop * scaling[ax]) != inner_tile[ax].stop
+                inner_tile[ax].start - int(outer_tile[ax].start * scaling_fr[ax]),
+                -(int(outer_tile[ax].stop * scaling_fr[ax]) - inner_tile[ax].stop)
+                if int(outer_tile[ax].stop * scaling_fr[ax]) != inner_tile[ax].stop
                 else None,
             )
             for ax in spatial_axes
@@ -108,7 +114,9 @@ def _predict_with_tiling_impl(
     halo = halos[0]
     scaling = scales[0]
 
-    tiles = get_tiling(shape=input_.shape, tile_shape=tile_shape, halo=halo, input_axes=input_.dims, scaling=scaling)
+    tiles = get_tiling(
+        shape=input_.shape, tile_shape=tile_shape, halo=halo, input_axes=[str(d) for d in input_.dims], scaling=scaling
+    )
 
     assert all(isinstance(ax, str) for ax in input_.dims)
     input_axes: Tuple[str, ...] = input_.dims  # noqa
@@ -271,7 +279,11 @@ def _determine_shape(min_shape, step, axes):
     return shape
 
 
-def _parse_tiling(tiling, input_specs, output_specs):
+def _parse_tiling(
+    tiling: Union[None, bool, TilingConfig],
+    input_specs: List[nodes.InputTensor],
+    output_specs: List[nodes.OutputTensor],
+):
     if tiling is None:  # no tiling
         return tiling
     if len(input_specs) > 1:
@@ -290,15 +302,15 @@ def _parse_tiling(tiling, input_specs, output_specs):
         )
     axes = input_spec.axes
 
-    def check_tiling(tiling):
-        assert "halo" in tiling and "tile" in tiling
+    def check_tiling(tc: TilingConfig):
+        assert "halo" in tc and "tile" in tc
         spatial_axes = [ax for ax in axes if ax in "xyz"]
-        halo = tiling["halo"]
-        tile = tiling["tile"]
-        scale = tiling.get("scale", dict())
-        assert all(halo.get(ax, 0) >= 0 for ax in spatial_axes)
-        assert all(tile.get(ax, 0) > 0 for ax in spatial_axes)
-        assert all(scale.get(ax, 1) > 0 for ax in spatial_axes)
+        h = tc["halo"]
+        t = tc["tile"]
+        s = tc.get("scale", dict())
+        assert all(h.get(ax, 0) >= 0 for ax in spatial_axes)
+        assert all(t.get(ax, 0) > 0 for ax in spatial_axes)
+        assert all(s.get(ax, 1) > 0 for ax in spatial_axes)
 
     if isinstance(tiling, dict) or (isinstance(tiling, bool) and tiling):
         # NOTE we assume here that shape in input and output are the same
@@ -308,7 +320,9 @@ def _parse_tiling(tiling, input_specs, output_specs):
         # input shape to compute the tile size and halo here
         shape = input_spec.shape
         if not isinstance(shape, list):
+            assert isinstance(shape, nodes.ParametrizedInputShape)
             shape = _determine_shape(shape.min, shape.step, axes)
+
         assert isinstance(shape, list)
         assert len(shape) == len(axes)
 
@@ -322,7 +336,7 @@ def _parse_tiling(tiling, input_specs, output_specs):
             halo = [0] * len(axes)
         assert len(halo) == len(axes)
 
-        default_tiling = {
+        default_tiling: TilingConfig = {
             "halo": {ax: ha for ax, ha in zip(axes, halo) if ax in "xyz"},
             "tile": {ax: sh for ax, sh in zip(axes, shape) if ax in "xyz"},
             "scale": {ax: sc for ax, sc in zip(axes, scale) if ax in "xyz"},
@@ -332,12 +346,15 @@ def _parse_tiling(tiling, input_specs, output_specs):
         if isinstance(tiling, dict):
             for key in ["halo", "tile", "scale"]:
                 default_tiling.update(tiling.get(key, dict()))
+
         tiling = default_tiling
+        assert isinstance(tiling, dict)
         check_tiling(tiling)
     elif isinstance(tiling, bool) and not tiling:
         raise NotImplementedError("Should be unreachable")
     else:
         raise ValueError(f"Invalid argument for tiling: {tiling}")
+
     return tiling
 
 
@@ -432,7 +449,7 @@ def predict_image(
     model_rdf: Union[RawResourceDescription, ResourceDescription, os.PathLike, str, dict, raw_nodes.URI],
     inputs: Union[Tuple[Path, ...], List[Path], Path],
     outputs: Union[Tuple[Path, ...], List[Path], Path],
-    padding: Optional[Union[bool, Dict[str, int]]] = None,
+    padding: Optional[Union[bool, Dict[str, Union[int, str]]]] = None,
     tiling: Optional[Union[bool, Dict[str, Dict[str, int]]]] = None,
     weight_format: Optional[str] = None,
     devices: Optional[List[str]] = None,
@@ -499,7 +516,7 @@ def predict_images(
         bioimageio_model=model, weight_format=weight_format, devices=devices
     ) as prediction_pipeline:
 
-        prog = zip(inputs, outputs)
+        prog: Iterable = zip(inputs, outputs)
         if verbose:
             prog = tqdm(prog, total=len(inputs))
 

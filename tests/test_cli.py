@@ -126,7 +126,7 @@ def test_torch_to_torchscript(unet2d_nuclei_broad_model, tmp_path):
     assert out_path.exists()
 
 
-@pytest.mark.skipif(pytest.skip_onnx, reason="requires torch and onnx")
+@pytest.mark.skipif(pytest.skip_onnx, reason="requires torch and onnx")  # type: ignore[attr-defined]
 def test_torch_to_onnx(unet2d_nuclei_broad_model, tmp_path):
     out_path = tmp_path.with_suffix(".onnx")
     ret = run_subprocess(["bioimageio", "convert-torch-weights-to-onnx", str(unet2d_nuclei_broad_model), str(out_path)])

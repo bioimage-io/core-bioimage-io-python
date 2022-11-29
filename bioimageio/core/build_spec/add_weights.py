@@ -64,7 +64,7 @@ def add_weights(
     model.weights.update(new_weights)
 
     try:
-        model_package = export_resource_package(model, output_path=output_path)
+        model_package = export_resource_package(model, output_path=Path(output_path))
         model = load_raw_resource_description(model_package)
     except Exception as e:
         raise e

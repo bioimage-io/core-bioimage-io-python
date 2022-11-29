@@ -40,7 +40,7 @@ def package(
 
     try:
         path = path.with_name(path.name.format(src_name=rdf_local_source.stem))
-        shutil.move(tmp_package_path, path)
+        shutil.move(str(tmp_package_path), str(path))
     except Exception as e:
         print(f"Failed to move package from {tmp_package_path} to {path} due to: {e}")
         if verbose:

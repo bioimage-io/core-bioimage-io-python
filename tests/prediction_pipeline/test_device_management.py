@@ -61,19 +61,19 @@ def test_device_management_torchscript(any_torchscript_model):
     _test_device_management(any_torchscript_model, "torchscript")
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires torch for device discovery")
+@pytest.mark.skipif(pytest.skip_torch, reason="requires torch for device discovery")  # type: ignore[attr-defined]
 @skip_on(TooFewDevicesException, reason="Too few devices")
 def test_device_management_onnx(any_onnx_model):
     _test_device_management(any_onnx_model, "onnx")
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires torch for device discovery")
+@pytest.mark.skipif(pytest.skip_torch, reason="requires torch for device discovery")  # type: ignore[attr-defined]
 @skip_on(TooFewDevicesException, reason="Too few devices")
 def test_device_management_tensorflow(any_tensorflow_model):
     _test_device_management(any_tensorflow_model, "tensorflow_saved_model_bundle")
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires torch for device discovery")
+@pytest.mark.skipif(pytest.skip_torch, reason="requires torch for device discovery")  # type: ignore[attr-defined]
 @skip_on(TooFewDevicesException, reason="Too few devices")
 def test_device_management_keras(any_keras_model):
     _test_device_management(any_keras_model, "keras_hdf5")

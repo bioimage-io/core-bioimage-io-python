@@ -60,7 +60,7 @@ def test_validation_section_warning(unet2d_nuclei_broad_model, tmp_path: pathlib
     assert summary["status"] == "passed"
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
+@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")  # type: ignore[attr-defined]
 def test_issue289():
     """test for failure case from https://github.com/bioimage-io/core-bioimage-io-python/issues/289"""
     import bioimageio.core

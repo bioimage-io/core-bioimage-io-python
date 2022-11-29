@@ -22,8 +22,8 @@ def test_export_package(any_onnx_model):
 def test_package_with_folder(unet2d_nuclei_broad_model):
     from bioimageio.core import export_resource_package, load_raw_resource_description
 
-    with TemporaryDirectory() as tmp_dir:
-        tmp_dir = Path(tmp_dir)
+    with TemporaryDirectory() as _tmp_dir:
+        tmp_dir = Path(_tmp_dir)
 
         # extract package (to not cache to BIOIMAGEIO_CACHE)
         package_folder = tmp_dir / "package"
