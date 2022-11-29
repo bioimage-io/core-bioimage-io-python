@@ -33,6 +33,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install mypy
+    - uses: actions/checkout@v2
     - name: MyPy
       run: |
         mkdir -p .mypy-cache
