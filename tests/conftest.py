@@ -1,9 +1,10 @@
 # mypy: disable-error-code=attr-defined
 import logging
 import warnings
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 import pytest
+
 from bioimageio.core import export_resource_package
 from bioimageio.spec import __version__ as bioimageio_spec_version
 
