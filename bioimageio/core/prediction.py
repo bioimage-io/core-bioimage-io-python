@@ -4,7 +4,7 @@ import os
 from fractions import Fraction
 from itertools import product
 from pathlib import Path
-from typing import Dict, Iterable, Iterator, List, NamedTuple, Optional, OrderedDict, Sequence, Tuple, TypedDict, Union
+from typing import Dict, Iterable, Iterator, List, NamedTuple, Optional, OrderedDict, Sequence, Tuple, Union
 
 import numpy as np
 import xarray as xr
@@ -16,6 +16,11 @@ from bioimageio.core.resource_io import nodes
 from bioimageio.core.resource_io.nodes import ImplicitOutputShape, Model, ResourceDescription
 from bioimageio.spec.shared import raw_nodes
 from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
+
+try:
+    from typing import TypedDict
+except ImportError:
+    from typing_extensions import TypedDict
 
 
 def _apply_crop(data, crop):
