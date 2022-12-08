@@ -41,7 +41,7 @@ def convert_weights_to_onnx(
     assert isinstance(model_spec, nodes.Model)
     with torch.no_grad():
         # load input and expected output data
-        input_data = [np.load(inp).astype("float32") for inp in model_spec.test_inputs]
+        input_data = [np.load(str(inp)).astype("float32") for inp in model_spec.test_inputs]
         input_tensors = [torch.from_numpy(inp) for inp in input_data]
 
         # instantiate and generate the expected output
@@ -68,6 +68,7 @@ def convert_weights_to_onnx(
         return 1
 
     # check the onnx model
+    assert rt is not None
     sess = rt.InferenceSession(str(output_path))  # does not support Path, so need to cast to str
     onnx_inputs = {input_name.name: inp for input_name, inp in zip(sess.get_inputs(), input_data)}
     outputs = sess.run(None, onnx_inputs)
