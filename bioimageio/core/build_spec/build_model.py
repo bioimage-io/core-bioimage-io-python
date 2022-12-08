@@ -353,17 +353,14 @@ def _get_deepimagej_config(
         attachments = [preproc["kwargs"] for preproc in preprocess_ij]
     else:
         preprocess_ij = [{"spec": None}]
-        attachments = None
+        attachments = []
 
     if any(postproc is not None for postproc in postprocessing):
         assert len(postprocessing) == 1
         postprocess_ij = [
             _get_deepimagej_macro(postproc["name"], postproc["kwargs"], export_folder) for postproc in postprocessing[0]
         ]
-        if attachments is None:
-            attachments = [postproc["kwargs"] for postproc in postprocess_ij]
-        else:
-            attachments.extend([postproc["kwargs"] for postproc in postprocess_ij])
+        attachments.extend([postproc["kwargs"] for postproc in postprocess_ij])
     else:
         postprocess_ij = [{"spec": None}]
 
