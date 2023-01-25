@@ -125,6 +125,7 @@ jobs:
       uses: mamba-org/provision-with-micromamba@main
       with:
         environment-file: false
+        environment-name: build-env
         channels: conda-forge
         extra-specs: |
           boa
