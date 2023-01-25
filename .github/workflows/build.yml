@@ -124,6 +124,7 @@ jobs:
     - name: Install Conda environment with Micromamba
       uses: mamba-org/provision-with-micromamba@main
       with:
+        environment-file: false
         channels: conda-forge
         extra-specs: |
           boa
