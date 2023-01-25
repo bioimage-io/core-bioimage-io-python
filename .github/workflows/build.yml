@@ -58,7 +58,7 @@ jobs:
     - name: additional setup
       shell: bash -l {0}
       run: |
-        conda remove --force bioimageio.spec
+        conda remove --yes --force bioimageio.spec
         pip install --no-deps git+https://github.com/bioimage-io/spec-bioimage-io
         pip install --no-deps -e .
     - name: pytest-base-bioimage-spec-main
@@ -82,7 +82,7 @@ jobs:
     - name: additional setup
       shell: bash -l {0}
       run: |
-        conda remove --force bioimageio.spec
+        conda remove --yes --force bioimageio.spec
         pip install --no-deps git+https://github.com/bioimage-io/spec-bioimage-io
         pip install --no-deps -e .
     - name: pytest-base-bioimage-spec-tf
@@ -106,7 +106,7 @@ jobs:
     - name: additional setup
       shell: bash -l {0}
       run: |
-        conda remove --force bioimageio.spec
+        conda remove --yes --force bioimageio.spec
         pip install --no-deps git+https://github.com/bioimage-io/spec-bioimage-io
         pip install --no-deps -e .
     - name: pytest-base-bioimage-spec-tf-legacy
