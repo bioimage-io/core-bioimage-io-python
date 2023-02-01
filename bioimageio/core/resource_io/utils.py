@@ -44,9 +44,9 @@ class SourceNodeChecker(NodeVisitor):
         self._visit_source(leaf)
 
 
-class SourceNodeTransformer(NodeTransformer):
+class CallableNodeTransformer(NodeTransformer):
     """
-    Imports all source callables
+    Import all callables
     note: Requires previous transformation by UriNodeTransformer
     """
 
@@ -67,7 +67,7 @@ class SourceNodeTransformer(NodeTransformer):
         return nodes.ImportedCallable(call=getattr(module, node.callable_name))
 
     @staticmethod
-    def transform_ResolvedImportableSourceFile(node: raw_nodes.ResolvedImportableSourceFile) -> nodes.ImportedCallable:
+    def transform_ResolvedCallableFromSourceFile(node: raw_nodes.ResolvedCallableFromSourceFile) -> nodes.ImportedCallable:
         module_path = resolve_source(node.source_file)
         module_name = f"module_from_source.{module_path.stem}"
         importlib_spec = importlib.util.spec_from_file_location(module_name, module_path)
@@ -109,6 +109,6 @@ def resolve_raw_node(
 ) -> GenericResolvedNode:
     """resolve all uris and paths (that are included when packaging)"""
     rd = UriNodeTransformer(root_path=raw_rd.root_path, uri_only_if_in_package=uri_only_if_in_package).transform(raw_rd)
-    rd = SourceNodeTransformer().transform(rd)
+    rd = CallableNodeTransformer().transform(rd)
     rd = RawNodeTypeTransformer(nodes_module).transform(rd)
     return rd
