@@ -60,21 +60,21 @@ class SourceNodeTransformer(NodeTransformer):
         def __exit__(self, exc_type, exc_value, traceback):
             sys.path.remove(self.path)
 
-    def transform_LocalImportableModule(self, node: raw_nodes.LocalImportableModule) -> nodes.ImportedSource:
+    def transform_LocalCallableFromModule(self, node: raw_nodes.LocalCallableFromModule) -> nodes.ImportedCallable:
         with self.TemporaryInsertionIntoPythonPath(str(node.root_path)):
             module = importlib.import_module(node.module_name)
 
-        return nodes.ImportedSource(factory=getattr(module, node.callable_name))
+        return nodes.ImportedCallable(call=getattr(module, node.callable_name))
 
     @staticmethod
-    def transform_ResolvedImportableSourceFile(node: raw_nodes.ResolvedImportableSourceFile) -> nodes.ImportedSource:
+    def transform_ResolvedImportableSourceFile(node: raw_nodes.ResolvedImportableSourceFile) -> nodes.ImportedCallable:
         module_path = resolve_source(node.source_file)
         module_name = f"module_from_source.{module_path.stem}"
         importlib_spec = importlib.util.spec_from_file_location(module_name, module_path)
         assert importlib_spec is not None
         dep = importlib.util.module_from_spec(importlib_spec)
         importlib_spec.loader.exec_module(dep)  # type: ignore  # todo: possible to use "loader.load_module"?
-        return nodes.ImportedSource(factory=getattr(dep, node.callable_name))
+        return nodes.ImportedCallable(call=getattr(dep, node.callable_name))
 
 
 class RawNodeTypeTransformer(NodeTransformer):
