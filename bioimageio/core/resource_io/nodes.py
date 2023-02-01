@@ -213,54 +213,27 @@ class Axis(Node, workflow_raw_nodes.Axis):
 
 
 @dataclass
-class BatchAxis(Node, workflow_raw_nodes.BatchAxis):
+class BatchAxis(Node, workflow_raw_nodes.Axis):
     pass
 
 
 @dataclass
-class ChannelAxis(Node, workflow_raw_nodes.ChannelAxis):
+class Input(Node, workflow_raw_nodes.Input):
     pass
 
 
 @dataclass
-class IndexAxis(Node, workflow_raw_nodes.IndexAxis):
+class Option(Node, workflow_raw_nodes.Option):
     pass
 
 
 @dataclass
-class SpaceAxis(Node, workflow_raw_nodes.SpaceAxis):
-    pass
-
-
-@dataclass
-class TimeAxis(Node, workflow_raw_nodes.TimeAxis):
-    pass
-
-
-@dataclass
-class InputSpec(Node, workflow_raw_nodes.InputSpec):
-    pass
-
-
-@dataclass
-class OptionSpec(Node, workflow_raw_nodes.OptionSpec):
-    pass
-
-
-@dataclass
-class OutputSpec(Node, workflow_raw_nodes.OutputSpec):
-    pass
-
-
-@dataclass
-class Step(Node, workflow_raw_nodes.Step):
+class Output(Node, workflow_raw_nodes.Output):
     pass
 
 
 @dataclass
 class Workflow(workflow_raw_nodes.Workflow, RDF):
-    inputs_spec: List[InputSpec] = missing
-    options_spec: List[OptionSpec] = missing
-    outputs_spec: List[OutputSpec] = missing
-    steps: List[Step] = missing
-    test_steps: List[Step] = missing
+    inputs: List[Input] = missing
+    options: List[Option] = missing
+    outputs: List[Output] = missing
