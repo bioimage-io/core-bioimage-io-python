@@ -168,8 +168,16 @@ def _test_predict_image_with_tiling(model, tmp_path, exp_mean_deviation):
 
 # prediction with tiling with the parameters above may not be suited for any model
 # so we only run it for the pytorch unet2d here
-def test_predict_image_with_tiling(unet2d_nuclei_broad_model, tmp_path):
+def test_predict_image_with_tiling_1(unet2d_nuclei_broad_model, tmp_path):
     _test_predict_image_with_tiling(unet2d_nuclei_broad_model, tmp_path, 0.012)
+
+
+def test_predict_image_with_tiling_2(unet2d_diff_output_shape, tmp_path):
+    _test_predict_image_with_tiling(unet2d_diff_output_shape, tmp_path, 0.012)
+
+
+def test_predict_image_with_tiling_3(shape_change_model, tmp_path):
+    _test_predict_image_with_tiling(shape_change_model, tmp_path, 0.012)
 
 
 def test_predict_image_with_tiling_channel_last(stardist, tmp_path):

@@ -1,3 +1,5 @@
+from typing import Optional
+
 from marshmallow import missing
 
 import bioimageio.spec as spec
@@ -5,6 +7,13 @@ from bioimageio.core import load_raw_resource_description, load_resource_descrip
 from bioimageio.core.resource_io import nodes
 from bioimageio.core.resource_io.utils import resolve_source
 from bioimageio.core.resource_tests import test_model as _test_model
+
+try:
+    import tensorflow
+except ImportError:
+    tf_version = None
+else:
+    tf_version: Optional[str] = ".".join(tensorflow.__version__.split(".")[:2])
 
 
 def _test_build_spec(
@@ -175,18 +184,18 @@ def test_build_spec_onnx(any_onnx_model, tmp_path):
 
 def test_build_spec_keras(any_keras_model, tmp_path):
     _test_build_spec(
-        any_keras_model, tmp_path / "model.zip", "keras_hdf5", tensorflow_version="1.12"
+        any_keras_model, tmp_path / "model.zip", "keras_hdf5", tensorflow_version=tf_version
     )  # todo: keras for tf 2??
 
 
 def test_build_spec_tf(any_tensorflow_model, tmp_path):
     _test_build_spec(
-        any_tensorflow_model, tmp_path / "model.zip", "tensorflow_saved_model_bundle", tensorflow_version="1.12"
+        any_tensorflow_model, tmp_path / "model.zip", "tensorflow_saved_model_bundle", tensorflow_version=tf_version
     )  # check tf version
 
 
 def test_build_spec_tfjs(any_tensorflow_js_model, tmp_path):
-    _test_build_spec(any_tensorflow_js_model, tmp_path / "model.zip", "tensorflow_js", tensorflow_version="1.12")
+    _test_build_spec(any_tensorflow_js_model, tmp_path / "model.zip", "tensorflow_js", tensorflow_version=tf_version)
 
 
 def test_build_spec_deepimagej(unet2d_nuclei_broad_model, tmp_path):
@@ -220,7 +229,7 @@ def test_build_spec_parent2(unet2d_nuclei_broad_model, tmp_path):
 
 def test_build_spec_deepimagej_keras(unet2d_keras, tmp_path):
     _test_build_spec(
-        unet2d_keras, tmp_path / "model.zip", "keras_hdf5", add_deepimagej_config=True, tensorflow_version="1.12"
+        unet2d_keras, tmp_path / "model.zip", "keras_hdf5", add_deepimagej_config=True, tensorflow_version=tf_version
     )
 
 

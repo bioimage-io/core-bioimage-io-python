@@ -18,9 +18,11 @@ To install additional deep learning libraries use:
   # cpu installation (if you don't have an nvidia graphics card)
   conda install -c pytorch -c conda-forge bioimageio.core pytorch torchvision cpuonly
 
-  # gpu installation
-  conda install -c pytorch -c conda-forge bioimageio.core pytorch torchvision cudatoolkit
+  # gpu installation (for cuda 11.6, please choose the appropriate cuda version for your system)
+  conda install -c pytorch -c nvidia -c conda-forge bioimageio.core pytorch torchvision pytorch-cuda=11.6 
   ```
+  Note that the pytorch installation instructions may change in the future. For the latest instructions please refer to [pytorch.org](https://pytorch.org/).
+
 
 * Tensorflow
   ```bash

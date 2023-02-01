@@ -15,18 +15,25 @@ torch_models = [
     "unet2d_multi_tensor",
     "unet2d_nuclei_broad_model",
     "unet2d_diff_output_shape",
+    "shape_change",
 ]
 torchscript_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
 onnx_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model", "hpa_densenet"]
 tensorflow1_models = ["stardist"]
-tensorflow2_models = []
-keras_models = ["unet2d_keras"]
+tensorflow2_models = ["unet2d_keras_tf2"]
+keras_tf1_models = ["unet2d_keras"]
+keras_tf2_models = ["unet2d_keras_tf2"]
 tensorflow_js_models = []
+
 
 model_sources = {
     "unet2d_keras": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
         "unet2d_keras_tf/rdf.yaml"
+    ),
+    "unet2d_keras_tf2": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
+        "unet2d_keras_tf2/rdf.yaml"
     ),
     "unet2d_nuclei_broad_model": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
@@ -63,6 +70,10 @@ model_sources = {
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
         "stardist_example_model/rdf_wrong_shape2.yaml"
     ),
+    "shape_change": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
+        "upsample_test_model/rdf.yaml"
+    )
 }
 
 try:
@@ -91,12 +102,6 @@ except ImportError:
 skip_tensorflow = tensorflow is None
 skip_tensorflow_js = True  # TODO: add a tensorflow_js example model
 
-try:
-    import keras
-except ImportError:
-    keras = None
-skip_keras = keras is None
-
 # load all model packages we need for testing
 load_model_packages = set()
 if not skip_torch:
@@ -106,13 +111,14 @@ if not skip_onnx:
     load_model_packages |= set(onnx_models)
 
 if not skip_tensorflow:
-    load_model_packages |= set(keras_models)
     load_model_packages |= set(tensorflow_js_models)
     if tf_major_version == 1:
+        load_model_packages |= set(keras_tf1_models)
         load_model_packages |= set(tensorflow1_models)
         load_model_packages.add("stardist_wrong_shape")
         load_model_packages.add("stardist_wrong_shape2")
     elif tf_major_version == 2:
+        load_model_packages |= set(keras_tf2_models)
         load_model_packages |= set(tensorflow2_models)
 
 
@@ -146,14 +152,12 @@ def any_onnx_model(request):
     return pytest.model_packages[request.param]
 
 
-@pytest.fixture(params=[] if skip_tensorflow else (set(tensorflow1_models) | set(tensorflow2_models)))
+@pytest.fixture(params=[] if skip_tensorflow else tensorflow1_models if tf_major_version == 1 else tensorflow2_models)
 def any_tensorflow_model(request):
-    name = request.param
-    if (tf_major_version == 1 and name in tensorflow1_models) or (tf_major_version == 2 and name in tensorflow2_models):
-        return pytest.model_packages[name]
+    return pytest.model_packages[request.param]
 
 
-@pytest.fixture(params=[] if skip_keras else keras_models)
+@pytest.fixture(params=[] if skip_tensorflow else keras_tf1_models if tf_major_version == 1 else keras_tf2_models)
 def any_keras_model(request):
     return pytest.model_packages[request.param]
 
@@ -178,21 +182,17 @@ def any_model(request):
 #
 
 
-@pytest.fixture(
-    params=[] if skip_torch else ["unet2d_nuclei_broad_model", "unet2d_fixed_shape"]
-)
+@pytest.fixture(params=[] if skip_torch else ["unet2d_nuclei_broad_model", "unet2d_fixed_shape"])
 def unet2d_fixed_shape_or_not(request):
     return pytest.model_packages[request.param]
 
 
-@pytest.fixture(
-    params=[] if skip_torch else ["unet2d_nuclei_broad_model", "unet2d_multi_tensor"]
-)
+@pytest.fixture(params=[] if skip_torch else ["unet2d_nuclei_broad_model", "unet2d_multi_tensor"])
 def unet2d_multi_tensor_or_not(request):
     return pytest.model_packages[request.param]
 
 
-@pytest.fixture(params=[] if skip_keras else ["unet2d_keras"])
+@pytest.fixture(params=[] if skip_tensorflow else ["unet2d_keras" if tf_major_version == 1 else "unet2d_keras_tf2"])
 def unet2d_keras(request):
     return pytest.model_packages[request.param]
 
@@ -218,6 +218,12 @@ def unet2d_expand_output_shape(request):
 # written as model group to automatically skip on missing torch
 @pytest.fixture(params=[] if skip_torch else ["unet2d_fixed_shape"])
 def unet2d_fixed_shape(request):
+    return pytest.model_packages[request.param]
+
+
+# written as model group to automatically skip on missing torch
+@pytest.fixture(params=[] if skip_torch else ["shape_change"])
+def shape_change_model(request):
     return pytest.model_packages[request.param]
 
 

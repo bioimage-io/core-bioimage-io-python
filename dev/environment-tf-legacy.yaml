@@ -1,4 +1,4 @@
-name: bio-core-tf
+name: bio-core-tf-legacy
 channels:
   - conda-forge
   - defaults
@@ -6,10 +6,12 @@ dependencies:
   - black
   - bioimageio.spec
   - conda-build
+  - h5py >=2.10,<2.11
   - mypy
   - pip
   - pytest
-  - python
+  - python >=3.7,<3.8  # this environment is only available for python 3.7
   - xarray
-  - tensorflow >=2.9,<3.0
+  - tensorflow >1.14,<2.0
   - tifffile <=2022.4.8  # pin fixes Syntax error; see https://github.com/bioimage-io/core-bioimage-io-python/pull/259
+  - keras

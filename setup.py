@@ -26,7 +26,7 @@ setup(
     ],
     packages=find_namespace_packages(exclude=["tests"]),  # Required
     install_requires=[
-        "bioimageio.spec>=0.4.5",
+        "bioimageio.spec==0.4.8.*",
         "imageio>=2.5",
         "numpy",
         "ruamel.yaml",
