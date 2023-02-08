@@ -1,8 +1,7 @@
 from typing import Dict, Iterable, Optional
 
-from tqdm import tqdm
-
 from bioimageio.core.statistical_measures import Measure
+from bioimageio.spec.shared.common import tqdm
 from ._measure_groups import MeasureGroups, MeasureValue, get_measure_groups
 from ._utils import ComputedMeasures, PER_DATASET, PER_SAMPLE, RequiredMeasures, Sample, TensorName
 
