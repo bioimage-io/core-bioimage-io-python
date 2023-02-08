@@ -142,11 +142,11 @@ class OutputTensor(Node, model_raw_nodes.OutputTensor):
 
 
 @dataclass
-class ImportedSource(Node):
-    factory: Callable
+class ImportedCallable(Node):
+    call: Callable
 
     def __call__(self, *args, **kwargs):
-        return self.factory(*args, **kwargs)
+        return self.call(*args, **kwargs)
 
 
 @dataclass
@@ -167,7 +167,7 @@ class OnnxWeightsEntry(WeightsEntryBase, model_raw_nodes.OnnxWeightsEntry):
 @dataclass
 class PytorchStateDictWeightsEntry(WeightsEntryBase, model_raw_nodes.PytorchStateDictWeightsEntry):
     source: Path = missing
-    architecture: Union[_Missing, ImportedSource] = missing
+    architecture: Union[_Missing, ImportedCallable] = missing
 
 
 @dataclass
