@@ -16,7 +16,6 @@ from bioimageio.core import __version__, commands, load_raw_resource_description
 from bioimageio.core.common import TestSummary
 from bioimageio.core.image_helper import load_image, save_image
 from bioimageio.core.resource_io import nodes
-from bioimageio.core.workflow.operators import run_workflow
 from bioimageio.spec.__main__ import app, help_version as help_version_spec
 from bioimageio.spec.model.raw_nodes import WeightsFormat
 from bioimageio.spec.workflow.raw_nodes import Workflow
@@ -196,7 +195,6 @@ def predict_image(
     weight_format: Optional[WeightFormatEnum] = typer.Option(None, help="The weight format to use."),
     devices: Optional[List[str]] = typer.Option(None, help="Devices for running the model."),
 ):
-
     if isinstance(padding, str):
         padding = json.loads(padding.replace("'", '"'))
         assert isinstance(padding, dict)
@@ -312,89 +310,6 @@ if keras_converter is not None:
     convert_keras_weights_to_tensorflow.__doc__ = (
         keras_converter.convert_weights_to_tensorflow_saved_model_bundle.__doc__
     )
-
-
-@app.command(context_settings=dict(allow_extra_args=True, ignore_unknown_options=True), add_help_option=False)
-def run(
-    rdf_source: str = typer.Argument(..., help="BioImage.IO RDF id/url/path."),
-    *,
-    output_folder: Path = Path("outputs"),
-    output_tensor_extension: str = ".npy",
-    ctx: typer.Context,
-):
-    resource = load_raw_resource_description(rdf_source, update_to_format="latest")
-    if not isinstance(resource, Workflow):
-        raise NotImplementedError(f"Non-workflow RDFs not yet supported (got type {resource.type})")
-
-    map_type = dict(
-        any=str,
-        boolean=bool,
-        float=float,
-        int=int,
-        list=str,
-        string=str,
-    )
-    wf = resource
-    parser = ArgumentParser(description=f"CLI for {wf.name}")
-
-    # replicate typer args to show up in help
-    parser.add_argument(
-        metavar="rdf-source",
-        dest="rdf_source",
-        help="BioImage.IO RDF id/url/path. The optional arguments below are RDF specific.",
-    )
-    parser.add_argument(
-        metavar="output-folder", dest="output_folder", help="Folder to save outputs to.", default=Path("outputs")
-    )
-    parser.add_argument(
-        metavar="output-tensor-extension",
-        dest="output_tensor_extension",
-        help="Output tensor extension.",
-        default=".npy",
-    )
-
-    def add_param_args(params):
-        for param in params:
-            argument_kwargs = {}
-            if param.type == "tensor":
-                argument_kwargs["type"] = partial(load_image, axes=[a.name or a.type for a in param.axes])
-            else:
-                argument_kwargs["type"] = map_type[param.type]
-
-            if param.type == "list":
-                argument_kwargs["nargs"] = "*"
-
-            argument_kwargs["help"] = param.description or ""
-            if hasattr(param, "default"):
-                argument_kwargs["default"] = param.default
-            else:
-                argument_kwargs["required"] = True
-
-            argument_kwargs["metavar"] = param.name[0].capitalize()
-            parser.add_argument("--" + param.name.replace("_", "-"), **argument_kwargs)
-
-    def prepare_parameter(value, param: Union[nodes.InputSpec, nodes.OptionSpec]):
-        if param.type == "tensor":
-            return load_image(value, [a.name or a.type for a in param.axes])
-        else:
-            return value
-
-    add_param_args(wf.inputs_spec)
-    add_param_args(wf.options_spec)
-    args = parser.parse_args([rdf_source, str(output_folder), output_tensor_extension] + list(ctx.args))
-    outputs = run_workflow(
-        rdf_source,
-        inputs=[prepare_parameter(getattr(args, ipt.name), ipt) for ipt in wf.inputs_spec],
-        options={opt.name: prepare_parameter(getattr(args, opt.name), opt) for opt in wf.options_spec},
-    )
-    output_folder.mkdir(parents=True, exist_ok=True)
-    for out_spec, out in zip(wf.outputs_spec, outputs):
-        out_path = output_folder / out_spec.name
-        if out_spec.type == "tensor":
-            save_image(out_path.with_suffix(output_tensor_extension), out)
-        else:
-            with out_path.with_suffix(".json").open("w") as f:
-                json.dump(out, f)
 
 
 if __name__ == "__main__":
