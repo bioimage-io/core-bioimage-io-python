@@ -45,6 +45,16 @@ class SourceNodeChecker(NodeVisitor):
     def visit_WindowsPath(self, leaf: pathlib.WindowsPath):
         self._visit_source(leaf)
 
+    def generic_visit(self, node):
+        """Called if no explicit visitor function exists for a node."""
+
+        if isinstance(node, raw_nodes.RawNode):
+            for field, value in iter_fields(node):
+                if field != "root_path":  # do not visit root_path, as it might be an incomplete (non-available) URL
+                    self.visit(value)
+        else:
+            super().generic_visit(node)
+
 
 class CallableNodeTransformer(NodeTransformer):
     """

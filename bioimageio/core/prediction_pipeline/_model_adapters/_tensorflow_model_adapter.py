@@ -29,7 +29,7 @@ class TensorflowModelAdapterBase(ModelAdapter):
     def _load_model(self, weight_file):
         weight_file = self.require_unzipped(weight_file)
         if self.use_keras_api:
-            return tf.keras.models.load_model(weight_file)
+            return tf.keras.models.load_model(weight_file, compile=False)
         else:
             # NOTE in tf1 the model needs to be loaded inside of the session, so we cannot preload the model
             return str(weight_file)

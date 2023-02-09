@@ -1,19 +1,18 @@
 import collections
 import os
+from fractions import Fraction
 from itertools import product
 from pathlib import Path
 from typing import Dict, Iterator, List, NamedTuple, Optional, OrderedDict, Sequence, Tuple, Union
-from fractions import Fraction
 
 import numpy as np
 import xarray as xr
-from tqdm import tqdm
 
-from bioimageio.core import image_helper
-from bioimageio.core import load_resource_description
+from bioimageio.core import image_helper, load_resource_description
 from bioimageio.core.prediction_pipeline import PredictionPipeline, create_prediction_pipeline
 from bioimageio.core.resource_io.nodes import ImplicitOutputShape, Model, ResourceDescription
 from bioimageio.spec.shared import raw_nodes
+from bioimageio.spec.shared.common import tqdm
 from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
 
 
@@ -498,7 +497,6 @@ def predict_images(
     with create_prediction_pipeline(
         bioimageio_model=model, weight_format=weight_format, devices=devices
     ) as prediction_pipeline:
-
         prog = zip(inputs, outputs)
         if verbose:
             prog = tqdm(prog, total=len(inputs))

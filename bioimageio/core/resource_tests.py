@@ -198,22 +198,24 @@ def _test_load_resource(
     main_test_warnings = []
     try:
         with warnings.catch_warnings(record=True) as all_warnings:
-            rd = load_resource_description(
+            rd: Optional[ResourceDescription] = load_resource_description(
                 rdf, weights_priority_order=None if weight_format is None else [weight_format]
             )
 
             main_test_warnings += list(all_warnings)
     except Exception as e:
+        rd = None
         error: Optional[str] = str(e)
         tb: Optional = traceback.format_tb(e.__traceback__)
     else:
         error = None
         tb = None
 
-    load_summary = dict(
+    load_summary = TestSummary(
         name="load resource description",
         status="passed" if error is None else "failed",
         error=error,
+        nested_errors=None,
         traceback=tb,
         bioimageio_spec_version=bioimageio_spec_version,
         bioimageio_core_version=bioimageio_core_version,
