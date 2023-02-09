@@ -39,7 +39,7 @@ def transform_input_image(image: np.ndarray, tensor_axes: Sequence[str], image_a
     # instead of 'b' we might want 'batch', etc...
     axis_letter_map = {
         letter: name
-        for letter, name in {"b": "batch", "c": "channel", "i": "index", "t": "time"}
+        for letter, name in {"b": "batch", "c": "channel", "i": "index", "t": "time"}.items()
         if name in tensor_axes  # only do this mapping if the full name is in the desired tensor_axes
     }
     image_axes = tuple(axis_letter_map.get(a, a) for a in image_axes)
@@ -167,7 +167,6 @@ def pad(image, axes: Sequence[str], padding, pad_right=True) -> Tuple[np.ndarray
     pad_width = []
     crop = {}
     for ax, dlen, pr in zip(axes, image.shape, pad_right):
-
         if ax in "zyx":
             pad_to = padding_[ax]
 
