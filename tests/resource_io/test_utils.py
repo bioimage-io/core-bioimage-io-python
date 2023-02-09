@@ -14,7 +14,7 @@ def test_resolve_import_path(tmpdir):
     uri_transformed = utils.UriNodeTransformer(root_path=tmpdir).transform(node)
     source_transformed = utils.CallableNodeTransformer().transform(uri_transformed)
     assert isinstance(source_transformed, nodes.ImportedCallable)
-    Foo = source_transformed.factory
+    Foo = source_transformed.call
     assert Foo.__name__ == "Foo"
     assert isinstance(Foo, type)
 
