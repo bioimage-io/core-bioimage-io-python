@@ -26,13 +26,13 @@ setup(
     ],
     packages=find_namespace_packages(exclude=["tests"]),  # Required
     install_requires=[
-        "bioimageio.spec==0.4.8.*",
+        "bioimageio.spec==0.4.9.*",
         "imageio>=2.5",
         "numpy",
         "ruamel.yaml",
         "tqdm",
         "xarray",
-        "tifffile"
+        "tifffile",
     ],
     include_package_data=True,
     extras_require={
