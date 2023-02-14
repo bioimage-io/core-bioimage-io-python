@@ -135,11 +135,11 @@ def pytest_configure():
     mamba_cmd = "micromamba"
     try:
         subprocess.run(["which", mamba_cmd], check=True)
-    except subprocess.CalledProcessError:
+    except (subprocess.CalledProcessError, FileNotFoundError):
         mamba_cmd = "mamba"
         try:
             subprocess.run(["which", mamba_cmd], check=True)
-        except subprocess.CalledProcessError:
+        except (subprocess.CalledProcessError, FileNotFoundError):
             pytest.mamba_cmd = None
 
     pytest.mamba_cmd = mamba_cmd
