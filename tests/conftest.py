@@ -132,17 +132,15 @@ def pytest_configure():
     # load all model packages used in tests
     pytest.model_packages = {name: export_resource_package(model_sources[name]) for name in load_model_packages}
 
-    mamba_cmd = "micromamba"
+    pytest.mamba_cmd = "micromamba"
     try:
-        subprocess.run(["which", mamba_cmd], check=True)
+        subprocess.run(["which", pytest.mamba_cmd], check=True)
     except (subprocess.CalledProcessError, FileNotFoundError):
-        mamba_cmd = "mamba"
+        pytest.mamba_cmd = "mamba"
         try:
-            subprocess.run(["which", mamba_cmd], check=True)
+            subprocess.run(["which", pytest.mamba_cmd], check=True)
         except (subprocess.CalledProcessError, FileNotFoundError):
             pytest.mamba_cmd = None
-
-    pytest.mamba_cmd = mamba_cmd
 
 
 #
