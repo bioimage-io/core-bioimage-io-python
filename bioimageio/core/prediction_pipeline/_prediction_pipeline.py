@@ -1,4 +1,5 @@
 import abc
+import warnings
 from dataclasses import dataclass
 from typing import Iterable, List, Optional, Sequence, Tuple, Union
 
@@ -6,13 +7,12 @@ import xarray as xr
 from marshmallow import missing
 
 from bioimageio.core.resource_io import nodes
+from bioimageio.core.resource_io.utils import resolve_raw_node
 from bioimageio.spec.model import raw_nodes
 from ._combined_processing import CombinedProcessing
 from ._model_adapters import ModelAdapter, create_model_adapter
 from ._stat_state import StatsState
 from ._utils import ComputedMeasures, Sample, TensorName
-from .. import load_resource_description
-from ..resource_io.utils import resolve_raw_node
 
 
 @dataclass
@@ -98,7 +98,7 @@ class _PredictionPipelineImpl(PredictionPipeline):
         model: ModelAdapter,
     ) -> None:
         if bioimageio_model.run_mode:
-            raise NotImplementedError(f"Not yet implemented inference for run mode '{bioimageio_model.run_mode.name}'")
+            warnings.warn(f"Not yet implemented inference for run mode '{bioimageio_model.run_mode.name}'")
 
         self._name = name
         if isinstance(bioimageio_model, nodes.Model):
