@@ -1,9 +1,12 @@
 import os
+import warnings
 from copy import deepcopy
+from pathlib import Path
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import imageio
 import numpy as np
+from tifffile import tifffile
 from xarray import DataArray
 from bioimageio.core.resource_io.nodes import InputTensor, OutputTensor
 
@@ -87,7 +90,7 @@ def to_channel_last(image):
 #
 
 
-def load_image(in_path, axes: Sequence[str]) -> DataArray:
+def load_image(in_path, axes: Optional[Sequence[str]] = None) -> DataArray:
     ext = os.path.splitext(in_path)[1]
     if ext == ".npy":
         im = np.load(in_path)
@@ -102,11 +105,17 @@ def load_tensors(sources, tensor_specs: List[Union[InputTensor, OutputTensor]]) 
     return [load_image(s, sspec.axes) for s, sspec in zip(sources, tensor_specs)]
 
 
-def save_image(out_path, image):
-    ext = os.path.splitext(out_path)[1]
-    if ext == ".npy":
-        np.save(out_path, image)
+def save_image(out_path: os.PathLike, image: DataArray, pixel_size=None):
+    out_path = Path(out_path)
+    if out_path.suffix == ".npy":
+        if pixel_size is not None:
+            warnings.warn("Ignoring 'pixel_size'")
+        np.save(str(out_path), image)
+    elif out_path.suffix in (".tif", ".tiff"):
+        save_imagej_tiff_image(out_path, image)
     else:
+        if pixel_size is not None:
+            warnings.warn("Ignoring 'pixel_size'")
         is_volume = "z" in image.dims
 
         # squeeze batch or channel axes if they are singletons
@@ -114,7 +123,7 @@ def save_image(out_path, image):
         image = image[squeeze]
 
         if "b" in image.dims:
-            raise RuntimeError(f"Cannot save prediction with batchsize > 1 as {ext}-file")
+            raise RuntimeError(f"Cannot save prediction with batchsize > 1 as {out_path.suffix}-file")
         if "c" in image.dims:  # image formats need channel last
             image = to_channel_last(image)
 
@@ -131,6 +140,49 @@ def save_image(out_path, image):
             for c in range(image.shape[-1]):
                 chan_out_path = f"{out_prefix}-c{c}{ext}"
                 save_function(chan_out_path, image[..., c])
+
+
+def save_imagej_tiff_image(path, image: DataArray, pixel_size: Optional[Dict[str, float]] = None):
+    pixel_size = pixel_size or image.attrs.get("pixel_size")
+    assert (
+        pixel_size is None
+        or isinstance(pixel_size, dict)
+        and all(isinstance(k, str) and isinstance(v, (int, float)) for k, v in pixel_size.items())
+    )
+    assert im.ndim in (4, 5), f"{im.ndim}"
+
+    # convert the image to expected (Z)CYX axis order
+    if im.ndim == 4:
+        assert set(axes) == {"b", "x", "y", "c"}, f"{axes}"
+        resolution_axes_ij = "cyxb"
+    else:
+        assert set(axes) == {"b", "x", "y", "z", "c"}, f"{axes}"
+        resolution_axes_ij = "bzcyx"
+
+    def add_missing_axes(im_axes):
+        needed_axes = ["b", "c", "x", "y", "z", "s"]
+        for ax in needed_axes:
+            if ax not in im_axes:
+                im_axes += ax
+        return im_axes
+
+    axes_ij = "bzcyxs"
+    # Expand the image to ImageJ dimensions
+    im = np.expand_dims(im, axis=tuple(range(len(axes), len(axes_ij))))
+
+    axis_permutation = tuple(add_missing_axes(axes).index(ax) for ax in axes_ij)
+    im = im.transpose(axis_permutation)
+
+    tiff_metadata = {}
+    if pixel_size is None:
+        resolution = None
+    else:
+        spatial_axes = list(set(resolution_axes_ij) - set("bc"))
+        resolution = tuple(1.0 / pixel_size[ax] for ax in resolution_axes_ij if ax in spatial_axes)
+    # does not work for double
+    if np.dtype(im.dtype) == np.dtype("float64"):
+        im = im.astype("float32")
+    tifffile.imwrite(path, im, imagej=True, resolution=resolution)
 
 
 #
@@ -157,7 +209,6 @@ def pad(image, axes: Sequence[str], padding, pad_right=True) -> Tuple[np.ndarray
     pad_width = []
     crop = {}
     for ax, dlen, pr in zip(axes, image.shape, pad_right):
-
         if ax in "zyx":
             pad_to = padding_[ax]
 

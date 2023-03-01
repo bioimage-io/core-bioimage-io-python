@@ -279,7 +279,6 @@ def _get_dependencies(dependencies, root):
 
 
 def _get_deepimagej_macro(name, kwargs, export_folder):
-
     # macros available in deepimagej
     macro_names = ("binarize", "scale_linear", "scale_range", "zero_mean_unit_variance")
     if name == "scale_linear":
@@ -382,7 +381,7 @@ def _get_deepimagej_config(
         assert len(shape) == 4
         return " x ".join(map(str, shape))
 
-    # deepimagej always expexts a pixel size for the z axis
+    # deepimagej always expects a pixel size for the z axis
     pixel_sizes_ = [pix_size if "z" in pix_size else dict(z=1.0, **pix_size) for pix_size in pixel_sizes]
 
     test_info = {
@@ -410,55 +409,19 @@ def _get_deepimagej_config(
 
 
 def _write_sample_data(input_paths, output_paths, input_axes, output_axes, pixel_sizes, export_folder: Path):
-    def write_im(path, im, axes, pixel_size=None):
-        assert len(axes) == im.ndim, f"{len(axes), {im.ndim}}"
-        assert im.ndim in (4, 5), f"{im.ndim}"
-
-        # convert the image to expects (Z)CYX axis order
-        if im.ndim == 4:
-            assert set(axes) == {"b", "x", "y", "c"}, f"{axes}"
-            resolution_axes_ij = "cyxb"
-        else:
-            assert set(axes) == {"b", "x", "y", "z", "c"}, f"{axes}"
-            resolution_axes_ij = "bzcyx"
-
-        def addMissingAxes(im_axes):
-            needed_axes = ["b", "c", "x", "y", "z", "s"]
-            for ax in needed_axes:
-                if ax not in im_axes:
-                    im_axes += ax
-            return im_axes
-
-        axes_ij = "bzcyxs"
-        # Expand the image to ImageJ dimensions
-        im = np.expand_dims(im, axis=tuple(range(len(axes), len(axes_ij))))
-
-        axis_permutation = tuple(addMissingAxes(axes).index(ax) for ax in axes_ij)
-        im = im.transpose(axis_permutation)
-
-        if pixel_size is None:
-            resolution = None
-        else:
-            spatial_axes = list(set(resolution_axes_ij) - set("bc"))
-            resolution = tuple(1.0 / pixel_size[ax] for ax in resolution_axes_ij if ax in spatial_axes)
-        # does not work for double
-        if np.dtype(im.dtype) == np.dtype("float64"):
-            im = im.astype("float32")
-        tifffile.imwrite(path, im, imagej=True, resolution=resolution)
-
     sample_in_paths = []
     for i, (in_path, axes) in enumerate(zip(input_paths, input_axes)):
         inp = np.load(export_folder / in_path)
         sample_in_path = export_folder / f"sample_input_{i}.tif"
         pixel_size = None if pixel_sizes is None else pixel_sizes[i]
-        write_im(sample_in_path, inp, axes, pixel_size)
+        write_tiff_image(sample_in_path, inp, axes, pixel_size)
         sample_in_paths.append(sample_in_path)
 
     sample_out_paths = []
     for i, (out_path, axes) in enumerate(zip(output_paths, output_axes)):
         outp = np.load(export_folder / out_path)
         sample_out_path = export_folder / f"sample_output_{i}.tif"
-        write_im(sample_out_path, outp, axes)
+        write_tiff_image(sample_out_path, outp, axes)
         sample_out_paths.append(sample_out_path)
 
     return [Path(p.name) for p in sample_in_paths], [Path(p.name) for p in sample_out_paths]

@@ -27,3 +27,7 @@ def test_transform_output_tensor():
     for out_axes in out_ax_list:
         out = transform_output_tensor(tensor, tensor_axes, out_axes)
         assert out.ndim == len(out_axes)
+
+
+def test_save_image():
+    assert False
