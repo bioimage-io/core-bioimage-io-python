@@ -79,7 +79,9 @@ class CallableNodeTransformer(NodeTransformer):
         return nodes.ImportedCallable(call=getattr(module, node.callable_name))
 
     @staticmethod
-    def transform_ResolvedCallableFromSourceFile(node: raw_nodes.ResolvedCallableFromSourceFile) -> nodes.ImportedCallable:
+    def transform_ResolvedCallableFromSourceFile(
+        node: raw_nodes.ResolvedCallableFromSourceFile,
+    ) -> nodes.ImportedCallable:
         module_path = resolve_source(node.source_file)
         module_name = f"module_from_source.{module_path.stem}"
         importlib_spec = importlib.util.spec_from_file_location(module_name, module_path)
@@ -119,10 +121,15 @@ def all_sources_available(
 
 
 def resolve_raw_node(
-    raw_rd: GenericRawNode, nodes_module: typing.Any, uri_only_if_in_package: bool = True
+    raw_rd: GenericRawNode,
+    nodes_module: typing.Any,
+    uri_only_if_in_package: bool = True,
+    root_path: typing.Optional[pathlib.Path] = None,
 ) -> GenericResolvedNode:
     """resolve all uris and paths (that are included when packaging)"""
-    rd = UriNodeTransformer(root_path=raw_rd.root_path, uri_only_if_in_package=uri_only_if_in_package).transform(raw_rd)
+    rd = UriNodeTransformer(
+        root_path=root_path or raw_rd.root_path, uri_only_if_in_package=uri_only_if_in_package
+    ).transform(raw_rd)
     rd = CallableNodeTransformer().transform(rd)
     rd = RawNodeTypeTransformer(nodes_module).transform(rd)
     return rd
