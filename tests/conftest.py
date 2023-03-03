@@ -1,12 +1,14 @@
 import logging
+import os
 import subprocess
 import warnings
-from typing import Optional
 
 import pytest
 
+os.environ["BIOIMAGEIO_COUNT_RDF_DOWNLOADS"] = "false"  # disable tracking before bioimageio imports
 from bioimageio.core import export_resource_package
 from bioimageio.spec import __version__ as bioimageio_spec_version
+
 
 logger = logging.getLogger(__name__)
 warnings.warn(f"testing with bioimageio.spec {bioimageio_spec_version}")
