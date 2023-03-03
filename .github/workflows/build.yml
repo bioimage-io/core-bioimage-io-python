@@ -32,6 +32,8 @@ jobs:
     - name: Install Conda environment with Micromamba
       uses: mamba-org/provision-with-micromamba@main
       with:
+        cache-downloads: true
+        cache-env: true
         environment-file: dev/environment-torch.yaml
         extra-specs: |
           python=${{ matrix.python-version }}
@@ -52,6 +54,8 @@ jobs:
     - name: Install Conda environment with Micromamba
       uses: mamba-org/provision-with-micromamba@main
       with:
+        cache-downloads: true
+        cache-env: true
         environment-file: dev/environment-torch.yaml
         extra-specs: |
           python=${{ matrix.python-version }}
@@ -75,6 +79,8 @@ jobs:
     - name: Install Conda environment with Micromamba
       uses: mamba-org/provision-with-micromamba@main
       with:
+        cache-downloads: true
+        cache-env: true
         environment-file: dev/environment-tf.yaml
         channel-priority: flexible
         extra-specs: |
@@ -99,6 +105,8 @@ jobs:
     - name: Install Conda environment with Micromamba
       uses: mamba-org/provision-with-micromamba@main
       with:
+        cache-downloads: true
+        cache-env: true
         environment-file: dev/environment-tf-legacy.yaml
         channel-priority: flexible
         extra-specs: |
@@ -124,6 +132,8 @@ jobs:
     - name: Install Conda environment with Micromamba
       uses: mamba-org/provision-with-micromamba@main
       with:
+        cache-downloads: true
+        cache-env: true
         environment-file: false
         environment-name: build-env
         channels: conda-forge
