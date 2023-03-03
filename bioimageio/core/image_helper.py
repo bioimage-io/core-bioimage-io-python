@@ -13,13 +13,13 @@ from bioimageio.core.resource_io.nodes import InputTensor, OutputTensor
 #
 
 
-def transform_input_image(image: np.ndarray, tensor_axes: Sequence[str], image_axes: Optional[str] = None):
+def transform_input_image(image: np.ndarray, tensor_axes: Sequence[str], image_axes: Optional[Sequence[str]] = None):
     """Transform input image into output tensor with desired axes.
 
     Args:
         image: the input image
         tensor_axes: the desired tensor axes
-        input_axes: the axes of the input image (optional)
+        image_axes: the axes of the input image (optional)
     """
     # if the image axes are not given deduce them from the required axes and image shape
     if image_axes is None:
@@ -105,7 +105,7 @@ def load_image(in_path, axes: Sequence[str]) -> DataArray:
         is_volume = "z" in axes
         im = imageio.volread(in_path) if is_volume else imageio.imread(in_path)
         im = transform_input_image(im, axes)
-    return DataArray(im, dims=axes)
+    return DataArray(im, dims=tuple(axes))
 
 
 def load_tensors(sources, tensor_specs: List[Union[InputTensor, OutputTensor]]) -> List[DataArray]:
