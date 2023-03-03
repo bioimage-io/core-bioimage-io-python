@@ -1,5 +1,7 @@
 import logging
+import subprocess
 import warnings
+from typing import Optional
 
 import pytest
 
@@ -73,7 +75,7 @@ model_sources = {
     "shape_change": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
         "upsample_test_model/rdf.yaml"
-    )
+    ),
 }
 
 try:
@@ -123,13 +125,22 @@ if not skip_tensorflow:
 
 
 def pytest_configure():
-
     # explicit skip flags needed for some tests
     pytest.skip_torch = skip_torch
     pytest.skip_onnx = skip_onnx
 
     # load all model packages used in tests
     pytest.model_packages = {name: export_resource_package(model_sources[name]) for name in load_model_packages}
+
+    pytest.mamba_cmd = "micromamba"
+    try:
+        subprocess.run(["which", pytest.mamba_cmd], check=True)
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pytest.mamba_cmd = "mamba"
+        try:
+            subprocess.run(["which", pytest.mamba_cmd], check=True)
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            pytest.mamba_cmd = None
 
 
 #

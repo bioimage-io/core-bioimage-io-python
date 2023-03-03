@@ -7,20 +7,13 @@ from packaging.version import Version
 
 
 @pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python 3.8")
+@pytest.mark.skipif(pytest.mamba_cmd is None, reason="requires mamba")
 def test_bioimageio_spec_version():
     from importlib.metadata import metadata
 
-    # check if 'micromamba' or 'mamba' are available
-    mamba_cmd = "micromamba"
-    try:
-        subprocess.run(["which", mamba_cmd], check=True)
-    except subprocess.CalledProcessError:
-        mamba_cmd = "mamba"
-        subprocess.run(["which", mamba_cmd], check=True)
-
     # get latest released bioimageio.spec version
     mamba_repoquery = subprocess.run(
-        f"{mamba_cmd} repoquery search -c conda-forge --json bioimageio.spec".split(" "),
+        f"{pytest.mamba_cmd} repoquery search -c conda-forge --json bioimageio.spec".split(" "),
         encoding="utf-8",
         capture_output=True,
         check=True,
