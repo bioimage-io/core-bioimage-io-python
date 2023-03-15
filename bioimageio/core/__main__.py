@@ -3,22 +3,17 @@ import json
 import os
 import sys
 import warnings
-from argparse import ArgumentParser
-from functools import partial
 from glob import glob
 from pathlib import Path
 from pprint import pformat
-from typing import List, Optional, Union
+from typing import List, Optional
 
 import typer
 
-from bioimageio.core import __version__, commands, load_raw_resource_description, prediction, resource_tests
+from bioimageio.core import __version__, commands, prediction, resource_tests
 from bioimageio.core.common import TestSummary
-from bioimageio.core.image_helper import load_image, save_image
-from bioimageio.core.resource_io import nodes
 from bioimageio.spec.__main__ import app, help_version as help_version_spec
 from bioimageio.spec.model.raw_nodes import WeightsFormat
-from bioimageio.spec.workflow.raw_nodes import Workflow
 
 try:
     from typing import get_args
