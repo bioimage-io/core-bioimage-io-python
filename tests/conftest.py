@@ -20,6 +20,7 @@ torch_models = [
     "unet2d_nuclei_broad_model",
     "unet2d_diff_output_shape",
     "shape_change",
+    "multichannel_output"
 ]
 torchscript_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
 onnx_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model", "hpa_densenet"]
@@ -78,6 +79,7 @@ model_sources = {
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
         "upsample_test_model/rdf.yaml"
     ),
+    "multichannel_output": "10.5281/zenodo.6079314"
 }
 
 try:
