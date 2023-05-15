@@ -536,7 +536,7 @@ def _generate_covers(in_path, out_path, input_axes, output_axes, root):
 
         n, m = im_shape
         x, y = ims_per_row * n, n_rows * m
-        out = np.zeros((3, y, x))
+        out = np.zeros((3, y, x), dtype="float32")
         images = [im0] + [np.repeat(im1[i : i + 1], 3, axis=0) for i in range(n_chan)]
 
         i, j = 0, 0
