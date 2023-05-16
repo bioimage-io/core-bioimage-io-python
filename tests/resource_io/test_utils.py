@@ -1,7 +1,13 @@
+import dataclasses
 from pathlib import Path
 
 from bioimageio.core.resource_io import nodes, utils
+from bioimageio.core.resource_io.utils import Sha256NodeChecker
 from bioimageio.spec.shared import raw_nodes
+from bioimageio.spec.shared.raw_nodes import RawNode
+
+
+import pytest
 
 
 def test_resolve_import_path(tmpdir):
@@ -55,3 +61,24 @@ def test_uri_node_transformer_is_ok_with_abs_path():
     assert tree["rel_path"] == Path("/root/something/relative").absolute()
     assert tree["abs_path"].is_absolute()
     assert tree["abs_path"] == Path("/something/absolute").absolute()
+
+
+def test_sha256_checker(tmpdir):
+    root = Path(tmpdir)
+    src1 = root / "meh.txt"
+    src2 = root / "meh.txt"
+    src1.write_text("meh", encoding="utf-8")
+    src2.write_text("muh", encoding="utf-8")
+
+    @dataclasses.dataclass
+    class TestNode(RawNode):
+        src: Path = src1
+        sha256: str = "f65255094d7773ed8dd417badc9fc045c1f80fdc5b2d25172b031ce6933e039a"
+        my_src: Path = src2
+        my_src_sha256: str = "8cf5844c38045aa19aae00d689002549d308de07a777c2ea34355d65283255ac"
+
+    checker = Sha256NodeChecker(root_path=root)
+    checker.visit(TestNode())
+
+    with pytest.raises(ValueError):
+        checker.visit(TestNode(my_src_sha256="nope"))
