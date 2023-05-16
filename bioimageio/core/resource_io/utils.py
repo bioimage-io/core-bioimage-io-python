@@ -7,6 +7,8 @@ import sys
 import typing
 from types import ModuleType
 
+from marshmallow import missing
+
 from bioimageio.spec.shared import get_resolved_source_path, raw_nodes, resolve_source, source_available
 from bioimageio.spec.shared.node_transformer import (
     GenericRawNode,
@@ -76,8 +78,16 @@ class Sha256NodeChecker(NodeVisitor):
     def generic_visit(self, node):
         if isinstance(node, raw_nodes.RawNode):
             for field, expected_sha256 in iter_fields(node):
+                if expected_sha256 is missing:
+                    continue
+
                 if field == "sha256":
                     source_name = "source"
+                    for sn in ["source", "uri"]:
+                        if hasattr(node, sn):
+                            source_name = sn
+                            break
+
                 elif field.endswith("_sha256"):
                     source_name = field[: -len("_sha256")]
                 elif "sha256" in field:
