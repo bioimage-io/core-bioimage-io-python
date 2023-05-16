@@ -33,7 +33,7 @@ jobs:
       uses: mamba-org/provision-with-micromamba@main
       with:
         cache-downloads: true
-        cache-env: true
+        cache-env: false  # debugging: torch does not detect onnxruntime
         environment-file: dev/environment-torch.yaml
         extra-specs: |
           python=${{ matrix.python-version }}
@@ -105,8 +105,8 @@ jobs:
     - name: Install Conda environment with Micromamba
       uses: mamba-org/provision-with-micromamba@main
       with:
-        cache-downloads: true
-        cache-env: true
+        cache-downloads: false  # false for debugging: TypeError: Cannot handle this data type: (1, 1, 3), <f8
+        cache-env: false  # false for debugging: TypeError: Cannot handle this data type: (1, 1, 3), <f8
         environment-file: dev/environment-tf-legacy.yaml
         channel-priority: flexible
         extra-specs: |
