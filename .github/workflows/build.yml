@@ -106,7 +106,7 @@ jobs:
       uses: mamba-org/provision-with-micromamba@main
       with:
         cache-downloads: true
-        cache-env: true
+        cache-env: false  # todo: detect env cache hit and adapt(skip?) additional setup (conda remove?)
         environment-file: dev/environment-tf-legacy.yaml
         channel-priority: flexible
         extra-specs: |
