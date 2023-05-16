@@ -37,7 +37,7 @@ jobs:
       uses: mamba-org/provision-with-micromamba@main
       with:
         cache-downloads: true
-        cache-env: false  # debugging: torch does not detect onnxruntime
+        cache-env: true
         environment-file: dev/environment-torch.yaml
         extra-specs: |
           python=${{ matrix.python-version }}
@@ -57,13 +57,13 @@ jobs:
       uses: mamba-org/provision-with-micromamba@main
       with:
         cache-downloads: true
-        cache-env: false  # todo: detect env cache hit and adapt(skip?) additional setup (conda remove?)
+        cache-env: true
         environment-file: dev/environment-torch.yaml
         extra-specs: |
           python=${{ matrix.python-version }}
     - name: additional setup
       run: |
-        conda remove --yes --force bioimageio.spec
+        conda remove --yes --force bioimageio.spec || true  # allow failure for cached env
         pip install --no-deps git+https://github.com/bioimage-io/spec-bioimage-io
         pip install --no-deps -e .
     - name: pytest-spec-main
@@ -80,14 +80,14 @@ jobs:
       uses: mamba-org/provision-with-micromamba@main
       with:
         cache-downloads: true
-        cache-env: false  # todo: detect env cache hit and adapt(skip?) additional setup (conda remove?)
+        cache-env: true
         environment-file: dev/environment-tf.yaml
         channel-priority: flexible
         extra-specs: |
           python=${{ matrix.python-version }}
     - name: additional setup
       run: |
-        conda remove --yes --force bioimageio.spec
+        conda remove --yes --force bioimageio.spec || true  # allow failure for cached env
         pip install --no-deps git+https://github.com/bioimage-io/spec-bioimage-io
         pip install --no-deps -e .
     - name: pytest-spec-tf
@@ -104,14 +104,14 @@ jobs:
       uses: mamba-org/provision-with-micromamba@main
       with:
         cache-downloads: true
-        cache-env: false  # todo: detect env cache hit and adapt(skip?) additional setup (conda remove?)
+        cache-env: true
         environment-file: dev/environment-tf-legacy.yaml
         channel-priority: flexible
         extra-specs: |
           python=${{ matrix.python-version }}
     - name: additional setup
       run: |
-        conda remove --yes --force bioimageio.spec
+        conda remove --yes --force bioimageio.spec || true  # allow failure for cached env
         pip install --no-deps git+https://github.com/bioimage-io/spec-bioimage-io
         pip install --no-deps -e .
     - name: pytest-spec-tf-legacy
