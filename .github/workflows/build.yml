@@ -55,7 +55,7 @@ jobs:
       uses: mamba-org/provision-with-micromamba@main
       with:
         cache-downloads: true
-        cache-env: true
+        cache-env: false  # todo: detect env cache hit and adapt(skip?) additional setup (conda remove?)
         environment-file: dev/environment-torch.yaml
         extra-specs: |
           python=${{ matrix.python-version }}
@@ -80,7 +80,7 @@ jobs:
       uses: mamba-org/provision-with-micromamba@main
       with:
         cache-downloads: true
-        cache-env: true
+        cache-env: false  # todo: detect env cache hit and adapt(skip?) additional setup (conda remove?)
         environment-file: dev/environment-tf.yaml
         channel-priority: flexible
         extra-specs: |
