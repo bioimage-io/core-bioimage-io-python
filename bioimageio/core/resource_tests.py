@@ -173,7 +173,7 @@ def _test_model_inference(model: Model, weight_format: str, devices: Optional[Li
             tb = traceback.format_tb(e.__traceback__)
 
     return dict(
-        name="reproduce test outputs from test inputs",
+        name=f"reproduce test outputs from test inputs (bioimageio.core {bioimageio_core_version})",
         status="passed" if error is None else "failed",
         error=error,
         traceback=tb,
