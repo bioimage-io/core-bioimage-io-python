@@ -1,4 +1,5 @@
 import dataclasses
+import hashlib
 import importlib.util
 import os
 import pathlib
@@ -6,7 +7,7 @@ import sys
 import typing
 from types import ModuleType
 
-from bioimageio.spec.shared import raw_nodes, resolve_source, source_available
+from bioimageio.spec.shared import get_resolved_source_path, raw_nodes, resolve_source, source_available
 from bioimageio.spec.shared.node_transformer import (
     GenericRawNode,
     GenericResolvedNode,
@@ -52,6 +53,50 @@ class SourceNodeChecker(NodeVisitor):
                     self.visit(value)
         else:
             super().generic_visit(node)
+
+
+def get_sha256(path: os.PathLike) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        while True:
+            block = f.read(h.block_size)
+            if not block:
+                break
+            h.update(block)
+
+    return h.hexdigest()
+
+
+class Sha256NodeChecker(NodeVisitor):
+    """Check integrity of the source-like field for every sha256-like field encountered"""
+
+    def __init__(self, *, root_path: os.PathLike):
+        self.root_path = root_path if isinstance(root_path, raw_nodes.URI) else pathlib.Path(root_path).resolve()
+
+    def generic_visit(self, node):
+        if isinstance(node, raw_nodes.RawNode):
+            for field, expected_sha256 in iter_fields(node):
+                if field == "sha256":
+                    source_name = "source"
+                elif field.endswith("_sha256"):
+                    source_name = field[: -len("_sha256")]
+                elif "sha256" in field:
+                    raise NotImplementedError(f"Don't know how to check integrity with {field}")
+                else:
+                    continue
+
+                if not hasattr(node, source_name):
+                    raise ValueError(
+                        f"Node {node} expected to have '{source_name}' field associated with '{expected_sha256}'"
+                    )
+
+                source_node = getattr(node, source_name)
+                source = get_resolved_source_path(source_node, root_path=self.root_path)
+                actual_sha256 = get_sha256(source)
+
+                if actual_sha256 != expected_sha256:
+                    raise ValueError(f"SHA256 of {source_name} ")
+        super().generic_visit(node)
 
 
 class SourceNodeTransformer(NodeTransformer):
