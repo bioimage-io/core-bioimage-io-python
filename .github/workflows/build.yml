@@ -22,7 +22,7 @@ jobs:
         with:
           tool_name: blackfmt
 
-  test-base-bioimage-spec-conda:
+  test-spec-conda:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -33,18 +33,18 @@ jobs:
       uses: mamba-org/provision-with-micromamba@main
       with:
         cache-downloads: true
-        cache-env: true
+        cache-env: false  # debugging: torch does not detect onnxruntime
         environment-file: dev/environment-torch.yaml
         extra-specs: |
           python=${{ matrix.python-version }}
     - name: additional setup
       shell: bash -l {0}
       run: pip install --no-deps -e .
-    - name: pytest-base-bioimage-spec-conda
+    - name: pytest-spec-conda
       shell: bash -l {0}
       run: pytest --disable-pytest-warnings
 
-  test-base-bioimage-spec-main:
+  test-spec-main:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -55,7 +55,7 @@ jobs:
       uses: mamba-org/provision-with-micromamba@main
       with:
         cache-downloads: true
-        cache-env: true
+        cache-env: false  # todo: detect env cache hit and adapt(skip?) additional setup (conda remove?)
         environment-file: dev/environment-torch.yaml
         extra-specs: |
           python=${{ matrix.python-version }}
@@ -65,11 +65,11 @@ jobs:
         conda remove --yes --force bioimageio.spec
         pip install --no-deps git+https://github.com/bioimage-io/spec-bioimage-io
         pip install --no-deps -e .
-    - name: pytest-base-bioimage-spec-main
+    - name: pytest-spec-main
       shell: bash -l {0}
       run: pytest --disable-pytest-warnings
-  
-  test-base-bioimage-spec-tf:
+
+  test-spec-tf:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -80,7 +80,7 @@ jobs:
       uses: mamba-org/provision-with-micromamba@main
       with:
         cache-downloads: true
-        cache-env: true
+        cache-env: false  # todo: detect env cache hit and adapt(skip?) additional setup (conda remove?)
         environment-file: dev/environment-tf.yaml
         channel-priority: flexible
         extra-specs: |
@@ -91,11 +91,11 @@ jobs:
         conda remove --yes --force bioimageio.spec
         pip install --no-deps git+https://github.com/bioimage-io/spec-bioimage-io
         pip install --no-deps -e .
-    - name: pytest-base-bioimage-spec-tf
+    - name: pytest-spec-tf
       shell: bash -l {0}
       run: pytest --disable-pytest-warnings
 
-  test-base-bioimage-spec-tf-legacy:
+  test-spec-tf-legacy:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -106,7 +106,7 @@ jobs:
       uses: mamba-org/provision-with-micromamba@main
       with:
         cache-downloads: true
-        cache-env: true
+        cache-env: false  # todo: detect env cache hit and adapt(skip?) additional setup (conda remove?)
         environment-file: dev/environment-tf-legacy.yaml
         channel-priority: flexible
         extra-specs: |
@@ -117,13 +117,13 @@ jobs:
         conda remove --yes --force bioimageio.spec
         pip install --no-deps git+https://github.com/bioimage-io/spec-bioimage-io
         pip install --no-deps -e .
-    - name: pytest-base-bioimage-spec-tf-legacy
+    - name: pytest-spec-tf-legacy
       shell: bash -l {0}
       run: pytest --disable-pytest-warnings
 
   conda-build:
     runs-on: ubuntu-latest
-    needs: test-base-bioimage-spec-conda
+    needs: test-spec-conda
     steps:
     - name: checkout
       uses: actions/checkout@v3

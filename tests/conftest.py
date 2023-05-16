@@ -200,8 +200,8 @@ def unet2d_fixed_shape_or_not(request):
     return pytest.model_packages[request.param]
 
 
-@pytest.fixture(params=[] if skip_torch else ["unet2d_nuclei_broad_model", "unet2d_multi_tensor"])
-def unet2d_multi_tensor_or_not(request):
+@pytest.fixture(params=[] if skip_onnx or skip_torch else ["unet2d_nuclei_broad_model", "unet2d_multi_tensor"])
+def convert_to_onnx(request):
     return pytest.model_packages[request.param]
 
 

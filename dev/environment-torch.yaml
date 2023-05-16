@@ -13,6 +13,7 @@ dependencies:
   - python >=3.7
   - xarray
   - pytorch
+  - onnx
   - onnxruntime
   - tifffile <=2022.4.8  # pin fixes Syntax error; see https://github.com/bioimage-io/core-bioimage-io-python/pull/259
 
