@@ -279,7 +279,6 @@ def _get_dependencies(dependencies, root):
 
 
 def _get_deepimagej_macro(name, kwargs, export_folder):
-
     # macros available in deepimagej
     macro_names = ("binarize", "scale_linear", "scale_range", "zero_mean_unit_variance")
     if name == "scale_linear":
@@ -536,7 +535,7 @@ def _generate_covers(in_path, out_path, input_axes, output_axes, root):
 
         n, m = im_shape
         x, y = ims_per_row * n, n_rows * m
-        out = np.zeros((3, y, x))
+        out = np.zeros((3, y, x), dtype=im0.dtype)
         images = [im0] + [np.repeat(im1[i : i + 1], 3, axis=0) for i in range(n_chan)]
 
         i, j = 0, 0
