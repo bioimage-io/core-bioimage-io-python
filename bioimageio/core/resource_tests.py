@@ -22,7 +22,7 @@ from bioimageio.core.resource_io.nodes import (
     ResourceDescription,
     URI,
 )
-from bioimageio.core.resource_io.utils import SourceNodeChecker
+from bioimageio.core.resource_io.utils import Sha256NodeChecker, SourceNodeChecker
 from bioimageio.spec import __version__ as bioimageio_spec_version
 from bioimageio.spec.model.raw_nodes import WeightsFormat
 from bioimageio.spec.shared import resolve_source
@@ -105,6 +105,31 @@ def _test_resource_urls(rd: ResourceDescription) -> TestSummary:
     )
 
 
+def _test_resource_integrity(rd: ResourceDescription) -> TestSummary:
+    assert isinstance(rd, ResourceDescription)
+    with warnings.catch_warnings(record=True) as all_warnings:
+        try:
+            Sha256NodeChecker(root_path=rd.root_path).visit(rd)
+        except FileNotFoundError as e:
+            error = str(e)
+            tb = traceback.format_tb(e.__traceback__)
+        else:
+            error = None
+            tb = None
+
+    return dict(
+        name="Integrity of source files",
+        status="passed" if error is None else "failed",
+        error=error,
+        traceback=tb,
+        bioimageio_spec_version=bioimageio_spec_version,
+        bioimageio_core_version=bioimageio_core_version,
+        nested_errors=None,
+        source_name=rd.id or rd.id or rd.name if hasattr(rd, "id") else rd.name,
+        warnings={"Sha256NodeChecker": [str(w.message) for w in all_warnings]} if all_warnings else {},
+    )
+
+
 def _test_model_documentation(rd: ResourceDescription) -> TestSummary:
     assert isinstance(rd, Model)
     with warnings.catch_warnings():
@@ -173,7 +198,7 @@ def _test_model_inference(model: Model, weight_format: str, devices: Optional[Li
             tb = traceback.format_tb(e.__traceback__)
 
     return dict(
-        name=f"reproduce test outputs from test inputs (bioimageio.core {bioimageio_core_version})",
+        name=f"Reproduce test outputs from test inputs (bioimageio.core {bioimageio_core_version})",
         status="passed" if error is None else "failed",
         error=error,
         traceback=tb,
@@ -212,7 +237,7 @@ def _test_load_resource(
         tb = None
 
     load_summary = TestSummary(
-        name="load resource description",
+        name="Load resource description",
         status="passed" if error is None else "failed",
         error=error,
         nested_errors=None,
@@ -229,7 +254,7 @@ def _test_load_resource(
 def _test_expected_resource_type(rd: ResourceDescription, expected_type: str) -> TestSummary:
     has_expected_type = rd.type == expected_type
     return dict(
-        name="has expected resource type",
+        name="Has expected resource type",
         status="passed" if has_expected_type else "failed",
         error=None if has_expected_type else f"expected type {expected_type}, found {rd.type}",
         traceback=None,
@@ -256,10 +281,14 @@ def test_resource(
             tests.append(_test_expected_resource_type(rd, expected_type))
 
         tests.append(_test_resource_urls(rd))
+        if tests[-1]["status"] == "passed":
+            tests.append(_test_resource_integrity(rd))
 
     if isinstance(rd, Model):
+        if tests[-1]["status"] == "passed":  # only run inference when source file hashes match
+            tests.append(_test_model_inference(rd, weight_format, devices, decimal))
+
         tests.append(_test_model_documentation(rd))
-        tests.append(_test_model_inference(rd, weight_format, devices, decimal))
 
     return tests
 

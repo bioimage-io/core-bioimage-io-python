@@ -19,10 +19,10 @@ def test_resolve_import_path(tmpdir):
     node = raw_nodes.ImportableSourceFile(source_file=source_file, callable_name="Foo")
     uri_transformed = utils.UriNodeTransformer(root_path=tmpdir).transform(node)
     source_transformed = utils.SourceNodeTransformer().transform(uri_transformed)
-    assert isinstance(source_transformed, nodes.ImportedSource)
+    assert isinstance(source_transformed, nodes.ImportedSource), type(source_transformed)
     Foo = source_transformed.factory
-    assert Foo.__name__ == "Foo"
-    assert isinstance(Foo, type)
+    assert Foo.__name__ == "Foo", Foo.__name__
+    assert isinstance(Foo, type), type(Foo)
 
 
 def test_resolve_directory_uri(tmpdir):
@@ -66,13 +66,13 @@ def test_uri_node_transformer_is_ok_with_abs_path():
 def test_sha256_checker(tmpdir):
     root = Path(tmpdir)
     src1 = root / "meh.txt"
-    src2 = root / "meh.txt"
-    src1.write_text("meh", encoding="utf-8")
-    src2.write_text("muh", encoding="utf-8")
+    src2 = root / "muh.txt"
+    src1.write_text(src1.stem, encoding="utf-8")
+    src2.write_text(src2.stem, encoding="utf-8")
 
     @dataclasses.dataclass
     class TestNode(RawNode):
-        src: Path = src1
+        source: Path = src1
         sha256: str = "f65255094d7773ed8dd417badc9fc045c1f80fdc5b2d25172b031ce6933e039a"
         my_src: Path = src2
         my_src_sha256: str = "8cf5844c38045aa19aae00d689002549d308de07a777c2ea34355d65283255ac"
