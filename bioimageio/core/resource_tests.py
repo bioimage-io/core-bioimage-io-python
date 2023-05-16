@@ -11,7 +11,11 @@ import numpy as np
 import xarray as xr
 from marshmallow import ValidationError
 
-from bioimageio.core import __version__ as bioimageio_core_version, load_resource_description
+from bioimageio.core import (
+    __version__ as bioimageio_core_version,
+    load_raw_resource_description,
+    load_resource_description,
+)
 from bioimageio.core.common import TestSummary
 from bioimageio.core.prediction import predict
 from bioimageio.core.prediction_pipeline import create_prediction_pipeline
@@ -80,8 +84,8 @@ def check_output_shape(shape: Tuple[int, ...], shape_spec, input_shapes) -> bool
         raise TypeError(f"Encountered unexpected shape description of type {type(shape_spec)}")
 
 
-def _test_resource_urls(rd: ResourceDescription) -> TestSummary:
-    assert isinstance(rd, ResourceDescription)
+def _test_resource_urls(rd: RawResourceDescription) -> TestSummary:
+    assert isinstance(rd, RawResourceDescription), type(rd)
     with warnings.catch_warnings(record=True) as all_warnings:
         try:
             SourceNodeChecker(root_path=rd.root_path).visit(rd)
@@ -105,8 +109,8 @@ def _test_resource_urls(rd: ResourceDescription) -> TestSummary:
     )
 
 
-def _test_resource_integrity(rd: ResourceDescription) -> TestSummary:
-    assert isinstance(rd, ResourceDescription)
+def _test_resource_integrity(rd: RawResourceDescription) -> TestSummary:
+    assert isinstance(rd, RawResourceDescription)
     with warnings.catch_warnings(record=True) as all_warnings:
         try:
             Sha256NodeChecker(root_path=rd.root_path).visit(rd)
@@ -209,9 +213,8 @@ def _test_model_inference(model: Model, weight_format: str, devices: Optional[Li
     )
 
 
-def _test_load_resource(
-    rdf: Union[RawResourceDescription, ResourceDescription, URI, Path, str],
-    weight_format: Optional[WeightsFormat] = None,
+def _test_load_raw_resource(
+    rdf: Union[RawResourceDescription, ResourceDescription, URI, Path, str]
 ) -> Tuple[Optional[ResourceDescription], TestSummary]:
     if isinstance(rdf, (URI, os.PathLike)):
         source_name = str(rdf)
@@ -223,8 +226,43 @@ def _test_load_resource(
     main_test_warnings = []
     try:
         with warnings.catch_warnings(record=True) as all_warnings:
+            rd: Optional[ResourceDescription] = load_raw_resource_description(rdf)
+
+            main_test_warnings += list(all_warnings)
+    except Exception as e:
+        rd = None
+        error: Optional[str] = str(e)
+        tb: Optional = traceback.format_tb(e.__traceback__)
+    else:
+        error = None
+        tb = None
+
+    load_summary = TestSummary(
+        name="Load raw resource description",
+        status="passed" if error is None else "failed",
+        error=error,
+        nested_errors=None,
+        traceback=tb,
+        bioimageio_spec_version=bioimageio_spec_version,
+        bioimageio_core_version=bioimageio_core_version,
+        warnings={},
+        source_name=source_name,
+    )
+
+    return rd, load_summary
+
+
+def _test_load_resource(
+    raw_rd: RawResourceDescription,
+    weight_format: Optional[WeightsFormat] = None,
+) -> Tuple[Optional[ResourceDescription], TestSummary]:
+    source_name = getattr(raw_rd, "rdf_source", getattr(raw_rd, "id", raw_rd.name))
+
+    main_test_warnings = []
+    try:
+        with warnings.catch_warnings(record=True) as all_warnings:
             rd: Optional[ResourceDescription] = load_resource_description(
-                rdf, weights_priority_order=None if weight_format is None else [weight_format]
+                raw_rd, weights_priority_order=None if weight_format is None else [weight_format]
             )
 
             main_test_warnings += list(all_warnings)
@@ -251,7 +289,7 @@ def _test_load_resource(
     return rd, load_summary
 
 
-def _test_expected_resource_type(rd: ResourceDescription, expected_type: str) -> TestSummary:
+def _test_expected_resource_type(rd: RawResourceDescription, expected_type: str) -> TestSummary:
     has_expected_type = rd.type == expected_type
     return dict(
         name="Has expected resource type",
@@ -274,21 +312,25 @@ def test_resource(
 
     Returns: summary dict with keys: name, status, error, traceback, bioimageio_spec_version, bioimageio_core_version
     """
-    rd, load_test = _test_load_resource(rdf, weight_format)
+    raw_rd, load_test = _test_load_raw_resource(rdf)
     tests: List[TestSummary] = [load_test]
-    if rd is not None:
-        if expected_type is not None:
-            tests.append(_test_expected_resource_type(rd, expected_type))
+    if raw_rd is None:
+        return tests
 
-        tests.append(_test_resource_urls(rd))
-        if tests[-1]["status"] == "passed":
-            tests.append(_test_resource_integrity(rd))
+    if expected_type is not None:
+        tests.append(_test_expected_resource_type(raw_rd, expected_type))
 
+    tests.append(_test_resource_urls(raw_rd))
+    if tests[-1]["status"] == "passed":
+        tests.append(_test_resource_integrity(raw_rd))
+
+    if tests[-1]["status"] != "passed":
+        return tests  # stop testing if resource availability/integrity is an issue
+
+    rd = _test_load_resource(raw_rd, weight_format)
     if isinstance(rd, Model):
-        if tests[-1]["status"] == "passed":  # only run inference when source file hashes match
-            tests.append(_test_model_inference(rd, weight_format, devices, decimal))
-
         tests.append(_test_model_documentation(rd))
+        tests.append(_test_model_inference(rd, weight_format, devices, decimal))
 
     return tests
 
