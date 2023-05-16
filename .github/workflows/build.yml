@@ -105,8 +105,8 @@ jobs:
     - name: Install Conda environment with Micromamba
       uses: mamba-org/provision-with-micromamba@main
       with:
-        cache-downloads: false  # false for debugging: TypeError: Cannot handle this data type: (1, 1, 3), <f8
-        cache-env: false  # false for debugging: TypeError: Cannot handle this data type: (1, 1, 3), <f8
+        cache-downloads: true
+        cache-env: true
         environment-file: dev/environment-tf-legacy.yaml
         channel-priority: flexible
         extra-specs: |
