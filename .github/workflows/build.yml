@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ "**" ]
 
+defaults:
+  run:
+    shell: bash -l {0}
+
 jobs:
   black:
     runs-on: ubuntu-latest
@@ -38,10 +42,8 @@ jobs:
         extra-specs: |
           python=${{ matrix.python-version }}
     - name: additional setup
-      shell: bash -l {0}
       run: pip install --no-deps -e .
     - name: pytest-spec-conda
-      shell: bash -l {0}
       run: pytest --disable-pytest-warnings
 
   test-spec-main:
@@ -60,13 +62,11 @@ jobs:
         extra-specs: |
           python=${{ matrix.python-version }}
     - name: additional setup
-      shell: bash -l {0}
       run: |
         conda remove --yes --force bioimageio.spec
         pip install --no-deps git+https://github.com/bioimage-io/spec-bioimage-io
         pip install --no-deps -e .
     - name: pytest-spec-main
-      shell: bash -l {0}
       run: pytest --disable-pytest-warnings
 
   test-spec-tf:
@@ -86,13 +86,11 @@ jobs:
         extra-specs: |
           python=${{ matrix.python-version }}
     - name: additional setup
-      shell: bash -l {0}
       run: |
         conda remove --yes --force bioimageio.spec
         pip install --no-deps git+https://github.com/bioimage-io/spec-bioimage-io
         pip install --no-deps -e .
     - name: pytest-spec-tf
-      shell: bash -l {0}
       run: pytest --disable-pytest-warnings
 
   test-spec-tf-legacy:
@@ -112,13 +110,11 @@ jobs:
         extra-specs: |
           python=${{ matrix.python-version }}
     - name: additional setup
-      shell: bash -l {0}
       run: |
         conda remove --yes --force bioimageio.spec
         pip install --no-deps git+https://github.com/bioimage-io/spec-bioimage-io
         pip install --no-deps -e .
     - name: pytest-spec-tf-legacy
-      shell: bash -l {0}
       run: pytest --disable-pytest-warnings
 
   conda-build:
@@ -140,6 +136,5 @@ jobs:
         extra-specs: |
           boa
     - name: linux conda build
-      shell: bash -l {0}
       run: |
         conda mambabuild -c conda-forge conda-recipe
