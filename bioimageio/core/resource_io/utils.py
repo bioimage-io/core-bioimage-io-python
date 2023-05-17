@@ -95,18 +95,18 @@ class Sha256NodeChecker(NodeVisitor):
 
                 source_node = getattr(node, source_name)
                 source = get_resolved_source_path(source_node, root_path=self.root_path)
-                actual_sha256 = get_sha256(source)
+                actual = get_sha256(source)
 
                 if not isinstance(expected, str):
                     raise TypeError(f"Expected '{sha_field}' to hold string, not {type(expected)}")
 
-                if actual_sha256 != expected:
-                    if actual_sha256[:6] != expected[:6]:
-                        actual_sha256 = actual_sha256[:6] + "..."
+                if actual != expected:
+                    if actual[:6] != expected[:6]:
+                        actual = actual[:6] + "..."
                         expected = expected[:6] + "..."
 
                     raise ValueError(
-                        f"Determined {actual_sha256} for {source_name}={source}, but expected {sha_field}={expected}"
+                        f"Determined {actual} for {source_name}={source}, but expected {sha_field}={expected}"
                     )
 
         super().generic_visit(node)
