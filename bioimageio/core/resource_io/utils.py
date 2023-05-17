@@ -58,13 +58,13 @@ class SourceNodeChecker(NodeVisitor):
 
 
 def get_sha256(path: os.PathLike) -> str:
+    """from https://stackoverflow.com/a/44873382"""
     h = hashlib.sha256()
-    with open(path, "rb") as f:
-        while True:
-            block = f.read(h.block_size)
-            if not block:
-                break
-            h.update(block)
+    b = bytearray(128 * 1024)
+    mv = memoryview(b)
+    with open(path, "rb", buffering=0) as f:
+        for n in iter(lambda: f.readinto(mv), 0):
+            h.update(mv[:n])
 
     return h.hexdigest()
 
