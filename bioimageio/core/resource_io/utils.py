@@ -77,43 +77,36 @@ class Sha256NodeChecker(NodeVisitor):
 
     def generic_visit(self, node):
         if isinstance(node, raw_nodes.RawNode):
-            for field, expected_sha256 in iter_fields(node):
-                if expected_sha256 is missing:
-                    continue
-
-                if field == "sha256":
+            for sha_field, expected in ((k, v) for (k, v) in iter_fields(node) if "sha256" in k and v is not missing):
+                if sha_field == "sha256":
                     source_name = "source"
-                    for sn in ["source", "uri"]:
-                        if hasattr(node, sn):
-                            source_name = sn
-                            break
+                    if not hasattr(node, "source") and hasattr(node, "uri"):
+                        source_name = "uri"
 
-                elif field.endswith("_sha256"):
-                    source_name = field[: -len("_sha256")]
-                elif "sha256" in field:
-                    raise NotImplementedError(f"Don't know how to check integrity with {field}")
+                elif sha_field.endswith("_sha256"):
+                    source_name = sha_field[: -len("_sha256")]
                 else:
-                    continue
+                    raise NotImplementedError(f"Don't know how to check integrity with {sha_field}")
 
                 if not hasattr(node, source_name):
                     raise ValueError(
-                        f"Node {node} expected to have '{source_name}' field associated with '{expected_sha256}'"
+                        f"Node {node} expected to have '{source_name}' field associated with '{sha_field}'"
                     )
 
                 source_node = getattr(node, source_name)
                 source = get_resolved_source_path(source_node, root_path=self.root_path)
                 actual_sha256 = get_sha256(source)
 
-                if not isinstance(expected_sha256, str):
-                    raise TypeError(f"Expected '{field}' to hold string, not {type(expected_sha256)}")
+                if not isinstance(expected, str):
+                    raise TypeError(f"Expected '{sha_field}' to hold string, not {type(expected)}")
 
-                if actual_sha256 != expected_sha256:
-                    if actual_sha256[:6] != expected_sha256[:6]:
+                if actual_sha256 != expected:
+                    if actual_sha256[:6] != expected[:6]:
                         actual_sha256 = actual_sha256[:6] + "..."
-                        expected_sha256 = expected_sha256[:6] + "..."
+                        expected = expected[:6] + "..."
 
                     raise ValueError(
-                        f"Determined {actual_sha256} for {source_name}={source}, but expected {field}={expected_sha256}"
+                        f"Determined {actual_sha256} for {source_name}={source}, but expected {sha_field}={expected}"
                     )
 
         super().generic_visit(node)
