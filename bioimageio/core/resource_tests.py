@@ -112,6 +112,9 @@ def _test_resource_urls(rd: RawResourceDescription) -> TestSummary:
 def _test_resource_integrity(rd: RawResourceDescription) -> TestSummary:
     assert isinstance(rd, RawResourceDescription)
     with warnings.catch_warnings(record=True) as all_warnings:
+        if isinstance(rd, ResourceDescription):
+            warnings.warn("Testing source file integrity of an already loaded resource!")
+
         try:
             Sha256NodeChecker(root_path=rd.root_path).visit(rd)
         except FileNotFoundError as e:

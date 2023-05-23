@@ -5,6 +5,7 @@ import os
 import pathlib
 import sys
 import typing
+import warnings
 from types import ModuleType
 
 from marshmallow import missing
@@ -18,6 +19,7 @@ from bioimageio.spec.shared.node_transformer import (
     UriNodeTransformer,
 )
 from . import nodes
+from .nodes import ImportedSource
 
 GenericNode = typing.Union[GenericRawNode, GenericResolvedNode]
 
@@ -94,6 +96,9 @@ class Sha256NodeChecker(NodeVisitor):
                     )
 
                 source_node = getattr(node, source_name)
+                if isinstance(source_node, ImportedSource):
+                    continue  # test is run after loading. Warning issued in resource_tests._test_resource_integrity
+
                 source = get_resolved_source_path(source_node, root_path=self.root_path)
                 actual = get_sha256(source)
 
