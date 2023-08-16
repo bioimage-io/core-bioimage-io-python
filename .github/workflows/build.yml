@@ -34,12 +34,12 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Install Conda environment with Micromamba
-      uses: mamba-org/provision-with-micromamba@main
+      uses: mamba-org/setup-micromamba@v1
       with:
         cache-downloads: true
-        cache-env: true
+        cache-environment: true
         environment-file: dev/environment-torch.yaml
-        extra-specs: |
+        create-args: >-
           python=${{ matrix.python-version }}
     - name: additional setup
       run: pip install --no-deps -e .
@@ -54,12 +54,12 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Install Conda environment with Micromamba
-      uses: mamba-org/provision-with-micromamba@main
+      uses: mamba-org/setup-micromamba@v1
       with:
         cache-downloads: true
-        cache-env: true
+        cache-environment: true
         environment-file: dev/environment-torch.yaml
-        extra-specs: |
+        create-args: >-
           python=${{ matrix.python-version }}
     - name: additional setup
       run: |
@@ -77,13 +77,14 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Install Conda environment with Micromamba
-      uses: mamba-org/provision-with-micromamba@main
+      uses: mamba-org/setup-micromamba@v1
       with:
         cache-downloads: true
-        cache-env: true
+        cache-environment: true
         environment-file: dev/environment-tf.yaml
-        channel-priority: flexible
-        extra-specs: |
+        condarc: |
+          channel-priority: flexible
+        create-args: >-
           python=${{ matrix.python-version }}
     - name: additional setup
       run: |
@@ -101,13 +102,14 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Install Conda environment with Micromamba
-      uses: mamba-org/provision-with-micromamba@main
+      uses: mamba-org/setup-micromamba@v1
       with:
         cache-downloads: true
-        cache-env: true
+        cache-environment: true
         environment-file: dev/environment-tf-legacy.yaml
-        channel-priority: flexible
-        extra-specs: |
+        condarc: |
+          channel_priority: flexible
+        create-args: |
           python=${{ matrix.python-version }}
     - name: additional setup
       run: |
@@ -126,14 +128,15 @@ jobs:
       with:
         fetch-depth: 0
     - name: Install Conda environment with Micromamba
-      uses: mamba-org/provision-with-micromamba@main
+      uses: mamba-org/setup-micromamba@v1
       with:
         cache-downloads: true
-        cache-env: true
-        environment-file: false
+        cache-environment: true
         environment-name: build-env
-        channels: conda-forge
-        extra-specs: |
+        condarc: |
+          channels:
+          - conda-forge
+        create-args: |
           boa
     - name: linux conda build
       run: |
