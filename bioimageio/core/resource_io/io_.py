@@ -30,15 +30,15 @@ def load_resource_description(
     *,
     weights_priority_order: Optional[Sequence[str]] = None,  # model only
 ) -> ResourceDescription:
-    """load a BioImage.IO resource description file (RDF).
+    """load a bioimage.io resource description file (RDF).
     This includes some transformations for convenience, e.g. importing `source`.
     Use `load_raw_resource_description` to obtain a raw representation instead.
 
     Args:
-        source: resource description file (RDF) or raw BioImage.IO resource
+        source: resource description file (RDF) or raw bioimage.io resource
         weights_priority_order: If given only the first weights format present in the model resource is included
     Returns:
-        BioImage.IO resource
+        bioimage.io resource
     """
     source = deepcopy(source)
     if isinstance(source, ResourceDescription):
@@ -101,7 +101,7 @@ def export_resource_package(
     update_to_format: Optional[str] = None,
     weights_priority_order: Optional[Sequence[Union[str]]] = None,
 ) -> pathlib.Path:
-    """Package a BioImage.IO resource as a zip file.
+    """Package a bioimage.io resource as a zip file.
 
     Args:
         source: raw resource description, path, URI or raw data as dict
@@ -114,7 +114,7 @@ def export_resource_package(
                                 If none of the prioritized weights formats is found all are included.
 
     Returns:
-        path to zipped BioImage.IO package in BIOIMAGEIO_CACHE_PATH or 'output_path'
+        path to zipped bioimage.io package in BIOIMAGEIO_CACHE_PATH or 'output_path'
     """
     raw_rd = load_raw_resource_description(source, update_to_format=update_to_format)
     package_content = get_local_resource_package_content(

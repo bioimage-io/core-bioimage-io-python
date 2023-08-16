@@ -15,11 +15,11 @@ def package(
     weights_priority_order: Optional[List[str]] = None,
     verbose: bool = False,
 ) -> int:
-    """Package a BioImage.IO resource described by a BioImage.IO Resource Description File (RDF)."""
+    """Package a bioimage.io resource described by a bioimage.io Resource Description File (RDF)."""
     code = validate(rdf_source, update_format=True, update_format_inner=True)
     source_name = rdf_source.get("name") if isinstance(rdf_source, dict) else rdf_source
-    if code["error"]:
-        print(f"Cannot package invalid BioImage.IO RDF {source_name}")
+    if code["status"] != "passed":
+        print(f"Cannot package invalid bioimage.io RDF {source_name}")
         return 1
 
     try:
