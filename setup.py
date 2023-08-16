@@ -18,21 +18,24 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/bioimage-io/core-bioimage-io-python",
     author="Bioimage Team",
-    classifiers=[  # Optional
+    classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
     ],
-    packages=find_namespace_packages(exclude=["tests"]),  # Required
+    packages=find_namespace_packages(exclude=["tests"]),
     install_requires=[
         "bioimageio.spec==0.4.9.*",
         "imageio>=2.5",
         "numpy",
         "ruamel.yaml",
-        "tqdm",
-        "xarray",
         "tifffile",
+        "tqdm",
+        "typer",
+        "xarray",
     ],
     include_package_data=True,
     extras_require={
@@ -42,7 +45,7 @@ setup(
         "tensorflow": ["tensorflow"],
         "onnx": ["onnxruntime"],
     },
-    project_urls={  # Optional
+    project_urls={
         "Bug Reports": "https://github.com/bioimage-io/core-bioimage-io-python/issues",
         "Source": "https://github.com/bioimage-io/core-bioimage-io-python",
     },

@@ -2,13 +2,10 @@ import os
 import pathlib
 from copy import deepcopy
 from tempfile import TemporaryDirectory
-from typing import Dict, Optional, Sequence, Union
+from typing import Dict, Literal, Optional, Sequence, Union
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from marshmallow import missing
-
-from bioimageio import spec
-from bioimageio.core.resource_io.nodes import ResourceDescription
+from bioimageio.spec._internal._constants import DISCOVER
 from bioimageio.spec import load_raw_resource_description
 from bioimageio.spec.shared import raw_nodes
 from bioimageio.spec.shared.common import (
@@ -17,7 +14,7 @@ from bioimageio.spec.shared.common import (
     get_class_name_from_type,
     no_cache_tmp_list,
 )
-from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
+from bioimageio.spec import ResourceDescription
 from . import nodes
 from .utils import resolve_raw_node, resolve_source
 
@@ -25,45 +22,21 @@ serialize_raw_resource_description = spec.io_.serialize_raw_resource_description
 save_raw_resource_description = spec.io_.save_raw_resource_description
 
 
-def load_resource_description(
-    source: Union[RawResourceDescription, ResourceDescription, os.PathLike, str, dict, raw_nodes.URI],
-    *,
-    weights_priority_order: Optional[Sequence[str]] = None,  # model only
-) -> ResourceDescription:
-    """load a bioimage.io resource description file (RDF).
-    This includes some transformations for convenience, e.g. importing `source`.
-    Use `load_raw_resource_description` to obtain a raw representation instead.
-
-    Args:
-        source: resource description file (RDF) or raw bioimage.io resource
-        weights_priority_order: If given only the first weights format present in the model resource is included
-    Returns:
-        bioimage.io resource
-    """
-    source = deepcopy(source)
-    if isinstance(source, ResourceDescription):
-        return source
-
-    raw_rd = load_raw_resource_description(source, update_to_format="latest")
-
-    if raw_rd.type == "model" and weights_priority_order is not None:
-        for wf in weights_priority_order:
-            if wf in raw_rd.weights:
-                raw_rd.weights = {wf: raw_rd.weights[wf]}
-                break
-        else:
-            raise ValueError(f"Not found any of the specified weights formats {weights_priority_order}")
-
-    rd: ResourceDescription = resolve_raw_node(raw_rd=raw_rd, nodes_module=nodes)
-    assert isinstance(rd, getattr(nodes, get_class_name_from_type(raw_rd.type)))
-
-    return rd
-
-
 def get_local_resource_package_content(
-    source: RawResourceDescription,
-    weights_priority_order: Optional[Sequence[Union[str]]],
-    update_to_format: Optional[str] = None,
+    source: ResourceDescription,
+    weights_priority_order: Optional[
+        Sequence[
+            Literal[
+                "keras_hdf5",
+                "onnx",
+                "pytorch_state_dict",
+                "tensorflow_js",
+                "tensorflow_saved_model_bundle",
+                "torchscript",
+            ]
+        ]
+    ],
+    format_version: Union[Literal["discover"], Literal["latest"], str] = DISCOVER,
 ) -> Dict[str, Union[pathlib.Path, str]]:
     """
 
@@ -77,7 +50,7 @@ def get_local_resource_package_content(
         Package content of local file paths or text content keyed by file names.
 
     """
-    raw_rd = load_raw_resource_description(source, update_to_format=update_to_format)
+    rd = load_resource_description(source, update_to_format=update_to_format)
     package_content = spec.get_resource_package_content(raw_rd, weights_priority_order=weights_priority_order)
 
     local_package_content = {}

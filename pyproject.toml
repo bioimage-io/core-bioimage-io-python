@@ -1,3 +1,23 @@
 [tool.black]
 line-length = 120
-target-version = ['py38']
+target-version = ['py38', 'py39', 'py310', 'py311']
+
+[tool.ruff]
+line-length = 120
+
+[tool.pyright]
+include = ["bioimageio", "scripts", "tests"]
+exclude = ["**/node_modules", "**/__pycache__", "tests/old_*"]
+typeCheckingMode = "strict"
+reportMissingSuperCall = "error"
+reportUnnecessaryTypeIgnoreComment = "error"
+reportUninitializedInstanceVariable = "error"
+reportUnknownMemberType = false
+reportIncompatibleMethodOverride = true
+reportMissingTypeArgument = true
+reportMissingTypeStubs = "warning"
+useLibraryCodeForTypes = true
+reportUnusedCallResult = "error"
+reportUnusedVariable = "error"
+pythonVersion = "3.9"
+pythonPlatform = "All"

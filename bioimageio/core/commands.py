@@ -5,7 +5,7 @@ from typing import List, Optional, Union
 
 from bioimageio.core import export_resource_package
 from bioimageio.core.resource_io.utils import resolve_source
-from bioimageio.spec.commands import validate
+from bioimageio.spec import validate
 from bioimageio.spec.shared.raw_nodes import URI
 
 
@@ -16,7 +16,7 @@ def package(
     verbose: bool = False,
 ) -> int:
     """Package a bioimage.io resource described by a bioimage.io Resource Description File (RDF)."""
-    code = validate(rdf_source, update_format=True, update_format_inner=True)
+    rd, summary = load_description(rdf_source, update_format=True, update_format_inner=True)
     source_name = rdf_source.get("name") if isinstance(rdf_source, dict) else rdf_source
     if code["status"] != "passed":
         print(f"Cannot package invalid bioimage.io RDF {source_name}")
