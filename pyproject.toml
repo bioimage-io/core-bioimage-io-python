@@ -2,8 +2,10 @@
 line-length = 120
 target-version = ['py38', 'py39', 'py310', 'py311']
 
-[tool.ruff]
-line-length = 120
+[tool.isort]
+line_length = 120
+multi_line_output = 3
+include_trailing_comma = true
 
 [tool.pyright]
 include = ["bioimageio", "scripts", "tests"]
@@ -21,3 +23,7 @@ reportUnusedCallResult = "error"
 reportUnusedVariable = "error"
 pythonVersion = "3.9"
 pythonPlatform = "All"
+
+[tool.pytest.ini_options]
+addopts = "-s --doctest-modules"
+# testpaths = ["bioimageio", "scripts", "example", "tests"]

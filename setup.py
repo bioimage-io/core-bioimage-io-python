@@ -39,7 +39,7 @@ setup(
     ],
     include_package_data=True,
     extras_require={
-        "test": ["pytest", "black", "mypy"],
+        "test": ["pytest", "black"],
         "dev": ["pre-commit"],
         "pytorch": ["torch>=1.6", "torchvision"],
         "tensorflow": ["tensorflow"],
