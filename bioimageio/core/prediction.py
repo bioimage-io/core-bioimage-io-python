@@ -3,17 +3,17 @@ import os
 from fractions import Fraction
 from itertools import product
 from pathlib import Path
-from typing import Dict, Iterator, List, NamedTuple, Optional, OrderedDict, Sequence, Tuple, Union
+from typing import Any, Dict, Iterator, List, NamedTuple, Optional, OrderedDict, Sequence, Tuple, Union
 
 import numpy as np
+from pydantic import HttpUrl
 import xarray as xr
 
 from bioimageio.core import image_helper, load_resource_description
 from bioimageio.core.prediction_pipeline import PredictionPipeline, create_prediction_pipeline
 from bioimageio.core.resource_io.nodes import ImplicitOutputShape, Model, ResourceDescription
-from bioimageio.spec.shared import raw_nodes
-from bioimageio.spec.shared.common import tqdm
-from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
+from tqdm import tqdm
+from bioimageio.spec import ResourceDescription
 
 
 def _apply_crop(data, crop):
@@ -428,7 +428,7 @@ def _predict_sample(prediction_pipeline, inputs, outputs, padding, tiling):
 
 
 def predict_image(
-    model_rdf: Union[RawResourceDescription, ResourceDescription, os.PathLike, str, dict, raw_nodes.URI],
+    model_rdf: RdfSource,
     inputs: Union[Tuple[Path, ...], List[Path], Path],
     outputs: Union[Tuple[Path, ...], List[Path], Path],
     padding: Optional[Union[bool, Dict[str, int]]] = None,
@@ -469,7 +469,7 @@ def predict_image(
 
 
 def predict_images(
-    model_rdf: Union[RawResourceDescription, ResourceDescription, os.PathLike, str, dict, raw_nodes.URI],
+    model_rdf: RdfSource,
     inputs: Sequence[Union[Tuple[Path, ...], List[Path], Path]],
     outputs: Sequence[Union[Tuple[Path, ...], List[Path], Path]],
     padding: Optional[Union[bool, Dict[str, int]]] = None,

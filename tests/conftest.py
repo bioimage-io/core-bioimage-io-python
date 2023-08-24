@@ -6,9 +6,9 @@ import warnings
 import pytest
 
 os.environ["BIOIMAGEIO_COUNT_RDF_DOWNLOADS"] = "false"  # disable tracking before bioimageio imports
-from bioimageio.core import export_resource_package
 from bioimageio.spec import __version__ as bioimageio_spec_version
 
+from bioimageio.core import write_zipped_resource_package
 
 logger = logging.getLogger(__name__)
 warnings.warn(f"testing with bioimageio.spec {bioimageio_spec_version}")
@@ -132,7 +132,7 @@ def pytest_configure():
     pytest.skip_onnx = skip_onnx
 
     # load all model packages used in tests
-    pytest.model_packages = {name: export_resource_package(model_sources[name]) for name in load_model_packages}
+    pytest.model_packages = {name: write_zipped_resource_package(model_sources[name]) for name in load_model_packages}
 
     pytest.mamba_cmd = "micromamba"
     try:

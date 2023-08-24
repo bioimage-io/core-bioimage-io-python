@@ -3,10 +3,11 @@ import traceback
 from pathlib import Path
 from typing import List, Optional, Union
 
-from bioimageio.core import export_resource_package
-from bioimageio.core.resource_io.utils import resolve_source
 from bioimageio.spec import validate
 from bioimageio.spec.shared.raw_nodes import URI
+
+from bioimageio.core import export_resource_package
+from bioimageio.core._internal.validation_visitors import resolve_source
 
 
 def package(

@@ -4,8 +4,8 @@ import xarray as xr
 from numpy.testing import assert_array_almost_equal
 
 from bioimageio.core import load_resource_description
+from bioimageio.core._internal.pytest_utils import skip_on
 from bioimageio.core.resource_io.nodes import Model
-from bioimageio.core.utils import skip_on
 
 
 class TooFewDevicesException(Exception):
