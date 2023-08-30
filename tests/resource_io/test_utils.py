@@ -1,13 +1,13 @@
 import dataclasses
 from pathlib import Path
 
-from bioimageio.core.resource_io import nodes, utils
-from bioimageio.core.resource_io.utils import Sha256NodeChecker
+import pytest
 from bioimageio.spec.shared import raw_nodes
 from bioimageio.spec.shared.raw_nodes import RawNode
 
-
-import pytest
+from bioimageio.core._internal import validation_visitors
+from bioimageio.core._internal.validation_visitors import Sha256NodeChecker
+from bioimageio.core.resource_io import nodes
 
 
 def test_resolve_import_path(tmpdir):
@@ -17,8 +17,8 @@ def test_resolve_import_path(tmpdir):
     source_file = Path("my_mod.py")
     (tmpdir / str(source_file)).write_text("class Foo: pass", encoding="utf8")
     node = raw_nodes.ImportableSourceFile(source_file=source_file, callable_name="Foo")
-    uri_transformed = utils.UriNodeTransformer(root_path=tmpdir).transform(node)
-    source_transformed = utils.SourceNodeTransformer().transform(uri_transformed)
+    uri_transformed = validation_visitors.UriNodeTransformer(root_path=tmpdir).transform(node)
+    source_transformed = validation_visitors.SourceNodeTransformer().transform(uri_transformed)
     assert isinstance(source_transformed, nodes.ImportedSource), type(source_transformed)
     Foo = source_transformed.factory
     assert Foo.__name__ == "Foo", Foo.__name__
@@ -27,7 +27,7 @@ def test_resolve_import_path(tmpdir):
 
 def test_resolve_directory_uri(tmpdir):
     node = raw_nodes.URI(Path(tmpdir).as_uri())
-    uri_transformed = utils.UriNodeTransformer(root_path=Path(tmpdir)).transform(node)
+    uri_transformed = validation_visitors.UriNodeTransformer(root_path=Path(tmpdir)).transform(node)
     assert uri_transformed == Path(tmpdir)
 
 
@@ -36,7 +36,7 @@ def test_uri_available():
 
 
 def test_all_uris_available():
-    from bioimageio.core.resource_io.utils import all_sources_available
+    from bioimageio.core._internal.validation_visitors import all_sources_available
 
     not_available = {
         "uri": raw_nodes.URI(scheme="file", path="non_existing_file_in/non_existing_dir/ftw"),
@@ -46,7 +46,7 @@ def test_all_uris_available():
 
 
 def test_uri_node_transformer_is_ok_with_abs_path():
-    from bioimageio.core.resource_io.utils import UriNodeTransformer
+    from bioimageio.core._internal.validation_visitors import UriNodeTransformer
 
     # note: the call of .absolute() is required to add the drive letter for windows paths, which are relative otherwise
     tree = {"rel_path": Path("something/relative"), "abs_path": Path("/something/absolute").absolute()}

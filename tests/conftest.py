@@ -1,36 +1,41 @@
+from __future__ import annotations
+
 import logging
 import os
 import subprocess
 import warnings
+from types import MappingProxyType
+from typing import Set
 
-import pytest
+from pydantic import FilePath
+from pytest import FixtureRequest, fixture
 
 os.environ["BIOIMAGEIO_COUNT_RDF_DOWNLOADS"] = "false"  # disable tracking before bioimageio imports
 from bioimageio.spec import __version__ as bioimageio_spec_version
 
-from bioimageio.core import write_zipped_resource_package
+from bioimageio.core import write_package
 
 logger = logging.getLogger(__name__)
 warnings.warn(f"testing with bioimageio.spec {bioimageio_spec_version}")
 
 # test models for various frameworks
-torch_models = [
+TORCH_MODELS = [
     "unet2d_fixed_shape",
     "unet2d_multi_tensor",
     "unet2d_nuclei_broad_model",
     "unet2d_diff_output_shape",
     "shape_change",
 ]
-torchscript_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
-onnx_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model", "hpa_densenet"]
-tensorflow1_models = ["stardist"]
-tensorflow2_models = ["unet2d_keras_tf2"]
-keras_tf1_models = ["unet2d_keras"]
-keras_tf2_models = ["unet2d_keras_tf2"]
-tensorflow_js_models = []
+TORCHSCRIPT_MODELS = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
+ONNX_MODELS = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model", "hpa_densenet"]
+TENSORFLOW1_MODELS = ["stardist"]
+TENSORFLOW2_MODELS = ["unet2d_keras_tf2"]
+KERAS_TF1_MODELS = ["unet2d_keras"]
+KERAS_TF2_MODELS = ["unet2d_keras_tf2"]
+TENSORFLOW_JS_MODELS = []
 
 
-model_sources = {
+MODEL_SOURCES = {
     "unet2d_keras": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
         "unet2d_keras_tf/rdf.yaml"
@@ -91,58 +96,60 @@ except ImportError:
 skip_torch = torch is None
 
 try:
-    import onnxruntime
+    import onnxruntime  # type: ignore
 except ImportError:
     onnxruntime = None
 skip_onnx = onnxruntime is None
 
 try:
-    import tensorflow
+    import tensorflow  # type: ignore
 
-    tf_major_version = int(tensorflow.__version__.split(".")[0])
+    tf_major_version = int(tensorflow.__version__.split(".")[0])  # type: ignore
 except ImportError:
     tensorflow = None
     tf_major_version = None
+
 skip_tensorflow = tensorflow is None
 skip_tensorflow_js = True  # TODO: add a tensorflow_js example model
 
 # load all model packages we need for testing
-load_model_packages = set()
+load_model_packages: Set[str] = set()
 if not skip_torch:
-    load_model_packages |= set(torch_models + torchscript_models)
+    load_model_packages |= set(TORCH_MODELS + TORCHSCRIPT_MODELS)
 
 if not skip_onnx:
-    load_model_packages |= set(onnx_models)
+    load_model_packages |= set(ONNX_MODELS)
 
 if not skip_tensorflow:
-    load_model_packages |= set(tensorflow_js_models)
+    load_model_packages |= set(TENSORFLOW_JS_MODELS)
     if tf_major_version == 1:
-        load_model_packages |= set(keras_tf1_models)
-        load_model_packages |= set(tensorflow1_models)
+        load_model_packages |= set(KERAS_TF1_MODELS)
+        load_model_packages |= set(TENSORFLOW1_MODELS)
         load_model_packages.add("stardist_wrong_shape")
         load_model_packages.add("stardist_wrong_shape2")
     elif tf_major_version == 2:
-        load_model_packages |= set(keras_tf2_models)
-        load_model_packages |= set(tensorflow2_models)
+        load_model_packages |= set(KERAS_TF2_MODELS)
+        load_model_packages |= set(TENSORFLOW2_MODELS)
 
 
-def pytest_configure():
-    # explicit skip flags needed for some tests
-    pytest.skip_torch = skip_torch
-    pytest.skip_onnx = skip_onnx
+@fixture(scope="session")
+def model_packages():
+    return MappingProxyType({name: write_package(MODEL_SOURCES[name]) for name in load_model_packages})
 
-    # load all model packages used in tests
-    pytest.model_packages = {name: write_zipped_resource_package(model_sources[name]) for name in load_model_packages}
 
-    pytest.mamba_cmd = "micromamba"
+@fixture(scope="session")
+def mamba_cmd():
+    mamba_cmd = "micromamba"
     try:
-        subprocess.run(["which", pytest.mamba_cmd], check=True)
+        _ = subprocess.run(["which", mamba_cmd], check=True)
     except (subprocess.CalledProcessError, FileNotFoundError):
-        pytest.mamba_cmd = "mamba"
+        mamba_cmd = "mamba"
         try:
-            subprocess.run(["which", pytest.mamba_cmd], check=True)
+            _ = subprocess.run(["which", mamba_cmd], check=True)
         except (subprocess.CalledProcessError, FileNotFoundError):
-            pytest.mamba_cmd = None
+            mamba_cmd = None
+
+    return mamba_cmd
 
 
 #
@@ -150,42 +157,42 @@ def pytest_configure():
 #
 
 
-@pytest.fixture(params=[] if skip_torch else torch_models)
-def any_torch_model(request):
-    return pytest.model_packages[request.param]
+@fixture(params=[] if skip_torch else TORCH_MODELS)
+def any_torch_model(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+    return model_packages[request.param]
 
 
-@pytest.fixture(params=[] if skip_torch else torchscript_models)
-def any_torchscript_model(request):
-    return pytest.model_packages[request.param]
+@fixture(params=[] if skip_torch else TORCHSCRIPT_MODELS)
+def any_torchscript_model(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+    return model_packages[request.param]
 
 
-@pytest.fixture(params=[] if skip_onnx else onnx_models)
-def any_onnx_model(request):
-    return pytest.model_packages[request.param]
+@fixture(params=[] if skip_onnx else ONNX_MODELS)
+def any_onnx_model(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+    return model_packages[request.param]
 
 
-@pytest.fixture(params=[] if skip_tensorflow else tensorflow1_models if tf_major_version == 1 else tensorflow2_models)
-def any_tensorflow_model(request):
-    return pytest.model_packages[request.param]
+@fixture(params=[] if skip_tensorflow else TENSORFLOW1_MODELS if tf_major_version == 1 else TENSORFLOW2_MODELS)
+def any_tensorflow_model(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+    return model_packages[request.param]
 
 
-@pytest.fixture(params=[] if skip_tensorflow else keras_tf1_models if tf_major_version == 1 else keras_tf2_models)
-def any_keras_model(request):
-    return pytest.model_packages[request.param]
+@fixture(params=[] if skip_tensorflow else KERAS_TF1_MODELS if tf_major_version == 1 else KERAS_TF2_MODELS)
+def any_keras_model(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+    return model_packages[request.param]
 
 
-@pytest.fixture(params=[] if skip_tensorflow_js else tensorflow_js_models)
-def any_tensorflow_js_model(request):
-    return pytest.model_packages[request.param]
+@fixture(params=[] if skip_tensorflow_js else TENSORFLOW_JS_MODELS)
+def any_tensorflow_js_model(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+    return model_packages[request.param]
 
 
 # fixture to test with all models that should run in the current environment
 # we exclude stardist_wrong_shape here because it is not a valid model
 # and included only to test that validation for this model fails
-@pytest.fixture(params=load_model_packages - {"stardist_wrong_shape", "stardist_wrong_shape2"})
-def any_model(request):
-    return pytest.model_packages[request.param]
+@fixture(params=load_model_packages - {"stardist_wrong_shape", "stardist_wrong_shape2"})
+def any_model(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+    return model_packages[request.param]
 
 
 # TODO it would be nice to just generate fixtures for all the individual models dynamically
@@ -195,64 +202,64 @@ def any_model(request):
 #
 
 
-@pytest.fixture(params=[] if skip_torch else ["unet2d_nuclei_broad_model", "unet2d_fixed_shape"])
-def unet2d_fixed_shape_or_not(request):
-    return pytest.model_packages[request.param]
+@fixture(params=[] if skip_torch else ["unet2d_nuclei_broad_model", "unet2d_fixed_shape"])
+def unet2d_fixed_shape_or_not(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+    return model_packages[request.param]
 
 
-@pytest.fixture(params=[] if skip_onnx or skip_torch else ["unet2d_nuclei_broad_model", "unet2d_multi_tensor"])
-def convert_to_onnx(request):
-    return pytest.model_packages[request.param]
+@fixture(params=[] if skip_onnx or skip_torch else ["unet2d_nuclei_broad_model", "unet2d_multi_tensor"])
+def convert_to_onnx(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+    return model_packages[request.param]
 
 
-@pytest.fixture(params=[] if skip_tensorflow else ["unet2d_keras" if tf_major_version == 1 else "unet2d_keras_tf2"])
-def unet2d_keras(request):
-    return pytest.model_packages[request.param]
-
-
-# written as model group to automatically skip on missing torch
-@pytest.fixture(params=[] if skip_torch else ["unet2d_nuclei_broad_model"])
-def unet2d_nuclei_broad_model(request):
-    return pytest.model_packages[request.param]
+@fixture(params=[] if skip_tensorflow else ["unet2d_keras" if tf_major_version == 1 else "unet2d_keras_tf2"])
+def unet2d_keras(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+    return model_packages[request.param]
 
 
 # written as model group to automatically skip on missing torch
-@pytest.fixture(params=[] if skip_torch else ["unet2d_diff_output_shape"])
-def unet2d_diff_output_shape(request):
-    return pytest.model_packages[request.param]
+@fixture(params=[] if skip_torch else ["unet2d_nuclei_broad_model"])
+def unet2d_nuclei_broad_model(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+    return model_packages[request.param]
 
 
 # written as model group to automatically skip on missing torch
-@pytest.fixture(params=[] if skip_torch else ["unet2d_expand_output_shape"])
-def unet2d_expand_output_shape(request):
-    return pytest.model_packages[request.param]
+@fixture(params=[] if skip_torch else ["unet2d_diff_output_shape"])
+def unet2d_diff_output_shape(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+    return model_packages[request.param]
 
 
 # written as model group to automatically skip on missing torch
-@pytest.fixture(params=[] if skip_torch else ["unet2d_fixed_shape"])
-def unet2d_fixed_shape(request):
-    return pytest.model_packages[request.param]
+@fixture(params=[] if skip_torch else ["unet2d_expand_output_shape"])
+def unet2d_expand_output_shape(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+    return model_packages[request.param]
 
 
 # written as model group to automatically skip on missing torch
-@pytest.fixture(params=[] if skip_torch else ["shape_change"])
-def shape_change_model(request):
-    return pytest.model_packages[request.param]
+@fixture(params=[] if skip_torch else ["unet2d_fixed_shape"])
+def unet2d_fixed_shape(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+    return model_packages[request.param]
+
+
+# written as model group to automatically skip on missing torch
+@fixture(params=[] if skip_torch else ["shape_change"])
+def shape_change_model(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+    return model_packages[request.param]
 
 
 # written as model group to automatically skip on missing tensorflow 1
-@pytest.fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist_wrong_shape"])
-def stardist_wrong_shape(request):
-    return pytest.model_packages[request.param]
+@fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist_wrong_shape"])
+def stardist_wrong_shape(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+    return model_packages[request.param]
 
 
 # written as model group to automatically skip on missing tensorflow 1
-@pytest.fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist_wrong_shape2"])
-def stardist_wrong_shape2(request):
-    return pytest.model_packages[request.param]
+@fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist_wrong_shape2"])
+def stardist_wrong_shape2(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+    return model_packages[request.param]
 
 
 # written as model group to automatically skip on missing tensorflow 1
-@pytest.fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist"])
-def stardist(request):
-    return pytest.model_packages[request.param]
+@fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist"])
+def stardist(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+    return model_packages[request.param]
