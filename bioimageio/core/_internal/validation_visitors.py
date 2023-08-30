@@ -10,9 +10,9 @@ from typing import Any, Hashable, List, Optional, Tuple, TypedDict, Union
 
 from annotated_types import SLOTS
 from bioimageio.spec._internal.base_nodes import Node
-from bioimageio.spec._internal.constants import IN_PACKAGE_MESSAGE, KW_ONLY, SLOTS
+from bioimageio.spec._internal.constants import ALERT_TYPE, IN_PACKAGE_MESSAGE, KW_ONLY, SLOTS
 from bioimageio.spec.description import ResourceDescription
-from bioimageio.spec.summary import ErrorOutcome, WarningOutcome
+from bioimageio.spec.summary import ErrorEntry, WarningEntry
 from bioimageio.spec.types import Loc
 from pydantic import AnyUrl, DirectoryPath
 from pydantic.fields import FieldInfo
@@ -32,8 +32,8 @@ class Note:
 class ValidationVisitor:
     def __init__(self) -> None:
         super().__init__()
-        self.errors: List[ErrorOutcome] = []
-        self.warnings: List[WarningOutcome] = []
+        self.errors: List[ErrorEntry] = []
+        self.warnings: List[WarningEntry] = []
 
     @singledispatchmethod
     def visit(self, obj: type, /, note: Note = Note()):
@@ -65,8 +65,12 @@ class SourceValidator(ValidationVisitor):
         super().__init__()
         self.root = root
 
-    # def _visit_path(self, path: PurePath, info: FieldInfo):
-    #     if not Path(path).exists():
+    def _visit_path(self, path: PurePath, note: Note):
+        if not Path(path).exists():
+            if note.info and note.info.description and note.info.description.startswith(IN_PACKAGE_MESSAGE):
+                self.errors.append(ErrorEntry(loc=note.loc, msg=msg, type="file-not-found"))
+            else:
+                self.warnings.append(WarningEntry(loc=note.loc, msg=msg, type=ALERT_TYPE))
 
 
 #             # info.description.startswith(IN_PACKAGE_MESSAGE)

@@ -1,11 +1,20 @@
+from __future__ import annotations
+
 import os
 from copy import deepcopy
 from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import imageio
 import numpy as np
+from bioimageio.spec.model.v0_4 import InputTensor as InputTensor04
+from bioimageio.spec.model.v0_4 import OutputTensor as OutputTensor04
+from bioimageio.spec.model.v0_5 import InputTensor as InputTensor05
+from bioimageio.spec.model.v0_5 import OutputTensor as OutputTensor05
+from numpy.typing import NDArray
 from xarray import DataArray
-from bioimageio.core.resource_io.nodes import InputTensor, OutputTensor
+
+InputTensor = Union[InputTensor04, InputTensor05]
+OutputTensor = Union[OutputTensor04, OutputTensor05]
 
 
 #
@@ -13,7 +22,7 @@ from bioimageio.core.resource_io.nodes import InputTensor, OutputTensor
 #
 
 
-def transform_input_image(image: np.ndarray, tensor_axes: str, image_axes: Optional[str] = None):
+def transform_input_image(image: NDArray, tensor_axes: str, image_axes: Optional[str] = None):
     """Transform input image into output tensor with desired axes.
 
     Args:
@@ -51,7 +60,7 @@ def _drop_axis_default(axis_name, axis_len):
     return axis_len // 2 if axis_name in "zyx" else 0
 
 
-def transform_output_tensor(tensor: np.ndarray, tensor_axes: str, output_axes: str, drop_function=_drop_axis_default):
+def transform_output_tensor(tensor: NDArray, tensor_axes: str, output_axes: str, drop_function=_drop_axis_default):
     """Transform output tensor into image with desired axes.
 
     Args:
@@ -157,7 +166,6 @@ def pad(image, axes: Sequence[str], padding, pad_right=True) -> Tuple[np.ndarray
     pad_width = []
     crop = {}
     for ax, dlen, pr in zip(axes, image.shape, pad_right):
-
         if ax in "zyx":
             pad_to = padding_[ax]
 
