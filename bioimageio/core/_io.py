@@ -5,7 +5,7 @@ import os
 import shutil
 from pathlib import Path
 from tempfile import NamedTemporaryFile, TemporaryDirectory
-from typing import Dict, Literal, NamedTuple, Optional, Sequence, Tuple, Union, cast
+from typing import Dict, Literal, NamedTuple, Optional, Sequence, Tuple, Union
 from zipfile import ZIP_DEFLATED
 
 import pooch
@@ -16,14 +16,7 @@ from bioimageio.spec.description import dump_description
 from bioimageio.spec.model.v0_4 import WeightsFormat
 from bioimageio.spec.package import extract_file_name, get_resource_package_content
 from bioimageio.spec.summary import ValidationSummary
-from bioimageio.spec.types import (
-    FileName,
-    RawStringMapping,
-    RawValue,
-    RelativeFilePath,
-    ValidationContext,
-    WarningLevel,
-)
+from bioimageio.spec.types import FileName, RelativeFilePath, ValidationContext, WarningLevel, YamlMapping, YamlValue
 from pydantic import AnyUrl, DirectoryPath, FilePath, HttpUrl, TypeAdapter
 from ruamel.yaml import YAML
 
@@ -31,17 +24,19 @@ from bioimageio.core._internal.utils import get_parent_url, write_zip
 
 yaml = YAML(typ="safe")
 
-FileSource = Union[HttpUrl, FilePath]
+StrictFileSource = Union[HttpUrl, FilePath]
+FileSource = Union[StrictFileSource, str]
+DescriptionSource = Union[ResourceDescription, YamlMapping, FileSource]
 
 
 class ReadRdf(NamedTuple):
-    content: RawStringMapping
+    content: YamlMapping
     root: Union[HttpUrl, DirectoryPath]
     file_name: str
 
 
 def load_description_from_file(
-    source: Union[FileSource, str],
+    source: FileSource,
     /,
     *,
     warning_level: WarningLevel = ERROR,
@@ -55,11 +50,9 @@ def load_description_from_file(
     )
 
 
-def read_rdf(
-    source: Union[FileSource, str], /, *, known_hash: Optional[str] = None, encoding: Optional[str] = None
-) -> ReadRdf:
+def read_rdf(source: FileSource, /, *, known_hash: Optional[str] = None, encoding: Optional[str] = None) -> ReadRdf:
     if isinstance(source, str):
-        source = TypeAdapter(FileSource).validate_python(source)
+        source = TypeAdapter(StrictFileSource).validate_python(source)
 
     src_msg = str(source)
     if isinstance(source, AnyUrl):
@@ -72,7 +65,7 @@ def read_rdf(
         root = source.parent
 
     with local_source.open(encoding=encoding) as f:
-        content: RawValue = yaml.load(f)
+        content: YamlValue = yaml.load(f)
 
     if not isinstance(content, collections.abc.Mapping):
         raise TypeError(f"Expected RDF content to be a mapping, but got '{type(content)}'.")
@@ -81,7 +74,7 @@ def read_rdf(
         raise TypeError(f"Got non-string keys {non_string_keys} in {src_msg}")
 
     return ReadRdf(
-        content=cast(RawStringMapping, content),
+        content=content,
         root=root,
         file_name=extract_file_name(source),
     )
@@ -109,7 +102,7 @@ def resolve_source(
     return source
 
 
-def dump_description_to_file(rd: Union[ResourceDescription, RawStringMapping], /, file_path: Path):
+def dump_description_to_file(rd: Union[ResourceDescription, YamlMapping], /, file_path: Path):
     if isinstance(rd, ResourceDescriptionBase):
         content = dump_description(rd)
     else:
@@ -120,7 +113,7 @@ def dump_description_to_file(rd: Union[ResourceDescription, RawStringMapping], /
 
 
 def load_description_from_file_and_validate(
-    rdf_source: Union[FileSource, str],
+    rdf_source: FileSource,
     /,
     *,
     warning_level: WarningLevel = ERROR,
@@ -132,7 +125,7 @@ def load_description_from_file_and_validate(
 
 
 def load_description_and_validate(
-    rdf_content: RawStringMapping,
+    rdf_content: YamlMapping,
     /,
     *,
     context: Optional[ValidationContext] = None,
@@ -144,7 +137,7 @@ def load_description_and_validate(
 
 
 def validate(
-    rdf_content: RawStringMapping,
+    rdf_content: YamlMapping,
     /,
     *,
     context: Optional[ValidationContext] = None,
@@ -153,14 +146,12 @@ def validate(
     return summary
 
 
-def validate_rdf(rdf_source: Union[FileSource, str], /, *, warning_level: WarningLevel = ERROR) -> ValidationSummary:
+def validate_rdf(rdf_source: FileSource, /, *, warning_level: WarningLevel = ERROR) -> ValidationSummary:
     _rd, summary = load_description_from_file_and_validate(rdf_source, warning_level=warning_level)
     return summary
 
 
-def validate_rdf_format(
-    rdf_source: Union[FileSource, str], /, *, warning_level: WarningLevel = ERROR
-) -> ValidationSummary:
+def validate_rdf_format(rdf_source: FileSource, /, *, warning_level: WarningLevel = ERROR) -> ValidationSummary:
     _rd, summary = load_description_from_file(rdf_source, warning_level=warning_level)
     return summary
 
@@ -205,7 +196,7 @@ def prepare_resource_package(
 
 
 def write_package(
-    rd: Union[ResourceDescription, FileSource, str],
+    rd: Union[ResourceDescription, FileSource],
     /,
     *,
     root: Union[AnyUrl, DirectoryPath] = Path(),
