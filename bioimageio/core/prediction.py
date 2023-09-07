@@ -3,46 +3,46 @@ import os
 from fractions import Fraction
 from itertools import product
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, NamedTuple, Optional, OrderedDict, Sequence, Tuple, Union
+from typing import Any, Dict, Hashable, Iterator, List, NamedTuple, Optional, OrderedDict, Sequence, Tuple, Union
 
 import numpy as np
-from pydantic import HttpUrl
 import xarray as xr
+from bioimageio.spec import ResourceDescription
+from bioimageio.spec.model.v0_5 import AxisType
+from numpy.typing import NDArray
+from pydantic import HttpUrl
+from tqdm import tqdm
 
 from bioimageio.core import image_helper, load_resource_description
 from bioimageio.core.prediction_pipeline import PredictionPipeline, create_prediction_pipeline
 from bioimageio.core.resource_io.nodes import ImplicitOutputShape, Model, ResourceDescription
-from tqdm import tqdm
-from bioimageio.spec import ResourceDescription
 
-
-def _apply_crop(data, crop):
-    crop = tuple(crop[ax] for ax in data.dims)
-    return data[crop]
+Axis = Hashable
 
 
 class TileDef(NamedTuple):
-    outer: Dict[str, slice]
-    inner: Dict[str, slice]
-    local: Dict[str, slice]
+    outer: Dict[Axis, slice]
+    inner: Dict[Axis, slice]
+    local: Dict[Axis, slice]
 
 
 def get_tiling(
     shape: Sequence[int],
-    tile_shape: Dict[str, int],
-    halo: Dict[str, int],
-    input_axes: Sequence[str],
-    scaling: Dict[str, float],
+    tile_shape: Dict[Axis, int],
+    halo: Dict[Axis, int],
+    input_axes: Sequence[Axis],
+    axis_types: Dict[Axis, AxisType],
+    scaling: Dict[Axis, float],
 ) -> Iterator[TileDef]:
     # outer_tile is the "input" tile, inner_tile is the "output" tile with the halo removed
     # tile_shape is the shape of the outer_tile
     assert len(shape) == len(input_axes)
-    scaling = {ax: Fraction(sc).limit_denominator() for ax, sc in scaling.items()}
+    scaling_fractions = {ax: Fraction(sc).limit_denominator() for ax, sc in scaling.items()}
 
-    shape_ = [sh for sh, ax in zip(shape, input_axes) if ax in "xyz"]
-    spatial_axes = [ax for ax in input_axes if ax in "xyz"]
+    shape_ = [sh for sh, ax in zip(shape, input_axes) if axis_types[ax] == "space"]
+    spatial_axes = [ax for ax in input_axes if axis_types[ax] == "space"]
     inner_tile_shape_ = [tile_shape[ax] - 2 * halo[ax] for ax in spatial_axes]
-    scaling_ = [scaling[ax] for ax in spatial_axes]
+    scaling_ = [scaling_fractions[ax] for ax in spatial_axes]
     assert all([sh % fr.denominator == 0 for sh, fr in zip(shape_, scaling_)])
     assert all([ish % fr.denominator == 0 for ish, fr in zip(inner_tile_shape_, scaling_)])
     halo_ = [halo[ax] for ax in spatial_axes]
@@ -58,15 +58,15 @@ def get_tiling(
             ax: slice(int(pos * fr), int(min(pos + tsh, sh) * fr))
             for ax, pos, tsh, sh, fr in zip(spatial_axes, positions, inner_tile_shape_, shape_, scaling_)
         }
-        inner_tile["b"] = slice(None)
-        inner_tile["c"] = slice(None)
+        # inner_tile["b"] = slice(None)
+        # inner_tile["c"] = slice(None)
 
         outer_tile = {
             ax: slice(max(pos - ha, 0), min(pos + tsh + ha, sh))
             for ax, pos, tsh, sh, ha in zip(spatial_axes, positions, inner_tile_shape_, shape_, halo_)
         }
-        outer_tile["b"] = slice(None)
-        outer_tile["c"] = slice(None)
+        # outer_tile["b"] = slice(None)
+        # outer_tile["c"] = slice(None)
 
         local_tile = {
             ax: slice(
@@ -77,8 +77,8 @@ def get_tiling(
             )
             for ax in spatial_axes
         }
-        local_tile["b"] = slice(None)
-        local_tile["c"] = slice(None)
+        # local_tile["b"] = slice(None)
+        # local_tile["c"] = slice(None)
 
         yield TileDef(outer_tile, inner_tile, local_tile)
 
@@ -109,14 +109,11 @@ def _predict_with_tiling_impl(
 
     tiles = get_tiling(shape=input_.shape, tile_shape=tile_shape, halo=halo, input_axes=input_.dims, scaling=scaling)
 
-    assert all(isinstance(ax, str) for ax in input_.dims)
-    input_axes: Tuple[str, ...] = input_.dims  # noqa
-
     def load_tile(tile):
         inp = input_[tile]
         # whether to pad on the right or left of the dim for the spatial dims
         # + placeholders for batch and axis dimension, where we don't pad
-        pad_right = [tile[ax].start == 0 if ax in "xyz" else None for ax in input_axes]
+        pad_right = [tile[ax].start == 0 if ax in "xyz" else None for ax in input_.dims]
         return inp, pad_right
 
     if verbose:
@@ -136,15 +133,10 @@ def _predict_with_tiling_impl(
         output[inner_tile] = out[local_tile]
 
 
-#
-# prediction functions
-#
-
-
 def predict(
     prediction_pipeline: PredictionPipeline,
     inputs: Union[
-        xr.DataArray, List[xr.DataArray], Tuple[xr.DataArray], np.ndarray, List[np.ndarray], Tuple[np.ndarray]
+        xr.DataArray, List[xr.DataArray], Tuple[xr.DataArray], NDArray[Any], List[NDArray[Any]], Tuple[NDArray[Any]]
     ],
 ) -> List[xr.DataArray]:
     """Run prediction for a single set of input(s) with a bioimage.io model
@@ -239,7 +231,7 @@ def predict_with_padding(
     )
     result = predict(prediction_pipeline, inputs)
     if network_resizes:
-        crops = tuple(
+        crops = [
             {
                 ax: slice(
                     crp.start if crp.start is None else int(crp.start * scale[ax] + 2 * offset[ax]),
@@ -250,8 +242,8 @@ def predict_with_padding(
                 for ax, crp in crop.items()
             }
             for crop in crops
-        )
-    return [_apply_crop(res, crop) for res, crop in zip(result, crops)]
+        ]
+    return [res[crop] for res, crop in zip(result, crops)]
 
 
 # simple heuristic to determine suitable shape from min and step
@@ -428,7 +420,7 @@ def _predict_sample(prediction_pipeline, inputs, outputs, padding, tiling):
 
 
 def predict_image(
-    model_rdf: RdfSource,
+    model_rdf: DescriptionSource,
     inputs: Union[Tuple[Path, ...], List[Path], Path],
     outputs: Union[Tuple[Path, ...], List[Path], Path],
     padding: Optional[Union[bool, Dict[str, int]]] = None,
@@ -469,7 +461,7 @@ def predict_image(
 
 
 def predict_images(
-    model_rdf: RdfSource,
+    model_rdf: DescriptionSource,
     inputs: Sequence[Union[Tuple[Path, ...], List[Path], Path]],
     outputs: Sequence[Union[Tuple[Path, ...], List[Path], Path]],
     padding: Optional[Union[bool, Dict[str, int]]] = None,

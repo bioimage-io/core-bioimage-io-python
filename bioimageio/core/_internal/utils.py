@@ -1,15 +1,18 @@
 from __future__ import annotations
 
+import io
 import os
 import sys
 from pathlib import Path
-from typing import Mapping, Union
+from typing import Any, Dict, Mapping, Union
 from urllib.parse import urlsplit, urlunsplit
 from zipfile import ZipFile
 
-from bioimageio.spec.types import FileName
+from bioimageio.spec._internal.types import FileName
 from pydantic import AnyUrl, FilePath, HttpUrl
+from ruamel.yaml import YAML
 
+yaml = YAML(typ="safe")
 if sys.version_info < (3, 9):
 
     def files(package_name: str):
@@ -29,7 +32,7 @@ def get_parent_url(url: HttpUrl) -> HttpUrl:
 
 def write_zip(
     path: os.PathLike[str],
-    content: Mapping[FileName, Union[str, FilePath]],
+    content: Mapping[FileName, Union[str, FilePath, Dict[Any, Any]]],
     *,
     compression: int,
     compression_level: int,
@@ -38,15 +41,20 @@ def write_zip(
 
     Args:
         path: output path to write to.
-        content: dict with archive names and local file paths or strings for text files.
+        content: dict mapping archive names to local file paths, strings (for text files), or dict (for yaml files).
         compression: The numeric constant of compression method.
         compression_level: Compression level to use when writing files to the archive.
                            See https://docs.python.org/3/library/zipfile.html#zipfile.ZipFile
 
     """
     with ZipFile(path, "w", compression=compression, compresslevel=compression_level) as myzip:
-        for arc_name, file_or_str_content in content.items():
-            if isinstance(file_or_str_content, str):
-                myzip.writestr(arc_name, file_or_str_content)
+        for arc_name, file in content.items():
+            if isinstance(file, dict):
+                buf = io.StringIO()
+                YAML.dump(file, buf)
+                file = buf.getvalue()
+
+            if isinstance(file, str):
+                myzip.writestr(arc_name, file.encode("utf-8"))
             else:
-                myzip.write(file_or_str_content, arcname=arc_name)
+                myzip.write(file, arcname=arc_name)

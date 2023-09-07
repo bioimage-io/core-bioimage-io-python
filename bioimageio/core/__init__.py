@@ -1,14 +1,7 @@
 import json
 
 from bioimageio.core._internal.utils import files
-from bioimageio.core._io import (
-    dump_description_to_file,
-    load_description_and_validate,
-    read_rdf,
-    resolve_source,
-    validate,
-    write_package,
-)
+from bioimageio.core._io import load_description_and_validate, resolve_source, validate, write_package
 
 with files("bioimageio.core").joinpath("VERSION").open("r", encoding="utf-8") as f:
     __version__: str = json.load(f)["version"]
@@ -32,7 +25,6 @@ __all__ = [
     "read_rdf",
     "resolve_source",
     "validate",
-    "dump_description_to_file",
     "write_package",
     #     "check_input_shape",
     #     "check_output_shape",

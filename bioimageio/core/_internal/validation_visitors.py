@@ -11,9 +11,9 @@ from typing import Any, Hashable, List, Optional, Tuple, TypedDict, Union
 from annotated_types import SLOTS
 from bioimageio.spec._internal.base_nodes import Node
 from bioimageio.spec._internal.constants import ALERT_TYPE, IN_PACKAGE_MESSAGE, KW_ONLY, SLOTS
+from bioimageio.spec._internal.types import Loc
 from bioimageio.spec.description import ResourceDescription
 from bioimageio.spec.summary import ErrorEntry, WarningEntry
-from bioimageio.spec.types import Loc
 from pydantic import AnyUrl, DirectoryPath
 from pydantic.fields import FieldInfo
 from typing_extensions import NotRequired, Unpack
