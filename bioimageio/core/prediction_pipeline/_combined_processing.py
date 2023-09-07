@@ -1,14 +1,10 @@
 import dataclasses
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Literal, Optional, Sequence, Union
 
 from bioimageio.core.resource_io import nodes
-from ._processing import AssertDtype, EnsureDtype, KNOWN_PROCESSING, Processing, TensorName
-from ._utils import ComputedMeasures, PER_DATASET, PER_SAMPLE, RequiredMeasures, Sample
 
-try:
-    from typing import Literal
-except ImportError:
-    from typing_extensions import Literal  # type: ignore
+from ._processing import KNOWN_PROCESSING, AssertDtype, EnsureDtype, Processing, TensorName
+from ._utils import PER_DATASET, PER_SAMPLE, ComputedMeasures, RequiredMeasures, Sample
 
 
 @dataclasses.dataclass
@@ -20,9 +16,9 @@ class ProcessingInfoStep:
 @dataclasses.dataclass
 class ProcessingInfo:
     steps: List[ProcessingInfoStep]
-    assert_dtype_before: Optional[Union[str, Sequence[str]]] = None  # throw AssertionError if data type doesn't match
+    # assert_dtype_before: Optional[Union[str, Sequence[str]]] = None  # throw AssertionError if data type doesn't match
     ensure_dtype_before: Optional[str] = None  # cast data type if needed
-    assert_dtype_after: Optional[Union[str, Sequence[str]]] = None  # throw AssertionError if data type doesn't match
+    # assert_dtype_after: Optional[Union[str, Sequence[str]]] = None  # throw AssertionError if data type doesn't match
     ensure_dtype_after: Optional[str] = None  # throw AssertionError if data type doesn't match
 
 

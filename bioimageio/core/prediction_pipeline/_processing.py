@@ -2,23 +2,26 @@
 see https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/preprocessing_spec_latest.md
 and https://github.com/bioimage-io/spec-bioimage-io/blob/gh-pages/postprocessing_spec_latest.md
 """
+from abc import ABC, abstractmethod
 import numbers
 from dataclasses import InitVar, dataclass, field, fields
-from typing import List, Mapping, Optional, Sequence, Tuple, Type, Union
+from typing import Dict, Generic,  Mapping, Optional, Sequence, Tuple, Type, TypeVar, Union
+from typing_extensions import Self
 
 import numpy
 import numpy as np
+from pydantic import model_validator  # type: ignore
+from pydantic import field_validator
 import xarray as xr
+from bioimageio.spec._internal.base_nodes import Node
+from bioimageio.spec.model import v0_4, v0_5
+from bioimageio.spec.model.v0_5 import Processing as ProcessingSpec, ProcessingKwargs, Binarize, Clip
+from bioimageio.spec.model.v0_5 import TensorId
+from numpy.typing import DTypeLike
+from bioimageio.core.statistical_measures import Mean, Measure, Percentile, Std, MeasureValue
+from ._utils import FIXED, PER_DATASET, PER_SAMPLE, DatasetMode, Mode, RequiredMeasure, SampleMode, Sample
 
-from bioimageio.core.statistical_measures import Mean, Measure, Percentile, Std
-from bioimageio.spec.model.raw_nodes import PostprocessingName, PreprocessingName
-from ._utils import ComputedMeasures, DatasetMode, FIXED, Mode, PER_DATASET, PER_SAMPLE, RequiredMeasures, SampleMode
-
-try:
-    from typing import Literal, get_args, TypedDict
-except ImportError:
-    from typing_extensions import Literal, get_args, TypedDict  # type: ignore
-
+from typing import Literal, TypedDict, get_args
 
 def _get_fixed(
     fixed: Union[float, Sequence[float]], tensor: xr.DataArray, axes: Optional[Sequence[str]]
@@ -32,93 +35,81 @@ def _get_fixed(
     return xr.DataArray(fixed, dims=fixed_dims)
 
 
-TensorName = str
 
-MISSING = "MISSING"
+PKwargs = TypeVar("PKwargs", bound=ProcessingKwargs)
+ProcInput = TypeVar("ProcInput", xr.DataArray, Sample)
 
-
-@dataclass
-class Processing:
+class ProcessingBase(Node, Generic[PKwargs], ABC, frozen=True):
     """base class for all Pre- and Postprocessing transformations."""
 
-    tensor_name: str
-    # todo: in python>=3.10 we should use dataclasses.KW_ONLY instead of MISSING (see child classes) to make inheritance work properly
-    computed_measures: ComputedMeasures = field(default_factory=dict)
-    mode: Mode = FIXED
+    tensor_id: TensorId
+    """id of tensor to operate on"""
+    kwargs: PKwargs
+    computed_measures: Dict[RequiredMeasure, MeasureValue] = field(default_factory=dict)
 
-    def get_required_measures(self) -> RequiredMeasures:
-        return {}
+    @model_validator(mode="after")
+    def check_required_measures_in_computed(self) -> Self:
+        for req in self.required_measures:
+            if req not in self.computed_measures:
+                raise ValueError(f"Missing computed {req}.")
 
-    def set_computed_measures(self, computed: ComputedMeasures):
-        # check if computed contains all required measures
-        for mode, req_per_mode in self.get_required_measures().items():
-            for tn, req_per_tn in req_per_mode.items():
-                comp_measures = computed.get(mode, {}).get(tn, {})
-                for req_measure in req_per_tn:
-                    if req_measure not in comp_measures:
-                        raise ValueError(f"Missing required {req_measure} for {tn} {mode}.")
+        return self
 
-        self.computed_measures = computed
+    @classmethod
+    def get_required_measures(cls, tensor_id: TensorId, kwargs: PKwargs) -> Tuple[RequiredMeasure, ...]:
+        return ()
 
-    def get_computed_measure(self, tensor_name: TensorName, measure: Measure, *, mode: Optional[Mode] = None):
-        """helper to unpack self.computed_measures"""
-        ret = self.computed_measures.get(mode or self.mode, {}).get(tensor_name, {}).get(measure)
-        if ret is None:
-            raise RuntimeError(f"Missing computed {measure} for {tensor_name} {mode}.")
+    @property
+    def required_measures(self) -> Tuple[RequiredMeasure, ...]:
+        return self.get_required_measures(tensor_id=self.tensor_id, kwargs=self.kwargs)
 
-        return ret
+    def __call__(self, __input: ProcInput, /) -> ProcInput:
+        if isinstance(__input, xr.DataArray):
+            return self.apply(__input)
+        else:
+            return self.apply_to_sample(__input)
 
-    def __call__(self, tensor: xr.DataArray) -> xr.DataArray:
-        return self.apply(tensor)
-
+    @abstractmethod
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
         """apply processing"""
-        raise NotImplementedError
+        ...
 
-    def __post_init__(self):
-        # validate common kwargs by their annotations
-        for f in fields(self):
-            # check MISSING
-            if getattr(self, f.name) is MISSING:
-                raise TypeError(f"missing required argument {f.name}")
+    def apply_to_sample(self, sample: Sample) -> Sample:
+        ret = dict(sample)
+        ret[self.tensor_id] = self.apply(sample[self.tensor_id])
+        return ret
 
-            if f.name == "mode":
-                # mode is always annotated as literals (or literals of literals)
-                valid_modes = get_args(f.type)
-                for inner in get_args(f.type):
-                    valid_modes += get_args(inner)
-
-                if self.mode not in valid_modes:
-                    raise NotImplementedError(f"Unsupported mode {self.mode} for {self.__class__.__name__}")
-
-
+class Processing(ProcessingSpec, ProcessingBase[PKwargs], frozen=True):
+    pass
 #
 # Pre- and Postprocessing implementations
 #
+class NonSpecProcessing(ProcessingBase[PKwargs], frozen=True):
+    """processings operations beyond what is currently defined in bioimageio.spec"""
+    pass
 
 
-@dataclass
-class AssertDtype(Processing):
+class AssertDtype(NonSpecProcessing[ProcessingKwargs], frozen=True):
     """Helper Processing to assert dtype."""
+    id: Literal["assert_dtype"] = "assert_dtype"
 
-    dtype: Union[str, Sequence[str]] = MISSING
-    assert_with: Tuple[Type[numpy.dtype], ...] = field(init=False)
+    dtype: Union[str, Sequence[str]]
+    _assert_with: Tuple[Type[DTypeLike], ...]
 
-    def __post_init__(self):
+    def __pydantic_postinit__(self):
         if isinstance(self.dtype, str):
             dtype = [self.dtype]
         else:
             dtype = self.dtype
 
-        self.assert_with = tuple(type(numpy.dtype(dt)) for dt in dtype)
+        object.__setattr__(self, "_assert_with", tuple(type(numpy.dtype(dt)) for dt in dtype))
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
-        assert isinstance(tensor.dtype, self.assert_with)
+        assert isinstance(tensor.dtype, self._assert_with)
         return tensor
 
 
-@dataclass
-class Binarize(Processing):
+class Binarize(Processing[BinarizeKwargs]):
     """'output = tensor > threshold'."""
 
     threshold: float = MISSING  # make dataclass inheritance work for py<3.10 by using an explicit MISSING value.
@@ -187,7 +178,7 @@ class ScaleMeanVariance(Processing):
         axes = None if self.axes is None else tuple(self.axes)
         return {
             self.mode: {
-                self.tensor_name: {Mean(axes=axes), Std(axes=axes)},
+                self.tensor_id: {Mean(axes=axes), Std(axes=axes)},
                 self.reference_tensor: {Mean(axes=axes), Std(axes=axes)},
             }
         }
@@ -195,8 +186,8 @@ class ScaleMeanVariance(Processing):
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
         axes = None if self.axes is None else tuple(self.axes)
         assert self.mode in (PER_SAMPLE, PER_DATASET)
-        mean = self.get_computed_measure(self.tensor_name, Mean(axes), mode=self.mode)
-        std = self.get_computed_measure(self.tensor_name, Std(axes), mode=self.mode)
+        mean = self.get_computed_measure(self.tensor_id, Mean(axes), mode=self.mode)
+        std = self.get_computed_measure(self.tensor_id, Std(axes), mode=self.mode)
         ref_mean = self.get_computed_measure(self.reference_tensor, Mean(axes), mode=self.mode)
         ref_std = self.get_computed_measure(self.reference_tensor, Std(axes), mode=self.mode)
 
@@ -217,10 +208,10 @@ class ScaleRange(Processing):
     def get_required_measures(self) -> RequiredMeasures:
         axes = None if self.axes is None else tuple(self.axes)
         measures = {Percentile(self.min_percentile, axes=axes), Percentile(self.max_percentile, axes=axes)}
-        return {self.mode: {self.reference_tensor or self.tensor_name: measures}}
+        return {self.mode: {self.reference_tensor or self.tensor_id: measures}}
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
-        ref_name = self.reference_tensor or self.tensor_name
+        ref_name = self.reference_tensor or self.tensor_id
         axes = None if self.axes is None else tuple(self.axes)
         v_lower = self.get_computed_measure(ref_name, Percentile(self.min_percentile, axes=axes))
         v_upper = self.get_computed_measure(ref_name, Percentile(self.max_percentile, axes=axes))
@@ -255,7 +246,7 @@ class ZeroMeanUnitVariance(Processing):
             return {}
         else:
             axes = None if self.axes is None else tuple(self.axes)
-            return {self.mode: {self.tensor_name: {Mean(axes=axes), Std(axes=axes)}}}
+            return {self.mode: {self.tensor_id: {Mean(axes=axes), Std(axes=axes)}}}
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
         axes = None if self.axes is None else tuple(self.axes)
@@ -265,20 +256,21 @@ class ZeroMeanUnitVariance(Processing):
             std = _get_fixed(self.std, tensor, axes)
         elif self.mode in (PER_SAMPLE, PER_DATASET):
             assert self.mean is None and self.std is None
-            mean = self.get_computed_measure(self.tensor_name, Mean(axes), mode=self.mode)
-            std = self.get_computed_measure(self.tensor_name, Std(axes), mode=self.mode)
+            mean = self.get_computed_measure(self.tensor_id, Mean(axes), mode=self.mode)
+            std = self.get_computed_measure(self.tensor_id, Std(axes), mode=self.mode)
         else:
             raise ValueError(self.mode)
 
         return (tensor - mean) / (std + self.eps)
 
 
-_KnownProcessing = TypedDict(
-    "_KnownProcessing",
-    dict(pre=Mapping[PreprocessingName, Type[Processing]], post=Mapping[PostprocessingName, Type[Processing]]),
-)
+class _KNOWN_PREPROCESSING(TypedDict):
 
-KNOWN_PROCESSING: _KnownProcessing = dict(
+class _KnownProcessing(TypedDict):
+    pre: Mapping[PreprocessingName, Type[Processing]]
+    post: Mapping[PostprocessingName, Type[Processing]]
+
+KNOWN_PROCESSING = _KnownProcessing(
     pre={
         "binarize": Binarize,
         "clip": Clip,

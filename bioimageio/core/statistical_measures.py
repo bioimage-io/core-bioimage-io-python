@@ -1,23 +1,26 @@
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
 import xarray as xr
+from bioimageio.spec.model.v0_5 import AxisName
 
 MeasureValue = xr.DataArray
 
 
 @dataclass(frozen=True)
-class Measure:
+class Measure(ABC):
+    @abstractmethod
     def compute(self, tensor: xr.DataArray) -> MeasureValue:
         """compute the measure (and also associated other Measures)"""
-        raise NotImplementedError(self.__class__.__name__)
+        ...
 
 
 @dataclass(frozen=True)
 class Mean(Measure):
-    axes: Optional[Tuple[str, ...]] = None
+    axes: Optional[Tuple[AxisName, ...]] = None
 
     def compute(self, tensor: xr.DataArray) -> xr.DataArray:
         return tensor.mean(dim=self.axes)
@@ -25,7 +28,7 @@ class Mean(Measure):
 
 @dataclass(frozen=True)
 class Std(Measure):
-    axes: Optional[Tuple[str, ...]] = None
+    axes: Optional[Tuple[AxisName, ...]] = None
 
     def compute(self, tensor: xr.DataArray) -> xr.DataArray:
         return tensor.std(dim=self.axes)
@@ -33,7 +36,7 @@ class Std(Measure):
 
 @dataclass(frozen=True)
 class Var(Measure):
-    axes: Optional[Tuple[str, ...]] = None
+    axes: Optional[Tuple[AxisName, ...]] = None
 
     def compute(self, tensor: xr.DataArray) -> xr.DataArray:
         return tensor.var(dim=self.axes)
@@ -42,7 +45,7 @@ class Var(Measure):
 @dataclass(frozen=True)
 class Percentile(Measure):
     n: float
-    axes: Optional[Tuple[str, ...]] = None
+    axes: Optional[Tuple[AxisName, ...]] = None
 
     def __post_init__(self):
         assert self.n >= 0

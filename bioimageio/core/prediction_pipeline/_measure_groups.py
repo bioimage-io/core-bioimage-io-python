@@ -3,36 +3,35 @@ from __future__ import annotations
 import collections
 import warnings
 from collections import defaultdict
+from dataclasses import field
 from itertools import product
 from typing import DefaultDict, Dict, Hashable, Iterator, List, Mapping, Optional, Sequence, Set, Tuple, Type, Union
 
 import numpy
 import xarray as xr
+from attr import dataclass
+from bioimageio.spec.model.v0_5 import AxisName
 
 from bioimageio.core.statistical_measures import Mean, Measure, Percentile, Std, Var
-from ._utils import ComputedMeasures, PER_DATASET, PER_SAMPLE, RequiredMeasures, Sample, TensorName
+
+from ._utils import PER_DATASET, PER_SAMPLE, ComputedMeasures, RequiredMeasures, Sample, TensorName
 
 try:
-    from typing import Literal, TypedDict
-except ImportError:
-    from typing_extensions import Literal, TypedDict  # type: ignore
-
-try:
-    import crick
+    import crick  # type: ignore
 except ImportError:
     crick = None
 
 MeasureValue = xr.DataArray
 
 
-class SampleMeasureGroup:
+class SampleMeasureCalculator:
     """group of measures for more efficient computation of multiple measures per sample"""
 
     def compute(self, sample: Sample) -> Dict[TensorName, Dict[Measure, MeasureValue]]:
         raise NotImplementedError
 
 
-class DatasetMeasureGroup:
+class DatasetMeasureCalculator:
     """group of measures for more efficient computation of multiple measures per dataset"""
 
     def reset(self) -> None:
@@ -48,19 +47,19 @@ class DatasetMeasureGroup:
         raise NotImplementedError
 
 
-MeasureGroups = TypedDict(
-    "MeasureGroups", {PER_SAMPLE: Sequence[SampleMeasureGroup], PER_DATASET: Sequence[DatasetMeasureGroup]}
-)
+@dataclass
+class MeasureGroups:
+    per_sample: List[SampleMeasureCalculator] = field(default_factory=list)
+    per_dataset: List[DatasetMeasureCalculator] = field(default_factory=list)
 
 
-class DatasetMean(DatasetMeasureGroup):
-    n: int
-    mean: Optional[xr.DataArray]
-
-    def __init__(self, tensor_name: TensorName, axes: Optional[Tuple[int]]):
-        self.axes: Optional[Tuple[str]] = axes
+class DatasetMean(DatasetMeasureCalculator):
+    def __init__(self, tensor_name: TensorName, axes: Optional[Sequence[AxisName]]):
+        super().__init__()
+        self.axes = None if axes is None else tuple(axes)
         self.tensor_name = tensor_name
-        self.reset()
+        self.n: int = 0
+        self.mean: Optional[xr.DataArray] = None
 
     def reset(self):
         self.n = 0
@@ -89,15 +88,18 @@ class DatasetMean(DatasetMeasureGroup):
             return {self.tensor_name: {Mean(axes=self.axes): self.mean}}
 
 
-class MeanVarStd(SampleMeasureGroup, DatasetMeasureGroup):
-    n: int
-    mean: Optional[xr.DataArray]
-    m2: Optional[xr.DataArray]
-
-    def __init__(self, tensor_name: TensorName, axes: Optional[Tuple[int]]):
-        self.axes: Optional[Tuple[str]] = axes
+class MeanVarStd(SampleMeasureCalculator, DatasetMeasureCalculator):
+    def __init__(self, tensor_name: TensorName, axes: Optional[Sequence[AxisName]]):
+        self.axes = None if axes is None else tuple(axes)
         self.tensor_name = tensor_name
-        self.reset()
+        self.n: int = 0
+        self.mean: Optional[xr.DataArray] = None
+        self.m2: Optional[xr.DataArray] = None
+
+    def reset(self):
+        self.n = 0
+        self.mean = None
+        self.m2 = None
 
     def compute(self, sample: Sample) -> Dict[TensorName, Dict[Measure, MeasureValue]]:
         tensor = sample[self.tensor_name]
@@ -107,11 +109,6 @@ class MeanVarStd(SampleMeasureGroup, DatasetMeasureGroup):
         var = xr.dot(c, c, dims=self.axes) / n
         std = numpy.sqrt(var)
         return {self.tensor_name: {Mean(axes=self.axes): mean, Var(axes=self.axes): var, Std(axes=self.axes): std}}
-
-    def reset(self):
-        self.n = 0
-        self.mean = None
-        self.m2 = None
 
     def update_with_sample(self, sample: Sample):
         tensor = sample[self.tensor_name].astype(numpy.float64, copy=False)
@@ -134,7 +131,7 @@ class MeanVarStd(SampleMeasureGroup, DatasetMeasureGroup):
             self.mean = (n_a * mean_a + n_b * mean_b) / n
             assert self.mean.dtype == numpy.float64
             d = mean_b - mean_a
-            self.m2 = m2_a + m2_b + d ** 2 * n_a * n_b / n
+            self.m2 = m2_a + m2_b + d**2 * n_a * n_b / n
             assert self.m2.dtype == numpy.float64
 
     def finalize(self) -> Dict[TensorName, Dict[Measure, MeasureValue]]:
@@ -151,7 +148,7 @@ class MeanVarStd(SampleMeasureGroup, DatasetMeasureGroup):
             }
 
 
-class SamplePercentiles(SampleMeasureGroup):
+class SamplePercentiles(SampleMeasureCalculator):
     def __init__(self, tensor_name: TensorName, axes: Optional[Tuple[str]], ns: Sequence[float]):
         assert all(0 <= n <= 100 for n in ns)
         self.ns = ns
@@ -165,7 +162,7 @@ class SamplePercentiles(SampleMeasureGroup):
         return {self.tensor_name: {Percentile(n=n, axes=self.axes): p for n, p in zip(self.ns, ps)}}
 
 
-class MeanPercentiles(DatasetMeasureGroup):
+class MeanPercentiles(DatasetMeasureCalculator):
     n: int
     estimates: Optional[xr.DataArray]
 
@@ -203,7 +200,7 @@ class MeanPercentiles(DatasetMeasureGroup):
             return {self.tensor_name: {Percentile(n=n, axes=self.axes): e for n, e in zip(self.ns, self.estimates)}}
 
 
-class CrickPercentiles(DatasetMeasureGroup):
+class CrickPercentiles(DatasetMeasureCalculator):
     digest: Optional[List["crick.TDigest"]]
     dims: Optional[Tuple[Hashable, ...]]
     indices: Optional[Iterator[Tuple[int, ...]]]
@@ -259,15 +256,16 @@ class CrickPercentiles(DatasetMeasureGroup):
 
 
 if crick is None:
-    DatasetPercentileGroup: Union[Type[MeanPercentiles], Type[CrickPercentiles]] = MeanPercentiles
+    DatasetPercentileGroup: Type[Union[MeanPercentiles, CrickPercentiles]] = MeanPercentiles
 else:
     DatasetPercentileGroup = CrickPercentiles
 
 
-class SingleMeasureAsGroup(SampleMeasureGroup):
+class SingleMeasureAsGroup(SampleMeasureCalculator):
     """wrapper for measures to match interface of SampleMeasureGroup"""
 
     def __init__(self, tensor_name: TensorName, measure: Measure):
+        super().__init__()
         self.tensor_name = tensor_name
         self.measure = measure
 
@@ -278,7 +276,7 @@ class SingleMeasureAsGroup(SampleMeasureGroup):
 def get_measure_groups(measures: RequiredMeasures) -> MeasureGroups:
     """find a list of MeasureGroups to compute measures efficiently"""
 
-    measure_groups = {PER_SAMPLE: [], PER_DATASET: []}
+    measure_groups = MeasureGroups()
     means: Set[Tuple[TensorName, Mean]] = set()
     mean_var_std_groups: Set[Tuple[TensorName, Optional[Tuple[str, ...]]]] = set()
     percentile_groups: DefaultDict[Tuple[TensorName, Optional[Tuple[str, ...]]], List[float]] = defaultdict(list)
@@ -292,12 +290,12 @@ def get_measure_groups(measures: RequiredMeasures) -> MeasureGroups:
                 elif isinstance(m, Percentile):
                     percentile_groups[(tn, m.axes)].append(m.n)
                 elif mode == PER_SAMPLE:
-                    measure_groups[mode].append(SingleMeasureAsGroup(tensor_name=tn, measure=m))
+                    measure_groups.per_sample.append(SingleMeasureAsGroup(tensor_name=tn, measure=m))
                 else:
                     raise NotImplementedError(f"Computing statistics for {m} {mode} not yet implemented")
 
         # add all mean measures that are not included in a mean/var/std group
-        for (tn, m) in means:
+        for tn, m in means:
             if (tn, m.axes) not in mean_var_std_groups:
                 # compute only mean
                 if mode == PER_SAMPLE:
@@ -307,7 +305,7 @@ def get_measure_groups(measures: RequiredMeasures) -> MeasureGroups:
                 else:
                     raise NotImplementedError(mode)
 
-        for (tn, axes) in mean_var_std_groups:
+        for tn, axes in mean_var_std_groups:
             measure_groups[mode].append(MeanVarStd(tensor_name=tn, axes=axes))
 
         for (tn, axes), ns in percentile_groups.items():
@@ -328,16 +326,16 @@ def compute_measures(
     ret = {PER_SAMPLE: {}, PER_DATASET: {}}
     if sample is not None:
         for mg in ms_groups[PER_SAMPLE]:
-            assert isinstance(mg, SampleMeasureGroup)
+            assert isinstance(mg, SampleMeasureCalculator)
             ret[PER_SAMPLE].update(mg.compute(sample))
 
     for sample in dataset:
         for mg in ms_groups[PER_DATASET]:
-            assert isinstance(mg, DatasetMeasureGroup)
+            assert isinstance(mg, DatasetMeasureCalculator)
             mg.update_with_sample(sample)
 
     for mg in ms_groups[PER_DATASET]:
-        assert isinstance(mg, DatasetMeasureGroup)
+        assert isinstance(mg, DatasetMeasureCalculator)
         ret[PER_DATASET].update(mg.finalize())
 
     return ret

@@ -1,14 +1,11 @@
 from typing import Dict, Iterable, Optional
 
-from bioimageio.core.statistical_measures import Measure
-from bioimageio.spec.shared.common import tqdm
-from ._measure_groups import MeasureGroups, MeasureValue, get_measure_groups
-from ._utils import ComputedMeasures, PER_DATASET, PER_SAMPLE, RequiredMeasures, Sample, TensorName
+from tqdm import tqdm
 
-try:
-    from typing import Literal
-except ImportError:
-    from typing_extensions import Literal  # type: ignore
+from bioimageio.core.statistical_measures import Measure
+
+from ._measure_groups import MeasureGroups, MeasureValue, get_measure_groups
+from ._utils import PER_DATASET, PER_SAMPLE, ComputedMeasures, RequiredMeasures, Sample, TensorName
 
 
 class StatsState:
