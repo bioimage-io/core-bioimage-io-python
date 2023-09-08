@@ -21,8 +21,8 @@ pythonPlatform = "All"
 
 [tool.pytest.ini_options]
 addopts = "--capture=no --doctest-modules --failed-first"
-# testpaths = ["bioimageio", "scripts", "example", "tests"]
 
 [tool.ruff]
 line-length = 120
 include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
+target-version = "py38"
