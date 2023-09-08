@@ -1,6 +1,6 @@
 import warnings
 import zipfile
-from typing import List, Optional
+from typing import List, Literal, Optional
 
 import numpy as np
 import tensorflow as tf
@@ -8,11 +8,6 @@ import xarray as xr
 from marshmallow import missing
 
 from ._model_adapter import ModelAdapter
-
-try:
-    from typing import Literal
-except ImportError:
-    from typing_extensions import Literal  # type: ignore
 
 
 class TensorflowModelAdapterBase(ModelAdapter):
@@ -79,7 +74,6 @@ class TensorflowModelAdapterBase(ModelAdapter):
         graph = tf.Graph()
         with graph.as_default():
             with tf.Session(graph=graph) as sess:
-
                 # load the model and the signature
                 graph_def = tf.saved_model.loader.load(sess, [tag], self._model)
                 signature = graph_def.signature_def

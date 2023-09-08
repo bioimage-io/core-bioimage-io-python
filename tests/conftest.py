@@ -11,9 +11,8 @@ from pydantic import FilePath
 from pytest import FixtureRequest, fixture
 
 os.environ["BIOIMAGEIO_COUNT_RDF_DOWNLOADS"] = "false"  # disable tracking before bioimageio imports
-from bioimageio.spec import __version__ as bioimageio_spec_version
-
 from bioimageio.core import write_package
+from bioimageio.spec import __version__ as bioimageio_spec_version
 
 logger = logging.getLogger(__name__)
 warnings.warn(f"testing with bioimageio.spec {bioimageio_spec_version}")

@@ -4,10 +4,14 @@ import collections.abc
 import os
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any, Dict, Literal, NamedTuple, Optional, Sequence, Tuple, Union, cast
+from typing import Any, Dict, Literal, NamedTuple, Optional, Sequence, TextIO, Tuple, Union, cast
 from zipfile import ZIP_DEFLATED, ZipFile, is_zipfile
 
 import pooch
+from pydantic import AnyUrl, DirectoryPath, FilePath, HttpUrl, TypeAdapter, ValidationError
+from ruamel.yaml import YAML
+
+from bioimageio.core._internal.utils import get_parent_url, write_zip
 from bioimageio.spec import ResourceDescription
 from bioimageio.spec import load_description as load_description_from_content
 from bioimageio.spec._internal.base_nodes import ResourceDescriptionBase
@@ -17,17 +21,12 @@ from bioimageio.spec.description import dump_description
 from bioimageio.spec.model.v0_4 import WeightsFormat
 from bioimageio.spec.package import extract_file_name, get_resource_package_content
 from bioimageio.spec.summary import ValidationSummary
-from pydantic import AnyUrl, DirectoryPath, FilePath, HttpUrl, TypeAdapter
-from ruamel.yaml import YAML
-
-from bioimageio.core._internal.utils import get_parent_url, write_zip
 
 yaml = YAML(typ="safe")
 
 StrictFileSource = Union[HttpUrl, FilePath]
 FileSource = Union[StrictFileSource, str]
-StrictRdfSource = Union[StrictFileSource, RdfContent, ResourceDescription]
-RdfSource = Union[StrictRdfSource, str]
+RdfSource = Union[FileSource, RdfContent, ResourceDescription, str]
 
 
 class RawRdf(NamedTuple):
@@ -62,10 +61,10 @@ def read_rdf_content(
     known_hash: Optional[str] = None,
     rdf_encoding: str = "utf-8",
 ) -> RawRdf:
-    class FileSourceInterpreter(BaseModel):
-        source: StrictFileSource
-
-    rdf_source = FileSourceInterpreter(source=rdf_source).source
+    try:
+        rdf_source = TypeAdapter(StrictFileSource).validate_python(rdf_source)
+    except ValidationError as e:
+        raise e
 
     if isinstance(rdf_source, AnyUrl):
         _ls: Any = pooch.retrieve(url=str(rdf_source), known_hash=known_hash)
@@ -129,14 +128,17 @@ def resolve_source(
     return source
 
 
-def write_description(rd: Union[ResourceDescription, RdfContent], /, file_path: FilePath):
+def write_description(rd: Union[ResourceDescription, RdfContent], /, file: Union[FilePath, TextIO]):
     if isinstance(rd, ResourceDescriptionBase):
         content = dump_description(rd)
     else:
         content = rd
 
-    with file_path.open("w", encoding="utf-8") as f:
-        yaml.dump(content, f)
+    if isinstance(file, Path):
+        with file.open("w", encoding="utf-8") as f:
+            yaml.dump(content, f)
+    else:
+        yaml.dump(content, file)
 
 
 def load_description_and_validate(
@@ -153,22 +155,7 @@ def load_description_and_validate(
     return rd, summary
 
 
-# def _get_default_io_context(context: Union[ValidationContext, CompleteValidationContext, None]) -> Union[ValidationContext, CompleteValidationContext]:
-#     if context is None:
-#         context = ValidationContext()
-
-#     if "warning_level" not in context:
-#         context["warning_level"] = INFO
-
-#     return context
-
-
 def _get_rdf_content_and_update_context(rdf_source: RdfSource, context: ValidationContext) -> RdfContent:
-    class RdfSourceInterpreter(BaseModel):
-        source: RdfSource
-
-    rdf_source = RdfSourceInterpreter(source=rdf_source).source
-
     if isinstance(rdf_source, (AnyUrl, Path, str)):
         rdf = read_rdf_content(rdf_source)
         rdf_source = rdf.content

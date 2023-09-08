@@ -2,7 +2,7 @@ import datetime
 import hashlib
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union, get_args
 from warnings import warn
 
 import imageio
@@ -14,14 +14,8 @@ import bioimageio.spec as spec
 import bioimageio.spec.model as model_spec
 from bioimageio.core import export_resource_package, load_raw_resource_description
 from bioimageio.core.resource_io.nodes import URI
-from bioimageio.spec.shared.raw_nodes import ImportableModule, ImportableSourceFile
 from bioimageio.spec.shared import resolve_local_source, resolve_source
-
-try:
-    from typing import get_args
-except ImportError:
-    from typing_extensions import get_args  # type: ignore
-
+from bioimageio.spec.shared.raw_nodes import ImportableModule, ImportableSourceFile
 
 #
 # utility functions to build the spec from python

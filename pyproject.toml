@@ -1,11 +1,6 @@
 [tool.black]
 line-length = 120
-target-version = ['py38', 'py39', 'py310', 'py311']
-
-[tool.isort]
-line_length = 120
-profile = "black"
-# sort_reexports = true  # buggy
+target-version = ["py38", "py39", "py310", "py311"]
 
 [tool.pyright]
 include = ["bioimageio", "scripts", "tests"]
@@ -27,3 +22,7 @@ pythonPlatform = "All"
 [tool.pytest.ini_options]
 addopts = "--capture=no --doctest-modules --failed-first"
 # testpaths = ["bioimageio", "scripts", "example", "tests"]
+
+[tool.ruff]
+line-length = 120
+include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
