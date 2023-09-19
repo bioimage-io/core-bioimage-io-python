@@ -4,11 +4,11 @@ import collections.abc
 import os
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any, Dict, Literal, NamedTuple, Optional, Sequence, TextIO, Tuple, Union, cast
+from typing import Any, Dict, List, Literal, NamedTuple, Optional, Sequence, TextIO, Union, cast
 from zipfile import ZIP_DEFLATED, ZipFile, is_zipfile
 
 import pooch
-from pydantic import AnyUrl, DirectoryPath, FilePath, HttpUrl, TypeAdapter, ValidationError
+from pydantic import AnyUrl, DirectoryPath, FilePath, HttpUrl, TypeAdapter
 from ruamel.yaml import YAML
 
 from bioimageio.core._internal.utils import get_parent_url, write_zip
@@ -17,7 +17,7 @@ from bioimageio.spec import load_description as load_description
 from bioimageio.spec._internal.base_nodes import ResourceDescriptionBase
 from bioimageio.spec._internal.constants import DISCOVER
 from bioimageio.spec._internal.types import FileName, RdfContent, RelativeFilePath, ValidationContext, YamlValue
-from bioimageio.spec.description import dump_description
+from bioimageio.spec.description import InvalidDescription, dump_description
 from bioimageio.spec.model.v0_4 import WeightsFormat
 from bioimageio.spec.package import extract_file_name, get_resource_package_content
 from bioimageio.spec.summary import ValidationSummary
@@ -36,7 +36,7 @@ def read_description(
     /,
     *,
     format_version: Union[Literal["discover"], Literal["latest"], str] = DISCOVER,
-) -> Tuple[Optional[ResourceDescription], ValidationSummary]:
+) -> Union[ResourceDescription, InvalidDescription]:
     rdf = download_rdf(rdf_source)
     return load_description(
         rdf.content,
@@ -47,9 +47,14 @@ def read_description(
 
 def read_description_and_validate(
     rdf_source: FileSource,
-) -> Tuple[Optional[ResourceDescription], ValidationSummary]:
+    /,
+    *,
+    format_version: Union[Literal["discover"], Literal["latest"], str] = DISCOVER,
+) -> Union[ResourceDescription, InvalidDescription]:
     rdf = download_rdf(rdf_source)
-    return load_description_and_validate(rdf.content, context=ValidationContext(root=rdf.root, file_name=rdf.file_name))
+    return load_description_and_validate(
+        rdf.content, context=ValidationContext(root=rdf.root, file_name=rdf.file_name), format_version=format_version
+    )
 
 
 def load_description_and_validate(
@@ -58,11 +63,26 @@ def load_description_and_validate(
     *,
     context: Optional[ValidationContext] = None,
     format_version: Union[Literal["discover"], Literal["latest"], str] = DISCOVER,
-) -> Tuple[Optional[ResourceDescription], ValidationSummary]:
+) -> Union[ResourceDescription, InvalidDescription]:
     """load and validate a BioImage.IO description from the content of a resource description file (RDF)"""
-    rd, summary = load_description(rdf_content, context=context, format_version=format_version)
+    rd = load_description(rdf_content, context=context, format_version=format_version)
     # todo: add dynamic validation
-    return rd, summary
+    return rd
+
+
+def validate(
+    rdf_source: Union[FileSource, RdfContent],
+    /,
+    *,
+    context: Optional[ValidationContext] = None,
+    format_version: Union[Literal["discover"], Literal["latest"], str] = DISCOVER,
+) -> List[ValidationSummary]:
+    if isinstance(rdf_source, dict):
+        rd = load_description_and_validate(rdf_source, context=context, format_version=format_version)
+    else:
+        rd = read_description_and_validate(rdf_source, format_version=format_version)
+
+    return rd.validation_summaries
 
 
 def write_description(rd: Union[ResourceDescription, RdfContent], /, file: Union[FilePath, TextIO]):
@@ -103,6 +123,10 @@ def prepare_resource_package(
             rdf.content,
             context=context,
         )
+
+    if isinstance(rd, InvalidDescription):
+        raise ValueError(f"{rdf_source} is invalid: {rd.validation_summaries[0]}")
+
     package_content = get_resource_package_content(rd, weights_priority_order=weights_priority_order)
 
     local_package_content: Dict[FileName, Union[FilePath, RdfContent]] = {}
@@ -152,7 +176,6 @@ def write_package(
     """
     package_content = prepare_resource_package(
         rdf_source,
-        context=context,
         weights_priority_order=weights_priority_order,
     )
     if output_path is None:
@@ -184,7 +207,12 @@ def download(
 ) -> _LocalFile:
     source = _interprete_file_source(source)
     if isinstance(source, AnyUrl):
-        _ls: Any = pooch.retrieve(url=str(source), known_hash=known_hash)
+        if source.scheme in ("http", "https") and os.environ.get("CI", "false").lower() in ("1", "true"):
+            downloader = pooch.HTTPDownloader(headers={"User-Agent": "ci"})
+        else:
+            downloader = None
+
+        _ls: Any = pooch.retrieve(url=str(source), known_hash=known_hash, downloader=downloader)
         local_source = Path(_ls)
         root: Union[HttpUrl, DirectoryPath] = get_parent_url(source)
     else:
@@ -241,48 +269,6 @@ def resolve_source(
         source = source.get_absolute(root)
 
     return download(source, known_hash=known_hash).path
-
-
-# def _get_rdf_content(rdf_source: RdfSource) -> Tuple[RdfContent, ValidationContext]:
-#     if isinstance(rdf_source, (AnyUrl, Path, str)):
-#         rdf = read_rdf_content(rdf_source)
-#         rdf_content = rdf.content
-#         context = ValidationContext(root=rdf.root, file_name=rdf.file_name)
-#     elif isinstance(rdf_source, ResourceDescriptionBase):
-#         rdf_content = dump_description(rdf_source, exclude_unset=False)
-#         ctxt = rdf_source._internal_validation_context  # pyright: ignore[reportPrivateUsage]
-#         context = ValidationContext(root=ctxt["root"], file_name=ctxt["file_name"])
-#     else:
-#         rdf_content = rdf_source
-#         context = ValidationContext()
-
-#     return rdf_content, context
-
-
-# def _get_rdf_content_and_update_context(rdf_source: RdfSource, context: ValidationContext) -> RdfContent:
-#     if isinstance(rdf_source, (AnyUrl, Path, str)):
-#         rdf = read_rdf_content(rdf_source)
-#         rdf_source = rdf.content
-#         context.root = rdf.root
-#         context.file_name = rdf.file_name
-#     elif isinstance(rdf_source, ResourceDescriptionBase):
-#         rdf_source = dump_description(rdf_source, exclude_unset=False)
-
-#     return rdf_source
-
-
-def _get_description_and_update_context(rdf_source: RdfSource, context: ValidationContext) -> ResourceDescription:
-    if isinstance(rdf_source, dict):
-        descr, summary = load_description(rdf_source, context=context)
-        if descr is None:
-            rdf_source_msg = (
-                f"{{name={rdf_source.get('name', 'missing'), ...}}})"
-                if isinstance(rdf_source, collections.abc.Mapping)
-                else rdf_source
-            )
-            raise ValueError(f"Failed to load {rdf_source_msg}:\n{summary.format()}")
-
-    return descr
 
 
 def _interprete_file_source(file_source: FileSource) -> StrictFileSource:

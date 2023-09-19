@@ -3,9 +3,9 @@ import json
 from bioimageio.core._internal.utils import files
 from bioimageio.core._io import load_description as load_description
 from bioimageio.core._io import load_description_and_validate as load_description_and_validate
-from bioimageio.core._io import read_rdf_content as read_rdf_content
+from bioimageio.core._io import read_description as read_description
+from bioimageio.core._io import read_description_and_validate as read_description_and_validate
 from bioimageio.core._io import resolve_source as resolve_source
-from bioimageio.core._io import validate as validate
 from bioimageio.core._io import write_description as write_description
 from bioimageio.core._io import write_package as write_package
 
