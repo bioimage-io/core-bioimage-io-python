@@ -207,11 +207,17 @@ def download(
 ) -> _LocalFile:
     source = _interprete_file_source(source)
     if isinstance(source, AnyUrl):
-        if source.scheme in ("http", "https") and os.environ.get("CI", "false").lower() in ("1", "true"):
-            downloader = pooch.HTTPDownloader(headers={"User-Agent": "ci"})
-        else:
-            downloader = None
+        if source.scheme not in ("http", "https"):
+            raise NotImplementedError(source.scheme)
 
+        if os.environ.get("CI", "false").lower() in ("1", "t", "true", "yes", "y"):
+            headers = {"User-Agent": "ci"}
+            progressbar = False
+        else:
+            headers = {}
+            progressbar = True
+
+        downloader = pooch.HTTPDownloader(headers=headers, progressbar=progressbar)
         _ls: Any = pooch.retrieve(url=str(source), known_hash=known_hash, downloader=downloader)
         local_source = Path(_ls)
         root: Union[HttpUrl, DirectoryPath] = get_parent_url(source)
