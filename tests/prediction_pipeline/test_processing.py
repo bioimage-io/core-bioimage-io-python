@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from bioimageio.core.prediction_pipeline._processing import KNOWN_PROCESSING
+from bioimageio.core.prediction_pipeline._processing import IMPLEMENTED_PROCESSING
 from bioimageio.core.prediction_pipeline._utils import FIXED
 
 try:
@@ -29,7 +29,7 @@ def test_assert_dtype():
 
 @pytest.mark.parametrize(
     "proc",
-    list(KNOWN_PROCESSING["pre"].values()) + list(KNOWN_PROCESSING["post"].values()),
+    list(IMPLEMENTED_PROCESSING["pre"].values()) + list(IMPLEMENTED_PROCESSING["post"].values()),
 )
 def test_no_req_measures_for_mode_fixed(proc):
     # check if mode=fixed is valid for this proc

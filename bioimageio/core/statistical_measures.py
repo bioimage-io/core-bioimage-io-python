@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Optional, Tuple
 
 import xarray as xr
+
 from bioimageio.spec.model.v0_5 import AxisName
 
 MeasureValue = xr.DataArray

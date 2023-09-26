@@ -3,19 +3,20 @@ from typing import Any, Dict, List, Literal, Optional, Sequence, Union
 
 from bioimageio.core.resource_io import nodes
 
-from ._processing import KNOWN_PROCESSING, AssertDtype, EnsureDtype, Processing, TensorName
+from ._processing import AssertDtype, EnsureDtype, Processing
 from ._utils import PER_DATASET, PER_SAMPLE, ComputedMeasures, RequiredMeasures, Sample
+import ._processing as proc_impl
+from bioimageio.spec.model.v0_5 import TensorId
 
-
-@dataclasses.dataclass
-class ProcessingInfoStep:
-    name: str
-    kwargs: Dict[str, Any]
+# @dataclasses.dataclass
+# class ProcessingInfoStep:
+#     name: str
+#     kwargs: Dict[str, Any]
 
 
 @dataclasses.dataclass
 class ProcessingInfo:
-    steps: List[ProcessingInfoStep]
+    steps: List[Processing]
     # assert_dtype_before: Optional[Union[str, Sequence[str]]] = None  # throw AssertionError if data type doesn't match
     ensure_dtype_before: Optional[str] = None  # cast data type if needed
     # assert_dtype_after: Optional[Union[str, Sequence[str]]] = None  # throw AssertionError if data type doesn't match
@@ -23,10 +24,8 @@ class ProcessingInfo:
 
 
 class CombinedProcessing:
-    def __init__(self, combine_tensors: Dict[TensorName, ProcessingInfo]):
+    def __init__(self, combine_tensors: Dict[TensorId, ProcessingInfo]):
         self._procs = []
-        known = dict(KNOWN_PROCESSING["pre"])
-        known.update(KNOWN_PROCESSING["post"])
 
         # ensure all tensors have correct data type before any processing
         for tensor_name, info in combine_tensors.items():
@@ -38,7 +37,8 @@ class CombinedProcessing:
 
         for tensor_name, info in combine_tensors.items():
             for step in info.steps:
-                self._procs.append(known[step.name](tensor_name=tensor_name, **step.kwargs))
+
+                self._procs.append((tensor_name=tensor_name, **step.kwargs))
 
             if info.assert_dtype_after is not None:
                 self._procs.append(AssertDtype(tensor_name=tensor_name, dtype=info.assert_dtype_after))
