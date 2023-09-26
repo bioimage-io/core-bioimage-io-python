@@ -217,6 +217,9 @@ def download(
             headers = {}
             progressbar = True
 
+        if (user_agent := os.environ.get("BIOIMAGEIO_USER_AGENT")) is not None:
+            headers["User-Agent"] =  user_agent
+
         downloader = pooch.HTTPDownloader(headers=headers, progressbar=progressbar)
         _ls: Any = pooch.retrieve(url=str(source), known_hash=known_hash, downloader=downloader)
         local_source = Path(_ls)
