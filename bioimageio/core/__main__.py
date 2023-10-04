@@ -4,23 +4,17 @@ import os
 import sys
 import warnings
 from glob import glob
-
 from pathlib import Path
 from pprint import pformat, pprint
-from typing import List, Optional
+from typing import List, Optional, get_args
 
 import typer
 
-from bioimageio.core import __version__, prediction, commands, resource_tests, load_raw_resource_description
+from bioimageio.core import __version__, commands, load_raw_resource_description, prediction, resource_tests
 from bioimageio.core.common import TestSummary
-from bioimageio.core.prediction_pipeline import get_weight_formats
-from bioimageio.spec.__main__ import app, help_version as help_version_spec
+from bioimageio.spec.__main__ import app
+from bioimageio.spec.__main__ import help_version as help_version_spec
 from bioimageio.spec.model.raw_nodes import WeightsFormat
-
-try:
-    from typing import get_args
-except ImportError:
-    from typing_extensions import get_args  # type: ignore
 
 try:
     with warnings.catch_warnings():
@@ -192,7 +186,6 @@ def predict_image(
     weight_format: Optional[WeightFormatEnum] = typer.Option(None, help="The weight format to use."),
     devices: Optional[List[str]] = typer.Option(None, help="Devices for running the model."),
 ):
-
     if isinstance(padding, str):
         padding = json.loads(padding.replace("'", '"'))
         assert isinstance(padding, dict)

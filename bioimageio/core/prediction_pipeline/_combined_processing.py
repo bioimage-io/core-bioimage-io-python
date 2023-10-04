@@ -5,13 +5,19 @@ from bioimageio.core.resource_io import nodes
 
 from ._processing import AssertDtype, EnsureDtype, Processing
 from ._utils import PER_DATASET, PER_SAMPLE, ComputedMeasures, RequiredMeasures, Sample
-import ._processing as proc_impl
+from .processing import get_impl, NamedMeasures, ProcSpec, M
 from bioimageio.spec.model.v0_5 import TensorId
 
-# @dataclasses.dataclass
-# class ProcessingInfoStep:
-#     name: str
-#     kwargs: Dict[str, Any]
+
+@dataclass
+class CombinedMeasures(NamedMeasures[M]):
+    step_specs: Sequence[ProcSpec]
+    steps: ProcessingImplBase[Any, Any, Any]
+    def get_set(self) -> Set[M]:
+        ret = set()
+        for step in self.steps:
+            for f in fields(step)
+        return {f"{}getattr(self, f.name) for f in fields(self)}
 
 
 @dataclasses.dataclass

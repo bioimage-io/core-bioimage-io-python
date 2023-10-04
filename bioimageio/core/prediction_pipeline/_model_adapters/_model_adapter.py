@@ -1,40 +1,41 @@
 import abc
-from typing import List, Optional, Sequence, Type, Union
+from typing import List, Optional, Sequence, Tuple, Type, Union
 
 import xarray as xr
 
-from bioimageio.core import load_resource_description
-from bioimageio.core.resource_io import nodes
+from bioimageio.spec.model import v0_4, v0_5
+
+WeightsFormat = Union[v0_4.WeightsFormat, v0_5.WeightsFormat]
 
 #: Known weight formats in order of priority
 #: First match wins
-from bioimageio.spec.model import raw_nodes
+_WEIGHT_FORMATS: Tuple[WeightsFormat, ...] = (
+    "pytorch_state_dict",
+    "tensorflow_saved_model_bundle",
+    "torchscript",
+    "onnx",
+    "keras_hdf5",
+)
 
-_WEIGHT_FORMATS = ["pytorch_state_dict", "tensorflow_saved_model_bundle", "torchscript", "onnx", "keras_hdf5"]
+
+BioimageioModel = Union[v0_4.Model, v0_5.Model]
 
 
 class ModelAdapter(abc.ABC):
     """
-    Represents model *without* any preprocessing and postprocessing
+    Represents model *without* any preprocessing or postprocessing
     """
 
-    def __init__(
-        self, *, bioimageio_model: Union[nodes.Model, raw_nodes.Model], devices: Optional[Sequence[str]] = None
-    ):
+    def __init__(self, *, bioimageio_model: BioimageioModel, devices: Optional[Sequence[str]] = None):
+        super().__init__()
         self.bioimageio_model = self._prepare_model(bioimageio_model)
         self.default_devices = devices
         self.loaded = False
 
     @staticmethod
-    def _prepare_model(bioimageio_model):
-        """the (raw) model node is prepared (here: loaded as non-raw model node) for the model adapter to be ready
-        for operation.
-        Note: To write a model adapter that uses the raw model node one can overwrite this method.
-        """
-        if isinstance(bioimageio_model, nodes.Model):
-            return bioimageio_model
-        else:
-            return load_resource_description(bioimageio_model)
+    def _prepare_model(bioimageio_model: BioimageioModel) -> BioimageioModel:
+        """The model node is prepared for the model adapter to be ready for operation."""
+        return bioimageio_model
 
     def __enter__(self):
         """load on entering context"""
@@ -42,7 +43,7 @@ class ModelAdapter(abc.ABC):
         self.load()  # using default_devices
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb):  # type: ignore
         """unload on exiting context"""
         assert self.loaded
         self.unload()
@@ -105,39 +106,31 @@ def get_weight_formats() -> List[str]:
     """
     Return list of supported weight types
     """
-    return _WEIGHT_FORMATS.copy()
+    return list(_WEIGHT_FORMATS)
 
 
 def create_model_adapter(
     *,
-    bioimageio_model: Union[nodes.Model, raw_nodes.Model],
-    devices=Optional[Sequence[str]],
-    weight_format: Optional[str] = None,
+    bioimageio_model: Union[v0_4.Model, v0_5.Model],
+    devices: Optional[Sequence[str]] = None,
+    weight_format: Optional[WeightsFormat] = None,
 ) -> ModelAdapter:
     """
     Creates model adapter based on the passed spec
     Note: All specific adapters should happen inside this function to prevent different framework
     initializations interfering with each other
     """
-    weights = bioimageio_model.weights
-    weight_formats = get_weight_formats()
+    if weight_format is not None and weight_format not in _WEIGHT_FORMATS:
+        raise ValueError(f"Weight format {weight_format} is not in supported formats {_WEIGHT_FORMATS}")
 
-    if weight_format is not None:
-        if weight_format not in weight_formats:
-            raise ValueError(f"Weight format {weight_format} is not in supported formats {weight_formats}")
-        weight_formats = [weight_format]
+    priority_order = _WEIGHT_FORMATS if weight_format is None else (weight_format,)
+    weight = bioimageio_model.weights.get(*priority_order)
 
-    for weight in weight_formats:
-        if weight in weights:
-            adapter_cls = _get_model_adapter(weight)
-            return adapter_cls(bioimageio_model=bioimageio_model, devices=devices)
-
-    raise RuntimeError(
-        f"weight format {weight_format} not among formats listed in model: {list(bioimageio_model.weights.keys())}"
-    )
+    adapter_cls = _get_model_adapter(weight.type)
+    return adapter_cls(bioimageio_model=bioimageio_model, devices=devices)
 
 
-def _get_model_adapter(weight_format: str) -> Type[ModelAdapter]:
+def _get_model_adapter(weight_format: WeightsFormat) -> Type[ModelAdapter]:
     """
     Return adapter class based on the weight format
     Note: All specific adapters should happen inside this function to prevent different framework

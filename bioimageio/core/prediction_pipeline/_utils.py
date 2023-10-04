@@ -5,31 +5,15 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, Iterator, List, Literal, NamedTuple, Set, Union
 
 import xarray as xr
+
+from bioimageio.core.statistical_measures import Measure
 from bioimageio.spec.model.v0_5 import TensorId
-
-from bioimageio.core.statistical_measures import Measure, MeasureValue
-
-FixedMode = Literal["fixed"]
-SampleMode = Literal["per_sample"]
-DatasetMode = Literal["per_dataset"]
-Mode = Literal[FixedMode, SampleMode, DatasetMode]
-
-FIXED: FixedMode = "fixed"
-PER_SAMPLE: SampleMode = "per_sample"
-PER_DATASET: DatasetMode = "per_dataset"
-MODES: Set[Mode] = {FIXED, PER_SAMPLE, PER_DATASET}
-
 
 Sample = Dict[TensorId, xr.DataArray]
 
 
-class RequiredMeasure(NamedTuple):
-    measure: Measure
-    tensor_id: TensorId
-    mode: Mode
-
-    # def __repr__(self) -> str:
-    #     return f"{self.measure} of {self.tensor_id} ({self.mode})"
+# def __repr__(self) -> str:
+#     return f"{self.measure} of {self.tensor_id} ({self.mode})"
 
 
 # RequiredMeasures = List[ReqMeasure]
