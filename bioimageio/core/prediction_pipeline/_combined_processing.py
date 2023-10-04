@@ -1,11 +1,11 @@
 import dataclasses
-from typing import Any, Dict, List, Literal, Optional, Sequence, Union
+from typing import Any, Dict, List, Literal, Optional, Sequence, Set, Union
 
 from bioimageio.core.resource_io import nodes
 
 from ._processing import AssertDtype, EnsureDtype, Processing
 from ._utils import PER_DATASET, PER_SAMPLE, ComputedMeasures, RequiredMeasures, Sample
-from .processing import get_impl, NamedMeasures, ProcSpec, M
+from .processing import ProcessingImplBase, get_impl, NamedMeasures, ProcSpec, M
 from bioimageio.spec.model.v0_5 import TensorId
 
 
@@ -30,7 +30,7 @@ class ProcessingInfo:
 
 
 class CombinedProcessing:
-    def __init__(self, combine_tensors: Dict[TensorId, ProcessingInfo]):
+    def __init__(self, steps: List[]: Dict[TensorId, ProcessingInfo]):
         self._procs = []
 
         # ensure all tensors have correct data type before any processing
