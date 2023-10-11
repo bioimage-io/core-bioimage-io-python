@@ -222,13 +222,13 @@ def write_package(
     return output_path
 
 
-class _LocalFile(NamedTuple):
+class LocalFile(NamedTuple):
     path: FilePath
     original_root: Union[AnyUrl, DirectoryPath]
     original_file_name: str
 
 
-class _LocalRdf(NamedTuple):
+class LocalRdf(NamedTuple):
     content: RdfContent
     root: Union[AnyUrl, DirectoryPath]
     file_name: str
@@ -239,7 +239,7 @@ def download(
     /,
     *,
     known_hash: Optional[KnownHash] = None,
-) -> _LocalFile:
+) -> LocalFile:
     source = _interprete_file_source(source)
     if isinstance(source, AnyUrl):
         if source.scheme not in ("http", "https"):
@@ -263,7 +263,7 @@ def download(
         local_source = source
         root = source.parent
 
-    return _LocalFile(
+    return LocalFile(
         local_source,
         root,
         extract_file_name(source),
@@ -296,7 +296,7 @@ def download_rdf(source: FileSource, /, *, known_hash: Optional[KnownHash] = Non
     if not isinstance(content, collections.abc.Mapping):
         raise TypeError(f"Expected RDF content to be a mapping, but got '{type(content)}'.")
 
-    return _LocalRdf(cast(RdfContent, content), root, file_name)
+    return LocalRdf(cast(RdfContent, content), root, file_name)
 
 
 def resolve_source(
