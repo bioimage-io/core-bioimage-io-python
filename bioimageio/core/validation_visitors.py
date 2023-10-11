@@ -1,11 +1,7 @@
-import hashlib
-import importlib.util
-import os
-import sys
 from dataclasses import dataclass, replace
 from functools import singledispatchmethod
-from pathlib import Path, PosixPath, PurePath
-from typing import Any, Hashable, List, Optional, Tuple, Type, TypedDict, Union
+from pathlib import Path, PurePath
+from typing import Any, List, Optional, Tuple, TypedDict, Union
 
 import requests
 from pydantic import AnyUrl, DirectoryPath
@@ -70,10 +66,6 @@ class ValidationVisitor:
             self.visit(v, replace(memo, loc=memo.loc + (k,)))
 
 
-class _NoSha:
-    pass
-
-
 class SourceValidator(ValidationVisitor):
     def __init__(self, root: Union[DirectoryPath, AnyUrl]) -> None:
         super().__init__()
@@ -90,14 +82,11 @@ class SourceValidator(ValidationVisitor):
     @_visit_impl.register
     def _visit_path(self, path: PurePath, memo: Memo):
         if Path(path).exists():
-            sha256: Union[None, Sha256, Type[_NoSha]] = _NoSha
-
             for parent in memo.parent_nodes:
                 if "sha256" in parent.model_fields:
-                    sha256: Optional[Sha256] = parent.sha256  # type: ignore
+                    sha256: Union[None, Sha256] = parent.sha256  # type: ignore
                     break
-
-            if sha256 is _NoSha:
+            else:
                 return
 
             actual_sha256 = get_sha256(path)
