@@ -1,17 +1,19 @@
 from __future__ import annotations
 
 import collections.abc
+import io
 import os
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any, Dict, List, Literal, NamedTuple, Optional, Sequence, TextIO, Union, cast
+from typing import Annotated, Any, Dict, List, Literal, Mapping, NamedTuple, Optional, Sequence, TextIO, Union, cast
 from zipfile import ZIP_DEFLATED, ZipFile, is_zipfile
 
 import pooch
+from annotated_types import Len, Predicate
 from pydantic import AnyUrl, DirectoryPath, FilePath, HttpUrl, TypeAdapter
 from ruamel.yaml import YAML
 
-from bioimageio.core._internal.utils import get_parent_url, write_zip
+from bioimageio.core.utils import get_parent_url
 from bioimageio.spec import ResourceDescription
 from bioimageio.spec import load_description as load_description
 from bioimageio.spec._internal.base_nodes import ResourceDescriptionBase
@@ -29,6 +31,9 @@ FileSource = Union[StrictFileSource, str]
 RdfSource = Union[FileSource, ResourceDescription]
 
 LEGACY_RDF_NAME = "rdf.yaml"
+
+
+KnownHash = Annotated[str, Len(64 + len("sha256:")), Predicate(lambda x: str.startswith(x, "sha256:"))]
 
 
 def read_description(
@@ -139,6 +144,36 @@ def prepare_resource_package(
     return local_package_content
 
 
+def write_zip(
+    path: os.PathLike[str],
+    content: Mapping[FileName, Union[str, FilePath, Dict[Any, Any]]],
+    *,
+    compression: int,
+    compression_level: int,
+) -> None:
+    """Write a zip archive.
+
+    Args:
+        path: output path to write to.
+        content: dict mapping archive names to local file paths, strings (for text files), or dict (for yaml files).
+        compression: The numeric constant of compression method.
+        compression_level: Compression level to use when writing files to the archive.
+                           See https://docs.python.org/3/library/zipfile.html#zipfile.ZipFile
+
+    """
+    with ZipFile(path, "w", compression=compression, compresslevel=compression_level) as myzip:
+        for arc_name, file in content.items():
+            if isinstance(file, dict):
+                buf = io.StringIO()
+                YAML.dump(file, buf)
+                file = buf.getvalue()
+
+            if isinstance(file, str):
+                myzip.writestr(arc_name, file.encode("utf-8"))
+            else:
+                myzip.write(file, arcname=arc_name)
+
+
 def write_package(
     rdf_source: RdfSource,
     /,
@@ -203,7 +238,7 @@ def download(
     source: FileSource,
     /,
     *,
-    known_hash: Optional[str] = None,
+    known_hash: Optional[KnownHash] = None,
 ) -> _LocalFile:
     source = _interprete_file_source(source)
     if isinstance(source, AnyUrl):
@@ -218,7 +253,7 @@ def download(
             progressbar = True
 
         if (user_agent := os.environ.get("BIOIMAGEIO_USER_AGENT")) is not None:
-            headers["User-Agent"] =  user_agent
+            headers["User-Agent"] = user_agent
 
         downloader = pooch.HTTPDownloader(headers=headers, progressbar=progressbar)
         _ls: Any = pooch.retrieve(url=str(source), known_hash=known_hash, downloader=downloader)
@@ -235,7 +270,7 @@ def download(
     )
 
 
-def download_rdf(source: FileSource, /, *, known_hash: Optional[str] = None, rdf_encoding: str = "utf-8"):
+def download_rdf(source: FileSource, /, *, known_hash: Optional[KnownHash] = None, rdf_encoding: str = "utf-8"):
     local_source, root, file_name = download(source, known_hash=known_hash)
     if is_zipfile(local_source):
         out_path = local_source.with_suffix(local_source.suffix + ".unzip")
@@ -268,7 +303,7 @@ def resolve_source(
     source: Union[FileSource, RelativeFilePath],
     /,
     *,
-    known_hash: Optional[str] = None,
+    known_hash: Optional[KnownHash] = None,
     root: Union[DirectoryPath, AnyUrl, None] = None,
 ) -> FilePath:
     if isinstance(source, RelativeFilePath):
