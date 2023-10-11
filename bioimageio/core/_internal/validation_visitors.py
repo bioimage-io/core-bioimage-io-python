@@ -8,15 +8,14 @@ from pathlib import Path, PosixPath, PurePath
 from types import ModuleType
 from typing import Any, Hashable, List, Optional, Tuple, TypedDict, Union
 
-from annotated_types import SLOTS
-from bioimageio.spec._internal.base_nodes import Node
-from bioimageio.spec._internal.constants import ALERT_TYPE, IN_PACKAGE_MESSAGE, KW_ONLY, SLOTS
-from bioimageio.spec._internal.types import Loc
-from bioimageio.spec.description import ResourceDescription
-from bioimageio.spec.summary import ErrorEntry, WarningEntry
 from pydantic import AnyUrl, DirectoryPath
 from pydantic.fields import FieldInfo
-from typing_extensions import NotRequired, Unpack
+from typing_extensions import NotRequired
+
+from bioimageio.spec._internal.base_nodes import Node
+from bioimageio.spec._internal.constants import ALERT_TYPE, IN_PACKAGE_MESSAGE, KW_ONLY, SLOTS
+from bioimageio.spec.description import ResourceDescription
+from bioimageio.spec.summary import ErrorEntry, Loc, WarningEntry
 
 
 class VisitorKwargs(TypedDict):
@@ -67,10 +66,15 @@ class SourceValidator(ValidationVisitor):
 
     def _visit_path(self, path: PurePath, note: Note):
         if not Path(path).exists():
-            if note.info and note.info.description and note.info.description.startswith(IN_PACKAGE_MESSAGE):
+            msg = f"{path} not found"
+            if (
+                note.info
+                and isinstance(note.info.description, str)
+                and note.info.description.startswith(IN_PACKAGE_MESSAGE)
+            ):
                 self.errors.append(ErrorEntry(loc=note.loc, msg=msg, type="file-not-found"))
             else:
-                self.warnings.append(WarningEntry(loc=note.loc, msg=msg, type=ALERT_TYPE))
+                self.warnings.append(WarningEntry(loc=note.loc, msg=msg, type="file-not-found"))
 
 
 #             # info.description.startswith(IN_PACKAGE_MESSAGE)

@@ -1,11 +1,12 @@
 import warnings
 from typing import List, Optional, Sequence
-from marshmallow import missing
+
+from packaging.version import Version
 
 # by default, we use the keras integrated with tensorflow
 try:
-    from tensorflow import keras
     import tensorflow as tf
+    from tensorflow import keras
 
     TF_VERSION = tf.__version__
 except Exception:
@@ -19,11 +20,13 @@ from ._model_adapter import ModelAdapter
 
 class KerasModelAdapter(ModelAdapter):
     def _load(self, *, devices: Optional[Sequence[str]] = None) -> None:
-        model_tf_version = self.bioimageio_model.weights["keras_hdf5"].tensorflow_version
-        if model_tf_version is missing:
+        assert self.bioimageio_model.weights.keras_hdf5 is not None
+        tf_version = self.bioimageio_model.weights.keras_hdf5.tensorflow_version
+        if tf_version is None:
             model_tf_version = None
         else:
-            model_tf_version = (int(model_tf_version.major), int(model_tf_version.minor))
+            v = Version(tf_version)
+            model_tf_version = (int(v.major), int(v.minor))
 
         if TF_VERSION is None or model_tf_version is None:
             warnings.warn("Could not check tensorflow versions. The prediction results may be wrong.")
