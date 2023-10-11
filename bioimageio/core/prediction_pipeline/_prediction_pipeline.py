@@ -4,14 +4,13 @@ from dataclasses import dataclass
 from typing import Iterable, List, Optional, Sequence, Tuple, Union
 
 import xarray as xr
-from bioimageio.spec.model import raw_nodes
 from marshmallow import missing
 
-from bioimageio.core._internal.validation_visitors import resolve_raw_node
-from bioimageio.core.resource_io import nodes
+from bioimageio.core.model_adapters import ModelAdapter, create_model_adapter
+from bioimageio.core.validation_visitors import resolve_raw_node
+from bioimageio.spec.model import AnyModel, raw_nodes
 
 from ._combined_processing import CombinedProcessing
-from ._model_adapters import ModelAdapter, create_model_adapter
 from ._stat_state import StatsState
 from ._utils import ComputedMeasures, Sample, TensorName
 
@@ -91,7 +90,7 @@ class _PredictionPipelineImpl(PredictionPipeline):
         self,
         *,
         name: str,
-        bioimageio_model: Union[nodes.Model, raw_nodes.Model],
+        bioimageio_model: AnyModel,
         preprocessing: CombinedProcessing,
         postprocessing: CombinedProcessing,
         ipt_stats: StatsState,
@@ -102,13 +101,8 @@ class _PredictionPipelineImpl(PredictionPipeline):
             warnings.warn(f"Not yet implemented inference for run mode '{bioimageio_model.run_mode.name}'")
 
         self._name = name
-        if isinstance(bioimageio_model, nodes.Model):
-            self._input_specs = bioimageio_model.inputs
-            self._output_specs = bioimageio_model.outputs
-        else:
-            assert isinstance(bioimageio_model, raw_nodes.Model)
-            self._input_specs = [resolve_raw_node(s, nodes) for s in bioimageio_model.inputs]
-            self._output_specs = [resolve_raw_node(s, nodes) for s in bioimageio_model.outputs]
+        self._input_specs = bioimageio_model.inputs
+        self._output_specs = bioimageio_model.outputs
 
         self._preprocessing = preprocessing
         self._postprocessing = postprocessing
@@ -185,7 +179,7 @@ class _PredictionPipelineImpl(PredictionPipeline):
 
 
 def create_prediction_pipeline(
-    bioimageio_model: Union[nodes.Model, raw_nodes.Model],
+    bioimageio_model: AnyModel,
     *,
     devices: Optional[Sequence[str]] = None,
     weight_format: Optional[str] = None,
