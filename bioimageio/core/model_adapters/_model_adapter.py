@@ -18,7 +18,7 @@ _WEIGHT_FORMATS: Tuple[WeightsFormat, ...] = (
 )
 
 
-BioimageioModel = Union[v0_4.Model, v0_5.Model]
+ModelDescription = Union[v0_4.Model, v0_5.Model]
 
 
 class ModelAdapter(abc.ABC):
@@ -26,16 +26,17 @@ class ModelAdapter(abc.ABC):
     Represents model *without* any preprocessing or postprocessing
     """
 
-    def __init__(self, *, bioimageio_model: BioimageioModel, devices: Optional[Sequence[str]] = None):
+    def __init__(self, *, model_description: ModelDescription, devices: Optional[Sequence[str]] = None):
         super().__init__()
-        self.bioimageio_model = self._prepare_model(bioimageio_model)
+        self.model_description = self._prepare_model(model_description)
+        self.model_description = self.model_description
         self.default_devices = devices
         self.loaded = False
 
     @staticmethod
-    def _prepare_model(bioimageio_model: BioimageioModel) -> BioimageioModel:
-        """The model node is prepared for the model adapter to be ready for operation."""
-        return bioimageio_model
+    def _prepare_model(model_description: ModelDescription) -> ModelDescription:
+        """The model description may be altered by the model adapter to be ready for operation."""
+        return model_description
 
     def __enter__(self):
         """load on entering context"""
@@ -111,7 +112,7 @@ def get_weight_formats() -> List[str]:
 
 def create_model_adapter(
     *,
-    bioimageio_model: Union[v0_4.Model, v0_5.Model],
+    model_description: Union[v0_4.Model, v0_5.Model],
     devices: Optional[Sequence[str]] = None,
     weight_format: Optional[WeightsFormat] = None,
 ) -> ModelAdapter:
@@ -124,10 +125,10 @@ def create_model_adapter(
         raise ValueError(f"Weight format {weight_format} is not in supported formats {_WEIGHT_FORMATS}")
 
     priority_order = _WEIGHT_FORMATS if weight_format is None else (weight_format,)
-    weight = bioimageio_model.weights.get(*priority_order)
+    weight = model_description.weights.get(*priority_order)
 
     adapter_cls = _get_model_adapter(weight.type)
-    return adapter_cls(bioimageio_model=bioimageio_model, devices=devices)
+    return adapter_cls(model_description=model_description, devices=devices)
 
 
 def _get_model_adapter(weight_format: WeightsFormat) -> Type[ModelAdapter]:
