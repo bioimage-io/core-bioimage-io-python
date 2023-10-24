@@ -14,21 +14,23 @@ from ._model_adapter import ModelAdapter
 class PytorchModelAdapter(ModelAdapter):
     _devices: Optional[List[torch.device]] = None
 
-    def _load(self, *, devices: Optional[Sequence[str]] = None):
-        if self.model_description.weights.pytorch_state_dict is None:
+    def __init__(self, *, model_description: Union[v0_4.Model, v0_5.Model], devices: Optional[Sequence[str]] = None):
+        super().__init__()
+        if model_description.weights.pytorch_state_dict is None:
             raise ValueError("missing pytorch_state_dict weights")
 
-        self._network = self.get_network(self.model_description.weights.pytorch_state_dict)
+        self.model_description = model_description
+        self._network = self.get_network(model_description.weights.pytorch_state_dict)
         self._devices = self.get_devices(devices)
         self._network = self._network.to(self._devices[0])
 
-        weights = self.model_description.weights.pytorch_state_dict
+        weights = model_description.weights.pytorch_state_dict
         state: Any = torch.load(weights.source, map_location=self._devices[0])
         _ = self._network.load_state_dict(state)
 
         self._network = self._network.eval()
 
-    def _forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
+    def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         assert self._devices is not None
         with torch.no_grad():
             tensors = [torch.from_numpy(ipt.data) for ipt in input_tensors]
@@ -48,7 +50,7 @@ class PytorchModelAdapter(ModelAdapter):
             for r, out in zip(result, self.model_description.outputs)
         ]
 
-    def _unload(self) -> None:
+    def unload(self) -> None:
         self._devices = None
         del self._network
         _ = gc.collect()  # deallocate memory
