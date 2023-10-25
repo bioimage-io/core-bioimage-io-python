@@ -16,7 +16,7 @@ reportMissingTypeStubs = "warning"
 useLibraryCodeForTypes = true
 reportUnusedCallResult = "error"
 reportUnusedVariable = "error"
-pythonVersion = "3.9"
+pythonVersion = "3.8"
 pythonPlatform = "All"
 
 [tool.pytest.ini_options]

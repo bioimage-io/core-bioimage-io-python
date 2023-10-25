@@ -58,7 +58,9 @@ class ModelAdapter(ABC):
                 try:
                     from ._pytorch_model_adapter import PytorchModelAdapter
 
-                    return PytorchModelAdapter(model_description=model_description, devices=devices)
+                    return PytorchModelAdapter(
+                        outputs=model_description.outputs, weights=weights.pytorch_state_dict, devices=devices
+                    )
                 except Exception as e:
                     errors.append(e)
             elif wf == "tensorflow_saved_model_bundle" and weights.tensorflow_saved_model_bundle is not None:
