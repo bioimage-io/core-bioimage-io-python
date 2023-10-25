@@ -2,20 +2,40 @@ import datetime
 import hashlib
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, get_args
+from typing import Any, Dict, List, Optional, Sequence, TypedDict, Union, get_args
 from warnings import warn
 
 import imageio
 import numpy as np
 import requests
 import tifffile
+from numpy.typing import NDArray
+
+# from bioimageio.core import export_resource_package, load_raw_resource_description
+from pydantic import AnyUrl, HttpUrl
+from typing_extensions import NotRequired, Unpack
 
 import bioimageio.spec as spec
 import bioimageio.spec.model as model_spec
-from bioimageio.core import export_resource_package, load_raw_resource_description
-from bioimageio.core.resource_io.nodes import URI
-from bioimageio.spec.shared import resolve_local_source, resolve_source
-from bioimageio.spec.shared.raw_nodes import ImportableModule, ImportableSourceFile
+from bioimageio.core.io import FileSource, download
+from bioimageio.core.utils import import_callable
+from bioimageio.spec.model.v0_5 import (
+    Author,
+    CiteEntry,
+    InputAxis,
+    InputTensor,
+    IntervalOrRatioData,
+    LicenseId,
+    Maintainer,
+    Model,
+    NominalOrOrdinalData,
+    NotEmpty,
+    OutputAxis,
+    Postprocessing,
+    Preprocessing,
+    TensorData,
+    TensorId,
+)
 
 #
 # utility functions to build the spec from python
@@ -581,12 +601,12 @@ def _ensure_local_or_url(source: Union[Path, URI, str, list], root: Path) -> Uni
 
 def build_model(
     # model or tensor specific and required
-    weight_uri: str,
-    test_inputs: List[Union[str, Path]],
-    test_outputs: List[Union[str, Path]],
+    weight_uri: FileSource,
+    test_inputs: List[FileSource],
+    test_outputs: List[FileSource],
     input_axes: List[str],
     output_axes: List[str],
-    # general required
+    # general metadata
     name: str,
     description: str,
     authors: List[Dict[str, str]],
