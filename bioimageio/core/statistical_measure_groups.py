@@ -10,11 +10,10 @@ from typing import DefaultDict, Dict, Hashable, Iterator, List, Mapping, Optiona
 import numpy
 import xarray as xr
 from attr import dataclass
-from bioimageio.spec.model.v0_5 import AxisName
 
+from bioimageio.core.sta import PER_DATASET, PER_SAMPLE, ComputedMeasures, RequiredMeasures, Sample
 from bioimageio.core.statistical_measures import Mean, Measure, Percentile, Std, Var
-
-from ._utils import PER_DATASET, PER_SAMPLE, ComputedMeasures, RequiredMeasures, Sample, TensorName
+from bioimageio.spec.model.v0_5 import AxisName
 
 try:
     import crick  # type: ignore
