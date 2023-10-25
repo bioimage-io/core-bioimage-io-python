@@ -3,22 +3,24 @@ from __future__ import annotations
 import collections.abc
 import io
 import os
+import shutil
+from dataclasses import dataclass
 from pathlib import Path
-from tempfile import NamedTemporaryFile
-from typing import Annotated, Any, Dict, List, Literal, Mapping, NamedTuple, Optional, Sequence, TextIO, Union, cast
+from tempfile import NamedTemporaryFile, TemporaryDirectory, mkdtemp
+from typing import Any, Dict, List, Literal, Mapping, Optional, Sequence, TextIO, TypedDict, Union, cast
 from zipfile import ZIP_DEFLATED, ZipFile, is_zipfile
 
 import pooch
-from annotated_types import Len, Predicate
 from pydantic import AnyUrl, DirectoryPath, FilePath, HttpUrl, TypeAdapter
 from ruamel.yaml import YAML
+from typing_extensions import NotRequired, Unpack
 
 from bioimageio.core.utils import get_parent_url
 from bioimageio.spec import ResourceDescription
 from bioimageio.spec import load_description as load_description
 from bioimageio.spec._internal.base_nodes import ResourceDescriptionBase
 from bioimageio.spec._internal.constants import DISCOVER
-from bioimageio.spec._internal.types import FileName, RdfContent, RelativeFilePath, ValidationContext, YamlValue
+from bioimageio.spec._internal.types import FileName, RdfContent, RelativeFilePath, Sha256, ValidationContext, YamlValue
 from bioimageio.spec.description import InvalidDescription, dump_description
 from bioimageio.spec.model.v0_4 import WeightsFormat
 from bioimageio.spec.package import extract_file_name, get_resource_package_content
@@ -33,7 +35,15 @@ RdfSource = Union[FileSource, ResourceDescription]
 LEGACY_RDF_NAME = "rdf.yaml"
 
 
-KnownHash = Annotated[str, Len(64 + len("sha256:")), Predicate(lambda x: str.startswith(x, "sha256:"))]
+class HashKwargs(TypedDict):
+    sha256: NotRequired[Optional[Sha256]]
+
+
+def get_known_hash(hash_kwargs: HashKwargs):
+    if "sha256" in hash_kwargs:
+        return f"sha256:{hash_kwargs['sha256']}"
+    else:
+        return None
 
 
 def read_description(
@@ -45,7 +55,7 @@ def read_description(
     rdf = download_rdf(rdf_source)
     return load_description(
         rdf.content,
-        context=ValidationContext(root=rdf.root, file_name=rdf.file_name),
+        context=ValidationContext(root=rdf.original_root, file_name=rdf.original_file_name),
         format_version=format_version,
     )
 
@@ -58,7 +68,9 @@ def read_description_and_validate(
 ) -> Union[ResourceDescription, InvalidDescription]:
     rdf = download_rdf(rdf_source)
     return load_description_and_validate(
-        rdf.content, context=ValidationContext(root=rdf.root, file_name=rdf.file_name), format_version=format_version
+        rdf.content,
+        context=ValidationContext(root=rdf.original_root, file_name=rdf.original_file_name),
+        format_version=format_version,
     )
 
 
@@ -123,7 +135,7 @@ def prepare_resource_package(
         context = ValidationContext(root=_ctxt["root"], file_name=_ctxt["file_name"])
     else:
         rdf = download_rdf(rdf_source)
-        context = ValidationContext(root=rdf.root, file_name=rdf.file_name)
+        context = ValidationContext(root=rdf.original_root, file_name=rdf.original_file_name)
         rd = load_description(
             rdf.content,
             context=context,
@@ -198,7 +210,6 @@ def write_package(
 
     Args:
         rd: bioimage.io resource description
-        context:
         compression: The numeric constant of compression method.
         compression_level: Compression level to use when writing files to the archive.
                            See https://docs.python.org/3/library/zipfile.html#zipfile.ZipFile
@@ -222,24 +233,72 @@ def write_package(
     return output_path
 
 
-class LocalFile(NamedTuple):
+def write_package_as_folder(
+    rdf_source: RdfSource,
+    /,
+    *,
+    output_path: Optional[DirectoryPath] = None,
+    weights_priority_order: Optional[  # model only
+        Sequence[
+            Literal[
+                "keras_hdf5",
+                "onnx",
+                "pytorch_state_dict",
+                "tensorflow_js",
+                "tensorflow_saved_model_bundle",
+                "torchscript",
+            ]
+        ]
+    ] = None,
+) -> DirectoryPath:
+    """Write the content of a bioimage.io resource package to a folder.
+
+    Args:
+        rd: bioimage.io resource description
+        output_path: file path to write package to
+        weights_priority_order: If given only the first weights format present in the model is included.
+                                If none of the prioritized weights formats is found all are included.
+
+    Returns:
+        path to zipped bioimage.io package in BIOIMAGEIO_CACHE_PATH or 'output_path'
+    """
+    package_content = prepare_resource_package(
+        rdf_source,
+        weights_priority_order=weights_priority_order,
+    )
+    if output_path is None:
+        output_path = Path(mkdtemp())
+    else:
+        output_path = Path(output_path)
+
+    for name, source in package_content.items():
+        if isinstance(source, collections.abc.Mapping):
+            yaml.dump(source, output_path / name)
+        else:
+            shutil.copy(source, output_path / name)
+
+    return output_path
+
+
+@dataclass
+class DownloadedFile:
     path: FilePath
     original_root: Union[AnyUrl, DirectoryPath]
     original_file_name: str
 
 
-class LocalRdf(NamedTuple):
+@dataclass
+class DownloadedRdf:
     content: RdfContent
-    root: Union[AnyUrl, DirectoryPath]
-    file_name: str
+    original_root: Union[AnyUrl, DirectoryPath]
+    original_file_name: str
 
 
 def download(
     source: FileSource,
     /,
-    *,
-    known_hash: Optional[KnownHash] = None,
-) -> LocalFile:
+    **kwargs: Unpack[HashKwargs],
+) -> DownloadedFile:
     source = _interprete_file_source(source)
     if isinstance(source, AnyUrl):
         if source.scheme not in ("http", "https"):
@@ -256,22 +315,23 @@ def download(
             headers["User-Agent"] = user_agent
 
         downloader = pooch.HTTPDownloader(headers=headers, progressbar=progressbar)
-        _ls: Any = pooch.retrieve(url=str(source), known_hash=known_hash, downloader=downloader)
+        _ls: Any = pooch.retrieve(url=str(source), known_hash=get_known_hash(kwargs), downloader=downloader)
         local_source = Path(_ls)
         root: Union[HttpUrl, DirectoryPath] = get_parent_url(source)
     else:
         local_source = source
         root = source.parent
 
-    return LocalFile(
+    return DownloadedFile(
         local_source,
         root,
         extract_file_name(source),
     )
 
 
-def download_rdf(source: FileSource, /, *, known_hash: Optional[KnownHash] = None, rdf_encoding: str = "utf-8"):
-    local_source, root, file_name = download(source, known_hash=known_hash)
+def download_rdf(source: FileSource, /, *, rdf_encoding: str = "utf-8", **kwargs: Unpack[HashKwargs]):
+    downloaded = download(source, **kwargs)
+    local_source = downloaded.path
     if is_zipfile(local_source):
         out_path = local_source.with_suffix(local_source.suffix + ".unzip")
         with ZipFile(local_source, "r") as f:
@@ -296,15 +356,15 @@ def download_rdf(source: FileSource, /, *, known_hash: Optional[KnownHash] = Non
     if not isinstance(content, collections.abc.Mapping):
         raise TypeError(f"Expected RDF content to be a mapping, but got '{type(content)}'.")
 
-    return LocalRdf(cast(RdfContent, content), root, file_name)
+    return DownloadedRdf(cast(RdfContent, content), downloaded.original_root, downloaded.original_file_name)
 
 
 def resolve_source(
     source: Union[FileSource, RelativeFilePath],
     /,
     *,
-    known_hash: Optional[KnownHash] = None,
     root: Union[DirectoryPath, AnyUrl, None] = None,
+    **kwargs: Unpack[HashKwargs],
 ) -> FilePath:
     if isinstance(source, RelativeFilePath):
         if root is None:
@@ -312,7 +372,7 @@ def resolve_source(
 
         source = source.get_absolute(root)
 
-    return download(source, known_hash=known_hash).path
+    return download(source, **kwargs).path
 
 
 def _interprete_file_source(file_source: FileSource) -> StrictFileSource:
