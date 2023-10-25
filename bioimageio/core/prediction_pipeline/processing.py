@@ -4,6 +4,7 @@ from types import MappingProxyType
 from typing import (
     Any,
     ClassVar,
+    Dict,
     FrozenSet,
     Generic,
     Hashable,
@@ -25,14 +26,12 @@ import numpy
 import numpy as np
 import xarray as xr
 from numpy.typing import DTypeLike
-from typing_extensions import LiteralString
+from typing_extensions import LiteralString, assert_never
 
 from bioimageio.core.statistical_measures import Mean, Measure, MeasureValue, Percentile, Std
 from bioimageio.spec._internal.base_nodes import NodeWithExplicitlySetFields
 from bioimageio.spec.model import v0_4, v0_5
-from bioimageio.spec.model.v0_5 import TensorId
-
-from ._utils import Sample
+from bioimageio.spec.model.v0_5 import AxisName, NonBatchAxisName, TensorId
 
 AssertProcessingId = Literal["assert_dtype"]
 
@@ -73,6 +72,7 @@ R = TypeVar("R", bound=NamedMeasures[RequiredMeasure])
 C = TypeVar("C", bound=NamedMeasures[MeasureValue])
 
 
+Sample = Dict[TensorId, xr.DataArray]
 PKwargs = TypeVar("PKwargs", bound=Union[v0_4.ProcessingKwargs, v0_5.ProcessingKwargs])
 ProcInput = TypeVar("ProcInput", xr.DataArray, Sample)
 ProcessingBase = Union[v0_4.ProcessingBase, v0_5.ProcessingBase]
@@ -141,6 +141,7 @@ class ProcessingImplBaseWoMeasures(
 
 @dataclass(frozen=True)
 class AssertDtypeImpl(ProcessingImplBaseWoMeasures[AssertDtypeKwargs]):
+    kwargs_class = AssertDtypeKwargs
     _assert_with: Tuple[Type[DTypeLike], ...] = field(init=False)
 
     def __post_init__(self, computed_measures: Mapping[RequiredMeasure, MeasureValue]) -> None:
@@ -189,6 +190,26 @@ class EnsureDtypeImpl(ProcessingImplBaseWoMeasures[v0_5.EnsureDtypeKwargs]):
         return v0_5.EnsureDtype(kwargs=self.kwargs)
 
 
+class ScaleLinearImplBase
+class ScaleLinearImpl04(ProcessingImplBaseWoMeasures[Union[v0_4.ScaleLinearKwargs, v0_5.ScaleLinearKwargs]]):
+    def apply(self, tensor: xr.DataArray) -> xr.DataArray:
+        axis = (
+            self.kwargs.axis
+            if isinstance(self.kwargs, v0_5.ScaleLinearKwargs)
+            else _get_complement_axis(tensor, self.kwargs.axes)
+        )
+        if axis:
+            gain = xr.DataArray(np.atleast_1d(self.kwargs.gain), dims=axis)
+            offset = xr.DataArray(np.atleast_1d(self.kwargs.offset), dims=axis)
+        else:
+            assert isinstance(self.kwargs.gain, (float, int)) or len(self.kwargs.gain) == 1
+            gain = self.kwargs.gain if isinstance(self.kwargs.gain, (float, int)) else self.kwargs.gain[0]
+            assert isinstance(self.kwargs.offset, (float, int)) or len(self.kwargs.offset) == 1
+            offset = self.kwargs.offset if isinstance(self.kwargs.offset, (float, int)) else self.kwargs.offset[0]
+
+        return tensor * gain + offset
+
+
 @dataclass(frozen=True)
 class ScaleLinearImpl(ProcessingImplBaseWoMeasures[Union[v0_4.ScaleLinearKwargs, v0_5.ScaleLinearKwargs]]):
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
@@ -235,7 +256,7 @@ class ScaleMeanVarianceImpl(
     def get_required_measures(
         cls, tensor_id: TensorId, kwargs: Union[v0_4.ScaleMeanVarianceKwargs, v0_5.ScaleMeanVarianceKwargs]
     ):
-        axes = tuple(kwargs.axes) if isinstance(kwargs.axes, str) else kwargs.axes
+        axes = tuple(NonBatchAxisName(a) for a in kwargs.axes) if isinstance(kwargs.axes, str) else kwargs.axes
         return NamedMeasuresScaleMeanVariance(
             mean=RequiredMeasure(Mean(axes), tensor_id, mode=kwargs.mode),
             std=RequiredMeasure(Std(axes), tensor_id, mode=kwargs.mode),
@@ -272,7 +293,7 @@ class ScaleRangeImpl(
     @classmethod
     def get_required_measures(cls, tensor_id: TensorId, kwargs: Union[v0_4.ScaleRangeKwargs, v0_5.ScaleRangeKwargs]):
         ref_name = kwargs.reference_tensor or tensor_id
-        axes = None if kwargs.axes is None else tuple(kwargs.axes)
+        axes = None if kwargs.axes is None else tuple(NonBatchAxisName(a) for a in kwargs.axes)
         return NamedMeasuresScaleRange(
             lower=RequiredMeasure(Percentile(kwargs.min_percentile, axes=axes), cast(TensorId, ref_name), kwargs.mode),
             upper=RequiredMeasure(Percentile(kwargs.max_percentile, axes=axes), cast(TensorId, ref_name), kwargs.mode),
@@ -320,7 +341,7 @@ class ZeroMeanUnitVarianceImpl(
     def get_required_measures(
         cls, tensor_id: TensorId, kwargs: Union[v0_4.ZeroMeanUnitVarianceKwargs, v0_5.ZeroMeanUnitVarianceKwargs]
     ):
-        axes = None if kwargs.axes is None else tuple(kwargs.axes)
+        axes = None if kwargs.axes is None else tuple(NonBatchAxisName(a) for a in kwargs.axes)
         assert kwargs.mode != "fixed"  # should use FixedZeroMeanUnitVarianceImpl
         return NamedMeasuresZeroMeanUnitVariance(
             mean=RequiredMeasure(Mean(axes=axes), tensor_id, kwargs.mode),
@@ -367,11 +388,20 @@ class FixedZeroMeanUnitVarianceImpl(
 ProcSpec = Union[AssertDtype, v0_4.Preprocessing, v0_4.Postprocessing, v0_5.Preprocessing, v0_5.Postprocessing]
 
 
+# todo:
+
+class ProcSelector:
+    def __init__(proc_spec: ProcSpec) -> None:
+        self.proc_spec = proc_spec
+
+
 def get_impl(proc_spec: ProcSpec):
     if isinstance(proc_spec, AssertDtype):
-        return AssertDtypeImpl
-    elif isinstance(proc_spec, (v0_4.Binarize, v0_5.Binarize)):
-        return BinarizeImpl
+        return AssertDtypeImpl, AssertDtypeKwargs
+    elif isinstance(proc_spec, v0_4.Binarize):
+        return BinarizeImpl, v0_4.BinarizeKwargs
+    elif isinstance(proc_spec, v0_5.Binarize):
+        return BinarizeImpl, v0_5.BinarizeKwargs
     elif isinstance(proc_spec, (v0_4.Clip, v0_5.Clip)):
         return ClipImpl
     elif isinstance(proc_spec, v0_5.EnsureDtype):
@@ -388,11 +418,12 @@ def get_impl(proc_spec: ProcSpec):
         return SigmoidImpl
     elif isinstance(proc_spec, v0_4.ZeroMeanUnitVariance) and proc_spec.kwargs.mode == "fixed":
         return FixedZeroMeanUnitVarianceImpl
-    elif isinstance(proc_spec, (v0_4.ZeroMeanUnitVariance, v0_5.ZeroMeanUnitVariance)):
-        return ZeroMeanUnitVarianceImpl
+    elif isinstance(proc_spec,  # pyright: ignore[reportUnnecessaryIsInstance]
+            (v0_4.ZeroMeanUnitVariance, v0_5.ZeroMeanUnitVariance)
+        ):
+            return ZeroMeanUnitVarianceImpl
     else:
-        raise NotImplementedError(proc_spec)
-
+        assert_never(proc_spec)
 
 Model = Union[v0_4.Model, v0_5.Model]
 
@@ -403,8 +434,13 @@ def get_procs(model: Model):
         if not ipt.preprocessing:
             continue
 
+        assert isinstance(ipt, v0_5.InputTensor)
         for proc_spec in ipt.preprocessing:
-            impl = get_impl(proc_spec)
+            impl = get_impl(proc_spec, ipt.id, computed_measures)
+            assert isinstance(proc_spec.kwargs, )
+            procs.append(impl(tensor_id=ipt.id, kwargs=proc_spec.kwargs))
+
+    return procs
 
 
 def _get_complement_axis(tensor: xr.DataArray, axes: Optional[Sequence[Hashable]]) -> Optional[Hashable]:
