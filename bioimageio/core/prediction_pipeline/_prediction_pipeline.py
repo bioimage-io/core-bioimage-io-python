@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Iterable, List, Optional, Sequence, Tuple, Union
 
 import xarray as xr
-from marshmallow import missing
 
 from bioimageio.core.model_adapters import ModelAdapter, create_model_adapter
 from bioimageio.core.validation_visitors import resolve_raw_node

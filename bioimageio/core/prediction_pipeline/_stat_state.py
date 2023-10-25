@@ -2,9 +2,9 @@ from typing import Dict, Iterable, Optional
 
 from tqdm import tqdm
 
+from bioimageio.core.statistical_measure_groups import MeasureGroups, MeasureValue, get_measure_groups
 from bioimageio.core.statistical_measures import Measure
 
-from ._measure_groups import MeasureGroups, MeasureValue, get_measure_groups
 from ._utils import PER_DATASET, PER_SAMPLE, MeasureValue, RequiredMeasure, Sample, TensorName
 
 

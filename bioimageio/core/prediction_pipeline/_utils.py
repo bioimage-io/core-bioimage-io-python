@@ -1,17 +1,3 @@
-from __future__ import annotations
-
-import collections.abc
-from dataclasses import dataclass, field
-from typing import Any, Dict, Iterator, List, Literal, NamedTuple, Set, Union
-
-import xarray as xr
-
-from bioimageio.core.statistical_measures import Measure
-from bioimageio.spec.model.v0_5 import TensorId
-
-Sample = Dict[TensorId, xr.DataArray]
-
-
 # def __repr__(self) -> str:
 #     return f"{self.measure} of {self.tensor_id} ({self.mode})"
 
