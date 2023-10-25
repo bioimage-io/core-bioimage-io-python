@@ -9,16 +9,16 @@ from contextlib import AbstractContextManager
 from functools import singledispatch
 from pathlib import Path
 from types import TracebackType
-from typing import Any, Callable, Optional
+from typing import Any, Callable
 from urllib.parse import urlsplit, urlunsplit
 
 from pydantic import AnyUrl, HttpUrl
+from typing_extensions import Unpack
 
-from bioimageio.core.io import FileSource, download
+from bioimageio.core.io import FileSource, HashKwargs, download
 from bioimageio.spec.model.v0_4 import CallableFromDepencency
 from bioimageio.spec.model.v0_4 import CallableFromFile as CallableFromFile04
 from bioimageio.spec.model.v0_5 import CallableFromFile as CallableFromFile05
-from bioimageio.spec.model.v0_5 import Sha256
 
 if sys.version_info < (3, 9):
 
@@ -85,17 +85,17 @@ def import_from_dependency(node: CallableFromDepencency) -> Callable[..., Any]:
 
 
 @import_callable.register
-def import_from_file04(node: CallableFromFile04, sha256: Optional[Sha256] = None):
-    return _import_from_file_impl(node.file, node.callable_name, sha256)
+def import_from_file04(node: CallableFromFile04, **kwargs: Unpack[HashKwargs]):
+    return _import_from_file_impl(node.file, node.callable_name, **kwargs)
 
 
 @import_callable.register
-def import_from_file05(node: CallableFromFile05, sha256: Optional[Sha256] = None):
-    return _import_from_file_impl(node.source_file, node.callable_name, sha256)
+def import_from_file05(node: CallableFromFile05, **kwargs: Unpack[HashKwargs]):
+    return _import_from_file_impl(node.source_file, node.callable_name, **kwargs)
 
 
-def _import_from_file_impl(source: FileSource, callable_name: str, sha256: Optional[Sha256]):
-    local_file = download(source, known_hash=None if sha256 is None else f"sha256:{sha256}")
+def _import_from_file_impl(source: FileSource, callable_name: str, **kwargs: Unpack[HashKwargs]):
+    local_file = download(source, **kwargs)
     module_name = local_file.path.stem
     importlib_spec = importlib.util.spec_from_file_location(module_name, local_file.path)
     if importlib_spec is None:
