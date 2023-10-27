@@ -24,16 +24,17 @@ class ModelAdapter(ABC):
     """
     Represents model *without* any preprocessing or postprocessing.
 
+    >>> from bioimageio.core import read_description
+    >>> model = read_description()
     >>> print("option 1:")
     option 1:
-    >>> adapter = create_model_adapter()
-    >>> adapter.load()
+    >>> adapter = ModelAdapter.create(model)
     >>> adapter.forward()
     >>> adapter.unload()
     >>> print("option 2:")
     option 2:
-    >>> with create_model_adapter_context() as adapter:
-            adapter.forward()
+    >>> with ModelAdapter.create(model) as adapter:
+    >>>     adapter.forward()
 
     """
 
@@ -41,8 +42,8 @@ class ModelAdapter(ABC):
     @classmethod
     def create(
         cls,
-        *,
         model_description: Union[v0_4.Model, v0_5.Model],
+        *,
         devices: Optional[Sequence[str]] = None,
         weight_format_priority_order: NotEmpty[Sequence[WeightsFormat]] = DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER,
     ):

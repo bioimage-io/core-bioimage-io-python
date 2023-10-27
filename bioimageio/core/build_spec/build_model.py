@@ -600,7 +600,7 @@ def _ensure_local_or_url(source: Union[Path, URI, str, list], root: Path) -> Uni
 
 
 def build_model(
-    # model or tensor specific and required
+    # model specific and required
     weight_uri: FileSource,
     test_inputs: List[FileSource],
     test_outputs: List[FileSource],
@@ -636,7 +636,7 @@ def build_model(
     pixel_sizes: Optional[List[Dict[str, float]]] = None,
     # general optional
     maintainers: Optional[List[Dict[str, str]]] = None,
-    license: Optional[str] = None,
+    license: LicenseId = "CC-BY-4.0",
     covers: Optional[List[str]] = None,
     git_repo: Optional[str] = None,
     attachments: Optional[Dict[str, Union[str, List[str]]]] = None,
