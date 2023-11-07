@@ -16,10 +16,10 @@ def test_traversing_nodes():
             super().visit(nr, note)
             self.errors.append(ErrorEntry(loc=note.loc, msg=f"nr: {nr}", type="got-int"))
 
-    class NestedNode(Node, frozen=True):
+    class NestedNode(Node):
         leaf: int
 
-    class MyNode(Node, frozen=True):
+    class MyNode(Node):
         nested: NestedNode
 
     tree = {

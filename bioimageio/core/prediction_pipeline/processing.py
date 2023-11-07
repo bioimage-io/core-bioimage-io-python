@@ -36,16 +36,16 @@ from bioimageio.spec.model.v0_5 import AxisName, NonBatchAxisName, TensorId
 AssertProcessingId = Literal["assert_dtype"]
 
 
-class AssertProcessingBase(NodeWithExplicitlySetFields, frozen=True):
+class AssertProcessingBase(NodeWithExplicitlySetFields ):
     id: AssertProcessingId
     fields_to_set_explicitly: ClassVar[FrozenSet[LiteralString]] = frozenset({"id"})
 
 
-class AssertDtypeKwargs(v0_5.ProcessingKwargs, frozen=True):
+class AssertDtypeKwargs(v0_5.ProcessingKwargs ):
     dtype: Union[str, Sequence[str]]
 
 
-class AssertDtype(AssertProcessingBase, frozen=True):
+class AssertDtype(AssertProcessingBase ):
     id: Literal["assert_dtype"] = "assert_dtype"
     kwargs: AssertDtypeKwargs
 

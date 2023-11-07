@@ -105,7 +105,7 @@ class _CoreTensorMixin:
             raise TypeError(tensor_data)
 
 
-class _CoreInputTensor(InputTensor, _CoreTensorMixin, frozen=True):
+class _CoreInputTensor(InputTensor, _CoreTensorMixin):
     @classmethod
     def build(cls, **kwargs: Unpack[CoreInputTensorKwargs]):
         return cls(
@@ -120,7 +120,7 @@ class _CoreInputTensor(InputTensor, _CoreTensorMixin, frozen=True):
         )
 
 
-class _CoreOutputTensor(OutputTensor, _CoreTensorMixin, frozen=True):
+class _CoreOutputTensor(OutputTensor, _CoreTensorMixin):
     @classmethod
     def build(cls, **kwargs: Unpack[CoreOutputTensorKwargs]):
         return cls(
@@ -141,7 +141,7 @@ class CoreModelKwargs(CoreModelBaseKwargs):
     weights: Weights
 
 
-class _CoreModel(Model, frozen=True):
+class _CoreModel(Model):
     @classmethod
     def build(cls, **kwargs: Unpack[CoreModelKwargs]) -> Self:
         documentation = ensure_file_in_folder(kwargs["documentation"], kwargs["output_path"])

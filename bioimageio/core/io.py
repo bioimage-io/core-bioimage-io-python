@@ -6,7 +6,7 @@ import os
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
-from tempfile import NamedTemporaryFile, TemporaryDirectory, mkdtemp
+from tempfile import NamedTemporaryFile, mkdtemp
 from typing import Any, Dict, List, Literal, Mapping, Optional, Sequence, TextIO, TypedDict, Union, cast
 from zipfile import ZIP_DEFLATED, ZipFile, is_zipfile
 
