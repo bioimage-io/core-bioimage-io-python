@@ -1,4 +1,7 @@
 import os
+
+import pytest
+
 from bioimageio.core import export_resource_package, load_raw_resource_description, load_resource_description
 from bioimageio.core.resource_tests import test_model as _test_model
 
@@ -45,5 +48,6 @@ def test_add_torchscript(unet2d_nuclei_broad_model, tmp_path):
     _test_add_weights(unet2d_nuclei_broad_model, tmp_path, "pytorch_state_dict", "torchscript")
 
 
+@pytest.mark.skipif(pytest.skip_onnx, reason="onnx")
 def test_add_onnx(unet2d_nuclei_broad_model, tmp_path):
     _test_add_weights(unet2d_nuclei_broad_model, tmp_path, "pytorch_state_dict", "onnx", opset_version=12)

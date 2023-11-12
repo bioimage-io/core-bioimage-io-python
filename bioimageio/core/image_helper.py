@@ -13,13 +13,13 @@ from bioimageio.core.resource_io.nodes import InputTensor, OutputTensor
 #
 
 
-def transform_input_image(image: np.ndarray, tensor_axes: str, image_axes: Optional[str] = None):
+def transform_input_image(image: np.ndarray, tensor_axes: Sequence[str], image_axes: Optional[Sequence[str]] = None):
     """Transform input image into output tensor with desired axes.
 
     Args:
         image: the input image
         tensor_axes: the desired tensor axes
-        input_axes: the axes of the input image (optional)
+        image_axes: the axes of the input image (optional)
     """
     # if the image axes are not given deduce them from the required axes and image shape
     if image_axes is None:
@@ -35,7 +35,16 @@ def transform_input_image(image: np.ndarray, tensor_axes: str, image_axes: Optio
             image_axes = "bczyx"
         else:
             raise ValueError(f"Invalid number of image dimensions: {ndim}")
-    tensor = DataArray(image, dims=tuple(image_axes))
+
+    # instead of 'b' we might want 'batch', etc...
+    axis_letter_map = {
+        letter: name
+        for letter, name in {"b": "batch", "c": "channel", "i": "index", "t": "time"}.items()
+        if name in tensor_axes  # only do this mapping if the full name is in the desired tensor_axes
+    }
+    image_axes = tuple(axis_letter_map.get(a, a) for a in image_axes)
+
+    tensor = DataArray(image, dims=image_axes)
     # expand the missing image axes
     missing_axes = tuple(set(tensor_axes) - set(image_axes))
     tensor = tensor.expand_dims(dim=missing_axes)
@@ -75,9 +84,10 @@ def transform_output_tensor(tensor: np.ndarray, tensor_axes: str, output_axes: s
 
 
 def to_channel_last(image):
-    chan_id = image.dims.index("c")
+    c = "c" if "c" in image.dims else "channel"
+    chan_id = image.dims.index(c)
     if chan_id != image.ndim - 1:
-        target_axes = tuple(ax for ax in image.dims if ax != "c") + ("c",)
+        target_axes = tuple(ax for ax in image.dims if ax != c) + (c,)
         image = image.transpose(*target_axes)
     return image
 
@@ -95,17 +105,17 @@ def load_image(in_path, axes: Sequence[str]) -> DataArray:
         is_volume = "z" in axes
         im = imageio.volread(in_path) if is_volume else imageio.imread(in_path)
         im = transform_input_image(im, axes)
-    return DataArray(im, dims=axes)
+    return DataArray(im, dims=tuple(axes))
 
 
 def load_tensors(sources, tensor_specs: List[Union[InputTensor, OutputTensor]]) -> List[DataArray]:
     return [load_image(s, sspec.axes) for s, sspec in zip(sources, tensor_specs)]
 
 
-def save_image(out_path, image):
-    ext = os.path.splitext(out_path)[1]
+def save_image(out_path: os.PathLike, image):
+    ext = os.path.splitext(str(out_path))[1]
     if ext == ".npy":
-        np.save(out_path, image)
+        np.save(str(out_path), image)
     else:
         is_volume = "z" in image.dims
 
@@ -113,9 +123,9 @@ def save_image(out_path, image):
         squeeze = {ax: 0 if (ax in "bc" and sh == 1) else slice(None) for ax, sh in zip(image.dims, image.shape)}
         image = image[squeeze]
 
-        if "b" in image.dims:
+        if "b" in image.dims or "batch" in image.dims:
             raise RuntimeError(f"Cannot save prediction with batchsize > 1 as {ext}-file")
-        if "c" in image.dims:  # image formats need channel last
+        if "c" in image.dims or "channel" in image.dims:  # image formats need channel last
             image = to_channel_last(image)
 
         save_function = imageio.volsave if is_volume else imageio.imsave
@@ -157,7 +167,6 @@ def pad(image, axes: Sequence[str], padding, pad_right=True) -> Tuple[np.ndarray
     pad_width = []
     crop = {}
     for ax, dlen, pr in zip(axes, image.shape, pad_right):
-
         if ax in "zyx":
             pad_to = padding_[ax]
 

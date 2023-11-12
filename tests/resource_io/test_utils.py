@@ -12,9 +12,9 @@ def test_resolve_import_path(tmpdir):
     (tmpdir / str(source_file)).write_text("class Foo: pass", encoding="utf8")
     node = raw_nodes.ImportableSourceFile(source_file=source_file, callable_name="Foo")
     uri_transformed = utils.UriNodeTransformer(root_path=tmpdir).transform(node)
-    source_transformed = utils.SourceNodeTransformer().transform(uri_transformed)
-    assert isinstance(source_transformed, nodes.ImportedSource)
-    Foo = source_transformed.factory
+    source_transformed = utils.CallableNodeTransformer().transform(uri_transformed)
+    assert isinstance(source_transformed, nodes.ImportedCallable)
+    Foo = source_transformed.call
     assert Foo.__name__ == "Foo"
     assert isinstance(Foo, type)
 

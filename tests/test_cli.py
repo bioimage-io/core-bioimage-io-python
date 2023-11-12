@@ -98,7 +98,7 @@ def _test_cli_predict_images(model, tmp_path, extra_kwargs=None):
         expected_outputs.append(out_folder / f"im-{i}.npy")
 
     input_pattern = str(in_folder / "*.npy")
-    cmd = ["bioimageio", "predict-images", model, input_pattern, str(out_folder)]
+    cmd = ["bioimageio", "predict-images", str(model), input_pattern, str(out_folder)]
     if extra_kwargs is not None:
         cmd.extend(extra_kwargs)
     ret = run_subprocess(cmd)
@@ -126,7 +126,7 @@ def test_torch_to_torchscript(unet2d_nuclei_broad_model, tmp_path):
     assert out_path.exists()
 
 
-@pytest.mark.skipif(pytest.skip_onnx, reason="requires torch and onnx")
+@pytest.mark.skipif(pytest.skip_onnx, reason="requires onnx")
 def test_torch_to_onnx(unet2d_nuclei_broad_model, tmp_path):
     out_path = tmp_path.with_suffix(".onnx")
     ret = run_subprocess(["bioimageio", "convert-torch-weights-to-onnx", str(unet2d_nuclei_broad_model), str(out_path)])
