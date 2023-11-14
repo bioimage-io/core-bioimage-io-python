@@ -26,7 +26,6 @@ def test_bioimageio_spec_version():
     # get currently pinned bioimageio.spec version
     meta = metadata("bioimageio.core")
     req = meta["Requires-Dist"]
-    print(req)
     assert req.startswith("bioimageio.spec ==")
     spec_ver = req[len("bioimageio.spec ==") :]
     assert spec_ver.count(".") == 2
