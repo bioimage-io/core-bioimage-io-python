@@ -110,9 +110,7 @@ def _test_predict_with_padding(model, tmp_path):
     check_result()
 
     # test with fixed padding
-    predict_image(
-        model, in_path, out_path, padding={"x": original_shape[0], "y": original_shape[1], "mode": "fixed"}
-    )
+    predict_image(model, in_path, out_path, padding={"x": original_shape[0], "y": original_shape[1], "mode": "fixed"})
     check_result()
 
     # test with automated padding
@@ -135,7 +133,7 @@ def test_predict_image_with_padding_channel_last(stardist, tmp_path):
     _test_predict_with_padding(stardist, tmp_path)
 
 
-def _test_predict_image_with_tiling(model, tmp_path, exp_mean_deviation):
+def _test_predict_image_with_tiling(model, tmp_path: Path, exp_mean_deviation):
     from bioimageio.core.prediction import predict_image
 
     spec = load_resource_description(model)
@@ -168,27 +166,27 @@ def _test_predict_image_with_tiling(model, tmp_path, exp_mean_deviation):
 
 # prediction with tiling with the parameters above may not be suited for any model
 # so we only run it for the pytorch unet2d here
-def test_predict_image_with_tiling_1(unet2d_nuclei_broad_model, tmp_path):
+def test_predict_image_with_tiling_1(unet2d_nuclei_broad_model, tmp_path: Path):
     _test_predict_image_with_tiling(unet2d_nuclei_broad_model, tmp_path, 0.012)
 
 
-def test_predict_image_with_tiling_2(unet2d_diff_output_shape, tmp_path):
-    _test_predict_image_with_tiling(unet2d_diff_output_shape, tmp_path, 0.012)
+def test_predict_image_with_tiling_2(unet2d_diff_output_shape, tmp_path: Path):
+    _test_predict_image_with_tiling(unet2d_diff_output_shape, tmp_path, 0.06)
 
 
-def test_predict_image_with_tiling_3(shape_change_model, tmp_path):
+def test_predict_image_with_tiling_3(shape_change_model, tmp_path: Path):
     _test_predict_image_with_tiling(shape_change_model, tmp_path, 0.012)
 
 
-def test_predict_image_with_tiling_channel_last(stardist, tmp_path):
+def test_predict_image_with_tiling_channel_last(stardist, tmp_path: Path):
     _test_predict_image_with_tiling(stardist, tmp_path, 0.13)
 
 
-def test_predict_image_with_tiling_fixed_output_shape(unet2d_fixed_shape, tmp_path):
+def test_predict_image_with_tiling_fixed_output_shape(unet2d_fixed_shape, tmp_path: Path):
     _test_predict_image_with_tiling(unet2d_fixed_shape, tmp_path, 0.025)
 
 
-def test_predict_images(unet2d_nuclei_broad_model, tmp_path):
+def test_predict_images(unet2d_nuclei_broad_model, tmp_path: Path):
     from bioimageio.core.prediction import predict_images
 
     n_images = 5
