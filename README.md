@@ -125,3 +125,9 @@ To get an overview of this functionality, check out the example notebooks:
 ## Model Specification
 
 The model specification and its validation tools can be found at <https://github.com/bioimage-io/spec-bioimage-io>.
+
+## Changelog
+
+### 0.5.10
+
+* [Fix critical bug in predict with tiling](https://github.com/bioimage-io/core-bioimage-io-python/pull/359)
