@@ -9,11 +9,6 @@ from typing import List, Optional, Tuple, Union
 import numpy
 import numpy as np
 import xarray as xr
-from bioimageio.spec import __version__ as bioimageio_spec_version
-from bioimageio.spec.model.raw_nodes import WeightsFormat
-from bioimageio.spec.shared import resolve_source
-from bioimageio.spec.shared.common import ValidationWarning
-from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
 from marshmallow import ValidationError
 
 from bioimageio.core import __version__ as bioimageio_core_version
@@ -29,6 +24,11 @@ from bioimageio.core.resource_io.nodes import (
     ParametrizedInputShape,
     ResourceDescription,
 )
+from bioimageio.spec import __version__ as bioimageio_spec_version
+from bioimageio.spec.model.raw_nodes import WeightsFormat
+from bioimageio.spec.shared import resolve_source
+from bioimageio.spec.shared.common import ValidationWarning
+from bioimageio.spec.shared.raw_nodes import ResourceDescription as RawResourceDescription
 
 
 def test_model(

@@ -10,7 +10,7 @@ from numpy.typing import NDArray
 # from bioimageio.core import export_resource_package, load_raw_resource_description
 from typing_extensions import NotRequired, Self, Unpack
 
-from bioimageio.core.io import FileSource, download, read_description_and_validate, write_description
+from bioimageio.core.io import FileSource, download, load_description_and_validate, write_description
 from bioimageio.spec.model.v0_5 import (
     Architecture,
     Author,
@@ -213,7 +213,7 @@ class _CoreModel(Model):
 
 def _build_spec_common(core_descr: _CoreModel, descr_path: Path, expected_type: Type[Any]):
     write_description(core_descr, descr_path)
-    loaded = read_description_and_validate(descr_path)
+    loaded = load_description_and_validate(descr_path)
     if type(loaded) is not expected_type:
         raise RuntimeError(f"Created {descr_path} was loaded as {type(loaded)}, but expected {expected_type}")
 

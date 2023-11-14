@@ -1,9 +1,9 @@
 import json
 
+from bioimageio.core.io import build_description_and_validate as build_description_and_validate
 from bioimageio.core.io import load_description as load_description
 from bioimageio.core.io import load_description_and_validate as load_description_and_validate
 from bioimageio.core.io import read_description as read_description
-from bioimageio.core.io import read_description_and_validate as read_description_and_validate
 from bioimageio.core.io import resolve_source as resolve_source
 from bioimageio.core.io import write_description as write_description
 from bioimageio.core.io import write_package as write_package

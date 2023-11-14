@@ -6,7 +6,7 @@ from typing import Iterable, List, Optional, Sequence, Tuple, Union
 import xarray as xr
 
 from bioimageio.core.model_adapters import ModelAdapter, create_model_adapter
-from bioimageio.core.validation_visitors import resolve_raw_node
+from bioimageio.core.utils.node_visitor import resolve_raw_node
 from bioimageio.spec.model import AnyModel, raw_nodes
 
 from ._combined_processing import CombinedProcessing

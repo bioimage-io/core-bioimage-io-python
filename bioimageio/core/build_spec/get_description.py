@@ -12,9 +12,9 @@ from pydantic import FilePath
 # from bioimageio.core import export_resource_package, load_raw_resource_description
 from typing_extensions import NotRequired, Self, Unpack
 
-from bioimageio.spec.description import ValidationContext
-from bioimageio.core.io import FileSource, download, read_description_and_validate, write_description
+from bioimageio.core.io import FileSource, download, load_description_and_validate, write_description
 from bioimageio.core.utils import get_sha256
+from bioimageio.spec.description import ValidationContext
 from bioimageio.spec.model.v0_5 import (
     Architecture,
     Author,
@@ -102,6 +102,7 @@ class SpecBuilder:
 
         return RelativeFilePath(rel_path)
 
+
 class ModelBuilder(SpecBuilder):
     def add_cite(self):
         self._cite.append(CiteEntry())
@@ -116,26 +117,26 @@ class ModelBuilder(SpecBuilder):
         data: TensorData,
         sample_tensor: Optional[FileSource],
     ) -> InputTensor:
-        return InputTensor.model_validate(InputTensor(
-            test_tensor=self.include_file(test_tensor),
-            id=id_,
-            axes=tuple(axes),
-            preprocessing=tuple(preprocessing),
-            data=data,
-            sample_tensor=None
-            if sample_tensor is None
-            else self.include_file(sample_tensor)
-        ), context=self.context)
+        return InputTensor.model_validate(
+            InputTensor(
+                test_tensor=self.include_file(test_tensor),
+                id=id_,
+                axes=tuple(axes),
+                preprocessing=tuple(preprocessing),
+                data=data,
+                sample_tensor=None if sample_tensor is None else self.include_file(sample_tensor),
+            ),
+            context=self.context,
+        )
 
     # def add_input_tensor()
-    def add_cover_image(cover)
+    # def add_cover_image(cover)
     def build(self, output_path: Path, *, inputs: Sequence[InputTensor]):
-
         assert False
+
 
 mb = ModelBuilder(Path("output_path"))
 mb.build(inputs=[mb.build_input_tensor(test_tensor=tt) for tt in test_tensors], outputs=based_on.outputs)
-
 
 
 class SpecGuesser:
@@ -161,7 +162,6 @@ class SpecGuesser:
         return IntervalOrRatioData(
             type=dtype, range=cls.guess_data_range(array), unit="arbitrary unit", scale=1.0, offset=None
         )
-
 
 
 class SpecBuilderWithGuesses(SpecBuilder, SpecGuesser):
@@ -193,7 +193,7 @@ def build_spec_interactively(output_path: Path):
     builder = SpecBuilder(output_path)
 
 
-class _CoreOutputTensor(OutputTensor, _CoreTensorMixin, frozen=True):
+class _CoreOutputTensor(OutputTensor, _CoreTensorMixin):
     @classmethod
     def build(cls, **kwargs: Unpack[_OutputTensorKwargs]):
         return cls(
@@ -214,7 +214,7 @@ class CoreModelKwargs(CoreModelBaseKwargs):
     weights: Weights
 
 
-class _CoreModel(Model, frozen=True):
+class _CoreModel(Model):
     @classmethod
     def build(cls, **kwargs: Unpack[CoreModelKwargs]) -> Self:
         documentation = ensure_file_in_folder(kwargs["documentation"], kwargs["output_path"])
@@ -286,7 +286,7 @@ class _CoreModel(Model, frozen=True):
 
 def _build_spec_common(core_descr: _CoreModel, descr_path: Path, expected_type: Type[Any]):
     write_description(core_descr, descr_path)
-    loaded = read_description_and_validate(descr_path)
+    loaded = load_description_and_validate(descr_path)
     if type(loaded) is not expected_type:
         raise RuntimeError(f"Created {descr_path} was loaded as {type(loaded)}, but expected {expected_type}")
 

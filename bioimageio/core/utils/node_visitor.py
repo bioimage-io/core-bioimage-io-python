@@ -1,22 +1,18 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, replace
 from functools import singledispatchmethod
 from pathlib import Path, PurePath
-from typing import Any, List, Optional, Tuple, TypedDict, Union
+from typing import Any, List, Optional, Tuple, Union
 
 import requests
 from pydantic import AnyUrl, DirectoryPath
 from pydantic.fields import FieldInfo
-from typing_extensions import NotRequired
 
 from bioimageio.core.utils import get_sha256
 from bioimageio.spec._internal.base_nodes import Node
 from bioimageio.spec._internal.constants import IN_PACKAGE_MESSAGE, KW_ONLY, SLOTS
 from bioimageio.spec._internal.types import Sha256
 from bioimageio.spec.summary import ErrorEntry, Loc, WarningEntry
-
-
-class VisitorKwargs(TypedDict):
-    info: NotRequired[FieldInfo]
 
 
 @dataclass(frozen=True, **SLOTS, **KW_ONLY)
@@ -26,12 +22,7 @@ class Memo:
     parent_nodes: Tuple[Node, ...] = ()
 
 
-class ValidationVisitor:
-    def __init__(self) -> None:
-        super().__init__()
-        self.errors: List[ErrorEntry] = []
-        self.warnings: List[WarningEntry] = []
-
+class NodeVisitor:
     def visit(self, obj: Any, /, memo: Memo = Memo()):
         self._traverse(obj, memo=memo)
 
@@ -66,20 +57,32 @@ class ValidationVisitor:
             self.visit(v, replace(memo, loc=memo.loc + (k,)))
 
 
+class ValidationVisitor(NodeVisitor, ABC):
+    def __init__(self) -> None:
+        super().__init__()
+        self.errors: List[ErrorEntry] = []
+        self.warnings: List[WarningEntry] = []
+
+    def visit(self, obj: Any, /, memo: Memo = Memo()):
+        self.validate(obj, memo=memo)
+        return super().visit(obj, memo)
+
+    @singledispatchmethod
+    @abstractmethod
+    def validate(self, obj: type, /, memo: Memo):
+        ...
+
+
 class SourceValidator(ValidationVisitor):
     def __init__(self, root: Union[DirectoryPath, AnyUrl]) -> None:
         super().__init__()
         self.root = root
 
-    def visit(self, obj: Any, /, memo: Memo = Memo()):
-        self._visit_impl(obj, memo=memo)
-        return super().visit(obj, memo)
-
     @singledispatchmethod
-    def _visit_impl(self, obj: type, /, memo: Memo):
+    def validate(self, obj: type, /, memo: Memo):
         pass
 
-    @_visit_impl.register
+    @validate.register
     def _visit_path(self, path: PurePath, memo: Memo):
         if Path(path).exists():
             for parent in memo.parent_nodes:
@@ -120,7 +123,7 @@ class SourceValidator(ValidationVisitor):
             else:
                 self.warnings.append(WarningEntry(loc=memo.loc, msg=msg, type="file_not_found"))
 
-    @_visit_impl.register
+    @validate.register
     def _visit_url(self, url: AnyUrl, memo: Memo):
         if url.scheme not in ("http", "https"):
             self.errors.append(ErrorEntry(loc=memo.loc, msg=f"invalid http(s) URL: {url}", type="url_scheme"))

@@ -30,25 +30,6 @@ else:
     from importlib.resources import files as files
 
 
-def get_parent_url(url: HttpUrl) -> HttpUrl:
-    parsed = urlsplit(str(url))
-    return AnyUrl(
-        urlunsplit((parsed.scheme, parsed.netloc, "/".join(parsed.path.split("/")[:-1]), parsed.query, parsed.fragment))
-    )
-
-
-def get_sha256(path: os.PathLike[str]) -> str:
-    """from https://stackoverflow.com/a/44873382"""
-    h = hashlib.sha256()
-    b = bytearray(128 * 1024)
-    mv = memoryview(b)
-    with open(path, "rb", buffering=0) as f:
-        for n in iter(lambda: f.readinto(mv), 0):
-            h.update(mv[:n])
-
-    return h.hexdigest()
-
-
 class TemporaryInsertionIntoPythonPath(AbstractContextManager[None]):
     def __init__(self, path: Path):
         super().__init__()
