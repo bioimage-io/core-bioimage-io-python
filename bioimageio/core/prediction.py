@@ -322,13 +322,16 @@ def _parse_tiling(tiling, input_specs, output_specs):
         # override metadata defaults with provided dict
         if isinstance(tiling, dict):
             for key in ["halo", "tile", "scale"]:
-                default_tiling.update(tiling.get(key, dict()))
+                default_tiling[key].update(tiling.get(key, dict()))
         tiling = default_tiling
         check_tiling(tiling)
+
     elif isinstance(tiling, bool) and not tiling:
         raise NotImplementedError("Should be unreachable")
+
     else:
         raise ValueError(f"Invalid argument for tiling: {tiling}")
+
     return tiling
 
 

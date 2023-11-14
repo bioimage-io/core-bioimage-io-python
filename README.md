@@ -102,7 +102,7 @@ bioimageio test-model <MODEL>
 Run prediction for an image stored on disc:
 
 ```console
-bioimageio predict-image -m <MODEL> -i <INPUT> -o <OUTPUT>
+bioimageio predict-image <MODEL> --inputs <INPUT> --outputs <OUTPUT>
 ```
 
 Run prediction for multiple images stored on disc:
