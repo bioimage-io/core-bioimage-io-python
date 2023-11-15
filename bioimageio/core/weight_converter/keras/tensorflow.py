@@ -4,38 +4,41 @@ from pathlib import Path
 from typing import Union
 from zipfile import ZipFile
 
-import bioimageio.spec as spec
-from bioimageio.core import load_resource_description
-
 import tensorflow
 from tensorflow import saved_model
 
+from bioimageio.spec import AnyModel, load_description
+from bioimageio.spec._internal.io_utils import download
 
-def _zip_weights(output_path):
-    zipped_model = f"{output_path}.zip"
-    # zip the weights
-    file_paths = []
-    for folder_names, subfolder, filenames in os.walk(os.path.join(output_path)):
-        for filename in filenames:
-            # create complete filepath of file in directory
-            file_paths.append(os.path.join(folder_names, filename))
 
-    with ZipFile(zipped_model, "w") as zip_obj:
-        for f in file_paths:
-            # Add file to zip
-            zip_obj.write(f, os.path.relpath(f, output_path))
+def _zip_model_bundle(model_bundle_folder: Path):
+    zipped_model_bundle = f"{model_bundle_folder}.zip"
+
+    with ZipFile(zipped_model_bundle, "w") as zip_obj:
+        for root, _, files in os.walk(model_bundle_folder):
+            for filename in files:
+                src = os.path.join(root, filename)
+                zip_obj.write(src, os.path.relpath(src, model_bundle_folder))
 
     try:
-        shutil.rmtree(output_path)
+        shutil.rmtree(model_bundle_folder)
     except Exception:
         print("TensorFlow bundled model was not removed after compression")
 
-    return zipped_model
+    return zipped_model_bundle
 
 
 # adapted from
 # https://github.com/deepimagej/pydeepimagej/blob/master/pydeepimagej/yaml/create_config.py#L236
-def _convert_tf1(keras_weight_path, output_path, input_name, output_name, zip_weights):
+def _convert_tf1(keras_weight_path: Path, output_path: Path, input_name: str, output_name: str, zip_weights: bool):
+    try:
+        # try to build the tf model with the keras import from tensorflow
+        from tensorflow import keras
+
+    except Exception:
+        # if the above fails try to export with the standalone keras
+        import keras
+
     def build_tf_model():
         keras_model = keras.models.load_model(keras_weight_path)
 
@@ -51,18 +54,10 @@ def _convert_tf1(keras_weight_path, output_path, input_name, output_name, zip_we
         )
         builder.save()
 
-    try:
-        # try to build the tf model with the keras import from tensorflow
-        from tensorflow import keras
-        build_tf_model()
-    except Exception:
-        # if the above fails try to export with the standalone keras
-        import keras
-
-        build_tf_model()
+    build_tf_model()
 
     if zip_weights:
-        output_path = _zip_weights(output_path)
+        output_path = _zip_model_bundle(output_path)
     print("TensorFlow model exported to", output_path)
 
     return 0
@@ -80,14 +75,14 @@ def _convert_tf2(keras_weight_path, output_path, zip_weights):
     keras.models.save_model(model, output_path)
 
     if zip_weights:
-        output_path = _zip_weights(output_path)
+        output_path = _zip_model_bundle(output_path)
     print("TensorFlow model exported to", output_path)
 
     return 0
 
 
 def convert_weights_to_tensorflow_saved_model_bundle(
-    model_spec: Union[str, Path, spec.model.raw_nodes.Model], output_path: Union[str, Path]
+    model_spec: Union[str, Path, AnyModel], output_path: Union[str, Path]
 ):
     """Convert model weights from format 'keras_hdf5' to 'tensorflow_saved_model_bundle'.
 
@@ -110,10 +105,10 @@ def convert_weights_to_tensorflow_saved_model_bundle(
     if path_.exists():
         raise ValueError(f"The ouptut directory at {path_} must not exist.")
 
-    model = load_resource_description(model_spec)
-    assert "keras_hdf5" in model.weights
-    weight_spec = model.weights["keras_hdf5"]
-    weight_path = str(weight_spec.source)
+    model = load_description(model_spec)
+    model.weights.keras_hdf5 is not None
+    weight_spec = model.weights.keras_hdf5
+    weight_path = download(weight_spec.source).path
 
     if weight_spec.tensorflow_version:
         model_tf_major_ver = int(weight_spec.tensorflow_version.major)
