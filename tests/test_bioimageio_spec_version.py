@@ -28,13 +28,11 @@ def test_bioimageio_spec_version():
     req = meta["Requires-Dist"]
     assert req.startswith("bioimageio.spec ==")
     spec_ver = req[len("bioimageio.spec ==") :]
-    assert spec_ver.count(".") == 2
-    pmaj, pmin, ppatchand_and_post = spec_ver.split(".")
-    assert (ppatchand_and_post.isdigit() or ppatchand_and_post[:-1].isdigit()) and (
-        ppatchand_and_post[-1] == "*" or ppatchand_and_post[-1].isdigit()
-    ), "bioimageio.spec version should be pinned down to patch, e.g. '0.4.9*'"
+    assert spec_ver.count(".") == 3
+    pmaj, pmin, ppatch, post = spec_ver.split(".")
+    assert (
+        pmaj.isdigit() and pmin.isdigit() and ppatch.isdigit() and post == "*"
+    ), "bioimageio.spec version should be pinned down to patch, e.g. '0.4.9.*'"
 
-    ppatch = ppatchand_and_post[:-1] if ppatchand_and_post[-1] == "*" else ppatchand_and_post
     pinned = Version(f"{pmaj}.{pmin}.{ppatch}")
-
-    assert pinned >= released, "bioimageio.spec pinned to an old version!"
+    assert pinned == released, "bioimageio.spec not pinned to the latest version"
