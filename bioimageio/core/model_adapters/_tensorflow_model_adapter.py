@@ -21,12 +21,12 @@ class TensorflowModelAdapterBase(ModelAdapter):
         *,
         devices: Optional[Sequence[str]] = None,
         weights: Union[
-            v0_4.KerasHdf5Weights,
-            v0_4.TensorflowSavedModelBundleWeights,
-            v0_5.KerasHdf5Weights,
-            v0_5.TensorflowSavedModelBundleWeights,
+            v0_4.KerasHdf5WeightsDescr,
+            v0_4.TensorflowSavedModelBundleWeightsDescr,
+            v0_5.KerasHdf5WeightsDescr,
+            v0_5.TensorflowSavedModelBundleWeightsDescr,
         ],
-        model_description: Union[v0_4.Model, v0_5.Model],
+        model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
     ):
         super().__init__()
         self.model_description = model_description

@@ -1,47 +1,49 @@
 import warnings
 from pathlib import Path
-from typing import Union, Optional
+from typing import Optional, Union
 
 import numpy as np
 import torch
 from numpy.testing import assert_array_almost_equal
 
-import bioimageio.spec as spec
-from bioimageio.core import load_resource_description
-from bioimageio.core.resource_io import nodes
-from .utils import load_model
+from bioimageio.spec import load_description
+from bioimageio.spec._internal.types import BioimageioYamlSource
+from bioimageio.spec.model import v0_4, v0_5
 
 try:
     import onnxruntime as rt
 except ImportError:
     rt = None
 
+# def add_converted_onnx_weights(model_spec: AnyModel, *, opset_version: Optional[int] = 12, use_tracing: bool = True,
+#     verbose: bool = True,
+#     test_decimal: int = 4):
 
-def convert_weights_to_onnx(
-    model_spec: Union[str, Path, spec.model.raw_nodes.Model],
-    output_path: Union[str, Path],
-    opset_version: Optional[int] = 12,
+
+# def add_onnx_weights_from_pytorch_state_dict(model_spec: Union[BioimageioYamlSource, AnyModel], test_decimals: int = 4):
+
+
+def add_onnx_weights(
+    source_model: Union[BioimageioYamlSource, AnyModel],
+    *,
     use_tracing: bool = True,
-    verbose: bool = True,
-    test_decimal: int = 4
+    test_decimal: int = 4,
 ):
     """Convert model weights from format 'pytorch_state_dict' to 'onnx'.
 
     Args:
-        model_spec: location of the resource for the input bioimageio model
-        output_path: where to save the onnx weights
+        source_model: model without onnx weights
         opset_version: onnx opset version
         use_tracing: whether to use tracing or scripting to export the onnx format
-        verbose: be verbose during the onnx export
         test_decimal: precision for testing whether the results agree
     """
-    if isinstance(model_spec, (str, Path)):
-        model_spec = load_resource_description(Path(model_spec))
+    if isinstance(source_model, (str, Path)):
+        model = load_description(Path(source_model))
+        assert isinstance(model, (v0_4.Model, v0_5.Model))
 
-    assert isinstance(model_spec, nodes.Model)
     with torch.no_grad():
         # load input and expected output data
-        input_data = [np.load(inp).astype("float32") for inp in model_spec.test_inputs]
+        input_data = [np.load(ipt).astype("float32") for ipt in model.test_inputs]
         input_tensors = [torch.from_numpy(inp) for inp in input_data]
 
         # instantiate and generate the expected output

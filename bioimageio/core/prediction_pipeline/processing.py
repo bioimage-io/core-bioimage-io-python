@@ -36,16 +36,16 @@ from bioimageio.spec.model.v0_5 import AxisName, NonBatchAxisName, TensorId
 AssertProcessingId = Literal["assert_dtype"]
 
 
-class AssertProcessingBase(NodeWithExplicitlySetFields ):
+class AssertProcessingBase(NodeWithExplicitlySetFields):
     id: AssertProcessingId
     fields_to_set_explicitly: ClassVar[FrozenSet[LiteralString]] = frozenset({"id"})
 
 
-class AssertDtypeKwargs(v0_5.ProcessingKwargs ):
+class AssertDtypeKwargs(v0_5.ProcessingKwargs):
     dtype: Union[str, Sequence[str]]
 
 
-class AssertDtype(AssertProcessingBase ):
+class AssertDtype(AssertProcessingBase):
     id: Literal["assert_dtype"] = "assert_dtype"
     kwargs: AssertDtypeKwargs
 
@@ -190,7 +190,6 @@ class EnsureDtypeImpl(ProcessingImplBaseWoMeasures[v0_5.EnsureDtypeKwargs]):
         return v0_5.EnsureDtype(kwargs=self.kwargs)
 
 
-class ScaleLinearImplBase
 class ScaleLinearImpl04(ProcessingImplBaseWoMeasures[Union[v0_4.ScaleLinearKwargs, v0_5.ScaleLinearKwargs]]):
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
         axis = (
@@ -390,6 +389,7 @@ ProcSpec = Union[AssertDtype, v0_4.Preprocessing, v0_4.Postprocessing, v0_5.Prep
 
 # todo:
 
+
 class ProcSelector:
     def __init__(proc_spec: ProcSpec) -> None:
         self.proc_spec = proc_spec
@@ -418,12 +418,14 @@ def get_impl(proc_spec: ProcSpec):
         return SigmoidImpl
     elif isinstance(proc_spec, v0_4.ZeroMeanUnitVariance) and proc_spec.kwargs.mode == "fixed":
         return FixedZeroMeanUnitVarianceImpl
-    elif isinstance(proc_spec,  # pyright: ignore[reportUnnecessaryIsInstance]
-            (v0_4.ZeroMeanUnitVariance, v0_5.ZeroMeanUnitVariance)
-        ):
-            return ZeroMeanUnitVarianceImpl
+    elif isinstance(
+        proc_spec,  # pyright: ignore[reportUnnecessaryIsInstance]
+        (v0_4.ZeroMeanUnitVariance, v0_5.ZeroMeanUnitVariance),
+    ):
+        return ZeroMeanUnitVarianceImpl
     else:
         assert_never(proc_spec)
+
 
 Model = Union[v0_4.Model, v0_5.Model]
 
@@ -437,7 +439,9 @@ def get_procs(model: Model):
         assert isinstance(ipt, v0_5.InputTensor)
         for proc_spec in ipt.preprocessing:
             impl = get_impl(proc_spec, ipt.id, computed_measures)
-            assert isinstance(proc_spec.kwargs, )
+            assert isinstance(
+                proc_spec.kwargs,
+            )
             procs.append(impl(tensor_id=ipt.id, kwargs=proc_spec.kwargs))
 
     return procs

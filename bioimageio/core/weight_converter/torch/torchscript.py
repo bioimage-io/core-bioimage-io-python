@@ -1,5 +1,4 @@
 import warnings
-
 from pathlib import Path
 from typing import Union
 
@@ -8,7 +7,8 @@ import torch
 from numpy.testing import assert_array_almost_equal
 
 import bioimageio.spec as spec
-from bioimageio.core import load_resource_description
+from bioimageio.spec import load_description
+
 from .utils import load_model
 
 
@@ -57,7 +57,6 @@ def _check_predictions(model, scripted_model, model_spec, input_data):
 
     # check that input and output agree for decreasing input sizes
     while True:
-
         slice_ = tuple(slice(None) if st == 0 else slice(step_factor * st, -step_factor * st) for st in half_step)
         this_input = [inp[slice_] for inp in input_data]
         this_shape = this_input[0].shape
@@ -83,7 +82,7 @@ def convert_weights_to_torchscript(
         use_tracing: whether to use tracing or scripting to export the torchscript format
     """
     if isinstance(model_spec, (str, Path)):
-        model_spec = load_resource_description(Path(model_spec))
+        model_spec = load_description(Path(model_spec))
 
     with torch.no_grad():
         # load input and expected output data
