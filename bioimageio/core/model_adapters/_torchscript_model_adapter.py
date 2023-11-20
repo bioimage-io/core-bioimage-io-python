@@ -7,7 +7,7 @@ import torch
 import xarray as xr
 from numpy.typing import NDArray
 
-from bioimageio.core.io import download
+from bioimageio.spec.utils import download
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import RelativeFilePath
 
@@ -15,7 +15,7 @@ from ._model_adapter import ModelAdapter
 
 
 class TorchscriptModelAdapter(ModelAdapter):
-    def __init__(self, *, model_description: Union[v0_4.Model, v0_5.Model], devices: Optional[Sequence[str]] = None):
+    def __init__(self, *, model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr], devices: Optional[Sequence[str]] = None):
         super().__init__()
         if model_description.weights.torchscript is None:
             raise ValueError(f"No torchscript weights found for model {model_description.name}")
@@ -32,7 +32,7 @@ class TorchscriptModelAdapter(ModelAdapter):
         if len(self.devices) > 1:
             warnings.warn("Multiple devices for single torchscript model not yet implemented")
 
-        self._model = torch.jit.load(weight_path)  # pyright: ignore[reportPrivateImportUsage]
+        self._model = torch.jit.load(weight_path)
         self._model.to(self.devices[0])
         self._internal_output_axes = [
             tuple(out.axes) if isinstance(out.axes, str) else tuple(a.id for a in out.axes)
