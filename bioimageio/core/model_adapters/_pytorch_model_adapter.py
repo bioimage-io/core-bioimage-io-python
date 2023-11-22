@@ -51,7 +51,7 @@ class PytorchModelAdapter(ModelAdapter):
         torch.cuda.empty_cache()  # release reserved memory
 
     @staticmethod
-    def get_network(weight_spec: Union[v0_4.PytorchStateDictWeightsDescr, v0_5.PytorchStateDictWeightsDescr]):
+    def get_network(weight_spec: Union[v0_4.PytorchStateDictWeightsDescr, v0_5.PytorchStateDictWeightsDescr]) -> torch.nn.Module:
         arch = import_callable(
             weight_spec.architecture,
             sha256=weight_spec.architecture_sha256
