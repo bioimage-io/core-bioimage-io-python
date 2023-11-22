@@ -280,8 +280,8 @@ if torch_converter is not None:
         output_path: Path = typer.Argument(..., help="Where to save the torchscript weights."),
         use_tracing: bool = typer.Option(True, help="Whether to use torch.jit tracing or scripting."),
     ):
-        ret_code = torch_converter.convert_weights_to_torchscript(model_rdf, output_path, use_tracing)
-        sys.exit(ret_code)
+        torch_converter.convert_weights_to_torchscript(model_rdf, output_path, use_tracing)
+        sys.exit(0)
 
     convert_torch_weights_to_torchscript.__doc__ = torch_converter.convert_weights_to_torchscript.__doc__
 
