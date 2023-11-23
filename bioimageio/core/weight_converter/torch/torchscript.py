@@ -1,5 +1,5 @@
 from typing import List, Sequence
-from typing_extensions import Any
+from typing_extensions import Any, assert_never
 from pathlib import Path
 from typing import Union
 
@@ -18,7 +18,6 @@ from .utils import load_model
 # FIXME: remove Any
 def _check_predictions(model: Any, scripted_model: Any, model_spec: "v0_4.ModelDescr | v0_5.ModelDescr", input_data: Sequence[torch.Tensor]):
     def _check(input_: Sequence[torch.Tensor]) -> None:
-        # get the expected output to validate the torchscript weights
         expected_tensors = model(*input_)
         if isinstance(expected_tensors, torch.Tensor):
             expected_tensors = [expected_tensors]
@@ -40,8 +39,6 @@ def _check_predictions(model: Any, scripted_model: Any, model_spec: "v0_4.ModelD
     if len(model_spec.inputs) > 1:
         return # FIXME: why don't we check multiple inputs?
 
-    # do we have fixed input size or variable?
-    # if variable, we need to check multiple sizes!
     input_descr = model_spec.inputs[0]
     if isinstance(input_descr, v0_4.InputTensorDescr):
         if not isinstance(input_descr.shape, v0_4.ParametrizedInputShape):
@@ -49,11 +46,24 @@ def _check_predictions(model: Any, scripted_model: Any, model_spec: "v0_4.ModelD
         min_shape = input_descr.shape.min
         step = input_descr.shape.step
     else:
-        raise NotImplementedError("FIXME: Can't handle v0.5 parameterized inputs yet")
+        min_shape: List[int] = []
+        step: List[int] = []
+        for axis in input_descr.axes:
+            if isinstance(axis.size, v0_5.ParameterizedSize):
+                min_shape.append(axis.size.min)
+                step.append(axis.size.step)
+            elif isinstance(axis.size, int):
+                min_shape.append(axis.size)
+                step.append(0)
+            elif isinstance(axis.size, (v0_5.AxisId, v0_5.TensorAxisId, type(None))):
+                raise NotImplementedError(f"Can't verify inputs that don't specify their shape fully: {axis}")
+            elif isinstance(axis.size, v0_5.SizeReference): # pyright: ignore [reportUnnecessaryIsInstance]
+                raise NotImplementedError(f"Can't handle axes like '{axis}' yet")
+            else:
+                assert_never(axis.size)
 
     half_step = [st // 2 for st in step]
     max_steps = 4
-    step_factor = 1
 
     # check that input and output agree for decreasing input sizes
     for step_factor in range(1, max_steps + 1):
