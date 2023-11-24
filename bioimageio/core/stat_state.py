@@ -1,43 +1,50 @@
-from typing import Dict, Iterable, Optional
+from dataclasses import dataclass, field
+from typing import Dict, Iterable, Literal, Optional, Union
 
 from tqdm import tqdm
 
-from bioimageio.core.statistical_measure_groups import MeasureGroups, MeasureValue, get_measure_groups
-from bioimageio.core.statistical_measures import Measure
+from bioimageio.core.common import PER_DATASET, PER_SAMPLE, MeasureValue, RequiredMeasure, Sample, TensorId
+from bioimageio.core.stat_calculators import MeasureGroups, MeasureValue, get_measure_calculators
+from bioimageio.core.stat_measures import Measure
 
-from ._utils import PER_DATASET, PER_SAMPLE, MeasureValue, RequiredMeasure, Sample, TensorName
 
-
+@dataclass
 class StatsState:
     """class to compute, hold and update dataset and sample statistics"""
 
-    sample_count: int
-    last_sample: Optional[Sample]
-    measure_groups: MeasureGroups
-    _n_start: int
-    _n_stop: int
-    _final_dataset_stats: Optional[Dict[TensorName, Dict[Measure, MeasureValue]]]
+    required_measures: Iterable[RequiredMeasure]
+
+
+def compute_statistics()
+    dataset: Iterable[Sample]
+    update_dataset_stats_after_n_samples: Optional[int] = None
+    update_dataset_stats_for_n_samples: Union[int, float] = float("inf")
+
+def
+    """iterates over dataset to compute dataset statistics (if required). The resulting dataset statistics are further updated with each new sample. A sample in this context may be a mini-batch.
+
+    Args:
+        required_measures: measures to be computed
+        dataset: (partial) dataset to initialize dataset statistics with
+        update_dataset_stats_after_n_samples: Update dataset statistics for new samples S_i if i > n.
+                                                (default: len(dataset))
+                                                This parameter allows to avoid weighting the first n processed
+                                                samples to count twice if they make up the given 'dataset'.
+        update_dataset_stats_for_n_samples: stop updating dataset statistics with new samples S_i if
+                                            i > for_n_samples (+ update_dataset_stats_after_n_samples)
+    """
+    sample_count: int = field(init=False)
+    last_sample: Optional[Sample] = field(init=False)
+    measure_groups: MeasureGroups = field(init=False)
+    _n_start: Union[int, float] = field(init=False)
+    _n_stop: Union[int, float] = field(init=False)
+    _final_dataset_stats: Optional[Dict[RequiredMeasure, MeasureValue]] = field(init=False)
 
     def __init__(
         self,
-        required_measures: RequiredMeasures,
         *,
-        dataset: Iterable[Sample] = tuple(),
-        update_dataset_stats_after_n_samples: Optional[int] = None,
-        update_dataset_stats_for_n_samples: int = float("inf"),
     ):
-        """iterates over dataset to compute dataset statistics (if required). The resulting dataset statistics are further updated with each new sample. A sample in this context may be a mini-batch.
-
-        Args:
-            required_measures: measures to be computed
-            dataset: (partial) dataset to initialize dataset statistics with
-            update_dataset_stats_after_n_samples: Update dataset statistics for new samples S_i if i > n.
-                                                  (default: len(dataset))
-                                                  This parameter allows to avoid weighting the first n processed
-                                                  samples to count twice if they make up the given 'dataset'.
-            update_dataset_stats_for_n_samples: stop updating dataset statistics with new samples S_i if
-                                                i > for_n_samples (+ update_dataset_stats_after_n_samples)
-        """
+        super().__init__()
         self.required_measures = required_measures
         self.update_dataset_stats_after_n_samples = update_dataset_stats_after_n_samples
         self.update_dataset_stats_for_n_samples = update_dataset_stats_for_n_samples
@@ -47,7 +54,7 @@ class StatsState:
         self.sample_count = 0
         self.last_sample = None
         self._final_dataset_stats = None
-        self.measure_groups = get_measure_groups(self.required_measures)
+        self.measure_groups = get_measure_calculators(self.required_measures)
 
         len_dataset = 0
         if self.measure_groups[PER_DATASET]:

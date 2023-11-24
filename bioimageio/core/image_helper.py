@@ -2,16 +2,17 @@ from __future__ import annotations
 
 import os
 from copy import deepcopy
-from typing import Dict, List, Optional, Sequence, Tuple, Union
+from typing import Dict, List, Optional, Sequence, Tuple, TypeVar, Union
 
 import imageio
 import numpy as np
+from numpy.typing import NDArray
+from xarray import DataArray
+
 from bioimageio.spec.model.v0_4 import InputTensor as InputTensor04
 from bioimageio.spec.model.v0_4 import OutputTensor as OutputTensor04
 from bioimageio.spec.model.v0_5 import InputTensor as InputTensor05
 from bioimageio.spec.model.v0_5 import OutputTensor as OutputTensor05
-from numpy.typing import NDArray
-from xarray import DataArray
 
 InputTensor = Union[InputTensor04, InputTensor05]
 OutputTensor = Union[OutputTensor04, OutputTensor05]
@@ -22,34 +23,37 @@ OutputTensor = Union[OutputTensor04, OutputTensor05]
 #
 
 
-def transform_input_image(image: NDArray, tensor_axes: str, image_axes: Optional[str] = None):
-    """Transform input image into output tensor with desired axes.
+DType = TypeVar("DType", bound=np.dtype)
+
+
+def transpose_image(image: NDArray[DType], desired_axes: str, current_axes: Optional[str] = None) -> NDArray[DType]:
+    """Transform an image to match desired axes.
 
     Args:
         image: the input image
-        tensor_axes: the desired tensor axes
-        input_axes: the axes of the input image (optional)
+        desired_axes: the desired image axes
+        current_axes: the axes of the input image
     """
     # if the image axes are not given deduce them from the required axes and image shape
-    if image_axes is None:
-        has_z_axis = "z" in tensor_axes
+    if current_axes is None:
+        has_z_axis = "z" in desired_axes
         ndim = image.ndim
         if ndim == 2:
-            image_axes = "yx"
+            current_axes = "yx"
         elif ndim == 3:
-            image_axes = "zyx" if has_z_axis else "cyx"
+            current_axes = "zyx" if has_z_axis else "cyx"
         elif ndim == 4:
-            image_axes = "czyx"
+            current_axes = "czyx"
         elif ndim == 5:
-            image_axes = "bczyx"
+            current_axes = "bczyx"
         else:
             raise ValueError(f"Invalid number of image dimensions: {ndim}")
-    tensor = DataArray(image, dims=tuple(image_axes))
+    tensor = DataArray(image, dims=tuple(current_axes))
     # expand the missing image axes
-    missing_axes = tuple(set(tensor_axes) - set(image_axes))
+    missing_axes = tuple(set(desired_axes) - set(current_axes))
     tensor = tensor.expand_dims(dim=missing_axes)
     # transpose to the correct axis order
-    tensor = tensor.transpose(*tuple(tensor_axes))
+    tensor = tensor.transpose(*tuple(desired_axes))
     # return numpy array
     return tensor.values
 
@@ -103,7 +107,7 @@ def load_image(in_path, axes: Sequence[str]) -> DataArray:
     else:
         is_volume = "z" in axes
         im = imageio.volread(in_path) if is_volume else imageio.imread(in_path)
-        im = transform_input_image(im, axes)
+        im = transpose_image(im, axes)
     return DataArray(im, dims=axes)
 
 

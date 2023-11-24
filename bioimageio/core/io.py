@@ -20,7 +20,7 @@ from bioimageio.spec import load_description as load_description
 from bioimageio.spec._internal.base_nodes import ResourceDescriptionBase
 from bioimageio.spec._internal.constants import DISCOVER
 from bioimageio.spec._internal.types import FileName, RdfContent, RelativeFilePath, Sha256, ValidationContext, YamlValue
-from bioimageio.spec.description import InvalidDescription, dump_description
+from bioimageio.spec.common import BioimageioYamlContent, FileSource, InvalidDescription
 from bioimageio.spec.model.v0_4 import WeightsFormat
 from bioimageio.spec.package import extract_file_name, get_resource_package_content
 from bioimageio.spec.summary import ValidationSummary
@@ -32,23 +32,24 @@ def load_description_and_validate(
     *,
     format_version: Union[Literal["discover"], Literal["latest"], str] = DISCOVER,
 ) -> Union[ResourceDescription, InvalidDescription]:
-    rdf = download_rdf(source)
+    opened = open_bioimageio_yaml(source)
+
     return build_description_and_validate(
-        rdf.content,
-        context=ValidationContext(root=rdf.original_root, file_name=rdf.original_file_name),
+        opened.content,
+        context=ValidationContext(root=opened.original_root, file_name=opened.original_file_name),
         format_version=format_version,
     )
 
 
 def build_description_and_validate(
-    rdf_content: RdfContent,
+    data: BioimageioYamlContent,
     /,
     *,
     context: Optional[ValidationContext] = None,
     format_version: Union[Literal["discover"], Literal["latest"], str] = DISCOVER,
 ) -> Union[ResourceDescription, InvalidDescription]:
     """load and validate a BioImage.IO description from the content of a resource description file (RDF)"""
-    rd = load_description(rdf_content, context=context, format_version=format_version)
+    descr = build_description(rdf_content, context=context, format_version=format_version)
     # todo: add dynamic validation
     return rd
 
