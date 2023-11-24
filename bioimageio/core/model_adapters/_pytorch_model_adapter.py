@@ -7,6 +7,7 @@ import xarray as xr
 
 from bioimageio.core.utils import import_callable
 from bioimageio.spec.model import v0_4, v0_5
+from bioimageio.spec.utils import download
 
 from ._model_adapter import ModelAdapter
 
@@ -15,8 +16,8 @@ class PytorchModelAdapter(ModelAdapter):
     def __init__(
         self,
         *,
-        outputs: Union[Sequence[v0_4.OutputTensor], Sequence[v0_5.OutputTensor]],
-        weights: Union[v0_4.PytorchStateDictWeights, v0_5.PytorchStateDictWeights],
+        outputs: Union[Sequence[v0_4.OutputTensorDescr], Sequence[v0_5.OutputTensorDescr]],
+        weights: Union[v0_4.PytorchStateDictWeightsDescr, v0_5.PytorchStateDictWeightsDescr],
         devices: Optional[Sequence[str]] = None,
     ):
         super().__init__()
@@ -25,7 +26,7 @@ class PytorchModelAdapter(ModelAdapter):
         self._devices = self.get_devices(devices)
         self._network = self._network.to(self._devices[0])
 
-        state: Any = torch.load(weights.source, map_location=self._devices[0])
+        state: Any = torch.load(download(weights.source).path, map_location=self._devices[0])
         _ = self._network.load_state_dict(state)
 
         self._network = self._network.eval()
@@ -50,16 +51,16 @@ class PytorchModelAdapter(ModelAdapter):
         torch.cuda.empty_cache()  # release reserved memory
 
     @staticmethod
-    def get_network(weight_spec: Union[v0_4.PytorchStateDictWeights, v0_5.PytorchStateDictWeights]):
+    def get_network(weight_spec: Union[v0_4.PytorchStateDictWeightsDescr, v0_5.PytorchStateDictWeightsDescr]) -> torch.nn.Module:
         arch = import_callable(
             weight_spec.architecture,
             sha256=weight_spec.architecture_sha256
-            if isinstance(weight_spec, v0_4.PytorchStateDictWeights)
+            if isinstance(weight_spec, v0_4.PytorchStateDictWeightsDescr)
             else weight_spec.sha256,
         )
         model_kwargs = (
             weight_spec.kwargs
-            if isinstance(weight_spec, v0_4.PytorchStateDictWeights)
+            if isinstance(weight_spec, v0_4.PytorchStateDictWeightsDescr)
             else weight_spec.architecture.kwargs
         )
         network = arch(**model_kwargs)
