@@ -11,8 +11,8 @@ from pydantic import FilePath
 from pytest import FixtureRequest, fixture
 
 os.environ["BIOIMAGEIO_COUNT_RDF_DOWNLOADS"] = "false"  # disable tracking before bioimageio imports
-from bioimageio.core import write_package
 from bioimageio.spec import __version__ as bioimageio_spec_version
+from bioimageio.spec._package import save_bioimageio_package
 
 logger = logging.getLogger(__name__)
 warnings.warn(f"testing with bioimageio.spec {bioimageio_spec_version}")
@@ -133,7 +133,7 @@ if not skip_tensorflow:
 
 @fixture(scope="session")
 def model_packages():
-    return MappingProxyType({name: write_package(MODEL_SOURCES[name]) for name in load_model_packages})
+    return MappingProxyType({name: save_bioimageio_package(MODEL_SOURCES[name]) for name in load_model_packages})
 
 
 @fixture(scope="session")
