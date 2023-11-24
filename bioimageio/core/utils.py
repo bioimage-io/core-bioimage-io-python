@@ -1,11 +1,12 @@
 from functools import singledispatch
-from typing import Any, List, Union
+from typing import Any, Dict, List, Union
 
 import numpy as np
 import xarray as xr
 from numpy.typing import NDArray
 
 from bioimageio.spec.model import v0_4, v0_5
+from bioimageio.spec.model.v0_5 import TensorId
 from bioimageio.spec.utils import download
 
 # @singledispatch

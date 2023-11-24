@@ -1,17 +1,14 @@
+import collections.abc
 from abc import ABC, abstractmethod
 from dataclasses import InitVar, dataclass, field, fields
 from types import MappingProxyType
 from typing import (
-    Any,
     ClassVar,
-    Dict,
     FrozenSet,
     Generic,
     Hashable,
-    List,
     Literal,
     Mapping,
-    NamedTuple,
     Optional,
     Sequence,
     Set,
@@ -28,10 +25,11 @@ import xarray as xr
 from numpy.typing import DTypeLike
 from typing_extensions import LiteralString, assert_never
 
-from bioimageio.core.statistical_measures import Mean, Measure, MeasureValue, Percentile, Std
+from bioimageio.core.common import MeasureValue, ProcessingDescrBase, ProcessingKwargs, RequiredMeasure, Sample
+from bioimageio.core.stat_measures import Mean, Percentile, Std
 from bioimageio.spec._internal.base_nodes import NodeWithExplicitlySetFields
 from bioimageio.spec.model import v0_4, v0_5
-from bioimageio.spec.model.v0_5 import AxisName, NonBatchAxisName, TensorId
+from bioimageio.spec.model.v0_5 import NonBatchAxisId, TensorId
 
 AssertProcessingId = Literal["assert_dtype"]
 
@@ -50,12 +48,6 @@ class AssertDtype(AssertProcessingBase):
     kwargs: AssertDtypeKwargs
 
 
-class RequiredMeasure(NamedTuple):
-    measure: Measure
-    tensor_id: TensorId
-    mode: Literal["per_sample", "per_dataset"]
-
-
 M = TypeVar("M", RequiredMeasure, MeasureValue)
 
 
@@ -72,10 +64,8 @@ R = TypeVar("R", bound=NamedMeasures[RequiredMeasure])
 C = TypeVar("C", bound=NamedMeasures[MeasureValue])
 
 
-Sample = Dict[TensorId, xr.DataArray]
-PKwargs = TypeVar("PKwargs", bound=Union[v0_4.ProcessingKwargs, v0_5.ProcessingKwargs])
+PKwargs = TypeVar("PKwargs", bound=ProcessingKwargs)
 ProcInput = TypeVar("ProcInput", xr.DataArray, Sample)
-ProcessingBase = Union[v0_4.ProcessingBase, v0_5.ProcessingBase]
 
 
 @dataclass(frozen=True)
@@ -126,7 +116,7 @@ class ProcessingImplBase(Generic[PKwargs, R, C], ABC):
         return ret
 
     @abstractmethod
-    def get_spec(self) -> Union[ProcessingBase, AssertProcessingBase]:
+    def get_descr(self) -> Union[ProcessingDescrBase, AssertProcessingBase]:
         ...
 
 
@@ -157,7 +147,7 @@ class AssertDtypeImpl(ProcessingImplBaseWoMeasures[AssertDtypeKwargs]):
         assert isinstance(tensor.dtype, self._assert_with)
         return tensor
 
-    def get_spec(self):
+    def get_descr(self):
         return AssertDtype(kwargs=self.kwargs)
 
 
@@ -168,8 +158,8 @@ class BinarizeImpl(ProcessingImplBaseWoMeasures[Union[v0_4.BinarizeKwargs, v0_5.
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
         return tensor > self.kwargs.threshold
 
-    def get_spec(self):
-        return v0_5.Binarize(kwargs=self.kwargs)
+    def get_descr(self):
+        return v0_5.BinarizeDescr(kwargs=self.kwargs)
 
 
 @dataclass(frozen=True)
@@ -177,8 +167,8 @@ class ClipImpl(ProcessingImplBaseWoMeasures[Union[v0_4.ClipKwargs, v0_5.ClipKwar
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
         return tensor.clip(min=self.kwargs.min, max=self.kwargs.max)
 
-    def get_spec(self):
-        return v0_5.Clip(kwargs=self.kwargs)
+    def get_descr(self):
+        return v0_5.ClipDescr(kwargs=self.kwargs)
 
 
 @dataclass(frozen=True)
@@ -186,8 +176,8 @@ class EnsureDtypeImpl(ProcessingImplBaseWoMeasures[v0_5.EnsureDtypeKwargs]):
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
         return tensor.astype(self.kwargs.dtype)
 
-    def get_spec(self):
-        return v0_5.EnsureDtype(kwargs=self.kwargs)
+    def get_descr(self):
+        return v0_5.EnsureDtypeDescr(kwargs=self.kwargs)
 
 
 class ScaleLinearImpl04(ProcessingImplBaseWoMeasures[Union[v0_4.ScaleLinearKwargs, v0_5.ScaleLinearKwargs]]):
@@ -228,11 +218,11 @@ class ScaleLinearImpl(ProcessingImplBaseWoMeasures[Union[v0_4.ScaleLinearKwargs,
 
         return tensor * gain + offset
 
-    def get_spec(self):
+    def get_descr(self):
         if isinstance(self.kwargs, v0_4.ScaleLinearKwargs):
             raise NotImplementedError
 
-        return v0_5.ScaleLinear(kwargs=self.kwargs)
+        return v0_5.ScaleLinearDescr(kwargs=self.kwargs)
 
 
 @dataclass
@@ -255,7 +245,15 @@ class ScaleMeanVarianceImpl(
     def get_required_measures(
         cls, tensor_id: TensorId, kwargs: Union[v0_4.ScaleMeanVarianceKwargs, v0_5.ScaleMeanVarianceKwargs]
     ):
-        axes = tuple(NonBatchAxisName(a) for a in kwargs.axes) if isinstance(kwargs.axes, str) else kwargs.axes
+        if kwargs.axes is None:
+            axes = None
+        elif isinstance(kwargs.axes, str):
+            axes = tuple(NonBatchAxisId(a) for a in kwargs.axes)
+        elif isinstance(kwargs.axes, collections.abc.Sequence):  # pyright: ignore[reportUnnecessaryIsInstance]
+            axes = tuple(kwargs.axes)
+        else:
+            assert_never(kwargs.axes)
+
         return NamedMeasuresScaleMeanVariance(
             mean=RequiredMeasure(Mean(axes), tensor_id, mode=kwargs.mode),
             std=RequiredMeasure(Std(axes), tensor_id, mode=kwargs.mode),
@@ -268,11 +266,11 @@ class ScaleMeanVarianceImpl(
         eps = self.kwargs.eps
         return (tensor - c.mean) / (c.std + eps) * (c.ref_std + eps) + c.ref_mean
 
-    def get_spec(self):
+    def get_descr(self):
         if isinstance(self.kwargs, v0_4.ScaleMeanVarianceKwargs):
             raise NotImplementedError
 
-        return v0_5.ScaleMeanVariance(kwargs=self.kwargs)
+        return v0_5.ScaleMeanVarianceDescr(kwargs=self.kwargs)
 
 
 @dataclass
@@ -292,7 +290,7 @@ class ScaleRangeImpl(
     @classmethod
     def get_required_measures(cls, tensor_id: TensorId, kwargs: Union[v0_4.ScaleRangeKwargs, v0_5.ScaleRangeKwargs]):
         ref_name = kwargs.reference_tensor or tensor_id
-        axes = None if kwargs.axes is None else tuple(NonBatchAxisName(a) for a in kwargs.axes)
+        axes = None if kwargs.axes is None else tuple(NonBatchAxisId(a) for a in kwargs.axes)
         return NamedMeasuresScaleRange(
             lower=RequiredMeasure(Percentile(kwargs.min_percentile, axes=axes), cast(TensorId, ref_name), kwargs.mode),
             upper=RequiredMeasure(Percentile(kwargs.max_percentile, axes=axes), cast(TensorId, ref_name), kwargs.mode),
@@ -302,11 +300,11 @@ class ScaleRangeImpl(
         c = self.computed
         return (tensor - c.lower) / (c.upper - c.lower + self.kwargs.eps)
 
-    def get_spec(self):
+    def get_descr(self):
         if isinstance(self.kwargs, v0_4.ScaleRangeKwargs):
             raise NotImplementedError
 
-        return v0_5.ScaleRange(kwargs=self.kwargs)
+        return v0_5.ScaleRangeDescr(kwargs=self.kwargs)
 
 
 @dataclass(frozen=True)
@@ -316,8 +314,8 @@ class SigmoidImpl(ProcessingImplBaseWoMeasures[v0_5.ProcessingKwargs]):
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
         return 1.0 / (1.0 + np.exp(-tensor))  # type: ignore
 
-    def get_spec(self):
-        return v0_5.Sigmoid()
+    def get_descr(self):
+        return v0_5.SigmoidDescr()
 
 
 @dataclass
@@ -340,7 +338,7 @@ class ZeroMeanUnitVarianceImpl(
     def get_required_measures(
         cls, tensor_id: TensorId, kwargs: Union[v0_4.ZeroMeanUnitVarianceKwargs, v0_5.ZeroMeanUnitVarianceKwargs]
     ):
-        axes = None if kwargs.axes is None else tuple(NonBatchAxisName(a) for a in kwargs.axes)
+        axes = None if kwargs.axes is None else tuple(NonBatchAxisId(a) for a in kwargs.axes)
         assert kwargs.mode != "fixed"  # should use FixedZeroMeanUnitVarianceImpl
         return NamedMeasuresZeroMeanUnitVariance(
             mean=RequiredMeasure(Mean(axes=axes), tensor_id, kwargs.mode),
@@ -352,11 +350,11 @@ class ZeroMeanUnitVarianceImpl(
         std = self.computed.std
         return (tensor - mean) / (std + self.kwargs.eps)
 
-    def get_spec(self):
+    def get_descr(self):
         if isinstance(self.kwargs, v0_4.ZeroMeanUnitVarianceKwargs):
             raise NotImplementedError
 
-        return v0_5.ZeroMeanUnitVariance(kwargs=self.kwargs)
+        return v0_5.ZeroMeanUnitVarianceDescr(kwargs=self.kwargs)
 
 
 @dataclass(frozen=True)
@@ -377,74 +375,92 @@ class FixedZeroMeanUnitVarianceImpl(
         std = xr.DataArray(self.kwargs.std, dims=axis)
         return (tensor - mean) / std
 
-    def get_spec(self):
+    def get_descr(self):
         if isinstance(self.kwargs, v0_4.ZeroMeanUnitVarianceKwargs):
             raise NotImplementedError
 
-        return v0_5.FixedZeroMeanUnitVariance(kwargs=self.kwargs)
+        return v0_5.FixedZeroMeanUnitVarianceDescr(kwargs=self.kwargs)
 
 
-ProcSpec = Union[AssertDtype, v0_4.Preprocessing, v0_4.Postprocessing, v0_5.Preprocessing, v0_5.Postprocessing]
+ProcDescr = Union[
+    AssertDtype, v0_4.PreprocessingDescr, v0_4.PostprocessingDescr, v0_5.PreprocessingDescr, v0_5.PostprocessingDescr
+]
+
+# get_impl_class which also returns the kwargs class
+# def get_impl_class(proc_spec: ProcDescr):
+#     if isinstance(proc_spec, AssertDtype):
+#         return AssertDtypeImpl, AssertDtypeKwargs
+#     elif isinstance(proc_spec, v0_4.BinarizeDescr):
+#         return BinarizeImpl, v0_4.BinarizeKwargs
+#     elif isinstance(proc_spec, v0_5.BinarizeDescr):
+#         return BinarizeImpl, v0_5.BinarizeKwargs
+#     elif isinstance(proc_spec, (v0_4.ClipDescr, v0_5.ClipDescr)):
+#         return ClipImpl, v0_5.ClipKwargs
+#     elif isinstance(proc_spec, v0_5.EnsureDtypeDescr):
+#         return EnsureDtypeImpl, v0_5.EnsureDtypeKwargs
+#     elif isinstance(proc_spec, v0_5.FixedZeroMeanUnitVarianceDescr):
+#         return FixedZeroMeanUnitVarianceImpl, v0_5.FixedZeroMeanUnitVarianceKwargs
+#     elif isinstance(proc_spec, (v0_4.ScaleLinearDescr, v0_5.ScaleLinearDescr)):
+#         return ScaleLinearImpl, v0_5.ScaleLinearKwargs
+#     elif isinstance(proc_spec, (v0_4.ScaleMeanVarianceDescr, v0_5.ScaleMeanVarianceDescr)):
+#         return ScaleMeanVarianceImpl, v0_5.ScaleMeanVarianceKwargs
+#     elif isinstance(proc_spec, (v0_4.ScaleRangeDescr, v0_5.ScaleRangeDescr)):
+#         return ScaleRangeImpl, v0_5.ScaleRangeKwargs
+#     elif isinstance(proc_spec, (v0_4.SigmoidDescr, v0_5.SigmoidDescr)):
+#         return SigmoidImpl, v0_5.ProcessingKwargs
+#     elif isinstance(proc_spec, v0_4.ZeroMeanUnitVarianceDescr) and proc_spec.kwargs.mode == "fixed":
+#         return FixedZeroMeanUnitVarianceImpl, v0_5.FixedZeroMeanUnitVarianceKwargs
+#     elif isinstance(
+#         proc_spec,  # pyright: ignore[reportUnnecessaryIsInstance
+#         (v0_4.ZeroMeanUnitVarianceDescr, v0_5.ZeroMeanUnitVarianceDescr),
+#     ):
+#         return ZeroMeanUnitVarianceImpl, v0_5.ZeroMeanUnitVarianceKwargs
+#     else:
+#         assert_never(proc_spec)
+
+ProcessingImpl = Union[
+    AssertDtypeImpl,
+    BinarizeImpl,
+    ClipImpl,
+    EnsureDtypeImpl,
+    FixedZeroMeanUnitVarianceImpl,
+    FixedZeroMeanUnitVarianceImpl,
+    ScaleLinearImpl,
+    ScaleMeanVarianceImpl,
+    ScaleRangeImpl,
+    SigmoidImpl,
+    ZeroMeanUnitVarianceImpl,
+]
 
 
-# todo:
-
-
-class ProcSelector:
-    def __init__(proc_spec: ProcSpec) -> None:
-        self.proc_spec = proc_spec
-
-
-def get_impl(proc_spec: ProcSpec):
+def get_impl_class(proc_spec: ProcDescr) -> Type[ProcessingImpl]:
     if isinstance(proc_spec, AssertDtype):
-        return AssertDtypeImpl, AssertDtypeKwargs
-    elif isinstance(proc_spec, v0_4.Binarize):
-        return BinarizeImpl, v0_4.BinarizeKwargs
-    elif isinstance(proc_spec, v0_5.Binarize):
-        return BinarizeImpl, v0_5.BinarizeKwargs
-    elif isinstance(proc_spec, (v0_4.Clip, v0_5.Clip)):
+        return AssertDtypeImpl
+    elif isinstance(proc_spec, (v0_4.BinarizeDescr, v0_5.BinarizeDescr)):
+        return BinarizeImpl
+    elif isinstance(proc_spec, (v0_4.ClipDescr, v0_5.ClipDescr)):
         return ClipImpl
-    elif isinstance(proc_spec, v0_5.EnsureDtype):
+    elif isinstance(proc_spec, v0_5.EnsureDtypeDescr):
         return EnsureDtypeImpl
-    elif isinstance(proc_spec, v0_5.FixedZeroMeanUnitVariance):
+    elif isinstance(proc_spec, v0_5.FixedZeroMeanUnitVarianceDescr):
         return FixedZeroMeanUnitVarianceImpl
-    elif isinstance(proc_spec, (v0_4.ScaleLinear, v0_5.ScaleLinear)):
+    elif isinstance(proc_spec, (v0_4.ScaleLinearDescr, v0_5.ScaleLinearDescr)):
         return ScaleLinearImpl
-    elif isinstance(proc_spec, (v0_4.ScaleMeanVariance, v0_5.ScaleMeanVariance)):
+    elif isinstance(proc_spec, (v0_4.ScaleMeanVarianceDescr, v0_5.ScaleMeanVarianceDescr)):
         return ScaleMeanVarianceImpl
-    elif isinstance(proc_spec, (v0_4.ScaleRange, v0_5.ScaleRange)):
+    elif isinstance(proc_spec, (v0_4.ScaleRangeDescr, v0_5.ScaleRangeDescr)):
         return ScaleRangeImpl
-    elif isinstance(proc_spec, (v0_4.Sigmoid, v0_5.Sigmoid)):
+    elif isinstance(proc_spec, (v0_4.SigmoidDescr, v0_5.SigmoidDescr)):
         return SigmoidImpl
-    elif isinstance(proc_spec, v0_4.ZeroMeanUnitVariance) and proc_spec.kwargs.mode == "fixed":
+    elif isinstance(proc_spec, v0_4.ZeroMeanUnitVarianceDescr) and proc_spec.kwargs.mode == "fixed":
         return FixedZeroMeanUnitVarianceImpl
     elif isinstance(
         proc_spec,  # pyright: ignore[reportUnnecessaryIsInstance]
-        (v0_4.ZeroMeanUnitVariance, v0_5.ZeroMeanUnitVariance),
+        (v0_4.ZeroMeanUnitVarianceDescr, v0_5.ZeroMeanUnitVarianceDescr),
     ):
         return ZeroMeanUnitVarianceImpl
     else:
         assert_never(proc_spec)
-
-
-Model = Union[v0_4.Model, v0_5.Model]
-
-
-def get_procs(model: Model):
-    procs: List[ProcessingImplBase[Any, Any, Any]] = []
-    for ipt in model.inputs:
-        if not ipt.preprocessing:
-            continue
-
-        assert isinstance(ipt, v0_5.InputTensor)
-        for proc_spec in ipt.preprocessing:
-            impl = get_impl(proc_spec, ipt.id, computed_measures)
-            assert isinstance(
-                proc_spec.kwargs,
-            )
-            procs.append(impl(tensor_id=ipt.id, kwargs=proc_spec.kwargs))
-
-    return procs
 
 
 def _get_complement_axis(tensor: xr.DataArray, axes: Optional[Sequence[Hashable]]) -> Optional[Hashable]:

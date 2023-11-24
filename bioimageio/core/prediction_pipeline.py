@@ -6,19 +6,20 @@ from typing import Iterable, List, Optional, Sequence, Tuple, Union
 import xarray as xr
 
 from bioimageio.core.model_adapters import ModelAdapter, create_model_adapter
+from bioimageio.core.model_adapters import get_weight_formats as get_weight_formats
 from bioimageio.core.utils.node_visitor import resolve_raw_node
 from bioimageio.spec.model import AnyModel, raw_nodes
 
 from ._combined_processing import CombinedProcessing
-from ._stat_state import StatsState
 from ._utils import ComputedMeasures, Sample, TensorName
+from .stat_state import StatsState
 
 
 @dataclass
 class NamedImplicitOutputShape:
-    reference_input: TensorName = missing
-    scale: List[Tuple[str, float]] = missing
-    offset: List[Tuple[str, int]] = missing
+    reference_input: TensorName
+    scale: List[Tuple[str, float]]
+    offset: List[Tuple[str, int]]
 
     def __len__(self):
         return len(self.scale)
