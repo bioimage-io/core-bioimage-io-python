@@ -9,10 +9,11 @@ import numpy as np
 from numpy.typing import NDArray
 from xarray import DataArray
 
-from bioimageio.spec.model.v0_4 import InputTensor as InputTensor04
-from bioimageio.spec.model.v0_4 import OutputTensor as OutputTensor04
-from bioimageio.spec.model.v0_5 import InputTensor as InputTensor05
-from bioimageio.spec.model.v0_5 import OutputTensor as OutputTensor05
+from bioimageio.spec._internal.io_utils import load_array
+from bioimageio.spec.model.v0_4 import InputTensorDescr as InputTensor04
+from bioimageio.spec.model.v0_4 import OutputTensorDescr as OutputTensor04
+from bioimageio.spec.model.v0_5 import InputTensorDescr as InputTensor05
+from bioimageio.spec.model.v0_5 import OutputTensorDescr as OutputTensor05
 
 InputTensor = Union[InputTensor04, InputTensor05]
 OutputTensor = Union[OutputTensor04, OutputTensor05]
@@ -103,7 +104,7 @@ def to_channel_last(image):
 def load_image(in_path, axes: Sequence[str]) -> DataArray:
     ext = os.path.splitext(in_path)[1]
     if ext == ".npy":
-        im = np.load(in_path)
+        im = load_array(in_path)
     else:
         is_volume = "z" in axes
         im = imageio.volread(in_path) if is_volume else imageio.imread(in_path)

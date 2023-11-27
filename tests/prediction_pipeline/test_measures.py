@@ -6,16 +6,16 @@ import numpy.testing
 import pytest
 import xarray as xr
 
-from bioimageio.core import statistical_measures
+from bioimageio.core import stat_measures
 from bioimageio.core.prediction_pipeline._measure_groups import get_measure_groups
 from bioimageio.core.prediction_pipeline._utils import PER_DATASET, PER_SAMPLE
-from bioimageio.core.statistical_measures import Mean, Percentile, Std, Var
+from bioimageio.core.stat_measures import Mean, Percentile, Std, Var
 
 
 @pytest.mark.parametrize("name_axes", product(["mean", "var", "std"], [None, ("x", "y")]))
 def test_individual_normal_measure(name_axes):
     name, axes = name_axes
-    measure = getattr(statistical_measures, name.title())(axes=axes)
+    measure = getattr(stat_measures, name.title())(axes=axes)
     data = xr.DataArray(np.random.random((5, 6, 3)), dims=("x", "y", "c"))
 
     expected = getattr(data, name)(dim=axes)
@@ -26,7 +26,7 @@ def test_individual_normal_measure(name_axes):
 @pytest.mark.parametrize("axes_n", product([None, ("x", "y")], [0, 10, 50, 100]))
 def test_individual_percentile_measure(axes_n):
     axes, n = axes_n
-    measure = statistical_measures.Percentile(axes=axes, n=n)
+    measure = stat_measures.Percentile(axes=axes, n=n)
     data = xr.DataArray(np.random.random((5, 6, 3)), dims=("x", "y", "c"))
 
     expected = data.quantile(q=n / 100, dim=axes)

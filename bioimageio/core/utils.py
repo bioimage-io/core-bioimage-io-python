@@ -7,7 +7,7 @@ from numpy.typing import NDArray
 
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import TensorId
-from bioimageio.spec.utils import download
+from bioimageio.spec.utils import download, load_array
 
 # @singledispatch
 # def is_valid_tensor(description: object, tensor: Union[NDArray[Any], xr.DataArray]) -> bool:
@@ -24,7 +24,7 @@ def get_test_input_tensors(model: object) -> List[xr.DataArray]:
 
 @get_test_input_tensors.register
 def _(model: v0_4.Model):
-    data = [np.load(download(ipt).path) for ipt in model.test_inputs]
+    data = [load_array(download(ipt).path) for ipt in model.test_inputs]
     assert all(isinstance(d, np.ndarray) for d in data)
 
 

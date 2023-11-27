@@ -9,7 +9,6 @@ from typing import List, Optional, Tuple, Union
 import numpy
 import numpy as np
 import xarray as xr
-from marshmallow import ValidationError
 
 from bioimageio.core import __version__ as bioimageio_core_version
 from bioimageio.core import load_raw_resource_description, load_resource_description
@@ -25,6 +24,7 @@ from bioimageio.core.resource_io.nodes import (
     ResourceDescription,
 )
 from bioimageio.spec import __version__ as bioimageio_spec_version
+from bioimageio.spec._internal.io_utils import load_array
 from bioimageio.spec.model.raw_nodes import WeightsFormat
 from bioimageio.spec.shared import resolve_source
 from bioimageio.spec.shared.common import ValidationWarning
@@ -161,8 +161,8 @@ def _test_model_inference(model: Model, weight_format: str, devices: Optional[Li
     tb: Optional = None
     with warnings.catch_warnings(record=True) as all_warnings:
         try:
-            inputs = [np.load(str(in_path)) for in_path in model.test_inputs]
-            expected = [np.load(str(out_path)) for out_path in model.test_outputs]
+            inputs = [load_array(str(in_path)) for in_path in model.test_inputs]
+            expected = [load_array(str(out_path)) for out_path in model.test_outputs]
 
             assert len(inputs) == len(model.inputs)  # should be checked by validation
             input_shapes = {}
@@ -362,7 +362,7 @@ def debug_model(
         bioimageio_model=model, devices=devices, weight_format=weight_format
     )
     inputs = [
-        xr.DataArray(np.load(str(in_path)), dims=input_spec.axes)
+        xr.DataArray(load_array(str(in_path)), dims=input_spec.axes)
         for in_path, input_spec in zip(model.test_inputs, model.inputs)
     ]
     input_dict = {input_spec.name: input for input_spec, input in zip(model.inputs, inputs)}
@@ -383,7 +383,7 @@ def debug_model(
         outputs = [outputs]
 
     expected = [
-        xr.DataArray(np.load(str(out_path)), dims=output_spec.axes)
+        xr.DataArray(load_array(str(out_path)), dims=output_spec.axes)
         for out_path, output_spec in zip(model.test_outputs, model.outputs)
     ]
     if len(outputs) != len(expected):
