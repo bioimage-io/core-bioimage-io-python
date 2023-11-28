@@ -3,9 +3,9 @@ from typing import Dict, Iterable, Literal, Optional, Union
 
 from tqdm import tqdm
 
-from bioimageio.core.common import PER_DATASET, PER_SAMPLE, MeasureValue, RequiredMeasure, Sample, TensorId
+from bioimageio.core.common import PER_DATASET, PER_SAMPLE, RequiredMeasure, Sample, TensorId
 from bioimageio.core.stat_calculators import MeasureGroups, MeasureValue, get_measure_calculators
-from bioimageio.core.stat_measures import Measure
+from bioimageio.core.stat_measures import MeasureBase, MeasureValue
 
 
 @dataclass
@@ -15,7 +15,7 @@ class StatsState:
     required_measures: Iterable[RequiredMeasure]
 
 
-def compute_statistics()
+def compute_statistics():
     dataset: Iterable[Sample]
     update_dataset_stats_after_n_samples: Optional[int] = None
     update_dataset_stats_for_n_samples: Union[int, float] = float("inf")

@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from dataclasses import InitVar, dataclass, field, fields
 from types import MappingProxyType
 from typing import (
+    Any,
     ClassVar,
     FrozenSet,
     Generic,
@@ -23,13 +24,21 @@ import numpy
 import numpy as np
 import xarray as xr
 from numpy.typing import DTypeLike
-from typing_extensions import LiteralString, assert_never
+from typing_extensions import LiteralString, assert_never, Unpack
 
-from bioimageio.core.common import MeasureValue, ProcessingDescrBase, ProcessingKwargs, RequiredMeasure, Sample
-from bioimageio.core.stat_measures import Mean, Percentile, Std
+from bioimageio.core.common import (
+    AnyRequiredMeasure,
+    AxisId,
+    MeasureVar,
+    ProcessingDescrBase,
+    ProcessingKwargs,
+    RequiredMeasure,
+    Sample,
+)
+from bioimageio.core.stat_measures import Mean, MeasureValue, Percentile, Std
 from bioimageio.spec._internal.base_nodes import NodeWithExplicitlySetFields
 from bioimageio.spec.model import v0_4, v0_5
-from bioimageio.spec.model.v0_5 import NonBatchAxisId, TensorId
+from bioimageio.spec.model.v0_5 import NonBatchAxisId, TensorId, BinarizeKwargs
 
 AssertProcessingId = Literal["assert_dtype"]
 
@@ -48,19 +57,19 @@ class AssertDtype(AssertProcessingBase):
     kwargs: AssertDtypeKwargs
 
 
-M = TypeVar("M", RequiredMeasure, MeasureValue)
+M = TypeVar("M", AnyRequiredMeasure, MeasureValue)
 
 
 @dataclass
-class NamedMeasures(Generic[M]):
+class NamedMeasures:
     """Named Measures that specifies all required/computed measures of a Processing instance"""
 
-    def get_set(self) -> Set[M]:
+    def get_set(self) -> Set[RequiredMeasure[Any, Any]]:
         return {getattr(self, f.name) for f in fields(self)}
 
 
 # The two generics are conceptually a higher kinded generic
-R = TypeVar("R", bound=NamedMeasures[RequiredMeasure])
+R = TypeVar("R", bound=NamedMeasures[RequiredMeasure[Any, Any]])
 C = TypeVar("C", bound=NamedMeasures[MeasureValue])
 
 
@@ -68,92 +77,171 @@ PKwargs = TypeVar("PKwargs", bound=ProcessingKwargs)
 ProcInput = TypeVar("ProcInput", xr.DataArray, Sample)
 
 
-@dataclass(frozen=True)
-class ProcessingImplBase(Generic[PKwargs, R, C], ABC):
-    """Base class for all Pre- and Postprocessing implementations."""
+Tensor = xr.DataArray
 
-    tensor_id: TensorId
-    """id of tensor to operate on"""
+@dataclass
+class Operator(Generic[PKwargs], ABC):
     kwargs: PKwargs
-    computed_measures: InitVar[Mapping[RequiredMeasure, MeasureValue]] = field(
-        default=MappingProxyType[RequiredMeasure, MeasureValue]({})
-    )
-    assert type(R) is type(C), "R and C are conceptually a higher kindes generic, their class has to be identical"
-    required: R = field(init=False)
-    computed: C = field(init=False)
+    computed:
+    @abstractmethod
+    def __call__(self) -> Tensor:
+        ...
 
-    def __post_init__(self, computed_measures: Mapping[RequiredMeasure, MeasureValue]) -> None:
-        object.__setattr__(self, "required", self.get_required_measures(self.tensor_id, self.kwargs))
-        selected = {}
-        for f in fields(self.required):
-            req = getattr(self.required, f.name)
-            if req in computed_measures:
-                selected[f.name] = computed_measures[req]
-            else:
-                raise ValueError(f"Missing computed measure: {req} (as '{f.name}').")
 
-        object.__setattr__(self, "computed", self.required.__class__(**selected))
+@dataclass
+class Binarize(Operator):
+    threshold: float
+
+
+# class Source(Operator):
+#     def __call__(self) -> Tensor:
+#         return Tensor()
+
+
+@dataclass
+class Smooth(Operator):
+    sigma: float
+    tensor_source: Source
 
     @abstractmethod
     @classmethod
-    def get_required_measures(cls, tensor_id: TensorId, kwargs: PKwargs) -> NamedMeasures[RequiredMeasure]:
+    def get_required_measures(cls, tensor_id: TensorId, kwargs: PKwargs) -> R:
         ...
 
-    def __call__(self, __input: ProcInput, /) -> ProcInput:
-        if isinstance(__input, xr.DataArray):
-            return self.apply(__input)
-        else:
-            return self.apply_to_sample(__input)
+    def __call__(self) -> Tensor:
+        return tensor * self.sigma  # fixme
 
-    @abstractmethod
-    def apply(self, tensor: xr.DataArray) -> xr.DataArray:
-        """apply processing"""
-        ...
 
-    def apply_to_sample(self, sample: Sample) -> Sample:
+class Diff(Operator):
+    def __call__(self, a: Tensor, b: Tensor) -> Tensor:
+        return a - b
+
+
+
+
+
+
+@dataclass
+class SimpleOperator(Operator, ABC):
+    input_id: TensorId
+    output_id: TensorId
+
+    def __call__(self, sample: Sample, /) -> Sample:
         ret = dict(sample)
-        ret[self.tensor_id] = self.apply(sample[self.tensor_id])
+        ret[self.output_id] = self.apply(sample[self.input_id])
         return ret
 
+
     @abstractmethod
-    def get_descr(self) -> Union[ProcessingDescrBase, AssertProcessingBase]:
+    def apply(self, tensor: xr.DataArray) -> xr.DataArray:
         ...
 
+# @dataclass(frozen=True)
+# class ProcessingImplBase(Generic[PKwargs, R, C], ABC):
+#     """Base class for all Pre- and Postprocessing implementations."""
 
-@dataclass(frozen=True)
-class ProcessingImplBaseWoMeasures(
-    ProcessingImplBase[PKwargs, NamedMeasures[RequiredMeasure], NamedMeasures[MeasureValue]]
-):
-    @classmethod
-    def get_required_measures(cls, tensor_id: TensorId, kwargs: PKwargs) -> NamedMeasures[RequiredMeasure]:
-        return NamedMeasures()
+#     tensor_id: TensorId
+#     """id of tensor to operate on"""
+#     kwargs: PKwargs
+#     computed_measures: InitVar[Mapping[AnyRequiredMeasure, MeasureValue]] = field(
+#         default=MappingProxyType[AnyRequiredMeasure, MeasureValue]({})
+#     )
+#     assert type(R) is type(C), "R and C are conceptually a higher kindes generic, their class has to be identical"
+#     required: R = field(init=False)
+#     computed: C = field(init=False)
+
+#     def __post_init__(self, computed_measures: Mapping[AnyRequiredMeasure, MeasureValue]) -> None:
+#         object.__setattr__(self, "required", self.get_required_measures(self.tensor_id, self.kwargs))
+#         selected = {}
+#         for f in fields(self.required):
+#             req = getattr(self.required, f.name)
+#             if req in computed_measures:
+#                 selected[f.name] = computed_measures[req]
+#             else:
+#                 raise ValueError(f"Missing computed measure: {req} (as '{f.name}').")
+
+#         object.__setattr__(self, "computed", self.required.__class__(**selected))
+
+#     @abstractmethod
+#     @classmethod
+#     def get_required_measures(cls, tensor_id: TensorId, kwargs: PKwargs) -> R:
+#         ...
+
+#     def __call__(self, __input: ProcInput, /) -> ProcInput:
+#         if isinstance(__input, xr.DataArray):
+#             return self.apply(__input)
+#         else:
+#             return self.apply_to_sample(__input)
+
+#     @abstractmethod
+#     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
+#         """apply processing"""
+#         ...
+
+#     def apply_to_sample(self, sample: Sample) -> Sample:
+#         ret = dict(sample)
+#         ret[self.tensor_id] = self.apply(sample[self.tensor_id])
+#         return ret
+
+#     @abstractmethod
+#     def get_descr(self) -> Union[ProcessingDescrBase, AssertProcessingBase]:
+#         ...
 
 
-@dataclass(frozen=True)
-class AssertDtypeImpl(ProcessingImplBaseWoMeasures[AssertDtypeKwargs]):
-    kwargs_class = AssertDtypeKwargs
-    _assert_with: Tuple[Type[DTypeLike], ...] = field(init=False)
-
-    def __post_init__(self, computed_measures: Mapping[RequiredMeasure, MeasureValue]) -> None:
-        super().__post_init__(computed_measures)
-        if isinstance(self.kwargs.dtype, str):
-            dtype = [self.kwargs.dtype]
-        else:
-            dtype = self.kwargs.dtype
-
-        object.__setattr__(self, "assert_with", tuple(type(numpy.dtype(dt)) for dt in dtype))
-
-    def apply(self, tensor: xr.DataArray) -> xr.DataArray:
-        assert isinstance(tensor.dtype, self._assert_with)
-        return tensor
-
-    def get_descr(self):
-        return AssertDtype(kwargs=self.kwargs)
+# @dataclass(frozen=True)
+# class ProcessingImplBaseWoMeasures(
+#     ProcessingImplBase[PKwargs, NamedMeasures[AnyRequiredMeasure], NamedMeasures[MeasureValue]]
+# ):
+#     @classmethod
+#     def get_required_measures(cls, tensor_id: TensorId, kwargs: PKwargs) -> NamedMeasures[AnyRequiredMeasure]:
+#         return NamedMeasures()
 
 
-@dataclass(frozen=True)
-class BinarizeImpl(ProcessingImplBaseWoMeasures[Union[v0_4.BinarizeKwargs, v0_5.BinarizeKwargs]]):
+# @dataclass(frozen=True)
+# class AssertDtypeImpl(ProcessingImplBaseWoMeasures[AssertDtypeKwargs]):
+#     kwargs_class = AssertDtypeKwargs
+#     _assert_with: Tuple[Type[DTypeLike], ...] = field(init=False)
+
+#     def __post_init__(self, computed_measures: Mapping[AnyRequiredMeasure, MeasureValue]) -> None:
+#         super().__post_init__(computed_measures)
+#         if isinstance(self.kwargs.dtype, str):
+#             dtype = [self.kwargs.dtype]
+#         else:
+#             dtype = self.kwargs.dtype
+
+#         object.__setattr__(self, "assert_with", tuple(type(numpy.dtype(dt)) for dt in dtype))
+
+#     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
+#         assert isinstance(tensor.dtype, self._assert_with)
+#         return tensor
+
+#     def get_descr(self):
+#         return AssertDtype(kwargs=self.kwargs)
+
+# class AssertDtype(Operator):
+#     dtype: Sequence[DTypeLike]
+#     _assert_with: Tuple[Type[DTypeLike], ...] = field(init=False)
+
+#     def __post_init__(self, computed_measures: Mapping[AnyRequiredMeasure, MeasureValue]) -> None:
+#         super().__post_init__(computed_measures)
+#         if isinstance(self.kwargs.dtype, str):
+#             dtype = [self.kwargs.dtype]
+#         else:
+#             dtype = self.kwargs.dtype
+
+#         object.__setattr__(self, "assert_with", tuple(type(numpy.dtype(dt)) for dt in dtype))
+
+#     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
+#         assert isinstance(tensor.dtype, self._assert_with)
+#         return tensor
+
+#     def get_descr(self):
+#         return AssertDtype(kwargs=self.kwargs)
+
+@dataclass
+class BinarizeImpl(Operator):
     """'output = tensor > threshold'."""
+    threshold: float
 
     def apply(self, tensor: xr.DataArray) -> xr.DataArray:
         return tensor > self.kwargs.threshold
@@ -237,7 +325,7 @@ class NamedMeasuresScaleMeanVariance(NamedMeasures[M]):
 class ScaleMeanVarianceImpl(
     ProcessingImplBase[
         Union[v0_4.ScaleMeanVarianceKwargs, v0_5.ScaleMeanVarianceKwargs],
-        NamedMeasuresScaleMeanVariance[RequiredMeasure],
+        NamedMeasuresScaleMeanVariance[AnyRequiredMeasure],
         NamedMeasuresScaleMeanVariance[MeasureValue],
     ]
 ):
@@ -248,7 +336,7 @@ class ScaleMeanVarianceImpl(
         if kwargs.axes is None:
             axes = None
         elif isinstance(kwargs.axes, str):
-            axes = tuple(NonBatchAxisId(a) for a in kwargs.axes)
+            axes = tuple(AxisId(a) for a in kwargs.axes)
         elif isinstance(kwargs.axes, collections.abc.Sequence):  # pyright: ignore[reportUnnecessaryIsInstance]
             axes = tuple(kwargs.axes)
         else:
@@ -283,14 +371,14 @@ class NamedMeasuresScaleRange(NamedMeasures[M]):
 class ScaleRangeImpl(
     ProcessingImplBase[
         Union[v0_4.ScaleRangeKwargs, v0_5.ScaleRangeKwargs],
-        NamedMeasuresScaleRange[RequiredMeasure],
+        NamedMeasuresScaleRange[RequiredMeasure[Percentile, Any]],
         NamedMeasuresScaleRange[MeasureValue],
     ]
 ):
     @classmethod
     def get_required_measures(cls, tensor_id: TensorId, kwargs: Union[v0_4.ScaleRangeKwargs, v0_5.ScaleRangeKwargs]):
         ref_name = kwargs.reference_tensor or tensor_id
-        axes = None if kwargs.axes is None else tuple(NonBatchAxisId(a) for a in kwargs.axes)
+        axes = None if kwargs.axes is None else tuple(AxisId(a) for a in kwargs.axes)
         return NamedMeasuresScaleRange(
             lower=RequiredMeasure(Percentile(kwargs.min_percentile, axes=axes), cast(TensorId, ref_name), kwargs.mode),
             upper=RequiredMeasure(Percentile(kwargs.max_percentile, axes=axes), cast(TensorId, ref_name), kwargs.mode),

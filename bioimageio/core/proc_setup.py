@@ -35,7 +35,7 @@ class _SetupProcessing(NamedTuple):
 def setup_pre_and_postprocessing(model: ModelDescr, dataset: Iterator[Sample]) -> _SetupProcessing:
     Prepared = List[Tuple[Type[ProcessingImplBase[Any, Any, Any]], ProcessingKwargs, TensorId]]
 
-    required_measures: Set[RequiredMeasure] = set()
+    required_measures: Set[RequiredMeasure[Any, Any]] = set()
 
     def prepare_procs(tensor_descrs: Sequence[TensorDescr]):
         prepared: Prepared = []
