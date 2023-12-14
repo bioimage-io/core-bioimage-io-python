@@ -13,13 +13,13 @@ from typing import (
 
 from typing_extensions import assert_never
 
-from bioimageio.core.common import ProcessingKwargs, RequiredMeasure, Sample
-from bioimageio.core.proc_impl import (
-    ProcessingImpl,
-    ProcessingImplBase,
-    get_impl_class,
+from bioimageio.core.common import ProcessingKwargs, Sample
+from bioimageio.core.proc_ops import (
+    Processing,
+    get_proc_class,
 )
 from bioimageio.core.stat_calculators import compute_measures
+from bioimageio.core.stat_measures import Measure
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import TensorId
 
@@ -28,34 +28,34 @@ TensorDescr = Union[v0_4.InputTensorDescr, v0_4.OutputTensorDescr, v0_5.InputTen
 
 
 class _SetupProcessing(NamedTuple):
-    preprocessing: List[ProcessingImpl]
-    postprocessing: List[ProcessingImpl]
+    preprocessing: List[Processing]
+    postprocessing: List[Processing]
 
 
 def setup_pre_and_postprocessing(model: ModelDescr, dataset: Iterator[Sample]) -> _SetupProcessing:
-    Prepared = List[Tuple[Type[ProcessingImplBase[Any, Any, Any]], ProcessingKwargs, TensorId]]
+    Prepared = List[Tuple[Type[Processing], ProcessingKwargs, TensorId]]
 
-    required_measures: Set[RequiredMeasure[Any, Any]] = set()
+    required_measures: Set[Measure] = set()
 
     def prepare_procs(tensor_descrs: Sequence[TensorDescr]):
         prepared: Prepared = []
         for t_descr in tensor_descrs:
             if isinstance(t_descr, (v0_4.InputTensorDescr, v0_5.InputTensorDescr)):
-                proc_specs = t_descr.preprocessing
+                proc_descrs = t_descr.preprocessing
             elif isinstance(
                 t_descr,  # pyright: ignore[reportUnnecessaryIsInstance]
                 (v0_4.OutputTensorDescr, v0_5.OutputTensorDescr),
             ):
-                proc_specs = t_descr.postprocessing
+                proc_descrs = t_descr.postprocessing
             else:
                 assert_never(t_descr)
 
-            for proc_spec in proc_specs:
-                impl_class = get_impl_class(proc_spec)
+            for proc_d in proc_descrs:
+                proc_class = get_proc_class(proc_d)
                 tensor_id = cast(TensorId, t_descr.name) if isinstance(t_descr, v0_4.TensorDescrBase) else t_descr.id
-                req = impl_class.get_required_measures(tensor_id, proc_spec.kwargs)  # type: ignore
+                req = proc_class.from_proc_descr(proc_d, tensor_id)
                 required_measures.update(req.get_set())
-                prepared.append((impl_class, proc_spec.kwargs, tensor_id))
+                prepared.append((proc_class, proc_d.kwargs, tensor_id))
 
         return prepared
 

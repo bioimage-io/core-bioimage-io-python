@@ -2,18 +2,17 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Tuple, TypeVar, Union
+from typing import Optional, Tuple, Union
 
 import xarray as xr
 
-from bioimageio.core.common import Sample
-from bioimageio.spec.model.v0_5 import AxisId, TensorId
+from bioimageio.core.common import AxisId, Sample, TensorId
 
 MeasureValue = Union[float, xr.DataArray]
 
 
 @dataclass(frozen=True)
-class MeasureBase(ABC):
+class MeasureBase:
     tensor_id: TensorId
 
 
@@ -31,55 +30,67 @@ class DatasetMeasureBase(MeasureBase, ABC):
 
 
 @dataclass(frozen=True)
-class _Mean(MeasureBase):
+class _Mean:
     axes: Optional[Tuple[AxisId, ...]] = None
 
 
 @dataclass(frozen=True)
-class SampleMean(_Mean, SampleMeasureBase):
+class SampleMean(SampleMeasureBase, _Mean):
     def compute(self, sample: Sample) -> MeasureValue:
-        return sample[self.tensor_id].mean(dim=self.axes)
+        return sample.data[self.tensor_id].mean(dim=self.axes)
+
+    def __post_init__(self):
+        assert self.axes is None or AxisId("batch") not in self.axes
 
 
 @dataclass(frozen=True)
-class DatasetMean(_Mean, DatasetMeasureBase):
-    pass
+class DatasetMean(DatasetMeasureBase, _Mean):
+    def __post_init__(self):
+        assert self.axes is None or AxisId("batch") in self.axes
 
 
 @dataclass(frozen=True)
-class _Std(MeasureBase):
+class _Std:
     axes: Optional[Tuple[AxisId, ...]] = None
 
 
 @dataclass(frozen=True)
-class SampleStd(_Std, SampleMeasureBase):
+class SampleStd(SampleMeasureBase, _Std):
     def compute(self, sample: Sample) -> MeasureValue:
-        return sample[self.tensor_id].std(dim=self.axes)
+        return sample.data[self.tensor_id].std(dim=self.axes)
+
+    def __post_init__(self):
+        assert self.axes is None or AxisId("batch") not in self.axes
 
 
 @dataclass(frozen=True)
-class DatasetStd(_Std, DatasetMeasureBase):
-    pass
+class DatasetStd(DatasetMeasureBase, _Std):
+    def __post_init__(self):
+        assert self.axes is None or AxisId("batch") in self.axes
 
 
 @dataclass(frozen=True)
-class _Var(MeasureBase):
+class _Var:
     axes: Optional[Tuple[AxisId, ...]] = None
 
 
 @dataclass(frozen=True)
-class SampleVar(_Var, SampleMeasureBase):
+class SampleVar(SampleMeasureBase, _Var):
     def compute(self, sample: Sample) -> MeasureValue:
-        return sample[self.tensor_id].var(dim=self.axes)
+        return sample.data[self.tensor_id].var(dim=self.axes)
+
+    def __post_init__(self):
+        assert self.axes is None or AxisId("batch") not in self.axes
 
 
 @dataclass(frozen=True)
-class DatasetVar(_Var, DatasetMeasureBase):
-    pass
+class DatasetVar(DatasetMeasureBase, _Var):
+    def __post_init__(self):
+        assert self.axes is None or AxisId("batch") in self.axes
 
 
 @dataclass(frozen=True)
-class _Percentile(MeasureBase):
+class _Percentile:
     n: float
     axes: Optional[Tuple[AxisId, ...]] = None
 
@@ -89,21 +100,22 @@ class _Percentile(MeasureBase):
 
 
 @dataclass(frozen=True)
-class SamplePercentile(_Percentile, SampleMeasureBase):
+class SamplePercentile(SampleMeasureBase, _Percentile):
     def compute(self, sample: Sample) -> MeasureValue:
-        return sample[self.tensor_id].tensor.quantile(self.n / 100.0, dim=self.axes)
+        return sample.data[self.tensor_id].quantile(self.n / 100.0, dim=self.axes)
+
+    def __post_init__(self):
+        super().__post_init__()
+        assert self.axes is None or AxisId("batch") not in self.axes
 
 
 @dataclass(frozen=True)
-class DatasetPercentile(_Percentile, DatasetMeasureBase):
-    pass
+class DatasetPercentile(DatasetMeasureBase, _Percentile):
+    def __post_init__(self):
+        super().__post_init__()
+        assert self.axes is None or AxisId("batch") in self.axes
 
 
 SampleMeasure = Union[SampleMean, SampleStd, SampleVar, SamplePercentile]
 DatasetMeasure = Union[DatasetMean, DatasetStd, DatasetVar, DatasetPercentile]
 Measure = Union[SampleMeasure, DatasetMeasure]
-
-# MeasureVar = TypeVar("MeasureVar", bound=MeasureBase)
-# SampleMeasureVar = TypeVar("SampleMeasureVar", bound=SampleMeasureBase)
-# DatasetMeasureVar = TypeVar("DatasetMeasureVar", bound=DatasetMeasureBase)
-# ModeVar = TypeVar("ModeVar", bound=Literal["per_sample", "per_dataset"])

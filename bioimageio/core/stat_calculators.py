@@ -2,21 +2,15 @@ from __future__ import annotations
 
 import collections
 import warnings
-from abc import ABC, abstractmethod
-from collections import defaultdict
-from dataclasses import field
 from itertools import product
 from typing import (
     Any,
-    ClassVar,
-    DefaultDict,
+    Collection,
     Dict,
-    Generic,
     Hashable,
     Iterable,
     Iterator,
     List,
-    Literal,
     Mapping,
     Optional,
     OrderedDict,
@@ -25,103 +19,99 @@ from typing import (
     Tuple,
     Type,
     Union,
-    assert_never,
+    cast,
 )
 
 import numpy as np
 import xarray as xr
 from numpy.typing import NDArray
+from typing_extensions import assert_never
 
 from bioimageio.core.common import (
-    PER_DATASET,
-    PER_SAMPLE,
     AxisId,
     Sample,
     TensorId,
 )
 from bioimageio.core.stat_measures import (
     DatasetMean,
-    DatasetMeasureBase,
-    DatasetMeasureVar,
+    DatasetMeasure,
     DatasetPercentile,
     DatasetStd,
     DatasetVar,
     Measure,
-    MeasureVar,
-    Percentile,
+    MeasureValue,
     SampleMean,
-    SampleMeasureBase,
+    SampleMeasure,
     SamplePercentile,
     SampleStd,
     SampleVar,
-    Std,
-    Var,
 )
 
 try:
-    import crick  # type: ignore
+    import crick
+
 except ImportError:
     crick = None
 
-MeasureValue = Union[xr.DataArray, float]
+    class TDigest:
+        def update(self, obj: Any):
+            pass
 
+        def quantile(self, q: Any) -> Any:
+            pass
 
-# class SampleMeasureCalculator(ABC):
-#     """group of measures for more efficient computation of multiple measures per sample"""
-
-#     @abstractmethod
-#     def compute(self, sample: Sample) -> Mapping[SampleMeasure, MeasureValue]:
-#         ...
-
-
-# class DatasetMeasureCalculator(ABC):
-#     """group of measures for more efficient computation of multiple measures per dataset"""
-
-#     @abstractmethod
-#     def update_with_sample(self, sample: Sample) -> None:
-#         """update intermediate representation with a data sample"""
-#         ...
-
-#     @abstractmethod
-#     def finalize(self) -> Mapping[DatasetMeasure, MeasureValue]:
-#         """compute statistics from intermediate representation"""
-#         ...
+else:
+    TDigest = crick.TDigest  # type: ignore
 
 
 class MeanCalculator:
     def __init__(self, tensor_id: TensorId, axes: Optional[Sequence[AxisId]]):
         super().__init__()
-        self._axes = None if axes is None else tuple(axes)
-        self._tensor_id = tensor_id
         self._n: int = 0
         self._mean: Optional[xr.DataArray] = None
+        self._axes = None if axes is None else tuple(axes)
+        self._tensor_id = tensor_id
+        self._sample_mean = SampleMean(tensor_id=self._tensor_id, axes=self._axes)
+        self._dataset_mean = DatasetMean(tensor_id=self._tensor_id, axes=self._axes)
 
-    def compute(self, sample: Sample):
-        mean = SampleMean(axes=self._axes, tensor_id=self._tensor_id)
-        return {mean: mean.compute(sample)}
+    def compute(self, sample: Sample) -> Dict[SampleMean, MeasureValue]:
+        return {self._sample_mean: self._compute_impl(sample)}
 
-    def update_with_sample(self, sample: Sample):
-        tensor = sample[self._tensor_id].astype(np.float64, copy=False)
-        mean_b = tensor.mean(dim=self._axes)
-        assert mean_b.dtype == np.float64
-        n_b = np.prod(list(tensor.shape)) / np.prod(list(mean_b.shape))  # reduced voxel count
+    def _compute_impl(self, sample: Sample) -> xr.DataArray:
+        tensor = sample.data[self._tensor_id].astype(np.float64, copy=False)
+        return tensor.mean(dim=self._axes)
+
+    def update(self, sample: Sample) -> None:
+        mean = self._compute_impl(sample)
+        self._update_impl(sample.data[self._tensor_id], mean)
+
+    def compute_and_update(self, sample: Sample) -> Dict[SampleMean, MeasureValue]:
+        mean = self._compute_impl(sample)
+        self._update_impl(sample.data[self._tensor_id], mean)
+        return {self._sample_mean: mean}
+
+    def _update_impl(self, tensor: xr.DataArray, tensor_mean: xr.DataArray):
+        assert tensor_mean.dtype == np.float64
+        # reduced voxel count
+        n_b = np.prod(tensor.shape) / np.prod(tensor_mean.shape)  # type: ignore
+
         if self._mean is None:
             assert self._n == 0
             self._n = n_b
-            self._mean = mean_b
+            self._mean = tensor_mean
         else:
             assert self._n != 0
             n_a = self._n
-            mean_a = self._mean
-            self._n = n = n_a + n_b
-            self._mean = (n_a * mean_a + n_b * mean_b) / n
+            mean_old = self._mean
+            self._n = n_a + n_b
+            self._mean = (n_a * mean_old + n_b * tensor_mean) / self._n
             assert self._mean.dtype == np.float64
 
-    def finalize(self) -> Mapping[DatasetMeasureBase, MeasureValue]:
+    def finalize(self) -> Dict[DatasetMean, MeasureValue]:
         if self._mean is None:
             return {}
         else:
-            return {DatasetMean(axes=self._axes, tensor_id=self._tensor_id): self._mean}
+            return {self._dataset_mean: self._mean}
 
 
 class MeanVarStdCalculator:
@@ -133,8 +123,8 @@ class MeanVarStdCalculator:
         self._mean: Optional[xr.DataArray] = None
         self._m2: Optional[xr.DataArray] = None
 
-    def compute(self, sample: Sample):
-        tensor = sample[self._tensor_id]
+    def compute(self, sample: Sample) -> Dict[Union[SampleMean, SampleVar, SampleStd], MeasureValue]:
+        tensor = sample.data[self._tensor_id]
         mean = tensor.mean(dim=self._axes)
         c = tensor - mean
         if self._axes is None:
@@ -142,16 +132,18 @@ class MeanVarStdCalculator:
         else:
             n = int(np.prod([tensor.sizes[d] for d in self._axes]))  # type: ignore  # FIXME: type annotation
 
-        var = xr.dot(c, c, dims=self._axes) / n
-        std = np.sqrt(var)
+        var: xr.DataArray = xr.dot(c, c, dims=self._axes) / n
+        assert isinstance(var, xr.DataArray)
+        std: xr.DataArray = np.sqrt(var)  # type: ignore
+        assert isinstance(std, xr.DataArray)
         return {
             SampleMean(axes=self._axes, tensor_id=self._tensor_id): mean,
             SampleVar(axes=self._axes, tensor_id=self._tensor_id): var,
             SampleStd(axes=self._axes, tensor_id=self._tensor_id): std,
         }
 
-    def update_with_sample(self, sample: Sample):
-        tensor = sample[self._tensor_id].astype(np.float64, copy=False)
+    def update(self, sample: Sample):
+        tensor = sample.data[self._tensor_id].astype(np.float64, copy=False)
         mean_b = tensor.mean(dim=self._axes)
         assert mean_b.dtype == np.float64
         # reduced voxel count
@@ -174,7 +166,7 @@ class MeanVarStdCalculator:
             self._m2 = m2_a + m2_b + d**2 * n_a * n_b / n
             assert self._m2.dtype == np.float64
 
-    def finalize(self) -> Mapping[DatasetMeasureBase, MeasureValue]:
+    def finalize(self) -> Dict[Union[DatasetMean, DatasetVar, DatasetStd], MeasureValue]:
         if self._mean is None:
             return {}
         else:
@@ -189,7 +181,7 @@ class MeanVarStdCalculator:
 
 
 class SamplePercentilesCalculator:
-    def __init__(self, tensor_id: TensorId, axes: Optional[Sequence[AxisId]], ns: Sequence[float]):
+    def __init__(self, tensor_id: TensorId, axes: Optional[Sequence[AxisId]], ns: Collection[float]):
         super().__init__()
         assert all(0 <= n <= 100 for n in ns)
         self.ns = ns
@@ -197,14 +189,14 @@ class SamplePercentilesCalculator:
         self._axes = None if axes is None else tuple(axes)
         self._tensor_id = tensor_id
 
-    def compute(self, sample: Sample):
-        tensor = sample[self._tensor_id]
+    def compute(self, sample: Sample) -> Dict[SamplePercentile, MeasureValue]:
+        tensor = sample.data[self._tensor_id]
         ps = tensor.quantile(self._qs, dim=self._axes)  # type:  ignore
         return {SamplePercentile(n=n, axes=self._axes, tensor_id=self._tensor_id): p for n, p in zip(self.ns, ps)}
 
 
 class MeanPercentilesCalculator:
-    def __init__(self, tensor_id: TensorId, axes: Optional[Sequence[AxisId]], ns: Sequence[float]):
+    def __init__(self, tensor_id: TensorId, axes: Optional[Sequence[AxisId]], ns: Collection[float]):
         super().__init__()
         assert all(0 <= n <= 100 for n in ns)
         self._ns = ns
@@ -214,8 +206,8 @@ class MeanPercentilesCalculator:
         self._n: int = 0
         self._estimates: Optional[xr.DataArray] = None
 
-    def update_with_sample(self, sample: Sample):
-        tensor = sample[self._tensor_id]
+    def update(self, sample: Sample):
+        tensor = sample.data[self._tensor_id]
         sample_estimates = tensor.quantile(self._qs, dim=self._axes).astype(np.float64, copy=False)
 
         # reduced voxel count
@@ -230,7 +222,7 @@ class MeanPercentilesCalculator:
 
         self._n += n
 
-    def finalize(self) -> Mapping[DatasetPercentile, MeasureValue]:
+    def finalize(self) -> Dict[DatasetPercentile, MeasureValue]:
         if self._estimates is None:
             return {}
         else:
@@ -242,7 +234,7 @@ class MeanPercentilesCalculator:
 
 
 class CrickPercentilesCalculator:
-    def __init__(self, tensor_name: TensorId, axes: Optional[Sequence[AxisId]], ns: Sequence[float]):
+    def __init__(self, tensor_id: TensorId, axes: Optional[Sequence[AxisId]], ns: Collection[float]):
         warnings.warn("Computing dataset percentiles with experimental 'crick' library.")
         super().__init__()
         assert all(0 <= n <= 100 for n in ns)
@@ -250,8 +242,8 @@ class CrickPercentilesCalculator:
         self._ns = ns
         self._qs = [n / 100 for n in ns]
         self._axes = None if axes is None else tuple(axes)
-        self._tensor_id = tensor_name
-        self._digest: Optional[List[crick.TDigest]] = None
+        self._tensor_id = tensor_id
+        self._digest: Optional[List[TDigest]] = None
         self._dims: Optional[Tuple[Hashable, ...]] = None
         self._indices: Optional[Iterator[Tuple[int, ...]]] = None
         self._shape: Optional[Tuple[int, ...]] = None
@@ -266,11 +258,11 @@ class CrickPercentilesCalculator:
 
         self._dims, self._shape = zip(*out_sizes.items())
         d = int(np.prod(self._shape[1:]))  # type: ignore
-        self._digest = [crick.TDigest() for _ in range(d)]
+        self._digest = [TDigest() for _ in range(d)]
         self._indices = product(*map(range, self._shape[1:]))
 
-    def update_with_sample(self, sample: Sample):
-        tensor = sample[self._tensor_id]
+    def update(self, sample: Sample):
+        tensor = sample.data[self._tensor_id]
         assert "_percentiles" not in tensor.dims
         if self._digest is None:
             self._initialize(tensor.sizes)
@@ -286,7 +278,11 @@ class CrickPercentilesCalculator:
             return {}
         else:
             assert self._dims is not None
-            vs: NDArray[Any] = np.asarray([[d.quantile(q) for d in self._digest] for q in self._qs]).reshape(self._shape)  # type: ignore
+            assert self._shape is not None
+
+            vs: NDArray[Any] = np.asarray([[d.quantile(q) for d in self._digest] for q in self._qs]).reshape(
+                self._shape
+            )
             return {
                 DatasetPercentile(n=n, axes=self._axes, tensor_id=self._tensor_id): xr.DataArray(v, dims=self._dims[1:])
                 for n, v in zip(self._ns, vs)
@@ -294,29 +290,83 @@ class CrickPercentilesCalculator:
 
 
 if crick is None:
-    DatasetPercentileCalculator: Type[
+    DatasetPercentilesCalculator: Type[
         Union[MeanPercentilesCalculator, CrickPercentilesCalculator]
     ] = MeanPercentilesCalculator
 else:
-    DatasetPercentileCalculator = CrickPercentilesCalculator
+    DatasetPercentilesCalculator = CrickPercentilesCalculator
 
 
 class NaivSampleMeasureCalculator:
     """wrapper for measures to match interface of other sample measure calculators"""
 
-    def __init__(self, tensor_id: TensorId, measure: SampleMeasureBase):
+    def __init__(self, tensor_id: TensorId, measure: SampleMeasure):
         super().__init__()
         self.tensor_name = tensor_id
         self.measure = measure
 
-    def compute(self, sample: Sample) -> Mapping[SampleMeasureBase, MeasureValue]:
+    def compute(self, sample: Sample) -> Dict[SampleMeasure, MeasureValue]:
         return {self.measure: self.measure.compute(sample)}
 
 
 SampleMeasureCalculator = Union[
     MeanCalculator, MeanVarStdCalculator, SamplePercentilesCalculator, NaivSampleMeasureCalculator
 ]
-DatasetMeasureCalculator = Union[MeanCalculator, MeanVarStdCalculator, DatasetPercentileCalculator]
+DatasetMeasureCalculator = Union[MeanCalculator, MeanVarStdCalculator, DatasetPercentilesCalculator]
+
+
+class StatsCalculator:
+    """Estimates dataset statistics and computes sample statistics efficiently"""
+
+    def __init__(
+        self,
+        *,
+        measures: Iterable[Measure],
+    ):
+        super().__init__()
+        self.sample_count = 0
+        self.sample_calculators, self.dataset_calculators = get_measure_calculators(measures)
+        self._current_dataset_measures: Optional[Dict[DatasetMeasure, MeasureValue]] = None
+
+    def _compute(self, sample: Sample) -> Dict[SampleMeasure, MeasureValue]:
+        ret: Dict[SampleMeasure, MeasureValue] = {}
+        for calc in self.sample_calculators:
+            values = calc.compute(sample)
+            ret.update(values.items())
+
+        return ret
+
+    def _update(self, sample: Sample):
+        self.sample_count += 1
+        for calc in self.dataset_calculators:
+            calc.update(sample)
+            self._current_dataset_measures = None
+
+    def _compute_and_update(self, sample: Sample):
+        self._update(sample)
+        return self._compute(sample)
+
+    def _finalize(self) -> Dict[DatasetMeasure, MeasureValue]:
+        """returns aggregated dataset statistics"""
+        if self._current_dataset_measures is None:
+            self._current_dataset_measures = {}
+            for calc in self.dataset_calculators:
+                values = calc.finalize()
+                self._current_dataset_measures.update(values.items())
+
+        return self._current_dataset_measures
+
+    def update_and_get_all(self, sample: Sample) -> Dict[Measure, MeasureValue]:
+        """Returns sample as well as updated dataset statistics"""
+        ret = cast(Dict[Measure, MeasureValue], self._compute_and_update(sample))
+        ret.update(self._finalize().items())
+        return ret
+
+    def skip_update_and_get_all(self, sample: Sample) -> Dict[Measure, MeasureValue]:
+        """Returns sample as well as previously computed dataset statistics"""
+        ret = cast(Dict[Measure, MeasureValue], self._compute(sample))
+        ret.update(self._finalize().items())
+        return ret
 
 
 def get_measure_calculators(
@@ -332,8 +382,8 @@ def get_measure_calculators(
     required_dataset_means: Set[DatasetMean] = set()
     required_sample_mean_var_std: Set[Union[SampleMean, SampleVar, SampleStd]] = set()
     required_dataset_mean_var_std: Set[Union[DatasetMean, DatasetVar, DatasetStd]] = set()
-    required_sample_percentiles: Set[SamplePercentile] = set()
-    required_dataset_percentiles: Set[DatasetPercentile] = set()
+    required_sample_percentiles: Dict[Tuple[TensorId, Optional[Tuple[AxisId, ...]]], Set[float]] = {}
+    required_dataset_percentiles: Dict[Tuple[TensorId, Optional[Tuple[AxisId, ...]]], Set[float]] = {}
 
     for rm in required_measures:
         if isinstance(rm, SampleMean):
@@ -351,9 +401,9 @@ def get_measure_calculators(
             )
             assert rm in required_dataset_mean_var_std
         elif isinstance(rm, SamplePercentile):
-            required_sample_percentiles.add(rm)
+            required_sample_percentiles.setdefault((rm.tensor_id, rm.axes), set()).add(rm.n)
         elif isinstance(rm, DatasetPercentile):  # pyright: ignore[reportUnnecessaryIsInstance]
-            required_dataset_percentiles.add(rm)
+            required_dataset_percentiles.setdefault((rm.tensor_id, rm.axes), set()).add(rm.n)
         else:
             assert_never(rm)
 
@@ -377,36 +427,29 @@ def get_measure_calculators(
     for rm in required_dataset_mean_var_std:
         dataset_calculators.append(MeanVarStdCalculator(tensor_id=rm.tensor_id, axes=rm.axes))
 
-    for rm in required_sample_percentiles:
-        sample_calculators.append(SamplePercentilesCalculator(tensor_id=rm.tensor_id, axes=axes))
-        for (tn, axes), ns in required_sample_percentiles.items():
-            if mode == PER_SAMPLE:
-                calculators[mode].append(SamplePercentilesCalculator(tensor_id=tn, axes=axes, ns=ns))
-            elif mode == PER_DATASET:
-                calculators[mode].append(DatasetPercentileCalculator(tensor_name=tn, axes=axes, ns=ns))
-            else:
-                raise NotImplementedError(mode)
+    for (tid, axes), ns in required_sample_percentiles.items():
+        sample_calculators.append(SamplePercentilesCalculator(tensor_id=tid, axes=axes, ns=ns))
 
-    return calculators
+    for (tid, axes), ns in required_dataset_percentiles.items():
+        dataset_calculators.append(DatasetPercentilesCalculator(tensor_id=tid, axes=axes, ns=ns))
+
+    return sample_calculators, dataset_calculators
 
 
-def compute_measures(
-    measures: Set[Measure], *, sample: Optional[Sample] = None, dataset: Iterator[Sample] = ()
-) -> ComputedMeasures:
-    ms_groups = get_measure_calculators(measures)
-    ret = {PER_SAMPLE: {}, PER_DATASET: {}}
-    if sample is not None:
-        for mg in ms_groups[PER_SAMPLE]:
-            assert isinstance(mg, SampleMeasureCalculator)
-            ret[PER_SAMPLE].update(mg.compute(sample))
+def compute_dataset_measures(
+    *, measures: Iterable[DatasetMeasure], dataset: Iterable[Sample]
+) -> Dict[DatasetMeasure, MeasureValue]:
+    """compute all dataset `measures` for the given `dataset`"""
+    sample_calculators, calculators = get_measure_calculators(measures)
+    assert not sample_calculators
+
+    ret: Dict[DatasetMeasure, MeasureValue] = {}
 
     for sample in dataset:
-        for mg in ms_groups[PER_DATASET]:
-            assert isinstance(mg, DatasetMeasureCalculator)
-            mg.update_with_sample(sample)
+        for calc in calculators:
+            calc.update(sample)
 
-    for mg in ms_groups[PER_DATASET]:
-        assert isinstance(mg, DatasetMeasureCalculator)
-        ret[PER_DATASET].update(mg.finalize())
+    for calc in calculators:
+        ret.update(calc.finalize().items())
 
     return ret

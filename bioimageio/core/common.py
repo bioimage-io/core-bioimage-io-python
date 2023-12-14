@@ -1,21 +1,26 @@
-from typing import Any, Dict, Generic, List, Literal, NamedTuple, TypeVar, Union
+from dataclasses import field
+from typing import Dict, Union
 
-import numpy as np
 import xarray as xr
 from attr import dataclass
-from typing_extensions import Final
 
-from bioimageio.core.stat_measures import MeasureBase
+from bioimageio.core.stat_measures import Measure, MeasureValue
 from bioimageio.spec.model import v0_4, v0_5
-from bioimageio.spec.model.v0_5 import TensorId
 
 TensorId = v0_5.TensorId
 AxisId = v0_5.AxisId
 
-Sample = Dict[TensorId, xr.DataArray]
+Tensor = xr.DataArray
+
+Data = Dict[TensorId, Tensor]
+Stat = Dict[Measure, MeasureValue]
+
+
+@dataclass
+class Sample:
+    data: Data = field(default_factory=dict)
+    stat: Stat = field(default_factory=dict)
+
 
 ProcessingDescrBase = Union[v0_4.ProcessingDescrBase, v0_5.ProcessingDescrBase]
 ProcessingKwargs = Union[v0_4.ProcessingKwargs, v0_5.ProcessingKwargs]
-
-PER_SAMPLE = "per_sample"
-PER_DATASET = "per_dataset"
