@@ -1,18 +1,18 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Union
+from typing import Union, no_type_check
 from zipfile import ZipFile
 
 import tensorflow
 from tensorflow import saved_model
 
-from bioimageio.spec import AnyModel, load_description
 from bioimageio.spec._internal.io_utils import download
+from bioimageio.spec.model.v0_5 import ModelDescr
 
 
 def _zip_model_bundle(model_bundle_folder: Path):
-    zipped_model_bundle = f"{model_bundle_folder}.zip"
+    zipped_model_bundle = model_bundle_folder.with_suffix(".zip")
 
     with ZipFile(zipped_model_bundle, "w") as zip_obj:
         for root, _, files in os.walk(model_bundle_folder):
@@ -33,12 +33,13 @@ def _zip_model_bundle(model_bundle_folder: Path):
 def _convert_tf1(keras_weight_path: Path, output_path: Path, input_name: str, output_name: str, zip_weights: bool):
     try:
         # try to build the tf model with the keras import from tensorflow
-        from tensorflow import keras
+        from tensorflow import keras  # type: ignore
 
     except Exception:
         # if the above fails try to export with the standalone keras
         import keras
 
+    @no_type_check
     def build_tf_model():
         keras_model = keras.models.load_model(keras_weight_path)
 
@@ -63,7 +64,7 @@ def _convert_tf1(keras_weight_path: Path, output_path: Path, input_name: str, ou
     return 0
 
 
-def _convert_tf2(keras_weight_path, output_path, zip_weights):
+def _convert_tf2(keras_weight_path: Path, output_path: Path, zip_weights: bool):
     try:
         # try to build the tf model with the keras import from tensorflow
         from tensorflow import keras
@@ -81,32 +82,30 @@ def _convert_tf2(keras_weight_path, output_path, zip_weights):
     return 0
 
 
-def convert_weights_to_tensorflow_saved_model_bundle(
-    model_spec: Union[str, Path, AnyModel], output_path: Union[str, Path]
-):
+def convert_weights_to_tensorflow_saved_model_bundle(model: ModelDescr, output_path: Path):
     """Convert model weights from format 'keras_hdf5' to 'tensorflow_saved_model_bundle'.
 
     Adapted from
     https://github.com/deepimagej/pydeepimagej/blob/5aaf0e71f9b04df591d5ca596f0af633a7e024f5/pydeepimagej/yaml/create_config.py
 
     Args:
-        model_spec: location of the resource for the input bioimageio model
+        model: The bioimageio model description
         output_path: where to save the tensorflow weights. This path must not exist yet.
     """
     tf_major_ver = int(tensorflow.__version__.split(".")[0])
 
-    path_ = Path(output_path)
-    if path_.suffix == ".zip":
-        path_ = Path(os.path.splitext(path_)[0])
+    if output_path.suffix == ".zip":
+        output_path = output_path.with_suffix("")
         zip_weights = True
     else:
         zip_weights = False
 
-    if path_.exists():
-        raise ValueError(f"The ouptut directory at {path_} must not exist.")
+    if output_path.exists():
+        raise ValueError(f"The ouptut directory at {output_path} must not exist.")
 
-    model = load_description(model_spec)
-    model.weights.keras_hdf5 is not None
+    if model.weights.keras_hdf5 is None:
+        raise ValueError("Missing Keras Hdf5 weights to convert from.")
+
     weight_spec = model.weights.keras_hdf5
     weight_path = download(weight_spec.source).path
 
@@ -120,6 +119,6 @@ def convert_weights_to_tensorflow_saved_model_bundle(
             raise NotImplementedError(
                 "Weight conversion for models with multiple inputs or outputs is not yet implemented."
             )
-        return _convert_tf1(weight_path, str(path_), model.inputs[0].name, model.outputs[0].name, zip_weights)
+        return _convert_tf1(weight_path, output_path, model.inputs[0].id, model.outputs[0].id, zip_weights)
     else:
-        return _convert_tf2(weight_path, str(path_), zip_weights)
+        return _convert_tf2(weight_path, output_path, zip_weights)
