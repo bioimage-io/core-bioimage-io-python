@@ -1,7 +1,7 @@
 import os
 import shutil
 from pathlib import Path
-from typing import Union, no_type_check
+from typing import no_type_check
 from zipfile import ZipFile
 
 import tensorflow

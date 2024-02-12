@@ -3,21 +3,22 @@ line-length = 120
 target-version = ["py38", "py39", "py310", "py311"]
 
 [tool.pyright]
-include = ["bioimageio", "scripts", "tests"]
 exclude = ["**/node_modules", "**/__pycache__", "tests/old_*"]
-typeCheckingMode = "strict"
-reportMissingSuperCall = "error"
-reportUnnecessaryTypeIgnoreComment = "error"
-reportUninitializedInstanceVariable = "error"
-reportUnknownMemberType = false
+include = ["bioimageio", "scripts", "tests"]
+pythonPlatform = "All"
+pythonVersion = "3.8"
 reportIncompatibleMethodOverride = true
+reportMissingSuperCall = "error"
 reportMissingTypeArgument = true
 reportMissingTypeStubs = "warning"
-useLibraryCodeForTypes = true
+reportUninitializedInstanceVariable = "error"
+reportUnknownMemberType = false
+reportUnnecessaryIsInstance = false
+reportUnnecessaryTypeIgnoreComment = "error"
 reportUnusedCallResult = "error"
 reportUnusedVariable = "error"
-pythonVersion = "3.8"
-pythonPlatform = "All"
+typeCheckingMode = "strict"
+useLibraryCodeForTypes = true
 
 [tool.pytest.ini_options]
 addopts = "--capture=no --doctest-modules --failed-first"

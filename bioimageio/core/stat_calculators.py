@@ -402,7 +402,7 @@ def get_measure_calculators(
             assert rm in required_dataset_mean_var_std
         elif isinstance(rm, SamplePercentile):
             required_sample_percentiles.setdefault((rm.tensor_id, rm.axes), set()).add(rm.n)
-        elif isinstance(rm, DatasetPercentile):  # pyright: ignore[reportUnnecessaryIsInstance]
+        elif isinstance(rm, DatasetPercentile):
             required_dataset_percentiles.setdefault((rm.tensor_id, rm.axes), set()).add(rm.n)
         else:
             assert_never(rm)

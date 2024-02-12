@@ -263,7 +263,7 @@ def _get_axes(
         axes = None
     elif isinstance(kwargs.axes, str):
         axes = convert_axis_ids(kwargs.axes, kwargs["mode"])
-    elif isinstance(kwargs.axes, collections.abc.Sequence):  # pyright: ignore[reportUnnecessaryIsInstance]
+    elif isinstance(kwargs.axes, collections.abc.Sequence):
         axes = tuple(kwargs.axes)
     else:
         assert_never(kwargs.axes)
@@ -477,7 +477,7 @@ ProcDescr = Union[v0_4.PreprocessingDescr, v0_4.PostprocessingDescr, v0_5.Prepro
 #     elif isinstance(proc_spec, v0_4.ZeroMeanUnitVarianceDescr) and proc_spec.kwargs.mode == "fixed":
 #         return FixedZeroMeanUnitVarianceImpl, v0_5.FixedZeroMeanUnitVarianceKwargs
 #     elif isinstance(
-#         proc_spec,  # pyright: ignore[reportUnnecessaryIsInstance
+#         proc_spec,
 #         (v0_4.ZeroMeanUnitVarianceDescr, v0_5.ZeroMeanUnitVarianceDescr),
 #     ):
 #         return ZeroMeanUnitVarianceImpl, v0_5.ZeroMeanUnitVarianceKwargs
@@ -517,7 +517,7 @@ def get_proc_class(proc_spec: ProcDescr) -> Type[Processing]:
     elif isinstance(proc_spec, v0_4.ZeroMeanUnitVarianceDescr) and proc_spec.kwargs.mode == "fixed":
         return FixedZeroMeanUnitVariance
     elif isinstance(
-        proc_spec,  # pyright: ignore[reportUnnecessaryIsInstance]
+        proc_spec,
         (v0_4.ZeroMeanUnitVarianceDescr, v0_5.ZeroMeanUnitVarianceDescr),
     ):
         return ZeroMeanUnitVariance

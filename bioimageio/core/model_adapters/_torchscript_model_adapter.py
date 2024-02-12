@@ -7,15 +7,17 @@ import torch
 import xarray as xr
 from numpy.typing import NDArray
 
-from bioimageio.spec.utils import download
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import RelativeFilePath
+from bioimageio.spec.utils import download
 
 from ._model_adapter import ModelAdapter
 
 
 class TorchscriptModelAdapter(ModelAdapter):
-    def __init__(self, *, model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr], devices: Optional[Sequence[str]] = None):
+    def __init__(
+        self, *, model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr], devices: Optional[Sequence[str]] = None
+    ):
         super().__init__()
         if model_description.weights.torchscript is None:
             raise ValueError(f"No torchscript weights found for model {model_description.name}")
@@ -50,10 +52,7 @@ class TorchscriptModelAdapter(ModelAdapter):
             else:
                 result = [_result]
 
-            result = [
-                r.cpu().numpy() if not isinstance(r, np.ndarray) else r  # pyright: ignore[reportUnnecessaryIsInstance]
-                for r in result
-            ]
+            result = [r.cpu().numpy() if not isinstance(r, np.ndarray) else r for r in result]
 
         assert len(result) == len(self._internal_output_axes)
         return [xr.DataArray(r, dims=axes) for r, axes in zip(result, self._internal_output_axes)]

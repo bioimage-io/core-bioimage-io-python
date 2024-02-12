@@ -59,7 +59,7 @@ def _check_predictions(
                 step.append(0)
             elif isinstance(axis.size, (v0_5.AxisId, v0_5.TensorAxisId, type(None))):
                 raise NotImplementedError(f"Can't verify inputs that don't specify their shape fully: {axis}")
-            elif isinstance(axis.size, v0_5.SizeReference):  # pyright: ignore [reportUnnecessaryIsInstance]
+            elif isinstance(axis.size, v0_5.SizeReference):
                 raise NotImplementedError(f"Can't handle axes like '{axis}' yet")
             else:
                 assert_never(axis.size)

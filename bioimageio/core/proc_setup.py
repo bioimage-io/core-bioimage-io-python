@@ -43,7 +43,7 @@ def setup_pre_and_postprocessing(model: ModelDescr, dataset: Iterator[Sample]) -
             if isinstance(t_descr, (v0_4.InputTensorDescr, v0_5.InputTensorDescr)):
                 proc_descrs = t_descr.preprocessing
             elif isinstance(
-                t_descr,  # pyright: ignore[reportUnnecessaryIsInstance]
+                t_descr,
                 (v0_4.OutputTensorDescr, v0_5.OutputTensorDescr),
             ):
                 proc_descrs = t_descr.postprocessing
