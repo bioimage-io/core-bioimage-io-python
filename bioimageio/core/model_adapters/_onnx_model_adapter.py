@@ -14,7 +14,9 @@ logger = logging.getLogger(__name__)
 
 
 class ONNXModelAdapter(ModelAdapter):
-    def __init__(self, *, model_description: Union[v0_4.Model, v0_5.Model], devices: Optional[Sequence[str]] = None):
+    def __init__(
+        self, *, model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr], devices: Optional[Sequence[str]] = None
+    ):
         super().__init__()
         self._internal_output_axes = [
             tuple(out.axes) if isinstance(out.axes, str) else tuple(a.id for a in out.axes)

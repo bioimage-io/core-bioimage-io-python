@@ -7,8 +7,8 @@ import torch
 import xarray as xr
 from numpy.typing import NDArray
 
+from bioimageio.spec.common import RelativeFilePath
 from bioimageio.spec.model import v0_4, v0_5
-from bioimageio.spec.model.v0_5 import RelativeFilePath
 from bioimageio.spec.utils import download
 
 from ._model_adapter import ModelAdapter
@@ -22,10 +22,7 @@ class TorchscriptModelAdapter(ModelAdapter):
         if model_description.weights.torchscript is None:
             raise ValueError(f"No torchscript weights found for model {model_description.name}")
 
-        src = model_description.weights.torchscript.source
-        weight_path = download(
-            src.get_absolute(model_description.root) if isinstance(src, RelativeFilePath) else src
-        ).path
+        weight_path = download(model_description.weights.torchscript.source).path
         if devices is None:
             self.devices = ["cuda" if torch.cuda.is_available() else "cpu"]
         else:

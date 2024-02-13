@@ -6,10 +6,9 @@ import numpy as np
 import tensorflow as tf
 import xarray as xr
 
-from bioimageio.spec.utils import download
-from bioimageio.spec.generic.v0_3 import FileSource #FIXME: getre-export from somewhere?
+from bioimageio.spec.common import FileSource, RelativeFilePath
 from bioimageio.spec.model import v0_4, v0_5
-from bioimageio.spec.model.v0_5 import RelativeFilePath
+from bioimageio.spec.utils import download
 
 from ._model_adapter import ModelAdapter
 
@@ -54,11 +53,7 @@ class TensorflowModelAdapterBase(ModelAdapter):
         if devices is not None:
             warnings.warn(f"Device management is not implemented for tensorflow yet, ignoring the devices {devices}")
 
-        weight_file = self.require_unzipped(
-            weights.source.get_absolute(model_description.root)
-            if isinstance(weights.source, RelativeFilePath)
-            else weights.source
-        )
+        weight_file = self.require_unzipped(weights.source)
         self._network = self._get_network(weight_file)
         self._internal_output_axes = [
             tuple(out.axes) if isinstance(out.axes, str) else tuple(a.id for a in out.axes)
@@ -149,7 +144,9 @@ class TensorflowModelAdapterBase(ModelAdapter):
 class TensorflowModelAdapter(TensorflowModelAdapterBase):
     weight_format = "tensorflow_saved_model_bundle"
 
-    def __init__(self, *, model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr], devices: Optional[Sequence[str]] = None):
+    def __init__(
+        self, *, model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr], devices: Optional[Sequence[str]] = None
+    ):
         if model_description.weights.tensorflow_saved_model_bundle is None:
             raise ValueError("missing tensorflow_saved_model_bundle weights")
 
@@ -163,7 +160,9 @@ class TensorflowModelAdapter(TensorflowModelAdapterBase):
 class KerasModelAdapter(TensorflowModelAdapterBase):
     weight_format = "keras_hdf5"
 
-    def __init__(self, *, model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr], devices: Optional[Sequence[str]] = None):
+    def __init__(
+        self, *, model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr], devices: Optional[Sequence[str]] = None
+    ):
         if model_description.weights.keras_hdf5 is None:
             raise ValueError("missing keras_hdf5 weights")
 

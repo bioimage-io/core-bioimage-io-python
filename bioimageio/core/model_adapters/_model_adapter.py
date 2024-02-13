@@ -42,7 +42,7 @@ class ModelAdapter(ABC):
     @classmethod
     def create(
         cls,
-        model_description: Union[v0_4.Model, v0_5.Model],
+        model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
         *,
         devices: Optional[Sequence[str]] = None,
         weight_format_priority_order: NotEmpty[Sequence[WeightsFormat]] = DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER,
