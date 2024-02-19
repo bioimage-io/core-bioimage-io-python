@@ -31,7 +31,7 @@ setup(
         "bioimageio.spec==0.4.9.*",
         "imageio>=2.5",
         "numpy",
-        "ruamel.yaml",
+        "ruyaml",
         "tifffile",
         "tqdm",
         "typer",
