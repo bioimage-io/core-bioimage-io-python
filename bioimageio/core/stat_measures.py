@@ -35,7 +35,7 @@ class _Mean:
 
 
 @dataclass(frozen=True)
-class SampleMean(SampleMeasureBase, _Mean):
+class SampleMean(_Mean, SampleMeasureBase):
     def compute(self, sample: Sample) -> MeasureValue:
         return sample.data[self.tensor_id].mean(dim=self.axes)
 
@@ -44,7 +44,7 @@ class SampleMean(SampleMeasureBase, _Mean):
 
 
 @dataclass(frozen=True)
-class DatasetMean(DatasetMeasureBase, _Mean):
+class DatasetMean(_Mean, DatasetMeasureBase):
     def __post_init__(self):
         assert self.axes is None or AxisId("batch") in self.axes
 
@@ -55,7 +55,7 @@ class _Std:
 
 
 @dataclass(frozen=True)
-class SampleStd(SampleMeasureBase, _Std):
+class SampleStd(_Std, SampleMeasureBase):
     def compute(self, sample: Sample) -> MeasureValue:
         return sample.data[self.tensor_id].std(dim=self.axes)
 
@@ -64,7 +64,7 @@ class SampleStd(SampleMeasureBase, _Std):
 
 
 @dataclass(frozen=True)
-class DatasetStd(DatasetMeasureBase, _Std):
+class DatasetStd(_Std, DatasetMeasureBase):
     def __post_init__(self):
         assert self.axes is None or AxisId("batch") in self.axes
 
@@ -75,7 +75,7 @@ class _Var:
 
 
 @dataclass(frozen=True)
-class SampleVar(SampleMeasureBase, _Var):
+class SampleVar(_Var, SampleMeasureBase):
     def compute(self, sample: Sample) -> MeasureValue:
         return sample.data[self.tensor_id].var(dim=self.axes)
 
@@ -84,7 +84,7 @@ class SampleVar(SampleMeasureBase, _Var):
 
 
 @dataclass(frozen=True)
-class DatasetVar(DatasetMeasureBase, _Var):
+class DatasetVar(_Var, DatasetMeasureBase):
     def __post_init__(self):
         assert self.axes is None or AxisId("batch") in self.axes
 
@@ -100,7 +100,7 @@ class _Percentile:
 
 
 @dataclass(frozen=True)
-class SamplePercentile(SampleMeasureBase, _Percentile):
+class SamplePercentile(_Percentile, SampleMeasureBase):
     def compute(self, sample: Sample) -> MeasureValue:
         return sample.data[self.tensor_id].quantile(self.n / 100.0, dim=self.axes)
 
@@ -110,7 +110,7 @@ class SamplePercentile(SampleMeasureBase, _Percentile):
 
 
 @dataclass(frozen=True)
-class DatasetPercentile(DatasetMeasureBase, _Percentile):
+class DatasetPercentile(_Percentile, DatasetMeasureBase):
     def __post_init__(self):
         super().__post_init__()
         assert self.axes is None or AxisId("batch") in self.axes

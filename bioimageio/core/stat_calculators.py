@@ -49,7 +49,7 @@ from bioimageio.core.stat_measures import (
 try:
     import crick
 
-except ImportError:
+except Exception:
     crick = None
 
     class TDigest:
@@ -289,9 +289,9 @@ class CrickPercentilesCalculator:
 
 
 if crick is None:
-    DatasetPercentilesCalculator: Type[
-        Union[MeanPercentilesCalculator, CrickPercentilesCalculator]
-    ] = MeanPercentilesCalculator
+    DatasetPercentilesCalculator: Type[Union[MeanPercentilesCalculator, CrickPercentilesCalculator]] = (
+        MeanPercentilesCalculator
+    )
 else:
     DatasetPercentilesCalculator = CrickPercentilesCalculator
 

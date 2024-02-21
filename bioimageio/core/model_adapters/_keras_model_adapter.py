@@ -11,7 +11,10 @@ try:
 
     tf_version = Version(tf.__version__)
 except Exception:
-    import keras
+    try:
+        import keras
+    except Exception:
+        keras = None
 
     tf_version = None
 import xarray as xr
@@ -26,6 +29,7 @@ class KerasModelAdapter(ModelAdapter):
     def __init__(
         self, *, model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr], devices: Optional[Sequence[str]] = None
     ) -> None:
+        assert keras is not None
         super().__init__()
         if model_description.weights.keras_hdf5 is None:
             raise ValueError("model has not keras_hdf5 weights specified")
@@ -50,9 +54,9 @@ class KerasModelAdapter(ModelAdapter):
         self._output_axes = [tuple(out.axes) for out in model_description.outputs]
 
     def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
-        _result: Union[  # pyright: ignore[reportUnknownVariableType]
-            Sequence[NDArray[Any]], NDArray[Any]
-        ] = self._network.predict(*input_tensors)
+        _result: Union[Sequence[NDArray[Any]], NDArray[Any]] = (  # pyright: ignore[reportUnknownVariableType]
+            self._network.predict(*input_tensors)
+        )
         if isinstance(_result, (tuple, list)):
             result: Sequence[NDArray[Any]] = _result
         else:

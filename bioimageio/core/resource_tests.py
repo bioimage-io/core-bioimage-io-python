@@ -3,14 +3,13 @@ import warnings
 from typing import List, Literal, Optional, Union
 
 import numpy as np
+import xarray as xr
 
 from bioimageio.core import __version__ as bioimageio_core_version
-from bioimageio.core.prediction import predict
 from bioimageio.core.prediction_pipeline import create_prediction_pipeline
 from bioimageio.spec import InvalidDescr, ResourceDescr, build_description, dump_description, load_description
 from bioimageio.spec._internal.base_nodes import ResourceDescrBase
 from bioimageio.spec._internal.io_utils import load_array
-from bioimageio.spec._internal.validation_context import validation_context_var
 from bioimageio.spec.common import BioimageioYamlContent, FileSource
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import WeightsFormat
@@ -39,16 +38,22 @@ def _test_model_inference(
     tb: List[str] = []
     try:
         if isinstance(model, v0_4.ModelDescr):
-            inputs = [load_array(in_path) for in_path in model.test_inputs]
-            expected = [load_array(out_path) for out_path in model.test_outputs]
+            inputs = [xr.DataArray(load_array(src), dims=d.axes) for src, d in zip(model.test_inputs, model.inputs)]
+            expected = [xr.DataArray(load_array(src), dims=d.axes) for src, d in zip(model.test_outputs, model.outputs)]
         else:
-            inputs = [load_array(ipt.test_tensor.download().path) for ipt in model.inputs]
-            expected = [load_array(out.test_tensor.download().path) for out in model.outputs]
+            inputs = [
+                xr.DataArray(load_array(d.test_tensor.download().path), dims=tuple(a.id for a in d.axes))
+                for d in model.inputs
+            ]
+            expected = [
+                xr.DataArray(load_array(d.test_tensor.download().path), dims=tuple(a.id for a in d.axes))
+                for d in model.outputs
+            ]
 
         with create_prediction_pipeline(
             bioimageio_model=model, devices=devices, weight_format=weight_format
         ) as prediction_pipeline:
-            results = predict(prediction_pipeline, inputs)
+            results = prediction_pipeline.forward(*inputs)
 
         if len(results) != len(expected):
             error = (error or "") + (
