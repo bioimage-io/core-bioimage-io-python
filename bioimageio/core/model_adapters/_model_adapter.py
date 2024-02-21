@@ -45,7 +45,7 @@ class ModelAdapter(ABC):
         model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
         *,
         devices: Optional[Sequence[str]] = None,
-        weight_format_priority_order: NotEmpty[Sequence[WeightsFormat]] = DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER,
+        weight_format_priority_order: Optional[Sequence[WeightsFormat]] = None,
     ):
         """
         Creates model adapter based on the passed spec
@@ -54,7 +54,7 @@ class ModelAdapter(ABC):
         """
         weights = model_description.weights
         errors: List[Exception] = []
-        for wf in weight_format_priority_order:
+        for wf in weight_format_priority_order or DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER:
             if wf == "pytorch_state_dict" and weights.pytorch_state_dict is not None:
                 try:
                     from ._pytorch_model_adapter import PytorchModelAdapter

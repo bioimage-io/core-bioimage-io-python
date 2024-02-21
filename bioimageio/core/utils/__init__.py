@@ -16,9 +16,8 @@ from pydantic import AnyUrl, HttpUrl
 from typing_extensions import Unpack
 
 from bioimageio.core.io import FileSource, HashKwargs, download
-from bioimageio.spec.model.v0_4 import CallableFromDepencency
-from bioimageio.spec.model.v0_4 import CallableFromFile as CallableFromFile04
-from bioimageio.spec.model.v0_5 import CallableFromFile as CallableFromFile05
+from bioimageio.spec.model.v0_4 import CallableFromDepencency, CallableFromFile
+from bioimageio.spec.model.v0_5 import ArchitectureFromFileDescr, ArchitectureFromLibraryDescr
 
 if sys.version_info < (3, 9):
 
@@ -66,7 +65,7 @@ def import_from_dependency(node: CallableFromDepencency) -> Callable[..., Any]:
 
 
 @import_callable.register
-def import_from_file04(node: CallableFromFile04, **kwargs: Unpack[HashKwargs]):
+def import_from_file04(node: CallableFromFile, **kwargs: Unpack[HashKwargs]):
     return _import_from_file_impl(node.file, node.callable_name, **kwargs)
 
 

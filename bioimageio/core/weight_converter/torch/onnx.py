@@ -12,6 +12,7 @@ from bioimageio.core.weight_converter.torch.utils import load_model
 from bioimageio.spec.common import InvalidDescription
 from bioimageio.spec.utils import download
 
+
 def add_onnx_weights(
     model_spec: "str | Path | v0_4.ModelDescr | v0_5.ModelDescr",
     *,
@@ -34,7 +35,9 @@ def add_onnx_weights(
         if isinstance(loaded_spec, InvalidDescription):
             raise ValueError(f"Bad resource description: {loaded_spec}")
         if not isinstance(loaded_spec, (v0_4.ModelDescr, v0_5.ModelDescr)):
-            raise TypeError(f"Path {model_spec} is a {loaded_spec.__class__.__name__}, expected a v0_4.ModelDescr or v0_5.ModelDescr")
+            raise TypeError(
+                f"Path {model_spec} is a {loaded_spec.__class__.__name__}, expected a v0_4.ModelDescr or v0_5.ModelDescr"
+            )
         model_spec = loaded_spec
 
     state_dict_weights_descr = model_spec.weights.pytorch_state_dict
@@ -69,7 +72,7 @@ def add_onnx_weights(
             raise NotImplementedError
 
     try:
-        import onnxruntime as rt # pyright: ignore [reportMissingTypeStubs]
+        import onnxruntime as rt  # pyright: ignore [reportMissingTypeStubs]
     except ImportError:
         msg = "The onnx weights were exported, but onnx rt is not available and weights cannot be checked."
         warnings.warn(msg)
@@ -77,11 +80,11 @@ def add_onnx_weights(
 
     # check the onnx model
     sess = rt.InferenceSession(str(output_path))
-    onnx_input_node_args = cast(List[Any], sess.get_inputs()) # fixme: remove cast, try using rt.NodeArg instead of Any
+    onnx_input_node_args = cast(List[Any], sess.get_inputs())  # fixme: remove cast, try using rt.NodeArg instead of Any
     onnx_inputs: Dict[str, np.ndarray[Any, Any]] = {
         input_name.name: inp for input_name, inp in zip(onnx_input_node_args, input_data)
     }
-    outputs = cast(Sequence[np.ndarray[Any, Any]], sess.run(None, onnx_inputs)) #FIXME: remove cast
+    outputs = cast(Sequence[np.ndarray[Any, Any]], sess.run(None, onnx_inputs))  # FIXME: remove cast
 
     try:
         for exp, out in zip(expected_outputs, outputs):

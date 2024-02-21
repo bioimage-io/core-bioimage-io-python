@@ -32,7 +32,6 @@ from bioimageio.core.stat_measures import (
     DatasetPercentile,
     DatasetStd,
     Measure,
-    MeasureValue,
     SampleMean,
     SamplePercentile,
     SampleStd,
@@ -79,8 +78,7 @@ class _SimpleOperator(Operator, ABC):
         sample.data[self.output] = self._apply(sample.data[self.input], sample.stat)
 
     @abstractmethod
-    def _apply(self, input: Tensor, stat: Stat) -> Tensor:
-        ...
+    def _apply(self, input: Tensor, stat: Stat) -> Tensor: ...
 
 
 @dataclass
@@ -342,16 +340,20 @@ class ScaleRange(_SimpleOperator):
 
 
 @dataclass
-class Sigmoid:
+class Sigmoid(_SimpleOperator):
     """1 / (1 + e^(-input))."""
 
-    def _apply(self, input: xr.DataArray) -> xr.DataArray:
+    def _apply(self, input: Tensor, stat: Stat) -> Tensor:
         return 1.0 / (1.0 + np.exp(-input))  # type: ignore
+
+    @property
+    def required_measures(self) -> Collection[Measure]:
+        return {}
 
     @classmethod
     def from_proc_descr(cls, descr: Union[v0_4.SigmoidDescr, v0_5.SigmoidDescr], tensor_id: TensorId) -> Self:
         assert isinstance(descr, (v0_4.SigmoidDescr, v0_5.SigmoidDescr))
-        return cls()
+        return cls(input=tensor_id, output=tensor_id)
 
     def get_descr(self):
         return v0_5.SigmoidDescr()

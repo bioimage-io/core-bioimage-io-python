@@ -16,16 +16,15 @@ except Exception:
     tf_version = None
 import xarray as xr
 
-from bioimageio.core.io import download
+from bioimageio.spec._internal.io_utils import download
 from bioimageio.spec.model import v0_4, v0_5
-from bioimageio.spec.model.v0_5 import RelativeFilePath
 
 from ._model_adapter import ModelAdapter
 
 
 class KerasModelAdapter(ModelAdapter):
     def __init__(
-        self, *, model_description: Union[v0_4.Model, v0_5.Model], devices: Optional[Sequence[str]] = None
+        self, *, model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr], devices: Optional[Sequence[str]] = None
     ) -> None:
         super().__init__()
         if model_description.weights.keras_hdf5 is None:
@@ -45,10 +44,7 @@ class KerasModelAdapter(ModelAdapter):
         if devices is not None:
             warnings.warn(f"Device management is not implemented for keras yet, ignoring the devices {devices}")
 
-        src = model_description.weights.keras_hdf5.source
-        weight_path = download(
-            src.get_absolute(model_description.root) if isinstance(src, RelativeFilePath) else src
-        ).path
+        weight_path = download(model_description.weights.keras_hdf5.source).path
 
         self._network = keras.models.load_model(weight_path)
         self._output_axes = [tuple(out.axes) for out in model_description.outputs]

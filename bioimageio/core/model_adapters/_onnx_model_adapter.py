@@ -35,9 +35,9 @@ class ONNXModelAdapter(ModelAdapter):
     def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         assert len(input_tensors) == len(self._input_names)
         input_arrays = [ipt.data for ipt in input_tensors]
-        result: Union[  # pyright: ignore[reportUnknownVariableType]
-            Sequence[NDArray[Any]], NDArray[Any]
-        ] = self._session.run(None, dict(zip(self._input_names, input_arrays)))
+        result: Union[Sequence[NDArray[Any]], NDArray[Any]] = (  # pyright: ignore[reportUnknownVariableType]
+            self._session.run(None, dict(zip(self._input_names, input_arrays)))
+        )
         if not isinstance(result, (list, tuple)):
             result = []
 

@@ -3,8 +3,7 @@ from typing import Any, Protocol, Type
 
 
 class test_func(Protocol):
-    def __call__(*args: Any, **kwargs: Any):
-        ...
+    def __call__(*args: Any, **kwargs: Any): ...
 
 
 def skip_on(exception: Type[Exception], reason: str):

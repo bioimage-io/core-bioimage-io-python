@@ -67,15 +67,19 @@ def _test_build_spec(
     input_axes = [input_.axes for input_ in model_spec.inputs]
     output_axes = [output.axes for output in model_spec.outputs]
     preprocessing = [
-        None
-        if input_.preprocessing is missing
-        else [{"name": preproc.name, "kwargs": preproc.kwargs} for preproc in input_.preprocessing]
+        (
+            None
+            if input_.preprocessing is missing
+            else [{"name": preproc.name, "kwargs": preproc.kwargs} for preproc in input_.preprocessing]
+        )
         for input_ in model_spec.inputs
     ]
     postprocessing = [
-        None
-        if output.postprocessing is missing
-        else [{"name": preproc.name, "kwargs": preproc.kwargs} for preproc in output.preprocessing]
+        (
+            None
+            if output.postprocessing is missing
+            else [{"name": preproc.name, "kwargs": preproc.kwargs} for preproc in output.preprocessing]
+        )
         for output in model_spec.outputs
     ]
 

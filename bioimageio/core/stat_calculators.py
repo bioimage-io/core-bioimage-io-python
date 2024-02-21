@@ -19,7 +19,6 @@ from typing import (
     Tuple,
     Type,
     Union,
-    cast,
 )
 
 import numpy as np
@@ -93,7 +92,7 @@ class MeanCalculator:
     def _update_impl(self, tensor: xr.DataArray, tensor_mean: xr.DataArray):
         assert tensor_mean.dtype == np.float64
         # reduced voxel count
-        n_b = np.prod(tensor.shape) / np.prod(tensor_mean.shape)  # type: ignore
+        n_b = int(np.prod(tensor.shape) / np.prod(tensor_mean.shape))
 
         if self._mean is None:
             assert self._n == 0
@@ -130,7 +129,7 @@ class MeanVarStdCalculator:
         if self._axes is None:
             n = tensor.size
         else:
-            n = int(np.prod([tensor.sizes[d] for d in self._axes]))  # type: ignore  # FIXME: type annotation
+            n = int(np.prod([tensor.sizes[d] for d in self._axes]))
 
         var: xr.DataArray = xr.dot(c, c, dims=self._axes) / n
         assert isinstance(var, xr.DataArray)
@@ -147,7 +146,7 @@ class MeanVarStdCalculator:
         mean_b = tensor.mean(dim=self._axes)
         assert mean_b.dtype == np.float64
         # reduced voxel count
-        n_b = int(np.prod(tensor.shape) / np.prod(mean_b.shape))  # type: ignore
+        n_b = int(np.prod(tensor.shape) / np.prod(mean_b.shape))
         m2_b = ((tensor - mean_b) ** 2).sum(dim=self._axes)
         assert m2_b.dtype == np.float64
         if self._mean is None:
@@ -191,7 +190,7 @@ class SamplePercentilesCalculator:
 
     def compute(self, sample: Sample) -> Dict[SamplePercentile, MeasureValue]:
         tensor = sample.data[self._tensor_id]
-        ps = tensor.quantile(self._qs, dim=self._axes)  # type:  ignore
+        ps = tensor.quantile(self._qs, dim=self._axes)
         return {SamplePercentile(n=n, axes=self._axes, tensor_id=self._tensor_id): p for n, p in zip(self.ns, ps)}
 
 
@@ -211,7 +210,7 @@ class MeanPercentilesCalculator:
         sample_estimates = tensor.quantile(self._qs, dim=self._axes).astype(np.float64, copy=False)
 
         # reduced voxel count
-        n = int(np.prod(tensor.shape) / np.prod(sample_estimates.shape[1:]))  # type: ignore
+        n = int(np.prod(tensor.shape) / np.prod(sample_estimates.shape[1:]))
 
         if self._estimates is None:
             assert self._n == 0
@@ -318,11 +317,7 @@ DatasetMeasureCalculator = Union[MeanCalculator, MeanVarStdCalculator, DatasetPe
 class StatsCalculator:
     """Estimates dataset statistics and computes sample statistics efficiently"""
 
-    def __init__(
-        self,
-        *,
-        measures: Iterable[Measure],
-    ):
+    def __init__(self, measures: Iterable[Measure]):
         super().__init__()
         self.sample_count = 0
         self.sample_calculators, self.dataset_calculators = get_measure_calculators(measures)
@@ -336,15 +331,20 @@ class StatsCalculator:
 
         return ret
 
-    def _update(self, sample: Sample):
-        self.sample_count += 1
-        for calc in self.dataset_calculators:
-            calc.update(sample)
-            self._current_dataset_measures = None
+    def update(self, sample: Union[Sample, Iterable[Sample]]) -> None:
+        _ = self._update(sample)
 
-    def _compute_and_update(self, sample: Sample):
-        self._update(sample)
-        return self._compute(sample)
+    def _update(self, sample: Union[Sample, Iterable[Sample]]) -> Optional[Sample]:
+        self.sample_count += 1
+        samples = [sample] if isinstance(sample, Sample) else sample
+        last_sample = None
+        for s in samples:
+            last_sample = s
+            for calc in self.dataset_calculators:
+                calc.update(s)
+
+        self._current_dataset_measures = None
+        return last_sample
 
     def _finalize(self) -> Dict[DatasetMeasure, MeasureValue]:
         """returns aggregated dataset statistics"""
@@ -356,17 +356,17 @@ class StatsCalculator:
 
         return self._current_dataset_measures
 
-    def update_and_get_all(self, sample: Sample) -> Dict[Measure, MeasureValue]:
+    def update_and_get_all(self, sample: Union[Sample, Iterable[Sample]]) -> Dict[Measure, MeasureValue]:
         """Returns sample as well as updated dataset statistics"""
-        ret = cast(Dict[Measure, MeasureValue], self._compute_and_update(sample))
-        ret.update(self._finalize().items())
-        return ret
+        last_sample = self._update(sample)
+        if last_sample is None:
+            raise ValueError("`sample` was not a `Sample`, nor did it yield any.")
+
+        return {**self._compute(last_sample), **self._finalize()}
 
     def skip_update_and_get_all(self, sample: Sample) -> Dict[Measure, MeasureValue]:
         """Returns sample as well as previously computed dataset statistics"""
-        ret = cast(Dict[Measure, MeasureValue], self._compute(sample))
-        ret.update(self._finalize().items())
-        return ret
+        return {**self._compute(sample), **self._finalize()}
 
 
 def get_measure_calculators(
