@@ -18,3 +18,5 @@ from bioimageio.spec import validate_format as validate_format
 from .prediction_pipeline import create_prediction_pipeline as create_prediction_pipeline
 from .resource_tests import load_description_and_test as load_description_and_test
 from .resource_tests import test_description as test_description
+
+test_resource = test_description
