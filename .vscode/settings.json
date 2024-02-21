@@ -1,4 +1,8 @@
 {
+    "window.title": "bioimageio.core",
+    "python.analysis.extraPaths": [
+        "../spec-bioimage-io",
+    ],
     "python.testing.unittestArgs": [
         "-v",
         "-s",
