@@ -1,14 +1,17 @@
 import json
 import subprocess
 import sys
+from typing import Optional
 
 import pytest
 from packaging.version import Version
 
 
 @pytest.mark.skipif(sys.version_info < (3, 8), reason="requires python 3.8")
-@pytest.mark.skipif(pytest.mamba_cmd is None, reason="requires mamba")
-def test_bioimageio_spec_version():
+def test_bioimageio_spec_version(mamba_cmd: Optional[str]):
+    if mamba_cmd is None:
+        pytest.skip("requires mamba")
+
     from importlib.metadata import metadata
 
     # get latest released bioimageio.spec version
