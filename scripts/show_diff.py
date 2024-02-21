@@ -6,19 +6,20 @@ import pooch
 
 from bioimageio.core import load_description, write_description
 
-rdf_source = "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/pydantic_axes/example_specs/models/unet2d_nuclei_broad/rdf_v0_4_9.yaml"
+if __name__ == "__main__":
+    rdf_source = "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/pydantic_axes/example_specs/models/unet2d_nuclei_broad/rdf_v0_4_9.yaml"
 
-local_source = Path(pooch.retrieve(rdf_source, None))  # type: ignore
-model_as_is, summary_as_is = load_description(rdf_source, format_version="discover")
-assert model_as_is is not None, summary_as_is
-model_latest, summary_latest = load_description(rdf_source, format_version="latest")
-print(summary_latest)
-assert model_latest is not None
+    local_source = Path(pooch.retrieve(rdf_source, None))  # type: ignore
+    model_as_is, summary_as_is = load_description(rdf_source, format_version="discover")
+    assert model_as_is is not None, summary_as_is
+    model_latest, summary_latest = load_description(rdf_source, format_version="latest")
+    print(summary_latest)
+    assert model_latest is not None
 
-with TemporaryDirectory() as tmp:
-    as_is = Path(tmp) / "as_is.bioimageio.yaml"
-    write_description(model_as_is, as_is)  # write out as is to avoid sorting diff
-    latest = Path(tmp) / "latest.bioimageio.yaml"
-    write_description(model_latest, latest)
+    with TemporaryDirectory() as tmp:
+        as_is = Path(tmp) / "as_is.bioimageio.yaml"
+        write_description(model_as_is, as_is)  # write out as is to avoid sorting diff
+        latest = Path(tmp) / "latest.bioimageio.yaml"
+        write_description(model_latest, latest)
 
-    _ = subprocess.run(f"git diff --no-index --ignore-all-space {as_is} {latest}")
+        _ = subprocess.run(f"git diff --no-index --ignore-all-space {as_is} {latest}")
