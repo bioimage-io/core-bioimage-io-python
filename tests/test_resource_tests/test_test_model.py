@@ -60,9 +60,11 @@ def test_validation_section_warning(unet2d_nuclei_broad_model, tmp_path: pathlib
     assert summary["status"] == "passed"
 
 
-@pytest.mark.skipif(pytest.skip_torch, reason="requires torch")
-def test_issue289():
+def test_issue289(unet2d_nuclei_broad_model):
     """test for failure case from https://github.com/bioimage-io/core-bioimage-io-python/issues/289"""
+    # remote model is a pytorch model, needing unet2d_nuclei_broad_model skips the test when needed
+    _ = unet2d_nuclei_broad_model
+
     import bioimageio.core
     from bioimageio.core.resource_tests import test_model
 
