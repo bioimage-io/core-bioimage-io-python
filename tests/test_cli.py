@@ -5,7 +5,7 @@ from typing import Sequence
 import numpy as np
 import pytest
 
-from bioimageio.core import load_resource_description
+from bioimageio.core import load_description
 
 
 def run_subprocess(commands: Sequence[str], **kwargs) -> subprocess.CompletedProcess:
@@ -61,7 +61,7 @@ def test_cli_test_resource_with_weight_format(unet2d_nuclei_broad_model):
 
 
 def _test_cli_predict_image(model, tmp_path, extra_kwargs=None):
-    spec = load_resource_description(model)
+    spec = load_description(model)
     in_path = spec.test_inputs[0]
     out_path = tmp_path.with_suffix(".npy")
     cmd = ["bioimageio", "predict-image", model, "--inputs", str(in_path), "--outputs", str(out_path)]

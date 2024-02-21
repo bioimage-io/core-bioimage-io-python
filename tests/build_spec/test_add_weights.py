@@ -1,5 +1,6 @@
 import os
-from bioimageio.core import export_resource_package, load_raw_resource_description, load_resource_description
+
+from bioimageio.core import export_resource_package, load_description, load_raw_resource_description
 from bioimageio.core.resource_tests import test_model as _test_model
 
 
@@ -10,7 +11,7 @@ def _test_add_weights(model, tmp_path, base_weights, added_weights, **kwargs):
     assert base_weights in rdf.weights
     assert added_weights in rdf.weights
 
-    weight_path = load_resource_description(model).weights[added_weights].source
+    weight_path = load_description(model).weights[added_weights].source
     assert weight_path.exists()
 
     drop_weights = set(rdf.weights.keys()) - {base_weights}
@@ -25,7 +26,7 @@ def _test_add_weights(model, tmp_path, base_weights, added_weights, **kwargs):
     add_weights(in_path, weight_path, weight_type=added_weights, output_path=out_path, **kwargs)
 
     assert out_path.exists()
-    new_rdf = load_resource_description(out_path)
+    new_rdf = load_description(out_path)
     assert set(new_rdf.weights.keys()) == {base_weights, added_weights}
     for weight in new_rdf.weights.values():
         assert weight.source.exists()

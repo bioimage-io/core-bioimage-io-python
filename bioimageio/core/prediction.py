@@ -14,7 +14,7 @@
 # from pydantic import HttpUrl
 # from tqdm import tqdm
 
-# from bioimageio.core import image_helper, load_resource_description
+# from bioimageio.core import image_helper, load_description
 # from bioimageio.core.prediction_pipeline import PredictionPipeline, create_prediction_pipeline
 # from bioimageio.core.resource_io.nodes import ImplicitOutputShape, Model, ResourceDescr
 
@@ -455,7 +455,7 @@
 #     if not isinstance(outputs, (tuple, list)):
 #         outputs = [outputs]
 
-#     model = load_resource_description(model_rdf)
+#     model = load_description(model_rdf)
 #     assert isinstance(model, Model)
 #     if len(model.inputs) != len(inputs):
 #         raise ValueError
@@ -491,7 +491,7 @@
 #         verbose: run prediction in verbose mode.
 #     """
 
-#     model = load_resource_description(model_rdf)
+#     model = load_description(model_rdf)
 #     assert isinstance(model, Model)
 
 #     with create_prediction_pipeline(

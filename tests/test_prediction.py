@@ -4,14 +4,14 @@ import imageio
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
-from bioimageio.core import load_resource_description
+from bioimageio.core import load_description
 from bioimageio.core.resource_io.nodes import Model
 
 
 def test_predict_image(any_model, tmpdir):
     from bioimageio.core.prediction import predict_image
 
-    spec = load_resource_description(any_model)
+    spec = load_description(any_model)
     assert isinstance(spec, Model)
     inputs = spec.test_inputs
 
@@ -29,7 +29,7 @@ def test_predict_image(any_model, tmpdir):
 def test_predict_image_with_weight_format(unet2d_fixed_shape_or_not, tmpdir):
     from bioimageio.core.prediction import predict_image
 
-    spec = load_resource_description(unet2d_fixed_shape_or_not)
+    spec = load_description(unet2d_fixed_shape_or_not)
     assert isinstance(spec, Model)
     inputs = spec.test_inputs
 
@@ -47,7 +47,7 @@ def test_predict_image_with_weight_format(unet2d_fixed_shape_or_not, tmpdir):
 def _test_predict_with_padding(model, tmp_path):
     from bioimageio.core.prediction import predict_image
 
-    spec = load_resource_description(model)
+    spec = load_description(model)
     assert isinstance(spec, Model)
 
     input_spec, output_spec = spec.inputs[0], spec.outputs[0]
@@ -136,7 +136,7 @@ def test_predict_image_with_padding_channel_last(stardist, tmp_path):
 def _test_predict_image_with_tiling(model, tmp_path: Path, exp_mean_deviation):
     from bioimageio.core.prediction import predict_image
 
-    spec = load_resource_description(model)
+    spec = load_description(model)
     assert isinstance(spec, Model)
     inputs = spec.test_inputs
     assert len(inputs) == 1

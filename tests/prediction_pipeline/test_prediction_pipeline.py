@@ -2,14 +2,14 @@ import numpy as np
 import xarray as xr
 from numpy.testing import assert_array_almost_equal
 
-from bioimageio.core import load_resource_description
+from bioimageio.core import load_description
 from bioimageio.core.resource_io.nodes import Model
 
 
 def _test_prediction_pipeline(model_package, weight_format):
     from bioimageio.core.prediction_pipeline import create_prediction_pipeline
 
-    bio_model = load_resource_description(model_package)
+    bio_model = load_description(model_package)
     assert isinstance(bio_model, Model)
     pp = create_prediction_pipeline(bioimageio_model=bio_model, weight_format=weight_format)
 

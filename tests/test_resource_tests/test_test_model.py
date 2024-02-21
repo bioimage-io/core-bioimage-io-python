@@ -41,10 +41,10 @@ def test_test_resource(any_model):
 
 
 def test_validation_section_warning(unet2d_nuclei_broad_model, tmp_path: pathlib.Path):
-    from bioimageio.core import load_resource_description
+    from bioimageio.core import load_description
     from bioimageio.core.resource_tests import test_description
 
-    model = load_resource_description(unet2d_nuclei_broad_model)
+    model = load_description(unet2d_nuclei_broad_model)
 
     summary = test_description(model)[2]
     assert summary["name"] == "Test documentation completeness."
@@ -67,6 +67,6 @@ def test_issue289():
     from bioimageio.core.resource_tests import test_model
 
     doi = "10.5281/zenodo.6287342"
-    model_resource = bioimageio.core.load_resource_description(doi)
+    model_resource = bioimageio.core.load_description(doi)
     test_result = test_model(model_resource)
     assert all([t["status"] == "passed" for t in test_result])

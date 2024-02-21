@@ -3,7 +3,7 @@ import pytest
 import xarray as xr
 from numpy.testing import assert_array_almost_equal
 
-from bioimageio.core import load_resource_description
+from bioimageio.core import load_description
 from bioimageio.core._internal.pytest_utils import skip_on
 from bioimageio.core.resource_io.nodes import Model
 
@@ -20,7 +20,7 @@ def _test_device_management(model_package, weight_format):
 
     from bioimageio.core.prediction_pipeline import create_prediction_pipeline
 
-    bio_model = load_resource_description(model_package)
+    bio_model = load_description(model_package)
     assert isinstance(bio_model, Model)
     pred_pipe = create_prediction_pipeline(bioimageio_model=bio_model, weight_format=weight_format, devices=["cuda:0"])
 

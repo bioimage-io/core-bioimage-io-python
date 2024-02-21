@@ -178,7 +178,7 @@ def load_description_and_test(
 #     expected: Optional = None
 #     diff: Optional = None
 
-#     model = load_resource_description(
+#     model = load_description(
 #         model_rdf, weights_priority_order=None if weight_format is None else [weight_format]
 #     )
 #     if not isinstance(model, Model):

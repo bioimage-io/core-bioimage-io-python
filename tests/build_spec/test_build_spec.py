@@ -1,9 +1,9 @@
 from typing import Optional
 
-import bioimageio.spec as spec
 from marshmallow import missing
 
-from bioimageio.core import load_raw_resource_description, load_resource_description
+import bioimageio.spec as spec
+from bioimageio.core import load_description, load_raw_resource_description
 from bioimageio.core._internal.validation_visitors import resolve_source
 from bioimageio.core.resource_io import nodes
 from bioimageio.core.resource_tests import test_model as _test_model
@@ -131,7 +131,7 @@ def _test_build_spec(
 
     build_model(**kwargs)
     assert out_path.exists()
-    loaded_model = load_resource_description(out_path)
+    loaded_model = load_description(out_path)
     assert isinstance(loaded_model, nodes.Model)
     if add_deepimagej_config:
         loaded_config = loaded_model.config
