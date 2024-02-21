@@ -4,22 +4,21 @@ from tempfile import TemporaryDirectory
 
 import pooch
 
-from bioimageio.core import load_description, write_description
+from bioimageio.core import load_description, save_bioimageio_yaml_only
 
 if __name__ == "__main__":
     rdf_source = "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/pydantic_axes/example_specs/models/unet2d_nuclei_broad/rdf_v0_4_9.yaml"
 
     local_source = Path(pooch.retrieve(rdf_source, None))  # type: ignore
-    model_as_is, summary_as_is = load_description(rdf_source, format_version="discover")
-    assert model_as_is is not None, summary_as_is
-    model_latest, summary_latest = load_description(rdf_source, format_version="latest")
-    print(summary_latest)
-    assert model_latest is not None
+    model_as_is = load_description(rdf_source, format_version="discover")
+    model_latest = load_description(rdf_source, format_version="latest")
+    print(model_latest.validation_summary)
 
     with TemporaryDirectory() as tmp:
         as_is = Path(tmp) / "as_is.bioimageio.yaml"
-        write_description(model_as_is, as_is)  # write out as is to avoid sorting diff
+
+        save_bioimageio_yaml_only(model_as_is, file=as_is)  # write out as is to avoid sorting diff
         latest = Path(tmp) / "latest.bioimageio.yaml"
-        write_description(model_latest, latest)
+        save_bioimageio_yaml_only(model_latest, file=latest)
 
         _ = subprocess.run(f"git diff --no-index --ignore-all-space {as_is} {latest}")
