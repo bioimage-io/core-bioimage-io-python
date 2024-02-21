@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from contextlib import nullcontext
 from typing import Literal, Optional, Union
 
-from bioimageio.spec import build_description
+from bioimageio.core.resource_tests import test_description
 from bioimageio.spec import load_description as load_description
 from bioimageio.spec._description import ResourceDescr
 from bioimageio.spec._internal.constants import DISCOVER
@@ -35,8 +36,14 @@ def build_description_and_test(
     format_version: Union[Literal["discover"], Literal["latest"], str] = DISCOVER,
 ) -> Union[ResourceDescr, InvalidDescr]:
     """load and validate a BioImage.IO description from the content of a resource description file (RDF)"""
-    rd = build_description(data, context=context, format_version=format_version)
-    # todo: add dynamic validation
+    if context is None:
+        val_context = nullcontext()
+    else:
+        val_context = context
+
+    with val_context:
+        rd = test_description(data, format_version=format_version)
+
     return rd
 
 
