@@ -4,8 +4,10 @@ from pathlib import Path
 from typing import no_type_check
 from zipfile import ZipFile
 
-import tensorflow
-from tensorflow import saved_model
+try:
+    import tensorflow.saved_model
+except Exception:
+    tensorflow = None
 
 from bioimageio.spec._internal.io_utils import download
 from bioimageio.spec.model.v0_5 import ModelDescr
@@ -42,16 +44,18 @@ def _convert_tf1(keras_weight_path: Path, output_path: Path, input_name: str, ou
     @no_type_check
     def build_tf_model():
         keras_model = keras.models.load_model(keras_weight_path)
-
-        builder = saved_model.builder.SavedModelBuilder(output_path)
-        signature = saved_model.signature_def_utils.predict_signature_def(
+        assert tensorflow is not None
+        builder = tensorflow.saved_model.builder.SavedModelBuilder(output_path)
+        signature = tensorflow.saved_model.signature_def_utils.predict_signature_def(
             inputs={input_name: keras_model.input}, outputs={output_name: keras_model.output}
         )
 
-        signature_def_map = {saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: signature}
+        signature_def_map = {tensorflow.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: signature}
 
         builder.add_meta_graph_and_variables(
-            keras.backend.get_session(), [saved_model.tag_constants.SERVING], signature_def_map=signature_def_map
+            keras.backend.get_session(),
+            [tensorflow.saved_model.tag_constants.SERVING],
+            signature_def_map=signature_def_map,
         )
         builder.save()
 
@@ -92,6 +96,7 @@ def convert_weights_to_tensorflow_saved_model_bundle(model: ModelDescr, output_p
         model: The bioimageio model description
         output_path: where to save the tensorflow weights. This path must not exist yet.
     """
+    assert tensorflow is not None
     tf_major_ver = int(tensorflow.__version__.split(".")[0])
 
     if output_path.suffix == ".zip":

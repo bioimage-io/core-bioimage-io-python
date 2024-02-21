@@ -4,7 +4,6 @@ from typing import List, Optional, Sequence, Tuple, Union, final
 
 import xarray as xr
 
-from bioimageio.spec._internal.types import NotEmpty
 from bioimageio.spec.model import v0_4, v0_5
 
 WeightsFormat = Union[v0_4.WeightsFormat, v0_5.WeightsFormat]
@@ -90,9 +89,9 @@ class ModelAdapter(ABC):
                 # we try to first import the keras model adapter using the separate package and,
                 # if it is not available, try to load the one using tf
                 try:
-                    try:
-                        from ._keras_model_adapter import KerasModelAdapter
-                    except ImportError:
+                    from ._keras_model_adapter import KerasModelAdapter, keras
+
+                    if keras is None:
                         from ._tensorflow_model_adapter import KerasModelAdapter
 
                     return KerasModelAdapter(model_description=model_description, devices=devices)

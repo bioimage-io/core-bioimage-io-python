@@ -2,13 +2,17 @@ import logging
 import warnings
 from typing import Any, List, Optional, Sequence, Union
 
-import onnxruntime as rt
 import xarray as xr
 from numpy.typing import NDArray
 
 from bioimageio.spec.model import v0_4, v0_5
 
 from ._model_adapter import ModelAdapter
+
+try:
+    import onnxruntime as rt
+except Exception:
+    rt = None
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +21,7 @@ class ONNXModelAdapter(ModelAdapter):
     def __init__(
         self, *, model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr], devices: Optional[Sequence[str]] = None
     ):
+        assert rt is not None
         super().__init__()
         self._internal_output_axes = [
             tuple(out.axes) if isinstance(out.axes, str) else tuple(a.id for a in out.axes)

@@ -2,7 +2,6 @@ import gc
 import warnings
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
-import torch
 import xarray as xr
 
 from bioimageio.core.utils import import_callable
@@ -10,6 +9,11 @@ from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.utils import download
 
 from ._model_adapter import ModelAdapter
+
+try:
+    import torch
+except Exception:
+    torch = None
 
 
 class PytorchModelAdapter(ModelAdapter):
@@ -20,6 +24,7 @@ class PytorchModelAdapter(ModelAdapter):
         weights: Union[v0_4.PytorchStateDictWeightsDescr, v0_5.PytorchStateDictWeightsDescr],
         devices: Optional[Sequence[str]] = None,
     ):
+        assert torch is not None
         super().__init__()
         self.output_dims = [tuple(a if isinstance(a, str) else a.id for a in out.axes) for out in outputs]
         self._network = self.get_network(weights)

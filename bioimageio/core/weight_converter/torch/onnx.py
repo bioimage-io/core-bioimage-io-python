@@ -6,10 +6,10 @@ import numpy as np
 import torch
 from numpy.testing import assert_array_almost_equal
 
-from bioimageio.spec import load_description
-from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.core.weight_converter.torch.utils import load_model
-from bioimageio.spec.common import InvalidDescription
+from bioimageio.spec import load_description
+from bioimageio.spec.common import InvalidDescr
+from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.utils import download
 
 
@@ -32,7 +32,7 @@ def add_onnx_weights(
     """
     if isinstance(model_spec, (str, Path)):
         loaded_spec = load_description(Path(model_spec))
-        if isinstance(loaded_spec, InvalidDescription):
+        if isinstance(loaded_spec, InvalidDescr):
             raise ValueError(f"Bad resource description: {loaded_spec}")
         if not isinstance(loaded_spec, (v0_4.ModelDescr, v0_5.ModelDescr)):
             raise TypeError(

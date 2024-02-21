@@ -3,14 +3,18 @@ import zipfile
 from typing import List, Literal, Optional, Sequence, Union
 
 import numpy as np
-import tensorflow as tf
 import xarray as xr
 
-from bioimageio.spec.common import FileSource, RelativeFilePath
+from bioimageio.spec.common import FileSource
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.utils import download
 
 from ._model_adapter import ModelAdapter
+
+try:
+    import tensorflow as tf
+except Exception:
+    tf = None
 
 
 class TensorflowModelAdapterBase(ModelAdapter):
@@ -28,6 +32,7 @@ class TensorflowModelAdapterBase(ModelAdapter):
         ],
         model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
     ):
+        assert tf is not None
         super().__init__()
         self.model_description = model_description
         tf_version = v0_5.Version(tf.__version__)

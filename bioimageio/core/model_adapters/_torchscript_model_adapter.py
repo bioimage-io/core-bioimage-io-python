@@ -3,21 +3,25 @@ import warnings
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
-import torch
 import xarray as xr
 from numpy.typing import NDArray
 
-from bioimageio.spec.common import RelativeFilePath
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.utils import download
 
 from ._model_adapter import ModelAdapter
+
+try:
+    import torch
+except Exception:
+    torch = None
 
 
 class TorchscriptModelAdapter(ModelAdapter):
     def __init__(
         self, *, model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr], devices: Optional[Sequence[str]] = None
     ):
+        assert torch is not None
         super().__init__()
         if model_description.weights.torchscript is None:
             raise ValueError(f"No torchscript weights found for model {model_description.name}")

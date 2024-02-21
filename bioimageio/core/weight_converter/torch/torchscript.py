@@ -6,11 +6,8 @@ import torch
 from numpy.testing import assert_array_almost_equal
 from typing_extensions import Any, assert_never
 
-from bioimageio.spec import load_description
-from bioimageio.spec.common import InvalidDescription
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import Version
-from bioimageio.spec.utils import download
 
 from .utils import load_model
 
