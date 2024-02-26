@@ -3,6 +3,7 @@ from abc import ABC, abstractmethod
 from dataclasses import InitVar, dataclass, field
 from typing import (
     Collection,
+    Generic,
     Hashable,
     Literal,
     Optional,
@@ -31,10 +32,12 @@ from bioimageio.core.stat_measures import (
     DatasetMean,
     DatasetPercentile,
     DatasetStd,
+    MeanMeasure,
     Measure,
     SampleMean,
     SamplePercentile,
     SampleStd,
+    StdMeasure,
 )
 from bioimageio.spec.model import v0_4, v0_5
 
@@ -166,7 +169,7 @@ class ScaleLinear(_SimpleOperator):
     offset: Union[float, xr.DataArray] = 0.0
     """additive term"""
 
-    def apply(self, input: Tensor, stat: Stat) -> Tensor:
+    def _apply(self, input: Tensor, stat: Stat) -> Tensor:
         return input * self.gain + self.offset
 
     # @classmethod
@@ -315,8 +318,8 @@ class ScaleRange(_SimpleOperator):
         return cls(
             input=tensor_id,
             output=tensor_id,
-            lower_percentile=Percentile(kwargs.min_percentile, axes=axes, tensor_id=ref_tensor),
-            upper_percentile=Percentile(kwargs.max_percentile, axes=axes, tensor_id=ref_tensor),
+            lower_percentile=Percentile(n=kwargs.min_percentile, axes=axes, tensor_id=ref_tensor),
+            upper_percentile=Percentile(n=kwargs.max_percentile, axes=axes, tensor_id=ref_tensor),
         )
 
     def _apply(self, input: xr.DataArray, stat: Stat) -> xr.DataArray:
@@ -363,8 +366,8 @@ class Sigmoid(_SimpleOperator):
 class ZeroMeanUnitVariance(_SimpleOperator):
     """normalize to zero mean, unit variance."""
 
-    mean: Union[SampleMean, DatasetMean]
-    std: Union[SampleStd, DatasetStd]
+    mean: MeanMeasure
+    std: StdMeasure
 
     eps: float = 1e-6
 
@@ -372,7 +375,7 @@ class ZeroMeanUnitVariance(_SimpleOperator):
         assert self.mean.axes == self.std.axes
 
     @property
-    def required_measures(self) -> Collection[Measure]:
+    def required_measures(self) -> Set[Union[MeanMeasure, StdMeasure]]:
         return {self.mean, self.std}
 
     @classmethod

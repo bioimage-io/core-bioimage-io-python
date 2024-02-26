@@ -1,18 +1,21 @@
+from pathlib import Path
+
 import numpy as np
-import pytest
 import xarray as xr
 from numpy.testing import assert_array_almost_equal
 
-from bioimageio.core import load_description
-from bioimageio.core._internal.pytest_utils import skip_on
-from bioimageio.core.resource_io.nodes import Model
+from bioimageio.core.utils.testing import skip_on
+from bioimageio.spec import load_description
+from bioimageio.spec.model.v0_4 import ModelDescr as ModelDescr04
+from bioimageio.spec.model.v0_5 import ModelDescr, WeightsFormat
+from bioimageio.spec.utils import load_array
 
 
 class TooFewDevicesException(Exception):
     pass
 
 
-def _test_device_management(model_package, weight_format):
+def _test_device_management(model_package: Path, weight_format: WeightsFormat):
     import torch
 
     if torch.cuda.device_count() == 0:
@@ -21,13 +24,18 @@ def _test_device_management(model_package, weight_format):
     from bioimageio.core.prediction_pipeline import create_prediction_pipeline
 
     bio_model = load_description(model_package)
-    assert isinstance(bio_model, Model)
+    assert isinstance(bio_model, (ModelDescr, ModelDescr04))
     pred_pipe = create_prediction_pipeline(bioimageio_model=bio_model, weight_format=weight_format, devices=["cuda:0"])
 
-    inputs = [
-        xr.DataArray(np.load(str(test_tensor)), dims=tuple(spec.axes))
-        for test_tensor, spec in zip(bio_model.test_inputs, bio_model.inputs)
-    ]
+    if isinstance(bio_model, ModelDescr04):
+        inputs = [
+            xr.DataArray(np.load(str(test_tensor)), dims=tuple(spec.axes))
+            for test_tensor, spec in zip(bio_model.test_inputs, bio_model.inputs)
+        ]
+    else:
+        inputs = [
+            xr.DataArray(load_array(ipt.test_tensor), dims=tuple(a.id for a in ipt.axes)) for ipt in bio_model.inputs
+        ]
     with pred_pipe as pp:
         outputs = pp.forward(*inputs)
 

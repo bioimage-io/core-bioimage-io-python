@@ -4,43 +4,18 @@ from pathlib import Path
 
 import pytest
 
-from bioimageio.core._internal.validation_visitors import resolve_source
 
+def test_load_model_with_abs_path_source(unet2d_nuclei_broad_model: Path):
+    from bioimageio.spec import load_description
 
-def test_load_non_existing_rdf():
-    from bioimageio.core import load_description
-
-    spec_path = Path("some/none/existing/path/to/spec.model.yaml")
-
-    with pytest.raises(FileNotFoundError):
-        load_description(spec_path)
-
-
-def test_load_raw_model(any_model):
-    from bioimageio.core import load_raw_resource_description
-
-    raw_model = load_raw_resource_description(any_model)
-    assert raw_model
-
-
-def test_load_model(any_model):
-    from bioimageio.core import load_description
-
-    model = load_description(any_model)
-    assert model
-
-
-def test_load_model_with_abs_path_source(unet2d_nuclei_broad_model):
-    from bioimageio.core.resource_io import load_description, load_raw_resource_description
-
-    raw_rd = load_raw_resource_description(unet2d_nuclei_broad_model)
-    path_source = (raw_rd.root_path / "rdf.yaml").absolute()
+    raw_rd = load_description(unet2d_nuclei_broad_model)
+    path_source = (raw_rd.root / "rdf.yaml").absolute()
     assert path_source.is_absolute()
     model = load_description(path_source)
     assert model
 
 
-def test_load_model_with_rel_path_source(unet2d_nuclei_broad_model):
+def test_load_model_with_rel_path_source(unet2d_nuclei_broad_model: Path):
     from bioimageio.core.resource_io import load_description, load_raw_resource_description
 
     raw_rd = load_raw_resource_description(unet2d_nuclei_broad_model)
@@ -50,7 +25,7 @@ def test_load_model_with_rel_path_source(unet2d_nuclei_broad_model):
     assert model
 
 
-def test_load_model_with_abs_str_source(unet2d_nuclei_broad_model):
+def test_load_model_with_abs_str_source(unet2d_nuclei_broad_model: Path):
     from bioimageio.core.resource_io import load_description, load_raw_resource_description
 
     raw_rd = load_raw_resource_description(unet2d_nuclei_broad_model)
@@ -60,7 +35,7 @@ def test_load_model_with_abs_str_source(unet2d_nuclei_broad_model):
     assert model
 
 
-def test_load_model_with_rel_str_source(unet2d_nuclei_broad_model):
+def test_load_model_with_rel_str_source(unet2d_nuclei_broad_model: Path):
     from bioimageio.core.resource_io import load_description, load_raw_resource_description
 
     raw_rd = load_raw_resource_description(unet2d_nuclei_broad_model)
@@ -70,7 +45,7 @@ def test_load_model_with_rel_str_source(unet2d_nuclei_broad_model):
     assert model
 
 
-def test_load_remote_rdf(unet2d_nuclei_broad_model):
+def test_load_remote_rdf(unet2d_nuclei_broad_model: Path):
     # remote model is a pytorch model, needing unet2d_nuclei_broad_model skips the test when needed
     _ = unet2d_nuclei_broad_model
     from bioimageio.core import load_description

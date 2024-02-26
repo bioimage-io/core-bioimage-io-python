@@ -1,12 +1,11 @@
 from typing import Optional
 
-from marshmallow import missing
-
 import bioimageio.spec as spec
-from bioimageio.core import load_description, load_raw_resource_description
-from bioimageio.core._internal.validation_visitors import resolve_source
-from bioimageio.core.resource_io import nodes
-from bioimageio.core.resource_tests import test_model as _test_model
+
+# from bioimageio.core import load_description, load_raw_resource_description
+# from bioimageio.core._internal.validation_visitors import resolve_source
+# from bioimageio.core.resource_io import nodes
+# from bioimageio.core.resource_tests import test_model as _test_model
 
 try:
     import tensorflow

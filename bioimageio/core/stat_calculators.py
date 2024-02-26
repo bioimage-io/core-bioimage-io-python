@@ -437,7 +437,7 @@ def get_measure_calculators(
 
 
 def compute_dataset_measures(
-    *, measures: Iterable[DatasetMeasure], dataset: Iterable[Sample]
+    measures: Iterable[DatasetMeasure], dataset: Iterable[Sample]
 ) -> Dict[DatasetMeasure, MeasureValue]:
     """compute all dataset `measures` for the given `dataset`"""
     sample_calculators, calculators = get_measure_calculators(measures)
@@ -451,5 +451,37 @@ def compute_dataset_measures(
 
     for calc in calculators:
         ret.update(calc.finalize().items())
+
+    return ret
+
+def compute_sample_measures(measures: Iterable[SampleMeasure], sample: Sample) -> Dict[SampleMeasure, MeasureValue]:
+    """compute all sample `measures` for the given `sample`"""
+    calculators, dataset_calculators = get_measure_calculators(measures)
+    assert not dataset_calculators
+    ret: Dict[SampleMeasure, MeasureValue] = {}
+
+    for calc in calculators:
+        ret.update(calc.compute(sample).items())
+
+    return ret
+
+
+def compute_measures(measures: Iterable[Measure], dataset: Iterable[Sample]) -> Dict[Measure, MeasureValue]:
+    """compute all `measures` for the given `dataset`
+    sample measures are computed for the last sample in `dataset`"""
+    sample_calculators, dataset_calculators = get_measure_calculators(measures)
+    ret: Dict[Measure, MeasureValue] = {}
+    sample = None
+    for sample in dataset:
+        for calc in dataset_calculators:
+            calc.update(sample)
+    if sample is None:
+        raise ValueError("empty dataset")
+
+    for calc in dataset_calculators:
+        ret.update(calc.finalize().items())
+
+    for calc in sample_calculators:
+        ret.update(calc.compute(sample).items())
 
     return ret

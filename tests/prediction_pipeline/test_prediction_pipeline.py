@@ -2,8 +2,8 @@ import numpy as np
 import xarray as xr
 from numpy.testing import assert_array_almost_equal
 
-from bioimageio.core import load_description
-from bioimageio.core.resource_io.nodes import Model
+# from bioimageio.core import load_description
+# from bioimageio.core.resource_io.nodes import Model
 
 
 def _test_prediction_pipeline(model_package, weight_format):

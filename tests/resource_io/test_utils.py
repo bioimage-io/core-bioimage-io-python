@@ -2,12 +2,13 @@ import dataclasses
 from pathlib import Path
 
 import pytest
-from bioimageio.spec.shared import raw_nodes
-from bioimageio.spec.shared.raw_nodes import RawNode
 
-from bioimageio.core._internal import validation_visitors
-from bioimageio.core._internal.validation_visitors import Sha256NodeChecker
-from bioimageio.core.resource_io import nodes
+# from bioimageio.spec.shared import raw_nodes
+# from bioimageio.spec.shared.raw_nodes import RawNode
+
+# from bioimageio.core._internal import validation_visitors
+# from bioimageio.core._internal.validation_visitors import Sha256NodeChecker
+# from bioimageio.core.resource_io import nodes
 
 
 def test_resolve_import_path(tmpdir):

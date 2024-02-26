@@ -4,15 +4,15 @@ import imageio
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
-from bioimageio.core import load_description
-from bioimageio.core.resource_io.nodes import Model
+from bioimageio.spec import load_description
+from bioimageio.spec.model.v0_5 import ModelDescr
 
 
-def test_predict_image(any_model, tmpdir):
+def test_predict_image(any_model: Path, tmpdir: Path):
     from bioimageio.core.prediction import predict_image
 
     spec = load_description(any_model)
-    assert isinstance(spec, Model)
+    assert isinstance(spec, ModelDescr)
     inputs = spec.test_inputs
 
     outputs = [Path(tmpdir) / f"out{i}.npy" for i in range(len(spec.test_outputs))]

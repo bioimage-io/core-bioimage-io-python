@@ -1,8 +1,5 @@
 import os
 
-from bioimageio.core import export_resource_package, load_description, load_raw_resource_description
-from bioimageio.core.resource_tests import test_model as _test_model
-
 
 def _test_add_weights(model, tmp_path, base_weights, added_weights, **kwargs):
     from bioimageio.core.build_spec import add_weights

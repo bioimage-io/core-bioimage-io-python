@@ -3,7 +3,6 @@ import subprocess
 from typing import Sequence
 
 import numpy as np
-import pytest
 
 from bioimageio.core import load_description
 

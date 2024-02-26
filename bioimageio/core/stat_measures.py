@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple, TypeVar, Union
 
 import xarray as xr
 
@@ -119,3 +119,12 @@ class DatasetPercentile(_Percentile, DatasetMeasureBase):
 SampleMeasure = Union[SampleMean, SampleStd, SampleVar, SamplePercentile]
 DatasetMeasure = Union[DatasetMean, DatasetStd, DatasetVar, DatasetPercentile]
 Measure = Union[SampleMeasure, DatasetMeasure]
+
+MeanMeasure = Union[SampleMean, DatasetMean]
+StdMeasure = Union[SampleStd, DatasetStd]
+VarMeasure = Union[SampleVar, DatasetVar]
+PercentileMeasure = Union[SamplePercentile, DatasetPercentile]
+MeanMeasureT = TypeVar("MeanMeasureT", bound=MeanMeasure)
+StdMeasureT = TypeVar("StdMeasureT", bound=StdMeasure)
+VarMeasureT = TypeVar("VarMeasureT", bound=VarMeasure)
+PercentileMeasureT = TypeVar("PercentileMeasureT", bound=PercentileMeasure)

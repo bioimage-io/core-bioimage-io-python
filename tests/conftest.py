@@ -132,7 +132,7 @@ if not skip_tensorflow:
 
 
 @fixture(scope="session")
-def model_packages():
+def model_packages() -> MappingProxyType[str, FilePath]:
     return MappingProxyType({name: save_bioimageio_package(MODEL_SOURCES[name]) for name in load_model_packages})
 
 
