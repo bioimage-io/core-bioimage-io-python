@@ -9,7 +9,7 @@ from bioimageio.spec.model.v0_5 import ModelDescr, WeightsFormat
 
 
 def _test_prediction_pipeline(model_package: Path, weights_format: WeightsFormat):
-    from bioimageio.core.prediction_pipeline import create_prediction_pipeline
+    from bioimageio.core._prediction_pipeline import create_prediction_pipeline
 
     bio_model = load_description(model_package)
     assert isinstance(bio_model, (ModelDescr, ModelDescr04))

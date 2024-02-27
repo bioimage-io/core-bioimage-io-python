@@ -21,7 +21,7 @@ def _test_device_management(model_package: Path, weight_format: WeightsFormat):
     if torch.cuda.device_count() == 0:
         raise TooFewDevicesException("Need at least one cuda device for this test")
 
-    from bioimageio.core.prediction_pipeline import create_prediction_pipeline
+    from bioimageio.core._prediction_pipeline import create_prediction_pipeline
 
     bio_model = load_description(model_package)
     assert isinstance(bio_model, (ModelDescr, ModelDescr04))

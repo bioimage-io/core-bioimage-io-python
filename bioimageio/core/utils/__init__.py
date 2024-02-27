@@ -1,9 +1,9 @@
 import sys
 from pathlib import Path
 
+from ._digest_spec import get_test_inputs as get_test_inputs
+from ._digest_spec import get_test_outputs as get_test_outputs
 from ._import_callable import import_callable as import_callable
-from ._tensor_io import get_test_inputs as get_test_inputs
-from ._tensor_io import get_test_outputs as get_test_outputs
 
 if sys.version_info < (3, 9):
 

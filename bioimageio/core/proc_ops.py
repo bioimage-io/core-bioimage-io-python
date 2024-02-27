@@ -19,6 +19,7 @@ import xarray as xr
 from numpy.typing import DTypeLike
 from typing_extensions import Self, assert_never
 
+from bioimageio.core._op_base import Operator
 from bioimageio.core.common import (
     AxisId,
     Sample,
@@ -26,7 +27,6 @@ from bioimageio.core.common import (
     Tensor,
     TensorId,
 )
-from bioimageio.core.op_base import Operator
 from bioimageio.core.stat_calculators import StatsCalculator
 from bioimageio.core.stat_measures import (
     DatasetMean,

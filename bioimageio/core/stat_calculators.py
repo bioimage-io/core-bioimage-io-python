@@ -65,6 +65,8 @@ else:
 
 
 class MeanCalculator:
+    """to calculate sample and dataset mean"""
+
     def __init__(self, tensor_id: TensorId, axes: Optional[Sequence[AxisId]]):
         super().__init__()
         self._n: int = 0
@@ -115,6 +117,8 @@ class MeanCalculator:
 
 
 class MeanVarStdCalculator:
+    """to calculate sample and dataset mean, variance or standard deviation"""
+
     def __init__(self, tensor_id: TensorId, axes: Optional[Sequence[AxisId]]):
         super().__init__()
         self._axes = None if axes is None else tuple(axes)
@@ -181,6 +185,8 @@ class MeanVarStdCalculator:
 
 
 class SamplePercentilesCalculator:
+    """to calculate sample percentiles"""
+
     def __init__(self, tensor_id: TensorId, axes: Optional[Sequence[AxisId]], ns: Collection[float]):
         super().__init__()
         assert all(0 <= n <= 100 for n in ns)
@@ -196,6 +202,9 @@ class SamplePercentilesCalculator:
 
 
 class MeanPercentilesCalculator:
+    """to calculate dataset percentiles heuristically by averaging across samples
+    **note**: the returned dataset percentiles are an estiamte and **not mathematically correct**"""
+
     def __init__(self, tensor_id: TensorId, axes: Optional[Sequence[AxisId]], ns: Collection[float]):
         super().__init__()
         assert all(0 <= n <= 100 for n in ns)
@@ -234,6 +243,8 @@ class MeanPercentilesCalculator:
 
 
 class CrickPercentilesCalculator:
+    """to calculate dataset percentiles with the experimental [crick libray](https://github.com/dask/crick)"""
+
     def __init__(self, tensor_id: TensorId, axes: Optional[Sequence[AxisId]], ns: Collection[float]):
         warnings.warn("Computing dataset percentiles with experimental 'crick' library.")
         super().__init__()
@@ -297,7 +308,7 @@ else:
     DatasetPercentilesCalculator = CrickPercentilesCalculator
 
 
-class NaivSampleMeasureCalculator:
+class NaiveSampleMeasureCalculator:
     """wrapper for measures to match interface of other sample measure calculators"""
 
     def __init__(self, tensor_id: TensorId, measure: SampleMeasure):
@@ -310,7 +321,7 @@ class NaivSampleMeasureCalculator:
 
 
 SampleMeasureCalculator = Union[
-    MeanCalculator, MeanVarStdCalculator, SamplePercentilesCalculator, NaivSampleMeasureCalculator
+    MeanCalculator, MeanVarStdCalculator, SamplePercentilesCalculator, NaiveSampleMeasureCalculator
 ]
 DatasetMeasureCalculator = Union[MeanCalculator, MeanVarStdCalculator, DatasetPercentilesCalculator]
 

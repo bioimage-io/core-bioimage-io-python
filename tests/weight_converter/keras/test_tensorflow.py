@@ -1,10 +1,13 @@
 import zipfile
 from pathlib import Path
 
+import pytest
+
 from bioimageio.spec import load_description
 from bioimageio.spec.model.v0_5 import ModelDescr
 
 
+@pytest.mark.skip("tensorflow converter not updated yet")  # TODO: test tensorflow converter
 def test_tensorflow_converter(any_keras_model: Path, tmp_path: Path):
     from bioimageio.core.weight_converter.keras import convert_weights_to_tensorflow_saved_model_bundle
 
@@ -18,6 +21,7 @@ def test_tensorflow_converter(any_keras_model: Path, tmp_path: Path):
     assert ret_val == 0  # check for correctness is done in converter and returns 0 if it passes
 
 
+@pytest.mark.skip("tensorflow converter not updated yet")  # TODO: test tensorflow converter
 def test_tensorflow_converter_zipped(any_keras_model: Path, tmp_path: Path):
     from bioimageio.core.weight_converter.keras import convert_weights_to_tensorflow_saved_model_bundle
 

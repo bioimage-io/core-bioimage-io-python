@@ -40,6 +40,9 @@ def setup_pre_and_postprocessing(
     keep_updating_initial_dataset_stats: bool = False,
     fixed_dataset_stats: Mapping[DatasetMeasure, MeasureValue] = MappingProxyType({}),
 ) -> PreAndPostprocessing:
+    """
+    Get pre- and postprocessing operators for a `model` description.
+    userd in `bioimageio.core.create_prediction_pipeline"""
     prep, post, prep_meas, post_meas = _prepare_setup_pre_and_postprocessing(model)
 
     missing_dataset_stats = {m for m in prep_meas | post_meas if m not in fixed_dataset_stats}

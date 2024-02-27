@@ -1,9 +1,9 @@
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Dict, Union
+from typing import TYPE_CHECKING, Dict
 
 import xarray as xr
 
-from bioimageio.spec.model import v0_4, v0_5
+from bioimageio.spec.model import v0_5
 
 if TYPE_CHECKING:
     from bioimageio.core.stat_measures import Measure, MeasureValue
@@ -19,9 +19,10 @@ Stat = Dict["Measure", "MeasureValue"]
 
 @dataclass
 class Sample:
+    """A (dataset) sample"""
+
     data: Data = field(default_factory=dict)
+    """the samples tensors"""
+
     stat: Stat = field(default_factory=dict)
-
-
-ProcessingDescrBase = Union[v0_4.ProcessingDescrBase, v0_5.ProcessingDescrBase]
-ProcessingKwargs = Union[v0_4.ProcessingKwargs, v0_5.ProcessingKwargs]
+    """sample and dataset statistics"""

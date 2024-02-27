@@ -4,7 +4,7 @@ from bioimageio.spec import InvalidDescr
 
 
 def test_error_for_wrong_shape(stardist_wrong_shape: Path):
-    from bioimageio.core.resource_tests import test_model
+    from bioimageio.core._resource_tests import test_model
 
     summary = test_model(stardist_wrong_shape)
     expected_error_message = (
@@ -16,7 +16,7 @@ def test_error_for_wrong_shape(stardist_wrong_shape: Path):
 
 
 def test_error_for_wrong_shape2(stardist_wrong_shape2: Path):
-    from bioimageio.core.resource_tests import test_model
+    from bioimageio.core._resource_tests import test_model
 
     summary = test_model(stardist_wrong_shape2)
     expected_error_message = (
@@ -27,14 +27,14 @@ def test_error_for_wrong_shape2(stardist_wrong_shape2: Path):
 
 
 def test_test_model(any_model: Path):
-    from bioimageio.core.resource_tests import test_model
+    from bioimageio.core._resource_tests import test_model
 
     summary = test_model(any_model)
     assert summary.status == "passed"
 
 
 def test_test_resource(any_model: Path):
-    from bioimageio.core.resource_tests import test_description
+    from bioimageio.core._resource_tests import test_description
 
     summary = test_description(any_model)
     assert summary.status == "passed"
@@ -42,7 +42,7 @@ def test_test_resource(any_model: Path):
 
 def test_validation_section_warning(unet2d_nuclei_broad_model: str, tmp_path: Path):
     from bioimageio.core import load_description
-    from bioimageio.core.resource_tests import test_description
+    from bioimageio.core._resource_tests import test_description
 
     model = load_description(unet2d_nuclei_broad_model)
     assert not isinstance(model, InvalidDescr)
@@ -65,7 +65,7 @@ def test_issue289(unet2d_nuclei_broad_model: str):
     # remote model is a pytorch model, needing unet2d_nuclei_broad_model skips the test when needed
     _ = unet2d_nuclei_broad_model
 
-    from bioimageio.core.resource_tests import test_model
+    from bioimageio.core._resource_tests import test_model
 
     doi = "10.5281/zenodo.6287342"
     summary = test_model(doi)

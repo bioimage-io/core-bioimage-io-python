@@ -9,7 +9,7 @@ from typing_extensions import Any, assert_never
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import Version
 
-from .utils import load_torch_model
+from ._utils import load_torch_model
 
 
 # FIXME: remove Any

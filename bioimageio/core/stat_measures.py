@@ -32,10 +32,13 @@ class DatasetMeasureBase(MeasureBase, ABC):
 @dataclass(frozen=True)
 class _Mean:
     axes: Optional[Tuple[AxisId, ...]] = None
+    """`axes` to reduce"""
 
 
 @dataclass(frozen=True)
 class SampleMean(_Mean, SampleMeasureBase):
+    """The mean value of a single tensor"""
+
     def compute(self, sample: Sample) -> MeasureValue:
         return sample.data[self.tensor_id].mean(dim=self.axes)
 
@@ -45,6 +48,8 @@ class SampleMean(_Mean, SampleMeasureBase):
 
 @dataclass(frozen=True)
 class DatasetMean(_Mean, DatasetMeasureBase):
+    """The mean value across multiple samples"""
+
     def __post_init__(self):
         assert self.axes is None or AxisId("batch") in self.axes
 
@@ -52,10 +57,13 @@ class DatasetMean(_Mean, DatasetMeasureBase):
 @dataclass(frozen=True)
 class _Std:
     axes: Optional[Tuple[AxisId, ...]] = None
+    """`axes` to reduce"""
 
 
 @dataclass(frozen=True)
 class SampleStd(_Std, SampleMeasureBase):
+    """The standard deviation of a single tensor"""
+
     def compute(self, sample: Sample) -> MeasureValue:
         return sample.data[self.tensor_id].std(dim=self.axes)
 
@@ -65,6 +73,8 @@ class SampleStd(_Std, SampleMeasureBase):
 
 @dataclass(frozen=True)
 class DatasetStd(_Std, DatasetMeasureBase):
+    """The standard deviation across multiple samples"""
+
     def __post_init__(self):
         assert self.axes is None or AxisId("batch") in self.axes
 
@@ -72,10 +82,13 @@ class DatasetStd(_Std, DatasetMeasureBase):
 @dataclass(frozen=True)
 class _Var:
     axes: Optional[Tuple[AxisId, ...]] = None
+    """`axes` to reduce"""
 
 
 @dataclass(frozen=True)
 class SampleVar(_Var, SampleMeasureBase):
+    """The variance of a single tensor"""
+
     def compute(self, sample: Sample) -> MeasureValue:
         return sample.data[self.tensor_id].var(dim=self.axes)
 
@@ -85,6 +98,8 @@ class SampleVar(_Var, SampleMeasureBase):
 
 @dataclass(frozen=True)
 class DatasetVar(_Var, DatasetMeasureBase):
+    """The variance across multiple samples"""
+
     def __post_init__(self):
         assert self.axes is None or AxisId("batch") in self.axes
 
@@ -93,6 +108,7 @@ class DatasetVar(_Var, DatasetMeasureBase):
 class _Percentile:
     n: float
     axes: Optional[Tuple[AxisId, ...]] = None
+    """`axes` to reduce"""
 
     def __post_init__(self):
         assert self.n >= 0
@@ -101,6 +117,8 @@ class _Percentile:
 
 @dataclass(frozen=True)
 class SamplePercentile(_Percentile, SampleMeasureBase):
+    """The `n`th percentile of a single tensor"""
+
     def compute(self, sample: Sample) -> MeasureValue:
         return sample.data[self.tensor_id].quantile(self.n / 100.0, dim=self.axes)
 
@@ -111,6 +129,8 @@ class SamplePercentile(_Percentile, SampleMeasureBase):
 
 @dataclass(frozen=True)
 class DatasetPercentile(_Percentile, DatasetMeasureBase):
+    """The `n`th percentile across multiple samples"""
+
     def __post_init__(self):
         super().__post_init__()
         assert self.axes is None or AxisId("batch") in self.axes

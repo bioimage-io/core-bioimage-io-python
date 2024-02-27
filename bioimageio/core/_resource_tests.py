@@ -6,7 +6,7 @@ import numpy as np
 import xarray as xr
 
 from bioimageio.core import __version__ as bioimageio_core_version
-from bioimageio.core.prediction_pipeline import create_prediction_pipeline
+from bioimageio.core._prediction_pipeline import create_prediction_pipeline
 from bioimageio.spec import InvalidDescr, ResourceDescr, build_description, dump_description, load_description
 from bioimageio.spec._internal.base_nodes import ResourceDescrBase
 from bioimageio.spec._internal.io_utils import load_array
@@ -26,6 +26,63 @@ def test_model(
     return test_description(
         source, weight_format=weight_format, devices=devices, decimal=decimal, expected_type="model"
     )
+
+
+def test_description(
+    source: Union[ResourceDescr, FileSource, BioimageioYamlContent],
+    *,
+    format_version: Union[Literal["discover", "latest"], str] = "discover",
+    weight_format: Optional[WeightsFormat] = None,
+    devices: Optional[List[str]] = None,
+    decimal: int = 4,
+    expected_type: Optional[str] = None,
+) -> ValidationSummary:
+    """Test RDF dynamically, e.g. model inference of test inputs"""
+    rd = load_description_and_test(
+        source,
+        format_version=format_version,
+        weight_format=weight_format,
+        devices=devices,
+        decimal=decimal,
+        expected_type=expected_type,
+    )
+    return rd.validation_summary
+
+
+def load_description_and_test(
+    source: Union[ResourceDescr, FileSource, BioimageioYamlContent],
+    *,
+    format_version: Union[Literal["discover", "latest"], str] = "discover",
+    weight_format: Optional[WeightsFormat] = None,
+    devices: Optional[List[str]] = None,
+    decimal: int = 4,
+    expected_type: Optional[str] = None,
+) -> Union[ResourceDescr, InvalidDescr]:
+    """Test RDF dynamically, e.g. model inference of test inputs"""
+    if (
+        isinstance(source, ResourceDescrBase)
+        and format_version != "discover"
+        and source.format_version != format_version
+    ):
+        warnings.warn(f"deserializing source to ensure we validate and test using format {format_version}")
+        source = dump_description(source)
+
+    if isinstance(source, ResourceDescrBase):
+        rd = source
+    elif isinstance(source, dict):
+        rd = build_description(source, format_version=format_version)
+    else:
+        rd = load_description(source, format_version=format_version)
+
+    rd.validation_summary.env.append(InstalledPackage(name="bioimageio.core", version=bioimageio_core_version))
+
+    if expected_type is not None:
+        _test_expected_resource_type(rd, expected_type)
+
+    if isinstance(rd, (v0_4.ModelDescr, v0_5.ModelDescr)):
+        _test_model_inference(rd, weight_format, devices, decimal)
+
+    return rd
 
 
 def _test_model_inference(
@@ -102,63 +159,6 @@ def _test_expected_resource_type(rd: Union[InvalidDescr, ResourceDescr], expecte
             ),
         )
     )
-
-
-def test_description(
-    source: Union[ResourceDescr, FileSource, BioimageioYamlContent],
-    *,
-    format_version: Union[Literal["discover", "latest"], str] = "discover",
-    weight_format: Optional[WeightsFormat] = None,
-    devices: Optional[List[str]] = None,
-    decimal: int = 4,
-    expected_type: Optional[str] = None,
-) -> ValidationSummary:
-    """Test RDF dynamically, e.g. model inference of test inputs"""
-    rd = load_description_and_test(
-        source,
-        format_version=format_version,
-        weight_format=weight_format,
-        devices=devices,
-        decimal=decimal,
-        expected_type=expected_type,
-    )
-    return rd.validation_summary
-
-
-def load_description_and_test(
-    source: Union[ResourceDescr, FileSource, BioimageioYamlContent],
-    *,
-    format_version: Union[Literal["discover", "latest"], str] = "discover",
-    weight_format: Optional[WeightsFormat] = None,
-    devices: Optional[List[str]] = None,
-    decimal: int = 4,
-    expected_type: Optional[str] = None,
-) -> Union[ResourceDescr, InvalidDescr]:
-    """Test RDF dynamically, e.g. model inference of test inputs"""
-    if (
-        isinstance(source, ResourceDescrBase)
-        and format_version != "discover"
-        and source.format_version != format_version
-    ):
-        warnings.warn(f"deserializing source to ensure we validate and test using format {format_version}")
-        source = dump_description(source)
-
-    if isinstance(source, ResourceDescrBase):
-        rd = source
-    elif isinstance(source, dict):
-        rd = build_description(source, format_version=format_version)
-    else:
-        rd = load_description(source, format_version=format_version)
-
-    rd.validation_summary.env.append(InstalledPackage(name="bioimageio.core", version=bioimageio_core_version))
-
-    if expected_type is not None:
-        _test_expected_resource_type(rd, expected_type)
-
-    if isinstance(rd, (v0_4.ModelDescr, v0_5.ModelDescr)):
-        _test_model_inference(rd, weight_format, devices, decimal)
-
-    return rd
 
 
 # def debug_model(

@@ -7,7 +7,7 @@ import torch
 from numpy.testing import assert_array_almost_equal
 
 from bioimageio.core.utils import get_test_inputs
-from bioimageio.core.weight_converter.torch.utils import load_torch_model
+from bioimageio.core.weight_converter.torch._utils import load_torch_model
 from bioimageio.spec import load_description
 from bioimageio.spec.common import InvalidDescr
 from bioimageio.spec.model import v0_4, v0_5

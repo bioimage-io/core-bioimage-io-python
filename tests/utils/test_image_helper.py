@@ -2,7 +2,7 @@ import numpy as np
 
 
 def test_transform_input_image():
-    from bioimageio.core.image_helper import transpose_image
+    from bioimageio.core.utils.image_helper import transpose_image
 
     ax_list = ["yx", "xy", "cyx", "yxc", "bczyx", "xyz", "xyzc", "bzyxc"]
     im = np.random.rand(256, 256)
@@ -18,7 +18,7 @@ def test_transform_input_image():
 
 
 def test_transform_output_tensor():
-    from bioimageio.core.image_helper import transform_output_tensor
+    from bioimageio.core.utils.image_helper import transform_output_tensor
 
     tensor = np.random.rand(1, 3, 64, 64, 64)
     tensor_axes = "bczyx"
