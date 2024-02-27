@@ -21,7 +21,7 @@ def test_error_for_wrong_shape2(stardist_wrong_shape2: Path):
     summary = test_model(stardist_wrong_shape2)
     expected_error_message = (
         "Shape (1, 512, 512, 1) of test input 0 'input' does not match input shape description: "
-        "ParametrizedInputShape(min=[1, 80, 80, 1], step=[0, 17, 17, 0])."
+        "ParameterizedInputShape(min=[1, 80, 80, 1], step=[0, 17, 17, 0])."
     )
     assert summary.details[0].errors[0].msg == expected_error_message
 

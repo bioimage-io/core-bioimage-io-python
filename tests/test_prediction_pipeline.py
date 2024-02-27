@@ -1,22 +1,27 @@
+from pathlib import Path
 import numpy as np
 import xarray as xr
 from numpy.testing import assert_array_almost_equal
 
-# from bioimageio.core import load_description
-# from bioimageio.core.resource_io.nodes import Model
+from bioimageio.spec import load_description
+from bioimageio.spec.model.v0_5 import WeightsFormat, ModelDescr
+from bioimageio.spec.model.v0_4 import ModelDescr as ModelDescr04
 
 
-def _test_prediction_pipeline(model_package, weight_format):
+def _test_prediction_pipeline(model_package: Path, weights_format: WeightsFormat):
     from bioimageio.core.prediction_pipeline import create_prediction_pipeline
 
     bio_model = load_description(model_package)
-    assert isinstance(bio_model, Model)
-    pp = create_prediction_pipeline(bioimageio_model=bio_model, weight_format=weight_format)
+    assert isinstance(bio_model, (ModelDescr, ModelDescr04))
+    pp = create_prediction_pipeline(bioimageio_model=bio_model, weight_format=weights_format)
 
-    inputs = [
-        xr.DataArray(np.load(str(test_tensor)), dims=tuple(spec.axes))
-        for test_tensor, spec in zip(bio_model.test_inputs, bio_model.inputs)
-    ]
+    if isinstance(bio_model, ModelDescr04):
+        inputs = [
+            xr.DataArray(np.load(str(test_tensor)), dims=tuple(spec.axes))
+            for test_tensor, spec in zip(bio_model.test_inputs, bio_model.inputs)
+        ]
+    else:
+
     outputs = pp.forward(*inputs)
     assert isinstance(outputs, list)
 

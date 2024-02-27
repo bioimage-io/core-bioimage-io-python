@@ -3,14 +3,13 @@ from abc import ABC, abstractmethod
 from dataclasses import InitVar, dataclass, field
 from typing import (
     Collection,
-    Generic,
     Hashable,
     Literal,
+    Mapping,
     Optional,
     Sequence,
     Set,
     Tuple,
-    Type,
     Union,
     cast,
 )
@@ -28,12 +27,15 @@ from bioimageio.core.common import (
     TensorId,
 )
 from bioimageio.core.op_base import Operator
+from bioimageio.core.stat_calculators import StatsCalculator
 from bioimageio.core.stat_measures import (
     DatasetMean,
+    DatasetMeasure,
     DatasetPercentile,
     DatasetStd,
     MeanMeasure,
     Measure,
+    MeasureValue,
     SampleMean,
     SamplePercentile,
     SampleStd,
@@ -85,24 +87,80 @@ class _SimpleOperator(Operator, ABC):
 
 
 @dataclass
-class Dataset(Operator):
+class AddKnownDatasetStats(Operator):
+    dataset_stats: Mapping[DatasetMeasure, MeasureValue]
+
     @property
     def required_measures(self) -> Set[Measure]:
         return set()
 
+    def __call__(self, sample: Sample) -> None:
+        sample.stat.update(self.dataset_stats.items())
+
 
 # @dataclass
-# class AssertDtype(Operator):
-#     tensor: TensorId
-#     dtype: Union[Type[DTypeLike], Tuple[Type[DTypeLike], ...]]
+# class UpdateStats(Operator):
+#     """Calculates sample and/or dataset measures"""
+
+#     measures: Union[Sequence[Measure], Set[Measure], Mapping[Measure, MeasureValue]]
+#     """sample and dataset `measuers` to be calculated by this operator. Initial/fixed
+#     dataset measure values may be given, see `keep_updating_dataset_stats` for details.
+#     """
+#     keep_updating_dataset_stats: Optional[bool] = None
+#     """indicates if operator calls should keep updating dataset statistics or not
+
+#     default (None): if `measures` is a `Mapping` (i.e. initial measure values are
+#     given) no further updates to dataset statistics is conducted, otherwise (w.o.
+#     initial measure values) dataset statistics are updated by each processed sample.
+#     """
+#     _keep_updating_dataset_stats: bool = field(init=False)
+#     _stats_calculator: StatsCalculator = field(init=False)
 
 #     @property
 #     def required_measures(self) -> Set[Measure]:
 #         return set()
 
-#     def apply(self, tensor: Tensor) -> Tensor:
-#         assert isinstance(tensor.dtype, self.dtype)
-#         return tensor
+#     def __post_init__(self):
+#         self._stats_calculator = StatsCalculator(self.measures)
+#         if self.keep_updating_dataset_stats is None:
+#             self._keep_updating_dataset_stats = not isinstance(self.measures, collections.abc.Mapping)
+#         else:
+#             self._keep_updating_dataset_stats = self.keep_updating_dataset_stats
+
+#     def __call__(self, sample: Sample) -> None:
+#         if self._keep_updating_dataset_stats:
+#             sample.stat.update(self._stats_calculator.update_and_get_all(sample))
+#         else:
+#             sample.stat.update(self._stats_calculator.skip_update_and_get_all(sample))
+
+
+@dataclass
+class UpdateStats(Operator):
+    """Calculates sample and/or dataset measures"""
+
+    stats_calculator: StatsCalculator
+    """`StatsCalculator` to be used by this operator."""
+    keep_updating_initial_dataset_stats: bool = False
+    """indicates if operator calls should keep updating initial dataset statistics or not;
+    if the `stats_calculator` was not provided with any initial dataset statistics,
+    these are always updated with every new sample.
+    """
+    _keep_updating_dataset_stats: bool = field(init=False)
+
+    @property
+    def required_measures(self) -> Set[Measure]:
+        return set()
+
+    def __post_init__(self):
+        self._keep_updating_initial_dataset_stats = (
+            self.keep_updating_initial_dataset_stats or not self.stats_calculator.has_dataset_measures
+        )
+
+    def __call__(self, sample: Sample) -> None:
+        if self._keep_updating_dataset_stats:
+            sample.stat.update(self.stats_calculator.update_and_get_all(sample))
+        else:
+            sample.stat.update(self.stats_calculator.skip_update_and_get_all(sample))
 
 
 @dataclass
@@ -457,39 +515,8 @@ class FixedZeroMeanUnitVariance(_SimpleOperator):
 
 ProcDescr = Union[v0_4.PreprocessingDescr, v0_4.PostprocessingDescr, v0_5.PreprocessingDescr, v0_5.PostprocessingDescr]
 
-# get_impl_class which also returns the kwargs class
-# def get_impl_class(proc_spec: ProcDescr):
-#     if isinstance(proc_spec, AssertDtype):
-#         return AssertDtypeImpl, AssertDtypeKwargs
-#     elif isinstance(proc_spec, v0_4.BinarizeDescr):
-#         return BinarizeImpl, v0_4.BinarizeKwargs
-#     elif isinstance(proc_spec, v0_5.BinarizeDescr):
-#         return BinarizeImpl, v0_5.BinarizeKwargs
-#     elif isinstance(proc_spec, (v0_4.ClipDescr, v0_5.ClipDescr)):
-#         return ClipImpl, v0_5.ClipKwargs
-#     elif isinstance(proc_spec, v0_5.EnsureDtypeDescr):
-#         return EnsureDtypeImpl, v0_5.EnsureDtypeKwargs
-#     elif isinstance(proc_spec, v0_5.FixedZeroMeanUnitVarianceDescr):
-#         return FixedZeroMeanUnitVarianceImpl, v0_5.FixedZeroMeanUnitVarianceKwargs
-#     elif isinstance(proc_spec, (v0_4.ScaleLinearDescr, v0_5.ScaleLinearDescr)):
-#         return ScaleLinearImpl, v0_5.ScaleLinearKwargs
-#     elif isinstance(proc_spec, (v0_4.ScaleMeanVarianceDescr, v0_5.ScaleMeanVarianceDescr)):
-#         return ScaleMeanVarianceImpl, v0_5.ScaleMeanVarianceKwargs
-#     elif isinstance(proc_spec, (v0_4.ScaleRangeDescr, v0_5.ScaleRangeDescr)):
-#         return ScaleRangeImpl, v0_5.ScaleRangeKwargs
-#     elif isinstance(proc_spec, (v0_4.SigmoidDescr, v0_5.SigmoidDescr)):
-#         return SigmoidImpl, v0_5.ProcessingKwargs
-#     elif isinstance(proc_spec, v0_4.ZeroMeanUnitVarianceDescr) and proc_spec.kwargs.mode == "fixed":
-#         return FixedZeroMeanUnitVarianceImpl, v0_5.FixedZeroMeanUnitVarianceKwargs
-#     elif isinstance(
-#         proc_spec,
-#         (v0_4.ZeroMeanUnitVarianceDescr, v0_5.ZeroMeanUnitVarianceDescr),
-#     ):
-#         return ZeroMeanUnitVarianceImpl, v0_5.ZeroMeanUnitVarianceKwargs
-#     else:
-#         assert_never(proc_spec)
-
 Processing = Union[
+    AddKnownDatasetStats,
     Binarize,
     Clip,
     EnsureDtype,
@@ -498,11 +525,12 @@ Processing = Union[
     ScaleMeanVariance,
     ScaleRange,
     Sigmoid,
+    UpdateStats,
     ZeroMeanUnitVariance,
 ]
 
 
-def get_proc_class(proc_spec: ProcDescr) -> Type[Processing]:
+def get_proc_class(proc_spec: ProcDescr):
     if isinstance(proc_spec, (v0_4.BinarizeDescr, v0_5.BinarizeDescr)):
         return Binarize
     elif isinstance(proc_spec, (v0_4.ClipDescr, v0_5.ClipDescr)):

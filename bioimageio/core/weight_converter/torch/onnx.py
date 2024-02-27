@@ -1,16 +1,16 @@
 import warnings
 from pathlib import Path
-from typing import Any, Dict, List, Sequence, cast
+from typing import Any, List, Sequence, cast
 
 import numpy as np
 import torch
 from numpy.testing import assert_array_almost_equal
 
-from bioimageio.core.weight_converter.torch.utils import load_model
+from bioimageio.core.utils import get_test_inputs
+from bioimageio.core.weight_converter.torch.utils import load_torch_model
 from bioimageio.spec import load_description
 from bioimageio.spec.common import InvalidDescr
 from bioimageio.spec.model import v0_4, v0_5
-from bioimageio.spec.utils import download
 
 
 def add_onnx_weights(
@@ -42,18 +42,13 @@ def add_onnx_weights(
 
     state_dict_weights_descr = model_spec.weights.pytorch_state_dict
     if state_dict_weights_descr is None:
-        raise ValueError(f"The provided model does not have weights in the pytorch state dict format")
+        raise ValueError("The provided model does not have weights in the pytorch state dict format")
 
     with torch.no_grad():
-        if isinstance(model_spec, v0_4.ModelDescr):
-            downloaded_test_inputs = [download(inp) for inp in model_spec.test_inputs]
-        else:
-            downloaded_test_inputs = [inp.test_tensor.download() for inp in model_spec.inputs]
 
-        input_data: List[np.ndarray[Any, Any]] = [np.load(dl.path).astype("float32") for dl in downloaded_test_inputs]
-        input_tensors = [torch.from_numpy(inp) for inp in input_data]
-
-        model = load_model(state_dict_weights_descr)
+        input_data = [t.data for t in get_test_inputs(model_spec)]
+        input_tensors = [torch.from_numpy(d) for d in input_data]
+        model = load_torch_model(state_dict_weights_descr)
 
         expected_tensors = model(*input_tensors)
         if isinstance(expected_tensors, torch.Tensor):
@@ -81,9 +76,7 @@ def add_onnx_weights(
     # check the onnx model
     sess = rt.InferenceSession(str(output_path))
     onnx_input_node_args = cast(List[Any], sess.get_inputs())  # fixme: remove cast, try using rt.NodeArg instead of Any
-    onnx_inputs: Dict[str, np.ndarray[Any, Any]] = {
-        input_name.name: inp for input_name, inp in zip(onnx_input_node_args, input_data)
-    }
+    onnx_inputs = {input_name.name: inp for input_name, inp in zip(onnx_input_node_args, input_data)}
     outputs = cast(Sequence[np.ndarray[Any, Any]], sess.run(None, onnx_inputs))  # FIXME: remove cast
 
     try:

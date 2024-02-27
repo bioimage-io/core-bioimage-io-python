@@ -58,7 +58,7 @@ class PytorchModelAdapter(ModelAdapter):
     @staticmethod
     def get_network(
         weight_spec: Union[v0_4.PytorchStateDictWeightsDescr, v0_5.PytorchStateDictWeightsDescr]
-    ) -> torch.nn.Module:
+    ) -> "torch.nn.Module":
         arch = import_callable(
             weight_spec.architecture,
             sha256=(
@@ -79,7 +79,7 @@ class PytorchModelAdapter(ModelAdapter):
         return network
 
     @staticmethod
-    def get_devices(devices: Optional[Sequence[str]] = None) -> List[torch.device]:
+    def get_devices(devices: Optional[Sequence[str]] = None) -> List["torch.device"]:
         if not devices:
             torch_devices = [torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")]
         else:

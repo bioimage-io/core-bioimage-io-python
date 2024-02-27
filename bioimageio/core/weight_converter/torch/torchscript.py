@@ -9,7 +9,7 @@ from typing_extensions import Any, assert_never
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import Version
 
-from .utils import load_model
+from .utils import load_torch_model
 
 
 # FIXME: remove Any
@@ -40,7 +40,7 @@ def _check_predictions(
 
     input_descr = model_spec.inputs[0]
     if isinstance(input_descr, v0_4.InputTensorDescr):
-        if not isinstance(input_descr.shape, v0_4.ParametrizedInputShape):
+        if not isinstance(input_descr.shape, v0_4.ParameterizedInputShape):
             return
         min_shape = input_descr.shape.min
         step = input_descr.shape.step
@@ -54,7 +54,7 @@ def _check_predictions(
             elif isinstance(axis.size, int):
                 min_shape.append(axis.size)
                 step.append(0)
-            elif isinstance(axis.size, (v0_5.AxisId, v0_5.TensorAxisId, type(None))):
+            elif axis.size is None:
                 raise NotImplementedError(f"Can't verify inputs that don't specify their shape fully: {axis}")
             elif isinstance(axis.size, v0_5.SizeReference):
                 raise NotImplementedError(f"Can't handle axes like '{axis}' yet")
@@ -94,7 +94,7 @@ def convert_weights_to_torchscript(
     with torch.no_grad():
         input_data = [torch.from_numpy(inp.astype("float32")) for inp in input_data]
 
-        model = load_model(state_dict_weights_descr)
+        model = load_torch_model(state_dict_weights_descr)
 
         # FIXME: remove Any
         if use_tracing:

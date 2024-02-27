@@ -1,5 +1,6 @@
 import warnings
-from typing import Any, Dict, Iterable, List, Optional, Sequence
+from types import MappingProxyType
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Union
 
 import xarray as xr
 
@@ -8,7 +9,7 @@ from bioimageio.core.model_adapters import ModelAdapter, create_model_adapter
 from bioimageio.core.model_adapters import get_weight_formats as get_weight_formats
 from bioimageio.core.proc_ops import Processing
 from bioimageio.core.proc_setup import setup_pre_and_postprocessing
-from bioimageio.core.stat_calculators import StatsCalculator
+from bioimageio.core.stat_measures import DatasetMeasure, MeasureValue
 from bioimageio.spec.model import AnyModelDescr, v0_4
 from bioimageio.spec.model.v0_5 import WeightsFormat
 
@@ -26,8 +27,6 @@ class PredictionPipeline:
         bioimageio_model: AnyModelDescr,
         preprocessing: List[Processing],
         postprocessing: List[Processing],
-        ipt_stats: StatsCalculator,
-        out_stats: StatsCalculator,
         model: ModelAdapter,
     ) -> None:
         super().__init__()
@@ -37,8 +36,6 @@ class PredictionPipeline:
         self.name = name
         self._preprocessing = preprocessing
         self._postprocessing = postprocessing
-        self._ipt_stats = ipt_stats
-        self._out_stats = out_stats
         if isinstance(bioimageio_model, v0_4.ModelDescr):
             self._input_ids = [TensorId(d.name) for d in bioimageio_model.inputs]
             self._output_ids = [TensorId(d.name) for d in bioimageio_model.outputs]
@@ -66,13 +63,11 @@ class PredictionPipeline:
 
     def apply_preprocessing(self, sample: Sample) -> None:
         """apply preprocessing in-place, also updates sample stats"""
-        sample.stat.update(self._ipt_stats.update_and_get_all(sample))
         for op in self._preprocessing:
             op(sample)
 
     def apply_postprocessing(self, sample: Sample) -> None:
         """apply postprocessing in-place, also updates samples stats"""
-        sample.stat.update(self._out_stats.update_and_get_all(sample))
         for op in self._postprocessing:
             op(sample)
 
@@ -85,7 +80,7 @@ class PredictionPipeline:
         self.apply_postprocessing(prediction)
         return prediction
 
-    def forward_named(
+    def forward_tensors(
         self, *input_tensors: xr.DataArray, **named_input_tensors: xr.DataArray
     ) -> Dict[TensorId, xr.DataArray]:
         """Apply preprocessing, run prediction and apply postprocessing."""
@@ -99,7 +94,7 @@ class PredictionPipeline:
 
     def forward(self, *input_tensors: xr.DataArray, **named_input_tensors: xr.DataArray) -> List[xr.DataArray]:
         """Apply preprocessing, run prediction and apply postprocessing."""
-        named_outputs = self.forward_named(*input_tensors, **named_input_tensors)
+        named_outputs = self.forward_tensors(*input_tensors, **named_input_tensors)
         return [named_outputs[x] for x in self._output_ids]
 
     def load(self):
@@ -120,7 +115,10 @@ def create_prediction_pipeline(
     *,
     devices: Optional[Sequence[str]] = None,
     weight_format: Optional[WeightsFormat] = None,
-    dataset_for_initial_statistics: Iterable[Sequence[xr.DataArray]] = tuple(),
+    weights_format: Optional[WeightsFormat] = None,
+    dataset_for_initial_statistics: Iterable[Union[Sample, Sequence[xr.DataArray]]] = tuple(),
+    keep_updating_initial_dataset_statistics: bool = False,
+    fixed_dataset_statistics: Mapping[DatasetMeasure, MeasureValue] = MappingProxyType({}),
     model_adapter: Optional[ModelAdapter] = None,
     **deprecated_kwargs: Any,
 ) -> PredictionPipeline:
@@ -132,13 +130,15 @@ def create_prediction_pipeline(
     * computation of output statistics
     * postprocessing
     """
+    weights_format = weight_format or weights_format
+    del weight_format
     if deprecated_kwargs:
         warnings.warn(f"deprecated create_prediction_pipeline kwargs: {set(deprecated_kwargs)}")
 
     model_adapter = model_adapter or create_model_adapter(
         model_description=bioimageio_model,
         devices=devices,
-        weight_format_priority_order=weight_format and (weight_format,),
+        weight_format_priority_order=weights_format and (weights_format,),
     )
 
     if isinstance(bioimageio_model, v0_4.ModelDescr):
@@ -146,13 +146,19 @@ def create_prediction_pipeline(
     else:
         input_ids = [ipt.id for ipt in bioimageio_model.inputs]
 
-    preprocessing, postprocessing, pre_req_meas, post_req_meas = setup_pre_and_postprocessing(bioimageio_model)
-    ipt_stats = StatsCalculator(pre_req_meas)
-    out_stats = StatsCalculator(post_req_meas)
-    for tensors in dataset_for_initial_statistics:
-        sample = Sample(data=dict(zip(input_ids, tensors)))
-        ipt_stats.update(sample)
-        out_stats.update(sample)
+    def dataset():
+        for x in dataset_for_initial_statistics:
+            if isinstance(x, Sample):
+                yield x
+            else:
+                yield Sample(data=dict(zip(input_ids, x)))
+
+    preprocessing, postprocessing = setup_pre_and_postprocessing(
+        bioimageio_model,
+        dataset(),
+        keep_updating_initial_dataset_stats=keep_updating_initial_dataset_statistics,
+        fixed_dataset_stats=fixed_dataset_statistics,
+    )
 
     return PredictionPipeline(
         name=bioimageio_model.name,
@@ -160,6 +166,4 @@ def create_prediction_pipeline(
         model=model_adapter,
         preprocessing=preprocessing,
         postprocessing=postprocessing,
-        ipt_stats=ipt_stats,
-        out_stats=out_stats,
     )

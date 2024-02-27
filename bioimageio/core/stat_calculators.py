@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import collections
+import collections.abc
 import warnings
 from itertools import product
 from typing import (
@@ -34,6 +34,7 @@ from bioimageio.core.common import (
 from bioimageio.core.stat_measures import (
     DatasetMean,
     DatasetMeasure,
+    DatasetMeasureBase,
     DatasetPercentile,
     DatasetStd,
     DatasetVar,
@@ -317,36 +318,34 @@ DatasetMeasureCalculator = Union[MeanCalculator, MeanVarStdCalculator, DatasetPe
 class StatsCalculator:
     """Estimates dataset statistics and computes sample statistics efficiently"""
 
-    def __init__(self, measures: Iterable[Measure]):
+    def __init__(
+        self,
+        measures: Collection[Measure],
+        initial_dataset_measures: Optional[Mapping[DatasetMeasure, MeasureValue]] = None,
+    ):
         super().__init__()
         self.sample_count = 0
         self.sample_calculators, self.dataset_calculators = get_measure_calculators(measures)
-        self._current_dataset_measures: Optional[Dict[DatasetMeasure, MeasureValue]] = None
+        if initial_dataset_measures is None:
+            self._current_dataset_measures: Optional[Dict[DatasetMeasure, MeasureValue]] = None
+        else:
+            missing_dataset_meas = {
+                m for m in measures if isinstance(m, DatasetMeasureBase) and m not in initial_dataset_measures
+            }
+            if missing_dataset_meas:
+                warnings.warn(f"ignoring `initial_dataset_measure` as it is missing {missing_dataset_meas}")
+                self._current_dataset_measures = None
+            else:
+                self._current_dataset_measures = dict(initial_dataset_measures)
 
-    def _compute(self, sample: Sample) -> Dict[SampleMeasure, MeasureValue]:
-        ret: Dict[SampleMeasure, MeasureValue] = {}
-        for calc in self.sample_calculators:
-            values = calc.compute(sample)
-            ret.update(values.items())
-
-        return ret
+    @property
+    def has_dataset_measures(self):
+        return self._current_dataset_measures is not None
 
     def update(self, sample: Union[Sample, Iterable[Sample]]) -> None:
         _ = self._update(sample)
 
-    def _update(self, sample: Union[Sample, Iterable[Sample]]) -> Optional[Sample]:
-        self.sample_count += 1
-        samples = [sample] if isinstance(sample, Sample) else sample
-        last_sample = None
-        for s in samples:
-            last_sample = s
-            for calc in self.dataset_calculators:
-                calc.update(s)
-
-        self._current_dataset_measures = None
-        return last_sample
-
-    def _finalize(self) -> Dict[DatasetMeasure, MeasureValue]:
+    def finalize(self) -> Dict[DatasetMeasure, MeasureValue]:
         """returns aggregated dataset statistics"""
         if self._current_dataset_measures is None:
             self._current_dataset_measures = {}
@@ -362,11 +361,31 @@ class StatsCalculator:
         if last_sample is None:
             raise ValueError("`sample` was not a `Sample`, nor did it yield any.")
 
-        return {**self._compute(last_sample), **self._finalize()}
+        return {**self._compute(last_sample), **self.finalize()}
 
     def skip_update_and_get_all(self, sample: Sample) -> Dict[Measure, MeasureValue]:
         """Returns sample as well as previously computed dataset statistics"""
-        return {**self._compute(sample), **self._finalize()}
+        return {**self._compute(sample), **self.finalize()}
+
+    def _compute(self, sample: Sample) -> Dict[SampleMeasure, MeasureValue]:
+        ret: Dict[SampleMeasure, MeasureValue] = {}
+        for calc in self.sample_calculators:
+            values = calc.compute(sample)
+            ret.update(values.items())
+
+        return ret
+
+    def _update(self, sample: Union[Sample, Iterable[Sample]]) -> Optional[Sample]:
+        self.sample_count += 1
+        samples = [sample] if isinstance(sample, Sample) else sample
+        last_sample = None
+        for s in samples:
+            last_sample = s
+            for calc in self.dataset_calculators:
+                calc.update(s)
+
+        self._current_dataset_measures = None
+        return last_sample
 
 
 def get_measure_calculators(
@@ -453,6 +472,7 @@ def compute_dataset_measures(
         ret.update(calc.finalize().items())
 
     return ret
+
 
 def compute_sample_measures(measures: Iterable[SampleMeasure], sample: Sample) -> Dict[SampleMeasure, MeasureValue]:
     """compute all sample `measures` for the given `sample`"""

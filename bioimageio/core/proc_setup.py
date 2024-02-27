@@ -1,5 +1,8 @@
+from types import MappingProxyType
 from typing import (
+    Iterable,
     List,
+    Mapping,
     NamedTuple,
     Sequence,
     Set,
@@ -9,22 +12,64 @@ from typing import (
 
 from typing_extensions import assert_never
 
-from bioimageio.core.proc_ops import Processing, get_proc_class
-from bioimageio.core.stat_measures import Measure
+from bioimageio.core.common import Sample
+from bioimageio.core.proc_ops import AddKnownDatasetStats, Processing, UpdateStats, get_proc_class
+from bioimageio.core.stat_calculators import StatsCalculator
+from bioimageio.core.stat_measures import DatasetMeasure, Measure, MeasureValue
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 from bioimageio.spec.model.v0_5 import TensorId
 
 TensorDescr = Union[v0_4.InputTensorDescr, v0_4.OutputTensorDescr, v0_5.InputTensorDescr, v0_5.OutputTensorDescr]
 
 
+class PreAndPostprocessing(NamedTuple):
+    pre: List[Processing]
+    post: List[Processing]
+
+
 class _SetupProcessing(NamedTuple):
-    preprocessing: List[Processing]
-    postprocessing: List[Processing]
-    preprocessing_req_measures: Set[Measure]
-    postprocessing_req_measures: Set[Measure]
+    pre: List[Processing]
+    post: List[Processing]
+    pre_measures: Set[Measure]
+    post_measures: Set[Measure]
 
 
-def setup_pre_and_postprocessing(model: AnyModelDescr) -> _SetupProcessing:
+def setup_pre_and_postprocessing(
+    model: AnyModelDescr,
+    dataset_for_initial_statistics: Iterable[Sample],
+    keep_updating_initial_dataset_stats: bool = False,
+    fixed_dataset_stats: Mapping[DatasetMeasure, MeasureValue] = MappingProxyType({}),
+) -> PreAndPostprocessing:
+    prep, post, prep_meas, post_meas = _prepare_setup_pre_and_postprocessing(model)
+
+    missing_dataset_stats = {m for m in prep_meas | post_meas if m not in fixed_dataset_stats}
+    initial_stats_calc = StatsCalculator(missing_dataset_stats)
+    for sample in dataset_for_initial_statistics:
+        initial_stats_calc.update(sample)
+
+    initial_stats = initial_stats_calc.finalize()
+    prep.insert(
+        0,
+        UpdateStats(
+            StatsCalculator(prep_meas, initial_stats),
+            keep_updating_initial_dataset_stats=keep_updating_initial_dataset_stats,
+        ),
+    )
+    post.insert(
+        0,
+        UpdateStats(
+            StatsCalculator(post_meas, initial_stats),
+            keep_updating_initial_dataset_stats=keep_updating_initial_dataset_stats,
+        ),
+    )
+    if fixed_dataset_stats:
+        prep.insert(0, AddKnownDatasetStats(fixed_dataset_stats))
+        post.insert(0, AddKnownDatasetStats(fixed_dataset_stats))
+
+    return PreAndPostprocessing(prep, post)
+
+
+def _prepare_setup_pre_and_postprocessing(model: AnyModelDescr) -> _SetupProcessing:
     pre_measures: Set[Measure] = set()
     post_measures: Set[Measure] = set()
 
@@ -62,12 +107,9 @@ def setup_pre_and_postprocessing(model: AnyModelDescr) -> _SetupProcessing:
                 procs.append(req)
         return procs
 
-    pre_procs = prepare_procs(model.inputs)
-    post_procs = prepare_procs(model.outputs)
-
     return _SetupProcessing(
-        preprocessing=pre_procs,
-        postprocessing=post_procs,
-        preprocessing_req_measures=pre_measures,
-        postprocessing_req_measures=post_measures,
+        pre=prepare_procs(model.inputs),
+        post=prepare_procs(model.outputs),
+        pre_measures=pre_measures,
+        post_measures=post_measures,
     )
