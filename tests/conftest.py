@@ -5,7 +5,7 @@ import os
 import subprocess
 import warnings
 from types import MappingProxyType
-from typing import Set
+from typing import List, Set
 
 from pydantic import FilePath
 from pytest import FixtureRequest, fixture
@@ -31,7 +31,7 @@ TENSORFLOW1_MODELS = ["stardist"]
 TENSORFLOW2_MODELS = ["unet2d_keras_tf2"]
 KERAS_TF1_MODELS = ["unet2d_keras"]
 KERAS_TF2_MODELS = ["unet2d_keras_tf2"]
-TENSORFLOW_JS_MODELS = []
+TENSORFLOW_JS_MODELS: List[str] = []
 
 
 MODEL_SOURCES = {
@@ -108,31 +108,32 @@ except ImportError:
     tensorflow = None
     tf_major_version = None
 
+
 skip_tensorflow = tensorflow is None
 skip_tensorflow_js = True  # TODO: add a tensorflow_js example model
-
-# load all model packages we need for testing
-load_model_packages: Set[str] = set()
-if not skip_torch:
-    load_model_packages |= set(TORCH_MODELS + TORCHSCRIPT_MODELS)
-
-if not skip_onnx:
-    load_model_packages |= set(ONNX_MODELS)
-
-if not skip_tensorflow:
-    load_model_packages |= set(TENSORFLOW_JS_MODELS)
-    if tf_major_version == 1:
-        load_model_packages |= set(KERAS_TF1_MODELS)
-        load_model_packages |= set(TENSORFLOW1_MODELS)
-        load_model_packages.add("stardist_wrong_shape")
-        load_model_packages.add("stardist_wrong_shape2")
-    elif tf_major_version == 2:
-        load_model_packages |= set(KERAS_TF2_MODELS)
-        load_model_packages |= set(TENSORFLOW2_MODELS)
 
 
 @fixture(scope="session")
 def model_packages() -> MappingProxyType[str, FilePath]:
+    # load all model packages we need for testing
+    load_model_packages: Set[str] = set()
+    if not skip_torch:
+        load_model_packages |= set(TORCH_MODELS + TORCHSCRIPT_MODELS)
+
+    if not skip_onnx:
+        load_model_packages |= set(ONNX_MODELS)
+
+    if not skip_tensorflow:
+        load_model_packages |= set(TENSORFLOW_JS_MODELS)
+        if tf_major_version == 1:
+            load_model_packages |= set(KERAS_TF1_MODELS)
+            load_model_packages |= set(TENSORFLOW1_MODELS)
+            load_model_packages.add("stardist_wrong_shape")
+            load_model_packages.add("stardist_wrong_shape2")
+        elif tf_major_version == 2:
+            load_model_packages |= set(KERAS_TF2_MODELS)
+            load_model_packages |= set(TENSORFLOW2_MODELS)
+
     return MappingProxyType({name: save_bioimageio_package(MODEL_SOURCES[name]) for name in load_model_packages})
 
 

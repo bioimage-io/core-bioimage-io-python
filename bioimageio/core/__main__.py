@@ -5,8 +5,7 @@ import sys
 import warnings
 from glob import glob
 from pathlib import Path
-from pprint import pformat
-from typing import List, Optional, get_args
+from typing import List, Optional
 
 import typer
 from typing_extensions import Annotated
@@ -16,9 +15,7 @@ from bioimageio.spec import load_description, save_bioimageio_package
 from bioimageio.spec.collection import CollectionDescr
 from bioimageio.spec.dataset import DatasetDescr
 from bioimageio.spec.model import ModelDescr
-from bioimageio.spec.model.v0_5 import WeightsFormat
 from bioimageio.spec.notebook import NotebookDescr
-from bioimageio.spec.summary import ValidationSummary
 
 try:
     with warnings.catch_warnings():
@@ -57,73 +54,41 @@ def callback():
 
 # if we want to use something like "choice" for the weight formats, we need to use an enum, see:
 # https://github.com/tiangolo/typer/issues/182
-WeightsFormatEnum = enum.Enum("WeightsFormatEnum", {wf: wf for wf in get_args(WeightsFormat)})
-# Enum with in values does not work with click.Choice: https://github.com/pallets/click/issues/784
-# so a simple Enum with auto int values is not an option:
-# WeightsFormatEnum = enum.Enum("WeightsFormatEnum", get_args(WeightsFormat))
+
+
+class WeightsFormatEnum(enum.Enum):
+    keras_hdf5 = "keras_hdf5"
+    onnx = "onnx"
+    pytorch_state_dict = "pytorch_state_dict"
+    tensorflow_js = "tensorflow_js"
+    tensorflow_saved_model_bundle = "tensorflow_saved_model_bundle"
+    torchscript = "torchscript"
+
+
+# Enum with int values does not work with click.Choice: https://github.com/pallets/click/issues/784
+# so a simple Enum with auto int values is not an option.
 
 
 @app.command()
 def package(
-    rdf_source: Annotated[str, typer.Argument(help="RDF source as relative file path or URI")],
-    path: Annotated[Path, typer.Argument(help="Save package as")] = Path() / "bioimageio-package.zip",
+    source: Annotated[str, typer.Argument(help="path or url to a bioimageio RDF")],
+    path: Annotated[Path, typer.Argument(help="Save package as")] = Path("bioimageio-package.zip"),
     weights_priority_order: Annotated[
         Optional[List[WeightsFormatEnum]],
         typer.Option(
             "--weights-priority-order",
             "-wpo",
             help="For model packages only. "
-            "If given only the first weights matching the given weight formats are included. "
-            "Defaults to include all weights present in source.",
+            "If given, only the first matching weights entry is included. "
+            "Defaults to including all weights present in source.",
             show_default=False,
         ),
     ] = None,
-    # verbose: Annotated[bool, typer.Option(help="show traceback of exceptions")] = False,
 ):
     # typer bug: typer returns empty tuple instead of None if weights_order_priority is not given
     weights_priority_order = weights_priority_order or None  # TODO: check if this is still the case
 
-    _ = save_bioimageio_package(rdf_source, output_path=path, weights_priority_order=weights_priority_order)
-
-
-def _log_test_summaries(summaries: List[ValidationSummary], msg: str):
-    # todo: improve logging of multiple test summaries
-    ret_code = 0
-    for summary in summaries:
-        print(f"{summary['name']}: {summary['status']}")
-        if summary["status"] != "passed":
-            s = {
-                k: v
-                for k, v in summary.items()
-                if k not in ("name", "status", "bioimageio_spec_version", "bioimageio_core_version")
-            }
-            tb = s.pop("traceback")
-            if tb:
-                print("traceback:")
-                print("".join(tb))
-
-            def show_part(part, show):
-                if show:
-                    line = f"{part}: "
-                    print(line + pformat(show, width=min(80, 120 - len(line))).replace("\n", " " * len(line) + "\n"))
-
-            for part in ["error", "warnings", "source_name"]:
-                show_part(part, s.pop(part, None))
-
-            for part in sorted(s.keys()):
-                show_part(part, s[part])
-
-            ret_code = 1
-
-    if ret_code:
-        result = "FAILED!"
-        icon = "❌"
-    else:
-        result = "passed."
-        icon = "✔️"
-
-    print(msg.format(icon=icon, result=result))
-    return ret_code
+    _ = save_bioimageio_package(source, output_path=path, weights_priority_order=weights_priority_order)
 
 
 @app.command()
@@ -138,15 +103,15 @@ def test_model(
     # this is a weird typer bug: default devices are empty tuple although they should be None
     devices = devices or None
 
-    summaries = resource_tests.test_model(
+    summary = resource_tests.test_model(
         model_rdf,
         weight_format=None if weight_format is None else weight_format.value,
         devices=devices,
         decimal=decimal,
     )
     print(f"\ntesting model {model_rdf}...")
-    ret_code = _log_test_summaries(summaries, f"\n{{icon}} Model {model_rdf} {{result}}")
-    sys.exit(ret_code)
+    print(summary.format())
+    sys.exit(0 if summary.status == "passed" else 1)
 
 
 test_model.__doc__ = resource_tests.test_model.__doc__
@@ -154,22 +119,26 @@ test_model.__doc__ = resource_tests.test_model.__doc__
 
 @app.command()
 def test_resource(
-    rdf: str = typer.Argument(
-        ..., help="Path or URL to the resource description file (rdf.yaml) or zipped resource package."
-    ),
-    weight_format: Optional[WeightsFormatEnum] = typer.Option(None, help="(for model only) The weight format to use."),
-    devices: Optional[List[str]] = typer.Option(None, help="(for model only) Devices for running the model."),
-    decimal: int = typer.Option(4, help="(for model only) The test precision."),
+    rdf: Annotated[
+        str, typer.Argument(help="Path or URL to the resource description file (rdf.yaml) or zipped resource package.")
+    ],
+    weight_format: Annotated[
+        Optional[WeightsFormatEnum], typer.Option(help="(for model only) The weight format to use.")
+    ] = None,
+    devices: Annotated[
+        Optional[List[str]], typer.Option(help="(for model only) Devices for running the model.")
+    ] = None,
+    decimal: Annotated[int, typer.Option(help="(for model only) The test precision.")] = 4,
 ):
     # this is a weird typer bug: default devices are empty tuple although they should be None
     if len(devices) == 0:
         devices = None
-    summaries = resource_tests.test_description(
+    print(f"\ntesting {rdf}...")
+    summary = resource_tests.test_description(
         rdf, weight_format=None if weight_format is None else weight_format.value, devices=devices, decimal=decimal
     )
-    print(f"\ntesting {rdf}...")
-    ret_code = _log_test_summaries(summaries, f"{{icon}} Resource test for {rdf} has {{result}}")
-    sys.exit(ret_code)
+    print(summary.format())
+    sys.exit(0 if summary.status == "passed" else 1)
 
 
 test_resource.__doc__ = resource_tests.test_description.__doc__
@@ -177,11 +146,11 @@ test_resource.__doc__ = resource_tests.test_description.__doc__
 
 @app.command()
 def predict_image(
-    model_rdf: Path = typer.Argument(
-        ..., help="Path to the model resource description file (rdf.yaml) or zipped model."
-    ),
-    inputs: List[Path] = typer.Option(..., help="Path(s) to the model input(s)."),
-    outputs: List[Path] = typer.Option(..., help="Path(s) for saveing the model output(s)."),
+    model_rdf: Annotated[
+        Path, typer.Argument(help="Path to the model resource description file (rdf.yaml) or zipped model.")
+    ],
+    inputs: Annotated[List[Path], typer.Option(help="Path(s) to the model input(s).")],
+    outputs: Annotated[List[Path], typer.Option(help="Path(s) for saveing the model output(s).")],
     # NOTE: typer currently doesn't support union types, so we only support boolean here
     # padding: Optional[Union[str, bool]] = typer.Argument(
     #     None, help="Padding to apply in each dimension passed as json encoded string."
@@ -189,10 +158,12 @@ def predict_image(
     # tiling: Optional[Union[str, bool]] = typer.Argument(
     #     None, help="Padding to apply in each dimension passed as json encoded string."
     # ),
-    padding: Optional[bool] = typer.Option(None, help="Whether to pad the image to a size suited for the model."),
-    tiling: Optional[bool] = typer.Option(None, help="Whether to run prediction in tiling mode."),
-    weight_format: Optional[WeightsFormatEnum] = typer.Option(None, help="The weight format to use."),
-    devices: Optional[List[str]] = typer.Option(None, help="Devices for running the model."),
+    padding: Annotated[
+        Optional[bool], typer.Option(help="Whether to pad the image to a size suited for the model.")
+    ] = None,
+    tiling: Annotated[Optional[bool], typer.Option(help="Whether to run prediction in tiling mode.")] = None,
+    weight_format: Annotated[Optional[WeightsFormatEnum], typer.Option(help="The weight format to use.")] = None,
+    devices: Annotated[Optional[List[str]], typer.Option(help="Devices for running the model.")] = None,
 ):
     if isinstance(padding, str):
         padding = json.loads(padding.replace("'", '"'))
@@ -202,8 +173,9 @@ def predict_image(
         assert isinstance(tiling, dict)
 
     # this is a weird typer bug: default devices are empty tuple although they should be None
-    if len(devices) == 0:
+    if devices is None or len(devices) == 0:
         devices = None
+
     prediction.predict_image(
         model_rdf, inputs, outputs, padding, tiling, None if weight_format is None else weight_format.value, devices
     )
@@ -214,12 +186,12 @@ predict_image.__doc__ = prediction.predict_image.__doc__
 
 @app.command()
 def predict_images(
-    model_rdf: Path = typer.Argument(
-        ..., help="Path to the model resource description file (rdf.yaml) or zipped model."
-    ),
-    input_pattern: str = typer.Argument(..., help="Glob pattern for the input images."),
-    output_folder: str = typer.Argument(..., help="Folder to save the outputs."),
-    output_extension: Optional[str] = typer.Argument(None, help="Optional output extension."),
+    model_rdf: Annotated[
+        Path, typer.Argument(help="Path to the model resource description file (rdf.yaml) or zipped model.")
+    ],
+    input_pattern: Annotated[str, typer.Argument(help="Glob pattern for the input images.")],
+    output_folder: Annotated[str, typer.Argument(help="Folder to save the outputs.")],
+    output_extension: Annotated[Optional[str], typer.Argument(help="Optional output extension.")] = None,
     # NOTE: typer currently doesn't support union types, so we only support boolean here
     # padding: Optional[Union[str, bool]] = typer.Argument(
     #     None, help="Padding to apply in each dimension passed as json encoded string."
@@ -227,10 +199,12 @@ def predict_images(
     # tiling: Optional[Union[str, bool]] = typer.Argument(
     #     None, help="Padding to apply in each dimension passed as json encoded string."
     # ),
-    padding: Optional[bool] = typer.Option(None, help="Whether to pad the image to a size suited for the model."),
-    tiling: Optional[bool] = typer.Option(None, help="Whether to run prediction in tiling mode."),
-    weight_format: Optional[WeightsFormatEnum] = typer.Option(None, help="The weight format to use."),
-    devices: Optional[List[str]] = typer.Option(None, help="Devices for running the model."),
+    padding: Annotated[
+        Optional[bool], typer.Option(help="Whether to pad the image to a size suited for the model.")
+    ] = None,
+    tiling: Annotated[Optional[bool], typer.Option(help="Whether to run prediction in tiling mode.")] = None,
+    weight_format: Annotated[Optional[WeightsFormatEnum], typer.Option(help="The weight format to use.")] = None,
+    devices: Annotated[Optional[List[str]], typer.Option(help="Devices for running the model.")] = None,
 ):
     input_files = glob(input_pattern)
     input_names = [os.path.split(infile)[1] for infile in input_files]
