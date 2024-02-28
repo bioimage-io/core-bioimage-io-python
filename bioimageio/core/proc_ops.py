@@ -557,26 +557,3 @@ def get_proc_class(proc_spec: ProcDescr):
     else:
         assert_never(proc_spec)
 
-
-def _get_complement_axis(tensor: xr.DataArray, axes: Optional[Sequence[Hashable]]) -> Optional[Hashable]:
-    if axes is None:
-        return None
-
-    v04_AXIS_TYPE_MAP = {
-        "b": "batch",
-        "t": "time",
-        "i": "index",
-        "c": "channel",
-        "x": "space",
-        "y": "space",
-        "z": "space",
-    }
-    converted_axes = [v04_AXIS_TYPE_MAP.get(a, a) for a in map(str, axes)] + ["batch"]
-    complement_axes = [a for a in tensor.dims if str(a) not in converted_axes]
-    if len(complement_axes) != 1:
-        raise ValueError(
-            f"Expected a single complement axis, but axes '{converted_axes}' (orignally '{axes}') "
-            f"for tensor dims '{tensor.dims}' leave '{complement_axes}'."
-        )
-
-    return complement_axes[0]
