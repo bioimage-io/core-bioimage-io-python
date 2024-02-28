@@ -21,7 +21,7 @@ typeCheckingMode = "strict"
 useLibraryCodeForTypes = true
 
 [tool.pytest.ini_options]
-addopts = "--capture=no --doctest-modules --failed-first"
+addopts = " -n auto --capture=no --doctest-modules --failed-first"
 
 [tool.ruff]
 line-length = 120
