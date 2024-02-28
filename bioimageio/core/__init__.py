@@ -1,3 +1,7 @@
+"""
+.. include:: ../../README.md
+"""
+
 import json
 
 from bioimageio.core.utils import files
