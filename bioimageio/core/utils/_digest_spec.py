@@ -2,7 +2,7 @@ from typing import List
 
 import xarray as xr
 
-from bioimageio.spec.model import AnyModelDescr, v0_4
+from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 from bioimageio.spec.utils import load_array
 
 

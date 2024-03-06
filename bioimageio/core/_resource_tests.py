@@ -6,9 +6,9 @@ import numpy as np
 import xarray as xr
 
 from bioimageio.core import __version__ as bioimageio_core_version
-from bioimageio.core._prediction_pipeline import create_prediction_pipeline
+from bioimageio.core import create_prediction_pipeline, PredictionPipeline
 from bioimageio.spec import InvalidDescr, ResourceDescr, build_description, dump_description, load_description
-from bioimageio.spec._internal.base_nodes import ResourceDescrBase
+from bioimageio.spec._internal.common_nodes import ResourceDescrBase
 from bioimageio.spec._internal.io_utils import load_array
 from bioimageio.spec.common import BioimageioYamlContent, FileSource
 from bioimageio.spec.model import v0_4, v0_5
@@ -81,6 +81,8 @@ def load_description_and_test(
 
     if isinstance(rd, (v0_4.ModelDescr, v0_5.ModelDescr)):
         _test_model_inference(rd, weight_format, devices, decimal)
+        if not isinstance(rd, v0_4.ModelDescr):
+            _test_model_inference_with_parametrized_inputs(rd, weight_format, devices)
 
     return rd
 
@@ -114,7 +116,7 @@ def _test_model_inference(
 
         if len(results) != len(expected):
             error = (error or "") + (
-                f"Number of outputs and number of expected outputs disagree: {len(results)} != {len(expected)}"
+                f"Expected {len(expected)} outputs, but got {len(results)}"
             )
         else:
             for res, exp in zip(results, expected):
@@ -122,6 +124,66 @@ def _test_model_inference(
                     np.testing.assert_array_almost_equal(res, exp, decimal=decimal)
                 except AssertionError as e:
                     error = (error or "") + f"Output and expected output disagree:\n {e}"
+    except Exception as e:
+        error = str(e)
+        tb = traceback.format_tb(e.__traceback__)
+
+    model.validation_summary.add_detail(
+        ValidationDetail(
+            name="Reproduce test outputs from test inputs",
+            status="passed" if error is None else "failed",
+            errors=(
+                []
+                if error is None
+                else [
+                    ErrorEntry(
+                        loc=("weights",) if weight_format is None else ("weights", weight_format),
+                        msg=error,
+                        type="bioimageio.core",
+                        traceback=tb,
+                    )
+                ]
+            ),
+        )
+    )
+
+def _test_model_inference_with_parametrized_inputs(
+    model: v0_5.ModelDescr,
+    weight_format: Optional[WeightsFormat],
+    devices: Optional[List[str]],
+) -> None:
+    if not any(isinstance(a.size, v0_5.ParameterizedSize) for ipt in model.inputs for a in ipt.axes):
+        return
+
+    error: Optional[str] = None
+    tb: List[str] = []
+    try:
+        test_inputs = [
+            xr.DataArray(load_array(d.test_tensor.download().path), dims=tuple(a.id for a in d.axes))
+            for d in model.inputs
+        ]
+        def generate_test_cases():
+            for n in [0, 1, 2, 3]:
+
+
+
+        with create_prediction_pipeline(
+            bioimageio_model=model, devices=devices, weight_format=weight_format
+        ) as prediction_pipeline:
+            for n, inputs, exptected_output_shape in generate_test_cases():
+                results = prediction_pipeline.forward(*inputs)
+
+                if len(results) != len(exptected_output_shape):
+                    error = (error or "") + (
+                        f"Expected {len(exptected_output_shape)} outputs, but got {len(results)}"
+                    )
+                else:
+                    for res, exp in zip(results, exptected_output_shape):
+                        if res.shape != exp:
+                            error = (error or "") + f"(n={n}) Expected output shape {exptected_output_shape}, but got {res.shape}\n"
+
+                if error:
+                    break
     except Exception as e:
         error = str(e)
         tb = traceback.format_tb(e.__traceback__)

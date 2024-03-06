@@ -19,6 +19,7 @@ from bioimageio.spec import save_bioimageio_package_as_folder as save_bioimageio
 from bioimageio.spec import save_bioimageio_yaml_only as save_bioimageio_yaml_only
 from bioimageio.spec import validate_format as validate_format
 
+from ._prediction_pipeline import PredictionPipeline as PredictionPipeline
 from ._prediction_pipeline import create_prediction_pipeline as create_prediction_pipeline
 from ._resource_tests import load_description_and_test as load_description_and_test
 from ._resource_tests import test_description as test_description
