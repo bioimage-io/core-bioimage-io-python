@@ -5,15 +5,13 @@ from typing import Any, List, Optional, Sequence, Set
 
 import numpy as np
 import pytest
+from pydantic import FilePath
 
 from bioimageio.core import load_description
 
 
 def run_subprocess(commands: Sequence[str], **kwargs: Any) -> "subprocess.CompletedProcess[str]":
     return subprocess.run(commands, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding="utf-8", **kwargs)
-
-
-FIXTURES = {"unet2d_nuclei_broad_model"}
 
 
 @pytest.mark.parametrize(
@@ -25,15 +23,15 @@ FIXTURES = {"unet2d_nuclei_broad_model"}
         ["test-model", "unet2d_nuclei_broad_model"],
     ],
 )
-def test_cli(args: List[str], request: pytest.FixtureRequest):
-    resolved_args = [str(request.getfixturevalue(arg)) if arg in FIXTURES else arg for arg in args]
+def test_cli(args: List[str], unet2d_nuclei_broad_model: FilePath):
+    resolved_args = [str(unet2d_nuclei_broad_model) if arg == "unet2d_nuclei_broad_model" else arg for arg in args]
     ret = run_subprocess(["bioimageio", *resolved_args])
     assert ret.returncode == 0, ret.stdout
 
 
 @pytest.mark.parametrize("args", [["test-model", "stardist_wrong_shape"]])
-def test_cli_fails(args: List[str], request: pytest.FixtureRequest):
-    resolved_args = [str(request.getfixturevalue(arg)) if arg in FIXTURES else arg for arg in args]
+def test_cli_fails(args: List[str], stardist_wrong_shape: FilePath):
+    resolved_args = [str(stardist_wrong_shape) if arg == "stardist_wrong_shape" else arg for arg in args]
     ret = run_subprocess(["bioimageio", *resolved_args])
     assert ret.returncode == 1, ret.stdout
 

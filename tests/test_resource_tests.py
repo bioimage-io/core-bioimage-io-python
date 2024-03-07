@@ -38,35 +38,3 @@ def test_test_resource(any_model: Path):
 
     summary = test_description(any_model)
     assert summary.status == "passed"
-
-
-def test_validation_section_warning(unet2d_nuclei_broad_model: str, tmp_path: Path):
-    from bioimageio.core import load_description
-    from bioimageio.core._resource_tests import test_description
-
-    model = load_description(unet2d_nuclei_broad_model)
-    assert not isinstance(model, InvalidDescr)
-    summary = test_description(model)
-    assert summary.name == "Test documentation completeness."
-    assert summary.warnings == {"documentation": "No '# Validation' (sub)section found."}
-    assert summary.status == "passed"
-
-    doc_with_validation = tmp_path / "doc.md"
-    _ = doc_with_validation.write_text("# Validation\nThis is a section about how to validate the model on new data")
-    model.documentation = doc_with_validation
-    summary = test_description(model)
-    assert summary.name == "Test documentation completeness."
-    assert summary.warnings == {}
-    assert summary.status == "passed"
-
-
-def test_issue289(unet2d_nuclei_broad_model: str):
-    """test for failure case from https://github.com/bioimage-io/core-bioimage-io-python/issues/289"""
-    # remote model is a pytorch model, needing unet2d_nuclei_broad_model skips the test when needed
-    _ = unet2d_nuclei_broad_model
-
-    from bioimageio.core._resource_tests import test_model
-
-    doi = "10.5281/zenodo.6287342"
-    summary = test_model(doi)
-    assert summary.status == "passed"

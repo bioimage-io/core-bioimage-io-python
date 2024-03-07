@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 TensorId = v0_5.TensorId
 AxisId = v0_5.AxisId
-
+BatchSize = int
 Tensor = xr.DataArray
 
 Data = Dict[TensorId, Tensor]

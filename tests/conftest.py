@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-import logging
 import os
 import subprocess
 import warnings
 from types import MappingProxyType
 from typing import List, Set
 
+from loguru import logger
 from pydantic import FilePath
 from pytest import FixtureRequest, fixture
 
@@ -14,7 +14,6 @@ os.environ["BIOIMAGEIO_COUNT_RDF_DOWNLOADS"] = "false"  # disable tracking befor
 from bioimageio.spec import __version__ as bioimageio_spec_version
 from bioimageio.spec._package import save_bioimageio_package
 
-logger = logging.getLogger(__name__)
 warnings.warn(f"testing with bioimageio.spec {bioimageio_spec_version}")
 
 # test models for various frameworks
@@ -130,6 +129,7 @@ if not skip_tensorflow:
     elif tf_major_version == 2:
         load_model_packages |= set(KERAS_TF2_MODELS)
         load_model_packages |= set(TENSORFLOW2_MODELS)
+
 
 @fixture(scope="session")
 def model_packages() -> MappingProxyType[str, FilePath]:

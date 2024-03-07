@@ -1,4 +1,3 @@
-import logging
 import warnings
 from typing import Any, List, Optional, Sequence, Union
 
@@ -13,8 +12,6 @@ try:
     import onnxruntime as rt
 except Exception:
     rt = None
-
-logger = logging.getLogger(__name__)
 
 
 class ONNXModelAdapter(ModelAdapter):

@@ -63,8 +63,8 @@ def package(
             "--weights-priority-order",
             "-wpo",
             help="For model packages only. "
-            "If given, only the first matching weights entry is included. "
-            "Defaults to including all weights present in source.",
+            + "If given, only the first matching weights entry is included. "
+            + "Defaults to including all weights present in source.",
             show_default=False,
         ),
     ] = None,

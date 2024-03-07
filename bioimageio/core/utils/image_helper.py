@@ -126,10 +126,10 @@ def load_tensor(
 
 def pad(
     tensor: xr.DataArray,
-    pad_with: Mapping[AxisId, Union[int, Tuple[int, int]]],
+    pad_width: Mapping[AxisId, Union[int, Tuple[int, int]]],
     mode: Literal["edge", "reflect", "symmetric"] = "symmetric",
 ):
-    return tensor.pad(pad_with=pad_with, mode=mode)
+    return tensor.pad(pad_width=pad_width, mode=mode)
 
 
 def pad_to(
@@ -148,11 +148,11 @@ def pad_to(
     else:
         pad_axis_where = pad_where
 
-    pad_with: Dict[AxisId, Union[int, Tuple[int, int]]] = {}
+    pad_width: Dict[AxisId, Union[int, Tuple[int, int]]] = {}
     for a, s_is in tensor.sizes.items():
         a = AxisId(str(a))
         if a not in sizes or sizes[a] == s_is:
-            pad_with[a] = 0
+            pad_width[a] = 0
         elif s_is < sizes[a]:
             raise ValueError(f"Cannot pad axis {a} of size {s_is} to smaller size {sizes[a]}")
         elif a not in pad_axis_where:
@@ -161,15 +161,15 @@ def pad_to(
             pad_this_axis_where = pad_axis_where[a]
             p = sizes[a] - s_is
             if pad_this_axis_where == "before":
-                pad_with[a] = (p, 0)
+                pad_width[a] = (p, 0)
             elif pad_this_axis_where == "after":
-                pad_with[a] = (0, p)
+                pad_width[a] = (0, p)
             elif pad_this_axis_where == "center":
-                pad_with[a] = (left := p // 2, p - left)
+                pad_width[a] = (left := p // 2, p - left)
             else:
                 assert_never(pad_this_axis_where)
 
-    return pad(tensor, pad_with, mode)
+    return pad(tensor, pad_width, mode)
 
 
 def pad_old(image, axes: Sequence[str], padding, pad_right=True) -> Tuple[np.ndarray, Dict[str, slice]]:

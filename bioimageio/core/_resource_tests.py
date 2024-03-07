@@ -1,35 +1,37 @@
 import traceback
 import warnings
-from typing import List, Literal, Optional, Union
+from typing import List, Literal, Optional, Sequence, Set, Tuple, Union
 
 import numpy as np
 import xarray as xr
 
-from bioimageio.core import __version__ as bioimageio_core_version
-from bioimageio.core import create_prediction_pipeline, PredictionPipeline
+from bioimageio.core._prediction_pipeline import create_prediction_pipeline
+from bioimageio.core.common import AxisId, BatchSize
+from bioimageio.core.utils import VERSION
+from bioimageio.core.utils.image_helper import pad_to
 from bioimageio.spec import InvalidDescr, ResourceDescr, build_description, dump_description, load_description
 from bioimageio.spec._internal.common_nodes import ResourceDescrBase
 from bioimageio.spec._internal.io_utils import load_array
-from bioimageio.spec.common import BioimageioYamlContent, FileSource
+from bioimageio.spec.common import BioimageioYamlContent, PermissiveFileSource
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import WeightsFormat
 from bioimageio.spec.summary import ErrorEntry, InstalledPackage, ValidationDetail, ValidationSummary
 
 
 def test_model(
-    source: FileSource,
+    source: PermissiveFileSource,
     weight_format: Optional[WeightsFormat] = None,
     devices: Optional[List[str]] = None,
     decimal: int = 4,
 ) -> ValidationSummary:
-    """Test whether the test output(s) of a model can be reproduced."""
+    """Test model inference"""
     return test_description(
         source, weight_format=weight_format, devices=devices, decimal=decimal, expected_type="model"
     )
 
 
 def test_description(
-    source: Union[ResourceDescr, FileSource, BioimageioYamlContent],
+    source: Union[ResourceDescr, PermissiveFileSource, BioimageioYamlContent],
     *,
     format_version: Union[Literal["discover", "latest"], str] = "discover",
     weight_format: Optional[WeightsFormat] = None,
@@ -37,7 +39,7 @@ def test_description(
     decimal: int = 4,
     expected_type: Optional[str] = None,
 ) -> ValidationSummary:
-    """Test RDF dynamically, e.g. model inference of test inputs"""
+    """Test a bioimage.io resource dynamically, e.g. prediction of test tensors for models"""
     rd = load_description_and_test(
         source,
         format_version=format_version,
@@ -50,7 +52,7 @@ def test_description(
 
 
 def load_description_and_test(
-    source: Union[ResourceDescr, FileSource, BioimageioYamlContent],
+    source: Union[ResourceDescr, PermissiveFileSource, BioimageioYamlContent],
     *,
     format_version: Union[Literal["discover", "latest"], str] = "discover",
     weight_format: Optional[WeightsFormat] = None,
@@ -74,20 +76,24 @@ def load_description_and_test(
     else:
         rd = load_description(source, format_version=format_version)
 
-    rd.validation_summary.env.append(InstalledPackage(name="bioimageio.core", version=bioimageio_core_version))
+    rd.validation_summary.env.append(InstalledPackage(name="bioimageio.core", version=VERSION))
 
     if expected_type is not None:
         _test_expected_resource_type(rd, expected_type)
 
     if isinstance(rd, (v0_4.ModelDescr, v0_5.ModelDescr)):
-        _test_model_inference(rd, weight_format, devices, decimal)
-        if not isinstance(rd, v0_4.ModelDescr):
-            _test_model_inference_with_parametrized_inputs(rd, weight_format, devices)
+        if isinstance(rd, v0_4.ModelDescr):
+            _test_model_inference_v0_4(rd, weight_format, devices, decimal)
+        else:
+            _test_model_inference_impl(rd, weight_format, devices)
+
+    # TODO: add execution of jupyter notebooks
+    # TODO: add more tests
 
     return rd
 
 
-def _test_model_inference(
+def _test_model_inference_v0_4(
     model: Union[v0_4.ModelDescr, v0_5.ModelDescr],
     weight_format: Optional[WeightsFormat],
     devices: Optional[List[str]],
@@ -115,9 +121,7 @@ def _test_model_inference(
             results = prediction_pipeline.forward(*inputs)
 
         if len(results) != len(expected):
-            error = (error or "") + (
-                f"Expected {len(expected)} outputs, but got {len(results)}"
-            )
+            error = (error or "") + (f"Expected {len(expected)} outputs, but got {len(results)}")
         else:
             for res, exp in zip(results, expected):
                 try:
@@ -147,65 +151,91 @@ def _test_model_inference(
         )
     )
 
-def _test_model_inference_with_parametrized_inputs(
+
+def _test_model_inference_impl(
     model: v0_5.ModelDescr,
     weight_format: Optional[WeightsFormat],
     devices: Optional[List[str]],
+    test_cases: Sequence[Tuple[v0_5.ParameterizedSize.N, BatchSize]] = ((0, 1), (1, 3), (2, 1), (3, 2)),
 ) -> None:
     if not any(isinstance(a.size, v0_5.ParameterizedSize) for ipt in model.inputs for a in ipt.axes):
         return
 
-    error: Optional[str] = None
-    tb: List[str] = []
     try:
         test_inputs = [
             xr.DataArray(load_array(d.test_tensor.download().path), dims=tuple(a.id for a in d.axes))
             for d in model.inputs
         ]
+
         def generate_test_cases():
-            for n in [0, 1, 2, 3]:
+            tested: Set[str] = set()
+            for n, batch_size in test_cases:
+                target_sizes = model.get_tensor_sizes(n, batch_size=batch_size)
+                hashable_target_size = str(target_sizes)
+                if hashable_target_size in tested:
+                    continue
+                else:
+                    tested.add(hashable_target_size)
 
-
+                resized_test_inputs = [
+                    pad_to(t, target_sizes[t_descr.id]) for t, t_descr in zip(test_inputs, model.inputs)
+                ]
+                expected_output_shapes = [target_sizes[t_descr.id] for t_descr in model.outputs]
+                yield n, batch_size, resized_test_inputs, expected_output_shapes
 
         with create_prediction_pipeline(
             bioimageio_model=model, devices=devices, weight_format=weight_format
         ) as prediction_pipeline:
-            for n, inputs, exptected_output_shape in generate_test_cases():
-                results = prediction_pipeline.forward(*inputs)
 
+            for n, batch_size, inputs, exptected_output_shape in generate_test_cases():
+                error: Optional[str] = None
+                results = prediction_pipeline.forward(*inputs)
                 if len(results) != len(exptected_output_shape):
-                    error = (error or "") + (
-                        f"Expected {len(exptected_output_shape)} outputs, but got {len(results)}"
-                    )
+                    error = (error or "") + (f"Expected {len(exptected_output_shape)} outputs, but got {len(results)}")
                 else:
                     for res, exp in zip(results, exptected_output_shape):
-                        if res.shape != exp:
-                            error = (error or "") + f"(n={n}) Expected output shape {exptected_output_shape}, but got {res.shape}\n"
+                        if diff := {a: s for a, s in res.sizes.items() if s != exp[AxisId(str(a))]}:
+                            error = (
+                                (error or "")
+                                + f"(n={n}) Expected output shape {exp},"
+                                + f" but got {exptected_output_shape} ({diff})\n"
+                            )
 
-                if error:
-                    break
+                model.validation_summary.add_detail(
+                    ValidationDetail(
+                        name="Reproduce test outputs from test inputs with batch_size:"
+                        + f" {batch_size} and size parameter n: {n}",
+                        status="passed" if error is None else "failed",
+                        errors=(
+                            []
+                            if error is None
+                            else [
+                                ErrorEntry(
+                                    loc=("weights",) if weight_format is None else ("weights", weight_format),
+                                    msg=error,
+                                    type="bioimageio.core",
+                                )
+                            ]
+                        ),
+                    )
+                )
     except Exception as e:
         error = str(e)
         tb = traceback.format_tb(e.__traceback__)
-
-    model.validation_summary.add_detail(
-        ValidationDetail(
-            name="Reproduce test outputs from test inputs",
-            status="passed" if error is None else "failed",
-            errors=(
-                []
-                if error is None
-                else [
+        model.validation_summary.add_detail(
+            ValidationDetail(
+                name="Reproduce test outputs from test inputs",
+                status="failed",
+                errors=[
                     ErrorEntry(
                         loc=("weights",) if weight_format is None else ("weights", weight_format),
                         msg=error,
                         type="bioimageio.core",
                         traceback=tb,
                     )
-                ]
-            ),
+                ],
+            )
         )
-    )
 
 
 def _test_expected_resource_type(rd: Union[InvalidDescr, ResourceDescr], expected_type: str):
