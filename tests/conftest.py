@@ -34,11 +34,11 @@ TENSORFLOW_JS_MODELS: List[str] = []
 MODEL_SOURCES = {
     "unet2d_keras": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
-        "unet2d_keras_tf/rdf.yaml"
+        "unet2d_keras_tf/rdf_v0_4.yaml"
     ),
     "unet2d_keras_tf2": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
-        "unet2d_keras_tf2/rdf.yaml"
+        "unet2d_keras_tf2/rdf_v0_4.yaml"
     ),
     "unet2d_nuclei_broad_model": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
@@ -46,26 +46,26 @@ MODEL_SOURCES = {
     ),
     "unet2d_expand_output_shape": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
-        "unet2d_nuclei_broad/rdf_expand_output_shape.yaml"
+        "unet2d_nuclei_broad/rdf_expand_output_shape_v0_4.bioimageio.yaml"
     ),
     "unet2d_fixed_shape": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
-        "unet2d_fixed_shape/rdf.yaml"
+        "unet2d_fixed_shape/rdf_v0_4.yaml"
     ),
     "unet2d_multi_tensor": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
-        "unet2d_multi_tensor/rdf.yaml"
+        "unet2d_multi_tensor/rdf_v0_4.yaml"
     ),
     "unet2d_diff_output_shape": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
-        "unet2d_diff_output_shape/rdf.yaml"
+        "unet2d_diff_output_shape/rdf_v0_4.yaml"
     ),
     "hpa_densenet": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/hpa-densenet/rdf.yaml"
     ),
     "stardist": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models"
-        "/stardist_example_model/rdf.yaml"
+        "/stardist_example_model/rdf_v0_4.yaml"
     ),
     "stardist_wrong_shape": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
@@ -73,11 +73,11 @@ MODEL_SOURCES = {
     ),
     "stardist_wrong_shape2": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
-        "stardist_example_model/rdf_wrong_shape2.yaml"
+        "stardist_example_model/rdf_wrong_shape2_v0_4.yaml"
     ),
     "shape_change": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
-        "upsample_test_model/rdf.yaml"
+        "upsample_test_model/v0_4_bioimageio.yaml"
     ),
 }
 
