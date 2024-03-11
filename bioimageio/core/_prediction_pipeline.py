@@ -37,8 +37,8 @@ class PredictionPipeline:
         self._preprocessing = preprocessing
         self._postprocessing = postprocessing
         if isinstance(bioimageio_model, v0_4.ModelDescr):
-            self._input_ids = [TensorId(d.name) for d in bioimageio_model.inputs]
-            self._output_ids = [TensorId(d.name) for d in bioimageio_model.outputs]
+            self._input_ids = [TensorId(str(d.name)) for d in bioimageio_model.inputs]
+            self._output_ids = [TensorId(str(d.name)) for d in bioimageio_model.outputs]
         else:
             self._input_ids = [d.id for d in bioimageio_model.inputs]
             self._output_ids = [d.id for d in bioimageio_model.outputs]
@@ -58,7 +58,7 @@ class PredictionPipeline:
 
     def predict(self, *input_tensors: xr.DataArray, **named_input_tensors: xr.DataArray) -> List[xr.DataArray]:
         """Predict input_tensor with the model without applying pre/postprocessing."""
-        named_tensors = [named_input_tensors[k] for k in self._input_ids[len(input_tensors) :]]
+        named_tensors = [named_input_tensors[str(k)] for k in self._input_ids[len(input_tensors) :]]
         return self._adapter.forward(*input_tensors, *named_tensors)
 
     def apply_preprocessing(self, sample: Sample) -> None:
@@ -71,11 +71,11 @@ class PredictionPipeline:
         for op in self._postprocessing:
             op(sample)
 
-    def forward_sample(self, input_sample: Sample):
+    def forward_sample(self, input_sample: Sample) -> Sample:
         """Apply preprocessing, run prediction and apply postprocessing."""
         self.apply_preprocessing(input_sample)
 
-        prediction_tensors = self.predict(**input_sample.data)
+        prediction_tensors = self.predict(**{str(k): v for k, v in input_sample.data.items()})
         prediction = Sample(data=dict(zip(self._output_ids, prediction_tensors)), stat=input_sample.stat)
         self.apply_postprocessing(prediction)
         return prediction
@@ -142,7 +142,7 @@ def create_prediction_pipeline(
     )
 
     if isinstance(bioimageio_model, v0_4.ModelDescr):
-        input_ids = [TensorId(ipt.name) for ipt in bioimageio_model.inputs]
+        input_ids = [TensorId(str(ipt.name)) for ipt in bioimageio_model.inputs]
     else:
         input_ids = [ipt.id for ipt in bioimageio_model.inputs]
 

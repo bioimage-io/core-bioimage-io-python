@@ -7,7 +7,6 @@ from typing import (
     Sequence,
     Set,
     Union,
-    cast,
 )
 
 from typing_extensions import assert_never
@@ -77,8 +76,8 @@ def _prepare_setup_pre_and_postprocessing(model: AnyModelDescr) -> _SetupProcess
     post_measures: Set[Measure] = set()
 
     if isinstance(model, v0_4.ModelDescr):
-        input_ids = {TensorId(d.name) for d in model.inputs}
-        output_ids = {TensorId(d.name) for d in model.outputs}
+        input_ids = {TensorId(str(d.name)) for d in model.inputs}
+        output_ids = {TensorId(str(d.name)) for d in model.outputs}
     else:
         input_ids = {d.id for d in model.inputs}
         output_ids = {d.id for d in model.outputs}
@@ -98,7 +97,7 @@ def _prepare_setup_pre_and_postprocessing(model: AnyModelDescr) -> _SetupProcess
 
             for proc_d in proc_descrs:
                 proc_class = get_proc_class(proc_d)
-                tensor_id = cast(TensorId, t_descr.name) if isinstance(t_descr, v0_4.TensorDescrBase) else t_descr.id
+                tensor_id = TensorId(str(t_descr.name)) if isinstance(t_descr, v0_4.TensorDescrBase) else t_descr.id
                 req = proc_class.from_proc_descr(proc_d, tensor_id)  # pyright: ignore[reportArgumentType]
                 for m in req.required_measures:
                     if m.tensor_id in input_ids:

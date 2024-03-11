@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 import subprocess
 import warnings
 from types import MappingProxyType
@@ -10,7 +9,6 @@ from loguru import logger
 from pydantic import FilePath
 from pytest import FixtureRequest, fixture
 
-os.environ["BIOIMAGEIO_COUNT_RDF_DOWNLOADS"] = "false"  # disable tracking before bioimageio imports
 from bioimageio.spec import __version__ as bioimageio_spec_version
 from bioimageio.spec._package import save_bioimageio_package
 
@@ -35,50 +33,50 @@ TENSORFLOW_JS_MODELS: List[str] = []
 
 MODEL_SOURCES = {
     "unet2d_keras": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
         "unet2d_keras_tf/rdf.yaml"
     ),
     "unet2d_keras_tf2": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
         "unet2d_keras_tf2/rdf.yaml"
     ),
     "unet2d_nuclei_broad_model": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
         "unet2d_nuclei_broad/rdf.yaml"
     ),
     "unet2d_expand_output_shape": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
         "unet2d_nuclei_broad/rdf_expand_output_shape.yaml"
     ),
     "unet2d_fixed_shape": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
         "unet2d_fixed_shape/rdf.yaml"
     ),
     "unet2d_multi_tensor": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
         "unet2d_multi_tensor/rdf.yaml"
     ),
     "unet2d_diff_output_shape": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
         "unet2d_diff_output_shape/rdf.yaml"
     ),
     "hpa_densenet": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/hpa-densenet/rdf.yaml"
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/hpa-densenet/rdf.yaml"
     ),
     "stardist": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models"
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models"
         "/stardist_example_model/rdf.yaml"
     ),
     "stardist_wrong_shape": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
         "stardist_example_model/rdf_wrong_shape.yaml"
     ),
     "stardist_wrong_shape2": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
         "stardist_example_model/rdf_wrong_shape2.yaml"
     ),
     "shape_change": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
         "upsample_test_model/rdf.yaml"
     ),
 }

@@ -1,13 +1,8 @@
-import os
 import subprocess
-from pathlib import Path
-from typing import Any, List, Optional, Sequence, Set
+from typing import Any, List, Sequence
 
-import numpy as np
 import pytest
 from pydantic import FilePath
-
-from bioimageio.core import load_description
 
 
 def run_subprocess(commands: Sequence[str], **kwargs: Any) -> "subprocess.CompletedProcess[str]":

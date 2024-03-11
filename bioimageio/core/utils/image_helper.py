@@ -31,69 +31,76 @@ InputTensor = Union[InputTensorDescr04, InputTensorDescr]
 OutputTensor = Union[OutputTensorDescr04, OutputTensorDescr]
 
 
-def transpose_image(
-    image: NDArray[Any],
+def interprete_array(
+    nd_array: NDArray[Any],
+    desired_axes: Union[v0_4.AxesStr, Sequence[AnyAxis]],
+) -> xr.DataArray:
+    if isinstance(desired_axes, str):
+        desired_space_axes = [a for a in desired_axes if a in "zyx"]
+    else:
+        desired_space_axes = [a for a in desired_axes if a.type == "space"]
+
+    ndim = nd_array.ndim
+    if ndim == 2 and len(desired_space_axes) >= 2:
+        current_axes = (
+            SpaceInputAxis(id=AxisId("y"), size=nd_array.shape[0]),
+            SpaceInputAxis(id=AxisId("x"), size=nd_array.shape[1]),
+        )
+    elif ndim == 3 and len(desired_space_axes) == 2:
+        current_axes = (
+            ChannelAxis(channel_names=[Identifier(f"channel{i}") for i in range(nd_array.shape[0])]),
+            SpaceInputAxis(id=AxisId("y"), size=nd_array.shape[1]),
+            SpaceInputAxis(id=AxisId("x"), size=nd_array.shape[2]),
+        )
+    elif ndim == 3 and len(desired_space_axes) == 3:
+        current_axes = (
+            SpaceInputAxis(id=AxisId("z"), size=nd_array.shape[0]),
+            SpaceInputAxis(id=AxisId("y"), size=nd_array.shape[1]),
+            SpaceInputAxis(id=AxisId("x"), size=nd_array.shape[2]),
+        )
+    elif ndim == 4:
+        current_axes = (
+            ChannelAxis(channel_names=[Identifier(f"channel{i}") for i in range(nd_array.shape[0])]),
+            SpaceInputAxis(id=AxisId("z"), size=nd_array.shape[1]),
+            SpaceInputAxis(id=AxisId("y"), size=nd_array.shape[2]),
+            SpaceInputAxis(id=AxisId("x"), size=nd_array.shape[3]),
+        )
+    elif ndim == 5:
+        current_axes = (
+            BatchAxis(),
+            ChannelAxis(channel_names=[Identifier(f"channel{i}") for i in range(nd_array.shape[1])]),
+            SpaceInputAxis(id=AxisId("z"), size=nd_array.shape[2]),
+            SpaceInputAxis(id=AxisId("y"), size=nd_array.shape[3]),
+            SpaceInputAxis(id=AxisId("x"), size=nd_array.shape[4]),
+        )
+    else:
+        raise ValueError(f"Could not guess a mapping of {nd_array.shape} to {desired_axes}")
+
+    current_axes_ids = tuple(current_axes) if isinstance(current_axes, str) else tuple(a.id for a in current_axes)
+    return xr.DataArray(nd_array, dims=current_axes_ids)
+
+
+def transpose_array(
+    arary: xr.DataArray,
     desired_axes: Union[v0_4.AxesStr, Sequence[AnyAxis]],
     current_axes: Optional[Union[v0_4.AxesStr, Sequence[AnyAxis]]] = None,
 ) -> xr.DataArray:
     """Transpose an image to match desired axes.
 
     Args:
-        image: the input image
+        array: the input array
         desired_axes: the desired image axes
         current_axes: the axes of the input image
     """
-    # if the image axes are not given deduce them from the required axes and image shape
-    if current_axes is None:
-        if isinstance(desired_axes, str):
-            desired_space_axes = [a for a in desired_axes if a in "zyx"]
-        else:
-            desired_space_axes = [a for a in desired_axes if a.type == "space"]
 
-        ndim = image.ndim
-        if ndim == 2 and len(desired_space_axes) >= 2:
-            current_axes = (
-                SpaceInputAxis(id=AxisId("y"), size=image.shape[0]),
-                SpaceInputAxis(id=AxisId("x"), size=image.shape[1]),
-            )
-        elif ndim == 3 and len(desired_space_axes) == 2:
-            current_axes = (
-                ChannelAxis(channel_names=[Identifier(f"channel{i}") for i in range(image.shape[0])]),
-                SpaceInputAxis(id=AxisId("y"), size=image.shape[1]),
-                SpaceInputAxis(id=AxisId("x"), size=image.shape[2]),
-            )
-        elif ndim == 3 and len(desired_space_axes) == 3:
-            current_axes = (
-                SpaceInputAxis(id=AxisId("z"), size=image.shape[0]),
-                SpaceInputAxis(id=AxisId("y"), size=image.shape[1]),
-                SpaceInputAxis(id=AxisId("x"), size=image.shape[2]),
-            )
-        elif ndim == 4:
-            current_axes = (
-                ChannelAxis(channel_names=[Identifier(f"channel{i}") for i in range(image.shape[0])]),
-                SpaceInputAxis(id=AxisId("z"), size=image.shape[1]),
-                SpaceInputAxis(id=AxisId("y"), size=image.shape[2]),
-                SpaceInputAxis(id=AxisId("x"), size=image.shape[3]),
-            )
-        elif ndim == 5:
-            current_axes = (
-                BatchAxis(),
-                ChannelAxis(channel_names=[Identifier(f"channel{i}") for i in range(image.shape[1])]),
-                SpaceInputAxis(id=AxisId("z"), size=image.shape[2]),
-                SpaceInputAxis(id=AxisId("y"), size=image.shape[3]),
-                SpaceInputAxis(id=AxisId("x"), size=image.shape[4]),
-            )
-        else:
-            raise ValueError(f"Could not guess a mapping of {image.shape} to {desired_axes}")
-
-    current_axes_ids = tuple(current_axes) if isinstance(current_axes, str) else tuple(a.id for a in current_axes)
-    desired_axes_ids = tuple(desired_axes) if isinstance(desired_axes, str) else tuple(a.id for a in desired_axes)
-    tensor = xr.DataArray(image, dims=current_axes_ids)
+    desired_axes_ids = (
+        tuple(map(AxisId, desired_axes)) if isinstance(desired_axes, str) else tuple(a.id for a in desired_axes)
+    )
     # expand the missing image axes
-    missing_axes = tuple(set(desired_axes_ids) - set(current_axes_ids))
-    tensor = tensor.expand_dims(dim=missing_axes)
+    missing_axes = tuple(set(desired_axes_ids) - set(map(AxisId, array.dims)))
+    array = array.expand_dims(dim=missing_axes)
     # transpose to the correct axis order
-    return tensor.transpose(*tuple(desired_axes_ids))
+    return arraytensor.transpose(*tuple(desired_axes_ids))
 
 
 def convert_axes_for_known_shape(axes: v0_4.AxesStr, shape: Sequence[int]):
@@ -117,7 +124,7 @@ def load_tensor(
             is_volume = len([a for a in guess_axes if a.type in ("time", "space")]) > 2
 
         im = imageio.volread(path) if is_volume else imageio.imread(path)
-        im = transpose_image(im, desired_axes=desired_axes, current_axes=current_axes)
+        im = transpose_array(im, desired_axes=desired_axes, current_axes=current_axes)
 
     return xr.DataArray(
         im, dims=tuple(desired_axes) if isinstance(desired_axes, str) else tuple(a.id for a in desired_axes)

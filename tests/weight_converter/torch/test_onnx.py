@@ -1,3 +1,4 @@
+# type: ignore  # TODO enable type checking
 import os
 from pathlib import Path
 

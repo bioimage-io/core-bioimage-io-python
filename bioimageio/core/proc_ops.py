@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from dataclasses import InitVar, dataclass, field
 from typing import (
     Collection,
-    Hashable,
     Literal,
     Mapping,
     Optional,
@@ -302,7 +301,7 @@ class ScaleMeanVariance(_SimpleOperator):
         return cls(
             input=tensor_id,
             output=tensor_id,
-            reference_tensor=cast(TensorId, kwargs.reference_tensor),
+            reference_tensor=TensorId(str(kwargs.reference_tensor)),
             axes=axes,
             eps=kwargs.eps,
         )
@@ -556,4 +555,3 @@ def get_proc_class(proc_spec: ProcDescr):
         return ZeroMeanUnitVariance
     else:
         assert_never(proc_spec)
-

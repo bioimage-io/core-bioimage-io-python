@@ -1,3 +1,4 @@
+# type: ignore  # TODO enable type checking
 import zipfile
 from pathlib import Path
 

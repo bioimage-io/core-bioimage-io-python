@@ -1,3 +1,4 @@
+# type: ignore  # TODO enable type checking
 from pathlib import Path
 
 import pytest
