@@ -3,11 +3,10 @@ from pathlib import Path
 from typing import Any, Dict, Literal, Mapping, Optional, Sequence, Tuple, Union
 
 import imageio
-import xarray as xr
 from numpy.typing import NDArray
 from typing_extensions import assert_never
 
-from bioimageio.core.common import Axis
+from bioimageio.core.common import Axis, Tensor
 from bioimageio.spec.model import v0_4
 from bioimageio.spec.model.v0_4 import InputTensorDescr as InputTensorDescr04
 from bioimageio.spec.model.v0_4 import OutputTensorDescr as OutputTensorDescr04
@@ -31,7 +30,7 @@ OutputTensor = Union[OutputTensorDescr04, OutputTensorDescr]
 def interprete_array_with_desired_axes(
     nd_array: NDArray[Any],
     desired_axes: Union[v0_4.AxesStr, Sequence[AnyAxis]],
-) -> xr.DataArray:
+) -> Tensor:
     if isinstance(desired_axes, str):
         desired_space_axes = [a for a in desired_axes if a in "zyx"]
     else:
@@ -43,7 +42,7 @@ def interprete_array_with_desired_axes(
 def interprete_array(
     nd_array: NDArray[Any],
     n_expected_space_axes: Optional[int] = None,
-) -> xr.DataArray:
+) -> Tensor:
 
     ndim = nd_array.ndim
     if ndim == 2 and (n_expected_space_axes is None or n_expected_space_axes >= 2):
@@ -86,7 +85,7 @@ def interprete_array(
         )
 
     current_axes_ids = tuple(current_axes) if isinstance(current_axes, str) else tuple(a.id for a in current_axes)
-    return xr.DataArray(nd_array, dims=current_axes_ids)
+    return Tensor(nd_array, dims=current_axes_ids)
 
 
 def axis_descr_to_ids(axes: Union[v0_4.AxesStr, Sequence[AnyAxis]]) -> Tuple[AxisId, ...]:
@@ -97,9 +96,9 @@ def axis_descr_to_ids(axes: Union[v0_4.AxesStr, Sequence[AnyAxis]]) -> Tuple[Axi
 
 
 def transpose_tensor(
-    tensor: xr.DataArray,
+    tensor: Tensor,
     axes: Sequence[AxisId],
-) -> xr.DataArray:
+) -> Tensor:
     """Transpose `array` to `axes` order.
 
     Args:
@@ -122,7 +121,7 @@ def convert_v0_4_axes_for_known_shape(axes: v0_4.AxesStr, shape: Sequence[int]):
 def load_tensor(
     path: Path,
     axes: Optional[Sequence[Axis]] = None,
-) -> xr.DataArray:
+) -> Tensor:
 
     ext = path.suffix
     if ext == ".npy":
@@ -134,11 +133,11 @@ def load_tensor(
     if axes is None:
         return interprete_array(array)
     else:
-        return xr.DataArray(array, dims=tuple(a.id for a in axes))
+        return Tensor(array, dims=tuple(a.id for a in axes))
 
 
 def pad(
-    tensor: xr.DataArray,
+    tensor: Tensor,
     pad_width: Mapping[AxisId, Union[int, Tuple[int, int]]],
     mode: Literal["edge", "reflect", "symmetric"] = "symmetric",
 ):
@@ -146,7 +145,7 @@ def pad(
 
 
 def resize_to(
-    tensor: xr.DataArray,
+    tensor: Tensor,
     sizes: Mapping[AxisId, int],
     *,
     pad_where: Union[
@@ -184,7 +183,7 @@ def resize_to(
 
 
 def crop_to(
-    tensor: xr.DataArray,
+    tensor: Tensor,
     sizes: Mapping[AxisId, int],
     crop_where: Union[
         Literal["before", "center", "after"], Mapping[AxisId, Literal["before", "center", "after"]]
@@ -222,7 +221,7 @@ def crop_to(
 
 
 def pad_to(
-    tensor: xr.DataArray,
+    tensor: Tensor,
     sizes: Mapping[AxisId, int],
     pad_where: Union[
         Literal["before", "center", "after"], Mapping[AxisId, Literal["before", "center", "after"]]
