@@ -35,7 +35,7 @@ jobs:
       - name: Check if there is a parent commit
         id: check-parent-commit
         run: |
-          echo "name=sha::$(git rev-parse --verify --quiet HEAD^)" >> $GITHUB_OUTPUT
+          echo "sha=$(git rev-parse --verify --quiet HEAD^)" >> $GITHUB_OUTPUT
 
       - name: Detect new version
         id: check-version
