@@ -1,10 +1,19 @@
 repos:
   - repo: https://github.com/ambv/black
-    rev: 23.7.0
+    rev: 24.2.0
     hooks:
       - id: black-jupyter
-  - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.3.2
     hooks:
-      - id: isort
-        name: isort
+      - id: ruff
+        args: [--fix]
+  - repo: local
+    hooks:
+      - id: pyright
+        name: pyright
+        entry: pyright
+        language: system
+        always_run: true
+        pass_filenames: true
+        files: ^.*\.py$
