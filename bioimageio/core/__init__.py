@@ -2,8 +2,6 @@
 .. include:: ../../README.md
 """
 
-import json
-
 from bioimageio.spec import build_description as build_description
 from bioimageio.spec import dump_description as dump_description
 from bioimageio.spec import load_description as load_description
@@ -24,6 +22,8 @@ from ._prediction_pipeline import (
 from ._resource_tests import load_description_and_test as load_description_and_test
 from ._resource_tests import test_description as test_description
 from ._resource_tests import test_model as test_model
-from .utils import VERSION as __version__
+from .utils import VERSION
+
+__version__ = VERSION
 
 test_resource = test_description
