@@ -117,8 +117,8 @@ class ModelAdapter(ABC):
             error_msg = ""
 
         raise ValueError(
-            f"None of the weight formats {weight_format_priority_order} is supported for {model_description.name} "
-            f"in this environment.{error_msg}"
+            f"None of the weight formats {weight_format_priority_order} is "
+            + f"supported for {model_description.name} in this environment.{error_msg}"
         )
 
     @final
