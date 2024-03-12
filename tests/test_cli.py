@@ -19,6 +19,7 @@ def run_subprocess(commands: Sequence[str], **kwargs: Any) -> "subprocess.Comple
     ],
 )
 def test_cli(args: List[str], unet2d_nuclei_broad_model: FilePath):
+    assert unet2d_nuclei_broad_model.exists()
     resolved_args = [str(unet2d_nuclei_broad_model) if arg == "unet2d_nuclei_broad_model" else arg for arg in args]
     ret = run_subprocess(["bioimageio", *resolved_args])
     assert ret.returncode == 0, ret.stdout

@@ -7,8 +7,8 @@ import xarray as xr
 
 from bioimageio.core._prediction_pipeline import create_prediction_pipeline
 from bioimageio.core.common import AxisId, BatchSize
-from bioimageio.core.utils import VERSION
-from bioimageio.core.utils.image_helper import pad_to
+from bioimageio.core.utils import VERSION, get_test_inputs
+from bioimageio.core.utils.image_helper import resize_to
 from bioimageio.spec import InvalidDescr, ResourceDescr, build_description, dump_description, load_description
 from bioimageio.spec._internal.common_nodes import ResourceDescrBase
 from bioimageio.spec._internal.io_utils import load_array
@@ -19,7 +19,7 @@ from bioimageio.spec.summary import ErrorEntry, InstalledPackage, ValidationDeta
 
 
 def test_model(
-    source: PermissiveFileSource,
+    source: Union[v0_5.ModelDescr, PermissiveFileSource],
     weight_format: Optional[WeightsFormat] = None,
     devices: Optional[List[str]] = None,
     decimal: int = 4,
@@ -82,10 +82,9 @@ def load_description_and_test(
         _test_expected_resource_type(rd, expected_type)
 
     if isinstance(rd, (v0_4.ModelDescr, v0_5.ModelDescr)):
-        if isinstance(rd, v0_4.ModelDescr):
-            _test_model_inference_v0_4(rd, weight_format, devices, decimal)
-        else:
-            _test_model_inference_impl(rd, weight_format, devices)
+        _test_model_inference(rd, weight_format, devices, decimal)
+        if not isinstance(rd, v0_4.ModelDescr):
+            _test_model_inference_parametrized(rd, weight_format, devices)
 
     # TODO: add execution of jupyter notebooks
     # TODO: add more tests
@@ -93,7 +92,7 @@ def load_description_and_test(
     return rd
 
 
-def _test_model_inference_v0_4(
+def _test_model_inference(
     model: Union[v0_4.ModelDescr, v0_5.ModelDescr],
     weight_format: Optional[WeightsFormat],
     devices: Optional[List[str]],
@@ -107,11 +106,11 @@ def _test_model_inference_v0_4(
             expected = [xr.DataArray(load_array(src), dims=d.axes) for src, d in zip(model.test_outputs, model.outputs)]
         else:
             inputs = [
-                xr.DataArray(load_array(d.test_tensor.download().path), dims=tuple(a.id for a in d.axes))
+                xr.DataArray(load_array(d.test_tensor.download().path), dims=tuple(str(a.id) for a in d.axes))
                 for d in model.inputs
             ]
             expected = [
-                xr.DataArray(load_array(d.test_tensor.download().path), dims=tuple(a.id for a in d.axes))
+                xr.DataArray(load_array(d.test_tensor.download().path), dims=tuple(str(a.id) for a in d.axes))
                 for d in model.outputs
             ]
 
@@ -152,7 +151,7 @@ def _test_model_inference_v0_4(
     )
 
 
-def _test_model_inference_impl(
+def _test_model_inference_parametrized(
     model: v0_5.ModelDescr,
     weight_format: Optional[WeightsFormat],
     devices: Optional[List[str]],
@@ -162,10 +161,7 @@ def _test_model_inference_impl(
         return
 
     try:
-        test_inputs = [
-            xr.DataArray(load_array(d.test_tensor.download().path), dims=tuple(a.id for a in d.axes))
-            for d in model.inputs
-        ]
+        test_inputs = get_test_inputs(model)
 
         def generate_test_cases():
             tested: Set[str] = set()
@@ -178,7 +174,7 @@ def _test_model_inference_impl(
                     tested.add(hashable_target_size)
 
                 resized_test_inputs = [
-                    pad_to(t, target_sizes[t_descr.id]) for t, t_descr in zip(test_inputs, model.inputs)
+                    resize_to(t, target_sizes[t_descr.id]) for t, t_descr in zip(test_inputs, model.inputs)
                 ]
                 expected_output_shapes = [target_sizes[t_descr.id] for t_descr in model.outputs]
                 yield n, batch_size, resized_test_inputs, expected_output_shapes
@@ -203,8 +199,7 @@ def _test_model_inference_impl(
 
                 model.validation_summary.add_detail(
                     ValidationDetail(
-                        name="Reproduce test outputs from test inputs with batch_size:"
-                        + f" {batch_size} and size parameter n: {n}",
+                        name="Run inference for inputs with batch_size:" + f" {batch_size} and size parameter n: {n}",
                         status="passed" if error is None else "failed",
                         errors=(
                             []
@@ -224,7 +219,7 @@ def _test_model_inference_impl(
         tb = traceback.format_tb(e.__traceback__)
         model.validation_summary.add_detail(
             ValidationDetail(
-                name="Reproduce test outputs from test inputs",
+                name="Run inference for parametrized inputs",
                 status="failed",
                 errors=[
                     ErrorEntry(

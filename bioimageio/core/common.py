@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, Literal
 
 import xarray as xr
 
@@ -10,6 +10,14 @@ if TYPE_CHECKING:
 
 TensorId = v0_5.TensorId
 AxisId = v0_5.AxisId
+
+
+@dataclass
+class Axis:
+    id: AxisId
+    type: Literal["batch", "channel", "index", "space", "time"]
+
+
 BatchSize = int
 Tensor = xr.DataArray
 

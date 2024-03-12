@@ -1,9 +1,7 @@
 from pathlib import Path
 
-from bioimageio.spec import InvalidDescr
 
-
-def test_error_for_wrong_shape(stardist_wrong_shape: Path):
+def test_error_for_wrong_shape(stardist_wrong_shape: str):
     from bioimageio.core._resource_tests import test_model
 
     summary = test_model(stardist_wrong_shape)
@@ -15,7 +13,7 @@ def test_error_for_wrong_shape(stardist_wrong_shape: Path):
     assert summary.details[0].errors[0].msg == expected_error_message
 
 
-def test_error_for_wrong_shape2(stardist_wrong_shape2: Path):
+def test_error_for_wrong_shape2(stardist_wrong_shape2: str):
     from bioimageio.core._resource_tests import test_model
 
     summary = test_model(stardist_wrong_shape2)

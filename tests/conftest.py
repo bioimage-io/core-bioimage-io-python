@@ -34,15 +34,15 @@ TENSORFLOW_JS_MODELS: List[str] = []
 MODEL_SOURCES = {
     "unet2d_keras": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
-        "unet2d_keras_tf/rdf_v0_4.yaml"
+        "unet2d_keras_tf/v0_4.bioimageio.yaml"
     ),
     "unet2d_keras_tf2": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
-        "unet2d_keras_tf2/rdf_v0_4.yaml"
+        "unet2d_keras_tf2/v0_4.bioimageio.yaml"
     ),
     "unet2d_nuclei_broad_model": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
-        "unet2d_nuclei_broad/rdf.yaml"
+        "unet2d_nuclei_broad/bioimageio.yaml"
     ),
     "unet2d_expand_output_shape": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
@@ -50,22 +50,22 @@ MODEL_SOURCES = {
     ),
     "unet2d_fixed_shape": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
-        "unet2d_fixed_shape/rdf_v0_4.yaml"
+        "unet2d_fixed_shape/v0_4.bioimageio.yaml"
     ),
     "unet2d_multi_tensor": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
-        "unet2d_multi_tensor/rdf_v0_4.yaml"
+        "unet2d_multi_tensor/v0_4.bioimageio.yaml"
     ),
     "unet2d_diff_output_shape": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
-        "unet2d_diff_output_shape/rdf_v0_4.yaml"
+        "unet2d_diff_output_shape/v0_4.bioimageio.yaml"
     ),
     "hpa_densenet": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/hpa-densenet/rdf.yaml"
     ),
     "stardist": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models"
-        "/stardist_example_model/rdf_v0_4.yaml"
+        "/stardist_example_model/v0_4.bioimageio.yaml"
     ),
     "stardist_wrong_shape": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
@@ -77,7 +77,7 @@ MODEL_SOURCES = {
     ),
     "shape_change": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
-        "upsample_test_model/v0_4_bioimageio.yaml"
+        "upsample_test_model/v0_4.bioimageio.yaml"
     ),
 }
 
@@ -122,8 +122,6 @@ if not skip_tensorflow:
     if tf_major_version == 1:
         load_model_packages |= set(KERAS_TF1_MODELS)
         load_model_packages |= set(TENSORFLOW1_MODELS)
-        load_model_packages.add("stardist_wrong_shape")
-        load_model_packages.add("stardist_wrong_shape2")
     elif tf_major_version == 2:
         load_model_packages |= set(KERAS_TF2_MODELS)
         load_model_packages |= set(TENSORFLOW2_MODELS)
@@ -246,14 +244,14 @@ def shape_change_model(request: FixtureRequest, model_packages: MappingProxyType
 
 # written as model group to automatically skip on missing tensorflow 1
 @fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist_wrong_shape"])
-def stardist_wrong_shape(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
-    return model_packages[request.param]
+def stardist_wrong_shape(request: FixtureRequest):
+    return MODEL_SOURCES[request.param]
 
 
 # written as model group to automatically skip on missing tensorflow 1
 @fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist_wrong_shape2"])
-def stardist_wrong_shape2(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
-    return model_packages[request.param]
+def stardist_wrong_shape2(request: FixtureRequest):
+    return MODEL_SOURCES[request.param]
 
 
 # written as model group to automatically skip on missing tensorflow 1
