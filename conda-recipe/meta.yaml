@@ -18,12 +18,10 @@ build:
 
 requirements:
   host:
-    - python >=3.7,<3.10
+    - python >=3.8,<3.13
     - pip
   run:
-    - python >=3.7,<3.10
-    - tqdm
-    - typer
+    - python >=3.8,<3.13
     {% for dep in setup_py_data['install_requires'] %}
     - {{ dep.lower() }}
     {% endfor %}
@@ -47,11 +45,10 @@ requirements:
 test:
   imports:
     - bioimageio.core
-    - bioimageio.core.build_spec
   source_files:
     - tests
   requires:
-    {% for dep in setup_py_data['extras_require']['test'] %}
+    {% for dep in setup_py_data['extras_require']['dev'] %}
     - {{ dep.lower() }}
     {% endfor %}
   commands:
@@ -64,6 +61,5 @@ about:
   license_family: MIT
   license_file: LICENSE
   summary: 'Tools for running BioimageIO compliant neural networks in Python.'
-
   doc_url: https://github.com/bioimage-io/core-bioimage-io-python
   dev_url: https://github.com/bioimage-io/core-bioimage-io-python

@@ -42,15 +42,18 @@ setup(
         "pytorch": ["torch>=1.6", "torchvision"],
         "tensorflow": ["tensorflow"],
         "onnx": ["onnxruntime"],
-        "test": [
-            "bioimageio.core[onnx]",
-            "bioimageio.core[pytorch]",
-            "black[jupyter]",
+        "dev": [
+            "black",
             "crick",
-            "pytest-xdist[psutil]",  # parallel pytest with 'pytest -n auto'
+            "filelock",
+            "onnxruntime",
+            "pre-commit",
+            "psutil",  # parallel pytest with 'pytest -n auto'
+            "pytest-xdist",  # parallel pytest
             "pytest",
+            "torch>=1.6",
+            "torchvision",
         ],
-        "dev": ["pre-commit", "bioimageio.core[test]"],
     },
     project_urls={
         "Bug Reports": "https://github.com/bioimage-io/core-bioimage-io-python/issues",
