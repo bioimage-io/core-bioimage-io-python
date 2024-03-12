@@ -97,11 +97,8 @@ def interprete_array(
             f"Could not guess an axis mapping for {nd_array.shape} with {n_expected_space_axes} expected space axes"
         )
 
-    current_axes_ids = (
-        tuple(current_axes)
-        if isinstance(current_axes, str)
-        else tuple(a.id for a in current_axes)
-    )
+    current_axes_ids = tuple(str(a.id) for a in current_axes)
+
     return Tensor(nd_array, dims=current_axes_ids)
 
 
@@ -130,7 +127,7 @@ def transpose_tensor(
     missing_axes = tuple(str(a) for a in axes if a not in current_axes)
     tensor = tensor.expand_dims(missing_axes)
     # transpose to the correct axis order
-    return tensor.transpose(*axes)
+    return tensor.transpose(*map(str, axes))
 
 
 def convert_v0_4_axes_for_known_shape(axes: v0_4.AxesStr, shape: Sequence[int]):

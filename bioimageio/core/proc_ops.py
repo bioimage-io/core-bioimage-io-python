@@ -152,7 +152,7 @@ class UpdateStats(Operator):
         return set()
 
     def __post_init__(self):
-        self._keep_updating_initial_dataset_stats = (
+        self._keep_updating_dataset_stats = (
             self.keep_updating_initial_dataset_stats
             or not self.stats_calculator.has_dataset_measures
         )

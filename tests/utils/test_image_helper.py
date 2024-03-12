@@ -3,9 +3,15 @@ from typing import Sequence
 import numpy as np
 import pytest
 import xarray as xr
+from xarray.testing import assert_equal  # pyright: ignore[reportUnknownVariableType]
 
 from bioimageio.core.common import AxisId
-from bioimageio.core.utils.image_helper import interprete_array
+from bioimageio.core.utils.image_helper import (
+    crop_to,
+    interprete_array,
+    pad,
+    transpose_tensor,
+)
 
 
 @pytest.mark.parametrize(
@@ -16,7 +22,6 @@ from bioimageio.core.utils.image_helper import interprete_array
     ],
 )
 def test_transpose_tensor_2d(axes: Sequence[AxisId]):
-    from bioimageio.core.utils.image_helper import transpose_tensor
 
     tensor = interprete_array(np.random.rand(256, 256), len(axes))
     transposed = transpose_tensor(tensor, axes)
@@ -31,15 +36,17 @@ def test_transpose_tensor_2d(axes: Sequence[AxisId]):
     ],
 )
 def test_transpose_tensor_3d(axes: Sequence[AxisId]):
-    from bioimageio.core.utils.image_helper import transpose_tensor
-
     tensor = interprete_array(np.random.rand(64, 64, 64), len(axes))
     transposed = transpose_tensor(tensor, axes)
     assert transposed.ndim == len(axes)
 
 
 def test_crop_and_pad():
-    tensor = xr.DataArray(np.random.rand(64))
+    tensor = xr.DataArray(np.random.rand(10, 20), dims=("x", "y"))
+    sizes = {AxisId(str(k)): v for k, v in tensor.sizes.items()}
+    padded = pad(tensor, {AxisId("x"): 7, AxisId("y"): (3, 3)})
+    cropped = crop_to(padded, sizes)
+    assert_equal(tensor, cropped)
 
 
 # def test_transform_output_tensor():
