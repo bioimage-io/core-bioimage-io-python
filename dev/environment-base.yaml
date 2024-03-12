@@ -3,20 +3,26 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - bioimageio.spec==0.5.*
   - black
-  - bioimageio.spec
   - conda-build
+  - filelock
   - h5py >=2.10,<2.11
+  - loguru
   - mypy
-  - pip
-  - pre-commit
-  - pytest
-  - python >=3.7,<3.8  # this environment is only available for python 3.7
-  - xarray
-  - pytorch
   - onnx
   - onnxruntime
+  - pip
+  - pre-commit
+  - psutil
+  - pytest
+  - pytest-xdist
+  - python >=3.7,<3.8 # this environment is only available for python 3.7
+  - pytorch
+  - ruyaml
   - tensorflow >=1.12,<2.0
-  - tifffile <=2022.4.8  # pin fixes Syntax error; see https://github.com/bioimage-io/core-bioimage-io-python/pull/259
+  - tifffile <=2022.4.8 # pin fixes Syntax error; see https://github.com/bioimage-io/core-bioimage-io-python/pull/259
+  - typer
+  - xarray
   - pip:
-    - keras==1.2.2
+      - keras==1.2.2

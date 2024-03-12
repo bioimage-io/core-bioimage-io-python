@@ -3,13 +3,19 @@ channels:
   - conda-forge
   - defaults
 dependencies:
+  - bioimageio.spec==0.5.*
   - black
-  - bioimageio.spec
   - conda-build
+  - filelock
+  - loguru
   - mypy
   - pip
+  - psutil
   - pytest
+  - pytest-xdist
   - python
-  - xarray
+  - ruyaml
   - tensorflow >=2.9,<3.0
-  - tifffile <=2022.4.8  # pin fixes Syntax error; see https://github.com/bioimage-io/core-bioimage-io-python/pull/259
+  - tifffile <=2022.4.8 # pin fixes Syntax error; see https://github.com/bioimage-io/core-bioimage-io-python/pull/259
+  - typer
+  - xarray
