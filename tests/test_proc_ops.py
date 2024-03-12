@@ -79,11 +79,20 @@ def test_zero_mean_unit_variance_fixed(tid: TensorId):
     from bioimageio.core.proc_ops import FixedZeroMeanUnitVariance
 
     op = FixedZeroMeanUnitVariance(
-        tid, tid, mean=xr.DataArray([1, 4, 7], dims=("y")), std=xr.DataArray([0.81650, 0.81650, 0.81650], dims=("y"))
+        tid,
+        tid,
+        mean=xr.DataArray([1, 4, 7], dims=("y")),
+        std=xr.DataArray([0.81650, 0.81650, 0.81650], dims=("y")),
     )
     data = xr.DataArray(np.arange(9).reshape((1, 1, 3, 3)), dims=("b", "c", "x", "y"))
     expected = xr.DataArray(
-        np.array([[-1.224743, 0.0, 1.224743], [-1.224743, 0.0, 1.224743], [-1.224743, 0.0, 1.224743]])[None, None],
+        np.array(
+            [
+                [-1.224743, 0.0, 1.224743],
+                [-1.224743, 0.0, 1.224743],
+                [-1.224743, 0.0, 1.224743],
+            ]
+        )[None, None],
         dims=("b", "c", "x", "y"),
     )
     sample = Sample(data={tid: data})
@@ -96,7 +105,9 @@ def test_zero_mean_unit_across_axes(tid: TensorId):
 
     data = xr.DataArray(np.arange(18).reshape((2, 3, 3)), dims=("c", "x", "y"))
 
-    op = ZeroMeanUnitVariance(tid, tid, SampleMean(tid, (AxisId("c"),)), SampleStd(tid, (AxisId("c"),)))
+    op = ZeroMeanUnitVariance(
+        tid, tid, SampleMean(tid, (AxisId("c"),)), SampleStd(tid, (AxisId("c"),))
+    )
     sample = Sample(data={tid: data})
     sample.stat = compute_measures(op.required_measures, [sample])
 
@@ -166,7 +177,9 @@ def test_clip(tid: TensorId):
     data = xr.DataArray(np.arange(9).reshape(3, 3), dims=("x", "y"))
     sample = Sample(data={tid: data})
 
-    expected = xr.DataArray(np.array([[3, 3, 3], [3, 4, 5], [5, 5, 5]]), dims=("x", "y"))
+    expected = xr.DataArray(
+        np.array([[3, 3, 3], [3, 4, 5], [5, 5, 5]]), dims=("x", "y")
+    )
     op(sample)
     xr.testing.assert_equal(expected, sample.data[tid])
 
@@ -176,7 +189,9 @@ def test_combination_of_op_steps_with_dims_specified(tid: TensorId):
 
     data = xr.DataArray(np.arange(18).reshape((2, 3, 3)), dims=("c", "x", "y"))
     sample = Sample(data={tid: data})
-    op = ZeroMeanUnitVariance(tid, tid, SampleMean(tid, (AxisId("c"),)), SampleStd(tid, (AxisId("c"),)))
+    op = ZeroMeanUnitVariance(
+        tid, tid, SampleMean(tid, (AxisId("c"),)), SampleStd(tid, (AxisId("c"),))
+    )
     sample.stat = compute_measures(op.required_measures, [sample])
 
     expected = xr.DataArray(
@@ -194,7 +209,15 @@ def test_combination_of_op_steps_with_dims_specified(tid: TensorId):
     xr.testing.assert_allclose(expected, sample.data[tid])
 
 
-@pytest.mark.parametrize("axes", [None, tuple(map(AxisId, "cy")), tuple(map(AxisId, "cyx")), tuple(map(AxisId, "x"))])
+@pytest.mark.parametrize(
+    "axes",
+    [
+        None,
+        tuple(map(AxisId, "cy")),
+        tuple(map(AxisId, "cyx")),
+        tuple(map(AxisId, "x")),
+    ],
+)
 def test_scale_mean_variance(tid: TensorId, axes: Optional[Tuple[AxisId, ...]]):
     from bioimageio.core.proc_ops import ScaleMeanVariance
 
@@ -211,8 +234,13 @@ def test_scale_mean_variance(tid: TensorId, axes: Optional[Tuple[AxisId, ...]]):
     xr.testing.assert_allclose(ref_data, sample.data[tid])
 
 
-@pytest.mark.parametrize("axes", [None, tuple(map(AxisId, "cy")), tuple(map(AxisId, "y")), tuple(map(AxisId, "yx"))])
-def test_scale_mean_variance_per_channel(tid: TensorId, axes: Optional[Tuple[AxisId, ...]]):
+@pytest.mark.parametrize(
+    "axes",
+    [None, tuple(map(AxisId, "cy")), tuple(map(AxisId, "y")), tuple(map(AxisId, "yx"))],
+)
+def test_scale_mean_variance_per_channel(
+    tid: TensorId, axes: Optional[Tuple[AxisId, ...]]
+):
     from bioimageio.core.proc_ops import ScaleMeanVariance
 
     shape = (3, 32, 46)

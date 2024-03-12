@@ -46,22 +46,34 @@ class TensorflowModelAdapterBase(ModelAdapter):
             warnings.warn(
                 f"The model specifies a newer tensorflow version than installed: {model_tf_version} > {tf_version}."
             )
-        elif (model_tf_version.major, model_tf_version.minor) != (tf_version.major, tf_version.minor):
+        elif (model_tf_version.major, model_tf_version.minor) != (
+            tf_version.major,
+            tf_version.minor,
+        ):
             warnings.warn(
                 "The tensorflow version specified by the model does not match the installed: "
                 f"{model_tf_version} != {tf_version}."
             )
 
-        self.use_keras_api = tf_version.major > 1 or self.weight_format == KerasModelAdapter.weight_format
+        self.use_keras_api = (
+            tf_version.major > 1
+            or self.weight_format == KerasModelAdapter.weight_format
+        )
 
         # TODO tf device management
         if devices is not None:
-            warnings.warn(f"Device management is not implemented for tensorflow yet, ignoring the devices {devices}")
+            warnings.warn(
+                f"Device management is not implemented for tensorflow yet, ignoring the devices {devices}"
+            )
 
         weight_file = self.require_unzipped(weights.source)
         self._network = self._get_network(weight_file)
         self._internal_output_axes = [
-            tuple(out.axes) if isinstance(out.axes, str) else tuple(a.id for a in out.axes)
+            (
+                tuple(out.axes)
+                if isinstance(out.axes, str)
+                else tuple(a.id for a in out.axes)
+            )
             for out in model_description.outputs
         ]
 
@@ -88,15 +100,19 @@ class TensorflowModelAdapterBase(ModelAdapter):
     # alive in between of forward passes (but then the sessions need to be properly opened / closed)
     def _forward_tf(self, *input_tensors):
         input_keys = [
-            ipt.name if isinstance(ipt, v0_4.InputTensorDescr) else ipt.id for ipt in self.model_description.inputs
+            ipt.name if isinstance(ipt, v0_4.InputTensorDescr) else ipt.id
+            for ipt in self.model_description.inputs
         ]
         output_keys = [
-            out.name if isinstance(out, v0_4.OutputTensorDescr) else out.id for out in self.model_description.outputs
+            out.name if isinstance(out, v0_4.OutputTensorDescr) else out.id
+            for out in self.model_description.outputs
         ]
 
         # TODO read from spec
         tag = tf.saved_model.tag_constants.SERVING
-        signature_key = tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY
+        signature_key = (
+            tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY
+        )
 
         graph = tf.Graph()
         with graph.as_default():
@@ -106,13 +122,20 @@ class TensorflowModelAdapterBase(ModelAdapter):
                 signature = graph_def.signature_def
 
                 # get the tensors into the graph
-                in_names = [signature[signature_key].inputs[key].name for key in input_keys]
-                out_names = [signature[signature_key].outputs[key].name for key in output_keys]
+                in_names = [
+                    signature[signature_key].inputs[key].name for key in input_keys
+                ]
+                out_names = [
+                    signature[signature_key].outputs[key].name for key in output_keys
+                ]
                 in_tensors = [graph.get_tensor_by_name(name) for name in in_names]
                 out_tensors = [graph.get_tensor_by_name(name) for name in out_names]
 
                 # run prediction
-                res = sess.run(dict(zip(out_names, out_tensors)), dict(zip(in_tensors, input_tensors)))
+                res = sess.run(
+                    dict(zip(out_names, out_tensors)),
+                    dict(zip(in_tensors, input_tensors)),
+                )
                 # from dict to list of tensors
                 res = [res[out] for out in out_names]
 
@@ -140,17 +163,25 @@ class TensorflowModelAdapterBase(ModelAdapter):
         else:
             result = self._forward_tf(*data)
 
-        return [xr.DataArray(r, dims=axes) for r, axes in zip(result, self._internal_output_axes)]
+        return [
+            xr.DataArray(r, dims=axes)
+            for r, axes in zip(result, self._internal_output_axes)
+        ]
 
     def unload(self) -> None:
-        warnings.warn("Device management is not implemented for keras yet, cannot unload model")
+        warnings.warn(
+            "Device management is not implemented for keras yet, cannot unload model"
+        )
 
 
 class TensorflowModelAdapter(TensorflowModelAdapterBase):
     weight_format = "tensorflow_saved_model_bundle"
 
     def __init__(
-        self, *, model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr], devices: Optional[Sequence[str]] = None
+        self,
+        *,
+        model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
+        devices: Optional[Sequence[str]] = None,
     ):
         if model_description.weights.tensorflow_saved_model_bundle is None:
             raise ValueError("missing tensorflow_saved_model_bundle weights")
@@ -166,7 +197,10 @@ class KerasModelAdapter(TensorflowModelAdapterBase):
     weight_format = "keras_hdf5"
 
     def __init__(
-        self, *, model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr], devices: Optional[Sequence[str]] = None
+        self,
+        *,
+        model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
+        devices: Optional[Sequence[str]] = None,
     ):
         if model_description.weights.keras_hdf5 is None:
             raise ValueError("missing keras_hdf5 weights")

@@ -42,7 +42,9 @@ def add_onnx_weights(
 
     state_dict_weights_descr = model_spec.weights.pytorch_state_dict
     if state_dict_weights_descr is None:
-        raise ValueError("The provided model does not have weights in the pytorch state dict format")
+        raise ValueError(
+            "The provided model does not have weights in the pytorch state dict format"
+        )
 
     with torch.no_grad():
 
@@ -53,7 +55,9 @@ def add_onnx_weights(
         expected_tensors = model(*input_tensors)
         if isinstance(expected_tensors, torch.Tensor):
             expected_tensors = [expected_tensors]
-        expected_outputs: List[np.ndarray[Any, Any]] = [out.numpy() for out in expected_tensors]
+        expected_outputs: List[np.ndarray[Any, Any]] = [
+            out.numpy() for out in expected_tensors
+        ]
 
         if use_tracing:
             torch.onnx.export(
@@ -75,9 +79,16 @@ def add_onnx_weights(
 
     # check the onnx model
     sess = rt.InferenceSession(str(output_path))
-    onnx_input_node_args = cast(List[Any], sess.get_inputs())  # fixme: remove cast, try using rt.NodeArg instead of Any
-    onnx_inputs = {input_name.name: inp for input_name, inp in zip(onnx_input_node_args, input_data)}
-    outputs = cast(Sequence[np.ndarray[Any, Any]], sess.run(None, onnx_inputs))  # FIXME: remove cast
+    onnx_input_node_args = cast(
+        List[Any], sess.get_inputs()
+    )  # fixme: remove cast, try using rt.NodeArg instead of Any
+    onnx_inputs = {
+        input_name.name: inp
+        for input_name, inp in zip(onnx_input_node_args, input_data)
+    }
+    outputs = cast(
+        Sequence[np.ndarray[Any, Any]], sess.run(None, onnx_inputs)
+    )  # FIXME: remove cast
 
     try:
         for exp, out in zip(expected_outputs, outputs):

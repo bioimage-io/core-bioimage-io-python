@@ -9,7 +9,10 @@ from typing_extensions import Unpack
 from bioimageio.spec._internal.io_utils import HashKwargs, download
 from bioimageio.spec.common import FileSource
 from bioimageio.spec.model.v0_4 import CallableFromDepencency, CallableFromFile
-from bioimageio.spec.model.v0_5 import ArchitectureFromFileDescr, ArchitectureFromLibraryDescr
+from bioimageio.spec.model.v0_5 import (
+    ArchitectureFromFileDescr,
+    ArchitectureFromLibraryDescr,
+)
 
 
 @singledispatch
@@ -47,10 +50,14 @@ def import_from_file05(node: ArchitectureFromFileDescr, **kwargs: Unpack[HashKwa
     return _import_from_file_impl(node.source, node.callable, sha256=node.sha256)
 
 
-def _import_from_file_impl(source: FileSource, callable_name: str, **kwargs: Unpack[HashKwargs]):
+def _import_from_file_impl(
+    source: FileSource, callable_name: str, **kwargs: Unpack[HashKwargs]
+):
     local_file = download(source, **kwargs)
     module_name = local_file.path.stem
-    importlib_spec = importlib.util.spec_from_file_location(module_name, local_file.path)
+    importlib_spec = importlib.util.spec_from_file_location(
+        module_name, local_file.path
+    )
     if importlib_spec is None:
         raise ImportError(f"Failed to import {module_name} from {source}.")
 

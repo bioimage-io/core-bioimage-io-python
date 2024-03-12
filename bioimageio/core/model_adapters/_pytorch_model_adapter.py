@@ -20,18 +20,27 @@ class PytorchModelAdapter(ModelAdapter):
     def __init__(
         self,
         *,
-        outputs: Union[Sequence[v0_4.OutputTensorDescr], Sequence[v0_5.OutputTensorDescr]],
-        weights: Union[v0_4.PytorchStateDictWeightsDescr, v0_5.PytorchStateDictWeightsDescr],
+        outputs: Union[
+            Sequence[v0_4.OutputTensorDescr], Sequence[v0_5.OutputTensorDescr]
+        ],
+        weights: Union[
+            v0_4.PytorchStateDictWeightsDescr, v0_5.PytorchStateDictWeightsDescr
+        ],
         devices: Optional[Sequence[str]] = None,
     ):
         assert torch is not None
         super().__init__()
-        self.output_dims = [tuple(a if isinstance(a, str) else a.id for a in out.axes) for out in outputs]
+        self.output_dims = [
+            tuple(a if isinstance(a, str) else a.id for a in out.axes)
+            for out in outputs
+        ]
         self._network = self.get_network(weights)
         self._devices = self.get_devices(devices)
         self._network = self._network.to(self._devices[0])
 
-        state: Any = torch.load(download(weights.source).path, map_location=self._devices[0])
+        state: Any = torch.load(
+            download(weights.source).path, map_location=self._devices[0]
+        )
         _ = self._network.load_state_dict(state)
 
         self._network = self._network.eval()
@@ -44,9 +53,14 @@ class PytorchModelAdapter(ModelAdapter):
             if not isinstance(result, (tuple, list)):
                 result = [result]
 
-            result = [r.detach().cpu().numpy() if isinstance(r, torch.Tensor) else r for r in result]
+            result = [
+                r.detach().cpu().numpy() if isinstance(r, torch.Tensor) else r
+                for r in result
+            ]
             if len(result) > len(self.output_dims):
-                raise ValueError(f"Expected at most {len(self.output_dims)} outputs, but got {len(result)}")
+                raise ValueError(
+                    f"Expected at most {len(self.output_dims)} outputs, but got {len(result)}"
+                )
 
         return [xr.DataArray(r, dims=out) for r, out in zip(result, self.output_dims)]
 
@@ -57,7 +71,9 @@ class PytorchModelAdapter(ModelAdapter):
 
     @staticmethod
     def get_network(
-        weight_spec: Union[v0_4.PytorchStateDictWeightsDescr, v0_5.PytorchStateDictWeightsDescr]
+        weight_spec: Union[
+            v0_4.PytorchStateDictWeightsDescr, v0_5.PytorchStateDictWeightsDescr
+        ]
     ) -> "torch.nn.Module":
         arch = import_callable(
             weight_spec.architecture,
@@ -74,14 +90,22 @@ class PytorchModelAdapter(ModelAdapter):
         )
         network = arch(**model_kwargs)
         if not isinstance(network, torch.nn.Module):
-            raise ValueError(f"calling {weight_spec.architecture.callable} did not return a torch.nn.Module")
+            raise ValueError(
+                f"calling {weight_spec.architecture.callable} did not return a torch.nn.Module"
+            )
 
         return network
 
     @staticmethod
     def get_devices(devices: Optional[Sequence[str]] = None) -> List["torch.device"]:
         if not devices:
-            torch_devices = [torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")]
+            torch_devices = [
+                (
+                    torch.device("cuda")
+                    if torch.cuda.is_available()
+                    else torch.device("cpu")
+                )
+            ]
         else:
             torch_devices = [torch.device(d) for d in devices]
 

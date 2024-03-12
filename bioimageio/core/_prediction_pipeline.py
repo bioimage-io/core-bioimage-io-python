@@ -31,7 +31,9 @@ class PredictionPipeline:
     ) -> None:
         super().__init__()
         if bioimageio_model.run_mode:
-            warnings.warn(f"Not yet implemented inference for run mode '{bioimageio_model.run_mode.name}'")
+            warnings.warn(
+                f"Not yet implemented inference for run mode '{bioimageio_model.run_mode.name}'"
+            )
 
         self.name = name
         self._preprocessing = preprocessing
@@ -45,7 +47,9 @@ class PredictionPipeline:
 
         self._adapter: ModelAdapter = model
 
-    def __call__(self, *input_tensors: xr.DataArray, **named_input_tensors: xr.DataArray) -> List[xr.DataArray]:
+    def __call__(
+        self, *input_tensors: xr.DataArray, **named_input_tensors: xr.DataArray
+    ) -> List[xr.DataArray]:
         return self.forward(*input_tensors, **named_input_tensors)
 
     def __enter__(self):
@@ -56,9 +60,13 @@ class PredictionPipeline:
         self.unload()
         return False
 
-    def predict(self, *input_tensors: xr.DataArray, **named_input_tensors: xr.DataArray) -> List[xr.DataArray]:
+    def predict(
+        self, *input_tensors: xr.DataArray, **named_input_tensors: xr.DataArray
+    ) -> List[xr.DataArray]:
         """Predict input_tensor with the model without applying pre/postprocessing."""
-        named_tensors = [named_input_tensors[str(k)] for k in self._input_ids[len(input_tensors) :]]
+        named_tensors = [
+            named_input_tensors[str(k)] for k in self._input_ids[len(input_tensors) :]
+        ]
         return self._adapter.forward(*input_tensors, *named_tensors)
 
     def apply_preprocessing(self, sample: Sample) -> None:
@@ -75,8 +83,12 @@ class PredictionPipeline:
         """Apply preprocessing, run prediction and apply postprocessing."""
         self.apply_preprocessing(input_sample)
 
-        prediction_tensors = self.predict(**{str(k): v for k, v in input_sample.data.items()})
-        prediction = Sample(data=dict(zip(self._output_ids, prediction_tensors)), stat=input_sample.stat)
+        prediction_tensors = self.predict(
+            **{str(k): v for k, v in input_sample.data.items()}
+        )
+        prediction = Sample(
+            data=dict(zip(self._output_ids, prediction_tensors)), stat=input_sample.stat
+        )
         self.apply_postprocessing(prediction)
         return prediction
 
@@ -92,7 +104,9 @@ class PredictionPipeline:
         )
         return self.forward_sample(input_sample).data
 
-    def forward(self, *input_tensors: xr.DataArray, **named_input_tensors: xr.DataArray) -> List[xr.DataArray]:
+    def forward(
+        self, *input_tensors: xr.DataArray, **named_input_tensors: xr.DataArray
+    ) -> List[xr.DataArray]:
         """Apply preprocessing, run prediction and apply postprocessing."""
         named_outputs = self.forward_tensors(*input_tensors, **named_input_tensors)
         return [named_outputs[x] for x in self._output_ids]
@@ -116,9 +130,13 @@ def create_prediction_pipeline(
     devices: Optional[Sequence[str]] = None,
     weight_format: Optional[WeightsFormat] = None,
     weights_format: Optional[WeightsFormat] = None,
-    dataset_for_initial_statistics: Iterable[Union[Sample, Sequence[xr.DataArray]]] = tuple(),
+    dataset_for_initial_statistics: Iterable[
+        Union[Sample, Sequence[xr.DataArray]]
+    ] = tuple(),
     keep_updating_initial_dataset_statistics: bool = False,
-    fixed_dataset_statistics: Mapping[DatasetMeasure, MeasureValue] = MappingProxyType({}),
+    fixed_dataset_statistics: Mapping[DatasetMeasure, MeasureValue] = MappingProxyType(
+        {}
+    ),
     model_adapter: Optional[ModelAdapter] = None,
     **deprecated_kwargs: Any,
 ) -> PredictionPipeline:
@@ -133,7 +151,9 @@ def create_prediction_pipeline(
     weights_format = weight_format or weights_format
     del weight_format
     if deprecated_kwargs:
-        warnings.warn(f"deprecated create_prediction_pipeline kwargs: {set(deprecated_kwargs)}")
+        warnings.warn(
+            f"deprecated create_prediction_pipeline kwargs: {set(deprecated_kwargs)}"
+        )
 
     model_adapter = model_adapter or create_model_adapter(
         model_description=bioimageio_model,

@@ -27,7 +27,10 @@ from ._model_adapter import ModelAdapter
 
 class KerasModelAdapter(ModelAdapter):
     def __init__(
-        self, *, model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr], devices: Optional[Sequence[str]] = None
+        self,
+        *,
+        model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
+        devices: Optional[Sequence[str]] = None,
     ) -> None:
         assert keras is not None
         super().__init__()
@@ -41,12 +44,19 @@ class KerasModelAdapter(ModelAdapter):
             warnings.warn(
                 f"The model specifies a newer tensorflow version than installed: {model_tf_version} > {tf_version}."
             )
-        elif (model_tf_version.major, model_tf_version.minor) != (tf_version.major, tf_version.minor):
-            warnings.warn(f"Model tensorflow version {model_tf_version} does not match {tf_version}.")
+        elif (model_tf_version.major, model_tf_version.minor) != (
+            tf_version.major,
+            tf_version.minor,
+        ):
+            warnings.warn(
+                f"Model tensorflow version {model_tf_version} does not match {tf_version}."
+            )
 
         # TODO keras device management
         if devices is not None:
-            warnings.warn(f"Device management is not implemented for keras yet, ignoring the devices {devices}")
+            warnings.warn(
+                f"Device management is not implemented for keras yet, ignoring the devices {devices}"
+            )
 
         weight_path = download(model_description.weights.keras_hdf5.source).path
 
@@ -54,8 +64,10 @@ class KerasModelAdapter(ModelAdapter):
         self._output_axes = [tuple(out.axes) for out in model_description.outputs]
 
     def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
-        _result: Union[Sequence[NDArray[Any]], NDArray[Any]] = (  # pyright: ignore[reportUnknownVariableType]
-            self._network.predict(*input_tensors)
+        _result: Union[Sequence[NDArray[Any]], NDArray[Any]] = (
+            self._network.predict(  # pyright: ignore[reportUnknownVariableType]
+                *input_tensors
+            )
         )
         if isinstance(_result, (tuple, list)):
             result: Sequence[NDArray[Any]] = _result
@@ -63,7 +75,11 @@ class KerasModelAdapter(ModelAdapter):
             result = [_result]  # type: ignore
 
         assert len(result) == len(self._output_axes)
-        return [xr.DataArray(r, dims=axes) for r, axes, in zip(result, self._output_axes)]
+        return [
+            xr.DataArray(r, dims=axes) for r, axes, in zip(result, self._output_axes)
+        ]
 
     def unload(self) -> None:
-        warnings.warn("Device management is not implemented for keras yet, cannot unload model")
+        warnings.warn(
+            "Device management is not implemented for keras yet, cannot unload model"
+        )

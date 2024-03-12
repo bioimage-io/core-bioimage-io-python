@@ -1,6 +1,6 @@
 [tool.black]
-line-length = 120
-target-version = ["py38", "py39", "py310", "py311"]
+line-length = 88
+target-version = ["py38", "py39", "py310", "py311", "py312"]
 
 [tool.pyright]
 exclude = ["**/node_modules", "**/__pycache__", "tests/old_*"]
@@ -33,6 +33,6 @@ useLibraryCodeForTypes = true
 addopts = " -n auto --capture=no --doctest-modules --failed-first"
 
 [tool.ruff]
-line-length = 120
+line-length = 88
 include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
 target-version = "py38"

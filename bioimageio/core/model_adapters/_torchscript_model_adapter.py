@@ -19,12 +19,17 @@ except Exception:
 
 class TorchscriptModelAdapter(ModelAdapter):
     def __init__(
-        self, *, model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr], devices: Optional[Sequence[str]] = None
+        self,
+        *,
+        model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
+        devices: Optional[Sequence[str]] = None,
     ):
         assert torch is not None
         super().__init__()
         if model_description.weights.torchscript is None:
-            raise ValueError(f"No torchscript weights found for model {model_description.name}")
+            raise ValueError(
+                f"No torchscript weights found for model {model_description.name}"
+            )
 
         weight_path = download(model_description.weights.torchscript.source).path
         if devices is None:
@@ -33,12 +38,18 @@ class TorchscriptModelAdapter(ModelAdapter):
             self.devices = [torch.device(d) for d in devices]
 
         if len(self.devices) > 1:
-            warnings.warn("Multiple devices for single torchscript model not yet implemented")
+            warnings.warn(
+                "Multiple devices for single torchscript model not yet implemented"
+            )
 
         self._model = torch.jit.load(weight_path)
         self._model.to(self.devices[0])
         self._internal_output_axes = [
-            tuple(out.axes) if isinstance(out.axes, str) else tuple(a.id for a in out.axes)
+            (
+                tuple(out.axes)
+                if isinstance(out.axes, str)
+                else tuple(a.id for a in out.axes)
+            )
             for out in model_description.outputs
         ]
 
@@ -53,10 +64,15 @@ class TorchscriptModelAdapter(ModelAdapter):
             else:
                 result = [_result]
 
-            result = [r.cpu().numpy() if not isinstance(r, np.ndarray) else r for r in result]
+            result = [
+                r.cpu().numpy() if not isinstance(r, np.ndarray) else r for r in result
+            ]
 
         assert len(result) == len(self._internal_output_axes)
-        return [xr.DataArray(r, dims=axes) for r, axes in zip(result, self._internal_output_axes)]
+        return [
+            xr.DataArray(r, dims=axes)
+            for r, axes in zip(result, self._internal_output_axes)
+        ]
 
     def unload(self) -> None:
         self._devices = None

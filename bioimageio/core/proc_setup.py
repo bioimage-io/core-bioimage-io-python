@@ -12,13 +12,23 @@ from typing import (
 from typing_extensions import assert_never
 
 from bioimageio.core.common import Sample
-from bioimageio.core.proc_ops import AddKnownDatasetStats, Processing, UpdateStats, get_proc_class
+from bioimageio.core.proc_ops import (
+    AddKnownDatasetStats,
+    Processing,
+    UpdateStats,
+    get_proc_class,
+)
 from bioimageio.core.stat_calculators import StatsCalculator
 from bioimageio.core.stat_measures import DatasetMeasure, Measure, MeasureValue
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 from bioimageio.spec.model.v0_5 import TensorId
 
-TensorDescr = Union[v0_4.InputTensorDescr, v0_4.OutputTensorDescr, v0_5.InputTensorDescr, v0_5.OutputTensorDescr]
+TensorDescr = Union[
+    v0_4.InputTensorDescr,
+    v0_4.OutputTensorDescr,
+    v0_5.InputTensorDescr,
+    v0_5.OutputTensorDescr,
+]
 
 
 class PreAndPostprocessing(NamedTuple):
@@ -44,7 +54,9 @@ def setup_pre_and_postprocessing(
     userd in `bioimageio.core.create_prediction_pipeline"""
     prep, post, prep_meas, post_meas = _prepare_setup_pre_and_postprocessing(model)
 
-    missing_dataset_stats = {m for m in prep_meas | post_meas if m not in fixed_dataset_stats}
+    missing_dataset_stats = {
+        m for m in prep_meas | post_meas if m not in fixed_dataset_stats
+    }
     initial_stats_calc = StatsCalculator(missing_dataset_stats)
     for sample in dataset_for_initial_statistics:
         initial_stats_calc.update(sample)
@@ -97,8 +109,14 @@ def _prepare_setup_pre_and_postprocessing(model: AnyModelDescr) -> _SetupProcess
 
             for proc_d in proc_descrs:
                 proc_class = get_proc_class(proc_d)
-                tensor_id = TensorId(str(t_descr.name)) if isinstance(t_descr, v0_4.TensorDescrBase) else t_descr.id
-                req = proc_class.from_proc_descr(proc_d, tensor_id)  # pyright: ignore[reportArgumentType]
+                tensor_id = (
+                    TensorId(str(t_descr.name))
+                    if isinstance(t_descr, v0_4.TensorDescrBase)
+                    else t_descr.id
+                )
+                req = proc_class.from_proc_descr(
+                    proc_d, tensor_id
+                )  # pyright: ignore[reportArgumentType]
                 for m in req.required_measures:
                     if m.tensor_id in input_ids:
                         pre_measures.add(m)

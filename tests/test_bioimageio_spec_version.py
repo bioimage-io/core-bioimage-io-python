@@ -14,7 +14,9 @@ def test_bioimageio_spec_version(mamba_cmd: Optional[str]):
 
     # get latest released bioimageio.spec version
     mamba_repoquery = subprocess.run(
-        f"{pytest.mamba_cmd} repoquery search -c conda-forge --json bioimageio.spec".split(" "),
+        f"{pytest.mamba_cmd} repoquery search -c conda-forge --json bioimageio.spec".split(
+            " "
+        ),
         encoding="utf-8",
         capture_output=True,
         check=True,

@@ -27,7 +27,9 @@ implementing:
 # prevent rewrapping with \b\n: https://click.palletsprojects.com/en/7.x/documentation/#preventing-rewrapping
 app = typer.Typer(
     help="\b\n" + help_version,
-    context_settings={"help_option_names": ["-h", "--help", "--version"]},  # make --version display help with version
+    context_settings={
+        "help_option_names": ["-h", "--help", "--version"]
+    },  # make --version display help with version
 )  # https://typer.tiangolo.com/
 
 
@@ -56,7 +58,9 @@ class WeightsFormatEnum(enum.Enum):
 @app.command()
 def package(
     source: Annotated[str, typer.Argument(help="path or url to a bioimageio RDF")],
-    path: Annotated[Path, typer.Argument(help="Save package as")] = Path("bioimageio-package.zip"),
+    path: Annotated[Path, typer.Argument(help="Save package as")] = Path(
+        "bioimageio-package.zip"
+    ),
     weights_priority_order: Annotated[
         Optional[List[WeightsFormatEnum]],
         typer.Option(
@@ -70,22 +74,35 @@ def package(
     ] = None,
 ):
     # typer bug: typer returns empty tuple instead of None if weights_order_priority is not given
-    weights_priority_order = weights_priority_order or None  # TODO: check if this is still the case
+    weights_priority_order = (
+        weights_priority_order or None
+    )  # TODO: check if this is still the case
 
     _ = save_bioimageio_package(
         source,
         output_path=path,
-        weights_priority_order=None if weights_priority_order is None else [wpo.name for wpo in weights_priority_order],
+        weights_priority_order=(
+            None
+            if weights_priority_order is None
+            else [wpo.name for wpo in weights_priority_order]
+        ),
     )
 
 
 @app.command()
 def test_model(
     model_rdf: Annotated[
-        str, typer.Argument(help="Path or URL to the model resource description file (rdf.yaml) or zipped model.")
+        str,
+        typer.Argument(
+            help="Path or URL to the model resource description file (rdf.yaml) or zipped model."
+        ),
     ],
-    weight_format: Annotated[Optional[WeightsFormatEnum], typer.Option(help="The weight format to use.")] = None,
-    devices: Annotated[Optional[List[str]], typer.Option(help="Devices for running the model.")] = None,
+    weight_format: Annotated[
+        Optional[WeightsFormatEnum], typer.Option(help="The weight format to use.")
+    ] = None,
+    devices: Annotated[
+        Optional[List[str]], typer.Option(help="Devices for running the model.")
+    ] = None,
     decimal: Annotated[int, typer.Option(help="The test precision.")] = 4,
 ):
     # this is a weird typer bug: default devices are empty tuple although they should be None
@@ -108,22 +125,32 @@ test_model.__doc__ = _test_model.__doc__
 @app.command()
 def test_resource(
     rdf: Annotated[
-        str, typer.Argument(help="Path or URL to the resource description file (rdf.yaml) or zipped resource package.")
+        str,
+        typer.Argument(
+            help="Path or URL to the resource description file (rdf.yaml) or zipped resource package."
+        ),
     ],
     weight_format: Annotated[
-        Optional[WeightsFormatEnum], typer.Option(help="(for model only) The weight format to use.")
+        Optional[WeightsFormatEnum],
+        typer.Option(help="(for model only) The weight format to use."),
     ] = None,
     devices: Annotated[
-        Optional[List[str]], typer.Option(help="(for model only) Devices for running the model.")
+        Optional[List[str]],
+        typer.Option(help="(for model only) Devices for running the model."),
     ] = None,
-    decimal: Annotated[int, typer.Option(help="(for model only) The test precision.")] = 4,
+    decimal: Annotated[
+        int, typer.Option(help="(for model only) The test precision.")
+    ] = 4,
 ):
     # this is a weird typer bug: default devices are empty tuple although they should be None
     if devices is None or len(devices) == 0:
         devices = None
 
     summary = _test_description(
-        rdf, weight_format=None if weight_format is None else weight_format.value, devices=devices, decimal=decimal
+        rdf,
+        weight_format=None if weight_format is None else weight_format.value,
+        devices=devices,
+        decimal=decimal,
     )
     print(summary.format())
     sys.exit(0 if summary.status == "passed" else 1)

@@ -51,10 +51,15 @@ def interprete_array(
             SpaceInputAxis(id=AxisId("x"), size=nd_array.shape[1]),
         )
     elif ndim == 3 and (
-        (n_expected_space_axes is None and any(s <= 3 for s in nd_array.shape)) or n_expected_space_axes == 2
+        (n_expected_space_axes is None and any(s <= 3 for s in nd_array.shape))
+        or n_expected_space_axes == 2
     ):
         current_axes = (
-            ChannelAxis(channel_names=[Identifier(f"channel{i}") for i in range(nd_array.shape[0])]),
+            ChannelAxis(
+                channel_names=[
+                    Identifier(f"channel{i}") for i in range(nd_array.shape[0])
+                ]
+            ),
             SpaceInputAxis(id=AxisId("y"), size=nd_array.shape[1]),
             SpaceInputAxis(id=AxisId("x"), size=nd_array.shape[2]),
         )
@@ -66,7 +71,11 @@ def interprete_array(
         )
     elif ndim == 4:
         current_axes = (
-            ChannelAxis(channel_names=[Identifier(f"channel{i}") for i in range(nd_array.shape[0])]),
+            ChannelAxis(
+                channel_names=[
+                    Identifier(f"channel{i}") for i in range(nd_array.shape[0])
+                ]
+            ),
             SpaceInputAxis(id=AxisId("z"), size=nd_array.shape[1]),
             SpaceInputAxis(id=AxisId("y"), size=nd_array.shape[2]),
             SpaceInputAxis(id=AxisId("x"), size=nd_array.shape[3]),
@@ -74,7 +83,11 @@ def interprete_array(
     elif ndim == 5:
         current_axes = (
             BatchAxis(),
-            ChannelAxis(channel_names=[Identifier(f"channel{i}") for i in range(nd_array.shape[1])]),
+            ChannelAxis(
+                channel_names=[
+                    Identifier(f"channel{i}") for i in range(nd_array.shape[1])
+                ]
+            ),
             SpaceInputAxis(id=AxisId("z"), size=nd_array.shape[2]),
             SpaceInputAxis(id=AxisId("y"), size=nd_array.shape[3]),
             SpaceInputAxis(id=AxisId("x"), size=nd_array.shape[4]),
@@ -84,11 +97,17 @@ def interprete_array(
             f"Could not guess an axis mapping for {nd_array.shape} with {n_expected_space_axes} expected space axes"
         )
 
-    current_axes_ids = tuple(current_axes) if isinstance(current_axes, str) else tuple(a.id for a in current_axes)
+    current_axes_ids = (
+        tuple(current_axes)
+        if isinstance(current_axes, str)
+        else tuple(a.id for a in current_axes)
+    )
     return Tensor(nd_array, dims=current_axes_ids)
 
 
-def axis_descr_to_ids(axes: Union[v0_4.AxesStr, Sequence[AnyAxis]]) -> Tuple[AxisId, ...]:
+def axis_descr_to_ids(
+    axes: Union[v0_4.AxesStr, Sequence[AnyAxis]]
+) -> Tuple[AxisId, ...]:
     if isinstance(axes, str):
         return tuple(map(AxisId, axes))
     else:
@@ -149,10 +168,12 @@ def resize_to(
     sizes: Mapping[AxisId, int],
     *,
     pad_where: Union[
-        Literal["before", "center", "after"], Mapping[AxisId, Literal["before", "center", "after"]]
+        Literal["before", "center", "after"],
+        Mapping[AxisId, Literal["before", "center", "after"]],
     ] = "center",
     crop_where: Union[
-        Literal["before", "center", "after"], Mapping[AxisId, Literal["before", "center", "after"]]
+        Literal["before", "center", "after"],
+        Mapping[AxisId, Literal["before", "center", "after"]],
     ] = "center",
     pad_mode: Literal["edge", "reflect", "symmetric"] = "symmetric",
 ):
@@ -186,13 +207,16 @@ def crop_to(
     tensor: Tensor,
     sizes: Mapping[AxisId, int],
     crop_where: Union[
-        Literal["before", "center", "after"], Mapping[AxisId, Literal["before", "center", "after"]]
+        Literal["before", "center", "after"],
+        Mapping[AxisId, Literal["before", "center", "after"]],
     ] = "center",
 ):
     """crop `tensor` to match `sizes`"""
     axes = [AxisId(str(a)) for a in tensor.dims]
     if crop_where in ("before", "center", "after"):
-        crop_axis_where: Mapping[AxisId, Literal["before", "center", "after"]] = {a: crop_where for a in axes}
+        crop_axis_where: Mapping[AxisId, Literal["before", "center", "after"]] = {
+            a: crop_where for a in axes
+        }
     else:
         crop_axis_where = crop_where
 
@@ -203,9 +227,13 @@ def crop_to(
         if a not in sizes or sizes[a] == s_is:
             pass
         elif sizes[a] > s_is:
-            warnings.warn(f"Cannot crop axis {a} of size {s_is} to larger size {sizes[a]}")
+            warnings.warn(
+                f"Cannot crop axis {a} of size {s_is} to larger size {sizes[a]}"
+            )
         elif a not in crop_axis_where:
-            raise ValueError(f"Don't know where to crop axis {a}, `crop_where`={crop_where}")
+            raise ValueError(
+                f"Don't know where to crop axis {a}, `crop_where`={crop_where}"
+            )
         else:
             crop_this_axis_where = crop_axis_where[a]
             if crop_this_axis_where == "before":
@@ -224,14 +252,17 @@ def pad_to(
     tensor: Tensor,
     sizes: Mapping[AxisId, int],
     pad_where: Union[
-        Literal["before", "center", "after"], Mapping[AxisId, Literal["before", "center", "after"]]
+        Literal["before", "center", "after"],
+        Mapping[AxisId, Literal["before", "center", "after"]],
     ] = "center",
     mode: Literal["edge", "reflect", "symmetric"] = "symmetric",
 ):
     """pad `tensor` to match `sizes`"""
     axes = [AxisId(str(a)) for a in tensor.dims]
     if pad_where in ("before", "center", "after"):
-        pad_axis_where: Mapping[AxisId, Literal["before", "center", "after"]] = {a: pad_where for a in axes}
+        pad_axis_where: Mapping[AxisId, Literal["before", "center", "after"]] = {
+            a: pad_where for a in axes
+        }
     else:
         pad_axis_where = pad_where
 
@@ -242,9 +273,13 @@ def pad_to(
             pad_width[a] = 0
         elif s_is < sizes[a]:
             pad_width[a] = 0
-            warnings.warn(f"Cannot pad axis {a} of size {s_is} to smaller size {sizes[a]}")
+            warnings.warn(
+                f"Cannot pad axis {a} of size {s_is} to smaller size {sizes[a]}"
+            )
         elif a not in pad_axis_where:
-            raise ValueError(f"Don't know where to pad axis {a}, `pad_where`={pad_where}")
+            raise ValueError(
+                f"Don't know where to pad axis {a}, `pad_where`={pad_where}"
+            )
         else:
             pad_this_axis_where = pad_axis_where[a]
             p = sizes[a] - s_is

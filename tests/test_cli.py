@@ -5,29 +5,53 @@ import pytest
 from pydantic import FilePath
 
 
-def run_subprocess(commands: Sequence[str], **kwargs: Any) -> "subprocess.CompletedProcess[str]":
-    return subprocess.run(commands, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, encoding="utf-8", **kwargs)
+def run_subprocess(
+    commands: Sequence[str], **kwargs: Any
+) -> "subprocess.CompletedProcess[str]":
+    return subprocess.run(
+        commands,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        encoding="utf-8",
+        **kwargs,
+    )
 
 
 @pytest.mark.parametrize(
     "args",
     [
-        ["package", "unet2d_nuclei_broad_model", "--weight-format", "pytorch_state_dict"],
+        [
+            "package",
+            "unet2d_nuclei_broad_model",
+            "--weight-format",
+            "pytorch_state_dict",
+        ],
         ["package", "unet2d_nuclei_broad_model"],
-        ["test-model", "unet2d_nuclei_broad_model", "--weight-format", "pytorch_state_dict"],
+        [
+            "test-model",
+            "unet2d_nuclei_broad_model",
+            "--weight-format",
+            "pytorch_state_dict",
+        ],
         ["test-model", "unet2d_nuclei_broad_model"],
     ],
 )
 def test_cli(args: List[str], unet2d_nuclei_broad_model: FilePath):
     assert unet2d_nuclei_broad_model.exists()
-    resolved_args = [str(unet2d_nuclei_broad_model) if arg == "unet2d_nuclei_broad_model" else arg for arg in args]
+    resolved_args = [
+        str(unet2d_nuclei_broad_model) if arg == "unet2d_nuclei_broad_model" else arg
+        for arg in args
+    ]
     ret = run_subprocess(["bioimageio", *resolved_args])
     assert ret.returncode == 0, ret.stdout
 
 
 @pytest.mark.parametrize("args", [["test-model", "stardist_wrong_shape"]])
 def test_cli_fails(args: List[str], stardist_wrong_shape: FilePath):
-    resolved_args = [str(stardist_wrong_shape) if arg == "stardist_wrong_shape" else arg for arg in args]
+    resolved_args = [
+        str(stardist_wrong_shape) if arg == "stardist_wrong_shape" else arg
+        for arg in args
+    ]
     ret = run_subprocess(["bioimageio", *resolved_args])
     assert ret.returncode == 1, ret.stdout
 

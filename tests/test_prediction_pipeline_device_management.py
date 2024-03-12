@@ -23,7 +23,9 @@ def _test_device_management(model_package: Path, weight_format: WeightsFormat):
 
     bio_model = load_description(model_package)
     assert isinstance(bio_model, (ModelDescr, ModelDescr04))
-    pred_pipe = create_prediction_pipeline(bioimageio_model=bio_model, weight_format=weight_format, devices=["cuda:0"])
+    pred_pipe = create_prediction_pipeline(
+        bioimageio_model=bio_model, weight_format=weight_format, devices=["cuda:0"]
+    )
 
     inputs = get_test_inputs(bio_model)
     with pred_pipe as pp:
@@ -46,26 +48,36 @@ def _test_device_management(model_package: Path, weight_format: WeightsFormat):
         assert_array_almost_equal(out, exp, decimal=4)
 
 
-@skip_on(TooFewDevicesException, reason="Too few devices")  # pyright: ignore[reportArgumentType]
+@skip_on(
+    TooFewDevicesException, reason="Too few devices"
+)  # pyright: ignore[reportArgumentType]
 def test_device_management_torch(any_torch_model: Path):
     _test_device_management(any_torch_model, "pytorch_state_dict")
 
 
-@skip_on(TooFewDevicesException, reason="Too few devices")  # pyright: ignore[reportArgumentType]
+@skip_on(
+    TooFewDevicesException, reason="Too few devices"
+)  # pyright: ignore[reportArgumentType]
 def test_device_management_torchscript(any_torchscript_model: Path):
     _test_device_management(any_torchscript_model, "torchscript")
 
 
-@skip_on(TooFewDevicesException, reason="Too few devices")  # pyright: ignore[reportArgumentType]
+@skip_on(
+    TooFewDevicesException, reason="Too few devices"
+)  # pyright: ignore[reportArgumentType]
 def test_device_management_onnx(any_onnx_model: Path):
     _test_device_management(any_onnx_model, "onnx")
 
 
-@skip_on(TooFewDevicesException, reason="Too few devices")  # pyright: ignore[reportArgumentType]
+@skip_on(
+    TooFewDevicesException, reason="Too few devices"
+)  # pyright: ignore[reportArgumentType]
 def test_device_management_tensorflow(any_tensorflow_model: Path):
     _test_device_management(any_tensorflow_model, "tensorflow_saved_model_bundle")
 
 
-@skip_on(TooFewDevicesException, reason="Too few devices")  # pyright: ignore[reportArgumentType]
+@skip_on(
+    TooFewDevicesException, reason="Too few devices"
+)  # pyright: ignore[reportArgumentType]
 def test_device_management_keras(any_keras_model: Path):
     _test_device_management(any_keras_model, "keras_hdf5")

@@ -16,12 +16,19 @@ except Exception:
 
 class ONNXModelAdapter(ModelAdapter):
     def __init__(
-        self, *, model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr], devices: Optional[Sequence[str]] = None
+        self,
+        *,
+        model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
+        devices: Optional[Sequence[str]] = None,
     ):
         assert rt is not None
         super().__init__()
         self._internal_output_axes = [
-            tuple(out.axes) if isinstance(out.axes, str) else tuple(a.id for a in out.axes)
+            (
+                tuple(out.axes)
+                if isinstance(out.axes, str)
+                else tuple(a.id for a in out.axes)
+            )
             for out in model_description.outputs
         ]
         if model_description.weights.onnx is None:
@@ -32,18 +39,27 @@ class ONNXModelAdapter(ModelAdapter):
         self._input_names: List[str] = [ipt.name for ipt in onnx_inputs]  # type: ignore
 
         if devices is not None:
-            warnings.warn(f"Device management is not implemented for onnx yet, ignoring the devices {devices}")
+            warnings.warn(
+                f"Device management is not implemented for onnx yet, ignoring the devices {devices}"
+            )
 
     def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
         assert len(input_tensors) == len(self._input_names)
         input_arrays = [ipt.data for ipt in input_tensors]
-        result: Union[Sequence[NDArray[Any]], NDArray[Any]] = (  # pyright: ignore[reportUnknownVariableType]
-            self._session.run(None, dict(zip(self._input_names, input_arrays)))
+        result: Union[Sequence[NDArray[Any]], NDArray[Any]] = (
+            self._session.run(  # pyright: ignore[reportUnknownVariableType]
+                None, dict(zip(self._input_names, input_arrays))
+            )
         )
         if not isinstance(result, (list, tuple)):
             result = []
 
-        return [xr.DataArray(r, dims=axes) for r, axes in zip(result, self._internal_output_axes)]
+        return [
+            xr.DataArray(r, dims=axes)
+            for r, axes in zip(result, self._internal_output_axes)
+        ]
 
     def unload(self) -> None:
-        warnings.warn("Device management is not implemented for onnx yet, cannot unload model")
+        warnings.warn(
+            "Device management is not implemented for onnx yet, cannot unload model"
+        )

@@ -32,7 +32,13 @@ def _zip_model_bundle(model_bundle_folder: Path):
 
 # adapted from
 # https://github.com/deepimagej/pydeepimagej/blob/master/pydeepimagej/yaml/create_config.py#L236
-def _convert_tf1(keras_weight_path: Path, output_path: Path, input_name: str, output_name: str, zip_weights: bool):
+def _convert_tf1(
+    keras_weight_path: Path,
+    output_path: Path,
+    input_name: str,
+    output_name: str,
+    zip_weights: bool,
+):
     try:
         # try to build the tf model with the keras import from tensorflow
         from bioimageio.core.weight_converter.keras._tensorflow import keras  # type: ignore
@@ -47,10 +53,13 @@ def _convert_tf1(keras_weight_path: Path, output_path: Path, input_name: str, ou
         assert _tensorflow is not None
         builder = _tensorflow.saved_model.builder.SavedModelBuilder(output_path)
         signature = _tensorflow.saved_model.signature_def_utils.predict_signature_def(
-            inputs={input_name: keras_model.input}, outputs={output_name: keras_model.output}
+            inputs={input_name: keras_model.input},
+            outputs={output_name: keras_model.output},
         )
 
-        signature_def_map = {_tensorflow.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: signature}
+        signature_def_map = {
+            _tensorflow.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: signature
+        }
 
         builder.add_meta_graph_and_variables(
             keras.backend.get_session(),
@@ -86,7 +95,9 @@ def _convert_tf2(keras_weight_path: Path, output_path: Path, zip_weights: bool):
     return 0
 
 
-def convert_weights_to_tensorflow_saved_model_bundle(model: ModelDescr, output_path: Path):
+def convert_weights_to_tensorflow_saved_model_bundle(
+    model: ModelDescr, output_path: Path
+):
     """Convert model weights from format 'keras_hdf5' to 'tensorflow_saved_model_bundle'.
 
     Adapted from
@@ -117,13 +128,21 @@ def convert_weights_to_tensorflow_saved_model_bundle(model: ModelDescr, output_p
     if weight_spec.tensorflow_version:
         model_tf_major_ver = int(weight_spec.tensorflow_version.major)
         if model_tf_major_ver != tf_major_ver:
-            raise RuntimeError(f"Tensorflow major versions of model {model_tf_major_ver} is not {tf_major_ver}")
+            raise RuntimeError(
+                f"Tensorflow major versions of model {model_tf_major_ver} is not {tf_major_ver}"
+            )
 
     if tf_major_ver == 1:
         if len(model.inputs) != 1 or len(model.outputs) != 1:
             raise NotImplementedError(
                 "Weight conversion for models with multiple inputs or outputs is not yet implemented."
             )
-        return _convert_tf1(weight_path, output_path, model.inputs[0].id, model.outputs[0].id, zip_weights)
+        return _convert_tf1(
+            weight_path,
+            output_path,
+            model.inputs[0].id,
+            model.outputs[0].id,
+            zip_weights,
+        )
     else:
         return _convert_tf2(weight_path, output_path, zip_weights)

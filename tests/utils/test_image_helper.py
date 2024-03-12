@@ -9,7 +9,11 @@ from bioimageio.core.utils.image_helper import interprete_array
 
 
 @pytest.mark.parametrize(
-    "axes", [[AxisId(a) for a in axes] for axes in ["yx", "xy", "cyx", "yxc", "bczyx", "xyz", "xyzc", "bzyxc"]]
+    "axes",
+    [
+        [AxisId(a) for a in axes]
+        for axes in ["yx", "xy", "cyx", "yxc", "bczyx", "xyz", "xyzc", "bzyxc"]
+    ],
 )
 def test_transpose_tensor_2d(axes: Sequence[AxisId]):
     from bioimageio.core.utils.image_helper import transpose_tensor
@@ -20,7 +24,11 @@ def test_transpose_tensor_2d(axes: Sequence[AxisId]):
 
 
 @pytest.mark.parametrize(
-    "axes", [[AxisId(a) for a in axes] for axes in ["zyx", "cyx", "yxc", "bczyx", "xyz", "xyzc", "bzyxc"]]
+    "axes",
+    [
+        [AxisId(a) for a in axes]
+        for axes in ["zyx", "cyx", "yxc", "bczyx", "xyz", "xyzc", "bzyxc"]
+    ],
 )
 def test_transpose_tensor_3d(axes: Sequence[AxisId]):
     from bioimageio.core.utils.image_helper import transpose_tensor

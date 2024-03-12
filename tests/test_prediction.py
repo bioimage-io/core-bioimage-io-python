@@ -29,7 +29,9 @@ def test_predict_image(any_model: Path, tmpdir: Path):
         assert_array_almost_equal(res, exp, decimal=4)
 
 
-def test_predict_image_with_weight_format(unet2d_fixed_shape_or_not: Path, tmpdir: Path):
+def test_predict_image_with_weight_format(
+    unet2d_fixed_shape_or_not: Path, tmpdir: Path
+):
     from bioimageio.core.prediction import predict_image
 
     spec = load_description(unet2d_fixed_shape_or_not)
@@ -37,7 +39,9 @@ def test_predict_image_with_weight_format(unet2d_fixed_shape_or_not: Path, tmpdi
     inputs = spec.test_inputs
 
     outputs = [Path(tmpdir) / f"out{i}.npy" for i in range(len(spec.test_outputs))]
-    predict_image(unet2d_fixed_shape_or_not, inputs, outputs, weight_format="pytorch_state_dict")
+    predict_image(
+        unet2d_fixed_shape_or_not, inputs, outputs, weight_format="pytorch_state_dict"
+    )
     for out_path in outputs:
         assert out_path.exists()
 
@@ -54,7 +58,11 @@ def _test_predict_with_padding(any_model: Path, tmp_path: Path):
     assert isinstance(model, (ModelDescr_v0_4, ModelDescr))
 
     input_spec, output_spec = model.inputs[0], model.outputs[0]
-    channel_axis = "c" if isinstance(input_spec, InputTensorDescr_v0_4) else [a.id for a in input_spec.axes][0]
+    channel_axis = (
+        "c"
+        if isinstance(input_spec, InputTensorDescr_v0_4)
+        else [a.id for a in input_spec.axes][0]
+    )
     channel_first = channel_axis == 1
 
     # TODO: check more tensors
@@ -78,14 +86,17 @@ def _test_predict_with_padding(any_model: Path, tmp_path: Path):
         scale = dict(zip(output_spec.axes, output_spec.shape.scale))
         offset = dict(zip(output_spec.axes, output_spec.shape.offset))
         spatial_axes = [ax for ax in output_spec.axes if ax in "xyz"]
-        network_resizes = any(sc != 1 for ax, sc in scale.items() if ax in spatial_axes) or any(
-            off != 0 for ax, off in offset.items() if ax in spatial_axes
-        )
+        network_resizes = any(
+            sc != 1 for ax, sc in scale.items() if ax in spatial_axes
+        ) or any(off != 0 for ax, off in offset.items() if ax in spatial_axes)
     else:
         network_resizes = False
 
     if network_resizes:
-        exp_shape = tuple(int(sh * scale[ax] + 2 * offset[ax]) for sh, ax in zip(image.shape, spatial_axes))
+        exp_shape = tuple(
+            int(sh * scale[ax] + 2 * offset[ax])
+            for sh, ax in zip(image.shape, spatial_axes)
+        )
     else:
         exp_shape = image.shape
 
@@ -103,12 +114,17 @@ def _test_predict_with_padding(any_model: Path, tmp_path: Path):
                 assert res.shape == exp_shape
 
     # test with dynamic padding
-    predict_image(any_model, in_path, out_path, padding={"x": 16, "y": 16, "mode": "dynamic"})
+    predict_image(
+        any_model, in_path, out_path, padding={"x": 16, "y": 16, "mode": "dynamic"}
+    )
     check_result()
 
     # test with fixed padding
     predict_image(
-        any_model, in_path, out_path, padding={"x": original_shape[0], "y": original_shape[1], "mode": "fixed"}
+        any_model,
+        in_path,
+        out_path,
+        padding={"x": original_shape[0], "y": original_shape[1], "mode": "fixed"},
     )
     check_result()
 
@@ -124,7 +140,9 @@ def test_predict_image_with_padding(unet2d_fixed_shape_or_not, tmp_path):
 
 
 # and with different output shape
-def test_predict_image_with_padding_diff_output_shape(unet2d_diff_output_shape, tmp_path):
+def test_predict_image_with_padding_diff_output_shape(
+    unet2d_diff_output_shape, tmp_path
+):
     _test_predict_with_padding(unet2d_diff_output_shape, tmp_path)
 
 
@@ -181,7 +199,9 @@ def test_predict_image_with_tiling_channel_last(stardist: Path, tmp_path: Path):
     _test_predict_image_with_tiling(stardist, tmp_path, 0.13)
 
 
-def test_predict_image_with_tiling_fixed_output_shape(unet2d_fixed_shape: Path, tmp_path: Path):
+def test_predict_image_with_tiling_fixed_output_shape(
+    unet2d_fixed_shape: Path, tmp_path: Path
+):
     _test_predict_image_with_tiling(unet2d_fixed_shape, tmp_path, 0.025)
 
 

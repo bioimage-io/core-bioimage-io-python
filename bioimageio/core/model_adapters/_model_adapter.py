@@ -59,29 +59,40 @@ class ModelAdapter(ABC):
                     from ._pytorch_model_adapter import PytorchModelAdapter
 
                     return PytorchModelAdapter(
-                        outputs=model_description.outputs, weights=weights.pytorch_state_dict, devices=devices
+                        outputs=model_description.outputs,
+                        weights=weights.pytorch_state_dict,
+                        devices=devices,
                     )
                 except Exception as e:
                     errors.append(e)
-            elif wf == "tensorflow_saved_model_bundle" and weights.tensorflow_saved_model_bundle is not None:
+            elif (
+                wf == "tensorflow_saved_model_bundle"
+                and weights.tensorflow_saved_model_bundle is not None
+            ):
                 try:
                     from ._tensorflow_model_adapter import TensorflowModelAdapter
 
-                    return TensorflowModelAdapter(model_description=model_description, devices=devices)
+                    return TensorflowModelAdapter(
+                        model_description=model_description, devices=devices
+                    )
                 except Exception as e:
                     errors.append(e)
             elif wf == "onnx" and weights.onnx is not None:
                 try:
                     from ._onnx_model_adapter import ONNXModelAdapter
 
-                    return ONNXModelAdapter(model_description=model_description, devices=devices)
+                    return ONNXModelAdapter(
+                        model_description=model_description, devices=devices
+                    )
                 except Exception as e:
                     errors.append(e)
             elif wf == "torchscript" and weights.torchscript is not None:
                 try:
                     from ._torchscript_model_adapter import TorchscriptModelAdapter
 
-                    return TorchscriptModelAdapter(model_description=model_description, devices=devices)
+                    return TorchscriptModelAdapter(
+                        model_description=model_description, devices=devices
+                    )
                 except Exception as e:
                     errors.append(e)
             elif wf == "keras_hdf5" and weights.keras_hdf5 is not None:
@@ -94,7 +105,9 @@ class ModelAdapter(ABC):
                     if keras is None:
                         from ._tensorflow_model_adapter import KerasModelAdapter
 
-                    return KerasModelAdapter(model_description=model_description, devices=devices)
+                    return KerasModelAdapter(
+                        model_description=model_description, devices=devices
+                    )
                 except Exception as e:
                     errors.append(e)
 

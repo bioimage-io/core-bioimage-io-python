@@ -13,7 +13,9 @@ def _test_prediction_pipeline(model_package: Path, weights_format: WeightsFormat
 
     bio_model = load_description(model_package)
     assert isinstance(bio_model, (ModelDescr, ModelDescr04))
-    pp = create_prediction_pipeline(bioimageio_model=bio_model, weight_format=weights_format)
+    pp = create_prediction_pipeline(
+        bioimageio_model=bio_model, weight_format=weights_format
+    )
 
     inputs = get_test_inputs(bio_model)
     outputs = pp.forward(*inputs)

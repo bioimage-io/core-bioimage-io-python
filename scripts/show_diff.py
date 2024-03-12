@@ -17,7 +17,9 @@ if __name__ == "__main__":
     with TemporaryDirectory() as tmp:
         as_is = Path(tmp) / "as_is.bioimageio.yaml"
 
-        save_bioimageio_yaml_only(model_as_is, file=as_is)  # write out as is to avoid sorting diff
+        save_bioimageio_yaml_only(
+            model_as_is, file=as_is
+        )  # write out as is to avoid sorting diff
         latest = Path(tmp) / "latest.bioimageio.yaml"
         save_bioimageio_yaml_only(model_latest, file=latest)
 

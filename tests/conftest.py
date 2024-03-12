@@ -129,17 +129,26 @@ if not skip_tensorflow:
 
 
 @fixture(scope="session")
-def model_packages(tmp_path_factory: TempPathFactory, worker_id: str) -> MappingProxyType[str, FilePath]:
+def model_packages(
+    tmp_path_factory: TempPathFactory, worker_id: str
+) -> MappingProxyType[str, FilePath]:
     """prepare model packages (only run with one worker)
     see https://pytest-xdist.readthedocs.io/en/latest/how-to.html#making-session-scoped-fixtures-execute-only-once
     """
     root_tmp_dir = tmp_path_factory.getbasetemp().parent
 
-    packages = MappingProxyType({name: (root_tmp_dir / name).with_suffix(".zip") for name in load_model_packages})
+    packages = MappingProxyType(
+        {
+            name: (root_tmp_dir / name).with_suffix(".zip")
+            for name in load_model_packages
+        }
+    )
 
     def generate_packages():
         for name in load_model_packages:
-            actual_out = save_bioimageio_package(MODEL_SOURCES[name], output_path=packages[name])
+            actual_out = save_bioimageio_package(
+                MODEL_SOURCES[name], output_path=packages[name]
+            )
             assert actual_out == packages[name]
 
     info_path = root_tmp_dir / "packages_created"
@@ -176,32 +185,56 @@ def mamba_cmd():
 
 
 @fixture(params=[] if skip_torch else TORCH_MODELS)
-def any_torch_model(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+def any_torch_model(
+    request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]
+):
     return model_packages[request.param]
 
 
 @fixture(params=[] if skip_torch else TORCHSCRIPT_MODELS)
-def any_torchscript_model(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+def any_torchscript_model(
+    request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]
+):
     return model_packages[request.param]
 
 
 @fixture(params=[] if skip_onnx else ONNX_MODELS)
-def any_onnx_model(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+def any_onnx_model(
+    request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]
+):
     return model_packages[request.param]
 
 
-@fixture(params=[] if skip_tensorflow else TENSORFLOW1_MODELS if tf_major_version == 1 else TENSORFLOW2_MODELS)
-def any_tensorflow_model(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+@fixture(
+    params=(
+        []
+        if skip_tensorflow
+        else TENSORFLOW1_MODELS if tf_major_version == 1 else TENSORFLOW2_MODELS
+    )
+)
+def any_tensorflow_model(
+    request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]
+):
     return model_packages[request.param]
 
 
-@fixture(params=[] if skip_tensorflow else KERAS_TF1_MODELS if tf_major_version == 1 else KERAS_TF2_MODELS)
-def any_keras_model(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+@fixture(
+    params=(
+        []
+        if skip_tensorflow
+        else KERAS_TF1_MODELS if tf_major_version == 1 else KERAS_TF2_MODELS
+    )
+)
+def any_keras_model(
+    request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]
+):
     return model_packages[request.param]
 
 
 @fixture(params=[] if skip_tensorflow_js else TENSORFLOW_JS_MODELS)
-def any_tensorflow_js_model(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+def any_tensorflow_js_model(
+    request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]
+):
     return model_packages[request.param]
 
 
@@ -220,59 +253,93 @@ def any_model(request: FixtureRequest, model_packages: MappingProxyType[str, Fil
 #
 
 
-@fixture(params=[] if skip_torch else ["unet2d_nuclei_broad_model", "unet2d_fixed_shape"])
-def unet2d_fixed_shape_or_not(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+@fixture(
+    params=[] if skip_torch else ["unet2d_nuclei_broad_model", "unet2d_fixed_shape"]
+)
+def unet2d_fixed_shape_or_not(
+    request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]
+):
     return model_packages[request.param]
 
 
-@fixture(params=[] if skip_onnx or skip_torch else ["unet2d_nuclei_broad_model", "unet2d_multi_tensor"])
-def convert_to_onnx(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+@fixture(
+    params=(
+        []
+        if skip_onnx or skip_torch
+        else ["unet2d_nuclei_broad_model", "unet2d_multi_tensor"]
+    )
+)
+def convert_to_onnx(
+    request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]
+):
     return model_packages[request.param]
 
 
-@fixture(params=[] if skip_tensorflow else ["unet2d_keras" if tf_major_version == 1 else "unet2d_keras_tf2"])
-def unet2d_keras(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+@fixture(
+    params=(
+        []
+        if skip_tensorflow
+        else ["unet2d_keras" if tf_major_version == 1 else "unet2d_keras_tf2"]
+    )
+)
+def unet2d_keras(
+    request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]
+):
     return model_packages[request.param]
 
 
 # written as model group to automatically skip on missing torch
 @fixture(params=[] if skip_torch else ["unet2d_nuclei_broad_model"])
-def unet2d_nuclei_broad_model(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+def unet2d_nuclei_broad_model(
+    request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]
+):
     return model_packages[request.param]
 
 
 # written as model group to automatically skip on missing torch
 @fixture(params=[] if skip_torch else ["unet2d_diff_output_shape"])
-def unet2d_diff_output_shape(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+def unet2d_diff_output_shape(
+    request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]
+):
     return model_packages[request.param]
 
 
 # written as model group to automatically skip on missing torch
 @fixture(params=[] if skip_torch else ["unet2d_expand_output_shape"])
-def unet2d_expand_output_shape(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+def unet2d_expand_output_shape(
+    request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]
+):
     return model_packages[request.param]
 
 
 # written as model group to automatically skip on missing torch
 @fixture(params=[] if skip_torch else ["unet2d_fixed_shape"])
-def unet2d_fixed_shape(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+def unet2d_fixed_shape(
+    request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]
+):
     return model_packages[request.param]
 
 
 # written as model group to automatically skip on missing torch
 @fixture(params=[] if skip_torch else ["shape_change"])
-def shape_change_model(request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]):
+def shape_change_model(
+    request: FixtureRequest, model_packages: MappingProxyType[str, FilePath]
+):
     return model_packages[request.param]
 
 
 # written as model group to automatically skip on missing tensorflow 1
-@fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist_wrong_shape"])
+@fixture(
+    params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist_wrong_shape"]
+)
 def stardist_wrong_shape(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
 
 
 # written as model group to automatically skip on missing tensorflow 1
-@fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist_wrong_shape2"])
+@fixture(
+    params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist_wrong_shape2"]
+)
 def stardist_wrong_shape2(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
 
