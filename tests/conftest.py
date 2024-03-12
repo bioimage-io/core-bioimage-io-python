@@ -5,9 +5,10 @@ import warnings
 from types import MappingProxyType
 from typing import List, Set
 
+from filelock import FileLock
 from loguru import logger
 from pydantic import FilePath
-from pytest import FixtureRequest, fixture
+from pytest import FixtureRequest, TempPathFactory, fixture
 
 from bioimageio.spec import __version__ as bioimageio_spec_version
 from bioimageio.spec._package import save_bioimageio_package
@@ -128,8 +129,30 @@ if not skip_tensorflow:
 
 
 @fixture(scope="session")
-def model_packages() -> MappingProxyType[str, FilePath]:
-    return MappingProxyType({name: save_bioimageio_package(MODEL_SOURCES[name]) for name in load_model_packages})
+def model_packages(tmp_path_factory: TempPathFactory, worker_id: str) -> MappingProxyType[str, FilePath]:
+    """prepare model packages (only run with one worker)
+    see https://pytest-xdist.readthedocs.io/en/latest/how-to.html#making-session-scoped-fixtures-execute-only-once
+    """
+    root_tmp_dir = tmp_path_factory.getbasetemp().parent
+
+    packages = MappingProxyType({name: (root_tmp_dir / name).with_suffix(".zip") for name in load_model_packages})
+
+    def generate_packages():
+        for name in load_model_packages:
+            actual_out = save_bioimageio_package(MODEL_SOURCES[name], output_path=packages[name])
+            assert actual_out == packages[name]
+
+    info_path = root_tmp_dir / "packages_created"
+    if worker_id == "master":
+        # no workers
+        generate_packages()
+    else:
+        with FileLock(info_path.with_suffix(".lock")):
+            if not info_path.is_file():
+                generate_packages()
+                _ = info_path.write_text("")
+
+    return packages
 
 
 @fixture(scope="session")
