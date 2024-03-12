@@ -23,7 +23,7 @@ def import_callable(node: type, /) -> Callable[..., Any]:
 @import_callable.register
 def import_from_dependency04(node: CallableFromDepencency) -> Callable[..., Any]:
     module = importlib.import_module(node.module_name)
-    c = getattr(module, node.callable_name)
+    c = getattr(module, str(node.callable_name))
     if not callable(c):
         raise ValueError(f"{node} (imported: {c}) is not callable")
 
@@ -33,7 +33,7 @@ def import_from_dependency04(node: CallableFromDepencency) -> Callable[..., Any]
 @import_callable.register
 def import_from_dependency05(node: ArchitectureFromLibraryDescr) -> Callable[..., Any]:
     module = importlib.import_module(node.import_from)
-    c = getattr(module, node.callable)
+    c = getattr(module, str(node.callable))
     if not callable(c):
         raise ValueError(f"{node} (imported: {c}) is not callable")
 
@@ -42,22 +42,18 @@ def import_from_dependency05(node: ArchitectureFromLibraryDescr) -> Callable[...
 
 @import_callable.register
 def import_from_file04(node: CallableFromFile, **kwargs: Unpack[HashKwargs]):
-    return _import_from_file_impl(node.file, node.callable_name, **kwargs)
+    return _import_from_file_impl(node.file, str(node.callable_name), **kwargs)
 
 
 @import_callable.register
 def import_from_file05(node: ArchitectureFromFileDescr, **kwargs: Unpack[HashKwargs]):
-    return _import_from_file_impl(node.source, node.callable, sha256=node.sha256)
+    return _import_from_file_impl(node.source, str(node.callable), sha256=node.sha256)
 
 
-def _import_from_file_impl(
-    source: FileSource, callable_name: str, **kwargs: Unpack[HashKwargs]
-):
+def _import_from_file_impl(source: FileSource, callable_name: str, **kwargs: Unpack[HashKwargs]):
     local_file = download(source, **kwargs)
     module_name = local_file.path.stem
-    importlib_spec = importlib.util.spec_from_file_location(
-        module_name, local_file.path
-    )
+    importlib_spec = importlib.util.spec_from_file_location(module_name, local_file.path)
     if importlib_spec is None:
         raise ImportError(f"Failed to import {module_name} from {source}.")
 
