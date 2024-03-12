@@ -90,31 +90,6 @@ jobs:
     - name: pytest-spec-tf
       run: pytest --disable-pytest-warnings
 
-  test-spec-tf-legacy:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.7]
-    steps:
-    - uses: actions/checkout@v3
-    - name: Install Conda environment with Micromamba
-      uses: mamba-org/setup-micromamba@v1
-      with:
-        cache-downloads: true
-        cache-environment: true
-        environment-file: dev/environment-tf-legacy.yaml
-        condarc: |
-          channel_priority: flexible
-        create-args: |
-          python=${{ matrix.python-version }}
-    - name: additional setup
-      run: |
-        conda remove --yes --force bioimageio.spec || true  # allow failure for cached env
-        pip install --no-deps git+https://github.com/bioimage-io/spec-bioimage-io
-        pip install --no-deps -e .
-    - name: pytest-spec-tf-legacy
-      run: pytest --disable-pytest-warnings
-
   conda-build:
     runs-on: ubuntu-latest
     needs: test-spec-conda
