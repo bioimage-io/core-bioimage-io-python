@@ -400,7 +400,11 @@ class ScaleRange(_SimpleOperator):
         tensor_id: TensorId,
     ):
         kwargs = descr.kwargs
-        ref_tensor = cast(TensorId, kwargs.reference_tensor) or tensor_id
+        ref_tensor = (
+            tensor_id
+            if kwargs.reference_tensor is None
+            else TensorId(str(kwargs.reference_tensor))
+        )
         axes = _get_axes(descr.kwargs)
         if axes is None or AxisId("batch") in axes:
             Percentile = DatasetPercentile

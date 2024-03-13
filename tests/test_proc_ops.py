@@ -81,19 +81,21 @@ def test_zero_mean_unit_variance_fixed(tid: TensorId):
     op = FixedZeroMeanUnitVariance(
         tid,
         tid,
-        mean=xr.DataArray([1, 4, 7], dims=("y")),
-        std=xr.DataArray([0.81650, 0.81650, 0.81650], dims=("y")),
+        mean=xr.DataArray([3, 4, 5], dims=("c")),
+        std=xr.DataArray([2.44948974, 2.44948974, 2.44948974], dims=("c")),
     )
-    data = xr.DataArray(np.arange(9).reshape((1, 1, 3, 3)), dims=("b", "c", "x", "y"))
+    data = xr.DataArray(np.arange(9).reshape((1, 3, 3)), dims=("b", "c", "x"))
     expected = xr.DataArray(
         np.array(
             [
-                [-1.224743, 0.0, 1.224743],
-                [-1.224743, 0.0, 1.224743],
-                [-1.224743, 0.0, 1.224743],
+                [
+                    [-1.22474487, -0.81649658, -0.40824829],
+                    [-0.40824829, 0.0, 0.40824829],
+                    [0.40824829, 0.81649658, 1.22474487],
+                ]
             ]
-        )[None, None],
-        dims=("b", "c", "x", "y"),
+        ),
+        dims=("b", "c", "x"),
     )
     sample = Sample(data={tid: data})
     op(sample)
@@ -106,20 +108,17 @@ def test_zero_mean_unit_across_axes(tid: TensorId):
     data = xr.DataArray(np.arange(18).reshape((2, 3, 3)), dims=("c", "x", "y"))
 
     op = ZeroMeanUnitVariance(
-        tid, tid, SampleMean(tid, (AxisId("c"),)), SampleStd(tid, (AxisId("c"),))
+        tid,
+        tid,
+        SampleMean(tid, (AxisId("x"), AxisId("y"))),
+        SampleStd(tid, (AxisId("x"), AxisId("y"))),
     )
     sample = Sample(data={tid: data})
     sample.stat = compute_measures(op.required_measures, [sample])
 
     expected = xr.DataArray(
-        np.array(
-            [
-                [-1.54919274, -1.16189455, -0.77459637],
-                [-0.38729818, 0.0, 0.38729818],
-                [0.77459637, 1.16189455, 1.54919274],
-            ]
-        ),
-        dims=("x", "y"),
+        np.array([]),
+        dims=("c", "x", "y"),
     )
     op(sample)
     xr.testing.assert_allclose(expected, sample.data[tid])
@@ -235,13 +234,13 @@ def test_scale_mean_variance(tid: TensorId, axes: Optional[Tuple[AxisId, ...]]):
 
 
 @pytest.mark.parametrize(
-    "axes",
-    [None, tuple(map(AxisId, "cy")), tuple(map(AxisId, "y")), tuple(map(AxisId, "yx"))],
+    "axes_str",
+    [None, "cy", "y", "yx"],
 )
-def test_scale_mean_variance_per_channel(
-    tid: TensorId, axes: Optional[Tuple[AxisId, ...]]
-):
+def test_scale_mean_variance_per_channel(tid: TensorId, axes_str: Optional[str]):
     from bioimageio.core.proc_ops import ScaleMeanVariance
+
+    axes = None if axes_str is None else tuple(map(AxisId, axes_str))
 
     shape = (3, 32, 46)
     ipt_axes = ("c", "y", "x")
@@ -288,8 +287,8 @@ def test_scale_range(tid: TensorId):
 def test_scale_range_axes(tid: TensorId):
     from bioimageio.core.proc_ops import ScaleRange
 
-    lower_percentile = SamplePercentile(tid, 1, axes=(AxisId("c"),))
-    upper_percentile = SamplePercentile(tid, 100, axes=(AxisId("c"),))
+    lower_percentile = SamplePercentile(tid, 1, axes=(AxisId("x"), AxisId("y")))
+    upper_percentile = SamplePercentile(tid, 100, axes=(AxisId("x"), AxisId("y")))
     op = ScaleRange(tid, tid, lower_percentile, upper_percentile)
 
     np_data = np.arange(18).reshape((2, 3, 3)).astype("float32")

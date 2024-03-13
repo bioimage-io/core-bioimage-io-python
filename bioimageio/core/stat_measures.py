@@ -40,7 +40,8 @@ class SampleMean(_Mean, SampleMeasureBase):
     """The mean value of a single tensor"""
 
     def compute(self, sample: Sample) -> MeasureValue:
-        return sample.data[self.tensor_id].mean(dim=self.axes)
+        tensor = sample.data[self.tensor_id]
+        return tensor.mean(dim=self.axes)
 
     def __post_init__(self):
         assert self.axes is None or AxisId("batch") not in self.axes
@@ -65,7 +66,8 @@ class SampleStd(_Std, SampleMeasureBase):
     """The standard deviation of a single tensor"""
 
     def compute(self, sample: Sample) -> MeasureValue:
-        return sample.data[self.tensor_id].std(dim=self.axes)
+        tensor = sample.data[self.tensor_id]
+        return tensor.std(dim=self.axes)
 
     def __post_init__(self):
         assert self.axes is None or AxisId("batch") not in self.axes
@@ -90,7 +92,8 @@ class SampleVar(_Var, SampleMeasureBase):
     """The variance of a single tensor"""
 
     def compute(self, sample: Sample) -> MeasureValue:
-        return sample.data[self.tensor_id].var(dim=self.axes)
+        tensor = sample.data[self.tensor_id]
+        return tensor.var(dim=self.axes)
 
     def __post_init__(self):
         assert self.axes is None or AxisId("batch") not in self.axes
@@ -120,7 +123,8 @@ class SamplePercentile(_Percentile, SampleMeasureBase):
     """The `n`th percentile of a single tensor"""
 
     def compute(self, sample: Sample) -> MeasureValue:
-        return sample.data[self.tensor_id].quantile(self.n / 100.0, dim=self.axes)
+        tensor = sample.data[self.tensor_id]
+        return tensor.quantile(self.n / 100.0, dim=self.axes)
 
     def __post_init__(self):
         super().__post_init__()

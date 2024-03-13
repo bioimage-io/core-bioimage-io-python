@@ -16,28 +16,22 @@ from bioimageio.core.utils.image_helper import (
 
 @pytest.mark.parametrize(
     "axes",
-    [
-        [AxisId(a) for a in axes]
-        for axes in ["yx", "xy", "cyx", "yxc", "bczyx", "xyz", "xyzc", "bzyxc"]
-    ],
+    ["yx", "xy", "cyx", "yxc", "bczyx", "xyz", "xyzc", "bzyxc"],
 )
-def test_transpose_tensor_2d(axes: Sequence[AxisId]):
+def test_transpose_tensor_2d(axes: str):
 
     tensor = interprete_array(np.random.rand(256, 256), len(axes))
-    transposed = transpose_tensor(tensor, axes)
+    transposed = transpose_tensor(tensor, [AxisId(a) for a in axes])
     assert transposed.ndim == len(axes)
 
 
 @pytest.mark.parametrize(
     "axes",
-    [
-        [AxisId(a) for a in axes]
-        for axes in ["zyx", "cyx", "yxc", "bczyx", "xyz", "xyzc", "bzyxc"]
-    ],
+    ["zyx", "cyzx", "yzixc", "bczyx", "xyz", "xyzc", "bzyxtc"],
 )
-def test_transpose_tensor_3d(axes: Sequence[AxisId]):
-    tensor = interprete_array(np.random.rand(64, 64, 64), len(axes))
-    transposed = transpose_tensor(tensor, axes)
+def test_transpose_tensor_3d(axes: str):
+    tensor = interprete_array(np.random.rand(64, 64, 64), 3)
+    transposed = transpose_tensor(tensor, [AxisId(a) for a in axes])
     assert transposed.ndim == len(axes)
 
 

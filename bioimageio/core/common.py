@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Dict, Literal
+from typing import TYPE_CHECKING, Dict, Iterable, Literal
 
 import xarray as xr
 
@@ -21,6 +21,7 @@ class Axis:
 BatchSize = int
 Tensor = xr.DataArray
 
+
 Data = Dict[TensorId, Tensor]
 Stat = Dict["Measure", "MeasureValue"]
 
@@ -34,3 +35,6 @@ class Sample:
 
     stat: Stat = field(default_factory=dict)
     """sample and dataset statistics"""
+
+
+Dataset = Iterable[Sample]

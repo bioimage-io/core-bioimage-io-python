@@ -15,20 +15,18 @@ from bioimageio.core.stat_measures import SamplePercentile
 
 
 @pytest.mark.parametrize(
-    "name,sample_or_dataset,axes",
+    "name,axes",
     product(
         ["mean", "var", "std"],
-        ["Sample", "Dataset"],
-        [None, (AxisId("x"), AxisId("y"))],
+        [None, (AxisId("c"),), (AxisId("x"), AxisId("y"))],
     ),
 )
 def test_individual_normal_measure(
     name: str,
-    sample_or_dataset: Literal["Sample", "Dataset"],
     axes: Optional[Tuple[AxisId, AxisId]],
 ):
     data_id = TensorId("test_data")
-    measure = getattr(stat_measures, sample_or_dataset + name.title())(
+    measure = getattr(stat_measures, "Sample" + name.title())(
         axes=axes, tensor_id=data_id
     )
     data = xr.DataArray(np.random.random((5, 6, 3)), dims=("x", "y", "c"))

@@ -121,7 +121,6 @@ def transpose_tensor(
         tensor: the input array
         axes: the desired array axes
     """
-
     # expand the missing image axes
     current_axes = tuple(AxisId(str(d)) for d in tensor.dims)
     missing_axes = tuple(str(a) for a in axes if a not in current_axes)
