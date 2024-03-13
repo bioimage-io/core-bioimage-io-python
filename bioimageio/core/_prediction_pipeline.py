@@ -39,11 +39,11 @@ class PredictionPipeline:
         self._preprocessing = preprocessing
         self._postprocessing = postprocessing
         if isinstance(bioimageio_model, v0_4.ModelDescr):
-            self._input_ids = [TensorId(str(d.name)) for d in bioimageio_model.inputs]
-            self._output_ids = [TensorId(str(d.name)) for d in bioimageio_model.outputs]
+            self.input_ids = [TensorId(str(d.name)) for d in bioimageio_model.inputs]
+            self.output_ids = [TensorId(str(d.name)) for d in bioimageio_model.outputs]
         else:
-            self._input_ids = [d.id for d in bioimageio_model.inputs]
-            self._output_ids = [d.id for d in bioimageio_model.outputs]
+            self.input_ids = [d.id for d in bioimageio_model.inputs]
+            self.output_ids = [d.id for d in bioimageio_model.outputs]
 
         self._adapter: ModelAdapter = model
 
@@ -65,7 +65,7 @@ class PredictionPipeline:
     ) -> List[xr.DataArray]:
         """Predict input_tensor with the model without applying pre/postprocessing."""
         named_tensors = [
-            named_input_tensors[str(k)] for k in self._input_ids[len(input_tensors) :]
+            named_input_tensors[str(k)] for k in self.input_ids[len(input_tensors) :]
         ]
         return self._adapter.forward(*input_tensors, *named_tensors)
 
@@ -87,7 +87,7 @@ class PredictionPipeline:
             **{str(k): v for k, v in input_sample.data.items()}
         )
         prediction = Sample(
-            data=dict(zip(self._output_ids, prediction_tensors)), stat=input_sample.stat
+            data=dict(zip(self.output_ids, prediction_tensors)), stat=input_sample.stat
         )
         self.apply_postprocessing(prediction)
         return prediction
@@ -98,7 +98,7 @@ class PredictionPipeline:
         """Apply preprocessing, run prediction and apply postprocessing."""
         input_sample = Sample(
             data={
-                **dict(zip(self._input_ids, input_tensors)),
+                **dict(zip(self.input_ids, input_tensors)),
                 **{TensorId(k): v for k, v in named_input_tensors.items()},
             }
         )
@@ -109,7 +109,7 @@ class PredictionPipeline:
     ) -> List[xr.DataArray]:
         """Apply preprocessing, run prediction and apply postprocessing."""
         named_outputs = self.forward_tensors(*input_tensors, **named_input_tensors)
-        return [named_outputs[x] for x in self._output_ids]
+        return [named_outputs[x] for x in self.output_ids]
 
     def load(self):
         """
