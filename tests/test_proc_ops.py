@@ -116,9 +116,8 @@ def test_zero_mean_unit_across_axes(tid: TensorId):
     sample = Sample(data={tid: data})
     sample.stat = compute_measures(op.required_measures, [sample])
 
-    expected = xr.DataArray(
-        np.array([]),
-        dims=("c", "x", "y"),
+    expected = xr.concat(
+        [(data[i : i + 1] - data[i].mean()) / data[i].std() for i in range(2)], dim="c"
     )
     op(sample)
     xr.testing.assert_allclose(expected, sample.data[tid])
@@ -189,19 +188,35 @@ def test_combination_of_op_steps_with_dims_specified(tid: TensorId):
     data = xr.DataArray(np.arange(18).reshape((2, 3, 3)), dims=("c", "x", "y"))
     sample = Sample(data={tid: data})
     op = ZeroMeanUnitVariance(
-        tid, tid, SampleMean(tid, (AxisId("c"),)), SampleStd(tid, (AxisId("c"),))
+        tid,
+        tid,
+        SampleMean(
+            tid,
+            (AxisId("x"), AxisId("y")),
+        ),
+        SampleStd(
+            tid,
+            (AxisId("x"), AxisId("y")),
+        ),
     )
     sample.stat = compute_measures(op.required_measures, [sample])
 
     expected = xr.DataArray(
         np.array(
             [
-                [-1.54919274, -1.16189455, -0.77459637],
-                [-0.38729818, 0.0, 0.38729818],
-                [0.77459637, 1.16189455, 1.54919274],
+                [
+                    [-1.54919274, -1.16189455, -0.77459637],
+                    [-0.38729818, 0.0, 0.38729818],
+                    [0.77459637, 1.16189455, 1.54919274],
+                ],
+                [
+                    [-1.54919274, -1.16189455, -0.77459637],
+                    [-0.38729818, 0.0, 0.38729818],
+                    [0.77459637, 1.16189455, 1.54919274],
+                ],
             ]
         ),
-        dims=("x", "y"),
+        dims=("c", "x", "y"),
     )
 
     op(sample)
