@@ -37,7 +37,7 @@ from bioimageio.core import PredictionPipeline, create_prediction_pipeline
 #     local: Dict[Axis, slice]
 
 
-def get_samples(
+def get_sample(
     inputs: Union[Tuple[Path, ...], List[Path]],
     input_ids: List[TensorId],
 ):
@@ -490,7 +490,8 @@ def predict_image(
     with create_prediction_pipeline(
         bioimageio_model=model, weight_format=weight_format, devices=devices
     ) as prediction_pipeline:
-        _predict_sample(prediction_pipeline, inputs, outputs, padding, tiling)
+        sample = get_sample(inputs, prediction_pipeline.input_ids)
+        _predict_sample(prediction_pipeline, sample, outputs, padding, tiling)
 
 
 # def predict_images(
