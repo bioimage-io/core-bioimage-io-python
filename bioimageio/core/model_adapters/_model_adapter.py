@@ -23,17 +23,17 @@ class ModelAdapter(ABC):
     """
     Represents model *without* any preprocessing or postprocessing.
 
-    >>> from bioimageio.core import read_description
-    >>> model = read_description()
+    >>> from bioimageio.core import load_description
+    >>> model = load_description()
     >>> print("option 1:")
     option 1:
     >>> adapter = ModelAdapter.create(model)
-    >>> adapter.forward()
+    >>> adapter.forward  # (...)
     >>> adapter.unload()
     >>> print("option 2:")
     option 2:
     >>> with ModelAdapter.create(model) as adapter:
-    >>>     adapter.forward()
+    >>>     adapter.forward  # (...)
 
     """
 

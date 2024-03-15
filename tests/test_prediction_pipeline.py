@@ -12,7 +12,9 @@ def _test_prediction_pipeline(model_package: Path, weights_format: WeightsFormat
     from bioimageio.core._prediction_pipeline import create_prediction_pipeline
 
     bio_model = load_description(model_package)
-    assert isinstance(bio_model, (ModelDescr, ModelDescr04))
+    assert isinstance(
+        bio_model, (ModelDescr, ModelDescr04)
+    ), bio_model.validation_summary.format()
     pp = create_prediction_pipeline(
         bioimageio_model=bio_model, weight_format=weights_format
     )

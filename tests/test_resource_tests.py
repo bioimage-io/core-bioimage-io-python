@@ -28,11 +28,11 @@ def test_test_model(any_model: Path):
     from bioimageio.core._resource_tests import test_model
 
     summary = test_model(any_model)
-    assert summary.status == "passed"
+    assert summary.status == "passed", summary.format()
 
 
 def test_test_resource(any_model: Path):
     from bioimageio.core._resource_tests import test_description
 
     summary = test_description(any_model)
-    assert summary.status == "passed"
+    assert summary.status == "passed", summary.format()
