@@ -32,10 +32,12 @@ class PredictionPipeline:
         super().__init__()
         if bioimageio_model.run_mode:
             warnings.warn(
-                f"Not yet implemented inference for run mode '{bioimageio_model.run_mode.name}'"
+                "Not yet implemented inference for run mode " +
+                f"'{bioimageio_model.run_mode.name}'"
             )
 
         self.name = name
+        self.input_specs = bioimageio_model.inputs
         self._preprocessing = preprocessing
         self._postprocessing = postprocessing
         if isinstance(bioimageio_model, v0_4.ModelDescr):
@@ -65,7 +67,7 @@ class PredictionPipeline:
     ) -> List[xr.DataArray]:
         """Predict input_tensor with the model without applying pre/postprocessing."""
         named_tensors = [
-            named_input_tensors[str(k)] for k in self.input_ids[len(input_tensors) :]
+            named_input_tensors[str(k)] for k in self.input_ids[len(input_tensors):]
         ]
         return self._adapter.forward(*input_tensors, *named_tensors)
 
@@ -113,7 +115,8 @@ class PredictionPipeline:
 
     def load(self):
         """
-        optional step: load model onto devices before calling forward if not using it as context manager
+        optional step: load model onto devices before calling forward
+        if not using it as context manager
         """
         self._adapter.load()
 

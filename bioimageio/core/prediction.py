@@ -1,23 +1,31 @@
-"""coming soon"""
-
 # TODO: update
-# import collections
-# import os
-# from fractions import Fraction
-# from itertools import product
-# from pathlib import Path
-# from typing import Any, Dict, Hashable, Iterator, List, NamedTuple, Optional, OrderedDict, Sequence, Tuple, Union
+import collections
+import os
+from fractions import Fraction
+from itertools import product
+from pathlib import Path
+from typing import (
+    Any, Dict, Hashable, Iterator, List, NamedTuple,
+    Optional, OrderedDict, Sequence, Tuple, Union
+)
 
-# import numpy as np
-# import xarray as xr
-# from bioimageio.spec import ResourceDescr
-# from bioimageio.spec.model.v0_5 import AxisType
-# from numpy.typing import NDArray
+import numpy as np
+import xarray as xr
+# from .._internal.types import NotEmpty as NotEmpty
+from bioimageio.spec.common import PermissiveFileSource
+from bioimageio.spec.model.v0_5 import AxisType, ModelDescr, WeightsFormat
+from bioimageio.spec.model.v0_5 import InputAxis
+from bioimageio.spec.model.v0_5 import InputTensorDescr
+from bioimageio.spec.model.v0_4 import AxesStr, ImplicitOutputShape
+from bioimageio.spec.model.v0_4 import InputTensorDescr as _InputTensorDescr
+from numpy.typing import NDArray
 # from pydantic import HttpUrl
-# from tqdm import tqdm
+from tqdm import tqdm
 
-# from bioimageio.core import image_helper, load_description
-# from bioimageio.core.prediction_pipeline import PredictionPipeline, create_prediction_pipeline
+from bioimageio.core import load_description
+from bioimageio.core.common import Sample, Axis, TensorId
+from bioimageio.core.utils import image_helper
+from bioimageio.core import PredictionPipeline, create_prediction_pipeline
 # from bioimageio.core.resource_io.nodes import ImplicitOutputShape, Model, ResourceDescr
 
 # Axis = Hashable
@@ -27,6 +35,23 @@
 #     outer: Dict[Axis, slice]
 #     inner: Dict[Axis, slice]
 #     local: Dict[Axis, slice]
+
+
+def get_samples(
+    inputs: Union[Tuple[Path, ...], List[Path]],
+    input_ids: List[TensorId],
+):
+    input_tensors = [
+        image_helper.load_tensor(input_path)
+        for input_path in inputs
+    ]
+    sample = Sample(
+        data={
+            **dict(zip(input_ids, input_tensors))
+        }
+    )
+
+    return sample
 
 
 # def get_tiling(
@@ -138,27 +163,18 @@
 #         output[inner_tile] = out[local_tile]
 
 
-# def predict(
-#     prediction_pipeline: PredictionPipeline,
-#     inputs: Union[
-#         xr.DataArray, List[xr.DataArray], Tuple[xr.DataArray], NDArray[Any], List[NDArray[Any]], Tuple[NDArray[Any]]
-#     ],
-# ) -> List[xr.DataArray]:
-#     """Run prediction for a single set of input(s) with a bioimage.io model
+def predict(
+    prediction_pipeline: PredictionPipeline,
+    input_sample: Sample,
+) -> Sample:
+    """Run prediction for a single set of input(s) with a bioimage.io model
 
-#     Args:
-#         prediction_pipeline: the prediction pipeline for the input model.
-#         inputs: the input(s) for this model represented as xarray data or numpy nd array.
-#     """
-#     if not isinstance(inputs, (tuple, list)):
-#         inputs = [inputs]
-
-#     assert len(inputs) == len(prediction_pipeline.input_specs)
-#     tagged_data = [
-#         ipt if isinstance(ipt, xr.DataArray) else xr.DataArray(ipt, dims=ipt_spec.axes)
-#         for ipt, ipt_spec in zip(inputs, prediction_pipeline.input_specs)
-#     ]
-#     return prediction_pipeline.forward(*tagged_data)
+    Args:
+        prediction_pipeline: the prediction pipeline for the input model.
+        inputs: the input(s) for this model represented as xarray data or numpy nd array.
+    """
+    assert len(input_sample.data) == len(prediction_pipeline.input_specs)
+    return prediction_pipeline.forward_sample(input_sample)
 
 
 # def _parse_padding(padding, input_specs):
@@ -411,63 +427,70 @@
 #     return outputs
 
 
-# def _predict_sample(prediction_pipeline, inputs, outputs, padding, tiling):
-#     if padding and tiling:
-#         raise ValueError("Only one of padding or tiling is supported")
+def _predict_sample(
+    prediction_pipeline: PredictionPipeline,
+    sample: Sample,
+    outputs: Union[Tuple[Path, ...], List[Path]],
+    padding: Optional[Union[bool, Dict[str, int]]],
+    tiling: Optional[Union[bool, Dict[str, Dict[str, int]]]]
+):
+    if padding and tiling:
+        raise ValueError("Only one of padding or tiling is supported")
 
-#     input_data = image_helper.load_tensors(inputs, prediction_pipeline.input_specs)
-#     if padding is not None:
-#         result = predict_with_padding(prediction_pipeline, input_data, padding)
-#     elif tiling is not None:
-#         result = predict_with_tiling(prediction_pipeline, input_data, tiling)
-#     else:
-#         result = predict(prediction_pipeline, input_data)
+    if padding is not None:
+        # result = predict_with_padding(prediction_pipeline, input_data, padding)
+        result = None
+    elif tiling is not None:
+        # result = predict_with_tiling(prediction_pipeline, input_data, tiling)
+        result = None
+    else:
+        result = predict(prediction_pipeline, sample)
 
-#     assert isinstance(result, list)
-#     assert len(result) == len(outputs)
-#     for res, out in zip(result, outputs):
-#         image_helper.save_image(out, res)
+    assert isinstance(result, list)
+    assert len(result.data) == len(outputs)
+    # for res, out in zip(result, outputs):
+    #     image_helper.save_image(out, res)
 
 
-# def predict_image(
-#     model_rdf: DescriptionSource,
-#     inputs: Union[Tuple[Path, ...], List[Path], Path],
-#     outputs: Union[Tuple[Path, ...], List[Path], Path],
-#     padding: Optional[Union[bool, Dict[str, int]]] = None,
-#     tiling: Optional[Union[bool, Dict[str, Dict[str, int]]]] = None,
-#     weight_format: Optional[str] = None,
-#     devices: Optional[List[str]] = None,
-#     verbose: bool = False,
-# ):
-#     """Run prediction for a single set of input image(s) with a bioimage.io model.
+def predict_image(
+    model_rdf: PermissiveFileSource,
+    inputs: Union[Tuple[Path, ...], List[Path], Path],
+    outputs: Union[Tuple[Path, ...], List[Path], Path],
+    padding: Optional[Union[bool, Dict[str, int]]] = None,
+    tiling: Optional[Union[bool, Dict[str, Dict[str, int]]]] = None,
+    weight_format: Optional[WeightsFormat] = None,
+    devices: Optional[List[str]] = None,
+    verbose: bool = False,
+):
+    """Run prediction for a single set of input image(s) with a bioimage.io model.
 
-#     Args:
-#         model_rdf: the bioimageio model.
-#         inputs: the filepaths for the input images.
-#         outputs: the filepaths for saving the input images.
-#         padding: the padding settings for prediction. By default no padding is used.
-#         tiling: the tiling settings for prediction. By default no tiling is used.
-#         weight_format: the weight format to use for predictions.
-#         devices: the devices to use for prediction.
-#         verbose: run prediction in verbose mode.
-#     """
-#     if not isinstance(inputs, (tuple, list)):
-#         inputs = [inputs]
+    Args:
+        model_rdf: the bioimageio model.
+        inputs: the filepaths for the input images.
+        outputs: the filepaths for saving the input images.
+        padding: the padding settings for prediction. By default no padding is used.
+        tiling: the tiling settings for prediction. By default no tiling is used.
+        weight_format: the weight format to use for predictions.
+        devices: the devices to use for prediction.
+        verbose: run prediction in verbose mode.
+    """
+    if not isinstance(inputs, (tuple, list)):
+        inputs = [inputs]
 
-#     if not isinstance(outputs, (tuple, list)):
-#         outputs = [outputs]
+    if not isinstance(outputs, (tuple, list)):
+        outputs = [outputs]
 
-#     model = load_description(model_rdf)
-#     assert isinstance(model, Model)
-#     if len(model.inputs) != len(inputs):
-#         raise ValueError
-#     if len(model.outputs) != len(outputs):
-#         raise ValueError
+    model = load_description(model_rdf)
+    assert isinstance(model, ModelDescr)
+    if len(model.inputs) != len(inputs):
+        raise ValueError
+    if len(model.outputs) != len(outputs):
+        raise ValueError
 
-#     with create_prediction_pipeline(
-#         bioimageio_model=model, weight_format=weight_format, devices=devices
-#     ) as prediction_pipeline:
-#         _predict_sample(prediction_pipeline, inputs, outputs, padding, tiling)
+    with create_prediction_pipeline(
+        bioimageio_model=model, weight_format=weight_format, devices=devices
+    ) as prediction_pipeline:
+        _predict_sample(prediction_pipeline, inputs, outputs, padding, tiling)
 
 
 # def predict_images(
