@@ -1,5 +1,3 @@
-from typing import Sequence
-
 import numpy as np
 import pytest
 import xarray as xr
@@ -7,11 +5,10 @@ from xarray.testing import assert_equal  # pyright: ignore[reportUnknownVariable
 
 from bioimageio.core.common import AxisId
 from bioimageio.core.utils.image_helper import (
-    crop_to,
     interprete_array,
-    pad,
     transpose_tensor,
 )
+from bioimageio.core.utils.tiling import crop_to, pad
 
 
 @pytest.mark.parametrize(
@@ -20,7 +17,7 @@ from bioimageio.core.utils.image_helper import (
 )
 def test_transpose_tensor_2d(axes: str):
 
-    tensor = interprete_array(np.random.rand(256, 256), len(axes))
+    tensor = interprete_array(np.random.rand(256, 256), None)
     transposed = transpose_tensor(tensor, [AxisId(a) for a in axes])
     assert transposed.ndim == len(axes)
 
@@ -30,7 +27,7 @@ def test_transpose_tensor_2d(axes: str):
     ["zyx", "cyzx", "yzixc", "bczyx", "xyz", "xyzc", "bzyxtc"],
 )
 def test_transpose_tensor_3d(axes: str):
-    tensor = interprete_array(np.random.rand(64, 64, 64), 3)
+    tensor = interprete_array(np.random.rand(64, 64, 64), None)
     transposed = transpose_tensor(tensor, [AxisId(a) for a in axes])
     assert transposed.ndim == len(axes)
 

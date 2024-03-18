@@ -3,11 +3,10 @@ import warnings
 from typing import List, Literal, Optional, Sequence, Set, Tuple, Union
 
 import numpy as np
-import xarray as xr
 
 from bioimageio.core._prediction_pipeline import create_prediction_pipeline
 from bioimageio.core.common import AxisId, BatchSize
-from bioimageio.core.utils import VERSION, get_test_inputs
+from bioimageio.core.utils import VERSION, get_test_inputs, get_test_outputs
 from bioimageio.core.utils.image_helper import resize_to
 from bioimageio.spec import (
     InvalidDescr,
@@ -17,7 +16,6 @@ from bioimageio.spec import (
     load_description,
 )
 from bioimageio.spec._internal.common_nodes import ResourceDescrBase
-from bioimageio.spec._internal.io_utils import load_array
 from bioimageio.spec.common import BioimageioYamlContent, PermissiveFileSource
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import WeightsFormat
@@ -120,30 +118,8 @@ def _test_model_inference(
     error: Optional[str] = None
     tb: List[str] = []
     try:
-        if isinstance(model, v0_4.ModelDescr):
-            inputs = [
-                xr.DataArray(load_array(src), dims=d.axes)
-                for src, d in zip(model.test_inputs, model.inputs)
-            ]
-            expected = [
-                xr.DataArray(load_array(src), dims=d.axes)
-                for src, d in zip(model.test_outputs, model.outputs)
-            ]
-        else:
-            inputs = [
-                xr.DataArray(
-                    load_array(d.test_tensor.download().path),
-                    dims=tuple(str(a.id) for a in d.axes),
-                )
-                for d in model.inputs
-            ]
-            expected = [
-                xr.DataArray(
-                    load_array(d.test_tensor.download().path),
-                    dims=tuple(str(a.id) for a in d.axes),
-                )
-                for d in model.outputs
-            ]
+        inputs = get_test_inputs(model)
+        expected = get_test_outputs(model)
 
         with create_prediction_pipeline(
             bioimageio_model=model, devices=devices, weight_format=weight_format

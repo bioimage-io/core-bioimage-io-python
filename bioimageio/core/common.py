@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Dict, Iterable, Literal
+from typing import TYPE_CHECKING, Dict, Iterable, Literal, Protocol
 
 import xarray as xr
 
@@ -15,6 +15,11 @@ AxisId = v0_5.AxisId
 @dataclass
 class Axis:
     id: AxisId
+    type: Literal["batch", "channel", "index", "space", "time"]
+
+
+class AxisLike(Protocol):
+    id: str
     type: Literal["batch", "channel", "index", "space", "time"]
 
 

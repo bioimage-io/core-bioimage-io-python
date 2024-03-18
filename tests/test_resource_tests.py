@@ -1,6 +1,3 @@
-from pathlib import Path
-
-
 def test_error_for_wrong_shape(stardist_wrong_shape: str):
     from bioimageio.core._resource_tests import test_model
 
@@ -24,14 +21,14 @@ def test_error_for_wrong_shape2(stardist_wrong_shape2: str):
     assert summary.details[0].errors[0].msg == expected_error_message
 
 
-def test_test_model(any_model: Path):
+def test_test_model(any_model: str):
     from bioimageio.core._resource_tests import test_model
 
     summary = test_model(any_model)
     assert summary.status == "passed", summary.format()
 
 
-def test_test_resource(any_model: Path):
+def test_test_resource(any_model: str):
     from bioimageio.core._resource_tests import test_description
 
     summary = test_description(any_model)
