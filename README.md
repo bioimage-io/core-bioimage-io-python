@@ -68,16 +68,6 @@ pip install -e . --no-deps
 
 There are different environment files that only install tensorflow or pytorch as dependencies available.
 
-## 🏞 Environment variables
-
-| Name | Default | Description |
-|---|---|---|
-| BIOIMAGEIO_USE_CACHE | "true" | Enables simple URL to file cache. possible, case-insensitive, positive values are:
-"true", "yes", "1". Any other value is interpreted as "false" |
-| BIOIMAGEIO_CACHE_PATH | generated tmp folder  | File path for simple URL to file cache;
-changes of URL source are not detected. |
-| BIOIMAGEIO_CACHE_WARNINGS_LIMIT | "3" | Maximum number of warnings generated for simple cache hits. |
-
 ## 💻 Command Line
 
 `bioimageio.core` installs a command line interface (CLI) for testing models and other functionality.
