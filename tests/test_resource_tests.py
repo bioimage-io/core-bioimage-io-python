@@ -1,3 +1,6 @@
+from bioimageio.spec import InvalidDescr
+
+
 def test_error_for_wrong_shape(stardist_wrong_shape: str):
     from bioimageio.core._resource_tests import test_model
 
@@ -33,3 +36,14 @@ def test_test_resource(any_model: str):
 
     summary = test_description(any_model)
     assert summary.status == "passed", summary.format()
+
+
+def test_loading_description_multiple_times(unet2d_nuclei_broad_model: str):
+    from bioimageio.core import load_description
+
+    model_descr = load_description(unet2d_nuclei_broad_model)
+    assert not isinstance(model_descr, InvalidDescr)
+
+    # load again, which some users might end up doing
+    model_descr = load_description(model_descr)  # pyright: ignore[reportArgumentType]
+    assert not isinstance(model_descr, InvalidDescr)
