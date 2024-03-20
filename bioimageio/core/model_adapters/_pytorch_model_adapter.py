@@ -2,8 +2,7 @@ import gc
 import warnings
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
-import xarray as xr
-
+from bioimageio.core.common import Tensor
 from bioimageio.core.utils import import_callable
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.utils import download
@@ -45,16 +44,23 @@ class PytorchModelAdapter(ModelAdapter):
 
         self._network = self._network.eval()
 
-    def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
+    def forward(self, *input_tensors: Optional[Tensor]) -> List[Optional[Tensor]]:
         with torch.no_grad():
-            tensors = [torch.from_numpy(ipt.data) for ipt in input_tensors]
+            tensors = [
+                None if ipt is None else torch.from_numpy(ipt.data)
+                for ipt in input_tensors
+            ]
             tensors = [t.to(self._devices[0]) for t in tensors]
             result: Union[Tuple[Any, ...], List[Any], Any] = self._network(*tensors)
             if not isinstance(result, (tuple, list)):
                 result = [result]
 
             result = [
-                r.detach().cpu().numpy() if isinstance(r, torch.Tensor) else r
+                (
+                    None
+                    if r is None
+                    else r.detach().cpu().numpy() if isinstance(r, torch.Tensor) else r
+                )
                 for r in result
             ]
             if len(result) > len(self.output_dims):
@@ -62,7 +68,10 @@ class PytorchModelAdapter(ModelAdapter):
                     f"Expected at most {len(self.output_dims)} outputs, but got {len(result)}"
                 )
 
-        return [xr.DataArray(r, dims=out) for r, out in zip(result, self.output_dims)]
+        return [
+            None if r is None else Tensor(r, dims=out)
+            for r, out in zip(result, self.output_dims)
+        ]
 
     def unload(self) -> None:
         del self._network

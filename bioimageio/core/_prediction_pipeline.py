@@ -2,9 +2,7 @@ import warnings
 from types import MappingProxyType
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Union
 
-import xarray as xr
-
-from bioimageio.core.common import Sample, TensorId
+from bioimageio.core.common import Sample, Tensor, TensorId
 from bioimageio.core.model_adapters import ModelAdapter, create_model_adapter
 from bioimageio.core.model_adapters import get_weight_formats as get_weight_formats
 from bioimageio.core.proc_ops import Processing
@@ -48,8 +46,8 @@ class PredictionPipeline:
         self._adapter: ModelAdapter = model
 
     def __call__(
-        self, *input_tensors: xr.DataArray, **named_input_tensors: xr.DataArray
-    ) -> List[xr.DataArray]:
+        self, *input_tensors: Tensor, **named_input_tensors: Tensor
+    ) -> List[Tensor]:
         return self.forward(*input_tensors, **named_input_tensors)
 
     def __enter__(self):
@@ -61,11 +59,12 @@ class PredictionPipeline:
         return False
 
     def predict(
-        self, *input_tensors: xr.DataArray, **named_input_tensors: xr.DataArray
-    ) -> List[xr.DataArray]:
+        self, *input_tensors: Optional[Tensor], **named_input_tensors: Optional[Tensor]
+    ) -> List[Tensor]:
         """Predict input_tensor with the model without applying pre/postprocessing."""
         named_tensors = [
-            named_input_tensors[str(k)] for k in self.input_ids[len(input_tensors) :]
+            named_input_tensors.get(str(k))
+            for k in self.input_ids[len(input_tensors) :]
         ]
         return self._adapter.forward(*input_tensors, *named_tensors)
 
@@ -93,23 +92,30 @@ class PredictionPipeline:
         return prediction
 
     def forward_tensors(
-        self, *input_tensors: xr.DataArray, **named_input_tensors: xr.DataArray
-    ) -> Dict[TensorId, xr.DataArray]:
+        self, *input_tensors: Optional[Tensor], **named_input_tensors: Optional[Tensor]
+    ) -> Dict[TensorId, Tensor]:
         """Apply preprocessing, run prediction and apply postprocessing."""
+        assert all(TensorId(k) in self.input_ids for k in named_input_tensors)
         input_sample = Sample(
             data={
-                **dict(zip(self.input_ids, input_tensors)),
-                **{TensorId(k): v for k, v in named_input_tensors.items()},
+                **{
+                    k: v for k, v in zip(self.input_ids, input_tensors) if v is not None
+                },
+                **{
+                    TensorId(k): v
+                    for k, v in named_input_tensors.items()
+                    if v is not None
+                },
             }
         )
         return self.forward_sample(input_sample).data
 
     def forward(
-        self, *input_tensors: xr.DataArray, **named_input_tensors: xr.DataArray
-    ) -> List[xr.DataArray]:
+        self, *input_tensors: Optional[Tensor], **named_input_tensors: Optional[Tensor]
+    ) -> List[Optional[Tensor]]:
         """Apply preprocessing, run prediction and apply postprocessing."""
         named_outputs = self.forward_tensors(*input_tensors, **named_input_tensors)
-        return [named_outputs[x] for x in self.output_ids]
+        return [named_outputs.get(x) for x in self.output_ids]
 
     def load(self):
         """
@@ -130,9 +136,7 @@ def create_prediction_pipeline(
     devices: Optional[Sequence[str]] = None,
     weight_format: Optional[WeightsFormat] = None,
     weights_format: Optional[WeightsFormat] = None,
-    dataset_for_initial_statistics: Iterable[
-        Union[Sample, Sequence[xr.DataArray]]
-    ] = tuple(),
+    dataset_for_initial_statistics: Iterable[Union[Sample, Sequence[Tensor]]] = tuple(),
     keep_updating_initial_dataset_statistics: bool = False,
     fixed_dataset_statistics: Mapping[DatasetMeasure, MeasureValue] = MappingProxyType(
         {}

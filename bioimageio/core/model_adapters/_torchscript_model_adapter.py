@@ -3,9 +3,9 @@ import warnings
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
-import xarray as xr
 from numpy.typing import NDArray
 
+from bioimageio.core.common import Tensor
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.utils import download
 
@@ -53,24 +53,34 @@ class TorchscriptModelAdapter(ModelAdapter):
             for out in model_description.outputs
         ]
 
-    def forward(self, *batch: xr.DataArray) -> List[xr.DataArray]:
+    def forward(self, *batch: Optional[Tensor]) -> List[Optional[Tensor]]:
         with torch.no_grad():
-            torch_tensor = [torch.from_numpy(b.data).to(self.devices[0]) for b in batch]
+            torch_tensor = [
+                None if b is None else torch.from_numpy(b.data).to(self.devices[0])
+                for b in batch
+            ]
             _result: Union[  # pyright: ignore[reportUnknownVariableType]
-                Tuple[NDArray[Any], ...], List[NDArray[Any]], NDArray[Any]
+                Tuple[Optional[NDArray[Any]], ...],
+                List[Optional[NDArray[Any]]],
+                Optional[NDArray[Any]],
             ] = self._model.forward(*torch_tensor)
             if isinstance(_result, (tuple, list)):
-                result: Sequence[NDArray[Any]] = _result
+                result: Sequence[Optional[NDArray[Any]]] = _result
             else:
                 result = [_result]
 
             result = [
-                r.cpu().numpy() if not isinstance(r, np.ndarray) else r for r in result
+                (
+                    None
+                    if r is None
+                    else r.cpu().numpy() if not isinstance(r, np.ndarray) else r
+                )
+                for r in result
             ]
 
         assert len(result) == len(self._internal_output_axes)
         return [
-            xr.DataArray(r, dims=axes)
+            None if r is None else Tensor(r, dims=axes)
             for r, axes in zip(result, self._internal_output_axes)
         ]
 

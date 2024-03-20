@@ -3,8 +3,8 @@ import zipfile
 from typing import List, Literal, Optional, Sequence, Union
 
 import numpy as np
-import xarray as xr
 
+from bioimageio.core.common import Tensor
 from bioimageio.spec.common import FileSource
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.utils import download
@@ -141,10 +141,12 @@ class TensorflowModelAdapterBase(ModelAdapter):
 
         return res
 
-    def _forward_keras(self, *input_tensors: xr.DataArray):
+    def _forward_keras(self, *input_tensors: Optional[Tensor]):
         assert self.use_keras_api
         assert not isinstance(self._network, str)
-        tf_tensor = [tf.convert_to_tensor(ipt) for ipt in input_tensors]
+        tf_tensor = [
+            None if ipt is None else tf.convert_to_tensor(ipt) for ipt in input_tensors
+        ]
 
         try:
             result = self._network.forward(*tf_tensor)
@@ -154,17 +156,24 @@ class TensorflowModelAdapterBase(ModelAdapter):
         if not isinstance(result, (tuple, list)):
             result = [result]
 
-        return [r if isinstance(r, np.ndarray) else tf.make_ndarray(r) for r in result]
+        return [
+            (
+                None
+                if r is None
+                else r if isinstance(r, np.ndarray) else tf.make_ndarray(r)
+            )
+            for r in result
+        ]
 
-    def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
-        data = [ipt.data for ipt in input_tensors]
+    def forward(self, *input_tensors: Optional[Tensor]) -> List[Optional[Tensor]]:
+        data = [None if ipt is None else ipt.data for ipt in input_tensors]
         if self.use_keras_api:
             result = self._forward_keras(*data)
         else:
             result = self._forward_tf(*data)
 
         return [
-            xr.DataArray(r, dims=axes)
+            None if r is None else Tensor(r, dims=axes)
             for r, axes in zip(result, self._internal_output_axes)
         ]
 

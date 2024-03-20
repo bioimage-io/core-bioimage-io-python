@@ -1,9 +1,9 @@
 import warnings
 from typing import Any, List, Optional, Sequence, Union
 
-import xarray as xr
 from numpy.typing import NDArray
 
+from bioimageio.core.common import Tensor
 from bioimageio.spec.model import v0_4, v0_5
 
 from ._model_adapter import ModelAdapter
@@ -43,20 +43,21 @@ class ONNXModelAdapter(ModelAdapter):
                 f"Device management is not implemented for onnx yet, ignoring the devices {devices}"
             )
 
-    def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
+    def forward(self, *input_tensors: Optional[Tensor]) -> List[Optional[Tensor]]:
         assert len(input_tensors) == len(self._input_names)
-        input_arrays = [ipt.data for ipt in input_tensors]
-        result: Union[Sequence[NDArray[Any]], NDArray[Any]] = (
-            self._session.run(  # pyright: ignore[reportUnknownVariableType]
-                None, dict(zip(self._input_names, input_arrays))
-            )
+        input_arrays = [None if ipt is None else ipt.data for ipt in input_tensors]
+        result: Union[Sequence[Optional[NDArray[Any]]], Optional[NDArray[Any]]]
+        result = self._session.run(  # pyright: ignore[reportUnknownVariableType]
+            None, dict(zip(self._input_names, input_arrays))
         )
-        if not isinstance(result, (list, tuple)):
-            result = []
+        if isinstance(result, (list, tuple)):
+            result_seq: Sequence[Optional[NDArray[Any]]] = result
+        else:
+            result_seq = [result]  # type: ignore
 
         return [
-            xr.DataArray(r, dims=axes)
-            for r, axes in zip(result, self._internal_output_axes)
+            None if r is None else Tensor(r, dims=axes)
+            for r, axes in zip(result_seq, self._internal_output_axes)
         ]
 
     def unload(self) -> None:

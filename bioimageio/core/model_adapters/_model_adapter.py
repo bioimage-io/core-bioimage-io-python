@@ -2,8 +2,7 @@ import warnings
 from abc import ABC, abstractmethod
 from typing import List, Optional, Sequence, Tuple, Union, final
 
-import xarray as xr
-
+from bioimageio.core.common import Tensor
 from bioimageio.spec.model import v0_4, v0_5
 
 WeightsFormat = Union[v0_4.WeightsFormat, v0_5.WeightsFormat]
@@ -128,7 +127,7 @@ class ModelAdapter(ABC):
         warnings.warn("Deprecated. ModelAdapter is always loaded")
 
     @abstractmethod
-    def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
+    def forward(self, *input_tensors: Optional[Tensor]) -> List[Optional[Tensor]]:
         """
         Run forward pass of model to get model predictions
         """

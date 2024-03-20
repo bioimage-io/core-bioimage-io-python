@@ -4,6 +4,8 @@ from typing import Any, List, Optional, Sequence, Union
 from numpy.typing import NDArray
 from packaging.version import Version
 
+from bioimageio.core.common import Tensor
+
 # by default, we use the keras integrated with tensorflow
 try:
     import tensorflow as tf
@@ -63,11 +65,10 @@ class KerasModelAdapter(ModelAdapter):
         self._network = keras.models.load_model(weight_path)
         self._output_axes = [tuple(out.axes) for out in model_description.outputs]
 
-    def forward(self, *input_tensors: xr.DataArray) -> List[xr.DataArray]:
-        _result: Union[Sequence[NDArray[Any]], NDArray[Any]] = (
-            self._network.predict(  # pyright: ignore[reportUnknownVariableType]
-                *input_tensors
-            )
+    def forward(self, *input_tensors: Optional[Tensor]) -> List[Optional[Tensor]]:
+        _result: Union[Sequence[NDArray[Any]], NDArray[Any]]
+        _result = self._network.predict(  # pyright: ignore[reportUnknownVariableType]
+            *input_tensors
         )
         if isinstance(_result, (tuple, list)):
             result: Sequence[NDArray[Any]] = _result
