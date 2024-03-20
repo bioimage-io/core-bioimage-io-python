@@ -1,13 +1,13 @@
 import traceback
 import warnings
-from typing import List, Literal, Optional, Sequence, Set, Tuple, Union
+from typing import Dict, Hashable, List, Literal, Optional, Sequence, Set, Tuple, Union
 
 import numpy as np
 
 from bioimageio.core._prediction_pipeline import create_prediction_pipeline
 from bioimageio.core.common import AxisId, BatchSize
 from bioimageio.core.utils import VERSION, get_test_inputs, get_test_outputs
-from bioimageio.core.utils.image_helper import resize_to
+from bioimageio.core.utils.tiling import resize_to
 from bioimageio.spec import (
     InvalidDescr,
     ResourceDescr,
@@ -171,7 +171,7 @@ def _test_model_inference_parametrized(
     weight_format: Optional[WeightsFormat],
     devices: Optional[List[str]],
     test_cases: Sequence[Tuple[v0_5.ParameterizedSize.N, BatchSize]] = (
-        (0, 1),
+        (0, 2),
         (1, 3),
         (2, 1),
         (3, 2),
@@ -182,27 +182,51 @@ def _test_model_inference_parametrized(
         for ipt in model.inputs
         for a in ipt.axes
     ):
-        return
+        # only test different batch sizes for n=0
+        test_cases = [tc for tc in test_cases if tc[0] == 0]
+        if not test_cases:
+            return
 
     try:
         test_inputs = get_test_inputs(model)
 
         def generate_test_cases():
-            tested: Set[str] = set()
+            tested: Set[Hashable] = set()
+
+            def get_ns(n: int):
+                return {(t.id, a.id): n for t in model.inputs for a in t.axes}
+
             for n, batch_size in test_cases:
-                target_sizes = model.get_tensor_sizes(n, batch_size=batch_size)
-                hashable_target_size = str(target_sizes)
+                input_target_sizes, expected_output_sizes = model.get_axis_sizes(
+                    get_ns(n), batch_size=batch_size
+                )
+                hashable_target_size = tuple(
+                    (input_target_sizes, input_target_sizes[ts])
+                    for ts in sorted(input_target_sizes)
+                )
                 if hashable_target_size in tested:
                     continue
                 else:
                     tested.add(hashable_target_size)
 
                 resized_test_inputs = [
-                    resize_to(t, target_sizes[t_descr.id])
+                    resize_to(
+                        t,
+                        {
+                            aid: s
+                            for (tid, aid), s in input_target_sizes.items()
+                            if tid == t_descr.id
+                        },
+                    )
                     for t, t_descr in zip(test_inputs, model.inputs)
                 ]
                 expected_output_shapes = [
-                    target_sizes[t_descr.id] for t_descr in model.outputs
+                    {
+                        aid: s
+                        for (tid, aid), s in expected_output_sizes.items()
+                        if tid == t_descr.id
+                    }
+                    for t_descr in model.outputs
                 ]
                 yield n, batch_size, resized_test_inputs, expected_output_shapes
 
@@ -219,15 +243,20 @@ def _test_model_inference_parametrized(
                     )
                 else:
                     for res, exp in zip(results, exptected_output_shape):
-                        if diff := {
-                            a: s
-                            for a, s in res.sizes.items()
-                            if s != exp[AxisId(str(a))]
-                        }:
+                        diff: Dict[AxisId, int] = {}
+                        for a, s in res.sizes.items():
+                            if isinstance((e_aid := exp[AxisId(a)]), int):
+                                if s != e_aid:
+                                    diff[AxisId(a)] = s
+                            elif (
+                                s < e_aid.min or e_aid.max is not None and s > e_aid.max
+                            ):
+                                diff[AxisId(a)] = s
+                        if diff:
                             error = (
                                 (error or "")
                                 + f"(n={n}) Expected output shape {exp},"
-                                + f" but got {exptected_output_shape} ({diff})\n"
+                                + f" but got {res.sizes} ({diff})\n"
                             )
 
                 model.validation_summary.add_detail(
