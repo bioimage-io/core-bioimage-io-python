@@ -10,7 +10,6 @@ from typing import (
     Set,
     Tuple,
     Union,
-    cast,
 )
 
 import numpy as np
@@ -168,22 +167,29 @@ class UpdateStats(Operator):
 class Binarize(_SimpleOperator):
     """'output = tensor > threshold'."""
 
-    threshold: float
+    threshold: Union[float, Sequence[float]]
+    axis: Optional[AxisId] = None
 
     def _apply(self, input: Tensor, stat: Stat) -> xr.DataArray:
         return input > self.threshold
 
-    # @classmethod
-    # def from_descr(cls, descr: Union[v0_4.BinarizeDescr, v0_5.BinarizeDescr]):
-    #     return cls(threshold=descr.kwargs.threshold)
-
-    # def get_descr(self):
-    #     return v0_5.BinarizeDescr(kwargs=v0_5.BinarizeKwargs(threshold=self.threshold))
     @classmethod
     def from_proc_descr(
         cls, descr: Union[v0_4.BinarizeDescr, v0_5.BinarizeDescr], tensor_id: TensorId
     ) -> Self:
-        return cls(input=tensor_id, output=tensor_id, threshold=descr.kwargs.threshold)
+        if isinstance(descr.kwargs, (v0_4.BinarizeKwargs, v0_5.BinarizeKwargs)):
+            return cls(
+                input=tensor_id, output=tensor_id, threshold=descr.kwargs.threshold
+            )
+        elif isinstance(descr.kwargs, v0_5.BinarizeAlongAxisKwargs):
+            return cls(
+                input=tensor_id,
+                output=tensor_id,
+                threshold=descr.kwargs.threshold,
+                axis=descr.kwargs.axis,
+            )
+        else:
+            assert_never(descr.kwargs)
 
 
 @dataclass
@@ -224,7 +230,9 @@ class EnsureDtype(_SimpleOperator):
 
     def get_descr(self):
         return v0_5.EnsureDtypeDescr(
-            kwargs=v0_5.EnsureDtypeKwargs(dtype=str(self.dtype))
+            kwargs=v0_5.EnsureDtypeKwargs(
+                dtype=str(self.dtype)  # pyright: ignore[reportArgumentType]
+            )
         )
 
     def _apply(self, input: Tensor, stat: Stat) -> Tensor:
@@ -242,10 +250,6 @@ class ScaleLinear(_SimpleOperator):
     def _apply(self, input: Tensor, stat: Stat) -> Tensor:
         return input * self.gain + self.offset
 
-    # @classmethod
-    # def from_descr(cls, descr: ScaleLinearDescr) -> Self:
-    #     ...
-
     @classmethod
     def from_proc_descr(
         cls,
@@ -253,14 +257,12 @@ class ScaleLinear(_SimpleOperator):
         tensor_id: TensorId,
     ) -> Self:
         kwargs = descr.kwargs
-        if isinstance(kwargs, v0_5.ScaleLinearKwargs):
+        if isinstance(kwargs, v0_5.ScaleLinearAlongAxisKwargs):
             axis = kwargs.axis
-        elif kwargs.axes is not None:
-            raise NotImplementedError(
-                "ScaleLinear operator from v0_4.ScaleLinearDescr with axes"
-            )
-        else:
+        elif isinstance(kwargs, (v0_4.ScaleLinearKwargs, v0_5.ScaleLinearKwargs)):
             axis = None
+        else:
+            assert_never(kwargs)
 
         if axis:
             gain = xr.DataArray(np.atleast_1d(kwargs.gain), dims=axis)
@@ -535,29 +537,34 @@ class FixedZeroMeanUnitVariance(_SimpleOperator):
         descr: v0_5.FixedZeroMeanUnitVarianceDescr,
         tensor_id: TensorId,
     ) -> Self:
+        if isinstance(descr.kwargs, v0_5.FixedZeroMeanUnitVarianceKwargs):
+            dims = None
+        elif isinstance(descr.kwargs, v0_5.FixedZeroMeanUnitVarianceAlongAxisKwargs):
+            dims = (descr.kwargs.axis,)
+        else:
+            assert_never(descr.kwargs)
+
         return cls(
             input=tensor_id,
             output=tensor_id,
-            mean=xr.DataArray(descr.kwargs.mean, dims=(descr.kwargs.axis,)),
-            std=xr.DataArray(descr.kwargs.std, dims=(descr.kwargs.axis,)),
+            mean=xr.DataArray(descr.kwargs.mean, dims=dims),
+            std=xr.DataArray(descr.kwargs.std, dims=dims),
         )
 
     def get_descr(self):
         if isinstance(self.mean, (int, float)):
             assert isinstance(self.std, (int, float))
-            axis = None
-            mean = self.mean
-            std = self.std
+            kwargs = v0_5.FixedZeroMeanUnitVarianceKwargs(mean=self.mean, std=self.std)
         else:
             assert isinstance(self.std, xr.DataArray)
             assert len(self.mean.dims) == 1
-            axis = AxisId(str(self.mean.dims[0]))
-            mean = tuple(self.mean)
-            std = tuple(self.std)
+            kwargs = v0_5.FixedZeroMeanUnitVarianceAlongAxisKwargs(
+                axis=AxisId(str(self.mean.dims[0])),
+                mean=list(self.mean),
+                std=list(self.std),
+            )
 
-        return v0_5.FixedZeroMeanUnitVarianceDescr(
-            kwargs=v0_5.FixedZeroMeanUnitVarianceKwargs(axis=axis, mean=mean, std=std)
-        )
+        return v0_5.FixedZeroMeanUnitVarianceDescr(kwargs=kwargs)
 
     def _apply(self, input: xr.DataArray, stat: Stat) -> xr.DataArray:
         return (input - self.mean) / (self.std + self.eps)

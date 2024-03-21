@@ -115,8 +115,8 @@ def _prepare_setup_pre_and_postprocessing(model: AnyModelDescr) -> _SetupProcess
                     else t_descr.id
                 )
                 req = proc_class.from_proc_descr(
-                    proc_d, tensor_id
-                )  # pyright: ignore[reportArgumentType]
+                    proc_d, tensor_id  # pyright: ignore[reportArgumentType]
+                )
                 for m in req.required_measures:
                     if m.tensor_id in input_ids:
                         pre_measures.add(m)

@@ -46,8 +46,8 @@ class PredictionPipeline:
         self._adapter: ModelAdapter = model
 
     def __call__(
-        self, *input_tensors: Tensor, **named_input_tensors: Tensor
-    ) -> List[Tensor]:
+        self, *input_tensors: Optional[Tensor], **named_input_tensors: Optional[Tensor]
+    ) -> List[Optional[Tensor]]:
         return self.forward(*input_tensors, **named_input_tensors)
 
     def __enter__(self):
@@ -60,7 +60,7 @@ class PredictionPipeline:
 
     def predict(
         self, *input_tensors: Optional[Tensor], **named_input_tensors: Optional[Tensor]
-    ) -> List[Tensor]:
+    ) -> List[Optional[Tensor]]:
         """Predict input_tensor with the model without applying pre/postprocessing."""
         named_tensors = [
             named_input_tensors.get(str(k))
@@ -86,7 +86,12 @@ class PredictionPipeline:
             **{str(k): v for k, v in input_sample.data.items()}
         )
         prediction = Sample(
-            data=dict(zip(self.output_ids, prediction_tensors)), stat=input_sample.stat
+            data={
+                tid: t
+                for tid, t in zip(self.output_ids, prediction_tensors)
+                if t is not None
+            },
+            stat=input_sample.stat,
         )
         self.apply_postprocessing(prediction)
         return prediction

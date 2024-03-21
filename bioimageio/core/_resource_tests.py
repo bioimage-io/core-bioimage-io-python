@@ -127,17 +127,18 @@ def _test_model_inference(
             results = prediction_pipeline.forward(*inputs)
 
         if len(results) != len(expected):
-            error = (error or "") + (
-                f"Expected {len(expected)} outputs, but got {len(results)}"
-            )
+            error = f"Expected {len(expected)} outputs, but got {len(results)}"
+
         else:
             for res, exp in zip(results, expected):
+                if res is None:
+                    error = "Output tensors for test case may not be None"
+                    break
                 try:
                     np.testing.assert_array_almost_equal(res, exp, decimal=decimal)
                 except AssertionError as e:
-                    error = (
-                        error or ""
-                    ) + f"Output and expected output disagree:\n {e}"
+                    error = f"Output and expected output disagree:\n {e}"
+                    break
     except Exception as e:
         error = str(e)
         tb = traceback.format_tb(e.__traceback__)
@@ -238,11 +239,17 @@ def _test_model_inference_parametrized(
                 error: Optional[str] = None
                 results = prediction_pipeline.forward(*inputs)
                 if len(results) != len(exptected_output_shape):
-                    error = (error or "") + (
-                        f"Expected {len(exptected_output_shape)} outputs, but got {len(results)}"
+                    error = (
+                        f"Expected {len(exptected_output_shape)} outputs,"
+                        + f" but got {len(results)}"
                     )
+
                 else:
                     for res, exp in zip(results, exptected_output_shape):
+                        if res is None:
+                            error = "Output tensors may not be None for test case"
+                            break
+
                         diff: Dict[AxisId, int] = {}
                         for a, s in res.sizes.items():
                             if isinstance((e_aid := exp[AxisId(a)]), int):
@@ -254,10 +261,10 @@ def _test_model_inference_parametrized(
                                 diff[AxisId(a)] = s
                         if diff:
                             error = (
-                                (error or "")
-                                + f"(n={n}) Expected output shape {exp},"
+                                f"(n={n}) Expected output shape {exp},"
                                 + f" but got {res.sizes} ({diff})\n"
                             )
+                            break
 
                 model.validation_summary.add_detail(
                     ValidationDetail(

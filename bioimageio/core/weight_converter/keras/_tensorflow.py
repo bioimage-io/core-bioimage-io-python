@@ -1,3 +1,4 @@
+# type: ignore  # TODO: type
 import os
 import shutil
 from pathlib import Path
@@ -7,7 +8,7 @@ from zipfile import ZipFile
 try:
     import tensorflow.saved_model
 except Exception:
-    _tensorflow = None
+    tensorflow = None
 
 from bioimageio.spec._internal.io_utils import download
 from bioimageio.spec.model.v0_5 import ModelDescr
@@ -41,7 +42,9 @@ def _convert_tf1(
 ):
     try:
         # try to build the tf model with the keras import from tensorflow
-        from bioimageio.core.weight_converter.keras._tensorflow import keras  # type: ignore
+        from bioimageio.core.weight_converter.keras._tensorflow import (
+            keras,  # type: ignore
+        )
 
     except Exception:
         # if the above fails try to export with the standalone keras
@@ -50,20 +53,20 @@ def _convert_tf1(
     @no_type_check
     def build_tf_model():
         keras_model = keras.models.load_model(keras_weight_path)
-        assert _tensorflow is not None
-        builder = _tensorflow.saved_model.builder.SavedModelBuilder(output_path)
-        signature = _tensorflow.saved_model.signature_def_utils.predict_signature_def(
+        assert tensorflow is not None
+        builder = tensorflow.saved_model.builder.SavedModelBuilder(output_path)
+        signature = tensorflow.saved_model.signature_def_utils.predict_signature_def(
             inputs={input_name: keras_model.input},
             outputs={output_name: keras_model.output},
         )
 
         signature_def_map = {
-            _tensorflow.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: signature
+            tensorflow.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: signature
         }
 
         builder.add_meta_graph_and_variables(
             keras.backend.get_session(),
-            [_tensorflow.saved_model.tag_constants.SERVING],
+            [tensorflow.saved_model.tag_constants.SERVING],
             signature_def_map=signature_def_map,
         )
         builder.save()
@@ -107,8 +110,8 @@ def convert_weights_to_tensorflow_saved_model_bundle(
         model: The bioimageio model description
         output_path: where to save the tensorflow weights. This path must not exist yet.
     """
-    assert _tensorflow is not None
-    tf_major_ver = int(_tensorflow.__version__.split(".")[0])
+    assert tensorflow is not None
+    tf_major_ver = int(tensorflow.__version__.split(".")[0])
 
     if output_path.suffix == ".zip":
         output_path = output_path.with_suffix("")

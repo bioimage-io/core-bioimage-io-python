@@ -1,3 +1,4 @@
+# type: ignore  # TODO: type
 from pathlib import Path
 from typing import List, Sequence, Union
 

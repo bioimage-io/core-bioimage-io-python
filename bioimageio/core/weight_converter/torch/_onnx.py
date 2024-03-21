@@ -1,3 +1,4 @@
+# type: ignore  # TODO: type
 import warnings
 from pathlib import Path
 from typing import Any, List, Sequence, cast
