@@ -50,7 +50,7 @@ class PytorchModelAdapter(ModelAdapter):
                 None if ipt is None else torch.from_numpy(ipt.data)
                 for ipt in input_tensors
             ]
-            tensors = [t.to(self._devices[0]) for t in tensors]
+            tensors = [None if t is None else t.to(self._devices[0]) for t in tensors]
             result: Union[Tuple[Any, ...], List[Any], Any] = self._network(*tensors)
             if not isinstance(result, (tuple, list)):
                 result = [result]
