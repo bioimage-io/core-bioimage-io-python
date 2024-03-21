@@ -20,7 +20,7 @@ jobs:
           options: "--check --verbose"
           src: "."
           jupyter: true
-          version: "23.7"
+          version: "24.3"
 
   test-spec-conda:
     runs-on: ubuntu-latest
