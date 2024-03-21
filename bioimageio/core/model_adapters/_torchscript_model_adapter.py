@@ -42,7 +42,9 @@ class TorchscriptModelAdapter(ModelAdapter):
                 "Multiple devices for single torchscript model not yet implemented"
             )
 
-        self._model = torch.jit.load(weight_path)
+        self._model = torch.jit.load(  # pyright: ignore[reportPrivateImportUsage]
+            weight_path
+        )
         self._model.to(self.devices[0])
         self._internal_output_axes = [
             (
@@ -54,6 +56,7 @@ class TorchscriptModelAdapter(ModelAdapter):
         ]
 
     def forward(self, *batch: Optional[Tensor]) -> List[Optional[Tensor]]:
+        assert torch is not None
         with torch.no_grad():
             torch_tensor = [
                 None if b is None else torch.from_numpy(b.data).to(self.devices[0])
@@ -85,6 +88,7 @@ class TorchscriptModelAdapter(ModelAdapter):
         ]
 
     def unload(self) -> None:
+        assert torch is not None
         self._devices = None
         del self._model
         _ = gc.collect()  # deallocate memory

@@ -37,21 +37,36 @@ class PytorchModelAdapter(ModelAdapter):
         self._devices = self.get_devices(devices)
         self._network = self._network.to(self._devices[0])
 
+        self._primary_device = self._devices[0]
         state: Any = torch.load(
-            download(weights.source).path, map_location=self._devices[0]
+            download(weights.source).path,
+            map_location=self._primary_device,  # pyright: ignore[reportUnknownArgumentType]
         )
-        _ = self._network.load_state_dict(state)
+        self._network.load_state_dict(state)
 
         self._network = self._network.eval()
 
     def forward(self, *input_tensors: Optional[Tensor]) -> List[Optional[Tensor]]:
+        assert torch is not None
         with torch.no_grad():
             tensors = [
                 None if ipt is None else torch.from_numpy(ipt.data)
                 for ipt in input_tensors
             ]
-            tensors = [None if t is None else t.to(self._devices[0]) for t in tensors]
-            result: Union[Tuple[Any, ...], List[Any], Any] = self._network(*tensors)
+            tensors = [
+                (
+                    None
+                    if t is None
+                    else t.to(
+                        self._primary_device  # pyright: ignore[reportUnknownArgumentType]
+                    )
+                )
+                for t in tensors
+            ]
+            result: Union[Tuple[Any, ...], List[Any], Any]
+            result = self._network(  # pyright: ignore[reportUnknownVariableType]
+                *tensors
+            )
             if not isinstance(result, (tuple, list)):
                 result = [result]
 
@@ -61,7 +76,7 @@ class PytorchModelAdapter(ModelAdapter):
                     if r is None
                     else r.detach().cpu().numpy() if isinstance(r, torch.Tensor) else r
                 )
-                for r in result
+                for r in result  # pyright: ignore[reportUnknownVariableType]
             ]
             if len(result) > len(self.output_dims):
                 raise ValueError(
@@ -76,14 +91,16 @@ class PytorchModelAdapter(ModelAdapter):
     def unload(self) -> None:
         del self._network
         _ = gc.collect()  # deallocate memory
+        assert torch is not None
         torch.cuda.empty_cache()  # release reserved memory
 
     @staticmethod
-    def get_network(
+    def get_network(  # pyright: ignore[reportUnknownParameterType]
         weight_spec: Union[
             v0_4.PytorchStateDictWeightsDescr, v0_5.PytorchStateDictWeightsDescr
         ]
-    ) -> "torch.nn.Module":
+    ) -> "torch.nn.Module":  # pyright: ignore[reportInvalidTypeForm]
+        assert torch is not None
         arch = import_callable(
             weight_spec.architecture,
             sha256=(
@@ -106,7 +123,10 @@ class PytorchModelAdapter(ModelAdapter):
         return network
 
     @staticmethod
-    def get_devices(devices: Optional[Sequence[str]] = None) -> List["torch.device"]:
+    def get_devices(  # pyright: ignore[reportUnknownParameterType]
+        devices: Optional[Sequence[str]] = None,
+    ) -> List["torch.device"]:  # pyright: ignore[reportInvalidTypeForm]
+        assert torch is not None
         if not devices:
             torch_devices = [
                 (

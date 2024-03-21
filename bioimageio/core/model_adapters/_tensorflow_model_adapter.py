@@ -12,7 +12,7 @@ from bioimageio.spec.utils import download
 from ._model_adapter import ModelAdapter
 
 try:
-    import tensorflow as tf
+    import tensorflow as tf  # pyright: ignore[reportMissingImports]
 except Exception:
     tf = None
 
@@ -35,12 +35,14 @@ class TensorflowModelAdapterBase(ModelAdapter):
         assert tf is not None
         super().__init__()
         self.model_description = model_description
-        tf_version = v0_5.Version(tf.__version__)
+        tf_version = v0_5.Version(
+            tf.__version__  # pyright: ignore[reportUnknownArgumentType]
+        )
         model_tf_version = weights.tensorflow_version
         if model_tf_version is None:
             warnings.warn(
                 "The model does not specify the tensorflow version."
-                f"Cannot check if it is compatible with intalled tensorflow {tf_version}."
+                + f"Cannot check if it is compatible with intalled tensorflow {tf_version}."
             )
         elif model_tf_version > tf_version:
             warnings.warn(
@@ -52,7 +54,7 @@ class TensorflowModelAdapterBase(ModelAdapter):
         ):
             warnings.warn(
                 "The tensorflow version specified by the model does not match the installed: "
-                f"{model_tf_version} != {tf_version}."
+                + f"{model_tf_version} != {tf_version}."
             )
 
         self.use_keras_api = (
@@ -88,17 +90,25 @@ class TensorflowModelAdapterBase(ModelAdapter):
         else:
             return loacl_weights_file
 
-    def _get_network(self, weight_file: FileSource):
+    def _get_network(  # pyright: ignore[reportUnknownParameterType]
+        self, weight_file: FileSource
+    ):
         weight_file = self.require_unzipped(weight_file)
+        assert tf is not None
         if self.use_keras_api:
-            return tf.keras.models.load_model(weight_file, compile=False)
+            return tf.keras.models.load_model(
+                weight_file, compile=False
+            )  # pyright: ignore[reportUnknownVariableType]
         else:
             # NOTE in tf1 the model needs to be loaded inside of the session, so we cannot preload the model
             return str(weight_file)
 
     # TODO currently we relaod the model every time. it would be better to keep the graph and session
     # alive in between of forward passes (but then the sessions need to be properly opened / closed)
-    def _forward_tf(self, *input_tensors):
+    def _forward_tf(  # pyright: ignore[reportUnknownParameterType]
+        self, *input_tensors: Optional[Tensor]
+    ):
+        assert tf is not None
         input_keys = [
             ipt.name if isinstance(ipt, v0_4.InputTensorDescr) else ipt.id
             for ipt in self.model_description.inputs
@@ -107,74 +117,114 @@ class TensorflowModelAdapterBase(ModelAdapter):
             out.name if isinstance(out, v0_4.OutputTensorDescr) else out.id
             for out in self.model_description.outputs
         ]
-
         # TODO read from spec
-        tag = tf.saved_model.tag_constants.SERVING
-        signature_key = (
+        tag = (  # pyright: ignore[reportUnknownVariableType]
+            tf.saved_model.tag_constants.SERVING
+        )
+        signature_key = (  # pyright: ignore[reportUnknownVariableType]
             tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY
         )
 
-        graph = tf.Graph()
+        graph = tf.Graph()  # pyright: ignore[reportUnknownVariableType]
         with graph.as_default():
-            with tf.Session(graph=graph) as sess:
+            with tf.Session(
+                graph=graph
+            ) as sess:  # pyright: ignore[reportUnknownVariableType]
                 # load the model and the signature
-                graph_def = tf.saved_model.loader.load(sess, [tag], self._network)
-                signature = graph_def.signature_def
+                graph_def = tf.saved_model.loader.load(  # pyright: ignore[reportUnknownVariableType]
+                    sess, [tag], self._network
+                )
+                signature = (  # pyright: ignore[reportUnknownVariableType]
+                    graph_def.signature_def
+                )
 
                 # get the tensors into the graph
-                in_names = [
+                in_names = [  # pyright: ignore[reportUnknownVariableType]
                     signature[signature_key].inputs[key].name for key in input_keys
                 ]
-                out_names = [
+                out_names = [  # pyright: ignore[reportUnknownVariableType]
                     signature[signature_key].outputs[key].name for key in output_keys
                 ]
-                in_tensors = [graph.get_tensor_by_name(name) for name in in_names]
-                out_tensors = [graph.get_tensor_by_name(name) for name in out_names]
+                in_tensors = [  # pyright: ignore[reportUnknownVariableType]
+                    graph.get_tensor_by_name(name)
+                    for name in in_names  # pyright: ignore[reportUnknownVariableType]
+                ]
+                out_tensors = [  # pyright: ignore[reportUnknownVariableType]
+                    graph.get_tensor_by_name(name)
+                    for name in out_names  # pyright: ignore[reportUnknownVariableType]
+                ]
 
                 # run prediction
-                res = sess.run(
-                    dict(zip(out_names, out_tensors)),
-                    dict(zip(in_tensors, input_tensors)),
+                res = sess.run(  # pyright: ignore[reportUnknownVariableType]
+                    dict(
+                        zip(
+                            out_names,  # pyright: ignore[reportUnknownArgumentType]
+                            out_tensors,  # pyright: ignore[reportUnknownArgumentType]
+                        )
+                    ),
+                    dict(
+                        zip(
+                            in_tensors,  # pyright: ignore[reportUnknownArgumentType]
+                            input_tensors,
+                        )
+                    ),
                 )
                 # from dict to list of tensors
-                res = [res[out] for out in out_names]
+                res = [  # pyright: ignore[reportUnknownVariableType]
+                    res[out]
+                    for out in out_names  # pyright: ignore[reportUnknownVariableType]
+                ]
 
-        return res
+        return res  # pyright: ignore[reportUnknownVariableType]
 
-    def _forward_keras(self, *input_tensors: Optional[Tensor]):
+    def _forward_keras(  # pyright: ignore[reportUnknownParameterType]
+        self, *input_tensors: Optional[Tensor]
+    ):
         assert self.use_keras_api
         assert not isinstance(self._network, str)
-        tf_tensor = [
+        assert tf is not None
+        tf_tensor = [  # pyright: ignore[reportUnknownVariableType]
             None if ipt is None else tf.convert_to_tensor(ipt) for ipt in input_tensors
         ]
 
         try:
-            result = self._network.forward(*tf_tensor)
+            result = (  # pyright: ignore[reportUnknownVariableType]
+                self._network.forward(*tf_tensor)
+            )
         except AttributeError:
-            result = self._network.predict(*tf_tensor)
+            result = (  # pyright: ignore[reportUnknownVariableType]
+                self._network.predict(*tf_tensor)
+            )
 
         if not isinstance(result, (tuple, list)):
-            result = [result]
+            result = [result]  # pyright: ignore[reportUnknownVariableType]
 
-        return [
+        return [  # pyright: ignore[reportUnknownVariableType]
             (
                 None
                 if r is None
                 else r if isinstance(r, np.ndarray) else tf.make_ndarray(r)
             )
-            for r in result
+            for r in result  # pyright: ignore[reportUnknownVariableType]
         ]
 
     def forward(self, *input_tensors: Optional[Tensor]) -> List[Optional[Tensor]]:
         data = [None if ipt is None else ipt.data for ipt in input_tensors]
         if self.use_keras_api:
-            result = self._forward_keras(*data)
+            result = self._forward_keras(  # pyright: ignore[reportUnknownVariableType]
+                *data
+            )
         else:
-            result = self._forward_tf(*data)
+            result = self._forward_tf(  # pyright: ignore[reportUnknownVariableType]
+                *data
+            )
 
         return [
             None if r is None else Tensor(r, dims=axes)
-            for r, axes in zip(result, self._internal_output_axes)
+            for r, axes in zip(  # pyright: ignore[reportUnknownVariableType]
+                result,  # pyright: ignore[reportUnknownArgumentType]
+                self._internal_output_axes,
+            )
         ]
 
     def unload(self) -> None:

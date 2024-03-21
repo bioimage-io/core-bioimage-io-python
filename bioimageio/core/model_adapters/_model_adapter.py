@@ -101,7 +101,10 @@ class ModelAdapter(ABC):
                 # we try to first import the keras model adapter using the separate package and,
                 # if it is not available, try to load the one using tf
                 try:
-                    from ._keras_model_adapter import KerasModelAdapter, keras
+                    from ._keras_model_adapter import (
+                        KerasModelAdapter,
+                        keras,  # type: ignore
+                    )
 
                     if keras is None:
                         from ._tensorflow_model_adapter import KerasModelAdapter
