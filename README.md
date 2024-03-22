@@ -4,12 +4,12 @@ Python specific core utilities for running models in the [BioImage Model Zoo](ht
 
 ## Installation
 
-### Via Conda
+### Via Mamba/Conda
 
 The `bioimageio.core` package can be installed from conda-forge via
 
 ```console
-conda install -c conda-forge bioimageio.core
+mamba install -c conda-forge bioimageio.core
 ```
 
 If you do not install any additional deep learning libraries, you will only be able to use general convenience
@@ -21,13 +21,13 @@ To install additional deep learning libraries use:
   CPU installation (if you don't have an nvidia graphics card):
 
   ```console
-  conda install -c pytorch -c conda-forge bioimageio.core pytorch torchvision cpuonly
+  mamba install -c pytorch -c conda-forge bioimageio.core pytorch torchvision cpuonly
   ```
 
   GPU installation (for cuda 11.6, please choose the appropriate cuda version for your system):
 
   ```console
-  conda install -c pytorch -c nvidia -c conda-forge bioimageio.core pytorch torchvision pytorch-cuda=11.6
+  mamba install -c pytorch -c nvidia -c conda-forge bioimageio.core pytorch torchvision pytorch-cuda=11.8
   ```
 
   Note that the pytorch installation instructions may change in the future. For the latest instructions please refer to [pytorch.org](https://pytorch.org/).
@@ -37,7 +37,7 @@ To install additional deep learning libraries use:
   Currently only CPU version supported
 
   ```console
-  conda install -c conda-forge bioimageio.core tensorflow
+  mamba install -c conda-forge bioimageio.core tensorflow
   ```
 
 * ONNXRuntime
@@ -45,24 +45,25 @@ To install additional deep learning libraries use:
   Currently only cpu version supported
 
   ```console
-  conda install -c conda-forge bioimageio.core onnxruntime
+  mamba install -c conda-forge bioimageio.core onnxruntime
   ```
 
 ### Via pip
 
-The package is also available via pip:
+The package is also available via pip
+(e.g. with recommended extras `onnx` and `pytorch`):
 
 ```console
-pip install bioimageio.core
+pip install bioimageio.core[onnx,pytorch]
 ```
 
 ### Set up Development Environment
 
-To set up a development conda environment run the following commands:
+To set up a development mamba environment run the following commands:
 
 ```console
-conda env create -f dev/environment-base.yaml
-conda activate bio-core-dev
+mamba env create -f dev/env.yaml
+mamba activate core
 pip install -e . --no-deps
 ```
 

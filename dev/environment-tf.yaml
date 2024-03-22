@@ -1,21 +1,37 @@
-name: bio-core-tf
+# modified copy of env.yaml
+name: core-tf # changed
 channels:
   - conda-forge
   - defaults
 dependencies:
-  - bioimageio.spec==0.5.*
+  - bioimageio.spec>=0.5.1
   - black
-  - conda-build
+  - crick
   - filelock
+  - imageio>=2.5
+  - keras>=3.0
   - loguru
-  - mypy
+  - numpy
+  - onnxruntime
+  - packaging>=17.0
   - pip
+  - pre-commit
   - psutil
+  - pydantic
+  - pydantic-settings
+  - pyright
   - pytest
   - pytest-xdist
-  - python
+  - python-dotenv
+  - python=3.8
+  # - pytorch>=1.6  # removed
+  - ruff
   - ruyaml
-  - tensorflow >=2.9,<3.0
-  - tifffile <=2022.4.8 # pin fixes Syntax error; see https://github.com/bioimage-io/core-bioimage-io-python/pull/259
+  - tensorflow>=2.16 # added
+  # - torchvision  # removed
+  - tqdm
   - typer
+  - typing-extensions
   - xarray
+  - pip:
+      - --no-deps -e ..

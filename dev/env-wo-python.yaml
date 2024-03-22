@@ -1,3 +1,4 @@
+# modified copy of env.yaml
 name: core
 channels:
   - conda-forge
@@ -22,7 +23,7 @@ dependencies:
   - pytest
   - pytest-xdist
   - python-dotenv
-  - python=3.8
+  # - python=3.8  # removed
   - pytorch>=1.6
   - ruff
   - ruyaml
