@@ -1,4 +1,5 @@
-name: core
+# manipulated copy of env.yaml
+name: core38
 channels:
   - conda-forge
   - defaults
@@ -8,7 +9,7 @@ dependencies:
   - crick
   - filelock
   - imageio>=2.5
-  - keras>=3.0
+  # - keras>=3.0  # removed
   - loguru
   - numpy
   - onnxruntime
@@ -22,7 +23,7 @@ dependencies:
   - pytest
   - pytest-xdist
   - python-dotenv
-  - python=3.9
+  - python=3.8 # changed
   - pytorch>=2.1
   - ruff
   - ruyaml

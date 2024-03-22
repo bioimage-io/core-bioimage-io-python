@@ -23,8 +23,8 @@ dependencies:
   - pytest
   - pytest-xdist
   - python-dotenv
-  # - python=3.8  # removed
-  - pytorch>=1.6
+  # - python=3.9  # removed
+  - pytorch>=2.1
   - ruff
   - ruyaml
   - torchvision

@@ -59,7 +59,7 @@ pip install bioimageio.core[onnx,pytorch]
 
 ### Set up Development Environment
 
-To set up a development mamba environment run the following commands:
+To set up a development conda environment run the following commands:
 
 ```console
 mamba env create -f dev/env.yaml
