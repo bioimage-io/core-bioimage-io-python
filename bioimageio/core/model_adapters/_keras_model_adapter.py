@@ -1,3 +1,4 @@
+import os
 from typing import Any, List, Optional, Sequence, Union
 
 from loguru import logger
@@ -8,7 +9,10 @@ from bioimageio.spec._internal.io_utils import download
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import Version
 
+from .._settings import settings
 from ._model_adapter import ModelAdapter
+
+os.environ["KERAS_BACKEND"] = settings.keras_backend
 
 # by default, we use the keras integrated with tensorflow
 try:
