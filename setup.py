@@ -30,12 +30,12 @@ setup(
     packages=find_namespace_packages(exclude=["tests"]),
     install_requires=[
         "bioimageio.spec==0.5.1.*",
-        "dotenv",
         "imageio>=2.5",
         "loguru",
         "numpy",
         "pydantic-settings",
         "pydantic",
+        "python-dotenv",
         "ruyaml",
         "tqdm",
         "typer",
