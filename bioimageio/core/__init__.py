@@ -22,6 +22,7 @@ from ._prediction_pipeline import (
 from ._resource_tests import load_description_and_test as load_description_and_test
 from ._resource_tests import test_description as test_description
 from ._resource_tests import test_model as test_model
+from ._settings import settings as settings
 from .utils import VERSION
 
 __version__ = VERSION

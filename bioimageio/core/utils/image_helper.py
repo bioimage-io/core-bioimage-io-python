@@ -39,13 +39,18 @@ def normalize_axes(
         "y": "space",
         "z": "space",
     }
+    AXIS_ID_MAP = {
+        "b": "batch",
+        "t": "time",
+        "i": "index",
+        "c": "channel",
+    }
     if isinstance(axes, str):
-        return tuple(Axis(id=AxisId(a), type=AXIS_TYPE_MAP[a]) for a in axes)
-    else:
         return tuple(
-            Axis(id=a.id if isinstance(a.id, AxisId) else AxisId(a.id), type=a.type)
-            for a in axes
+            Axis(id=AxisId(AXIS_ID_MAP.get(a, a)), type=AXIS_TYPE_MAP[a]) for a in axes
         )
+    else:
+        return tuple(Axis(id=AxisId(a.id), type=a.type) for a in axes)
 
 
 def _interprete_array_wo_known_axes(array: NDArray[Any]):
@@ -110,34 +115,33 @@ def interprete_array(
                 if len(array.shape) == len(axes):
                     break
 
-    if len(array.shape) < len(axes):
-        # add singletons
-        for a in axes:
-            if len(array.shape) == len(axes):
-                break
+    # add singletons if nececsary
+    for a in axes:
+        if len(array.shape) >= len(axes):
+            break
 
-            if isinstance(a, str) or a.size is None:
+        if isinstance(a, str) or a.size is None:
+            array = array[None]
+            continue
+
+        if isinstance(a.size, int):
+            if a.size == 1:
                 array = array[None]
-                continue
 
-            if isinstance(a.size, int):
-                if a.size == 1:
-                    array = array[None]
+            continue
 
-                continue
+        if isinstance(a.size, SizeReference):
+            continue  # TODO: check if singleton is ok for a `SizeReference`
 
-            if isinstance(a.size, SizeReference):
-                continue  # TODO: check if singleton is ok for a `SizeReference`
+        try:
+            maybe_size_one = a.size.validate_size(
+                1
+            )  # TODO: refactor validate_size() to have boolean func here
+        except ValueError:
+            continue
 
-            try:
-                maybe_size_one = a.size.validate_size(
-                    1
-                )  # TODO: refactor validate_size() to have boolean func here
-            except ValueError:
-                continue
-
-            if maybe_size_one == 1:
-                array = array[None]
+        if maybe_size_one == 1:
+            array = array[None]
 
     if len(array.shape) != len(axes):
         raise ValueError(f"Array shape {original_shape} does not map to axes {axes}")
