@@ -33,4 +33,4 @@ dependencies:
   - typing-extensions
   - xarray
   - pip:
-      - --no-deps -e ..
+      - -e ..
