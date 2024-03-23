@@ -52,6 +52,11 @@ class ModelAdapter(ABC):
         Note: All specific adapters should happen inside this function to prevent different framework
         initializations interfering with each other
         """
+        if not isinstance(model_description, (v0_4.ModelDescr, v0_5.ModelDescr)):
+            raise TypeError(
+                f"expected v0_4.ModelDescr or v0_5.ModelDescr, but got {type(model_description)}"
+            )
+
         weights = model_description.weights
         errors: List[Exception] = []
         for wf in weight_format_priority_order or DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER:

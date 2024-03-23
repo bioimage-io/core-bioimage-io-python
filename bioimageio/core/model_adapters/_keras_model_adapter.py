@@ -38,7 +38,9 @@ class KerasModelAdapter(ModelAdapter):
         model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
         devices: Optional[Sequence[str]] = None,
     ) -> None:
-        assert keras is not None
+        if keras is None:
+            raise ImportError("keras")
+
         super().__init__()
         if model_description.weights.keras_hdf5 is None:
             raise ValueError("model has not keras_hdf5 weights specified")

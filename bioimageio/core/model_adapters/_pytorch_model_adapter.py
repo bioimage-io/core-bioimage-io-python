@@ -27,7 +27,8 @@ class PytorchModelAdapter(ModelAdapter):
         ],
         devices: Optional[Sequence[str]] = None,
     ):
-        assert torch is not None
+        if torch is None:
+            raise ImportError("torch")
         super().__init__()
         self.output_dims = [
             tuple(a if isinstance(a, str) else a.id for a in out.axes)
@@ -47,7 +48,8 @@ class PytorchModelAdapter(ModelAdapter):
         self._network = self._network.eval()
 
     def forward(self, *input_tensors: Optional[Tensor]) -> List[Optional[Tensor]]:
-        assert torch is not None
+        if torch is None:
+            raise ImportError("torch")
         with torch.no_grad():
             tensors = [
                 None if ipt is None else torch.from_numpy(ipt.data)
@@ -100,7 +102,8 @@ class PytorchModelAdapter(ModelAdapter):
             v0_4.PytorchStateDictWeightsDescr, v0_5.PytorchStateDictWeightsDescr
         ]
     ) -> "torch.nn.Module":  # pyright: ignore[reportInvalidTypeForm]
-        assert torch is not None
+        if torch is None:
+            raise ImportError("torch")
         arch = import_callable(
             weight_spec.architecture,
             sha256=(
@@ -126,7 +129,8 @@ class PytorchModelAdapter(ModelAdapter):
     def get_devices(  # pyright: ignore[reportUnknownParameterType]
         devices: Optional[Sequence[str]] = None,
     ) -> List["torch.device"]:  # pyright: ignore[reportInvalidTypeForm]
-        assert torch is not None
+        if torch is None:
+            raise ImportError("torch")
         if not devices:
             torch_devices = [
                 (

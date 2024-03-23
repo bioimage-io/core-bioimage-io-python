@@ -21,7 +21,9 @@ class ONNXModelAdapter(ModelAdapter):
         model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
         devices: Optional[Sequence[str]] = None,
     ):
-        assert rt is not None
+        if rt is None:
+            raise ImportError("onnxruntime")
+
         super().__init__()
         self._internal_output_axes = [
             (

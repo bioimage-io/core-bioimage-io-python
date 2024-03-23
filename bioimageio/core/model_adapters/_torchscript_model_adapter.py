@@ -24,7 +24,9 @@ class TorchscriptModelAdapter(ModelAdapter):
         model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
         devices: Optional[Sequence[str]] = None,
     ):
-        assert torch is not None
+        if torch is None:
+            raise ImportError("torch")
+
         super().__init__()
         if model_description.weights.torchscript is None:
             raise ValueError(

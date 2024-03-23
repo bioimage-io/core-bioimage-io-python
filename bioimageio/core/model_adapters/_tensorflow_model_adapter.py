@@ -32,7 +32,9 @@ class TensorflowModelAdapterBase(ModelAdapter):
         ],
         model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
     ):
-        assert tf is not None
+        if tf is None:
+            raise ImportError("tensorflow")
+
         super().__init__()
         self.model_description = model_description
         tf_version = v0_5.Version(
