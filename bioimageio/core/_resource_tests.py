@@ -195,7 +195,12 @@ def _test_model_inference_parametrized(
             tested: Set[Hashable] = set()
 
             def get_ns(n: int):
-                return {(t.id, a.id): n for t in model.inputs for a in t.axes}
+                return {
+                    (t.id, a.id): n
+                    for t in model.inputs
+                    for a in t.axes
+                    if isinstance(a.size, v0_5.ParameterizedSize)
+                }
 
             for n, batch_size in test_cases:
                 input_target_sizes, expected_output_sizes = model.get_axis_sizes(
