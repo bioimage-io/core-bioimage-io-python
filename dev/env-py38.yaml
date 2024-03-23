@@ -9,6 +9,8 @@ dependencies:
   - crick # uncommented
   - filelock
   - imageio>=2.5
+  - jupyter
+  - jupyter-black
   # - keras>=3.0  # removed
   - loguru
   - numpy

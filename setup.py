@@ -51,6 +51,8 @@ setup(
             "black",
             # "crick",  # currently requires python<=3.9
             "filelock",
+            "jupyter",
+            "jupyter-black",
             "keras>=3.0",
             "onnxruntime",
             "packaging>=17.0",
