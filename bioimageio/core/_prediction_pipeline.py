@@ -126,7 +126,7 @@ class PredictionPipeline:
         """
         optional step: load model onto devices before calling forward if not using it as context manager
         """
-        self._adapter.load()
+        pass
 
     def unload(self):
         """
