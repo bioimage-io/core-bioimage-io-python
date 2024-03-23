@@ -49,7 +49,7 @@ setup(
         "onnx": ["onnxruntime"],
         "dev": [
             "black",
-            "crick",
+            # "crick",  # currently requires python<=3.9
             "filelock",
             "keras>=3.0",
             "onnxruntime",

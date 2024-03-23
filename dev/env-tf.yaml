@@ -6,7 +6,7 @@ channels:
 dependencies:
   - bioimageio.spec>=0.5.1
   - black
-  - crick
+  # - crick  # currently requires python<=3.9
   - filelock
   - imageio>=2.5
   - keras>=3.0
