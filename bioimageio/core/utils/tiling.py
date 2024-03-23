@@ -38,7 +38,7 @@ def pad_to(
         a = AxisId(str(a))
         if a not in sizes or sizes[a] == s_is:
             pad_width[a] = 0
-        elif s_is < sizes[a]:
+        elif s_is > sizes[a]:
             pad_width[a] = 0
             warnings.warn(
                 f"Cannot pad axis {a} of size {s_is} to smaller size {sizes[a]}"
@@ -130,7 +130,7 @@ def resize_to(
         _ = new_axes.pop(a, None)
         if a not in sizes or sizes[a] == s_is:
             pass
-        elif s_is < sizes[a]:
+        elif s_is > sizes[a]:
             crop_to_sizes[a] = sizes[a]
         else:
             pad_to_sizes[a] = sizes[a]
