@@ -1,0 +1,38 @@
+# manipulated copy of env.yaml
+name: core38
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - bioimageio.spec>=0.5.1
+  - black
+  - crick # uncommented
+  - filelock
+  - imageio>=2.5
+  - jupyter
+  - jupyter-black
+  # - keras>=3.0  # removed
+  - loguru
+  - numpy
+  - onnxruntime
+  - packaging>=17.0
+  - pip
+  - pre-commit
+  - psutil
+  - pydantic
+  - pydantic-settings
+  - pyright
+  - pytest
+  - pytest-xdist
+  - python-dotenv
+  - python=3.8 # changed
+  - pytorch>=2.1
+  - ruff # uncommented
+  - ruyaml
+  - torchvision
+  - tqdm
+  - typer
+  - typing-extensions
+  - xarray
+  - pip:
+      - -e ..
