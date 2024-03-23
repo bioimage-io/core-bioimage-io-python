@@ -171,74 +171,78 @@ def _test_model_inference_parametrized(
     model: v0_5.ModelDescr,
     weight_format: Optional[WeightsFormat],
     devices: Optional[List[str]],
-    test_cases: Sequence[Tuple[v0_5.ParameterizedSize.N, BatchSize]] = (
+    test_cases: Set[Tuple[v0_5.ParameterizedSize.N, BatchSize]] = {
         (0, 2),
         (1, 3),
         (2, 1),
         (3, 2),
-    ),
+    },
 ) -> None:
+    if not test_cases:
+        return
+
     if not any(
         isinstance(a.size, v0_5.ParameterizedSize)
         for ipt in model.inputs
         for a in ipt.axes
     ):
-        # only test different batch sizes for n=0
-        test_cases = [tc for tc in test_cases if tc[0] == 0]
-        if not test_cases:
-            return
+        # no parameterized sizes => set n=0
+        test_cases = {(0, b) for _n, b in test_cases}
+
+    if not any(isinstance(a, v0_5.BatchAxis) for ipt in model.inputs for a in ipt.axes):
+        # no batch axis => set b=1
+        test_cases = {(n, 1) for n, _b in test_cases}
+
+    def generate_test_cases():
+        tested: Set[Hashable] = set()
+
+        def get_ns(n: int):
+            return {
+                (t.id, a.id): n
+                for t in model.inputs
+                for a in t.axes
+                if isinstance(a.size, v0_5.ParameterizedSize)
+            }
+
+        for n, batch_size in sorted(test_cases):
+            input_target_sizes, expected_output_sizes = model.get_axis_sizes(
+                get_ns(n), batch_size=batch_size
+            )
+            hashable_target_size = tuple(
+                (k, input_target_sizes[k]) for k in sorted(input_target_sizes)
+            )
+            if hashable_target_size in tested:
+                continue
+            else:
+                tested.add(hashable_target_size)
+
+            resized_test_inputs = [
+                resize_to(
+                    t,
+                    {
+                        aid: s
+                        for (tid, aid), s in input_target_sizes.items()
+                        if tid == t_descr.id
+                    },
+                )
+                for t, t_descr in zip(test_inputs, model.inputs)
+            ]
+            expected_output_shapes = [
+                {
+                    aid: s
+                    for (tid, aid), s in expected_output_sizes.items()
+                    if tid == t_descr.id
+                }
+                for t_descr in model.outputs
+            ]
+            yield n, batch_size, resized_test_inputs, expected_output_shapes
 
     try:
         test_inputs = get_test_inputs(model)
 
-        def generate_test_cases():
-            tested: Set[Hashable] = set()
-
-            def get_ns(n: int):
-                return {
-                    (t.id, a.id): n
-                    for t in model.inputs
-                    for a in t.axes
-                    if isinstance(a.size, v0_5.ParameterizedSize)
-                }
-
-            for n, batch_size in test_cases:
-                input_target_sizes, expected_output_sizes = model.get_axis_sizes(
-                    get_ns(n), batch_size=batch_size
-                )
-                hashable_target_size = tuple(
-                    (k, input_target_sizes[k]) for k in sorted(input_target_sizes)
-                )
-                if hashable_target_size in tested:
-                    continue
-                else:
-                    tested.add(hashable_target_size)
-
-                resized_test_inputs = [
-                    resize_to(
-                        t,
-                        {
-                            aid: s
-                            for (tid, aid), s in input_target_sizes.items()
-                            if tid == t_descr.id
-                        },
-                    )
-                    for t, t_descr in zip(test_inputs, model.inputs)
-                ]
-                expected_output_shapes = [
-                    {
-                        aid: s
-                        for (tid, aid), s in expected_output_sizes.items()
-                        if tid == t_descr.id
-                    }
-                    for t_descr in model.outputs
-                ]
-                yield n, batch_size, resized_test_inputs, expected_output_shapes
-
         with create_prediction_pipeline(
             bioimageio_model=model, devices=devices, weight_format=weight_format
         ) as prediction_pipeline:
-
             for n, batch_size, inputs, exptected_output_shape in generate_test_cases():
                 error: Optional[str] = None
                 results = prediction_pipeline.forward(*inputs)
@@ -266,7 +270,7 @@ def _test_model_inference_parametrized(
                         if diff:
                             error = (
                                 f"(n={n}) Expected output shape {exp},"
-                                + f" but got {res.sizes} ({diff})\n"
+                                + f" but got {res.sizes} (diff: {diff})"
                             )
                             break
 
