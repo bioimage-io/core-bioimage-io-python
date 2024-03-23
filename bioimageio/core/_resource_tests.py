@@ -207,8 +207,7 @@ def _test_model_inference_parametrized(
                     get_ns(n), batch_size=batch_size
                 )
                 hashable_target_size = tuple(
-                    (input_target_sizes, input_target_sizes[ts])
-                    for ts in sorted(input_target_sizes)
+                    (k, input_target_sizes[k]) for k in sorted(input_target_sizes)
                 )
                 if hashable_target_size in tested:
                     continue

@@ -137,7 +137,7 @@ class ModelAdapter(ABC):
 
     @final
     def load(self, *, devices: Optional[Sequence[str]] = None) -> None:
-        warnings.warn("Deprecated. ModelAdapter is always loaded")
+        warnings.warn("Deprecated. ModelAdapter is loaded on initialization")
 
     @abstractmethod
     def forward(self, *input_tensors: Optional[Tensor]) -> List[Optional[Tensor]]:
@@ -149,7 +149,7 @@ class ModelAdapter(ABC):
     def unload(self):
         """
         Unload model from any devices, freeing their memory.
-        Note: Use ModelAdapter as context to not worry about calling unload()!
+        The moder adapter should be considered unusable afterwards.
         """
 
 
