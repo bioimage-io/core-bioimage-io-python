@@ -25,11 +25,11 @@ dependencies:
   - pytest
   - pytest-xdist
   - python-dotenv
-  - python=3.9
+  # - python=3.9  # removed
   # - pytorch>=2.1 # removed
   - ruff
   - ruyaml
-  - tensorflow>=2.16 # added
+  - tensorflow>=2.15 # added
   # - torchvision  # removed
   - tqdm
   - typer

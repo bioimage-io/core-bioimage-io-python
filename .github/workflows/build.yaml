@@ -60,6 +60,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Install Conda environment with Micromamba
+      if: matrix.python-version != '3.8'
       uses: mamba-org/setup-micromamba@v1
       with:
         cache-downloads: true
@@ -67,6 +68,14 @@ jobs:
         environment-file: dev/env-wo-python.yaml
         create-args: >-
           python=${{ matrix.python-version }}
+        post-cleanup: 'all'
+    - name: Install py3.8 environment
+      if: matrix.python-version == '3.8'
+      uses: mamba-org/setup-micromamba@v1
+      with:
+        cache-downloads: true
+        cache-environment: true
+        environment-file: dev/env-py38.yaml
         post-cleanup: 'all'
     - name: additional setup
       run: |
