@@ -98,14 +98,30 @@ def _prepare_setup_pre_and_postprocessing(model: AnyModelDescr) -> _SetupProcess
         procs: List[Processing] = []
         for t_descr in tensor_descrs:
             if isinstance(t_descr, (v0_4.InputTensorDescr, v0_5.InputTensorDescr)):
-                proc_descrs = t_descr.preprocessing
+                proc_descrs: List[
+                    Union[
+                        v0_4.PreprocessingDescr,
+                        v0_5.PreprocessingDescr,
+                        v0_4.PostprocessingDescr,
+                        v0_5.PostprocessingDescr,
+                    ]
+                ] = list(t_descr.preprocessing)
             elif isinstance(
                 t_descr,
                 (v0_4.OutputTensorDescr, v0_5.OutputTensorDescr),
             ):
-                proc_descrs = t_descr.postprocessing
+                proc_descrs = list(t_descr.postprocessing)
             else:
                 assert_never(t_descr)
+
+            if isinstance(t_descr, (v0_4.InputTensorDescr, v0_4.OutputTensorDescr)):
+                ensure_dtype = v0_5.EnsureDtypeDescr(
+                    kwargs=v0_5.EnsureDtypeKwargs(dtype=t_descr.data_type)
+                )
+                if isinstance(t_descr, v0_4.InputTensorDescr) and proc_descrs:
+                    proc_descrs.insert(0, ensure_dtype)
+
+                proc_descrs.append(ensure_dtype)
 
             for proc_d in proc_descrs:
                 proc_class = get_proc_class(proc_d)
