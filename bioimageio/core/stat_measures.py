@@ -6,7 +6,8 @@ from typing import Optional, Tuple, TypeVar, Union
 
 import xarray as xr
 
-from bioimageio.core.common import AxisId, Sample, TensorId
+from bioimageio.core.common import AxisId, TensorId
+from bioimageio.core.sample import Sample
 
 MeasureValue = Union[float, xr.DataArray]
 

@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Collection
 
-from bioimageio.core.common import Sample
+from bioimageio.core.sample import Sample
 from bioimageio.core.stat_measures import Measure
 
 

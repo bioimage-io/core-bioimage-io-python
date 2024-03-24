@@ -1,5 +1,7 @@
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Dict, Iterable, Literal, Protocol
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Dict, Literal, Mapping, Protocol, Tuple, Union
 
 import xarray as xr
 
@@ -26,20 +28,5 @@ class AxisLike(Protocol):
 BatchSize = int
 Tensor = xr.DataArray
 
-
 Data = Dict[TensorId, Tensor]
 Stat = Dict["Measure", "MeasureValue"]
-
-
-@dataclass
-class Sample:
-    """A (dataset) sample"""
-
-    data: Data = field(default_factory=dict)
-    """the samples tensors"""
-
-    stat: Stat = field(default_factory=dict)
-    """sample and dataset statistics"""
-
-
-Dataset = Iterable[Sample]

@@ -28,9 +28,9 @@ from typing_extensions import assert_never
 
 from bioimageio.core.common import (
     AxisId,
-    Sample,
     TensorId,
 )
+from bioimageio.core.sample import Sample
 from bioimageio.core.stat_measures import (
     DatasetMean,
     DatasetMeasure,

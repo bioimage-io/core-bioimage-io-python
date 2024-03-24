@@ -1,16 +1,19 @@
 import warnings
-from typing import Dict, Literal, Mapping, Tuple, Union
+from typing import Dict, Literal, Mapping, Union
 
 from typing_extensions import assert_never
 
-from bioimageio.core.common import Tensor
 from bioimageio.spec.model.v0_5 import AxisId
+
+from ..common import LeftRight, Tensor
+
+PadMode = Literal["edge", "reflect", "symmetric"]
 
 
 def pad(
     tensor: Tensor,
-    pad_width: Mapping[AxisId, Union[int, Tuple[int, int]]],
-    mode: Literal["edge", "reflect", "symmetric"] = "symmetric",
+    pad_width: Mapping[AxisId, Union[int, LeftRight]],
+    mode: PadMode = "symmetric",
 ):
     return tensor.pad(pad_width={str(k): v for k, v in pad_width.items()}, mode=mode)
 
@@ -22,7 +25,7 @@ def pad_to(
         Literal["before", "center", "after"],
         Mapping[AxisId, Literal["before", "center", "after"]],
     ] = "center",
-    mode: Literal["edge", "reflect", "symmetric"] = "symmetric",
+    mode: PadMode = "symmetric",
 ):
     """pad `tensor` to match `sizes`"""
     axes = [AxisId(str(a)) for a in tensor.dims]
@@ -33,7 +36,7 @@ def pad_to(
     else:
         pad_axis_where = pad_where
 
-    pad_width: Dict[AxisId, Union[int, Tuple[int, int]]] = {}
+    pad_width: Dict[AxisId, Union[int, LeftRight]] = {}
     for a, s_is in tensor.sizes.items():
         a = AxisId(str(a))
         if a not in sizes or sizes[a] == s_is:
@@ -51,11 +54,11 @@ def pad_to(
             pad_this_axis_where = pad_axis_where[a]
             p = sizes[a] - s_is
             if pad_this_axis_where == "before":
-                pad_width[a] = (p, 0)
+                pad_width[a] = LeftRight(p, 0)
             elif pad_this_axis_where == "after":
-                pad_width[a] = (0, p)
+                pad_width[a] = LeftRight(0, p)
             elif pad_this_axis_where == "center":
-                pad_width[a] = (left := p // 2, p - left)
+                pad_width[a] = LeftRight(left := p // 2, p - left)
             else:
                 assert_never(pad_this_axis_where)
 
@@ -119,7 +122,7 @@ def resize_to(
         Literal["before", "center", "after"],
         Mapping[AxisId, Literal["before", "center", "after"]],
     ] = "center",
-    pad_mode: Literal["edge", "reflect", "symmetric"] = "symmetric",
+    pad_mode: PadMode = "symmetric",
 ):
     """crop and pad `tensor` to match `sizes`"""
     crop_to_sizes: Dict[AxisId, int] = {}
