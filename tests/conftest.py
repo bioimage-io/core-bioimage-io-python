@@ -97,6 +97,10 @@ if torch is not None:
                 "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
                 "unet2d_diff_output_shape/v0_4.bioimageio.yaml"
             ),
+            "shape_change": (
+                "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
+                "upsample_test_model/v0_4.bioimageio.yaml"
+            ),
         }
     )
 if tensorflow is not None:
