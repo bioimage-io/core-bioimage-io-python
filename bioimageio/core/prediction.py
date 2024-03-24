@@ -18,6 +18,7 @@ from bioimageio.spec.model.v0_5 import InputAxis
 from bioimageio.spec.model.v0_5 import InputTensorDescr
 from bioimageio.spec.model.v0_4 import AxesStr, ImplicitOutputShape
 from bioimageio.spec.model.v0_4 import InputTensorDescr as _InputTensorDescr
+from bioimageio.spec.model.v0_4 import ModelDescr as ModelDescr_v0_4
 from numpy.typing import NDArray
 # from pydantic import HttpUrl
 from tqdm import tqdm

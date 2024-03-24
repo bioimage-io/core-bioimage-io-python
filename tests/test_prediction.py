@@ -16,9 +16,10 @@ def test_predict_image(any_model: Path, tmpdir: Path):
 
     spec = load_description(any_model)
     assert isinstance(spec, ModelDescr)
-    inputs = spec.test_inputs
 
+    inputs = [Path(str(test_input)) for test_input in spec.test_inputs]
     outputs = [Path(tmpdir) / f"out{i}.npy" for i in range(len(spec.test_outputs))]
+
     predict_image(any_model, inputs, outputs)
     for out_path in outputs:
         assert out_path.exists()
