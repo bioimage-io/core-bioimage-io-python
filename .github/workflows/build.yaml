@@ -144,8 +144,16 @@ jobs:
           python-version: '3.12'
           cache: 'pip'
       - run: pip install -e .[dev]
+      - id: get_version
+        run: python -c 'import bioimageio.core;print(f"version={bioimageio.core.__version__}")' >> $GITHUB_OUTPUT
       - name: Generate developer docs
-        run: pdoc -o ./dist bioimageio.spec
+        run: |
+          pdoc \
+          --logo https://bioimage.io/static/img/bioimage-io-logo.svg \
+          --logo-link https://bioimage.io/ \
+          --favicon https://bioimage.io/static/img/bioimage-io-icon-small.svg \
+          --footer-text 'bioimageio.core ${{steps.get_version.outputs.version}}' \
+          -o ./dist bioimageio.core
       - run: cp README.md ./dist/README.md
       - name: Deploy to gh-pages 🚀
         uses: JamesIves/github-pages-deploy-action@v4
