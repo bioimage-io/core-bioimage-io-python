@@ -1,7 +1,16 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Dict, Literal, Mapping, Protocol, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    Dict,
+    Literal,
+    Mapping,
+    NamedTuple,
+    Protocol,
+    Tuple,
+    Union,
+)
 
 import xarray as xr
 
@@ -30,3 +39,13 @@ Tensor = xr.DataArray
 
 Data = Dict[TensorId, Tensor]
 Stat = Dict["Measure", "MeasureValue"]
+
+
+class LeftRight(NamedTuple):
+    left: int
+    right: int
+
+
+class SliceInfo(NamedTuple):
+    start: int
+    stop: int

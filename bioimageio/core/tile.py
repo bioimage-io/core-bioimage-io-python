@@ -3,12 +3,18 @@ from dataclasses import dataclass, field
 from math import prod
 from typing import Dict, Iterable, List, Mapping, Tuple, Union, cast
 
-from .common import AxisId, Data, LeftRight, Stat, Tensor, TensorId
+from xarray.core.utils import Frozen
 
-TensorTilePos = Dict[AxisId, int]
-TilePos = Dict[TensorId, TensorTilePos]
-TensorSampleSize = Dict[AxisId, int]
-SampleSizes = Dict[TensorId, TensorSampleSize]
+from .common import AxisId, Data, LeftRight, SliceInfo, Stat, Tensor, TensorId
+
+# TensorTilePos = Mapping[AxisId, int]
+# TilePos = Mapping[TensorId, TensorTilePos]
+TensorTileSlice = Mapping[AxisId, SliceInfo]
+TileSlice = Mapping[TensorId, TensorTileSlice]
+TensorSampleSize = Mapping[AxisId, int]
+SampleSizes = Mapping[TensorId, TensorSampleSize]
+TensorTileHalo = Mapping[AxisId, LeftRight]
+TileHalo = Mapping[TensorId, TensorTileHalo]
 
 
 @dataclass
@@ -18,11 +24,69 @@ class Tile:
     data: Data
     """the tile's tensors"""
 
-    pos: TilePos
-    """position of the inner origin (origin of tile if halo is cropped) within the sample"""
+    inner_slice: TileSlice
+    """slice of the inner tile (without padding and overlap) of the sample"""
 
-    halo: Dict[AxisId, LeftRight]
-    """padded or overlapping border region"""
+    halo: TileHalo
+    """pad/overlap to extend the (inner) tile (to the outer tile)"""
+
+    outer_slice: Frozen[TensorId, Frozen[AxisId, SliceInfo]] = field(init=False)
+    """slice of the outer tile (including overlap, but not padding) in the sample"""
+
+    overlap: Frozen[TensorId, Frozen[AxisId, LeftRight]] = field(init=False)
+    """overlap 'into a neighboring tile'"""
+
+    padding: Frozen[TensorId, Frozen[AxisId, LeftRight]] = field(init=False)
+    """pad (at sample edges where we cannot overlap to realize `halo`"""
+
+    def __post_init__(self):
+        self.outer_slice = Frozen(
+            {
+                t: Frozen(
+                    {
+                        a: SliceInfo(
+                            max(0, self.inner_slice[t][a].start - self.halo[t][a].left),
+                            min(
+                                self.sample_sizes[t][a],
+                                self.inner_slice[t][a].stop + self.halo[t][a].right,
+                            ),
+                        )
+                        for a in self.inner_slice[t]
+                    }
+                )
+                for t in self.inner_slice
+            }
+        )
+        self.overlap = Frozen(
+            {
+                tid: Frozen(
+                    {
+                        a: LeftRight(
+                            self.inner_slice[tid][a].start
+                            - self.outer_slice[tid][a].start,
+                            self.outer_slice[tid][a].stop
+                            - self.inner_slice[tid][a].stop,
+                        )
+                        for a in self.inner_slice[tid]
+                    }
+                )
+                for tid in self.inner_slice
+            }
+        )
+        self.padding = Frozen(
+            {
+                tid: Frozen(
+                    {
+                        a: LeftRight(
+                            self.halo[tid][a].left - self.overlap[tid][a].left,
+                            self.halo[tid][a].right - self.overlap[tid][a].right,
+                        )
+                        for a in self.inner_slice[tid]
+                    }
+                )
+                for tid in self.inner_slice
+            }
+        )
 
     tile_number: int
     """the n-th tile of the sample"""

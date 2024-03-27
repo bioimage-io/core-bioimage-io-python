@@ -1,6 +1,10 @@
 from dataclasses import dataclass, field
 from typing import Dict, Iterable, Iterator, Mapping, Optional, Tuple, Union, cast
+
+import numpy
+import xarray
 from typing_extensions import Self
+
 from bioimageio.core.common import AxisId, Data, Stat, Tensor, TensorId
 
 from .tile import SampleSizes, TensorTilePos, Tile, TilePos, tile_tensor
@@ -21,7 +25,9 @@ class Sample:
 
     @property
     def sizes(self) -> SampleSizes:
-        return {tid: cast(Dict[AxisId, int], dict(t.sizes)) for tid, t in self.data.items()}
+        return {
+            tid: cast(Dict[AxisId, int], dict(t.sizes)) for tid, t in self.data.items()
+        }
 
     def tile(
         self,
@@ -32,14 +38,24 @@ class Sample:
 
     @classmethod
     def from_tiles(cls, tiles: Iterable[Tile]) -> Self:
+        # TODO: add `mode: Literal['in-memory', 'to-disk']` or similar to save out of mem samples
         data: Data = {}
         stat: Stat = {}
         for tile in tiles:
             for tid, tile_data in tile.data.items():
-
+                if tid not in data:
+                    axes = cast(Tuple[AxisId], tile_data.dims)
+                    data[tid] = Tensor(
+                        numpy.zeros(
+                            tuple(tile.sample_sizes[tid][a] for a in axes),
+                            dtype=tile_data.dtype,  # pyright: ignore[reportUnknownArgumentType]
+                        ),
+                        dims=axes,
+                    )
             stat = tile.stat
 
         return cls(data=data, stat=stat)
+
 
 def tile_sample(
     sample: Sample,
