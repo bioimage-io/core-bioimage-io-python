@@ -24,6 +24,10 @@ from ._resource_tests import test_description as test_description
 from ._resource_tests import test_model as test_model
 from ._settings import settings as settings
 from .utils import VERSION
+from .tensor import Tensor as Tensor
+from .tile import Tile as Tile
+from .sample import Sample as Sample
+
 
 __version__ = VERSION
 

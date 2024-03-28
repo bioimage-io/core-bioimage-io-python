@@ -5,7 +5,7 @@ from typing import Dict, Hashable, List, Literal, Optional, Sequence, Set, Tuple
 import numpy as np
 
 from bioimageio.core._prediction_pipeline import create_prediction_pipeline
-from bioimageio.core.common import AxisId, BatchSize
+from bioimageio.core.axis import AxisId, BatchSize
 from bioimageio.core.utils import VERSION, get_test_inputs, get_test_outputs
 from bioimageio.core.utils.tiling import resize_to
 from bioimageio.spec import (

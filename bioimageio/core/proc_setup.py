@@ -11,13 +11,13 @@ from typing import (
 
 from typing_extensions import assert_never
 
-from bioimageio.core.common import Sample
 from bioimageio.core.proc_ops import (
     AddKnownDatasetStats,
     Processing,
     UpdateStats,
     get_proc_class,
 )
+from bioimageio.core.sample import Sample
 from bioimageio.core.stat_calculators import StatsCalculator
 from bioimageio.core.stat_measures import DatasetMeasure, Measure, MeasureValue
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5

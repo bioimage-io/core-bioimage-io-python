@@ -5,7 +5,7 @@ from typing import Any, List, Optional, Sequence, Tuple, Union
 import numpy as np
 from numpy.typing import NDArray
 
-from bioimageio.core.common import Tensor
+from bioimageio.core.Tensor import Tensor
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.utils import download
 

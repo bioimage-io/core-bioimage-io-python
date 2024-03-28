@@ -4,7 +4,7 @@ from typing import List, Literal, Optional, Sequence, Union
 
 import numpy as np
 
-from bioimageio.core.common import Tensor
+from bioimageio.core.Tensor import Tensor
 from bioimageio.spec.common import FileSource
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.utils import download

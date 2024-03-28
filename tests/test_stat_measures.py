@@ -6,12 +6,14 @@ import pytest
 import xarray as xr
 
 from bioimageio.core import stat_measures
-from bioimageio.core.common import AxisId, Sample, Tensor, TensorId
+from bioimageio.core.axis import AxisId
+from bioimageio.core.sample import Sample
 from bioimageio.core.stat_calculators import (
     SamplePercentilesCalculator,
     get_measure_calculators,
 )
 from bioimageio.core.stat_measures import SamplePercentile
+from bioimageio.core.Tensor import Tensor, TensorId
 
 
 @pytest.mark.parametrize(

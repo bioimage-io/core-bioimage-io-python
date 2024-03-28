@@ -1,45 +1,64 @@
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Dict, Iterable, Literal, Protocol
+from __future__ import annotations
 
-import xarray as xr
+from typing import Literal, NamedTuple, Tuple, TypeVar, Union
 
-from bioimageio.spec.model import v0_5
+from typing_extensions import Self, assert_never
 
-if TYPE_CHECKING:
-    from bioimageio.core.stat_measures import Measure, MeasureValue
-
-TensorId = v0_5.TensorId
-AxisId = v0_5.AxisId
-
-
-@dataclass
-class Axis:
-    id: AxisId
-    type: Literal["batch", "channel", "index", "space", "time"]
-
-
-class AxisLike(Protocol):
-    id: str
-    type: Literal["batch", "channel", "index", "space", "time"]
+DTypeStr = Literal[
+    "bool",
+    "float32",
+    "float64",
+    "int8",
+    "int16",
+    "int32",
+    "int64",
+    "uint8",
+    "uint16",
+    "uint32",
+    "uint64",
+]
 
 
-BatchSize = int
-Tensor = xr.DataArray
+LeftRight_T = TypeVar("LeftRight_T", bound="LeftRight")
+LeftRightLike = Union[int, Tuple[int, int], LeftRight_T]
 
 
-Data = Dict[TensorId, Tensor]
-Stat = Dict["Measure", "MeasureValue"]
+class LeftRight(NamedTuple):
+    left: int
+    right: int
+
+    @classmethod
+    def create(cls, like: LeftRightLike[Self]) -> Self:
+        if isinstance(like, cls):
+            return like
+        elif isinstance(like, tuple):
+            return cls(*like)
+        elif isinstance(like, int):
+            return cls(like, like)
+        else:
+            assert_never(like)
 
 
-@dataclass
-class Sample:
-    """A (dataset) sample"""
-
-    data: Data = field(default_factory=dict)
-    """the samples tensors"""
-
-    stat: Stat = field(default_factory=dict)
-    """sample and dataset statistics"""
+class Halo(LeftRight):
+    pass
 
 
-Dataset = Iterable[Sample]
+HaloLike = LeftRightLike[Halo]
+
+
+class PadWidth(LeftRight):
+    pass
+
+
+PadWidthLike = LeftRightLike[PadWidth]
+PadMode = Literal["edge", "reflect", "symmetric"]
+PadWhere = Literal["before", "center", "after"]
+
+
+class SliceInfo(NamedTuple):
+    start: int
+    stop: int
+
+
+TileNumber = int
+TotalNumberOfTiles = int
