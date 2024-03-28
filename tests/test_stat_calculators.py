@@ -4,7 +4,7 @@ import numpy as np
 import pytest
 from xarray.testing import assert_allclose  # pyright: ignore[reportUnknownVariableType]
 
-from bioimageio.core.common import AxisId, Tensor, TensorId
+from bioimageio.core.axis import AxisId
 from bioimageio.core.sample import Sample
 from bioimageio.core.stat_calculators import MeanVarStdCalculator
 from bioimageio.core.stat_measures import (
@@ -12,6 +12,7 @@ from bioimageio.core.stat_measures import (
     DatasetStd,
     DatasetVar,
 )
+from bioimageio.core.Tensor import Tensor, TensorId
 
 
 def create_random_dataset(tid: TensorId, axes: Tuple[str, ...], n: int = 3):

@@ -18,11 +18,8 @@ from numpy.typing import DTypeLike
 from typing_extensions import Self, assert_never
 
 from bioimageio.core._op_base import Operator
-from bioimageio.core.common import (
+from bioimageio.core.axis import (
     AxisId,
-    Stat,
-    Tensor,
-    TensorId,
 )
 from bioimageio.core.sample import Sample
 from bioimageio.core.stat_calculators import StatsCalculator
@@ -37,8 +34,10 @@ from bioimageio.core.stat_measures import (
     SampleMean,
     SamplePercentile,
     SampleStd,
+    Stat,
     StdMeasure,
 )
+from bioimageio.core.Tensor import Tensor, TensorId
 from bioimageio.spec.model import v0_4, v0_5
 
 

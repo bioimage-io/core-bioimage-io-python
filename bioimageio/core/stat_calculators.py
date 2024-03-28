@@ -26,9 +26,8 @@ import xarray as xr
 from numpy.typing import NDArray
 from typing_extensions import assert_never
 
-from bioimageio.core.common import (
+from bioimageio.core.axis import (
     AxisId,
-    TensorId,
 )
 from bioimageio.core.sample import Sample
 from bioimageio.core.stat_measures import (
@@ -46,6 +45,7 @@ from bioimageio.core.stat_measures import (
     SampleStd,
     SampleVar,
 )
+from bioimageio.core.Tensor import TensorId
 
 try:
     import crick

@@ -2,13 +2,13 @@ import warnings
 from types import MappingProxyType
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Union
 
-from bioimageio.core.common import Tensor, TensorId
 from bioimageio.core.model_adapters import ModelAdapter, create_model_adapter
 from bioimageio.core.model_adapters import get_weight_formats as get_weight_formats
 from bioimageio.core.proc_ops import Processing
 from bioimageio.core.proc_setup import setup_pre_and_postprocessing
 from bioimageio.core.sample import Sample
 from bioimageio.core.stat_measures import DatasetMeasure, MeasureValue
+from bioimageio.core.Tensor import Tensor, TensorId
 from bioimageio.spec.model import AnyModelDescr, v0_4
 from bioimageio.spec.model.v0_5 import WeightsFormat
 

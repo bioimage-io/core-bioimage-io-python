@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Optional, Tuple, TypeVar, Union
+from typing import Dict, Optional, Tuple, TypeVar, Union
 
 import xarray as xr
 
-from bioimageio.core.common import AxisId, TensorId
+from bioimageio.core.axis import AxisId
 from bioimageio.core.sample import Sample
+from bioimageio.core.Tensor import TensorId
 
 MeasureValue = Union[float, xr.DataArray]
 
@@ -144,6 +145,7 @@ class DatasetPercentile(_Percentile, DatasetMeasureBase):
 SampleMeasure = Union[SampleMean, SampleStd, SampleVar, SamplePercentile]
 DatasetMeasure = Union[DatasetMean, DatasetStd, DatasetVar, DatasetPercentile]
 Measure = Union[SampleMeasure, DatasetMeasure]
+Stat = Dict[Measure, MeasureValue]
 
 MeanMeasure = Union[SampleMean, DatasetMean]
 StdMeasure = Union[SampleStd, DatasetStd]

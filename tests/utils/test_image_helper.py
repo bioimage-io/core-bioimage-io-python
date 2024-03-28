@@ -3,8 +3,8 @@ import pytest
 import xarray as xr
 from xarray.testing import assert_equal  # pyright: ignore[reportUnknownVariableType]
 
-from bioimageio.core.common import AxisId
-from bioimageio.core.utils.image_helper import (
+from bioimageio.core.axis import AxisId
+from bioimageio.core.io import (
     interprete_array,
     transpose_tensor,
 )
