@@ -1,12 +1,9 @@
 from pathlib import Path
-from typing import Optional, Sequence, Union
+from typing import Optional, Sequence
 
 import imageio
 
 from bioimageio.core.axis import Axis, AxisLike
-from bioimageio.spec.model import v0_5
-from bioimageio.spec.model.v0_4 import InputTensorDescr as InputTensorDescr04
-from bioimageio.spec.model.v0_4 import OutputTensorDescr as OutputTensorDescr04
 from bioimageio.spec.utils import load_array
 
 from .tensor import Tensor, TensorId
@@ -27,4 +24,6 @@ def load_tensor(
         )
         array = imageio.volread(path) if is_volume else imageio.imread(path)
 
-    return Tensor.from_numpy(array, axes, id=TensorId(path.stem) if id is None else id)
+    return Tensor.from_numpy(
+        array, dims=axes, id=TensorId(path.stem) if id is None else id
+    )

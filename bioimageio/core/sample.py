@@ -1,15 +1,16 @@
 from dataclasses import dataclass, field
-from typing import Dict, Iterable, Iterator, Mapping, Optional, Tuple, Union, cast
+from pprint import pformat
+from typing import Dict, Iterable, Iterator, Optional, Tuple, cast
 
 import numpy
+import xarray as xr
 from typing_extensions import Self
-from xarray.core.utils import Frozen
 
 from .axis import AxisId, PerAxis
-from .common import Halo, HaloLike, PadMode, PadWidth, SliceInfo, TileNumber
+from .common import Halo, HaloLike, PadMode, SliceInfo, TileNumber
 from .stat_measures import Stat
 from .tensor import PerTensor, Tensor, TensorId
-from .tile import Tile, tile_tensor
+from .tile import Tile
 
 TiledSample = Iterable[Tile]
 """A dataset sample split into tiles"""
@@ -19,7 +20,7 @@ TiledSample = Iterable[Tile]
 class Sample:
     """A dataset sample"""
 
-    data: PerTensor[Tensor]
+    data: Dict[TensorId, Tensor]
     """the sample's tensors"""
 
     stat: Stat = field(default_factory=dict)
@@ -32,79 +33,90 @@ class Sample:
     def tile(
         self,
         tile_sizes: PerTensor[PerAxis[int]],
-        minimum_halo: PerTensor[PerAxis[HaloLike]],
+        halo: PerTensor[PerAxis[HaloLike]],
+        pad_mode: PadMode,
     ) -> TiledSample:
         assert not (
             missing := [t for t in tile_sizes if t not in self.data]
         ), f"`tile_sizes` specified for missing tensors: {missing}"
         assert not (
-            missing := [t for t in minimum_halo if t not in tile_sizes]
-        ), f"`minimum_halo` specified for tensors without `tile_sizes`: {missing}"
+            missing := [t for t in halo if t not in tile_sizes]
+        ), f"`halo` specified for tensors without `tile_sizes`: {missing}"
 
-        tensor_ids = list(tile_sizes)
+        # any axis not given in `tile_sizes` is treated
+        #   as tile size equal to the tensor axis' size
+        explicit_tile_sizes = {
+            t: {a: tile_sizes.get(t, {}).get(a, s) for a, s in tdata.sizes.items()}
+            for t, tdata in self.data.items()
+        }
 
-        tensor_tile_generators: Dict[
-            TensorId, Iterable[Tuple[TileNumber, Tensor, PerAxis[SliceInfo]]]
+        tensor_ids = tuple(self.data)
+        broadcasted_tensors = {
+            t: Tensor.from_xarray(d)
+            for t, d in zip(
+                tensor_ids, xr.broadcast(*(self.data[tt].data for tt in tensor_ids))
+            )
+        }
+
+        tile_iterators: Dict[
+            TensorId, Iterator[Tuple[TileNumber, Tensor, PerAxis[SliceInfo]]]
         ] = {}
-        n_tiles: Dict[TensorId, int] = {}
+
+        n_tiles_common = 1
+        last_non_trivial: Optional[TensorId] = None
         for t in tensor_ids:
-            n_tiles[t], tensor_tile_generators[t] = tile_tensor(
-                self.data[t],
-                tile_sizes=tile_sizes.get(t, self.data[t].sizes),
-                minimum_halo=minimum_halo.get(t, {a: 0 for a in self.data[t].dims}),
+            n_tiles, generator = broadcasted_tensors[t].tile(
+                tile_size=explicit_tile_sizes[t],
+                halo=halo.get(t, {}),
                 pad_mode=pad_mode,
             )
-
-        n_tiles_common: Optional[int] = None
-        single_tile_tensors: Dict[TensorId, Tuple[TensorTilePos, Tensor]] = {}
-        tile_iterators: Dict[TensorId, Iterator[Tuple[int, TensorTilePos, Tensor]]] = {}
-        for t, n in n_tiles.items():
-            tile_iterator = iter(tensor_tile_generators[t])
-            if n == 1:
-                t0, pos, tensor_tile = next(tile_iterator)
-                assert t0 == 0
-                single_tile_tensors[t] = (pos, tensor_tile)
-                continue
-
-            if n_tiles_common is None:
-                n_tiles_common = n
-            elif n != n_tiles_common:
+            tile_iterators[t] = iter(generator)
+            if n_tiles in (1, n_tiles_common):
+                pass
+            elif n_tiles_common == 1:
+                last_non_trivial = t
+                n_tiles_common = n_tiles
+            else:
+                assert last_non_trivial is not None
+                mismatch = {
+                    last_non_trivial: {
+                        "original sizes": self.data[last_non_trivial].sizes,
+                        "broadcasted sizes": broadcasted_tensors[
+                            last_non_trivial
+                        ].sizes,
+                        "n_tiles": n_tiles_common,
+                    },
+                    t: {
+                        "original sizes": self.data[t].sizes,
+                        "broadcasted sizes": broadcasted_tensors[t].sizes,
+                        "n_tiles": n_tiles,
+                    },
+                }
                 raise ValueError(
-                    f"{self} tiled by {tile_sizes} yields different numbers of tiles: {n_tiles}"
+                    f"broadcasted tensors {last_non_trivial, t} do not tile to the same"
+                    + f" number of tiles {n_tiles_common, n_tiles}. Details\n"
+                    + pformat(mismatch)
                 )
 
-            tile_iterators[t] = tile_iterator
-
-        if n_tiles_common is None:
-            assert not tile_iterators
-            n_tiles_common = 1
-
-        for t in range(n_tiles_common):
+        for i in range(n_tiles_common):
             data: Dict[TensorId, Tensor] = {}
-            tile_pos: TilePos = {}
-            inner_slice: TileSlice = {}
-            outer_slice: TileSlice = {}
-            for t, (tensor_tile, tensor_pos) in single_tile_tensors.items():
+            inner_slice: Dict[TensorId, PerAxis[SliceInfo]] = {}
+            for t, iterator in tile_iterators.items():
+                tn, tensor_tile, tensor_slice = next(iterator)
+                assert tn == i, f"expected tile number {i}, but got {tn}"
                 data[t] = tensor_tile
-                tile_pos[t] = tensor_pos
-                inner_slice[t] = inner_tensor_slice
-                outer_slice[t] = outer_tensor_slice
-
-            for t, tile_iterator in tile_iterators.items():
-                assert t not in data
-                assert t not in tile_pos
-                _t, tensor_pos, tensor_tile = next(tile_iterator)
-                assert _t == t, (_t, t)
-                data[t] = tensor_tile
-                tile_pos[t] = tensor_pos
+                inner_slice[t] = tensor_slice
 
             yield Tile(
                 data=data,
-                pos=tile_pos,
                 inner_slice=inner_slice,
-                outer_slice=outer_slice,
-                tile_number=t,
-                tiles_in_self=n_tiles_common,
+                halo={
+                    t: {a: Halo.create(h) for a, h in th.items()}
+                    for t, th in halo.items()
+                },
+                sample_sizes=self.sizes,
+                tile_number=i,
+                tiles_in_sample=n_tiles_common,
                 stat=self.stat,
             )
 
@@ -113,7 +125,7 @@ class Sample:
         cls, tiles: Iterable[Tile], *, fill_value: float = float("nan")
     ) -> Self:
         # TODO: add `mode: Literal['in-memory', 'to-disk']` or similar to save out of mem samples
-        data: TileData = {}
+        data: PerTensor[Tensor] = {}
         stat: Stat = {}
         for tile in tiles:
             for t, tile_data in tile.inner_data.items():

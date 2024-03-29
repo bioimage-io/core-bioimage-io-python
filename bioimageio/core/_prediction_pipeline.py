@@ -1,16 +1,17 @@
 import warnings
 from types import MappingProxyType
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Union
+from typing import Any, Iterable, List, Mapping, Optional, Sequence, Union
 
-from bioimageio.core.model_adapters import ModelAdapter, create_model_adapter
-from bioimageio.core.model_adapters import get_weight_formats as get_weight_formats
-from bioimageio.core.proc_ops import Processing
-from bioimageio.core.proc_setup import setup_pre_and_postprocessing
-from bioimageio.core.sample import Sample
-from bioimageio.core.stat_measures import DatasetMeasure, MeasureValue
-from bioimageio.core.Tensor import Tensor, TensorId
 from bioimageio.spec.model import AnyModelDescr, v0_4
 from bioimageio.spec.model.v0_5 import WeightsFormat
+
+from .model_adapters import ModelAdapter, create_model_adapter
+from .model_adapters import get_weight_formats as get_weight_formats
+from .proc_ops import Processing
+from .proc_setup import setup_pre_and_postprocessing
+from .sample import Sample
+from .stat_measures import DatasetMeasure, MeasureValue
+from .tensor import PerTensor, Tensor, TensorId
 
 
 class PredictionPipeline:
@@ -64,8 +65,7 @@ class PredictionPipeline:
     ) -> List[Optional[Tensor]]:
         """Predict input_tensor with the model without applying pre/postprocessing."""
         named_tensors = [
-            named_input_tensors.get(str(k))
-            for k in self.input_ids[len(input_tensors) :]
+            named_input_tensors.get(k) for k in self.input_ids[len(input_tensors) :]
         ]
         return self._adapter.forward(*input_tensors, *named_tensors)
 
@@ -99,7 +99,7 @@ class PredictionPipeline:
 
     def forward_tensors(
         self, *input_tensors: Optional[Tensor], **named_input_tensors: Optional[Tensor]
-    ) -> Dict[TensorId, Tensor]:
+    ) -> PerTensor[Tensor]:
         """Apply preprocessing, run prediction and apply postprocessing."""
         assert all(TensorId(k) in self.input_ids for k in named_input_tensors)
         input_sample = Sample(

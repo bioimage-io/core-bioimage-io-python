@@ -27,7 +27,7 @@ def get_test_inputs(model: AnyModelDescr) -> List[Tensor]:
         tensor_ids = [ipt.id for ipt in model.inputs]
 
     return [
-        Tensor.from_numpy(arr, ax, t)
+        Tensor.from_numpy(arr, dims=ax, id=t)
         for arr, ax, t in zip(arrays, core_axes, tensor_ids)
     ]
 
@@ -52,6 +52,6 @@ def get_test_outputs(model: AnyModelDescr) -> List[Tensor]:
         tensor_ids = [ipt.id for ipt in model.inputs]
 
     return [
-        Tensor.from_numpy(arr, ax, t)
+        Tensor.from_numpy(arr, dims=ax, id=t)
         for arr, ax, t in zip(arrays, core_axes, tensor_ids)
     ]

@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from bioimageio.core.common import TileNumber, TotalNumberOfTiles
 
 from .axis import PerAxis
-from .common import Halo, LeftRight, PadWidth, SliceInfo
+from .common import Halo, OverlapWidth, PadWidth, SliceInfo
 from .stat_measures import Stat
 from .tensor import PerTensor, Tensor
 
@@ -36,7 +36,7 @@ class AbstractTile:
     local_slice: PerTensor[PerAxis[SliceInfo]] = field(init=False)
     """slice to extract the inner tile from the outer tile"""
 
-    overlap: PerTensor[PerAxis[LeftRight]] = field(init=False)
+    overlap: PerTensor[PerAxis[OverlapWidth]] = field(init=False)
     """overlap 'into a neighboring tile'"""
 
     padding: PerTensor[PerAxis[PadWidth]] = field(init=False)
@@ -68,7 +68,7 @@ class AbstractTile:
         }
         self.overlap = {
             t: {
-                a: LeftRight(
+                a: OverlapWidth(
                     self.inner_slice[t][a].start - self.outer_slice[t][a].start,
                     self.outer_slice[t][a].stop - self.inner_slice[t][a].stop,
                 )

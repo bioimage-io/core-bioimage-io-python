@@ -26,11 +26,9 @@ import xarray as xr
 from numpy.typing import NDArray
 from typing_extensions import assert_never
 
-from bioimageio.core.axis import (
-    AxisId,
-)
-from bioimageio.core.sample import Sample
-from bioimageio.core.stat_measures import (
+from .axis import AxisId
+from .sample import Sample
+from .stat_measures import (
     DatasetMean,
     DatasetMeasure,
     DatasetMeasureBase,
@@ -45,7 +43,7 @@ from bioimageio.core.stat_measures import (
     SampleStd,
     SampleVar,
 )
-from bioimageio.core.Tensor import TensorId
+from .tensor import Tensor, TensorId
 
 try:
     import crick
@@ -70,7 +68,7 @@ class MeanCalculator:
     def __init__(self, tensor_id: TensorId, axes: Optional[Sequence[AxisId]]):
         super().__init__()
         self._n: int = 0
-        self._mean: Optional[xr.DataArray] = None
+        self._mean: Optional[Tensor] = None
         self._axes = None if axes is None else tuple(axes)
         self._tensor_id = tensor_id
         self._sample_mean = SampleMean(tensor_id=self._tensor_id, axes=self._axes)
@@ -79,8 +77,8 @@ class MeanCalculator:
     def compute(self, sample: Sample) -> Dict[SampleMean, MeasureValue]:
         return {self._sample_mean: self._compute_impl(sample)}
 
-    def _compute_impl(self, sample: Sample) -> xr.DataArray:
-        tensor = sample.data[self._tensor_id].astype(np.float64, copy=False)
+    def _compute_impl(self, sample: Sample) -> Tensor:
+        tensor = sample.data[self._tensor_id].astype("float64", copy=False)
         return tensor.mean(dim=self._axes)
 
     def update(self, sample: Sample) -> None:
@@ -92,8 +90,8 @@ class MeanCalculator:
         self._update_impl(sample.data[self._tensor_id], mean)
         return {self._sample_mean: mean}
 
-    def _update_impl(self, tensor: xr.DataArray, tensor_mean: xr.DataArray):
-        assert tensor_mean.dtype == np.float64
+    def _update_impl(self, tensor: Tensor, tensor_mean: Tensor):
+        assert tensor_mean.dtype == "float64"
         # reduced voxel count
         n_b = int(np.prod(tensor.shape) / np.prod(tensor_mean.shape))
 
@@ -132,7 +130,7 @@ class MeanVarStdCalculator:
     ) -> Dict[Union[SampleMean, SampleVar, SampleStd], MeasureValue]:
         tensor = sample.data[self._tensor_id]
         mean = tensor.mean(dim=self._axes)
-        c = tensor - mean
+        c = (tensor - mean).data
         if self._axes is None:
             n = tensor.size
         else:
@@ -144,12 +142,16 @@ class MeanVarStdCalculator:
         assert isinstance(std, xr.DataArray)
         return {
             SampleMean(axes=self._axes, tensor_id=self._tensor_id): mean,
-            SampleVar(axes=self._axes, tensor_id=self._tensor_id): var,
-            SampleStd(axes=self._axes, tensor_id=self._tensor_id): std,
+            SampleVar(axes=self._axes, tensor_id=self._tensor_id): Tensor.from_xarray(
+                var
+            ),
+            SampleStd(axes=self._axes, tensor_id=self._tensor_id): Tensor.from_xarray(
+                std
+            ),
         }
 
     def update(self, sample: Sample):
-        tensor = sample.data[self._tensor_id].astype(np.float64, copy=False)
+        tensor = sample.data[self._tensor_id].astype("float64", copy=False)
         mean_b = tensor.mean(dim=self._axes)
         assert mean_b.dtype == np.float64
         # reduced voxel count

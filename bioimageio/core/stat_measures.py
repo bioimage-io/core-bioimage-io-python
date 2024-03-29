@@ -2,15 +2,18 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, Optional, Tuple, TypeVar, Union
+from typing import Dict, Optional, Protocol, Tuple, TypeVar, Union
 
-import xarray as xr
+from .axis import AxisId
+from .tensor import PerTensor, Tensor, TensorId
 
-from bioimageio.core.axis import AxisId
-from bioimageio.core.sample import Sample
-from bioimageio.core.Tensor import TensorId
+MeasureValue = Union[float, Tensor]
 
-MeasureValue = Union[float, xr.DataArray]
+
+# using Sample Protocol really only to avoid circular imports
+class SampleLike(Protocol):
+    @property
+    def data(self) -> PerTensor[Tensor]: ...
 
 
 @dataclass(frozen=True)
@@ -21,7 +24,7 @@ class MeasureBase:
 @dataclass(frozen=True)
 class SampleMeasureBase(MeasureBase, ABC):
     @abstractmethod
-    def compute(self, sample: Sample) -> MeasureValue:
+    def compute(self, sample: SampleLike) -> MeasureValue:
         """compute the measure"""
         ...
 
@@ -41,7 +44,7 @@ class _Mean:
 class SampleMean(_Mean, SampleMeasureBase):
     """The mean value of a single tensor"""
 
-    def compute(self, sample: Sample) -> MeasureValue:
+    def compute(self, sample: SampleLike) -> MeasureValue:
         tensor = sample.data[self.tensor_id]
         return tensor.mean(dim=self.axes)
 
@@ -67,7 +70,7 @@ class _Std:
 class SampleStd(_Std, SampleMeasureBase):
     """The standard deviation of a single tensor"""
 
-    def compute(self, sample: Sample) -> MeasureValue:
+    def compute(self, sample: SampleLike) -> MeasureValue:
         tensor = sample.data[self.tensor_id]
         return tensor.std(dim=self.axes)
 
@@ -93,7 +96,7 @@ class _Var:
 class SampleVar(_Var, SampleMeasureBase):
     """The variance of a single tensor"""
 
-    def compute(self, sample: Sample) -> MeasureValue:
+    def compute(self, sample: SampleLike) -> MeasureValue:
         tensor = sample.data[self.tensor_id]
         return tensor.var(dim=self.axes)
 
@@ -111,22 +114,22 @@ class DatasetVar(_Var, DatasetMeasureBase):
 
 @dataclass(frozen=True)
 class _Percentile:
-    n: float
+    q: float
     axes: Optional[Tuple[AxisId, ...]] = None
     """`axes` to reduce"""
 
     def __post_init__(self):
-        assert self.n >= 0
-        assert self.n <= 100
+        assert self.q >= 0.0
+        assert self.q <= 1.0
 
 
 @dataclass(frozen=True)
 class SamplePercentile(_Percentile, SampleMeasureBase):
     """The `n`th percentile of a single tensor"""
 
-    def compute(self, sample: Sample) -> MeasureValue:
+    def compute(self, sample: SampleLike) -> MeasureValue:
         tensor = sample.data[self.tensor_id]
-        return tensor.quantile(self.n / 100.0, dim=self.axes)
+        return tensor.quantile(self.q, dim=self.axes)
 
     def __post_init__(self):
         super().__post_init__()

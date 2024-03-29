@@ -19,16 +19,16 @@ DTypeStr = Literal[
 ]
 
 
-LeftRight_T = TypeVar("LeftRight_T", bound="LeftRight")
-LeftRightLike = Union[int, Tuple[int, int], LeftRight_T]
+_LeftRight_T = TypeVar("_LeftRight_T", bound="_LeftRight")
+_LeftRightLike = Union[int, Tuple[int, int], _LeftRight_T]
 
 
-class LeftRight(NamedTuple):
+class _LeftRight(NamedTuple):
     left: int
     right: int
 
     @classmethod
-    def create(cls, like: LeftRightLike[Self]) -> Self:
+    def create(cls, like: _LeftRightLike[Self]) -> Self:
         if isinstance(like, cls):
             return like
         elif isinstance(like, tuple):
@@ -39,20 +39,35 @@ class LeftRight(NamedTuple):
             assert_never(like)
 
 
-class Halo(LeftRight):
+_Where = Literal["left", "right", "left_and_right"]
+
+
+class CropWidth(_LeftRight):
     pass
 
 
-HaloLike = LeftRightLike[Halo]
+CropWidthLike = _LeftRightLike[CropWidth]
+CropWhere = _Where
 
 
-class PadWidth(LeftRight):
+class Halo(_LeftRight):
     pass
 
 
-PadWidthLike = LeftRightLike[PadWidth]
+HaloLike = _LeftRightLike[Halo]
+
+
+class OverlapWidth(_LeftRight):
+    pass
+
+
+class PadWidth(_LeftRight):
+    pass
+
+
+PadWidthLike = _LeftRightLike[PadWidth]
 PadMode = Literal["edge", "reflect", "symmetric"]
-PadWhere = Literal["before", "center", "after"]
+PadWhere = _Where
 
 
 class SliceInfo(NamedTuple):

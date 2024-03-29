@@ -23,11 +23,13 @@ from ._resource_tests import load_description_and_test as load_description_and_t
 from ._resource_tests import test_description as test_description
 from ._resource_tests import test_model as test_model
 from ._settings import settings as settings
-from .utils import VERSION
-from .tensor import Tensor as Tensor
-from .tile import Tile as Tile
+from .axis import Axis as Axis
+from .axis import AxisId as AxisId
 from .sample import Sample as Sample
-
+from .tensor import Tensor as Tensor
+from .tensor import TensorId as TensorId
+from .tile import Tile as Tile
+from .utils import VERSION
 
 __version__ = VERSION
 
