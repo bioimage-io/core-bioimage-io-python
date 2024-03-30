@@ -8,6 +8,7 @@ from typing import (
     Callable,
     Dict,
     Generator,
+    Iterator,
     List,
     Mapping,
     Optional,
@@ -75,13 +76,25 @@ class Tensor(MagicTensorOpsMixin):
     def __array__(self, dtype: DTypeLike = None):
         return np.asarray(self._data, dtype=dtype)
 
-    def __getitem__(self, key: PerAxis[Union[SliceInfo, slice]]) -> Self:
-        key = {a: s if isinstance(s, slice) else slice(*s) for a, s in key.items()}
+    def __getitem__(self, key: PerAxis[Union[SliceInfo, slice, int]]) -> Self:
+        key = {
+            a: s if isinstance(s, int) else s if isinstance(s, slice) else slice(*s)
+            for a, s in key.items()
+        }
         return self.__class__.from_xarray(self._data[key])
 
     def __setitem__(self, key: PerAxis[Union[SliceInfo, slice]], value: Tensor) -> None:
         key = {a: s if isinstance(s, slice) else slice(*s) for a, s in key.items()}
         self._data[key] = value._data
+
+    def _iter(self: Any) -> Iterator[Any]:
+        for n in range(len(self)):
+            yield self[n]
+
+    def __iter__(self: Any) -> Iterator[Any]:
+        if self.ndim == 0:
+            raise TypeError("iteration over a 0-d array")
+        return self._iter()
 
     def _binary_op(
         self,
@@ -353,10 +366,22 @@ class Tensor(MagicTensorOpsMixin):
         return self.pad(pad_width, mode)
 
     def quantile(
-        self, q: float, dim: Optional[Union[AxisId, Sequence[AxisId]]] = None
+        self,
+        q: Union[float, Sequence[float]],
+        dim: Optional[Union[AxisId, Sequence[AxisId]]] = None,
     ) -> Self:
-        assert q >= 0.0
-        assert q <= 1.0
+        assert (
+            isinstance(q, (float, int))
+            and q >= 0.0
+            or not isinstance(q, (float, int))
+            and all(qq >= 0.0 for qq in q)
+        )
+        assert (
+            isinstance(q, (float, int))
+            and q <= 1.0
+            or not isinstance(q, (float, int))
+            and all(qq <= 1.0 for qq in q)
+        )
         return self.__class__.from_xarray(self._data.quantile(q, dim=dim))
 
     def resize_to(
@@ -406,7 +431,7 @@ class Tensor(MagicTensorOpsMixin):
         pad_mode: PadMode,
     ) -> Tuple[
         TotalNumberOfTiles,
-        Generator[Tuple[TileNumber, Tensor, PedrAxis[SliceInfo]], Any, None],
+        Generator[Tuple[TileNumber, Tensor, PerAxis[SliceInfo]], Any, None],
     ]:
         """tile this tensor into `tile_size` tiles that overlap by `halo`.
         At the tensor's edge the `halo` is padded with `pad_mode`.
