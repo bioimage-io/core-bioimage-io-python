@@ -3,7 +3,7 @@ from typing import Any, List, Optional, Sequence, Union
 
 from numpy.typing import NDArray
 
-from bioimageio.core.Tensor import Tensor
+from bioimageio.core.tensor import Tensor
 from bioimageio.spec.model import v0_4, v0_5
 
 from ._model_adapter import ModelAdapter

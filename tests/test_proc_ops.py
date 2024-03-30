@@ -9,7 +9,7 @@ from bioimageio.core.axis import AxisId
 from bioimageio.core.sample import Sample
 from bioimageio.core.stat_calculators import compute_measures
 from bioimageio.core.stat_measures import SampleMean, SamplePercentile, SampleStd
-from bioimageio.core.Tensor import TensorId
+from bioimageio.core.tensor import TensorId
 
 
 @pytest.fixture(scope="module")

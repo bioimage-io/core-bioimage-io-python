@@ -13,7 +13,7 @@ from bioimageio.core.stat_calculators import (
     get_measure_calculators,
 )
 from bioimageio.core.stat_measures import SamplePercentile
-from bioimageio.core.Tensor import Tensor, TensorId
+from bioimageio.core.tensor import Tensor, TensorId
 
 
 @pytest.mark.parametrize(
@@ -31,7 +31,9 @@ def test_individual_normal_measure(
     measure = getattr(stat_measures, "Sample" + name.title())(
         axes=axes, tensor_id=data_id
     )
-    data = Tensor(np.random.random((5, 6, 3)), dims=("x", "y", "c"))
+    data = Tensor(
+        np.random.random((5, 6, 3)), dims=(AxisId("x"), AxisId("y"), AxisId("c"))
+    )
 
     expected = getattr(data, name)(dim=axes)
     sample = Sample(data={data_id: data})
@@ -41,17 +43,19 @@ def test_individual_normal_measure(
 
 @pytest.mark.parametrize("axes", [None, (AxisId("x"), AxisId("y"))])
 def test_individual_percentile_measure(axes: Optional[Tuple[AxisId, ...]]):
-    ns = [0, 10, 50, 100]
+    qs = [0, 0.1, 0.5, 1.0]
     tid = TensorId("tensor")
 
-    measures = [SamplePercentile(tensor_id=tid, axes=axes, n=n) for n in ns]
+    measures = [SamplePercentile(tensor_id=tid, axes=axes, q=q) for q in qs]
     calcs, _ = get_measure_calculators(measures)
     assert len(calcs) == 1
     calc = calcs[0]
     assert isinstance(calc, SamplePercentilesCalculator)
 
-    data = Tensor(np.random.random((5, 6, 3)), dims=("x", "y", "c"))
+    data = Tensor(
+        np.random.random((5, 6, 3)), dims=(AxisId("x"), AxisId("y"), AxisId("c"))
+    )
     actual = calc.compute(Sample(data={tid: data}))
     for m in measures:
-        expected = data.quantile(q=m.n / 100, dim=m.axes)
+        expected = data.quantile(q=m.q, dim=m.axes)
         xr.testing.assert_allclose(expected, actual[m])

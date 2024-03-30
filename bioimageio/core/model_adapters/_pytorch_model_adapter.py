@@ -2,7 +2,7 @@ import gc
 import warnings
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
-from bioimageio.core.Tensor import Tensor
+from bioimageio.core.tensor import Tensor
 from bioimageio.core.utils import import_callable
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.utils import download

@@ -12,16 +12,17 @@ from bioimageio.core.stat_measures import (
     DatasetStd,
     DatasetVar,
 )
-from bioimageio.core.Tensor import Tensor, TensorId
+from bioimageio.core.tensor import Tensor, TensorId
 
 
-def create_random_dataset(tid: TensorId, axes: Tuple[str, ...], n: int = 3):
-    assert axes[0] == "batch"
-    sizes = list(range(1, len(axes) + 1))
-    b = sizes[0]
-    ds_array = Tensor(np.random.rand(n * b, *sizes[1:]), dims=axes)
-    ds = [Sample(data={tid: ds_array[i * b : (i + 1) * b]}) for i in range(n)]
-    return ds_array, ds
+def create_random_dataset(tid: TensorId, axes: Tuple[AxisId, ...]):
+    n = 3
+    sizes = list(range(n, len(axes) + 1))
+    data = np.asarray(np.random.rand(*sizes))
+    ds = [
+        Sample(data={tid: Tensor(data[i : i + 1], dims=axes, id=tid)}) for i in range(n)
+    ]
+    return Tensor(data, dims=axes), ds
 
 
 @pytest.mark.parametrize(

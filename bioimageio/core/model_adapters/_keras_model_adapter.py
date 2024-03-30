@@ -4,7 +4,7 @@ from typing import Any, List, Optional, Sequence, Union
 from loguru import logger
 from numpy.typing import NDArray
 
-from bioimageio.core.Tensor import Tensor
+from bioimageio.core.tensor import Tensor
 from bioimageio.spec._internal.io_utils import download
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import Version

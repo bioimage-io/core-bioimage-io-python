@@ -8,7 +8,7 @@ from bioimageio.core.utils import get_test_inputs
 from bioimageio.spec import load_description
 from bioimageio.spec.model.v0_4 import InputTensorDescr as InputTensorDescr_v0_4
 from bioimageio.spec.model.v0_4 import ModelDescr as ModelDescr_v0_4
-from bioimageio.spec.model.v0_5 import InputTensorDescr, ModelDescr
+from bioimageio.spec.model.v0_5 import ModelDescr
 
 
 def test_predict_image(any_model: Path, tmpdir: Path):
