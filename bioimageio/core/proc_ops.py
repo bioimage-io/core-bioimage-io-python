@@ -14,19 +14,16 @@ from typing import (
 
 import numpy as np
 import xarray as xr
-from numpy.typing import DTypeLike
 from typing_extensions import Self, assert_never
 
-from bioimageio.core._op_base import Operator
-from bioimageio.core.common import (
-    AxisId,
-    Sample,
-    Stat,
-    Tensor,
-    TensorId,
-)
-from bioimageio.core.stat_calculators import StatsCalculator
-from bioimageio.core.stat_measures import (
+from bioimageio.core.common import DTypeStr
+from bioimageio.spec.model import v0_4, v0_5
+
+from ._op_base import Operator
+from .axis import AxisId
+from .sample import Sample
+from .stat_calculators import StatsCalculator
+from .stat_measures import (
     DatasetMean,
     DatasetMeasure,
     DatasetPercentile,
@@ -37,9 +34,10 @@ from bioimageio.core.stat_measures import (
     SampleMean,
     SamplePercentile,
     SampleStd,
+    Stat,
     StdMeasure,
 )
-from bioimageio.spec.model import v0_4, v0_5
+from .tensor import Tensor, TensorId
 
 
 def convert_axis_ids(
@@ -170,7 +168,7 @@ class Binarize(_SimpleOperator):
     threshold: Union[float, Sequence[float]]
     axis: Optional[AxisId] = None
 
-    def _apply(self, input: Tensor, stat: Stat) -> xr.DataArray:
+    def _apply(self, input: Tensor, stat: Stat) -> Tensor:
         return input > self.threshold
 
     @classmethod
@@ -222,18 +220,14 @@ class Clip(_SimpleOperator):
 
 @dataclass
 class EnsureDtype(_SimpleOperator):
-    dtype: DTypeLike
+    dtype: DTypeStr
 
     @classmethod
     def from_proc_descr(cls, descr: v0_5.EnsureDtypeDescr, tensor_id: TensorId):
         return cls(input=tensor_id, output=tensor_id, dtype=descr.kwargs.dtype)
 
     def get_descr(self):
-        return v0_5.EnsureDtypeDescr(
-            kwargs=v0_5.EnsureDtypeKwargs(
-                dtype=str(self.dtype)  # pyright: ignore[reportArgumentType]
-            )
-        )
+        return v0_5.EnsureDtypeDescr(kwargs=v0_5.EnsureDtypeKwargs(dtype=self.dtype))
 
     def _apply(self, input: Tensor, stat: Stat) -> Tensor:
         return input.astype(self.dtype)
@@ -378,17 +372,17 @@ class ScaleRange(_SimpleOperator):
     ):
         if lower_percentile is None:
             tid = self.input if upper_percentile is None else upper_percentile.tensor_id
-            self.lower = DatasetPercentile(n=0, tensor_id=tid)
+            self.lower = DatasetPercentile(q=0.0, tensor_id=tid)
         else:
             self.lower = lower_percentile
 
         if upper_percentile is None:
-            self.upper = DatasetPercentile(n=100, tensor_id=self.lower.tensor_id)
+            self.upper = DatasetPercentile(q=1.0, tensor_id=self.lower.tensor_id)
         else:
             self.upper = upper_percentile
 
         assert self.lower.tensor_id == self.upper.tensor_id
-        assert self.lower.n < self.upper.n
+        assert self.lower.q < self.upper.q
         assert self.lower.axes == self.upper.axes
 
     @property
@@ -417,14 +411,14 @@ class ScaleRange(_SimpleOperator):
             input=tensor_id,
             output=tensor_id,
             lower_percentile=Percentile(
-                n=kwargs.min_percentile, axes=axes, tensor_id=ref_tensor
+                q=kwargs.min_percentile / 100, axes=axes, tensor_id=ref_tensor
             ),
             upper_percentile=Percentile(
-                n=kwargs.max_percentile, axes=axes, tensor_id=ref_tensor
+                q=kwargs.max_percentile / 100, axes=axes, tensor_id=ref_tensor
             ),
         )
 
-    def _apply(self, input: xr.DataArray, stat: Stat) -> xr.DataArray:
+    def _apply(self, input: Tensor, stat: Stat) -> Tensor:
         lower = stat[self.lower]
         upper = stat[self.upper]
         return (input - lower) / (upper - lower + self.eps)
@@ -436,8 +430,8 @@ class ScaleRange(_SimpleOperator):
         return v0_5.ScaleRangeDescr(
             kwargs=v0_5.ScaleRangeKwargs(
                 axes=self.lower.axes,
-                min_percentile=self.lower.n,
-                max_percentile=self.upper.n,
+                min_percentile=self.lower.q * 100,
+                max_percentile=self.upper.q * 100,
                 eps=self.eps,
                 reference_tensor=self.lower.tensor_id,
             )
@@ -504,7 +498,7 @@ class ZeroMeanUnitVariance(_SimpleOperator):
             std=Std(axes=axes, tensor_id=tensor_id),
         )
 
-    def _apply(self, input: xr.DataArray, stat: Stat) -> xr.DataArray:
+    def _apply(self, input: Tensor, stat: Stat) -> Tensor:
         mean = stat[self.mean]
         std = stat[self.std]
         return (input - mean) / (std + self.eps)
@@ -566,7 +560,7 @@ class FixedZeroMeanUnitVariance(_SimpleOperator):
 
         return v0_5.FixedZeroMeanUnitVarianceDescr(kwargs=kwargs)
 
-    def _apply(self, input: xr.DataArray, stat: Stat) -> xr.DataArray:
+    def _apply(self, input: Tensor, stat: Stat) -> Tensor:
         return (input - self.mean) / (self.std + self.eps)
 
 

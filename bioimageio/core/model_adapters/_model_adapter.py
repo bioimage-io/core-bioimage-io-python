@@ -2,8 +2,9 @@ import warnings
 from abc import ABC, abstractmethod
 from typing import List, Optional, Sequence, Tuple, Union, final
 
-from bioimageio.core.common import Tensor
 from bioimageio.spec.model import v0_4, v0_5
+
+from ..tensor import Tensor
 
 WeightsFormat = Union[v0_4.WeightsFormat, v0_5.WeightsFormat]
 

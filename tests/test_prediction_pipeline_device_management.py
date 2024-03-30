@@ -37,6 +37,7 @@ def _test_device_management(model_package: Path, weight_format: WeightsFormat):
 
     assert len(outputs) == len(expected_outputs)
     for out, exp in zip(outputs, expected_outputs):
+        assert out is not None
         assert_array_almost_equal(out, exp, decimal=4)
 
     # repeat inference with context manager to test load/unload/load/forward
@@ -45,6 +46,7 @@ def _test_device_management(model_package: Path, weight_format: WeightsFormat):
 
     assert len(outputs) == len(expected_outputs)
     for out, exp in zip(outputs, expected_outputs):
+        assert out is not None
         assert_array_almost_equal(out, exp, decimal=4)
 
 

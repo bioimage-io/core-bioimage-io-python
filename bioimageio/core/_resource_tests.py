@@ -1,13 +1,12 @@
 import traceback
 import warnings
-from typing import Dict, Hashable, List, Literal, Optional, Sequence, Set, Tuple, Union
+from typing import Dict, Hashable, List, Literal, Optional, Set, Tuple, Union
 
 import numpy as np
 
 from bioimageio.core._prediction_pipeline import create_prediction_pipeline
-from bioimageio.core.common import AxisId, BatchSize
+from bioimageio.core.axis import AxisId, BatchSize
 from bioimageio.core.utils import VERSION, get_test_inputs, get_test_outputs
-from bioimageio.core.utils.tiling import resize_to
 from bioimageio.spec import (
     InvalidDescr,
     ResourceDescr,
@@ -135,7 +134,9 @@ def _test_model_inference(
                     error = "Output tensors for test case may not be None"
                     break
                 try:
-                    np.testing.assert_array_almost_equal(res, exp, decimal=decimal)
+                    np.testing.assert_array_almost_equal(
+                        res.data, exp.data, decimal=decimal
+                    )
                 except AssertionError as e:
                     error = f"Output and expected output disagree:\n {e}"
                     break
@@ -217,8 +218,7 @@ def _test_model_inference_parametrized(
                 tested.add(hashable_target_size)
 
             resized_test_inputs = [
-                resize_to(
-                    t,
+                t.resize_to(
                     {
                         aid: s
                         for (tid, aid), s in input_target_sizes.items()
