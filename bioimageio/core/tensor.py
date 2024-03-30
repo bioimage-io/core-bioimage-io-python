@@ -22,7 +22,7 @@ from typing import (
 import numpy as np
 import xarray as xr
 from loguru import logger
-from numpy.typing import NDArray
+from numpy.typing import DTypeLike, NDArray
 from typing_extensions import Self, assert_never
 
 from bioimageio.core.axis import PerAxis
@@ -55,8 +55,6 @@ PerTensor = Mapping[TensorId, T]
 _ScalarOrArray = Union["ArrayLike", np.generic, "NDArray[Any]"]  # TODO: add "DaskArray"
 
 
-# TODO: make Tensor a numpy compatible array type, to use e.g. \
-#   with `np.testing.assert_array_almost_equal`.
 # TODO: complete docstrings
 class Tensor(MagicTensorOpsMixin):
     """A wrapper around an xr.DataArray for better integration with bioimageio.spec
@@ -73,6 +71,9 @@ class Tensor(MagicTensorOpsMixin):
         super().__init__()
         self._data = xr.DataArray(array, dims=dims, name=id)
         self._id = id
+
+    def __array__(self, dtype: DTypeLike = None):
+        return np.asarray(self._data, dtype=dtype)
 
     def __getitem__(self, key: PerAxis[Union[SliceInfo, slice]]) -> Self:
         key = {a: s if isinstance(s, slice) else slice(*s) for a, s in key.items()}
