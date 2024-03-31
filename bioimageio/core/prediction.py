@@ -1,92 +1,38 @@
 """coming soon"""
 
 # TODO: update
-# import collections
-# import os
-# from fractions import Fraction
-# from itertools import product
-# from pathlib import Path
-# from typing import Any, Dict, Hashable, Iterator, List, NamedTuple, Optional, OrderedDict, Sequence, Tuple, Union
+import collections.abc
+import os
+from fractions import Fraction
+from itertools import product
+from pathlib import Path
+from typing import (
+    Any,
+    Dict,
+    Hashable,
+    Iterator,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    OrderedDict,
+    Sequence,
+    Tuple,
+    Union,
+)
 
-# import numpy as np
-# import xarray as xr
-# from bioimageio.spec import ResourceDescr
-# from bioimageio.spec.model.v0_5 import AxisType
-# from numpy.typing import NDArray
-# from pydantic import HttpUrl
-# from tqdm import tqdm
+import numpy as np
+import xarray as xr
+from numpy.typing import NDArray
+from pydantic import HttpUrl
+from tqdm import tqdm
 
-# from bioimageio.core import image_helper, load_description
-# from bioimageio.core.prediction_pipeline import PredictionPipeline, create_prediction_pipeline
-# from bioimageio.core.resource_io.nodes import ImplicitOutputShape, Model, ResourceDescr
+from bioimageio.core.tensor import Tensor, TensorId
+from bioimageio.spec import ResourceDescr, load_description
+from bioimageio.spec.model import v0_4, v0_5
+from bioimageio.spec.model.v0_5 import AxisType
 
-# Axis = Hashable
-
-
-# class TileDef(NamedTuple):
-#     outer: Dict[Axis, slice]
-#     inner: Dict[Axis, slice]
-#     local: Dict[Axis, slice]
-
-
-# def get_tiling(
-#     shape: Sequence[int],
-#     tile_shape: Dict[Axis, int],
-#     halo: Dict[Axis, int],
-#     input_axes: Sequence[Axis],
-#     axis_types: Dict[Axis, AxisType],
-#     scaling: Dict[Axis, float],
-# ) -> Iterator[TileDef]:
-#     # outer_tile is the "input" tile, inner_tile is the "output" tile with the halo removed
-#     # tile_shape is the shape of the outer_tile
-#     assert len(shape) == len(input_axes)
-#     scaling_fractions = {ax: Fraction(sc).limit_denominator() for ax, sc in scaling.items()}
-
-#     shape_ = [sh for sh, ax in zip(shape, input_axes) if axis_types[ax] == "space"]
-#     spatial_axes = [ax for ax in input_axes if axis_types[ax] == "space"]
-#     inner_tile_shape_ = [tile_shape[ax] - 2 * halo[ax] for ax in spatial_axes]
-#     scaling_ = [scaling_fractions[ax] for ax in spatial_axes]
-#     assert all([sh % fr.denominator == 0 for sh, fr in zip(shape_, scaling_)])
-#     assert all([ish % fr.denominator == 0 for ish, fr in zip(inner_tile_shape_, scaling_)])
-#     halo_ = [halo[ax] for ax in spatial_axes]
-#     assert len(shape_) == len(inner_tile_shape_) == len(spatial_axes) == len(halo_)
-
-#     ranges = [range(sh // tsh if sh % tsh == 0 else sh // tsh + 1) for sh, tsh in zip(shape_, inner_tile_shape_)]
-#     start_points = product(*ranges)
-
-#     for start_point in start_points:
-#         positions = [sp * tsh for sp, tsh in zip(start_point, inner_tile_shape_)]
-
-#         inner_tile = {
-#             ax: slice(int(pos * fr), int(min(pos + tsh, sh) * fr))
-#             for ax, pos, tsh, sh, fr in zip(spatial_axes, positions, inner_tile_shape_, shape_, scaling_)
-#         }
-#         # inner_tile["b"] = slice(None)
-#         # inner_tile["c"] = slice(None)
-
-#         outer_tile = {
-#             ax: slice(max(pos - ha, 0), min(pos + tsh + ha, sh))
-#             for ax, pos, tsh, sh, ha in zip(spatial_axes, positions, inner_tile_shape_, shape_, halo_)
-#         }
-#         # outer_tile["b"] = slice(None)
-#         # outer_tile["c"] = slice(None)
-
-#         local_tile = {
-#             ax: slice(
-#                 inner_tile[ax].start - int(outer_tile[ax].start * scaling[ax]),
-#                 (
-#                     -(int(outer_tile[ax].stop * scaling[ax]) - inner_tile[ax].stop)
-#                     if int(outer_tile[ax].stop * scaling[ax]) != inner_tile[ax].stop
-#                     else None
-#                 ),
-#             )
-#             for ax in spatial_axes
-#         }
-#         # local_tile["b"] = slice(None)
-#         # local_tile["c"] = slice(None)
-
-#         yield TileDef(outer_tile, inner_tile, local_tile)
-
+from ._prediction_pipeline import PredictionPipeline, create_prediction_pipeline
 
 # def _predict_with_tiling_impl(
 #     prediction_pipeline: PredictionPipeline,
@@ -138,27 +84,38 @@
 #         output[inner_tile] = out[local_tile]
 
 
-# def predict(
-#     prediction_pipeline: PredictionPipeline,
-#     inputs: Union[
-#         xr.DataArray, List[xr.DataArray], Tuple[xr.DataArray], NDArray[Any], List[NDArray[Any]], Tuple[NDArray[Any]]
-#     ],
-# ) -> List[xr.DataArray]:
-#     """Run prediction for a single set of input(s) with a bioimage.io model
+def predict(
+    prediction_pipeline: PredictionPipeline,
+    inputs: Union[
+        Tensor,
+        NDArray[Any],
+        Sequence[Union[Tensor, NDArray[Any]]],
+        Mapping[Union[TensorId, str], Union[Tensor, NDArray[Any]]],
+    ],
+) -> List[xr.DataArray]:
+    """Run prediction for a single set of input(s) with a bioimage.io model
 
-#     Args:
-#         prediction_pipeline: the prediction pipeline for the input model.
-#         inputs: the input(s) for this model represented as xarray data or numpy nd array.
-#     """
-#     if not isinstance(inputs, (tuple, list)):
-#         inputs = [inputs]
+    Args:
+        prediction_pipeline: the prediction pipeline for the input model.
+        inputs: the input(s) for this model represented as xarray data or numpy nd array.
+    """
+    if isinstance(inputs, collections.abc.Mapping):
+        inputs_seq = [
+            inputs.get(str(tid), inputs[tid]) for tid in prediction_pipeline.input_ids
+        ]
+    else:
+        if isinstance(inputs, (Tensor, np.ndarray)):
+            inputs_seq = [inputs]
+        else:
+            inputs_seq = inputs
 
-#     assert len(inputs) == len(prediction_pipeline.input_specs)
-#     tagged_data = [
-#         ipt if isinstance(ipt, xr.DataArray) else xr.DataArray(ipt, dims=ipt_spec.axes)
-#         for ipt, ipt_spec in zip(inputs, prediction_pipeline.input_specs)
-#     ]
-#     return prediction_pipeline.forward(*tagged_data)
+        assert len(inputs_seq) == len(prediction_pipeline.input_ids)
+
+    tagged_data = [
+        ipt if isinstance(ipt, Tensor) else Tensor.from_numpy(ipt, dims=ipt_spec.axes)
+        for ipt, ipt_spec in zip(inputs, prediction_pipeline.input_axes)
+    ]
+    return prediction_pipeline.forward(*tagged_data)
 
 
 # def _parse_padding(padding, input_specs):

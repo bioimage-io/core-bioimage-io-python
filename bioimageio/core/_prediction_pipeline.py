@@ -12,6 +12,7 @@ from .proc_setup import setup_pre_and_postprocessing
 from .sample import Sample
 from .stat_measures import DatasetMeasure, MeasureValue
 from .tensor import PerTensor, Tensor, TensorId
+from .utils import get_sample_axes
 
 
 class PredictionPipeline:
@@ -44,6 +45,9 @@ class PredictionPipeline:
         else:
             self.input_ids = [d.id for d in bioimageio_model.inputs]
             self.output_ids = [d.id for d in bioimageio_model.outputs]
+
+        self.input_axes = get_sample_axes(bioimageio_model.inputs)
+        self.output_axes = get_sample_axes(bioimageio_model.outputs)
 
         self._adapter: ModelAdapter = model
 

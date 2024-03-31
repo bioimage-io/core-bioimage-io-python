@@ -1,21 +1,37 @@
-from typing import List, Sequence, get_args
+from typing import List, Sequence, Union
 
-from bioimageio.core.axis import AxisLetter, AxisLike
-from bioimageio.spec.model import AnyModelDescr, v0_4
+from bioimageio.core.axis import AxisInfo
+from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 from bioimageio.spec.utils import load_array
 
 from ..tensor import Tensor, TensorId
 
 
-def get_test_inputs(model: AnyModelDescr) -> List[Tensor]:
-    axes = [d.axes for d in model.inputs]
-    if isinstance(axes, str):
-        core_axes: List[Sequence[AxisLike]] = [
-            a if a in get_args(AxisLetter) else "i" for a in axes
-        ]  # pyright: ignore[reportAssignmentType]
-    else:
-        core_axes = axes  # pyright: ignore[reportAssignmentType]
+def get_sample_axes(
+    io_descr: Sequence[
+        Union[
+            v0_4.InputTensorDescr,
+            v0_4.OutputTensorDescr,
+            v0_5.InputTensorDescr,
+            v0_5.OutputTensorDescr,
+        ]
+    ]
+):
+    return [
+        [
+            (
+                AxisInfo.create("i")
+                if isinstance(a, str) and a not in ("b", "i", "t", "c", "z", "y", "x")
+                else AxisInfo.create(a)
+            )
+            for a in d.axes
+        ]
+        for d in io_descr
+    ]
 
+
+def get_test_inputs(model: AnyModelDescr) -> List[Tensor]:
+    axes = get_sample_axes(model.inputs)
     if isinstance(model, v0_4.ModelDescr):
         arrays = [load_array(tt) for tt in model.test_inputs]
     else:
@@ -28,19 +44,12 @@ def get_test_inputs(model: AnyModelDescr) -> List[Tensor]:
 
     return [
         Tensor.from_numpy(arr, dims=ax, id=t)
-        for arr, ax, t in zip(arrays, core_axes, tensor_ids)
+        for arr, ax, t in zip(arrays, axes, tensor_ids)
     ]
 
 
 def get_test_outputs(model: AnyModelDescr) -> List[Tensor]:
-    axes = [d.axes for d in model.outputs]
-    if isinstance(axes, str):
-        core_axes: List[Sequence[AxisLike]] = [
-            a if a in get_args(AxisLetter) else "i" for a in axes
-        ]  # pyright: ignore[reportAssignmentType]
-    else:
-        core_axes = axes  # pyright: ignore[reportAssignmentType]
-
+    axes = get_sample_axes(model.outputs)
     if isinstance(model, v0_4.ModelDescr):
         arrays = [load_array(tt) for tt in model.test_outputs]
     else:
@@ -53,5 +62,5 @@ def get_test_outputs(model: AnyModelDescr) -> List[Tensor]:
 
     return [
         Tensor.from_numpy(arr, dims=ax, id=t)
-        for arr, ax, t in zip(arrays, core_axes, tensor_ids)
+        for arr, ax, t in zip(arrays, axes, tensor_ids)
     ]

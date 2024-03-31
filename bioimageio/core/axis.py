@@ -20,7 +20,7 @@ def _get_axis_type(a: Literal["b", "t", "i", "c", "x", "y", "z"]):
     elif a in ("x", "y", "z"):
         return "space"
     else:
-        assert_never(a)
+        return "index"  # return most unspecific axis
 
 
 S = TypeVar("S", bound=str)
