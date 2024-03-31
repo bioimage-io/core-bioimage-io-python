@@ -8,6 +8,7 @@ from itertools import product
 from pathlib import Path
 from typing import (
     Any,
+    Collection,
     Dict,
     Hashable,
     Iterator,
@@ -27,6 +28,8 @@ from numpy.typing import NDArray
 from pydantic import HttpUrl
 from tqdm import tqdm
 
+from bioimageio.core.axis import AxisInfo
+from bioimageio.core.sample import Sample
 from bioimageio.core.tensor import Tensor, TensorId
 from bioimageio.spec import ResourceDescr, load_description
 from bioimageio.spec.model import v0_4, v0_5
@@ -112,8 +115,10 @@ def predict(
         assert len(inputs_seq) == len(prediction_pipeline.input_ids)
 
     tagged_data = [
-        ipt if isinstance(ipt, Tensor) else Tensor.from_numpy(ipt, dims=ipt_spec.axes)
-        for ipt, ipt_spec in zip(inputs, prediction_pipeline.input_axes)
+        ipt if isinstance(ipt, Tensor) else Tensor.from_numpy(ipt, dims=axes, id=tid)
+        for ipt, axes, tid in zip(
+            inputs_seq, prediction_pipeline.input_axes, prediction_pipeline.input_ids
+        )
     ]
     return prediction_pipeline.forward(*tagged_data)
 

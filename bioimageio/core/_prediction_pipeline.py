@@ -1,7 +1,10 @@
+import collections
 import warnings
+from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Any, Iterable, List, Mapping, Optional, Sequence, Union
 
+from bioimageio.core.axis import AxisInfo
 from bioimageio.spec.model import AnyModelDescr, v0_4
 from bioimageio.spec.model.v0_5 import WeightsFormat
 
@@ -11,8 +14,15 @@ from .proc_ops import Processing
 from .proc_setup import setup_pre_and_postprocessing
 from .sample import Sample
 from .stat_measures import DatasetMeasure, MeasureValue
-from .tensor import PerTensor, Tensor, TensorId
-from .utils import get_sample_axes
+from .tensor import Tensor, TensorId
+from .utils import get_axes_infos
+
+
+@dataclass
+class CoreTensorDescr:
+    id: TensorId
+    axes: Sequence[AxisInfo]
+    optional: bool
 
 
 class PredictionPipeline:
@@ -39,22 +49,42 @@ class PredictionPipeline:
         self.name = name
         self._preprocessing = preprocessing
         self._postprocessing = postprocessing
-        if isinstance(bioimageio_model, v0_4.ModelDescr):
-            self.input_ids = [TensorId(str(d.name)) for d in bioimageio_model.inputs]
-            self.output_ids = [TensorId(str(d.name)) for d in bioimageio_model.outputs]
-        else:
-            self.input_ids = [d.id for d in bioimageio_model.inputs]
-            self.output_ids = [d.id for d in bioimageio_model.outputs]
 
-        self.input_axes = get_sample_axes(bioimageio_model.inputs)
-        self.output_axes = get_sample_axes(bioimageio_model.outputs)
+        self.input_ids = tuple(
+            (TensorId(str(t.name)) if isinstance(t, v0_4.InputTensorDescr) else t.id)
+            for t in bioimageio_model.inputs
+        )
+        self.inputs = collections.OrderedDict(
+            (
+                tid,
+                CoreTensorDescr(
+                    id=tid,
+                    axes=get_axes_infos(t),
+                    optional=not isinstance(t, v0_4.InputTensorDescr) and t.optional,
+                ),
+            )
+            for tid, t in zip(self.input_ids, bioimageio_model.inputs)
+        )
+        self.output_ids = tuple(
+            (TensorId(str(t.name)) if isinstance(t, v0_4.OutputTensorDescr) else t.id)
+            for t in bioimageio_model.outputs
+        )
+        self.outputs = collections.OrderedDict(
+            (
+                tid,
+                CoreTensorDescr(
+                    id=tid,
+                    axes=get_axes_infos(t),
+                    optional=False,
+                ),
+            )
+            for tid, t in zip(self.output_ids, bioimageio_model.outputs)
+        )
 
         self._adapter: ModelAdapter = model
 
-    def __call__(
-        self, *input_tensors: Optional[Tensor], **named_input_tensors: Optional[Tensor]
-    ) -> List[Optional[Tensor]]:
-        return self.forward(*input_tensors, **named_input_tensors)
+    def __call__(self, sample: Sample) -> Sample:
+        return self.predict(sample)
 
     def __enter__(self):
         self.load()
@@ -64,14 +94,21 @@ class PredictionPipeline:
         self.unload()
         return False
 
-    def predict(
-        self, *input_tensors: Optional[Tensor], **named_input_tensors: Optional[Tensor]
-    ) -> List[Optional[Tensor]]:
-        """Predict input_tensor with the model without applying pre/postprocessing."""
-        named_tensors = [
-            named_input_tensors.get(k) for k in self.input_ids[len(input_tensors) :]
-        ]
-        return self._adapter.forward(*input_tensors, *named_tensors)
+    def predict(self, sample: Sample) -> Sample:
+        """Run model prediction **including** pre/postprocessing."""
+        self.apply_preprocessing(sample)
+        output = Sample(
+            data={
+                tid: out
+                for tid, out in zip(
+                    self.output_ids,
+                    self._adapter.forward(*(sample.data[t] for t in self.input_ids)),
+                )
+                if out is not None
+            }
+        )
+        self.apply_postprocessing(output)
+        return output
 
     def apply_preprocessing(self, sample: Sample) -> None:
         """apply preprocessing in-place, also updates sample stats"""
@@ -82,50 +119,6 @@ class PredictionPipeline:
         """apply postprocessing in-place, also updates samples stats"""
         for op in self._postprocessing:
             op(sample)
-
-    def forward_sample(self, input_sample: Sample) -> Sample:
-        """Apply preprocessing, run prediction and apply postprocessing."""
-        self.apply_preprocessing(input_sample)
-
-        prediction_tensors = self.predict(
-            **{str(k): v for k, v in input_sample.data.items()}
-        )
-        prediction = Sample(
-            data={
-                tid: t
-                for tid, t in zip(self.output_ids, prediction_tensors)
-                if t is not None
-            },
-            stat=input_sample.stat,
-        )
-        self.apply_postprocessing(prediction)
-        return prediction
-
-    def forward_tensors(
-        self, *input_tensors: Optional[Tensor], **named_input_tensors: Optional[Tensor]
-    ) -> PerTensor[Tensor]:
-        """Apply preprocessing, run prediction and apply postprocessing."""
-        assert all(TensorId(k) in self.input_ids for k in named_input_tensors)
-        input_sample = Sample(
-            data={
-                **{
-                    k: v for k, v in zip(self.input_ids, input_tensors) if v is not None
-                },
-                **{
-                    TensorId(k): v
-                    for k, v in named_input_tensors.items()
-                    if v is not None
-                },
-            }
-        )
-        return self.forward_sample(input_sample).data
-
-    def forward(
-        self, *input_tensors: Optional[Tensor], **named_input_tensors: Optional[Tensor]
-    ) -> List[Optional[Tensor]]:
-        """Apply preprocessing, run prediction and apply postprocessing."""
-        named_outputs = self.forward_tensors(*input_tensors, **named_input_tensors)
-        return [named_outputs.get(x) for x in self.output_ids]
 
     def load(self):
         """

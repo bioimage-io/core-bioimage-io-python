@@ -66,12 +66,15 @@ class Tensor(MagicTensorOpsMixin):
     def __init__(
         self,
         array: NDArray[Any],
-        dims: Union[AxisId, Sequence[AxisId]],
-        id: Optional[TensorId] = None,
+        dims: Sequence[AxisId],
     ) -> None:
         super().__init__()
-        self._data = xr.DataArray(array, dims=dims, name=id)
-        self._id = id
+        if any(not isinstance(d, AxisId) for d in dims):
+            raise TypeError(
+                f"Expected sequence of `AxisId`, but got {list(map(type, dims))}"
+            )
+
+        self._data = xr.DataArray(array, dims=dims)
 
     def __array__(self, dtype: DTypeLike = None):
         return np.asarray(self._data, dtype=dtype)
@@ -142,9 +145,7 @@ class Tensor(MagicTensorOpsMixin):
             for any `Tensor`'s  `data` property (an xarray.DataArray).
         """
         return cls(
-            array=data_array.data,
-            dims=tuple(AxisId(d) for d in data_array.dims),
-            id=None if data_array.name is None else TensorId(data_array.name),
+            array=data_array.data, dims=tuple(AxisId(d) for d in data_array.dims)
         )
 
     @classmethod
@@ -153,7 +154,6 @@ class Tensor(MagicTensorOpsMixin):
         array: NDArray[Any],
         *,
         dims: Optional[Union[AxisLike, Sequence[AxisLike]]],
-        id: TensorId,
     ) -> Tensor:
         """create a `Tensor` from a numpy array
 
@@ -161,14 +161,13 @@ class Tensor(MagicTensorOpsMixin):
             array: the nd numpy array
             axes: A description of the array's axes,
                 if None axes are guessed (which might fail and raise a ValueError.)
-            id: the created tensor's identifier
 
         Raises:
             ValueError: if `axes` is None and axes guessing fails.
         """
 
         if dims is None:
-            return cls._interprete_array_wo_known_axes(array, id=id)
+            return cls._interprete_array_wo_known_axes(array)
         elif isinstance(dims, (str, Axis, v0_5.AxisBase)):
             dims = [dims]
 
@@ -196,7 +195,7 @@ class Tensor(MagicTensorOpsMixin):
                 f"Array shape {original_shape} does not map to axes {dims}"
             )
 
-        return Tensor(array, dims=tuple(a.id for a in axis_infos), id=id)
+        return Tensor(array, dims=tuple(a.id for a in axis_infos))
 
     @property
     def data(self):
@@ -234,11 +233,6 @@ class Tensor(MagicTensorOpsMixin):
         dt = str(self.data.dtype)  # pyright: ignore[reportUnknownArgumentType]
         assert dt in get_args(DTypeStr)
         return dt  # pyright: ignore[reportReturnType]
-
-    @property
-    def id(self):
-        """the tensor's identifier"""
-        return self._id
 
     @property
     def sizes(self):
@@ -482,7 +476,7 @@ class Tensor(MagicTensorOpsMixin):
         return self.__class__.from_xarray(array.transpose(*axes))
 
     @classmethod
-    def _interprete_array_wo_known_axes(cls, array: NDArray[Any], id: TensorId):
+    def _interprete_array_wo_known_axes(cls, array: NDArray[Any]):
         ndim = array.ndim
         if ndim == 2:
             current_axes = (
@@ -531,7 +525,7 @@ class Tensor(MagicTensorOpsMixin):
         else:
             raise ValueError(f"Could not guess an axis mapping for {array.shape}")
 
-        return cls(array, dims=tuple(a.id for a in current_axes), id=id)
+        return cls(array, dims=tuple(a.id for a in current_axes))
 
     def _tile_generator(
         self,
