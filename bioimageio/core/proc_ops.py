@@ -21,7 +21,7 @@ from bioimageio.spec.model import v0_4, v0_5
 
 from ._op_base import Operator
 from .axis import AxisId
-from .sample import Sample
+from .sample import UntiledSample
 from .stat_calculators import StatsCalculator
 from .stat_measures import (
     DatasetMean,
@@ -76,7 +76,7 @@ class _SimpleOperator(Operator, ABC):
     # def produced_tensors(self) -> Set[TensorId]:
     #     return {self.output}
 
-    def __call__(self, sample: Sample) -> None:
+    def __call__(self, sample: UntiledSample) -> None:
         sample.data[self.output] = self._apply(sample.data[self.input], sample.stat)
 
     @abstractmethod
@@ -91,7 +91,7 @@ class AddKnownDatasetStats(Operator):
     def required_measures(self) -> Set[Measure]:
         return set()
 
-    def __call__(self, sample: Sample) -> None:
+    def __call__(self, sample: UntiledSample) -> None:
         sample.stat.update(self.dataset_stats.items())
 
 
@@ -154,7 +154,7 @@ class UpdateStats(Operator):
             or not self.stats_calculator.has_dataset_measures
         )
 
-    def __call__(self, sample: Sample) -> None:
+    def __call__(self, sample: UntiledSample) -> None:
         if self._keep_updating_dataset_stats:
             sample.stat.update(self.stats_calculator.update_and_get_all(sample))
         else:

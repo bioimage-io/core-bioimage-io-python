@@ -1,20 +1,33 @@
-import collections
+import collections.abc
 import warnings
 from dataclasses import dataclass
 from types import MappingProxyType
-from typing import Any, Iterable, List, Mapping, Optional, Sequence, Union
+from typing import (
+    Any,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    TypeVar,
+    Union,
+)
 
-from bioimageio.core.axis import AxisInfo
+from numpy.typing import NDArray
+from typing_extensions import assert_never
+
 from bioimageio.spec.model import AnyModelDescr, v0_4
 from bioimageio.spec.model.v0_5 import WeightsFormat
 
+from .axis import AxisInfo
 from .model_adapters import ModelAdapter, create_model_adapter
 from .model_adapters import get_weight_formats as get_weight_formats
 from .proc_ops import Processing
 from .proc_setup import setup_pre_and_postprocessing
-from .sample import Sample
+from .sample import TiledSample, UntiledSample
 from .stat_measures import DatasetMeasure, MeasureValue
 from .tensor import Tensor, TensorId
+from .tile import Tile
 from .utils import get_axes_infos
 
 
@@ -23,6 +36,19 @@ class CoreTensorDescr:
     id: TensorId
     axes: Sequence[AxisInfo]
     optional: bool
+
+
+Data = TypeVar(
+    "Data",
+    TiledSample,
+    UntiledSample,
+    Tile,
+    Iterable[TiledSample],
+    Iterable[UntiledSample],
+    NDArray[Any],
+    Sequence[Optional[NDArray[Any]]],
+    Mapping[Union[TensorId, str], Optional[NDArray[Any]]],
+)
 
 
 class PredictionPipeline:
@@ -83,8 +109,8 @@ class PredictionPipeline:
 
         self._adapter: ModelAdapter = model
 
-    def __call__(self, sample: Sample) -> Sample:
-        return self.predict(sample)
+    def __call__(self, data: Data) -> Data:
+        return self.predict(data)
 
     def __enter__(self):
         self.load()
@@ -94,31 +120,66 @@ class PredictionPipeline:
         self.unload()
         return False
 
-    def predict(self, sample: Sample) -> Sample:
+    def predict(self, inputs: Data) -> Data:
         """Run model prediction **including** pre/postprocessing."""
-        self.apply_preprocessing(sample)
-        output = Sample(
-            data={
-                tid: out
-                for tid, out in zip(
-                    self.output_ids,
-                    self._adapter.forward(*(sample.data[t] for t in self.input_ids)),
-                )
-                if out is not None
-            }
-        )
-        self.apply_postprocessing(output)
+
+        if isinstance(inputs, Tile):
+            self.apply_preprocessing(inputs)
+            output_tile = Tile(
+                data={
+                    tid: out
+                    for tid, out in zip(
+                        self.output_ids,
+                        self._adapter.forward(
+                            *(inputs.data[t] for t in self.input_ids)
+                        ),
+                    )
+                    if out is not None
+                }
+            )
+            self.apply_postprocessing(output_tile)
+            return output_tile
+
+        else:
+            assert_never(inputs)
+
         return output
 
-    def apply_preprocessing(self, sample: Sample) -> None:
+        # if isinstance(inputs, collections.abc.Mapping):
+        #     data = {
+        #         tid: d
+        #         for tid in self.input_ids
+        #         if (d := inputs.get(tid, inputs.get(str(tid)))) is not None
+        #     }
+        # else:
+        #     if isinstance(inputs, (Tensor, np.ndarray)):
+        #         inputs_seq = [inputs]
+        #     else:
+        #         inputs_seq = inputs
+
+        #     assert len(inputs_seq) == len(self.input_ids)
+        #     data = {
+        #         tid: d for tid, d in zip(self.input_ids, inputs_seq) if d is not None
+        #     }
+
+        # sample = UntiledSample(
+        #     data={
+        #         tid: Tensor.from_numpy(d, dims=self.inputs[tid].axes)
+        #         for tid, d in data.items()
+        #     }
+        # )
+        # output = self.predict(sample)
+        # return {tid: out.data.data for }
+
+    def apply_preprocessing(self, tile: Tile) -> None:
         """apply preprocessing in-place, also updates sample stats"""
         for op in self._preprocessing:
-            op(sample)
+            op(tile)
 
-    def apply_postprocessing(self, sample: Sample) -> None:
+    def apply_postprocessing(self, tile: Tile) -> None:
         """apply postprocessing in-place, also updates samples stats"""
         for op in self._postprocessing:
-            op(sample)
+            op(tile)
 
     def load(self):
         """
@@ -139,7 +200,9 @@ def create_prediction_pipeline(
     devices: Optional[Sequence[str]] = None,
     weight_format: Optional[WeightsFormat] = None,
     weights_format: Optional[WeightsFormat] = None,
-    dataset_for_initial_statistics: Iterable[Union[Sample, Sequence[Tensor]]] = tuple(),
+    dataset_for_initial_statistics: Iterable[
+        Union[UntiledSample, Sequence[Tensor]]
+    ] = tuple(),
     keep_updating_initial_dataset_statistics: bool = False,
     fixed_dataset_statistics: Mapping[DatasetMeasure, MeasureValue] = MappingProxyType(
         {}
@@ -175,10 +238,10 @@ def create_prediction_pipeline(
 
     def dataset():
         for x in dataset_for_initial_statistics:
-            if isinstance(x, Sample):
+            if isinstance(x, UntiledSample):
                 yield x
             else:
-                yield Sample(data=dict(zip(input_ids, x)))
+                yield UntiledSample(data=dict(zip(input_ids, x)))
 
     preprocessing, postprocessing = setup_pre_and_postprocessing(
         bioimageio_model,

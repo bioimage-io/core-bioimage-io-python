@@ -28,14 +28,14 @@ from numpy.typing import NDArray
 from pydantic import HttpUrl
 from tqdm import tqdm
 
-from bioimageio.core.axis import AxisInfo
-from bioimageio.core.sample import Sample
-from bioimageio.core.tensor import Tensor, TensorId
 from bioimageio.spec import ResourceDescr, load_description
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import AxisType
 
 from ._prediction_pipeline import PredictionPipeline, create_prediction_pipeline
+from .axis import AxisInfo
+from .sample import UntiledSample
+from .tensor import Tensor, TensorId
 
 # def _predict_with_tiling_impl(
 #     prediction_pipeline: PredictionPipeline,
@@ -87,39 +87,15 @@ from ._prediction_pipeline import PredictionPipeline, create_prediction_pipeline
 #         output[inner_tile] = out[local_tile]
 
 
-def predict(
+def predict_numpy(
     prediction_pipeline: PredictionPipeline,
-    inputs: Union[
-        Tensor,
-        NDArray[Any],
-        Sequence[Union[Tensor, NDArray[Any]]],
-        Mapping[Union[TensorId, str], Union[Tensor, NDArray[Any]]],
-    ],
-) -> List[xr.DataArray]:
+
     """Run prediction for a single set of input(s) with a bioimage.io model
 
     Args:
         prediction_pipeline: the prediction pipeline for the input model.
         inputs: the input(s) for this model represented as xarray data or numpy nd array.
     """
-    if isinstance(inputs, collections.abc.Mapping):
-        inputs_seq = [
-            inputs.get(str(tid), inputs[tid]) for tid in prediction_pipeline.input_ids
-        ]
-    else:
-        if isinstance(inputs, (Tensor, np.ndarray)):
-            inputs_seq = [inputs]
-        else:
-            inputs_seq = inputs
-
-        assert len(inputs_seq) == len(prediction_pipeline.input_ids)
-
-    tagged_data = [
-        ipt if isinstance(ipt, Tensor) else Tensor.from_numpy(ipt, dims=axes, id=tid)
-        for ipt, axes, tid in zip(
-            inputs_seq, prediction_pipeline.input_axes, prediction_pipeline.input_ids
-        )
-    ]
     return prediction_pipeline.forward(*tagged_data)
 
 

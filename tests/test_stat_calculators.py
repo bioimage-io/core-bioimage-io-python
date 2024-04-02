@@ -5,7 +5,7 @@ import pytest
 from xarray.testing import assert_allclose  # pyright: ignore[reportUnknownVariableType]
 
 from bioimageio.core.axis import AxisId
-from bioimageio.core.sample import Sample
+from bioimageio.core.sample import UntiledSample
 from bioimageio.core.stat_calculators import MeanVarStdCalculator
 from bioimageio.core.stat_measures import (
     DatasetMean,
@@ -20,7 +20,8 @@ def create_random_dataset(tid: TensorId, axes: Tuple[AxisId, ...]):
     sizes = list(range(n, len(axes) + 1))
     data = np.asarray(np.random.rand(*sizes))
     ds = [
-        Sample(data={tid: Tensor(data[i : i + 1], dims=axes, id=tid)}) for i in range(n)
+        UntiledSample(data={tid: Tensor(data[i : i + 1], dims=axes, id=tid)})
+        for i in range(n)
     ]
     return Tensor(data, dims=axes), ds
 

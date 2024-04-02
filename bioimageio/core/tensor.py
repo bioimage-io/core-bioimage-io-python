@@ -1,15 +1,11 @@
 from __future__ import annotations
 
-import itertools
-from math import prod
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     Dict,
-    Generator,
     Iterator,
-    List,
     Mapping,
     Optional,
     Sequence,
@@ -26,22 +22,18 @@ from loguru import logger
 from numpy.typing import DTypeLike, NDArray
 from typing_extensions import Self, assert_never
 
-from bioimageio.core.axis import PerAxis
-from bioimageio.core.common import PadMode, PadWhere
 from bioimageio.spec.model import v0_5
 
 from ._magic_tensor_ops import MagicTensorOpsMixin
-from .axis import Axis, AxisId, AxisInfo, AxisLike
+from .axis import Axis, AxisId, AxisInfo, AxisLike, PerAxis
 from .common import (
     CropWhere,
     DTypeStr,
-    Halo,
-    HaloLike,
+    PadMode,
+    PadWhere,
     PadWidth,
     PadWidthLike,
     SliceInfo,
-    TileNumber,
-    TotalNumberOfTiles,
 )
 
 if TYPE_CHECKING:
@@ -207,9 +199,9 @@ class Tensor(MagicTensorOpsMixin):
         return cast(Tuple[AxisId, ...], self._data.dims)
 
     @property
-    def shape(self):
-        """Tuple of tensor dimension lenghts"""
-        return self._data.shape
+    def tagged_shape(self):
+        """alias for `sizes`"""
+        return self.sizes
 
     @property
     def size(self):
@@ -236,8 +228,13 @@ class Tensor(MagicTensorOpsMixin):
 
     @property
     def sizes(self):
-        """Ordered, immutable mapping from axis ids to lengths."""
+        """Ordered, immutable mapping from axis ids to axis lengths."""
         return cast(Mapping[AxisId, int], self.data.sizes)
+
+    # @property
+    # def tagged_shape(self):
+    #     """(alias for `sizes`) Ordered, immutable mapping from axis ids to lengths."""
+    #     return cast(Mapping[AxisId, int], self.data.sizes)
 
     def astype(self, dtype: DTypeStr, *, copy: bool = False):
         """Return tensor cast to `dtype`
@@ -418,45 +415,6 @@ class Tensor(MagicTensorOpsMixin):
 
         return tensor
 
-    def tile(
-        self,
-        tile_size: PerAxis[int],
-        halo: PerAxis[HaloLike],
-        pad_mode: PadMode,
-    ) -> Tuple[
-        TotalNumberOfTiles,
-        Generator[Tuple[TileNumber, Tensor, PerAxis[SliceInfo]], Any, None],
-    ]:
-        """tile this tensor into `tile_size` tiles that overlap by `halo`.
-        At the tensor's edge the `halo` is padded with `pad_mode`.
-
-        Args:
-            tile_sizes: (Outer) output tile shape.
-            halo: padding At the tensor's edge, overlap with neighboring tiles within
-                the tensor; additional padding at the end of dimensions that do not
-                evenly divide by the tile shape may result in larger halos for edge
-                tiles.
-            pad_mode: How to pad at the tensor's edge.
-        """
-        assert all(a in self.dims for a in tile_size), (self.dims, set(tile_size))
-        assert all(a in self.dims for a in halo), (self.dims, set(halo))
-
-        # fill in default halo (0) and tile_size (tensor size)
-        halo = {a: Halo.create(halo.get(a, 0)) for a in self.dims}
-        tile_size = {a: tile_size.get(a, s) for a, s in self.sizes.items()}
-
-        inner_1d_tiles: List[List[SliceInfo]] = []
-        for a, s in self.sizes.items():
-            stride = tile_size[a] - sum(halo[a])
-            tiles_1d = [SliceInfo(p, min(s, p + stride)) for p in range(0, s, stride)]
-            inner_1d_tiles.append(tiles_1d)
-
-        n_tiles = prod(map(len, inner_1d_tiles))
-
-        return n_tiles, self._tile_generator(
-            inner_1d_tiles=inner_1d_tiles, halo=halo, pad_mode=pad_mode
-        )
-
     def transpose(
         self,
         axes: Sequence[AxisId],
@@ -526,29 +484,3 @@ class Tensor(MagicTensorOpsMixin):
             raise ValueError(f"Could not guess an axis mapping for {array.shape}")
 
         return cls(array, dims=tuple(a.id for a in current_axes))
-
-    def _tile_generator(
-        self,
-        *,
-        inner_1d_tiles: List[List[SliceInfo]],
-        halo: PerAxis[Halo],
-        pad_mode: PadMode,
-    ):
-        for i, nd_tile in enumerate(itertools.product(*inner_1d_tiles)):
-            inner_slice: PerAxis[SliceInfo] = dict(zip(self.dims, nd_tile))
-            outer_slice = {
-                a: SliceInfo(
-                    max(0, inner.start - halo[a].left),
-                    min(self.sizes[a], inner.stop + halo[a].right),
-                )
-                for a, inner in inner_slice.items()
-            }
-            pad_width: PerAxis[PadWidth] = {
-                a: PadWidth(
-                    max(0, halo[a].left - inner.start),
-                    max(0, inner.stop + halo[a].right - self.sizes[a]),
-                )
-                for a, inner in inner_slice.items()
-            }
-
-            yield i, self[outer_slice].pad(pad_width, pad_mode), inner_slice

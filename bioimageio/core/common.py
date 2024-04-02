@@ -75,5 +75,5 @@ class SliceInfo(NamedTuple):
     stop: int
 
 
-TileNumber = int
-TotalNumberOfTiles = int
+BlockNumber = int
+TotalNumberOfBlocks = int

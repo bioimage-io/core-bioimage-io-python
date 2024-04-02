@@ -6,7 +6,7 @@ import xarray as xr
 from typing_extensions import TypeGuard
 
 from bioimageio.core.axis import AxisId
-from bioimageio.core.sample import Sample
+from bioimageio.core.sample import UntiledSample
 from bioimageio.core.stat_calculators import compute_measures
 from bioimageio.core.stat_measures import SampleMean, SamplePercentile, SampleStd
 from bioimageio.core.tensor import TensorId
@@ -23,7 +23,7 @@ def test_scale_linear(tid: TensorId):
     offset = xr.DataArray([1, 2, 42], dims=("c"))
     gain = xr.DataArray([1, 2, 3], dims=("c"))
     data = xr.DataArray(np.arange(6).reshape((1, 2, 3)), dims=("x", "y", "c"))
-    sample = Sample(data={tid: data})
+    sample = UntiledSample(data={tid: data})
 
     op = ScaleLinear(input=tid, output=tid, offset=offset, gain=gain)
     op(sample)
@@ -37,7 +37,7 @@ def test_scale_linear_no_channel(tid: TensorId):
 
     op = ScaleLinear(tid, tid, offset=1, gain=2)
     data = xr.DataArray(np.arange(6).reshape(2, 3), dims=("x", "y"))
-    sample = Sample(data={tid: data})
+    sample = UntiledSample(data={tid: data})
     op(sample)
 
     expected = xr.DataArray(np.array([[1, 3, 5], [7, 9, 11]]), dims=("x", "y"))
@@ -56,7 +56,7 @@ def test_zero_mean_unit_variance(tid: TensorId):
     from bioimageio.core.proc_ops import ZeroMeanUnitVariance
 
     data = xr.DataArray(np.arange(9).reshape(3, 3), dims=("x", "y"))
-    sample = Sample(data={tid: data})
+    sample = UntiledSample(data={tid: data})
     m = SampleMean(tid)
     std = SampleStd(tid)
     op = ZeroMeanUnitVariance(tid, tid, m, std)
@@ -99,7 +99,7 @@ def test_zero_mean_unit_variance_fixed(tid: TensorId):
         ),
         dims=("b", "c", "x"),
     )
-    sample = Sample(data={tid: data})
+    sample = UntiledSample(data={tid: data})
     op(sample)
     xr.testing.assert_allclose(expected, sample.data[tid])
 
@@ -115,7 +115,7 @@ def test_zero_mean_unit_across_axes(tid: TensorId):
         SampleMean(tid, (AxisId("x"), AxisId("y"))),
         SampleStd(tid, (AxisId("x"), AxisId("y"))),
     )
-    sample = Sample(data={tid: data})
+    sample = UntiledSample(data={tid: data})
     sample.stat = compute_measures(op.required_measures, [sample])
 
     expected = xr.concat(
@@ -135,7 +135,7 @@ def test_zero_mean_unit_variance_fixed2(tid: TensorId):
     op = FixedZeroMeanUnitVariance(tid, tid, mean=mean, std=std, eps=eps)
 
     data = xr.DataArray(np_data, dims=("x", "y"))
-    sample = Sample(data={tid: data})
+    sample = UntiledSample(data={tid: data})
     expected = xr.DataArray((np_data - mean) / (std + eps), dims=("x", "y"))
     op(sample)
     xr.testing.assert_allclose(expected, sample.data[tid])
@@ -146,7 +146,7 @@ def test_binarize(tid: TensorId):
 
     op = Binarize(tid, tid, threshold=14)
     data = xr.DataArray(np.arange(30).reshape((2, 3, 5)), dims=("x", "y", "c"))
-    sample = Sample(data={tid: data})
+    sample = UntiledSample(data={tid: data})
     expected = xr.zeros_like(data)
     expected[{"x": slice(1, None)}] = 1
     op(sample)
@@ -164,7 +164,7 @@ def test_binarize2(tid: TensorId):
     threshold = 0.5
     exp = xr.DataArray(np_data > threshold, dims=axes)
 
-    sample = Sample(data={tid: data})
+    sample = UntiledSample(data={tid: data})
     binarize = Binarize(tid, tid, threshold=threshold)
     binarize(sample)
     xr.testing.assert_allclose(exp, sample.data[tid])
@@ -175,7 +175,7 @@ def test_clip(tid: TensorId):
 
     op = Clip(tid, tid, min=3, max=5)
     data = xr.DataArray(np.arange(9).reshape(3, 3), dims=("x", "y"))
-    sample = Sample(data={tid: data})
+    sample = UntiledSample(data={tid: data})
 
     expected = xr.DataArray(
         np.array([[3, 3, 3], [3, 4, 5], [5, 5, 5]]), dims=("x", "y")
@@ -188,7 +188,7 @@ def test_combination_of_op_steps_with_dims_specified(tid: TensorId):
     from bioimageio.core.proc_ops import ZeroMeanUnitVariance
 
     data = xr.DataArray(np.arange(18).reshape((2, 3, 3)), dims=("c", "x", "y"))
-    sample = Sample(data={tid: data})
+    sample = UntiledSample(data={tid: data})
     op = ZeroMeanUnitVariance(
         tid,
         tid,
@@ -244,7 +244,7 @@ def test_scale_mean_variance(tid: TensorId, axes: Optional[Tuple[AxisId, ...]]):
     ref_data = xr.DataArray((np_data * 2) + 3, dims=ipt_axes)
 
     op = ScaleMeanVariance(tid, tid, reference_tensor=TensorId("ref_name"), axes=axes)
-    sample = Sample(data={tid: ipt_data, TensorId("ref_name"): ref_data})
+    sample = UntiledSample(data={tid: ipt_data, TensorId("ref_name"): ref_data})
     sample.stat = compute_measures(op.required_measures, [sample])
     op(sample)
     xr.testing.assert_allclose(ref_data, sample.data[tid])
@@ -269,7 +269,7 @@ def test_scale_mean_variance_per_channel(tid: TensorId, axes_str: Optional[str])
     ref_data = xr.DataArray(np_ref_data, dims=ipt_axes)
 
     op = ScaleMeanVariance(tid, tid, reference_tensor=TensorId("ref_name"), axes=axes)
-    sample = Sample(data={tid: ipt_data, TensorId("ref_name"): ref_data})
+    sample = UntiledSample(data={tid: ipt_data, TensorId("ref_name"): ref_data})
     sample.stat = compute_measures(op.required_measures, [sample])
     op(sample)
 
@@ -288,7 +288,7 @@ def test_scale_range(tid: TensorId):
     op = ScaleRange(tid, tid)
     np_data = np.arange(9).reshape(3, 3).astype("float32")
     data = xr.DataArray(np_data, dims=("x", "y"))
-    sample = Sample(data={tid: data})
+    sample = UntiledSample(data={tid: data})
     sample.stat = compute_measures(op.required_measures, [sample])
 
     eps = 1.0e-6
@@ -310,7 +310,7 @@ def test_scale_range_axes(tid: TensorId):
 
     np_data = np.arange(18).reshape((2, 3, 3)).astype("float32")
     data = xr.DataArray(np_data, dims=("c", "x", "y"))
-    sample = Sample(data={tid: data})
+    sample = UntiledSample(data={tid: data})
     sample.stat = compute_measures(op.required_measures, [sample])
 
     eps = 1.0e-6
@@ -331,7 +331,7 @@ def test_sigmoid(tid: TensorId):
     axes = ("c", "y", "x")
     np_data = np.random.rand(*shape)
     data = xr.DataArray(np_data, dims=axes)
-    sample = Sample(data={tid: data})
+    sample = UntiledSample(data={tid: data})
     sigmoid = Sigmoid(tid, tid)
     sigmoid(sample)
 

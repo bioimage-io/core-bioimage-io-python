@@ -27,7 +27,7 @@ from numpy.typing import NDArray
 from typing_extensions import assert_never
 
 from .axis import AxisId, PerAxis
-from .sample import Sample
+from .sample import UntiledSample
 from .stat_measures import (
     DatasetMean,
     DatasetMeasure,
@@ -74,18 +74,20 @@ class MeanCalculator:
         self._sample_mean = SampleMean(tensor_id=self._tensor_id, axes=self._axes)
         self._dataset_mean = DatasetMean(tensor_id=self._tensor_id, axes=self._axes)
 
-    def compute(self, sample: Sample) -> Dict[SampleMean, MeasureValue]:
+    def compute(self, sample: UntiledSample) -> Dict[SampleMean, MeasureValue]:
         return {self._sample_mean: self._compute_impl(sample)}
 
-    def _compute_impl(self, sample: Sample) -> Tensor:
+    def _compute_impl(self, sample: UntiledSample) -> Tensor:
         tensor = sample.data[self._tensor_id].astype("float64", copy=False)
         return tensor.mean(dim=self._axes)
 
-    def update(self, sample: Sample) -> None:
+    def update(self, sample: UntiledSample) -> None:
         mean = self._compute_impl(sample)
         self._update_impl(sample.data[self._tensor_id], mean)
 
-    def compute_and_update(self, sample: Sample) -> Dict[SampleMean, MeasureValue]:
+    def compute_and_update(
+        self, sample: UntiledSample
+    ) -> Dict[SampleMean, MeasureValue]:
         mean = self._compute_impl(sample)
         self._update_impl(sample.data[self._tensor_id], mean)
         return {self._sample_mean: mean}
@@ -126,7 +128,7 @@ class MeanVarStdCalculator:
         self._m2: Optional[Tensor] = None
 
     def compute(
-        self, sample: Sample
+        self, sample: UntiledSample
     ) -> Dict[Union[SampleMean, SampleVar, SampleStd], MeasureValue]:
         tensor = sample.data[self._tensor_id]
         mean = tensor.mean(dim=self._axes)
@@ -150,7 +152,7 @@ class MeanVarStdCalculator:
             ),
         }
 
-    def update(self, sample: Sample):
+    def update(self, sample: UntiledSample):
         tensor = sample.data[self._tensor_id].astype("float64", copy=False)
         mean_b = tensor.mean(dim=self._axes)
         assert mean_b.dtype == "float64"
@@ -208,7 +210,7 @@ class SamplePercentilesCalculator:
         self._axes = None if axes is None else tuple(axes)
         self._tensor_id = tensor_id
 
-    def compute(self, sample: Sample) -> Dict[SamplePercentile, MeasureValue]:
+    def compute(self, sample: UntiledSample) -> Dict[SamplePercentile, MeasureValue]:
         tensor = sample.data[self._tensor_id]
         ps = tensor.quantile(self._qs, dim=self._axes)
         return {
@@ -236,7 +238,7 @@ class MeanPercentilesCalculator:
         self._n: int = 0
         self._estimates: Optional[Tensor] = None
 
-    def update(self, sample: Sample):
+    def update(self, sample: UntiledSample):
         tensor = sample.data[self._tensor_id]
         sample_estimates = tensor.quantile(self._qs, dim=self._axes).astype(
             "float64", copy=False
@@ -307,7 +309,7 @@ class CrickPercentilesCalculator:
         self._digest = [TDigest() for _ in range(d)]
         self._indices = product(*map(range, self._shape[1:]))
 
-    def update(self, sample: Sample):
+    def update(self, sample: UntiledSample):
         tensor = sample.data[self._tensor_id]
         assert "_percentiles" not in tensor.dims
         if self._digest is None:
@@ -353,7 +355,7 @@ class NaiveSampleMeasureCalculator:
         self.tensor_name = tensor_id
         self.measure = measure
 
-    def compute(self, sample: Sample) -> Dict[SampleMeasure, MeasureValue]:
+    def compute(self, sample: UntiledSample) -> Dict[SampleMeasure, MeasureValue]:
         return {self.measure: self.measure.compute(sample)}
 
 
@@ -406,7 +408,7 @@ class StatsCalculator:
     def has_dataset_measures(self):
         return self._current_dataset_measures is not None
 
-    def update(self, sample: Union[Sample, Iterable[Sample]]) -> None:
+    def update(self, sample: Union[UntiledSample, Iterable[UntiledSample]]) -> None:
         _ = self._update(sample)
 
     def finalize(self) -> Dict[DatasetMeasure, MeasureValue]:
@@ -420,7 +422,7 @@ class StatsCalculator:
         return self._current_dataset_measures
 
     def update_and_get_all(
-        self, sample: Union[Sample, Iterable[Sample]]
+        self, sample: Union[UntiledSample, Iterable[UntiledSample]]
     ) -> Dict[Measure, MeasureValue]:
         """Returns sample as well as updated dataset statistics"""
         last_sample = self._update(sample)
@@ -429,11 +431,13 @@ class StatsCalculator:
 
         return {**self._compute(last_sample), **self.finalize()}
 
-    def skip_update_and_get_all(self, sample: Sample) -> Dict[Measure, MeasureValue]:
+    def skip_update_and_get_all(
+        self, sample: UntiledSample
+    ) -> Dict[Measure, MeasureValue]:
         """Returns sample as well as previously computed dataset statistics"""
         return {**self._compute(sample), **self.finalize()}
 
-    def _compute(self, sample: Sample) -> Dict[SampleMeasure, MeasureValue]:
+    def _compute(self, sample: UntiledSample) -> Dict[SampleMeasure, MeasureValue]:
         ret: Dict[SampleMeasure, MeasureValue] = {}
         for calc in self.sample_calculators:
             values = calc.compute(sample)
@@ -441,9 +445,11 @@ class StatsCalculator:
 
         return ret
 
-    def _update(self, sample: Union[Sample, Iterable[Sample]]) -> Optional[Sample]:
+    def _update(
+        self, sample: Union[UntiledSample, Iterable[UntiledSample]]
+    ) -> Optional[UntiledSample]:
         self.sample_count += 1
-        samples = [sample] if isinstance(sample, Sample) else sample
+        samples = [sample] if isinstance(sample, UntiledSample) else sample
         last_sample = None
         for s in samples:
             last_sample = s
@@ -546,7 +552,7 @@ def get_measure_calculators(
 
 
 def compute_dataset_measures(
-    measures: Iterable[DatasetMeasure], dataset: Iterable[Sample]
+    measures: Iterable[DatasetMeasure], dataset: Iterable[UntiledSample]
 ) -> Dict[DatasetMeasure, MeasureValue]:
     """compute all dataset `measures` for the given `dataset`"""
     sample_calculators, calculators = get_measure_calculators(measures)
@@ -565,7 +571,7 @@ def compute_dataset_measures(
 
 
 def compute_sample_measures(
-    measures: Iterable[SampleMeasure], sample: Sample
+    measures: Iterable[SampleMeasure], sample: UntiledSample
 ) -> Dict[SampleMeasure, MeasureValue]:
     """compute all sample `measures` for the given `sample`"""
     calculators, dataset_calculators = get_measure_calculators(measures)
@@ -579,7 +585,7 @@ def compute_sample_measures(
 
 
 def compute_measures(
-    measures: Iterable[Measure], dataset: Iterable[Sample]
+    measures: Iterable[Measure], dataset: Iterable[UntiledSample]
 ) -> Dict[Measure, MeasureValue]:
     """compute all `measures` for the given `dataset`
     sample measures are computed for the last sample in `dataset`"""

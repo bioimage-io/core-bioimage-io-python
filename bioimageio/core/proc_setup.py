@@ -17,7 +17,7 @@ from bioimageio.core.proc_ops import (
     UpdateStats,
     get_proc_class,
 )
-from bioimageio.core.sample import Sample
+from bioimageio.core.sample import UntiledSample
 from bioimageio.core.stat_calculators import StatsCalculator
 from bioimageio.core.stat_measures import DatasetMeasure, Measure, MeasureValue
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
@@ -45,7 +45,7 @@ class _SetupProcessing(NamedTuple):
 
 def setup_pre_and_postprocessing(
     model: AnyModelDescr,
-    dataset_for_initial_statistics: Iterable[Sample],
+    dataset_for_initial_statistics: Iterable[UntiledSample],
     keep_updating_initial_dataset_stats: bool = False,
     fixed_dataset_stats: Mapping[DatasetMeasure, MeasureValue] = MappingProxyType({}),
 ) -> PreAndPostprocessing:
