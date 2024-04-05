@@ -5,7 +5,8 @@ from dataclasses import dataclass
 from typing import Dict, Optional, Protocol, Tuple, TypeVar, Union
 
 from .axis import AxisId
-from .tensor import PerTensor, Tensor, TensorId
+from .common import MemberId, PerMember
+from .tensor import Tensor
 
 MeasureValue = Union[float, Tensor]
 
@@ -13,12 +14,12 @@ MeasureValue = Union[float, Tensor]
 # using Sample Protocol really only to avoid circular imports
 class SampleLike(Protocol):
     @property
-    def data(self) -> PerTensor[Tensor]: ...
+    def members(self) -> PerMember[Tensor]: ...
 
 
 @dataclass(frozen=True)
 class MeasureBase:
-    tensor_id: TensorId
+    member_id: MemberId
 
 
 @dataclass(frozen=True)
@@ -45,7 +46,7 @@ class SampleMean(_Mean, SampleMeasureBase):
     """The mean value of a single tensor"""
 
     def compute(self, sample: SampleLike) -> MeasureValue:
-        tensor = sample.data[self.tensor_id]
+        tensor = sample.members[self.member_id]
         return tensor.mean(dim=self.axes)
 
     def __post_init__(self):
@@ -71,7 +72,7 @@ class SampleStd(_Std, SampleMeasureBase):
     """The standard deviation of a single tensor"""
 
     def compute(self, sample: SampleLike) -> MeasureValue:
-        tensor = sample.data[self.tensor_id]
+        tensor = sample.members[self.member_id]
         return tensor.std(dim=self.axes)
 
     def __post_init__(self):
@@ -97,7 +98,7 @@ class SampleVar(_Var, SampleMeasureBase):
     """The variance of a single tensor"""
 
     def compute(self, sample: SampleLike) -> MeasureValue:
-        tensor = sample.data[self.tensor_id]
+        tensor = sample.members[self.member_id]
         return tensor.var(dim=self.axes)
 
     def __post_init__(self):
@@ -128,7 +129,7 @@ class SamplePercentile(_Percentile, SampleMeasureBase):
     """The `n`th percentile of a single tensor"""
 
     def compute(self, sample: SampleLike) -> MeasureValue:
-        tensor = sample.data[self.tensor_id]
+        tensor = sample.members[self.member_id]
         return tensor.quantile(self.q, dim=self.axes)
 
     def __post_init__(self):

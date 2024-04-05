@@ -3,7 +3,6 @@ from __future__ import annotations
 import collections.abc
 import warnings
 from itertools import product
-from math import prod
 from typing import (
     Any,
     Collection,
@@ -27,7 +26,8 @@ from numpy.typing import NDArray
 from typing_extensions import assert_never
 
 from .axis import AxisId, PerAxis
-from .sample import UntiledSample
+from .common import MemberId
+from .sample import Sample
 from .stat_measures import (
     DatasetMean,
     DatasetMeasure,
@@ -43,7 +43,7 @@ from .stat_measures import (
     SampleStd,
     SampleVar,
 )
-from .tensor import Tensor, TensorId
+from .tensor import Tensor
 
 try:
     import crick
@@ -63,39 +63,37 @@ else:
 
 
 class MeanCalculator:
-    """to calculate sample and dataset mean"""
+    """to calculate sample and dataset mean for in-memory samples"""
 
-    def __init__(self, tensor_id: TensorId, axes: Optional[Sequence[AxisId]]):
+    def __init__(self, member_id: MemberId, axes: Optional[Sequence[AxisId]]):
         super().__init__()
         self._n: int = 0
         self._mean: Optional[Tensor] = None
         self._axes = None if axes is None else tuple(axes)
-        self._tensor_id = tensor_id
-        self._sample_mean = SampleMean(tensor_id=self._tensor_id, axes=self._axes)
-        self._dataset_mean = DatasetMean(tensor_id=self._tensor_id, axes=self._axes)
+        self._member_id = member_id
+        self._sample_mean = SampleMean(member_id=self._member_id, axes=self._axes)
+        self._dataset_mean = DatasetMean(member_id=self._member_id, axes=self._axes)
 
-    def compute(self, sample: UntiledSample) -> Dict[SampleMean, MeasureValue]:
+    def compute(self, sample: Sample) -> Dict[SampleMean, MeasureValue]:
         return {self._sample_mean: self._compute_impl(sample)}
 
-    def _compute_impl(self, sample: UntiledSample) -> Tensor:
-        tensor = sample.data[self._tensor_id].astype("float64", copy=False)
+    def _compute_impl(self, sample: Sample) -> Tensor:
+        tensor = sample.members[self._member_id].astype("float64", copy=False)
         return tensor.mean(dim=self._axes)
 
-    def update(self, sample: UntiledSample) -> None:
+    def update(self, sample: Sample) -> None:
         mean = self._compute_impl(sample)
-        self._update_impl(sample.data[self._tensor_id], mean)
+        self._update_impl(sample.members[self._member_id], mean)
 
-    def compute_and_update(
-        self, sample: UntiledSample
-    ) -> Dict[SampleMean, MeasureValue]:
+    def compute_and_update(self, sample: Sample) -> Dict[SampleMean, MeasureValue]:
         mean = self._compute_impl(sample)
-        self._update_impl(sample.data[self._tensor_id], mean)
+        self._update_impl(sample.members[self._member_id], mean)
         return {self._sample_mean: mean}
 
     def _update_impl(self, tensor: Tensor, tensor_mean: Tensor):
         assert tensor_mean.dtype == "float64"
         # reduced voxel count
-        n_b = int(np.prod(tensor.shape) / np.prod(tensor_mean.shape))
+        n_b = int(tensor.size / tensor_mean.size)
 
         if self._mean is None:
             assert self._n == 0
@@ -119,18 +117,18 @@ class MeanCalculator:
 class MeanVarStdCalculator:
     """to calculate sample and dataset mean, variance or standard deviation"""
 
-    def __init__(self, tensor_id: TensorId, axes: Optional[Sequence[AxisId]]):
+    def __init__(self, member_id: MemberId, axes: Optional[Sequence[AxisId]]):
         super().__init__()
         self._axes = None if axes is None else tuple(axes)
-        self._tensor_id = tensor_id
+        self._member_id = member_id
         self._n: int = 0
         self._mean: Optional[Tensor] = None
         self._m2: Optional[Tensor] = None
 
     def compute(
-        self, sample: UntiledSample
+        self, sample: Sample
     ) -> Dict[Union[SampleMean, SampleVar, SampleStd], MeasureValue]:
-        tensor = sample.data[self._tensor_id]
+        tensor = sample.members[self._member_id]
         mean = tensor.mean(dim=self._axes)
         c = (tensor - mean).data
         if self._axes is None:
@@ -143,21 +141,21 @@ class MeanVarStdCalculator:
         std = np.sqrt(var)
         assert isinstance(std, xr.DataArray)
         return {
-            SampleMean(axes=self._axes, tensor_id=self._tensor_id): mean,
-            SampleVar(axes=self._axes, tensor_id=self._tensor_id): Tensor.from_xarray(
+            SampleMean(axes=self._axes, member_id=self._member_id): mean,
+            SampleVar(axes=self._axes, member_id=self._member_id): Tensor.from_xarray(
                 var
             ),
-            SampleStd(axes=self._axes, tensor_id=self._tensor_id): Tensor.from_xarray(
+            SampleStd(axes=self._axes, member_id=self._member_id): Tensor.from_xarray(
                 std
             ),
         }
 
-    def update(self, sample: UntiledSample):
-        tensor = sample.data[self._tensor_id].astype("float64", copy=False)
+    def update(self, sample: Sample):
+        tensor = sample.members[self._member_id].astype("float64", copy=False)
         mean_b = tensor.mean(dim=self._axes)
         assert mean_b.dtype == "float64"
         # reduced voxel count
-        n_b = int(prod(tensor.shape) / prod(mean_b.shape))
+        n_b = int(tensor.size / mean_b.size)
         m2_b = ((tensor - mean_b) ** 2).sum(dim=self._axes)
         assert m2_b.dtype == "float64"
         if self._mean is None:
@@ -187,10 +185,10 @@ class MeanVarStdCalculator:
             sqrt = np.sqrt(var)
             assert isinstance(sqrt, xr.DataArray)
             return {
-                DatasetMean(tensor_id=self._tensor_id, axes=self._axes): self._mean,
-                DatasetVar(tensor_id=self._tensor_id, axes=self._axes): var,
+                DatasetMean(member_id=self._member_id, axes=self._axes): self._mean,
+                DatasetVar(member_id=self._member_id, axes=self._axes): var,
                 DatasetStd(
-                    tensor_id=self._tensor_id, axes=self._axes
+                    member_id=self._member_id, axes=self._axes
                 ): Tensor.from_xarray(sqrt),
             }
 
@@ -200,7 +198,7 @@ class SamplePercentilesCalculator:
 
     def __init__(
         self,
-        tensor_id: TensorId,
+        member_id: MemberId,
         axes: Optional[Sequence[AxisId]],
         qs: Collection[float],
     ):
@@ -208,13 +206,13 @@ class SamplePercentilesCalculator:
         assert all(0.0 <= q <= 1.0 for q in qs)
         self._qs = sorted(set(qs))
         self._axes = None if axes is None else tuple(axes)
-        self._tensor_id = tensor_id
+        self._member_id = member_id
 
-    def compute(self, sample: UntiledSample) -> Dict[SamplePercentile, MeasureValue]:
-        tensor = sample.data[self._tensor_id]
+    def compute(self, sample: Sample) -> Dict[SamplePercentile, MeasureValue]:
+        tensor = sample.members[self._member_id]
         ps = tensor.quantile(self._qs, dim=self._axes)
         return {
-            SamplePercentile(q=q, axes=self._axes, tensor_id=self._tensor_id): p
+            SamplePercentile(q=q, axes=self._axes, member_id=self._member_id): p
             for q, p in zip(self._qs, ps)
         }
 
@@ -226,7 +224,7 @@ class MeanPercentilesCalculator:
 
     def __init__(
         self,
-        tensor_id: TensorId,
+        member_id: MemberId,
         axes: Optional[Sequence[AxisId]],
         qs: Collection[float],
     ):
@@ -234,18 +232,18 @@ class MeanPercentilesCalculator:
         assert all(0.0 <= q <= 1.0 for q in qs)
         self._qs = sorted(set(qs))
         self._axes = None if axes is None else tuple(axes)
-        self._tensor_id = tensor_id
+        self._member_id = member_id
         self._n: int = 0
         self._estimates: Optional[Tensor] = None
 
-    def update(self, sample: UntiledSample):
-        tensor = sample.data[self._tensor_id]
+    def update(self, sample: Sample):
+        tensor = sample.members[self._member_id]
         sample_estimates = tensor.quantile(self._qs, dim=self._axes).astype(
             "float64", copy=False
         )
 
         # reduced voxel count
-        n = int(np.prod(tensor.shape) / np.prod(sample_estimates.shape[1:]))
+        n = int(tensor.size / np.prod(sample_estimates.shape_tuple[1:]))
 
         if self._estimates is None:
             assert self._n == 0
@@ -266,7 +264,7 @@ class MeanPercentilesCalculator:
                 "Computed dataset percentiles naively by averaging percentiles of samples."
             )
             return {
-                DatasetPercentile(q=q, axes=self._axes, tensor_id=self._tensor_id): e
+                DatasetPercentile(q=q, axes=self._axes, member_id=self._member_id): e
                 for q, e in zip(self._qs, self._estimates)
             }
 
@@ -276,7 +274,7 @@ class CrickPercentilesCalculator:
 
     def __init__(
         self,
-        tensor_id: TensorId,
+        member_id: MemberId,
         axes: Optional[Sequence[AxisId]],
         qs: Collection[float],
     ):
@@ -288,7 +286,7 @@ class CrickPercentilesCalculator:
         assert axes is None or "_percentiles" not in axes
         self._qs = sorted(set(qs))
         self._axes = None if axes is None else tuple(axes)
-        self._tensor_id = tensor_id
+        self._member_id = member_id
         self._digest: Optional[List[TDigest]] = None
         self._dims: Optional[Tuple[AxisId, ...]] = None
         self._indices: Optional[Iterator[Tuple[int, ...]]] = None
@@ -309,11 +307,15 @@ class CrickPercentilesCalculator:
         self._digest = [TDigest() for _ in range(d)]
         self._indices = product(*map(range, self._shape[1:]))
 
-    def update(self, sample: UntiledSample):
-        tensor = sample.data[self._tensor_id]
+    def update(self, part: Sample):
+        tensor = (
+            part.members[self._member_id]
+            if isinstance(part, Sample)
+            else part.members[self._member_id].data
+        )
         assert "_percentiles" not in tensor.dims
         if self._digest is None:
-            self._initialize(tensor.sizes)
+            self._initialize(tensor.tagged_shape)
 
         assert self._digest is not None
         assert self._indices is not None
@@ -333,7 +335,7 @@ class CrickPercentilesCalculator:
             ).reshape(self._shape)
             return {
                 DatasetPercentile(
-                    q=q, axes=self._axes, tensor_id=self._tensor_id
+                    q=q, axes=self._axes, member_id=self._member_id
                 ): Tensor(v, dims=self._dims[1:])
                 for q, v in zip(self._qs, vs)
             }
@@ -350,12 +352,12 @@ else:
 class NaiveSampleMeasureCalculator:
     """wrapper for measures to match interface of other sample measure calculators"""
 
-    def __init__(self, tensor_id: TensorId, measure: SampleMeasure):
+    def __init__(self, member_id: MemberId, measure: SampleMeasure):
         super().__init__()
-        self.tensor_name = tensor_id
+        self.tensor_name = member_id
         self.measure = measure
 
-    def compute(self, sample: UntiledSample) -> Dict[SampleMeasure, MeasureValue]:
+    def compute(self, sample: Sample) -> Dict[SampleMeasure, MeasureValue]:
         return {self.measure: self.measure.compute(sample)}
 
 
@@ -408,7 +410,10 @@ class StatsCalculator:
     def has_dataset_measures(self):
         return self._current_dataset_measures is not None
 
-    def update(self, sample: Union[UntiledSample, Iterable[UntiledSample]]) -> None:
+    def update(
+        self,
+        sample: Union[Sample, Iterable[Sample]],
+    ) -> None:
         _ = self._update(sample)
 
     def finalize(self) -> Dict[DatasetMeasure, MeasureValue]:
@@ -422,7 +427,8 @@ class StatsCalculator:
         return self._current_dataset_measures
 
     def update_and_get_all(
-        self, sample: Union[UntiledSample, Iterable[UntiledSample]]
+        self,
+        sample: Union[Sample, Iterable[Sample]],
     ) -> Dict[Measure, MeasureValue]:
         """Returns sample as well as updated dataset statistics"""
         last_sample = self._update(sample)
@@ -431,13 +437,11 @@ class StatsCalculator:
 
         return {**self._compute(last_sample), **self.finalize()}
 
-    def skip_update_and_get_all(
-        self, sample: UntiledSample
-    ) -> Dict[Measure, MeasureValue]:
+    def skip_update_and_get_all(self, sample: Sample) -> Dict[Measure, MeasureValue]:
         """Returns sample as well as previously computed dataset statistics"""
         return {**self._compute(sample), **self.finalize()}
 
-    def _compute(self, sample: UntiledSample) -> Dict[SampleMeasure, MeasureValue]:
+    def _compute(self, sample: Sample) -> Dict[SampleMeasure, MeasureValue]:
         ret: Dict[SampleMeasure, MeasureValue] = {}
         for calc in self.sample_calculators:
             values = calc.compute(sample)
@@ -445,16 +449,14 @@ class StatsCalculator:
 
         return ret
 
-    def _update(
-        self, sample: Union[UntiledSample, Iterable[UntiledSample]]
-    ) -> Optional[UntiledSample]:
+    def _update(self, sample: Union[Sample, Iterable[Sample]]) -> Optional[Sample]:
         self.sample_count += 1
-        samples = [sample] if isinstance(sample, UntiledSample) else sample
+        samples = [sample] if isinstance(sample, Sample) else sample
         last_sample = None
-        for s in samples:
-            last_sample = s
+        for el in samples:
+            last_sample = el
             for calc in self.dataset_calculators:
-                calc.update(s)
+                calc.update(el)
 
         self._current_dataset_measures = None
         return last_sample
@@ -476,10 +478,10 @@ def get_measure_calculators(
         set()
     )
     required_sample_percentiles: Dict[
-        Tuple[TensorId, Optional[Tuple[AxisId, ...]]], Set[float]
+        Tuple[MemberId, Optional[Tuple[AxisId, ...]]], Set[float]
     ] = {}
     required_dataset_percentiles: Dict[
-        Tuple[TensorId, Optional[Tuple[AxisId, ...]]], Set[float]
+        Tuple[MemberId, Optional[Tuple[AxisId, ...]]], Set[float]
     ] = {}
 
     for rm in required_measures:
@@ -490,7 +492,7 @@ def get_measure_calculators(
         elif isinstance(rm, (SampleVar, SampleStd)):
             required_sample_mean_var_std.update(
                 {
-                    msv(axes=rm.axes, tensor_id=rm.tensor_id)
+                    msv(axes=rm.axes, member_id=rm.member_id)
                     for msv in (SampleMean, SampleStd, SampleVar)
                 }
             )
@@ -498,17 +500,17 @@ def get_measure_calculators(
         elif isinstance(rm, (DatasetVar, DatasetStd)):
             required_dataset_mean_var_std.update(
                 {
-                    msv(axes=rm.axes, tensor_id=rm.tensor_id)
+                    msv(axes=rm.axes, member_id=rm.member_id)
                     for msv in (DatasetMean, DatasetStd, DatasetVar)
                 }
             )
             assert rm in required_dataset_mean_var_std
         elif isinstance(rm, SamplePercentile):
-            required_sample_percentiles.setdefault((rm.tensor_id, rm.axes), set()).add(
+            required_sample_percentiles.setdefault((rm.member_id, rm.axes), set()).add(
                 rm.q
             )
         elif isinstance(rm, DatasetPercentile):
-            required_dataset_percentiles.setdefault((rm.tensor_id, rm.axes), set()).add(
+            required_dataset_percentiles.setdefault((rm.member_id, rm.axes), set()).add(
                 rm.q
             )
         else:
@@ -519,11 +521,11 @@ def get_measure_calculators(
             # computed togehter with var and std
             continue
 
-        sample_calculators.append(MeanCalculator(tensor_id=rm.tensor_id, axes=rm.axes))
+        sample_calculators.append(MeanCalculator(member_id=rm.member_id, axes=rm.axes))
 
     for rm in required_sample_mean_var_std:
         sample_calculators.append(
-            MeanVarStdCalculator(tensor_id=rm.tensor_id, axes=rm.axes)
+            MeanVarStdCalculator(member_id=rm.member_id, axes=rm.axes)
         )
 
     for rm in required_dataset_means:
@@ -531,28 +533,28 @@ def get_measure_calculators(
             # computed togehter with var and std
             continue
 
-        dataset_calculators.append(MeanCalculator(tensor_id=rm.tensor_id, axes=rm.axes))
+        dataset_calculators.append(MeanCalculator(member_id=rm.member_id, axes=rm.axes))
 
     for rm in required_dataset_mean_var_std:
         dataset_calculators.append(
-            MeanVarStdCalculator(tensor_id=rm.tensor_id, axes=rm.axes)
+            MeanVarStdCalculator(member_id=rm.member_id, axes=rm.axes)
         )
 
     for (tid, axes), qs in required_sample_percentiles.items():
         sample_calculators.append(
-            SamplePercentilesCalculator(tensor_id=tid, axes=axes, qs=qs)
+            SamplePercentilesCalculator(member_id=tid, axes=axes, qs=qs)
         )
 
     for (tid, axes), qs in required_dataset_percentiles.items():
         dataset_calculators.append(
-            DatasetPercentilesCalculator(tensor_id=tid, axes=axes, qs=qs)
+            DatasetPercentilesCalculator(member_id=tid, axes=axes, qs=qs)
         )
 
     return sample_calculators, dataset_calculators
 
 
 def compute_dataset_measures(
-    measures: Iterable[DatasetMeasure], dataset: Iterable[UntiledSample]
+    measures: Iterable[DatasetMeasure], dataset: Iterable[Sample]
 ) -> Dict[DatasetMeasure, MeasureValue]:
     """compute all dataset `measures` for the given `dataset`"""
     sample_calculators, calculators = get_measure_calculators(measures)
@@ -571,7 +573,7 @@ def compute_dataset_measures(
 
 
 def compute_sample_measures(
-    measures: Iterable[SampleMeasure], sample: UntiledSample
+    measures: Iterable[SampleMeasure], sample: Sample
 ) -> Dict[SampleMeasure, MeasureValue]:
     """compute all sample `measures` for the given `sample`"""
     calculators, dataset_calculators = get_measure_calculators(measures)
@@ -585,7 +587,7 @@ def compute_sample_measures(
 
 
 def compute_measures(
-    measures: Iterable[Measure], dataset: Iterable[UntiledSample]
+    measures: Iterable[Measure], dataset: Iterable[Sample]
 ) -> Dict[Measure, MeasureValue]:
     """compute all `measures` for the given `dataset`
     sample measures are computed for the last sample in `dataset`"""

@@ -10,7 +10,6 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
-    TypeVar,
     Union,
     cast,
     get_args,
@@ -38,11 +37,6 @@ from .common import (
 
 if TYPE_CHECKING:
     from numpy.typing import ArrayLike, NDArray
-TensorId = v0_5.TensorId
-
-T = TypeVar("T")
-
-PerTensor = Mapping[TensorId, T]
 
 
 _ScalarOrArray = Union["ArrayLike", np.generic, "NDArray[Any]"]  # TODO: add "DaskArray"
@@ -200,8 +194,13 @@ class Tensor(MagicTensorOpsMixin):
 
     @property
     def tagged_shape(self):
-        """alias for `sizes`"""
+        """(alias for `sizes`) Ordered, immutable mapping from axis ids to lengths."""
         return self.sizes
+
+    @property
+    def shape_tuple(self):
+        """Tuple of tensor axes lengths"""
+        return self._data.shape
 
     @property
     def size(self):
@@ -230,11 +229,6 @@ class Tensor(MagicTensorOpsMixin):
     def sizes(self):
         """Ordered, immutable mapping from axis ids to axis lengths."""
         return cast(Mapping[AxisId, int], self.data.sizes)
-
-    # @property
-    # def tagged_shape(self):
-    #     """(alias for `sizes`) Ordered, immutable mapping from axis ids to lengths."""
-    #     return cast(Mapping[AxisId, int], self.data.sizes)
 
     def astype(self, dtype: DTypeStr, *, copy: bool = False):
         """Return tensor cast to `dtype`
@@ -372,6 +366,9 @@ class Tensor(MagicTensorOpsMixin):
             and q <= 1.0
             or not isinstance(q, (float, int))
             and all(qq <= 1.0 for qq in q)
+        )
+        assert dim is None or (
+            (quantile_dim := AxisId("quantile")) != dim and quantile_dim not in set(dim)
         )
         return self.__class__.from_xarray(self._data.quantile(q, dim=dim))
 

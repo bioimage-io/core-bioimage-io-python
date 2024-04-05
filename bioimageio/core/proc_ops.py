@@ -1,6 +1,6 @@
 import collections.abc
 from abc import ABC, abstractmethod
-from dataclasses import InitVar, dataclass, field
+from dataclasses import InitVar, dataclass, field, replace
 from typing import (
     Collection,
     Literal,
@@ -16,12 +16,12 @@ import numpy as np
 import xarray as xr
 from typing_extensions import Self, assert_never
 
-from bioimageio.core.common import DTypeStr
+from bioimageio.core.sample import SampleBlock
 from bioimageio.spec.model import v0_4, v0_5
 
 from ._op_base import Operator
 from .axis import AxisId
-from .sample import UntiledSample
+from .common import DTypeStr, MemberId
 from .stat_calculators import StatsCalculator
 from .stat_measures import (
     DatasetMean,
@@ -37,7 +37,7 @@ from .stat_measures import (
     Stat,
     StdMeasure,
 )
-from .tensor import Tensor, TensorId
+from .tensor import Tensor
 
 
 def convert_axis_ids(
@@ -61,23 +61,35 @@ def convert_axis_ids(
 
 @dataclass
 class _SimpleOperator(Operator, ABC):
-    input: TensorId
-    output: TensorId
+    input: MemberId
+    output: MemberId
 
     @property
     def required_measures(self) -> Collection[Measure]:
         return set()
 
     # @property
-    # def required_tensors(self) -> Set[TensorId]:
+    # def required_tensors(self) -> Set[MemberId]:
     #     return {self.input}
 
     # @property
-    # def produced_tensors(self) -> Set[TensorId]:
+    # def produced_tensors(self) -> Set[MemberId]:
     #     return {self.output}
 
-    def __call__(self, sample: UntiledSample) -> None:
-        sample.data[self.output] = self._apply(sample.data[self.input], sample.stat)
+    def __call__(self, sample_block: SampleBlock) -> None:
+        input_tensor = sample_block.members[self.input]
+        output_tensor = self._apply(input_tensor, sample_block.stat)
+
+        if self.output in sample_block.blocks:
+            assert (
+                sample_block.blocks[self.output].tagged_shape
+                == output_tensor.tagged_shape
+            )
+            sample_block.blocks[self.output].data = output_tensor
+        else:
+            sample_block.blocks[self.output] = replace(
+                sample_block.blocks[self.input], data=output_tensor
+            )
 
     @abstractmethod
     def _apply(self, input: Tensor, stat: Stat) -> Tensor: ...
@@ -91,8 +103,8 @@ class AddKnownDatasetStats(Operator):
     def required_measures(self) -> Set[Measure]:
         return set()
 
-    def __call__(self, sample: UntiledSample) -> None:
-        sample.stat.update(self.dataset_stats.items())
+    def __call__(self, sample_block: SampleBlock) -> None:
+        sample_block.stat.update(self.dataset_stats.items())
 
 
 # @dataclass
@@ -124,7 +136,7 @@ class AddKnownDatasetStats(Operator):
 #         else:
 #             self._keep_updating_dataset_stats = self.keep_updating_dataset_stats
 
-#     def __call__(self, sample: Sample) -> None:
+#     def __call__(self, sample_block: SampleBlock> None:
 #         if self._keep_updating_dataset_stats:
 #             sample.stat.update(self._stats_calculator.update_and_get_all(sample))
 #         else:
@@ -154,11 +166,18 @@ class UpdateStats(Operator):
             or not self.stats_calculator.has_dataset_measures
         )
 
-    def __call__(self, sample: UntiledSample) -> None:
+    def __call__(self, sample_block: SampleBlock) -> None:
+        if sample_block.block_number != 0:
+            return  # update stats with whole sample on first block
+
         if self._keep_updating_dataset_stats:
-            sample.stat.update(self.stats_calculator.update_and_get_all(sample))
+            sample_block.stat.update(
+                self.stats_calculator.update_and_get_all(sample_block.origin)
+            )
         else:
-            sample.stat.update(self.stats_calculator.skip_update_and_get_all(sample))
+            sample_block.stat.update(
+                self.stats_calculator.skip_update_and_get_all(sample_block.origin)
+            )
 
 
 @dataclass
@@ -173,16 +192,16 @@ class Binarize(_SimpleOperator):
 
     @classmethod
     def from_proc_descr(
-        cls, descr: Union[v0_4.BinarizeDescr, v0_5.BinarizeDescr], tensor_id: TensorId
+        cls, descr: Union[v0_4.BinarizeDescr, v0_5.BinarizeDescr], member_id: MemberId
     ) -> Self:
         if isinstance(descr.kwargs, (v0_4.BinarizeKwargs, v0_5.BinarizeKwargs)):
             return cls(
-                input=tensor_id, output=tensor_id, threshold=descr.kwargs.threshold
+                input=member_id, output=member_id, threshold=descr.kwargs.threshold
             )
         elif isinstance(descr.kwargs, v0_5.BinarizeAlongAxisKwargs):
             return cls(
-                input=tensor_id,
-                output=tensor_id,
+                input=member_id,
+                output=member_id,
                 threshold=descr.kwargs.threshold,
                 axis=descr.kwargs.axis,
             )
@@ -208,11 +227,11 @@ class Clip(_SimpleOperator):
 
     @classmethod
     def from_proc_descr(
-        cls, descr: Union[v0_4.ClipDescr, v0_5.ClipDescr], tensor_id: TensorId
+        cls, descr: Union[v0_4.ClipDescr, v0_5.ClipDescr], member_id: MemberId
     ) -> Self:
         return cls(
-            input=tensor_id,
-            output=tensor_id,
+            input=member_id,
+            output=member_id,
             min=descr.kwargs.min,
             max=descr.kwargs.max,
         )
@@ -223,8 +242,8 @@ class EnsureDtype(_SimpleOperator):
     dtype: DTypeStr
 
     @classmethod
-    def from_proc_descr(cls, descr: v0_5.EnsureDtypeDescr, tensor_id: TensorId):
-        return cls(input=tensor_id, output=tensor_id, dtype=descr.kwargs.dtype)
+    def from_proc_descr(cls, descr: v0_5.EnsureDtypeDescr, member_id: MemberId):
+        return cls(input=member_id, output=member_id, dtype=descr.kwargs.dtype)
 
     def get_descr(self):
         return v0_5.EnsureDtypeDescr(kwargs=v0_5.EnsureDtypeKwargs(dtype=self.dtype))
@@ -248,7 +267,7 @@ class ScaleLinear(_SimpleOperator):
     def from_proc_descr(
         cls,
         descr: Union[v0_4.ScaleLinearDescr, v0_5.ScaleLinearDescr],
-        tensor_id: TensorId,
+        member_id: MemberId,
     ) -> Self:
         kwargs = descr.kwargs
         if isinstance(kwargs, v0_5.ScaleLinearAlongAxisKwargs):
@@ -273,13 +292,13 @@ class ScaleLinear(_SimpleOperator):
                 else kwargs.offset[0]
             )
 
-        return cls(input=tensor_id, output=tensor_id, gain=gain, offset=offset)
+        return cls(input=member_id, output=member_id, gain=gain, offset=offset)
 
 
 @dataclass
 class ScaleMeanVariance(_SimpleOperator):
     axes: Optional[Sequence[AxisId]] = None
-    reference_tensor: Optional[TensorId] = None
+    reference_tensor: Optional[MemberId] = None
     eps: float = 1e-6
     mean: Union[SampleMean, DatasetMean] = field(init=False)
     std: Union[SampleStd, DatasetStd] = field(init=False)
@@ -300,10 +319,10 @@ class ScaleMeanVariance(_SimpleOperator):
             Mean = DatasetMean
             Std = DatasetStd
 
-        self.mean = Mean(tensor_id=self.input, axes=axes)
-        self.std = Std(tensor_id=self.input, axes=axes)
-        self.ref_mean = Mean(tensor_id=ref_tensor, axes=axes)
-        self.ref_std = Std(tensor_id=ref_tensor, axes=axes)
+        self.mean = Mean(member_id=self.input, axes=axes)
+        self.std = Std(member_id=self.input, axes=axes)
+        self.ref_mean = Mean(member_id=ref_tensor, axes=axes)
+        self.ref_std = Std(member_id=ref_tensor, axes=axes)
 
     def _apply(self, input: Tensor, stat: Stat) -> Tensor:
         mean = stat[self.mean]
@@ -316,15 +335,15 @@ class ScaleMeanVariance(_SimpleOperator):
     def from_proc_descr(
         cls,
         descr: Union[v0_4.ScaleMeanVarianceDescr, v0_5.ScaleMeanVarianceDescr],
-        tensor_id: TensorId,
+        member_id: MemberId,
     ) -> Self:
         kwargs = descr.kwargs
         axes = _get_axes(descr.kwargs)
 
         return cls(
-            input=tensor_id,
-            output=tensor_id,
-            reference_tensor=TensorId(str(kwargs.reference_tensor)),
+            input=member_id,
+            output=member_id,
+            reference_tensor=MemberId(str(kwargs.reference_tensor)),
             axes=axes,
             eps=kwargs.eps,
         )
@@ -371,17 +390,17 @@ class ScaleRange(_SimpleOperator):
         upper_percentile: Optional[Union[SamplePercentile, DatasetPercentile]],
     ):
         if lower_percentile is None:
-            tid = self.input if upper_percentile is None else upper_percentile.tensor_id
-            self.lower = DatasetPercentile(q=0.0, tensor_id=tid)
+            tid = self.input if upper_percentile is None else upper_percentile.member_id
+            self.lower = DatasetPercentile(q=0.0, member_id=tid)
         else:
             self.lower = lower_percentile
 
         if upper_percentile is None:
-            self.upper = DatasetPercentile(q=1.0, tensor_id=self.lower.tensor_id)
+            self.upper = DatasetPercentile(q=1.0, member_id=self.lower.member_id)
         else:
             self.upper = upper_percentile
 
-        assert self.lower.tensor_id == self.upper.tensor_id
+        assert self.lower.member_id == self.upper.member_id
         assert self.lower.q < self.upper.q
         assert self.lower.axes == self.upper.axes
 
@@ -393,13 +412,13 @@ class ScaleRange(_SimpleOperator):
     def from_proc_descr(
         cls,
         descr: Union[v0_4.ScaleRangeDescr, v0_5.ScaleRangeDescr],
-        tensor_id: TensorId,
+        member_id: MemberId,
     ):
         kwargs = descr.kwargs
         ref_tensor = (
-            tensor_id
+            member_id
             if kwargs.reference_tensor is None
-            else TensorId(str(kwargs.reference_tensor))
+            else MemberId(str(kwargs.reference_tensor))
         )
         axes = _get_axes(descr.kwargs)
         if axes is None or AxisId("batch") in axes:
@@ -408,13 +427,13 @@ class ScaleRange(_SimpleOperator):
             Percentile = SamplePercentile
 
         return cls(
-            input=tensor_id,
-            output=tensor_id,
+            input=member_id,
+            output=member_id,
             lower_percentile=Percentile(
-                q=kwargs.min_percentile / 100, axes=axes, tensor_id=ref_tensor
+                q=kwargs.min_percentile / 100, axes=axes, member_id=ref_tensor
             ),
             upper_percentile=Percentile(
-                q=kwargs.max_percentile / 100, axes=axes, tensor_id=ref_tensor
+                q=kwargs.max_percentile / 100, axes=axes, member_id=ref_tensor
             ),
         )
 
@@ -425,7 +444,7 @@ class ScaleRange(_SimpleOperator):
 
     def get_descr(self):
         assert self.lower.axes == self.upper.axes
-        assert self.lower.tensor_id == self.upper.tensor_id
+        assert self.lower.member_id == self.upper.member_id
 
         return v0_5.ScaleRangeDescr(
             kwargs=v0_5.ScaleRangeKwargs(
@@ -433,7 +452,7 @@ class ScaleRange(_SimpleOperator):
                 min_percentile=self.lower.q * 100,
                 max_percentile=self.upper.q * 100,
                 eps=self.eps,
-                reference_tensor=self.lower.tensor_id,
+                reference_tensor=self.lower.member_id,
             )
         )
 
@@ -451,10 +470,10 @@ class Sigmoid(_SimpleOperator):
 
     @classmethod
     def from_proc_descr(
-        cls, descr: Union[v0_4.SigmoidDescr, v0_5.SigmoidDescr], tensor_id: TensorId
+        cls, descr: Union[v0_4.SigmoidDescr, v0_5.SigmoidDescr], member_id: MemberId
     ) -> Self:
         assert isinstance(descr, (v0_4.SigmoidDescr, v0_5.SigmoidDescr))
-        return cls(input=tensor_id, output=tensor_id)
+        return cls(input=member_id, output=member_id)
 
     def get_descr(self):
         return v0_5.SigmoidDescr()
@@ -480,7 +499,7 @@ class ZeroMeanUnitVariance(_SimpleOperator):
     def from_proc_descr(
         cls,
         descr: Union[v0_4.ZeroMeanUnitVarianceDescr, v0_5.ZeroMeanUnitVarianceDescr],
-        tensor_id: TensorId,
+        member_id: MemberId,
     ):
         axes = _get_axes(descr.kwargs)
 
@@ -492,10 +511,10 @@ class ZeroMeanUnitVariance(_SimpleOperator):
             Std = SampleStd
 
         return cls(
-            input=tensor_id,
-            output=tensor_id,
-            mean=Mean(axes=axes, tensor_id=tensor_id),
-            std=Std(axes=axes, tensor_id=tensor_id),
+            input=member_id,
+            output=member_id,
+            mean=Mean(axes=axes, member_id=member_id),
+            std=Std(axes=axes, member_id=member_id),
         )
 
     def _apply(self, input: Tensor, stat: Stat) -> Tensor:
@@ -529,7 +548,7 @@ class FixedZeroMeanUnitVariance(_SimpleOperator):
     def from_proc_descr(
         cls,
         descr: v0_5.FixedZeroMeanUnitVarianceDescr,
-        tensor_id: TensorId,
+        member_id: MemberId,
     ) -> Self:
         if isinstance(descr.kwargs, v0_5.FixedZeroMeanUnitVarianceKwargs):
             dims = None
@@ -539,8 +558,8 @@ class FixedZeroMeanUnitVariance(_SimpleOperator):
             assert_never(descr.kwargs)
 
         return cls(
-            input=tensor_id,
-            output=tensor_id,
+            input=member_id,
+            output=member_id,
             mean=xr.DataArray(descr.kwargs.mean, dims=dims),
             std=xr.DataArray(descr.kwargs.std, dims=dims),
         )

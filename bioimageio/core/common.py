@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from typing import Literal, NamedTuple, Tuple, TypeVar, Union
+from typing import Hashable, Literal, Mapping, NamedTuple, Tuple, TypeVar, Union
 
 from typing_extensions import Self, assert_never
+
+from bioimageio.spec.model import v0_5
 
 DTypeStr = Literal[
     "bool",
@@ -74,6 +76,11 @@ class SliceInfo(NamedTuple):
     start: int
     stop: int
 
+
+SampleId = Hashable
+MemberId = v0_5.TensorId
+T = TypeVar("T")
+PerMember = Mapping[MemberId, T]
 
 BlockNumber = int
 TotalNumberOfBlocks = int

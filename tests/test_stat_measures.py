@@ -29,7 +29,7 @@ def test_individual_normal_measure(
 ):
     data_id = TensorId("test_data")
     measure = getattr(stat_measures, "Sample" + name.title())(
-        axes=axes, tensor_id=data_id
+        axes=axes, member_id=data_id
     )
     data = Tensor(
         np.random.random((5, 6, 3)), dims=(AxisId("x"), AxisId("y"), AxisId("c"))
@@ -46,7 +46,7 @@ def test_individual_percentile_measure(axes: Optional[Tuple[AxisId, ...]]):
     qs = [0, 0.1, 0.5, 1.0]
     tid = TensorId("tensor")
 
-    measures = [SamplePercentile(tensor_id=tid, axes=axes, q=q) for q in qs]
+    measures = [SamplePercentile(member_id=tid, axes=axes, q=q) for q in qs]
     calcs, _ = get_measure_calculators(measures)
     assert len(calcs) == 1
     calc = calcs[0]

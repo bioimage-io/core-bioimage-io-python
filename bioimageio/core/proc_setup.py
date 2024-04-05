@@ -1,9 +1,9 @@
-from types import MappingProxyType
 from typing import (
     Iterable,
     List,
     Mapping,
     NamedTuple,
+    Optional,
     Sequence,
     Set,
     Union,
@@ -11,17 +11,13 @@ from typing import (
 
 from typing_extensions import assert_never
 
-from bioimageio.core.proc_ops import (
-    AddKnownDatasetStats,
-    Processing,
-    UpdateStats,
-    get_proc_class,
-)
-from bioimageio.core.sample import UntiledSample
-from bioimageio.core.stat_calculators import StatsCalculator
-from bioimageio.core.stat_measures import DatasetMeasure, Measure, MeasureValue
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 from bioimageio.spec.model.v0_5 import TensorId
+
+from .proc_ops import AddKnownDatasetStats, Processing, UpdateStats, get_proc_class
+from .sample import Sample
+from .stat_calculators import StatsCalculator
+from .stat_measures import DatasetMeasure, Measure, MeasureValue
 
 TensorDescr = Union[
     v0_4.InputTensorDescr,
@@ -45,9 +41,9 @@ class _SetupProcessing(NamedTuple):
 
 def setup_pre_and_postprocessing(
     model: AnyModelDescr,
-    dataset_for_initial_statistics: Iterable[UntiledSample],
+    dataset_for_initial_statistics: Iterable[Sample],
     keep_updating_initial_dataset_stats: bool = False,
-    fixed_dataset_stats: Mapping[DatasetMeasure, MeasureValue] = MappingProxyType({}),
+    fixed_dataset_stats: Optional[Mapping[DatasetMeasure, MeasureValue]] = None,
 ) -> PreAndPostprocessing:
     """
     Get pre- and postprocessing operators for a `model` description.
@@ -55,7 +51,9 @@ def setup_pre_and_postprocessing(
     prep, post, prep_meas, post_meas = _prepare_setup_pre_and_postprocessing(model)
 
     missing_dataset_stats = {
-        m for m in prep_meas | post_meas if m not in fixed_dataset_stats
+        m
+        for m in prep_meas | post_meas
+        if fixed_dataset_stats is None or m not in fixed_dataset_stats
     }
     initial_stats_calc = StatsCalculator(missing_dataset_stats)
     for sample in dataset_for_initial_statistics:
@@ -125,18 +123,18 @@ def _prepare_setup_pre_and_postprocessing(model: AnyModelDescr) -> _SetupProcess
 
             for proc_d in proc_descrs:
                 proc_class = get_proc_class(proc_d)
-                tensor_id = (
+                member_id = (
                     TensorId(str(t_descr.name))
                     if isinstance(t_descr, v0_4.TensorDescrBase)
                     else t_descr.id
                 )
                 req = proc_class.from_proc_descr(
-                    proc_d, tensor_id  # pyright: ignore[reportArgumentType]
+                    proc_d, member_id  # pyright: ignore[reportArgumentType]
                 )
                 for m in req.required_measures:
-                    if m.tensor_id in input_ids:
+                    if m.member_id in input_ids:
                         pre_measures.add(m)
-                    elif m.tensor_id in output_ids:
+                    elif m.member_id in output_ids:
                         post_measures.add(m)
                     else:
                         raise ValueError("When to raise ")

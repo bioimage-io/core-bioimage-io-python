@@ -2,14 +2,14 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Collection
 
-from bioimageio.core.sample import UntiledSample
-from bioimageio.core.stat_measures import Measure
+from .sample import SampleBlock
+from .stat_measures import Measure
 
 
 @dataclass
 class Operator(ABC):
     @abstractmethod
-    def __call__(self, sample: UntiledSample) -> None: ...
+    def __call__(self, sample_block: SampleBlock) -> None: ...
 
     @property
     @abstractmethod
