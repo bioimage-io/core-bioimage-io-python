@@ -5,12 +5,13 @@ from typing import (
     Iterable,
     Optional,
     Tuple,
+    Union,
 )
 
 from typing_extensions import Self
 
 from .axis import PerAxis
-from .block_meta import BlockMeta, split_shape_into_blocks
+from .block_meta import BlockMeta, LinearAxisTransform, split_shape_into_blocks
 from .common import (
     Halo,
     HaloLike,
@@ -21,7 +22,7 @@ from .common import (
 from .tensor import Tensor
 
 
-@dataclass(init=False)
+@dataclass(init=False, frozen=True)
 class Block(BlockMeta):
     """A block/tile of a (larger) tensor"""
 
@@ -44,7 +45,7 @@ class Block(BlockMeta):
             block_number=block_number,
             blocks_in_sample=blocks_in_sample,
         )
-        self.data = data
+        object.__setattr__(self, "data", data)
 
     @property
     def inner_data(self):
@@ -76,6 +77,11 @@ class Block(BlockMeta):
             block_number=block.block_number,
             blocks_in_sample=block.blocks_in_sample,
         )
+
+    def get_transformed(
+        self, new_axes: PerAxis[Union[LinearAxisTransform, int]]
+    ) -> Self:
+        raise NotImplementedError
 
 
 def split_tensor_into_blocks(

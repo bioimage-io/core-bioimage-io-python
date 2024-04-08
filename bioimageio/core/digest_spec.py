@@ -2,9 +2,23 @@ from __future__ import annotations
 
 import importlib.util
 from functools import singledispatch
-from typing import Any, Callable, Dict, Iterable, Mapping, NamedTuple, Tuple, Union
+from itertools import chain
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    NamedTuple,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
-from typing_extensions import Unpack
+from numpy.typing import NDArray
+from typing_extensions import Unpack, assert_never
 
 from bioimageio.spec._internal.io_utils import HashKwargs, download
 from bioimageio.spec.common import FileSource
@@ -14,19 +28,25 @@ from bioimageio.spec.model.v0_5 import (
     ArchitectureFromFileDescr,
     ArchitectureFromLibraryDescr,
     ParameterizedSize,
-    TensorId,
 )
 from bioimageio.spec.utils import load_array
 
 from .axis import AxisId, AxisInfo, PerAxis
 from .block_meta import split_multiple_shapes_into_blocks
 from .common import Halo, MemberId, PerMember, TotalNumberOfBlocks
-from .sample import Sample, SampleBlockMeta, sample_block_meta_generator
+from .sample import (
+    LinearSampleAxisTransform,
+    Sample,
+    SampleBlockMeta,
+    sample_block_meta_generator,
+)
+from .stat_measures import Stat
 from .tensor import Tensor
 
 
 @singledispatch
 def import_callable(node: type, /) -> Callable[..., Any]:
+    """import a callable (e.g. a torch.nn.Module) from a spec node describing it"""
     raise TypeError(type(node))
 
 
@@ -83,8 +103,8 @@ def get_axes_infos(
         v0_5.InputTensorDescr,
         v0_5.OutputTensorDescr,
     ]
-):
-    """get a unified, simplified axis represenation from spec axes"""
+) -> List[AxisInfo]:
+    """get a unified, simplified axis representation from spec axes"""
     return [
         (
             AxisInfo.create("i")
@@ -95,13 +115,43 @@ def get_axes_infos(
     ]
 
 
+def get_member_id(
+    tensor_description: Union[
+        v0_4.InputTensorDescr,
+        v0_4.OutputTensorDescr,
+        v0_5.InputTensorDescr,
+        v0_5.OutputTensorDescr,
+    ]
+) -> MemberId:
+    """get the normalized tensor ID, usable as a sample member ID"""
+
+    if isinstance(tensor_description, (v0_4.InputTensorDescr, v0_4.OutputTensorDescr)):
+        return MemberId(tensor_description.name)
+    elif isinstance(
+        tensor_description, (v0_5.InputTensorDescr, v0_5.OutputTensorDescr)
+    ):
+        return tensor_description.id
+    else:
+        assert_never(tensor_description)
+
+
+def get_member_ids(
+    tensor_descriptions: Sequence[
+        Union[
+            v0_4.InputTensorDescr,
+            v0_4.OutputTensorDescr,
+            v0_5.InputTensorDescr,
+            v0_5.OutputTensorDescr,
+        ]
+    ]
+) -> List[MemberId]:
+    """get normalized tensor IDs to be used as sample member IDs"""
+    return [get_member_id(descr) for descr in tensor_descriptions]
+
+
 def get_test_inputs(model: AnyModelDescr) -> Sample:
     """returns a model's test input sample"""
-    if isinstance(model, v0_4.ModelDescr):
-        tensor_ids = [TensorId(t.name) for t in model.inputs]
-    else:
-        tensor_ids = [t.id for t in model.inputs]
-
+    member_ids = get_member_ids(model.inputs)
     if isinstance(model, v0_4.ModelDescr):
         arrays = [load_array(tt) for tt in model.test_inputs]
     else:
@@ -110,18 +160,15 @@ def get_test_inputs(model: AnyModelDescr) -> Sample:
     axes = [get_axes_infos(t) for t in model.inputs]
     return Sample(
         members={
-            tid: Tensor.from_numpy(arr, dims=ax)
-            for tid, arr, ax in zip(tensor_ids, arrays, axes)
+            m: Tensor.from_numpy(arr, dims=ax)
+            for m, arr, ax in zip(member_ids, arrays, axes)
         }
     )
 
 
 def get_test_outputs(model: AnyModelDescr) -> Sample:
     """returns a model's test output sample"""
-    if isinstance(model, v0_4.ModelDescr):
-        tensor_ids = [TensorId(t.name) for t in model.outputs]
-    else:
-        tensor_ids = [t.id for t in model.outputs]
+    member_ids = get_member_ids(model.outputs)
 
     if isinstance(model, v0_4.ModelDescr):
         arrays = [load_array(tt) for tt in model.test_outputs]
@@ -132,8 +179,8 @@ def get_test_outputs(model: AnyModelDescr) -> Sample:
 
     return Sample(
         members={
-            tid: Tensor.from_numpy(arr, dims=ax)
-            for tid, arr, ax in zip(tensor_ids, arrays, axes)
+            m: Tensor.from_numpy(arr, dims=ax)
+            for m, arr, ax in zip(member_ids, arrays, axes)
         }
     )
 
@@ -142,8 +189,11 @@ class IO_SampleBlockMeta(NamedTuple):
     input: SampleBlockMeta
     output: SampleBlockMeta
 
+
 def get_input_halo(model: v0_5.ModelDescr, output_halo: PerMember[PerAxis[Halo]]):
-    halo: Dict[MemberId, Dict[AxisId, Halo]] = {}
+    """returns which halo input tensors need to be divided into blocks with such that
+    `output_halo` can be cropped from their outputs without intorducing gaps."""
+    input_halo: Dict[MemberId, Dict[AxisId, Halo]] = {}
     outputs = {t.id: t for t in model.outputs}
     all_tensors = {**{t.id: t for t in model.inputs}, **outputs}
 
@@ -153,30 +203,85 @@ def get_input_halo(model: v0_5.ModelDescr, output_halo: PerMember[PerAxis[Halo]]
         for a, ah in th.items():
             s = axes[a].size
             if not isinstance(s, v0_5.SizeReference):
-                raise ValueError(f"Unable to map output halo for {t}.{a} to an input axis")
-
+                raise ValueError(
+                    f"Unable to map output halo for {t}.{a} to an input axis"
+                )
 
             axis = axes[a]
             ref_axis = {a.id: a for a in all_tensors[s.tensor_id].axes}[s.axis_id]
 
             total_output_halo = sum(ah)
             total_input_halo = total_output_halo * axis.scale / ref_axis.scale
-            if total_input_halo != int(total_input_halo):
-                raise ValueError()
-            for lr in (ah.left, ah.right):
-                input_halo =
-    return halo
+            assert (
+                total_input_halo == int(total_input_halo) and total_input_halo % 2 == 0
+            )
+            input_halo.setdefault(t, {})[a] = Halo(
+                int(total_input_halo // 2), int(total_input_halo // 2)
+            )
 
-def get_block_meta(
+    return input_halo
+
+
+def get_block_transform(model: v0_5.ModelDescr):
+    """returns how a model's output tensor shapes relate to its input shapes"""
+    ret: Dict[MemberId, Dict[AxisId, Union[LinearSampleAxisTransform, int]]] = {}
+    batch_axis_trf = None
+    for ipt in model.inputs:
+        for a in ipt.axes:
+            if a.type == "batch":
+                batch_axis_trf = LinearSampleAxisTransform(
+                    axis=a.id, scale=1, offset=0, member=ipt.id
+                )
+                break
+        if batch_axis_trf is not None:
+            break
+    axis_scales = {
+        t.id: {a.id: a.scale for a in t.axes}
+        for t in chain(model.inputs, model.outputs)
+    }
+    for out in model.outputs:
+        new_axes: Dict[AxisId, Union[LinearSampleAxisTransform, int]] = {}
+        for a in out.axes:
+            if a.size is None:
+                assert a.type == "batch"
+                if batch_axis_trf is None:
+                    raise ValueError(
+                        "no batch axis found in any input tensor, but output tensor"
+                        + f" '{out.id}' has one."
+                    )
+                s = batch_axis_trf
+            elif isinstance(a.size, int):
+                s = a.size
+            elif isinstance(a.size, v0_5.DataDependentSize):
+                s = -1
+            elif isinstance(a.size, v0_5.SizeReference):
+                s = LinearSampleAxisTransform(
+                    axis=a.size.axis_id,
+                    scale=axis_scales[a.size.tensor_id][a.size.axis_id] / a.scale,
+                    offset=a.size.offset,
+                    member=a.size.tensor_id,
+                )
+            else:
+                assert_never(a.size)
+
+            new_axes[a.id] = s
+
+        ret[out.id] = new_axes
+
+    return ret
+
+
+def get_io_sample_block_metas(
     model: v0_5.ModelDescr,
     input_sample_shape: PerMember[PerAxis[int]],
-    ns: Mapping[Tuple[TensorId, AxisId], ParameterizedSize.N],
+    ns: Mapping[Tuple[MemberId, AxisId], ParameterizedSize.N],
+    batch_size: int = 1,
 ) -> Tuple[TotalNumberOfBlocks, Iterable[IO_SampleBlockMeta]]:
     """returns an iterable yielding meta data for corresponding input and output samples"""
     if not isinstance(model, v0_5.ModelDescr):
         raise TypeError(f"get_block_meta() not implemented for {type(model)}")
 
-    block_axis_sizes = model.get_axis_sizes(ns=ns, batch_size=1)
+    block_axis_sizes = model.get_axis_sizes(ns=ns, batch_size=batch_size)
     input_block_shape = {
         t: {aa: s for (tt, aa), s in block_axis_sizes.inputs.items() if tt == t}
         for t in {tt for tt, _ in block_axis_sizes.inputs}
@@ -189,7 +294,12 @@ def get_block_meta(
         }
         for t in {tt for tt, _ in block_axis_sizes.outputs}
     }
-    output_halo = {t.id: {a.id: Halo(a.halo, a.halo) for a in t.axes if isinstance(a, v0_5.WithHalo)} for t in model.outputs}
+    output_halo = {
+        t.id: {
+            a.id: Halo(a.halo, a.halo) for a in t.axes if isinstance(a, v0_5.WithHalo)
+        }
+        for t in model.outputs
+    }
     input_halo = get_input_halo(model, output_halo)
     output_sample_shape_data_dep = model.get_output_tensor_sizes(input_sample_shape)
     output_sample_shape = {
@@ -209,7 +319,45 @@ def get_block_meta(
     return n_input_blocks, (
         IO_SampleBlockMeta(ipt, out)
         for ipt, out in zip(
-            sample_block_meta_generator(input_blocks, origin=input_sample_shape),
-            sample_block_meta_generator(output_blocks, origin=output_sample_shape),
+            sample_block_meta_generator(input_blocks, sample_shape=input_sample_shape),
+            sample_block_meta_generator(
+                output_blocks, sample_shape=output_sample_shape
+            ),
         )
+    )
+
+
+def create_sample(
+    inputs: Sequence[NDArray[Any]],
+    model: AnyModelDescr,
+    stat: Optional[Stat] = None,
+) -> Sample:
+    """Run prediction for a single set of input(s) with a bioimage.io model
+
+    Args:
+        inputs: the input(s) for this model.
+        model: a bioimage.io model description
+        stat: dictionary with sample and dataset statistics (may be updated in-place!)
+    """
+    if len(inputs) > len(model.inputs):
+        raise ValueError(
+            f"Got {len(inputs)} inputs, but expected at most {len(model.inputs)}"
+        )
+
+    missing_inputs = model.inputs[len(inputs) :]
+    for missing in missing_inputs:
+        if isinstance(missing, v0_4.InputTensorDescr):
+            raise ValueError(f"Missing input tensor '{missing.name}'")
+        elif isinstance(missing, v0_5.InputTensorDescr):
+            if not missing.optional:
+                raise ValueError(f"Missing non-optional input tensor '{missing.id}'")
+        else:
+            assert_never(missing)
+
+    return Sample(
+        members={
+            get_member_id(ipt): Tensor.from_numpy(array, dims=get_axes_infos(ipt))
+            for ipt, array in zip(model.inputs, inputs)
+        },
+        stat={} if stat is None else stat,
     )

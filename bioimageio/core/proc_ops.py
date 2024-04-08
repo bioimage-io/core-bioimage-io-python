@@ -16,7 +16,7 @@ import numpy as np
 import xarray as xr
 from typing_extensions import Self, assert_never
 
-from bioimageio.core.sample import SampleBlock
+from bioimageio.core.sample import Sample, SampleBlock, SampleBlockWithOrigin
 from bioimageio.spec.model import v0_4, v0_5
 
 from ._op_base import Operator
@@ -76,20 +76,23 @@ class _SimpleOperator(Operator, ABC):
     # def produced_tensors(self) -> Set[MemberId]:
     #     return {self.output}
 
-    def __call__(self, sample_block: SampleBlock) -> None:
-        input_tensor = sample_block.members[self.input]
-        output_tensor = self._apply(input_tensor, sample_block.stat)
+    def __call__(self, sample: Union[Sample, SampleBlock]) -> None:
+        input_tensor = sample.members[self.input]
+        output_tensor = self._apply(input_tensor, sample.stat)
 
-        if self.output in sample_block.blocks:
+        if self.output in sample.members:
             assert (
-                sample_block.blocks[self.output].tagged_shape
-                == output_tensor.tagged_shape
+                sample.members[self.output].tagged_shape == output_tensor.tagged_shape
             )
-            sample_block.blocks[self.output].data = output_tensor
+
+        if isinstance(sample, Sample):
+            sample.members[self.output] = output_tensor
+        elif isinstance(sample, SampleBlock):
+            sample.blocks[self.output] = replace(
+                sample.blocks[self.input], data=output_tensor
+            )
         else:
-            sample_block.blocks[self.output] = replace(
-                sample_block.blocks[self.input], data=output_tensor
-            )
+            assert_never(sample)
 
     @abstractmethod
     def _apply(self, input: Tensor, stat: Stat) -> Tensor: ...
@@ -103,8 +106,8 @@ class AddKnownDatasetStats(Operator):
     def required_measures(self) -> Set[Measure]:
         return set()
 
-    def __call__(self, sample_block: SampleBlock) -> None:
-        sample_block.stat.update(self.dataset_stats.items())
+    def __call__(self, sample: Union[Sample, SampleBlock]) -> None:
+        sample.stat.update(self.dataset_stats.items())
 
 
 # @dataclass
@@ -136,7 +139,7 @@ class AddKnownDatasetStats(Operator):
 #         else:
 #             self._keep_updating_dataset_stats = self.keep_updating_dataset_stats
 
-#     def __call__(self, sample_block: SampleBlock> None:
+#     def __call__(self, sample_block: SampleBlockWithOrigin> None:
 #         if self._keep_updating_dataset_stats:
 #             sample.stat.update(self._stats_calculator.update_and_get_all(sample))
 #         else:
@@ -166,18 +169,20 @@ class UpdateStats(Operator):
             or not self.stats_calculator.has_dataset_measures
         )
 
-    def __call__(self, sample_block: SampleBlock) -> None:
-        if sample_block.block_number != 0:
-            return  # update stats with whole sample on first block
+    def __call__(self, sample: Union[Sample, SampleBlockWithOrigin]) -> None:
+        if isinstance(sample, SampleBlockWithOrigin):
+            # update stats with whole sample on first block
+            if sample.block_number != 0:
+                return
+
+            origin = sample.origin
+        else:
+            origin = sample
 
         if self._keep_updating_dataset_stats:
-            sample_block.stat.update(
-                self.stats_calculator.update_and_get_all(sample_block.origin)
-            )
+            sample.stat.update(self.stats_calculator.update_and_get_all(origin))
         else:
-            sample_block.stat.update(
-                self.stats_calculator.skip_update_and_get_all(sample_block.origin)
-            )
+            sample.stat.update(self.stats_calculator.skip_update_and_get_all(origin))
 
 
 @dataclass

@@ -10,7 +10,7 @@ VERSION_FILE = ROOT_DIR / "bioimageio" / "core" / "VERSION"
 VERSION = json.loads(VERSION_FILE.read_text())["version"]
 
 
-setup(
+_ = setup(
     name="bioimageio.core",
     version=VERSION,
     description="Python functionality for the bioimage model zoo",

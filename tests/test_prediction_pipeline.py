@@ -2,7 +2,6 @@ from pathlib import Path
 
 from numpy.testing import assert_array_almost_equal
 
-from bioimageio.core.utils import get_test_inputs, get_test_outputs
 from bioimageio.spec import load_description
 from bioimageio.spec.model.v0_4 import ModelDescr as ModelDescr04
 from bioimageio.spec.model.v0_5 import ModelDescr, WeightsFormat
@@ -10,6 +9,7 @@ from bioimageio.spec.model.v0_5 import ModelDescr, WeightsFormat
 
 def _test_prediction_pipeline(model_package: Path, weights_format: WeightsFormat):
     from bioimageio.core._prediction_pipeline import create_prediction_pipeline
+    from bioimageio.core.digest_spec import get_test_inputs, get_test_outputs
 
     bio_model = load_description(model_package)
     assert isinstance(

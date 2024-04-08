@@ -3,7 +3,7 @@ import pytest
 import xarray as xr
 from xarray.testing import assert_equal  # pyright: ignore[reportUnknownVariableType]
 
-from bioimageio.core import AxisId, Tensor, TensorId
+from bioimageio.core import AxisId, Tensor
 
 
 @pytest.mark.parametrize(
@@ -12,7 +12,7 @@ from bioimageio.core import AxisId, Tensor, TensorId
 )
 def test_transpose_tensor_2d(axes: str):
 
-    tensor = Tensor.from_numpy(np.random.rand(256, 256), dims=None, id=TensorId("id"))
+    tensor = Tensor.from_numpy(np.random.rand(256, 256), dims=None)
     transposed = tensor.transpose([AxisId(a) for a in axes])
     assert transposed.ndim == len(axes)
 
@@ -22,7 +22,7 @@ def test_transpose_tensor_2d(axes: str):
     ["zyx", "cyzx", "yzixc", "bczyx", "xyz", "xyzc", "bzyxtc"],
 )
 def test_transpose_tensor_3d(axes: str):
-    tensor = Tensor.from_numpy(np.random.rand(64, 64, 64), dims=None, id=TensorId("id"))
+    tensor = Tensor.from_numpy(np.random.rand(64, 64, 64), dims=None)
     transposed = tensor.transpose([AxisId(a) for a in axes])
     assert transposed.ndim == len(axes)
 
@@ -37,5 +37,5 @@ def test_crop_and_pad():
 
 
 def test_some_magic_ops():
-    tensor = Tensor.from_numpy(np.random.rand(256, 256), dims=None, id=TensorId("id"))
+    tensor = Tensor.from_numpy(np.random.rand(256, 256), dims=None)
     assert tensor + 2 == 2 + tensor

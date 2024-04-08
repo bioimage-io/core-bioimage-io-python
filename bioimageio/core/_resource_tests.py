@@ -4,9 +4,6 @@ from typing import Dict, Hashable, List, Literal, Optional, Set, Tuple, Union
 
 import numpy as np
 
-from bioimageio.core._prediction_pipeline import create_prediction_pipeline
-from bioimageio.core.axis import AxisId, BatchSize
-from bioimageio.core.utils import VERSION, get_test_inputs, get_test_outputs
 from bioimageio.spec import (
     InvalidDescr,
     ResourceDescr,
@@ -24,6 +21,11 @@ from bioimageio.spec.summary import (
     ValidationDetail,
     ValidationSummary,
 )
+
+from ._prediction_pipeline import create_prediction_pipeline
+from .axis import AxisId, BatchSize
+from .digest_spec import get_test_inputs, get_test_outputs
+from .utils import VERSION
 
 
 def test_model(

@@ -5,23 +5,23 @@ import pytest
 from xarray.testing import assert_allclose  # pyright: ignore[reportUnknownVariableType]
 
 from bioimageio.core.axis import AxisId
-from bioimageio.core.sample import UntiledSample
+from bioimageio.core.common import MemberId
+from bioimageio.core.sample import Sample
 from bioimageio.core.stat_calculators import MeanVarStdCalculator
 from bioimageio.core.stat_measures import (
     DatasetMean,
     DatasetStd,
     DatasetVar,
 )
-from bioimageio.core.tensor import Tensor, TensorId
+from bioimageio.core.tensor import Tensor
 
 
-def create_random_dataset(tid: TensorId, axes: Tuple[AxisId, ...]):
+def create_random_dataset(tid: MemberId, axes: Tuple[AxisId, ...]):
     n = 3
     sizes = list(range(n, len(axes) + 1))
     data = np.asarray(np.random.rand(*sizes))
     ds = [
-        UntiledSample(data={tid: Tensor(data[i : i + 1], dims=axes, id=tid)})
-        for i in range(n)
+        Sample(data={tid: Tensor(data[i : i + 1], dims=axes, id=tid)}) for i in range(n)
     ]
     return Tensor(data, dims=axes), ds
 
@@ -35,7 +35,7 @@ def create_random_dataset(tid: TensorId, axes: Tuple[AxisId, ...]):
     ],
 )
 def test_mean_var_std_calculator(axes: Union[None, str, Tuple[str, ...]]):
-    tid = TensorId("tensor")
+    tid = MemberId("tensor")
     axes = tuple(map(AxisId, ("batch", "channel", "x", "y")))
     data, ds = create_random_dataset(tid, axes)
     expected_mean = data.mean(axes)

@@ -2,8 +2,6 @@ from pathlib import Path
 
 from numpy.testing import assert_array_almost_equal
 
-from bioimageio.core import load_description
-from bioimageio.core.utils import get_test_inputs, get_test_outputs
 from bioimageio.core.utils.testing import skip_on
 from bioimageio.spec.model.v0_4 import ModelDescr as ModelDescr04
 from bioimageio.spec.model.v0_5 import ModelDescr, WeightsFormat
@@ -16,10 +14,12 @@ class TooFewDevicesException(Exception):
 def _test_device_management(model_package: Path, weight_format: WeightsFormat):
     import torch
 
+    from bioimageio.core import load_description
+    from bioimageio.core._prediction_pipeline import create_prediction_pipeline
+    from bioimageio.core.digest_spec import get_test_inputs, get_test_outputs
+
     if torch.cuda.device_count() == 0:
         raise TooFewDevicesException("Need at least one cuda device for this test")
-
-    from bioimageio.core._prediction_pipeline import create_prediction_pipeline
 
     bio_model = load_description(model_package)
     assert isinstance(bio_model, (ModelDescr, ModelDescr04))

@@ -10,7 +10,10 @@ from typing import (
     List,
     Optional,
     Tuple,
+    Union,
 )
+
+from typing_extensions import Self
 
 from .axis import AxisId, PerAxis
 from .common import (
@@ -26,6 +29,16 @@ from .common import (
 
 
 @dataclass
+class LinearAxisTransform:
+    axis: AxisId
+    scale: float
+    offset: int
+
+    def compute(self, s: int) -> int:
+        return int(s * self.scale) + self.offset
+
+
+@dataclass(frozen=True)
 class BlockMeta:
     """Block meta data of a sample member (a tensor in a sample)
 
@@ -104,7 +117,7 @@ class BlockMeta:
         stiched together trivially to form the original sample.
 
         This can also be used to calculate statistics
-        without overrepresenting edge regions."""
+        without overrepresenting block edge regions."""
         # TODO: update inner_slice_wo_overlap when adding block overlap
         return self.inner_slice
 
@@ -116,52 +129,110 @@ class BlockMeta:
             a in self.inner_slice for a in self.halo
         ), "halo has axes not present in block"
 
-        self.shape = {
-            a: s.stop - s.start + sum(self.halo[a]) for a, s in self.inner_slice.items()
-        }
+        object.__setattr__(   #TODO: write as property
+            self,
+            "shape",
+            {
+                a: s.stop - s.start + sum(self.halo[a])
+                for a, s in self.inner_slice.items()
+            },
+        )
         assert all(
             s <= self.sample_shape[a] for a, s in self.shape.items()
         ), "block larger than sample"
 
-        self.inner_shape = {a: s.stop - s.start for a, s in self.inner_slice.items()}
-        self.outer_slice = {
-            a: SliceInfo(
-                max(
-                    0,
-                    min(
-                        self.inner_slice[a].start - self.halo[a].left,
-                        self.sample_shape[a] - self.inner_shape[a] - self.halo[a].left,
+        object.__setattr__(   #TODO: write as property
+            self,
+            "inner_shape",
+            {a: s.stop - s.start for a, s in self.inner_slice.items()},
+        )
+        object.__setattr__(   #TODO: write as property
+            self,
+            "outer_slice",
+            {
+                a: SliceInfo(
+                    max(
+                        0,
+                        min(
+                            self.inner_slice[a].start - self.halo[a].left,
+                            self.sample_shape[a]
+                            - self.inner_shape[a]
+                            - self.halo[a].left,
+                        ),
                     ),
-                ),
-                min(
-                    self.sample_shape[a],
-                    self.inner_slice[a].stop + self.halo[a].right,
-                ),
-            )
-            for a in self.inner_slice
-        }
-        self.padding = {
-            a: PadWidth(
-                max(
-                    0,
-                    self.halo[a].left
-                    - (self.inner_slice[a].start + self.outer_slice[a].start),
-                ),
-                max(
-                    0,
-                    self.halo[a].right
-                    - (self.outer_slice[a].stop + self.inner_slice[a].stop),
-                ),
-            )
-            for a in self.inner_slice
-        }
-        self.local_slice = {
-            a: SliceInfo(
-                self.padding[a].left,
-                self.padding[a].left + self.inner_shape[a],
-            )
-            for a in self.inner_slice
-        }
+                    min(
+                        self.sample_shape[a],
+                        self.inner_slice[a].stop + self.halo[a].right,
+                    ),
+                )
+                for a in self.inner_slice
+            },
+        )
+        object.__setattr__(   #TODO: write as property
+            self,
+            "padding",
+            {
+                a: PadWidth(
+                    max(
+                        0,
+                        self.halo[a].left
+                        - (self.inner_slice[a].start + self.outer_slice[a].start),
+                    ),
+                    max(
+                        0,
+                        self.halo[a].right
+                        - (self.outer_slice[a].stop + self.inner_slice[a].stop),
+                    ),
+                )
+                for a in self.inner_slice
+            },
+        )
+        object.__setattr__(   #TODO: write as property
+            self,
+            "local_slice",
+            {
+                a: SliceInfo(
+                    self.padding[a].left,
+                    self.padding[a].left + self.inner_shape[a],
+                )
+                for a in self.inner_slice
+            },
+        )
+
+    def get_transformed(
+        self, new_axes: PerAxis[Union[LinearAxisTransform, int]]
+    ) -> Self:
+        return self.__class__(
+            sample_shape={
+                a: (
+                    trf
+                    if isinstance(trf, int)
+                    else trf.compute(self.sample_shape[trf.axis])
+                )
+                for a, trf in new_axes.items()
+            },
+            inner_slice={
+                a: (
+                    SliceInfo(0, trf)
+                    if isinstance(trf, int)
+                    else SliceInfo(
+                        trf.compute(self.inner_slice[trf.axis].start),
+                        trf.compute(self.inner_slice[trf.axis].stop),
+                    )
+                )
+                for a, trf in new_axes.items()
+            },
+            halo={
+                a: (
+                    Halo(0, 0)
+                    if isinstance(trf, int)
+                    else Halo(self.halo[trf.axis].left, self.halo[trf.axis].right)
+                )
+                for a, trf in new_axes.items()
+            },
+            block_number=self.block_number,
+            blocks_in_sample=self.blocks_in_sample,
+        )
 
 
 def split_shape_into_blocks(

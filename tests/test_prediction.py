@@ -4,7 +4,6 @@ import imageio
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
-from bioimageio.core.utils import get_test_inputs
 from bioimageio.spec import load_description
 from bioimageio.spec.model.v0_4 import InputTensorDescr as InputTensorDescr_v0_4
 from bioimageio.spec.model.v0_4 import ModelDescr as ModelDescr_v0_4
@@ -52,6 +51,7 @@ def test_predict_image_with_weight_format(
 
 
 def _test_predict_with_padding(any_model: Path, tmp_path: Path):
+    from bioimageio.core.digest_spec import get_test_inputs
     from bioimageio.core.prediction import predict_image
 
     model = load_description(any_model)

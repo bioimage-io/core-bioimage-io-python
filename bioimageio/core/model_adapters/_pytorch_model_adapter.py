@@ -2,11 +2,11 @@ import gc
 import warnings
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
-from bioimageio.core.tensor import Tensor
-from bioimageio.core.utils import import_callable
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.utils import download
 
+from ..digest_spec import import_callable
+from ..tensor import Tensor
 from ._model_adapter import ModelAdapter
 
 try:
