@@ -340,9 +340,9 @@ def create_sample_for_model(
     """Create a sample from a single set of input(s) for a specific bioimage.io model
 
     Args:
-        inputs: the input(s) constituting a single sample.
         model: a bioimage.io model description
         stat: dictionary with sample and dataset statistics (may be updated in-place!)
+        inputs: the input(s) constituting a single sample.
     """
     if len(inputs) > len(model.inputs):
         raise ValueError(
