@@ -177,12 +177,12 @@ class BlockMeta:
                 a: PadWidth(
                     max(
                         0,
-                        self.halo[a].left
+                        (self.halo[a].left if a in self.halo else 0)
                         - (self.inner_slice[a].start + self.outer_slice[a].start),
                     ),
                     max(
                         0,
-                        self.halo[a].right
+                        (self.halo[a].right if a in self.halo else 0)
                         - (self.outer_slice[a].stop + self.inner_slice[a].stop),
                     ),
                 )
