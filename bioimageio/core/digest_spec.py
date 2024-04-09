@@ -333,9 +333,9 @@ def get_io_sample_block_metas(
 
 
 def create_sample_for_model(
-    inputs: Sequence[NDArray[Any]],
     model: AnyModelDescr,
     stat: Optional[Stat] = None,
+    **inputs: NDArray[Any],
 ) -> Sample:
     """Create a sample from a single set of input(s) for a specific bioimage.io model
 
@@ -349,20 +349,20 @@ def create_sample_for_model(
             f"Got {len(inputs)} inputs, but expected at most {len(model.inputs)}"
         )
 
-    missing_inputs = model.inputs[len(inputs) :]
-    for missing in missing_inputs:
-        if isinstance(missing, v0_4.InputTensorDescr):
-            raise ValueError(f"Missing input tensor '{missing.name}'")
-        elif isinstance(missing, v0_5.InputTensorDescr):
-            if not missing.optional:
-                raise ValueError(f"Missing non-optional input tensor '{missing.id}'")
-        else:
-            assert_never(missing)
+    missing_inputs = {
+        get_member_id(ipt)
+        for ipt in model.inputs
+        if str(get_member_id(ipt) not in inputs)
+        and not (isinstance(ipt, v0_5.InputTensorDescr) and ipt.optional)
+    }
+    if missing_inputs:
+        raise ValueError(f"Missing non-optional input tensors {missing_inputs}")
 
     return Sample(
         members={
-            get_member_id(ipt): Tensor.from_numpy(array, dims=get_axes_infos(ipt))
-            for ipt, array in zip(model.inputs, inputs)
+            m: Tensor.from_numpy(inputs[str(m)], dims=get_axes_infos(ipt))
+            for ipt in model.inputs
+            if str((m := get_member_id(ipt))) in inputs
         },
         stat={} if stat is None else stat,
     )
