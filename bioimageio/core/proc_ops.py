@@ -19,7 +19,7 @@ from typing_extensions import Self, assert_never
 from bioimageio.core.sample import Sample, SampleBlock, SampleBlockWithOrigin
 from bioimageio.spec.model import v0_4, v0_5
 
-from ._op_base import Operator
+from ._op_base import BlockedOperator, Operator
 from .axis import AxisId
 from .common import DTypeStr, MemberId
 from .stat_calculators import StatsCalculator
@@ -60,7 +60,7 @@ def convert_axis_ids(
 
 
 @dataclass
-class _SimpleOperator(Operator, ABC):
+class _SimpleOperator(BlockedOperator, ABC):
     input: MemberId
     output: MemberId
 
@@ -99,7 +99,7 @@ class _SimpleOperator(Operator, ABC):
 
 
 @dataclass
-class AddKnownDatasetStats(Operator):
+class AddKnownDatasetStats(BlockedOperator):
     dataset_stats: Mapping[DatasetMeasure, MeasureValue]
 
     @property

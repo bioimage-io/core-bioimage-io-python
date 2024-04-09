@@ -19,6 +19,7 @@ from typing_extensions import assert_never
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 from bioimageio.spec.model.v0_5 import WeightsFormat
 
+from ._op_base import BlockedOperator
 from .axis import AxisId, PerAxis
 from .common import Halo, MemberId, PerMember
 from .digest_spec import (
@@ -121,9 +122,15 @@ class PredictionPipeline:
         self.unload()
         return False
 
-    def _predict_sample_block_wo_procs(
-        self, sample_block: SampleBlockWithOrigin
+    def predict_sample_block(
+        self,
+        sample_block: SampleBlockWithOrigin,
+        skip_preprocessing: bool = False,
+        skip_postprocessing: bool = False,
     ) -> SampleBlock:
+        if not skip_preprocessing:
+            self.apply_preprocessing(sample_block)
+
         output_meta = sample_block.get_transformed_meta(self._block_transform)
         output = output_meta.with_data(
             {
@@ -138,10 +145,20 @@ class PredictionPipeline:
             },
             stat=sample_block.stat,
         )
+        if not skip_postprocessing:
+            self.apply_postprocessing(output)
+
         return output
 
-    def predict_sample(self, sample: Sample) -> Sample:
-        self.apply_preprocessing(sample)
+    def predict_sample(
+        self,
+        sample: Sample,
+        skip_preprocessing: bool = False,
+        skip_postprocessing: bool = False,
+    ) -> Sample:
+        if not skip_preprocessing:
+            self.apply_preprocessing(sample)
+
         n_blocks, input_blocks = sample.split_into_blocks(
             self._default_input_block_shape,
             halo=self._default_input_halo,
@@ -153,37 +170,62 @@ class PredictionPipeline:
             unit="block",
             total=n_blocks,
         )
-        predicted_blocks = map(self._predict_sample_block_wo_procs, input_blocks)
+        predicted_blocks = (
+            self.predict_sample_block(
+                b, skip_preprocessing=True, skip_postprocessing=True
+            )
+            for b in input_blocks
+        )
         predicted_sample = Sample.from_blocks(predicted_blocks)
-        self.apply_postprocessing(predicted_sample)
+        if not skip_postprocessing:
+            self.apply_postprocessing(predicted_sample)
+
         return predicted_sample
 
     def predict(
         self,
         inputs: Predict_IO,
+        skip_preprocessing: bool = False,
+        skip_postprocessing: bool = False,
     ) -> Predict_IO:
         """Run model prediction **including** pre/postprocessing."""
 
         if isinstance(inputs, Sample):
-            return self.predict_sample(inputs)
+            return self.predict_sample(
+                inputs,
+                skip_preprocessing=skip_preprocessing,
+                skip_postprocessing=skip_postprocessing,
+            )
         elif isinstance(inputs, collections.abc.Iterable):
-            return (self.predict(ipt) for ipt in inputs)
+            return (
+                self.predict(
+                    ipt,
+                    skip_preprocessing=skip_preprocessing,
+                    skip_postprocessing=skip_postprocessing,
+                )
+                for ipt in inputs
+            )
         else:
             assert_never(inputs)
 
-    def apply_preprocessing(
-        self, sample_block: Union[Sample, SampleBlockWithOrigin]
-    ) -> None:
+    def apply_preprocessing(self, sample: Union[Sample, SampleBlockWithOrigin]) -> None:
         """apply preprocessing in-place, also updates sample stats"""
         for op in self._preprocessing:
-            op(sample_block)
+            op(sample)
 
     def apply_postprocessing(
-        self, sample_block: Union[Sample, SampleBlockWithOrigin]
+        self, sample: Union[Sample, SampleBlock, SampleBlockWithOrigin]
     ) -> None:
         """apply postprocessing in-place, also updates samples stats"""
         for op in self._postprocessing:
-            op(sample_block)
+            if isinstance(sample, (Sample, SampleBlockWithOrigin)):
+                op(sample)
+            elif not isinstance(op, BlockedOperator):
+                raise NotImplementedError(
+                    "block wise update of output statistics not yet implemented"
+                )
+            else:
+                op(sample)
 
     def load(self):
         """

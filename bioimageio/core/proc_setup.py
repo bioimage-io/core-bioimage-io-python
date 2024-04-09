@@ -67,13 +67,15 @@ def setup_pre_and_postprocessing(
             keep_updating_initial_dataset_stats=keep_updating_initial_dataset_stats,
         ),
     )
-    post.insert(
-        0,
-        UpdateStats(
-            StatsCalculator(post_meas, initial_stats),
-            keep_updating_initial_dataset_stats=keep_updating_initial_dataset_stats,
-        ),
-    )
+    if post_meas:
+        post.insert(
+            0,
+            UpdateStats(
+                StatsCalculator(post_meas, initial_stats),
+                keep_updating_initial_dataset_stats=keep_updating_initial_dataset_stats,
+            ),
+        )
+
     if fixed_dataset_stats:
         prep.insert(0, AddKnownDatasetStats(fixed_dataset_stats))
         post.insert(0, AddKnownDatasetStats(fixed_dataset_stats))
