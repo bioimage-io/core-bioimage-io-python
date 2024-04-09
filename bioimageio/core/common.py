@@ -82,5 +82,5 @@ MemberId = v0_5.TensorId
 T = TypeVar("T")
 PerMember = Mapping[MemberId, T]
 
-BlockNumber = int
+BlockIndex = int
 TotalNumberOfBlocks = int

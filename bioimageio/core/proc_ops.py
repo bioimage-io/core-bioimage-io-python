@@ -94,7 +94,7 @@ class _SimpleOperator(BlockedOperator, ABC):
                 data=output_tensor,
                 inner_slice=b.inner_slice,
                 halo=b.halo,
-                block_number=b.block_number,
+                block_index=b.block_index,
                 blocks_in_sample=b.blocks_in_sample,
             )
         else:
@@ -178,7 +178,7 @@ class UpdateStats(Operator):
     def __call__(self, sample: Union[Sample, SampleBlockWithOrigin]) -> None:
         if isinstance(sample, SampleBlockWithOrigin):
             # update stats with whole sample on first block
-            if sample.block_number != 0:
+            if sample.block_index != 0:
                 return
 
             origin = sample.origin

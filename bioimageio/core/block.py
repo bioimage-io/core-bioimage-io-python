@@ -35,7 +35,7 @@ class Block(BlockMeta):
         *,
         inner_slice: PerAxis[SliceInfo],
         halo: PerAxis[Halo],
-        block_number: int,
+        block_index: int,
         blocks_in_sample: int,
     ):
         object.__setattr__(self, "data", data)
@@ -43,7 +43,7 @@ class Block(BlockMeta):
             sample_shape=data.tagged_shape,
             inner_slice=inner_slice,
             halo=halo,
-            block_number=block_number,
+            block_index=block_index,
             blocks_in_sample=blocks_in_sample,
         )
 
@@ -74,7 +74,7 @@ class Block(BlockMeta):
             data=sample_member[block.outer_slice].pad(block.padding, pad_mode),
             inner_slice=block.inner_slice,
             halo=block.halo,
-            block_number=block.block_number,
+            block_index=block.block_index,
             blocks_in_sample=block.blocks_in_sample,
         )
 

@@ -17,7 +17,7 @@ from typing_extensions import Self
 
 from .axis import AxisId, PerAxis
 from .common import (
-    BlockNumber,
+    BlockIndex,
     Halo,
     HaloLike,
     MemberId,
@@ -80,8 +80,8 @@ class BlockMeta:
     halo: PerAxis[Halo]
     """halo enlarging the inner region to the block's sizes"""
 
-    block_number: BlockNumber
-    """the n-th block of the sample"""
+    block_index: BlockIndex
+    """the i-th block of the sample"""
 
     blocks_in_sample: TotalNumberOfBlocks
     """total number of blocks in the sample"""
@@ -232,7 +232,7 @@ class BlockMeta:
                 )
                 for a, trf in new_axes.items()
             },
-            block_number=self.block_number,
+            block_index=self.block_index,
             blocks_in_sample=self.blocks_in_sample,
         )
 
@@ -291,7 +291,7 @@ def _block_meta_generator(
             sample_shape=sample_shape,
             inner_slice=inner_slice,
             halo=halo,
-            block_number=i,
+            block_index=i,
             blocks_in_sample=blocks_in_sample,
         )
 

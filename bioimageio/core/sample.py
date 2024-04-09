@@ -27,7 +27,7 @@ from .block_meta import (
     split_multiple_shapes_into_blocks,
 )
 from .common import (
-    BlockNumber,
+    BlockIndex,
     Halo,
     HaloLike,
     MemberId,
@@ -90,10 +90,12 @@ class Sample:
             blocks={
                 m: Block(
                     data,
-                    inner_slice={a: SliceInfo(0, s) for a, s in data.tagged_shape.items()},
+                    inner_slice={
+                        a: SliceInfo(0, s) for a, s in data.tagged_shape.items()
+                    },
                     halo=halo.get(m, {}),
-                    block_number=1,
-                    blocks_in_sample=1
+                    block_index=0,
+                    blocks_in_sample=1,
                 )
                 for m, data in self.members.items()
             },
@@ -145,7 +147,7 @@ class SampleBlockBase(Generic[BlockT]):
     blocks: Dict[MemberId, BlockT]
     """Individual tensor blocks comprising this sample block"""
 
-    block_number: BlockNumber = field(init=False)
+    block_index: BlockIndex = field(init=False)
     """the n-th block of the sample"""
 
     blocks_in_sample: TotalNumberOfBlocks = field(init=False)
@@ -153,7 +155,7 @@ class SampleBlockBase(Generic[BlockT]):
 
     def __post_init__(self):
         a_block = next(iter(self.blocks.values()))
-        self.block_number = a_block.block_number
+        self.block_index = a_block.block_index
         self.blocks_in_sample = a_block.blocks_in_sample
 
     @property
@@ -222,7 +224,7 @@ class SampleBlockMeta(SampleBlockBase[BlockMeta]):
                         )
                         for a, trf in new_axes[m].items()
                     },
-                    block_number=self.block_number,
+                    block_index=self.block_index,
                     blocks_in_sample=self.blocks_in_sample,
                 )
                 for m in new_axes
@@ -238,7 +240,7 @@ class SampleBlockMeta(SampleBlockBase[BlockMeta]):
                     data[m],
                     inner_slice=b.inner_slice,
                     halo=b.halo,
-                    block_number=b.block_number,
+                    block_index=b.block_index,
                     blocks_in_sample=b.blocks_in_sample,
                 )
                 for m, b in self.blocks.items()
