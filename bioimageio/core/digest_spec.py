@@ -352,7 +352,7 @@ def create_sample_for_model(
     missing_inputs = {
         get_member_id(ipt)
         for ipt in model.inputs
-        if str(get_member_id(ipt) not in inputs)
+        if str(get_member_id(ipt)) not in inputs
         and not (isinstance(ipt, v0_5.InputTensorDescr) and ipt.optional)
     }
     if missing_inputs:
