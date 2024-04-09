@@ -133,7 +133,7 @@ class BlockMeta:
             self,
             "shape",
             {
-                a: s.stop - s.start + sum(self.halo[a])
+                a: s.stop - s.start + (sum(self.halo[a]) if a in self.halo else 0)
                 for a, s in self.inner_slice.items()
             },
         )
@@ -154,15 +154,17 @@ class BlockMeta:
                     max(
                         0,
                         min(
-                            self.inner_slice[a].start - self.halo[a].left,
+                            self.inner_slice[a].start
+                            - (self.halo[a].left if a in self.halo else 0),
                             self.sample_shape[a]
                             - self.inner_shape[a]
-                            - self.halo[a].left,
+                            - (self.halo[a].left if a in self.halo else 0),
                         ),
                     ),
                     min(
                         self.sample_shape[a],
-                        self.inner_slice[a].stop + self.halo[a].right,
+                        self.inner_slice[a].stop
+                        + (self.halo[a].right if a in self.halo else 0),
                     ),
                 )
                 for a in self.inner_slice
