@@ -114,7 +114,7 @@ class DatasetVar(_Var, DatasetMeasureBase):
 
 
 @dataclass(frozen=True)
-class _Percentile:
+class _Quantile:
     q: float
     axes: Optional[Tuple[AxisId, ...]] = None
     """`axes` to reduce"""
@@ -125,7 +125,7 @@ class _Percentile:
 
 
 @dataclass(frozen=True)
-class SamplePercentile(_Percentile, SampleMeasureBase):
+class SampleQuantile(_Quantile, SampleMeasureBase):
     """The `n`th percentile of a single tensor"""
 
     def compute(self, sample: SampleLike) -> MeasureValue:
@@ -138,7 +138,7 @@ class SamplePercentile(_Percentile, SampleMeasureBase):
 
 
 @dataclass(frozen=True)
-class DatasetPercentile(_Percentile, DatasetMeasureBase):
+class DatasetPercentile(_Quantile, DatasetMeasureBase):
     """The `n`th percentile across multiple samples"""
 
     def __post_init__(self):
@@ -146,7 +146,7 @@ class DatasetPercentile(_Percentile, DatasetMeasureBase):
         assert self.axes is None or AxisId("batch") in self.axes
 
 
-SampleMeasure = Union[SampleMean, SampleStd, SampleVar, SamplePercentile]
+SampleMeasure = Union[SampleMean, SampleStd, SampleVar, SampleQuantile]
 DatasetMeasure = Union[DatasetMean, DatasetStd, DatasetVar, DatasetPercentile]
 Measure = Union[SampleMeasure, DatasetMeasure]
 Stat = Dict[Measure, MeasureValue]
@@ -154,7 +154,7 @@ Stat = Dict[Measure, MeasureValue]
 MeanMeasure = Union[SampleMean, DatasetMean]
 StdMeasure = Union[SampleStd, DatasetStd]
 VarMeasure = Union[SampleVar, DatasetVar]
-PercentileMeasure = Union[SamplePercentile, DatasetPercentile]
+PercentileMeasure = Union[SampleQuantile, DatasetPercentile]
 MeanMeasureT = TypeVar("MeanMeasureT", bound=MeanMeasure)
 StdMeasureT = TypeVar("StdMeasureT", bound=StdMeasure)
 VarMeasureT = TypeVar("VarMeasureT", bound=VarMeasure)

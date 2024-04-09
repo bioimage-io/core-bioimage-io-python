@@ -39,7 +39,7 @@ from .stat_measures import (
     MeasureValue,
     SampleMean,
     SampleMeasure,
-    SamplePercentile,
+    SampleQuantile,
     SampleStd,
     SampleVar,
 )
@@ -210,11 +210,11 @@ class SamplePercentilesCalculator:
         self._axes = None if axes is None else tuple(axes)
         self._member_id = member_id
 
-    def compute(self, sample: Sample) -> Dict[SamplePercentile, MeasureValue]:
+    def compute(self, sample: Sample) -> Dict[SampleQuantile, MeasureValue]:
         tensor = sample.members[self._member_id]
         ps = tensor.quantile(self._qs, dim=self._axes)
         return {
-            SamplePercentile(q=q, axes=self._axes, member_id=self._member_id): p
+            SampleQuantile(q=q, axes=self._axes, member_id=self._member_id): p
             for q, p in zip(self._qs, ps)
         }
 
@@ -507,7 +507,7 @@ def get_measure_calculators(
                 }
             )
             assert rm in required_dataset_mean_var_std
-        elif isinstance(rm, SamplePercentile):
+        elif isinstance(rm, SampleQuantile):
             required_sample_percentiles.setdefault((rm.member_id, rm.axes), set()).add(
                 rm.q
             )

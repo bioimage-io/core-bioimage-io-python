@@ -32,7 +32,7 @@ from .stat_measures import (
     Measure,
     MeasureValue,
     SampleMean,
-    SamplePercentile,
+    SampleQuantile,
     SampleStd,
     Stat,
     StdMeasure,
@@ -378,21 +378,17 @@ def _get_axes(
 
 @dataclass
 class ScaleRange(_SimpleOperator):
-    lower_percentile: InitVar[Optional[Union[SamplePercentile, DatasetPercentile]]] = (
-        None
-    )
-    upper_percentile: InitVar[Optional[Union[SamplePercentile, DatasetPercentile]]] = (
-        None
-    )
-    lower: Union[SamplePercentile, DatasetPercentile] = field(init=False)
-    upper: Union[SamplePercentile, DatasetPercentile] = field(init=False)
+    lower_percentile: InitVar[Optional[Union[SampleQuantile, DatasetPercentile]]] = None
+    upper_percentile: InitVar[Optional[Union[SampleQuantile, DatasetPercentile]]] = None
+    lower: Union[SampleQuantile, DatasetPercentile] = field(init=False)
+    upper: Union[SampleQuantile, DatasetPercentile] = field(init=False)
 
     eps: float = 1e-6
 
     def __post_init__(
         self,
-        lower_percentile: Optional[Union[SamplePercentile, DatasetPercentile]],
-        upper_percentile: Optional[Union[SamplePercentile, DatasetPercentile]],
+        lower_percentile: Optional[Union[SampleQuantile, DatasetPercentile]],
+        upper_percentile: Optional[Union[SampleQuantile, DatasetPercentile]],
     ):
         if lower_percentile is None:
             tid = self.input if upper_percentile is None else upper_percentile.member_id
@@ -429,7 +425,7 @@ class ScaleRange(_SimpleOperator):
         if axes is None or AxisId("batch") in axes:
             Percentile = DatasetPercentile
         else:
-            Percentile = SamplePercentile
+            Percentile = SampleQuantile
 
         return cls(
             input=member_id,
@@ -467,7 +463,7 @@ class Sigmoid(_SimpleOperator):
     """1 / (1 + e^(-input))."""
 
     def _apply(self, input: Tensor, stat: Stat) -> Tensor:
-        return 1.0 / (1.0 + np.exp(-input))  # type: ignore
+        return Tensor(1.0 / (1.0 + np.exp(-input)), dims=input.dims)
 
     @property
     def required_measures(self) -> Collection[Measure]:

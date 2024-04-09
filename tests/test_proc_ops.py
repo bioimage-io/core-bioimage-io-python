@@ -9,7 +9,8 @@ from bioimageio.core.axis import AxisId
 from bioimageio.core.common import MemberId
 from bioimageio.core.sample import Sample
 from bioimageio.core.stat_calculators import compute_measures
-from bioimageio.core.stat_measures import SampleMean, SamplePercentile, SampleStd
+from bioimageio.core.stat_measures import SampleMean, SampleQuantile, SampleStd
+from bioimageio.core.tensor import Tensor
 
 
 @pytest.fixture(scope="module")
@@ -314,24 +315,36 @@ def test_scale_range(tid: MemberId):
 def test_scale_range_axes(tid: MemberId):
     from bioimageio.core.proc_ops import ScaleRange
 
-    lower_percentile = SamplePercentile(tid, 1, axes=(AxisId("x"), AxisId("y")))
-    upper_percentile = SamplePercentile(tid, 100, axes=(AxisId("x"), AxisId("y")))
-    op = ScaleRange(tid, tid, lower_percentile, upper_percentile)
+    eps = 1.0e-6
+
+    lower_quantile = SampleQuantile(tid, 0.1, axes=(AxisId("x"), AxisId("y")))
+    upper_quantile = SampleQuantile(tid, 0.9, axes=(AxisId("x"), AxisId("y")))
+    op = ScaleRange(tid, tid, lower_quantile, upper_quantile, eps=eps)
 
     np_data = np.arange(18).reshape((2, 3, 3)).astype("float32")
-    data = xr.DataArray(np_data, dims=("c", "x", "y"))
-    sample = Sample(data={tid: data})
+    data = Tensor.from_xarray(xr.DataArray(np_data, dims=("c", "x", "y")))
+    sample = Sample(members={tid: data})
+
+    p_low_direct = lower_quantile.compute(sample)
+    p_up_direct = upper_quantile.compute(sample)
+
+    p_low_expected = np.quantile(np_data, lower_quantile.q, axis=(1, 2), keepdims=True)
+    p_up_expected = np.quantile(np_data, upper_quantile.q, axis=(1, 2), keepdims=True)
+
+    np.testing.assert_allclose(p_low_expected.squeeze(), p_low_direct)
+    np.testing.assert_allclose(p_up_expected.squeeze(), p_up_direct)
+
     sample.stat = compute_measures(op.required_measures, [sample])
 
-    eps = 1.0e-6
-    p_low = np.percentile(np_data, lower_percentile.n, axis=(1, 2), keepdims=True)
-    p_up = np.percentile(np_data, upper_percentile.n, axis=(1, 2), keepdims=True)
-    exp_data = (np_data - p_low) / (p_up - p_low + eps)
+    np.testing.assert_allclose(p_low_expected.squeeze(), sample.stat[lower_quantile])
+    np.testing.assert_allclose(p_up_expected.squeeze(), sample.stat[upper_quantile])
+
+    exp_data = (np_data - p_low_expected) / (p_up_expected - p_low_expected + eps)
     expected = xr.DataArray(exp_data, dims=("c", "x", "y"))
 
     op(sample)
     # NOTE xarray.testing.assert_allclose compares irrelavant properties here and fails although the result is correct
-    np.testing.assert_allclose(expected, sample.data[tid])
+    np.testing.assert_allclose(expected, sample.members[tid].data)
 
 
 def test_sigmoid(tid: MemberId):

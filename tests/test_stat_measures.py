@@ -13,7 +13,7 @@ from bioimageio.core.stat_calculators import (
     SamplePercentilesCalculator,
     get_measure_calculators,
 )
-from bioimageio.core.stat_measures import SamplePercentile
+from bioimageio.core.stat_measures import SampleQuantile
 from bioimageio.core.tensor import Tensor
 
 
@@ -47,7 +47,7 @@ def test_individual_percentile_measure(axes: Optional[Tuple[AxisId, ...]]):
     qs = [0, 0.1, 0.5, 1.0]
     tid = MemberId("tensor")
 
-    measures = [SamplePercentile(member_id=tid, axes=axes, q=q) for q in qs]
+    measures = [SampleQuantile(member_id=tid, axes=axes, q=q) for q in qs]
     calcs, _ = get_measure_calculators(measures)
     assert len(calcs) == 1
     calc = calcs[0]
