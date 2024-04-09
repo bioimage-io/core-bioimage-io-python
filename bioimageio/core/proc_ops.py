@@ -1,6 +1,6 @@
 import collections.abc
 from abc import ABC, abstractmethod
-from dataclasses import InitVar, dataclass, field, replace
+from dataclasses import InitVar, dataclass, field
 from typing import (
     Collection,
     Literal,
@@ -16,6 +16,7 @@ import numpy as np
 import xarray as xr
 from typing_extensions import Self, assert_never
 
+from bioimageio.core.block import Block
 from bioimageio.core.sample import Sample, SampleBlock, SampleBlockWithOrigin
 from bioimageio.spec.model import v0_4, v0_5
 
@@ -88,8 +89,13 @@ class _SimpleOperator(BlockedOperator, ABC):
         if isinstance(sample, Sample):
             sample.members[self.output] = output_tensor
         elif isinstance(sample, SampleBlock):
-            sample.blocks[self.output] = replace(
-                sample.blocks[self.input], data=output_tensor
+            b = sample.blocks[self.input]
+            sample.blocks[self.output] = Block(
+                data=output_tensor,
+                inner_slice=b.inner_slice,
+                halo=b.halo,
+                block_number=b.block_number,
+                blocks_in_sample=b.blocks_in_sample,
             )
         else:
             assert_never(sample)
