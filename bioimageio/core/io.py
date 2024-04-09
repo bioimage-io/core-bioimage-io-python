@@ -5,12 +5,12 @@ import imageio
 from loguru import logger
 from numpy.typing import NDArray
 
-from bioimageio.core.digest_spec import create_sample, get_axes_infos
-from bioimageio.core.stat_measures import Stat
 from bioimageio.spec.model import AnyModelDescr
 from bioimageio.spec.utils import load_array
 
 from .axis import Axis, AxisLike
+from .digest_spec import create_sample_for_model, get_axes_infos
+from .stat_measures import Stat
 from .tensor import Tensor
 
 
@@ -34,7 +34,7 @@ def load_tensor(path: Path, axes: Optional[Sequence[AxisLike]] = None) -> Tensor
     return Tensor.from_numpy(array, dims=axes)
 
 
-def load_sample(
+def load_sample_for_model(
     *paths: Path,
     model: AnyModelDescr,
     axes: Optional[Sequence[Sequence[AxisLike]]] = None,
@@ -53,7 +53,7 @@ def load_sample(
         raise ValueError(f"got {len(paths)} paths, but {len(axes)} axes hints!")
 
     arrays = [load_image(p, is_volume=True) for p in paths]
-    return create_sample(
+    return create_sample_for_model(
         arrays,
         model,
         stat={} if stat is None else stat,

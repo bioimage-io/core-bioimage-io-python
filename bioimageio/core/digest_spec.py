@@ -327,15 +327,15 @@ def get_io_sample_block_metas(
     )
 
 
-def create_sample(
+def create_sample_for_model(
     inputs: Sequence[NDArray[Any]],
     model: AnyModelDescr,
     stat: Optional[Stat] = None,
 ) -> Sample:
-    """Run prediction for a single set of input(s) with a bioimage.io model
+    """Create a sample from a single set of input(s) for a specific bioimage.io model
 
     Args:
-        inputs: the input(s) for this model.
+        inputs: the input(s) constituting a single sample.
         model: a bioimage.io model description
         stat: dictionary with sample and dataset statistics (may be updated in-place!)
     """
