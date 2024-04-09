@@ -82,6 +82,25 @@ class Sample:
         )
         return n_blocks, sample_block_generator(blocks, origin=self, pad_mode=pad_mode)
 
+    def as_single_block(self, halo: Optional[PerMember[PerAxis[Halo]]] = None):
+        if halo is None:
+            halo = {}
+        return SampleBlockWithOrigin(
+            sample_shape=self.shape,
+            blocks={
+                m: Block(
+                    data,
+                    inner_slice={},
+                    halo=halo.get(m, {}),
+                    block_number=1,
+                    blocks_in_sample=1
+                )
+                for m, data in self.members.items()
+            },
+            stat=self.stat,
+            origin=self,
+        )
+
     @classmethod
     def from_blocks(
         cls,
