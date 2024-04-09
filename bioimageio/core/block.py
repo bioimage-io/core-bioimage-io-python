@@ -55,7 +55,7 @@ class Block(BlockMeta):
         super().__post_init__()
         for a, s in self.data.sizes.items():
             slice_ = self.inner_slice[a]
-            halo = self.halo[a]
+            halo = self.halo.get(a, Halo(0, 0))
             assert s == slice_.stop - slice_.start + halo.left + halo.right, (
                 s,
                 slice_,
