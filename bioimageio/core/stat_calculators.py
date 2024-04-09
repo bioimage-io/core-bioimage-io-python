@@ -105,7 +105,7 @@ class MeanCalculator:
             mean_old = self._mean
             self._n = n_a + n_b
             self._mean = (n_a * mean_old + n_b * tensor_mean) / self._n
-            assert self._mean.dtype == np.float64
+            assert self._mean.dtype == "float64"
 
     def finalize(self) -> Dict[DatasetMean, MeasureValue]:
         if self._mean is None:
@@ -169,10 +169,10 @@ class MeanVarStdCalculator:
             m2_a = self._m2
             self._n = n = n_a + n_b
             self._mean = (n_a * mean_a + n_b * mean_b) / n
-            assert self._mean.dtype == np.float64
+            assert self._mean.dtype == "float64"
             d = mean_b - mean_a
             self._m2 = m2_a + m2_b + d**2 * n_a * n_b / n
-            assert self._m2.dtype == np.float64
+            assert self._m2.dtype == "float64"
 
     def finalize(
         self,
@@ -252,7 +252,7 @@ class MeanPercentilesCalculator:
             self._estimates = (self._n * self._estimates + n * sample_estimates) / (
                 self._n + n
             )
-            assert self._estimates.dtype == np.float64
+            assert self._estimates.dtype == "float64"
 
         self._n += n
 

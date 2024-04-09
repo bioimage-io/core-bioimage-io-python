@@ -33,7 +33,7 @@ def test_crop_and_pad():
     )
     padded = tensor.pad({AxisId("x"): 7, AxisId("y"): (3, 3)})
     cropped = padded.crop_to(tensor.sizes)
-    assert_equal(tensor, cropped)
+    assert_equal(tensor.data, cropped.data)
 
 
 def test_some_magic_ops():

@@ -37,9 +37,9 @@ def test_individual_normal_measure(
     )
 
     expected = getattr(data, name)(dim=axes)
-    sample = Sample(data={data_id: data})
+    sample = Sample(members={data_id: data})
     actual = measure.compute(sample)
-    xr.testing.assert_allclose(expected, actual)
+    xr.testing.assert_allclose(expected.data, actual.data)
 
 
 @pytest.mark.parametrize("axes", [None, (AxisId("x"), AxisId("y"))])
@@ -56,7 +56,11 @@ def test_individual_percentile_measure(axes: Optional[Tuple[AxisId, ...]]):
     data = Tensor(
         np.random.random((5, 6, 3)), dims=(AxisId("x"), AxisId("y"), AxisId("c"))
     )
-    actual = calc.compute(Sample(data={tid: data}))
+    actual = calc.compute(Sample(members={tid: data}))
     for m in measures:
         expected = data.quantile(q=m.q, dim=m.axes)
-        xr.testing.assert_allclose(expected, actual[m])
+        actual_data = actual[m]
+        if isinstance(actual_data, Tensor):
+            actual_data = actual_data.data
+
+        xr.testing.assert_allclose(expected.data, actual_data)

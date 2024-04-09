@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections.abc
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -65,16 +66,24 @@ class Tensor(MagicTensorOpsMixin):
     def __array__(self, dtype: DTypeLike = None):
         return np.asarray(self._data, dtype=dtype)
 
-    def __getitem__(self, key: PerAxis[Union[SliceInfo, slice, int]]) -> Self:
-        key = {
-            a: s if isinstance(s, int) else s if isinstance(s, slice) else slice(*s)
-            for a, s in key.items()
-        }
+    def __getitem__(
+        self, key: Union[SliceInfo, slice, int, PerAxis[Union[SliceInfo, slice, int]]]
+    ) -> Self:
+        if isinstance(key, SliceInfo):
+            key = slice(*key)
+        elif isinstance(key, collections.abc.Mapping):
+            key = {
+                a: s if isinstance(s, int) else s if isinstance(s, slice) else slice(*s)
+                for a, s in key.items()
+            }
         return self.__class__.from_xarray(self._data[key])
 
     def __setitem__(self, key: PerAxis[Union[SliceInfo, slice]], value: Tensor) -> None:
         key = {a: s if isinstance(s, slice) else slice(*s) for a, s in key.items()}
         self._data[key] = value._data
+
+    def __len__(self) -> int:
+        return len(self.data)
 
     def _iter(self: Any) -> Iterator[Any]:
         for n in range(len(self)):
@@ -290,13 +299,13 @@ class Tensor(MagicTensorOpsMixin):
         return self.__class__.from_xarray(self._data.expand_dims(dims=dims))
 
     def mean(self, dim: Optional[Union[AxisId, Sequence[AxisId]]] = None) -> Self:
-        return self.__class__.from_xarray(self._data.mean(dims=dim))
+        return self.__class__.from_xarray(self._data.mean(dim=dim))
 
     def std(self, dim: Optional[Union[AxisId, Sequence[AxisId]]] = None) -> Self:
-        return self.__class__.from_xarray(self._data.std(dims=dim))
+        return self.__class__.from_xarray(self._data.std(dim=dim))
 
     def var(self, dim: Optional[Union[AxisId, Sequence[AxisId]]] = None) -> Self:
-        return self.__class__.from_xarray(self._data.var(dims=dim))
+        return self.__class__.from_xarray(self._data.var(dim=dim))
 
     def pad(
         self,
