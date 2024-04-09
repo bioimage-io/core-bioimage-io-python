@@ -90,7 +90,7 @@ class Sample:
             blocks={
                 m: Block(
                     data,
-                    inner_slice={},
+                    inner_slice={a: SliceInfo(0, s) for a, s in data.tagged_shape.items()},
                     halo=halo.get(m, {}),
                     block_number=1,
                     blocks_in_sample=1
