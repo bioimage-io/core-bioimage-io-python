@@ -1,4 +1,3 @@
-import collections.abc
 import warnings
 from types import MappingProxyType
 from typing import (
@@ -14,7 +13,6 @@ from typing import (
 )
 
 from tqdm import tqdm
-from typing_extensions import assert_never
 
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 from bioimageio.spec.model.v0_5 import WeightsFormat
@@ -74,23 +72,9 @@ class PredictionPipeline:
 
         self.model_description = model_description
         if isinstance(model_description, v0_4.ModelDescr):
-            self._default_input_block_shape = {}
-            default_ns = {}
             self._default_input_halo: PerMember[PerAxis[Halo]] = {}
             self._block_transform = {}
         else:
-            if isinstance(default_ns, int):
-                default_ns = {
-                    (ipt.id, a.id): default_ns
-                    for ipt in model_description.inputs
-                    for a in ipt.axes
-                    if isinstance(a.size, v0_5.ParameterizedSize)
-                }
-
-            self._default_input_block_shape = model_description.get_tensor_sizes(
-                default_ns, default_batch_size
-            ).inputs
-
             default_output_halo = {
                 t.id: {
                     a.id: Halo(a.halo, a.halo)
@@ -105,14 +89,12 @@ class PredictionPipeline:
             self._block_transform = get_block_transform(model_description)
 
         self._default_ns = default_ns
+        self._default_batch_size = default_batch_size
 
         self._input_ids = get_member_ids(model_description.inputs)
         self._output_ids = get_member_ids(model_description.outputs)
 
         self._adapter: ModelAdapter = model_adapter
-
-    def __call__(self, data: Predict_IO) -> Predict_IO:
-        return self.predict(data)
 
     def __enter__(self):
         self.load()
@@ -150,17 +132,61 @@ class PredictionPipeline:
 
         return output
 
-    def predict_sample(
+    def predict_sample_without_blocking(
         self,
         sample: Sample,
         skip_preprocessing: bool = False,
         skip_postprocessing: bool = False,
     ) -> Sample:
+        """predict a sample.
+        The sample's tensor shapes have to match the model's input tensor description.
+        If that is not the case, consider `predict_sample_with_blocking`"""
+
+        block = sample.as_single_block()
+        predicted_block = self.predict_sample_block(
+            block,
+            skip_preprocessing=skip_preprocessing,
+            skip_postprocessing=skip_postprocessing,
+        )
+        predicted_sample = Sample.from_blocks([predicted_block])
+        return predicted_sample
+
+    def predict_sample_with_blocking(
+        self,
+        sample: Sample,
+        skip_preprocessing: bool = False,
+        skip_postprocessing: bool = False,
+        ns: Optional[
+            Union[
+                v0_5.ParameterizedSize.N,
+                Mapping[Tuple[MemberId, AxisId], v0_5.ParameterizedSize.N],
+            ]
+        ] = None,
+        batch_size: Optional[int] = None,
+    ) -> Sample:
+        """predict a sample by splitting it into blocks according to the model and the `ns` parameter"""
         if not skip_preprocessing:
             self.apply_preprocessing(sample)
 
+        if isinstance(self.model_description, v0_4.ModelDescr):
+            raise NotImplementedError(
+                "predict with blocking not implemented for v0_4.ModelDescr {self.model_description.name}"
+            )
+
+        ns = ns or self._default_ns
+        if isinstance(ns, int):
+            ns = {
+                (ipt.id, a.id): ns
+                for ipt in self.model_description.inputs
+                for a in ipt.axes
+                if isinstance(a.size, v0_5.ParameterizedSize)
+            }
+        input_block_shape = self.model_description.get_tensor_sizes(
+            ns, batch_size or self._default_batch_size
+        ).inputs
+
         n_blocks, input_blocks = sample.split_into_blocks(
-            self._default_input_block_shape,
+            input_block_shape,
             halo=self._default_input_halo,
             pad_mode="reflect",
         )
@@ -182,31 +208,31 @@ class PredictionPipeline:
 
         return predicted_sample
 
-    def predict(
-        self,
-        inputs: Predict_IO,
-        skip_preprocessing: bool = False,
-        skip_postprocessing: bool = False,
-    ) -> Predict_IO:
-        """Run model prediction **including** pre/postprocessing."""
+    # def predict(
+    #     self,
+    #     inputs: Predict_IO,
+    #     skip_preprocessing: bool = False,
+    #     skip_postprocessing: bool = False,
+    # ) -> Predict_IO:
+    #     """Run model prediction **including** pre/postprocessing."""
 
-        if isinstance(inputs, Sample):
-            return self.predict_sample(
-                inputs,
-                skip_preprocessing=skip_preprocessing,
-                skip_postprocessing=skip_postprocessing,
-            )
-        elif isinstance(inputs, collections.abc.Iterable):
-            return (
-                self.predict(
-                    ipt,
-                    skip_preprocessing=skip_preprocessing,
-                    skip_postprocessing=skip_postprocessing,
-                )
-                for ipt in inputs
-            )
-        else:
-            assert_never(inputs)
+    #     if isinstance(inputs, Sample):
+    #         return self.predict_sample_with_blocking(
+    #             inputs,
+    #             skip_preprocessing=skip_preprocessing,
+    #             skip_postprocessing=skip_postprocessing,
+    #         )
+    #     elif isinstance(inputs, collections.abc.Iterable):
+    #         return (
+    #             self.predict(
+    #                 ipt,
+    #                 skip_preprocessing=skip_preprocessing,
+    #                 skip_postprocessing=skip_postprocessing,
+    #             )
+    #             for ipt in inputs
+    #         )
+    #     else:
+    #         assert_never(inputs)
 
     def apply_preprocessing(self, sample: Union[Sample, SampleBlockWithOrigin]) -> None:
         """apply preprocessing in-place, also updates sample stats"""
