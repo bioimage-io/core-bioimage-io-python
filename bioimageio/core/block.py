@@ -38,6 +38,7 @@ class Block(BlockMeta):
         block_number: int,
         blocks_in_sample: int,
     ):
+        object.__setattr__(self, "data", data)
         super().__init__(
             sample_shape=data.tagged_shape,
             inner_slice=inner_slice,
@@ -45,7 +46,6 @@ class Block(BlockMeta):
             block_number=block_number,
             blocks_in_sample=blocks_in_sample,
         )
-        object.__setattr__(self, "data", data)
 
     @property
     def inner_data(self):

@@ -301,7 +301,12 @@ def get_io_sample_block_metas(
         for t in model.outputs
     }
     input_halo = get_input_halo(model, output_halo)
+
+    # TODO: fix output_sample_shape_data_dep
+    #  (below only valid if input_sample_shape is a valid model input,
+    #   which is not a valid assumption)
     output_sample_shape_data_dep = model.get_output_tensor_sizes(input_sample_shape)
+
     output_sample_shape = {
         t: {
             a: -1 if isinstance(s, tuple) else s

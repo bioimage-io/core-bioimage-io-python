@@ -2,7 +2,18 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from dataclasses import dataclass, field
-from typing import Dict, Generic, Iterable, Optional, Tuple, TypeVar, Union
+from itertools import islice
+from typing import (
+    Any,
+    Dict,
+    Generator,
+    Generic,
+    Iterable,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 import numpy as np
 from typing_extensions import Self
@@ -79,6 +90,7 @@ class Sample:
         fill_value: float = float("nan"),
     ) -> Self:
         members: PerMember[Tensor] = {}
+        sample_blocks = list(iter(sample_blocks))
         for member_blocks in sample_blocks:
             for m, block in member_blocks.blocks.items():
                 if m not in members:

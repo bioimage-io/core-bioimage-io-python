@@ -129,7 +129,7 @@ class BlockMeta:
             a in self.inner_slice for a in self.halo
         ), "halo has axes not present in block"
 
-        object.__setattr__(   #TODO: write as property
+        object.__setattr__(  # TODO: write as property
             self,
             "shape",
             {
@@ -141,12 +141,12 @@ class BlockMeta:
             s <= self.sample_shape[a] for a, s in self.shape.items()
         ), "block larger than sample"
 
-        object.__setattr__(   #TODO: write as property
+        object.__setattr__(  # TODO: write as property
             self,
             "inner_shape",
             {a: s.stop - s.start for a, s in self.inner_slice.items()},
         )
-        object.__setattr__(   #TODO: write as property
+        object.__setattr__(  # TODO: write as property
             self,
             "outer_slice",
             {
@@ -168,7 +168,7 @@ class BlockMeta:
                 for a in self.inner_slice
             },
         )
-        object.__setattr__(   #TODO: write as property
+        object.__setattr__(  # TODO: write as property
             self,
             "padding",
             {
@@ -187,7 +187,7 @@ class BlockMeta:
                 for a in self.inner_slice
             },
         )
-        object.__setattr__(   #TODO: write as property
+        object.__setattr__(  # TODO: write as property
             self,
             "local_slice",
             {
@@ -247,8 +247,8 @@ def split_shape_into_blocks(
     )
     assert all(a in shape for a in halo), (tuple(shape), set(halo))
 
-    # fill in default halo (0) and tile_size (tensor size)
-    halo = {a: Halo.create(h) for a, h in halo.items()}
+    # fill in default halo (0) and block axis length (from tensor shape)
+    halo = {a: Halo.create(halo.get(a, 0)) for a in shape}
     block_shape = {a: block_shape.get(a, s) for a, s in shape.items()}
     if stride is None:
         stride = {}
@@ -305,6 +305,9 @@ def split_multiple_shapes_into_blocks(
     assert not (
         missing := [t for t in block_shapes if t not in shapes]
     ), f"block shape specified for unknown tensors: {missing}"
+    if not block_shapes:
+        block_shapes = shapes
+
     assert broadcast or not (
         missing := [t for t in shapes if t not in block_shapes]
     ), f"no block shape specified for {missing} (set `broadcast` to True if these tensors should be repeated for each block)"
@@ -330,6 +333,8 @@ def split_multiple_shapes_into_blocks(
         )
         assert n_blocks[t] > 0
 
+    assert len(blocks) > 0, blocks
+    assert len(n_blocks) > 0, n_blocks
     unique_n_blocks = set(n_blocks.values())
     n = max(unique_n_blocks)
     if len(unique_n_blocks) == 2 and 1 in unique_n_blocks:

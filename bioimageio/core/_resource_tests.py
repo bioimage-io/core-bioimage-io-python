@@ -4,6 +4,7 @@ from typing import Dict, Hashable, List, Literal, Optional, Set, Tuple, Union
 
 import numpy as np
 
+from bioimageio.core.sample import Sample
 from bioimageio.spec import (
     InvalidDescr,
     ResourceDescr,
@@ -125,13 +126,14 @@ def _test_model_inference(
         with create_prediction_pipeline(
             bioimageio_model=model, devices=devices, weight_format=weight_format
         ) as prediction_pipeline:
-            results = prediction_pipeline.forward(*inputs)
+            results = prediction_pipeline.predict(inputs)
 
-        if len(results) != len(expected):
-            error = f"Expected {len(expected)} outputs, but got {len(results)}"
+        if len(results.members) != len(expected.members):
+            error = f"Expected {len(expected.members)} outputs, but got {len(results.members)}"
 
         else:
-            for res, exp in zip(results, expected):
+            for m, exp in expected.members.items():
+                res = results.members.get(m)
                 if res is None:
                     error = "Output tensors for test case may not be None"
                     break
@@ -219,24 +221,26 @@ def _test_model_inference_parametrized(
             else:
                 tested.add(hashable_target_size)
 
-            resized_test_inputs = [
-                t.resize_to(
-                    {
-                        aid: s
-                        for (tid, aid), s in input_target_sizes.items()
-                        if tid == t_descr.id
-                    },
-                )
-                for t, t_descr in zip(test_inputs, model.inputs)
-            ]
-            expected_output_shapes = [
-                {
+            resized_test_inputs = Sample(
+                members={
+                    t.id: test_inputs.members[t.id].resize_to(
+                        {
+                            aid: s
+                            for (tid, aid), s in input_target_sizes.items()
+                            if tid == t.id
+                        },
+                    )
+                    for t in model.inputs
+                }
+            )
+            expected_output_shapes = {
+                t.id: {
                     aid: s
                     for (tid, aid), s in expected_output_sizes.items()
-                    if tid == t_descr.id
+                    if tid == t.id
                 }
-                for t_descr in model.outputs
-            ]
+                for t in model.outputs
+            }
             yield n, batch_size, resized_test_inputs, expected_output_shapes
 
     try:
@@ -247,15 +251,16 @@ def _test_model_inference_parametrized(
         ) as prediction_pipeline:
             for n, batch_size, inputs, exptected_output_shape in generate_test_cases():
                 error: Optional[str] = None
-                results = prediction_pipeline.forward(*inputs)
-                if len(results) != len(exptected_output_shape):
+                result = prediction_pipeline.predict(inputs)
+                if len(result.members) != len(exptected_output_shape):
                     error = (
                         f"Expected {len(exptected_output_shape)} outputs,"
-                        + f" but got {len(results)}"
+                        + f" but got {len(result.members)}"
                     )
 
                 else:
-                    for res, exp in zip(results, exptected_output_shape):
+                    for m, exp in exptected_output_shape.items():
+                        res = result.members.get(m)
                         if res is None:
                             error = "Output tensors may not be None for test case"
                             break
