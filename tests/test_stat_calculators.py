@@ -49,6 +49,15 @@ def test_mean_var_std_calculator(axes: Union[None, str, Tuple[str, ...]]):
     actual_var = actual[DatasetVar(tid, axes=axes)]
     actual_std = actual[DatasetStd(tid, axes=axes)]
 
-    assert_allclose(actual_mean, expected_mean)
-    assert_allclose(actual_var, expected_var)
-    assert_allclose(actual_std, expected_std)
+    assert_allclose(
+        actual_mean if isinstance(actual_mean, (int, float)) else actual_mean.data,
+        expected_mean.data,
+    )
+    assert_allclose(
+        actual_var if isinstance(actual_var, (int, float)) else actual_var.data,
+        expected_var.data,
+    )
+    assert_allclose(
+        actual_std if isinstance(actual_std, (int, float)) else actual_std.data,
+        expected_std.data,
+    )

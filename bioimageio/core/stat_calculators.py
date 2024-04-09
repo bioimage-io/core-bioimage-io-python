@@ -183,13 +183,15 @@ class MeanVarStdCalculator:
             assert self._m2 is not None
             var = self._m2 / self._n
             sqrt = np.sqrt(var)
-            assert isinstance(sqrt, xr.DataArray)
+            if isinstance(sqrt, (int, float)):
+                # var and mean are scalar tensors, let's keep it consistent
+                sqrt = Tensor.from_xarray(xr.DataArray(sqrt))
+
+            assert isinstance(sqrt, Tensor), type(sqrt)
             return {
                 DatasetMean(member_id=self._member_id, axes=self._axes): self._mean,
                 DatasetVar(member_id=self._member_id, axes=self._axes): var,
-                DatasetStd(
-                    member_id=self._member_id, axes=self._axes
-                ): Tensor.from_xarray(sqrt),
+                DatasetStd(member_id=self._member_id, axes=self._axes): sqrt,
             }
 
 

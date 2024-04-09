@@ -23,13 +23,13 @@ def test_scale_linear(tid: MemberId):
     offset = xr.DataArray([1, 2, 42], dims=("c"))
     gain = xr.DataArray([1, 2, 3], dims=("c"))
     data = xr.DataArray(np.arange(6).reshape((1, 2, 3)), dims=("x", "y", "c"))
-    sample = Sample(data={tid: data})
+    sample = Sample(members={tid: Tensor.from_xarray(data)})
 
     op = ScaleLinear(input=tid, output=tid, offset=offset, gain=gain)
     op(sample)
 
     expected = xr.DataArray(np.array([[[1, 4, 48], [4, 10, 57]]]), dims=("x", "y", "c"))
-    xr.testing.assert_allclose(expected, sample.data[tid])
+    xr.testing.assert_allclose(expected, sample.members[tid].data)
 
 
 def test_scale_linear_no_channel(tid: MemberId):
@@ -37,11 +37,11 @@ def test_scale_linear_no_channel(tid: MemberId):
 
     op = ScaleLinear(tid, tid, offset=1, gain=2)
     data = xr.DataArray(np.arange(6).reshape(2, 3), dims=("x", "y"))
-    sample = Sample(data={tid: data})
+    sample = Sample(members={tid: Tensor.from_xarray(data)})
     op(sample)
 
     expected = xr.DataArray(np.array([[1, 3, 5], [7, 9, 11]]), dims=("x", "y"))
-    xr.testing.assert_allclose(expected, sample.data[tid])
+    xr.testing.assert_allclose(expected, sample.members[tid].data)
 
 
 T = TypeVar("T")
@@ -56,7 +56,7 @@ def test_zero_mean_unit_variance(tid: MemberId):
     from bioimageio.core.proc_ops import ZeroMeanUnitVariance
 
     data = xr.DataArray(np.arange(9).reshape(3, 3), dims=("x", "y"))
-    sample = Sample(data={tid: data})
+    sample = Sample(members={tid: Tensor.from_xarray(data)})
     m = SampleMean(tid)
     std = SampleStd(tid)
     op = ZeroMeanUnitVariance(tid, tid, m, std)
@@ -74,7 +74,7 @@ def test_zero_mean_unit_variance(tid: MemberId):
         ),
         dims=("x", "y"),
     )
-    xr.testing.assert_allclose(expected, sample.data[tid])
+    xr.testing.assert_allclose(expected, sample.members[tid].data)
 
 
 def test_zero_mean_unit_variance_fixed(tid: MemberId):
@@ -99,9 +99,9 @@ def test_zero_mean_unit_variance_fixed(tid: MemberId):
         ),
         dims=("b", "c", "x"),
     )
-    sample = Sample(data={tid: data})
+    sample = Sample(members={tid: Tensor.from_xarray(data)})
     op(sample)
-    xr.testing.assert_allclose(expected, sample.data[tid])
+    xr.testing.assert_allclose(expected, sample.members[tid].data)
 
 
 def test_zero_mean_unit_across_axes(tid: MemberId):
@@ -115,14 +115,14 @@ def test_zero_mean_unit_across_axes(tid: MemberId):
         SampleMean(tid, (AxisId("x"), AxisId("y"))),
         SampleStd(tid, (AxisId("x"), AxisId("y"))),
     )
-    sample = Sample(data={tid: data})
+    sample = Sample(members={tid: Tensor.from_xarray(data)})
     sample.stat = compute_measures(op.required_measures, [sample])
 
     expected = xr.concat(
         [(data[i : i + 1] - data[i].mean()) / data[i].std() for i in range(2)], dim="c"
     )
     op(sample)
-    xr.testing.assert_allclose(expected, sample.data[tid])
+    xr.testing.assert_allclose(expected, sample.members[tid].data)
 
 
 def test_zero_mean_unit_variance_fixed2(tid: MemberId):
@@ -135,10 +135,10 @@ def test_zero_mean_unit_variance_fixed2(tid: MemberId):
     op = FixedZeroMeanUnitVariance(tid, tid, mean=mean, std=std, eps=eps)
 
     data = xr.DataArray(np_data, dims=("x", "y"))
-    sample = Sample(data={tid: data})
+    sample = Sample(members={tid: Tensor.from_xarray(data)})
     expected = xr.DataArray((np_data - mean) / (std + eps), dims=("x", "y"))
     op(sample)
-    xr.testing.assert_allclose(expected, sample.data[tid])
+    xr.testing.assert_allclose(expected, sample.members[tid].data)
 
 
 def test_binarize(tid: MemberId):
@@ -146,11 +146,11 @@ def test_binarize(tid: MemberId):
 
     op = Binarize(tid, tid, threshold=14)
     data = xr.DataArray(np.arange(30).reshape((2, 3, 5)), dims=("x", "y", "c"))
-    sample = Sample(data={tid: data})
+    sample = Sample(members={tid: Tensor.from_xarray(data)})
     expected = xr.zeros_like(data)
     expected[{"x": slice(1, None)}] = 1
     op(sample)
-    xr.testing.assert_allclose(expected, sample.data[tid])
+    xr.testing.assert_allclose(expected, sample.members[tid].data)
 
 
 def test_binarize2(tid: MemberId):
@@ -164,10 +164,10 @@ def test_binarize2(tid: MemberId):
     threshold = 0.5
     exp = xr.DataArray(np_data > threshold, dims=axes)
 
-    sample = Sample(data={tid: data})
+    sample = Sample(members={tid: Tensor.from_xarray(data)})
     binarize = Binarize(tid, tid, threshold=threshold)
     binarize(sample)
-    xr.testing.assert_allclose(exp, sample.data[tid])
+    xr.testing.assert_allclose(exp, sample.members[tid].data)
 
 
 def test_clip(tid: MemberId):
@@ -175,20 +175,20 @@ def test_clip(tid: MemberId):
 
     op = Clip(tid, tid, min=3, max=5)
     data = xr.DataArray(np.arange(9).reshape(3, 3), dims=("x", "y"))
-    sample = Sample(data={tid: data})
+    sample = Sample(members={tid: Tensor.from_xarray(data)})
 
     expected = xr.DataArray(
         np.array([[3, 3, 3], [3, 4, 5], [5, 5, 5]]), dims=("x", "y")
     )
     op(sample)
-    xr.testing.assert_equal(expected, sample.data[tid])
+    xr.testing.assert_equal(expected, sample.members[tid].data)
 
 
 def test_combination_of_op_steps_with_dims_specified(tid: MemberId):
     from bioimageio.core.proc_ops import ZeroMeanUnitVariance
 
     data = xr.DataArray(np.arange(18).reshape((2, 3, 3)), dims=("c", "x", "y"))
-    sample = Sample(data={tid: data})
+    sample = Sample(members={tid: Tensor.from_xarray(data)})
     op = ZeroMeanUnitVariance(
         tid,
         tid,
@@ -222,7 +222,7 @@ def test_combination_of_op_steps_with_dims_specified(tid: MemberId):
     )
 
     op(sample)
-    xr.testing.assert_allclose(expected, sample.data[tid])
+    xr.testing.assert_allclose(expected, sample.members[tid].data)
 
 
 @pytest.mark.parametrize(
@@ -244,10 +244,15 @@ def test_scale_mean_variance(tid: MemberId, axes: Optional[Tuple[AxisId, ...]]):
     ref_data = xr.DataArray((np_data * 2) + 3, dims=ipt_axes)
 
     op = ScaleMeanVariance(tid, tid, reference_tensor=MemberId("ref_name"), axes=axes)
-    sample = Sample(data={tid: ipt_data, MemberId("ref_name"): ref_data})
+    sample = Sample(
+        members={
+            tid: Tensor.from_xarray(ipt_data),
+            MemberId("ref_name"): Tensor.from_xarray(ref_data),
+        }
+    )
     sample.stat = compute_measures(op.required_measures, [sample])
     op(sample)
-    xr.testing.assert_allclose(ref_data, sample.data[tid])
+    xr.testing.assert_allclose(ref_data, sample.members[tid].data)
 
 
 @pytest.mark.parametrize(
@@ -269,17 +274,22 @@ def test_scale_mean_variance_per_channel(tid: MemberId, axes_str: Optional[str])
     ref_data = xr.DataArray(np_ref_data, dims=ipt_axes)
 
     op = ScaleMeanVariance(tid, tid, reference_tensor=MemberId("ref_name"), axes=axes)
-    sample = Sample(data={tid: ipt_data, MemberId("ref_name"): ref_data})
+    sample = Sample(
+        members={
+            tid: Tensor.from_xarray(ipt_data),
+            MemberId("ref_name"): Tensor.from_xarray(ref_data),
+        }
+    )
     sample.stat = compute_measures(op.required_measures, [sample])
     op(sample)
 
     if axes is not None and AxisId("c") not in axes:
         # mean,std per channel should match exactly
-        xr.testing.assert_allclose(ref_data, sample.data[tid])
+        xr.testing.assert_allclose(ref_data, sample.members[tid].data)
     else:
         # mean,std across channels should not match
         with pytest.raises(AssertionError):
-            xr.testing.assert_allclose(ref_data, sample.data[tid])
+            xr.testing.assert_allclose(ref_data, sample.members[tid].data)
 
 
 def test_scale_range(tid: MemberId):
@@ -288,7 +298,7 @@ def test_scale_range(tid: MemberId):
     op = ScaleRange(tid, tid)
     np_data = np.arange(9).reshape(3, 3).astype("float32")
     data = xr.DataArray(np_data, dims=("x", "y"))
-    sample = Sample(data={tid: data})
+    sample = Sample(members={tid: Tensor.from_xarray(data)})
     sample.stat = compute_measures(op.required_measures, [sample])
 
     eps = 1.0e-6
@@ -298,7 +308,7 @@ def test_scale_range(tid: MemberId):
 
     op(sample)
     # NOTE xarray.testing.assert_allclose compares irrelavant properties here and fails although the result is correct
-    np.testing.assert_allclose(expected, sample.data[tid])
+    np.testing.assert_allclose(expected, sample.members[tid].data)
 
 
 def test_scale_range_axes(tid: MemberId):
@@ -331,9 +341,9 @@ def test_sigmoid(tid: MemberId):
     axes = ("c", "y", "x")
     np_data = np.random.rand(*shape)
     data = xr.DataArray(np_data, dims=axes)
-    sample = Sample(data={tid: data})
+    sample = Sample(members={tid: Tensor.from_xarray(data)})
     sigmoid = Sigmoid(tid, tid)
     sigmoid(sample)
 
     exp = xr.DataArray(1.0 / (1 + np.exp(-np_data)), dims=axes)
-    xr.testing.assert_allclose(exp, sample.data[tid])
+    xr.testing.assert_allclose(exp, sample.members[tid].data)
