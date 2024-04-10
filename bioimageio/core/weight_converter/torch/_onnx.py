@@ -11,7 +11,7 @@ from bioimageio.spec import load_description
 from bioimageio.spec.common import InvalidDescr
 from bioimageio.spec.model import v0_4, v0_5
 
-from ...digest_spec import get_test_inputs
+from ...digest_spec import get_member_id, get_test_inputs
 from ...weight_converter.torch._utils import load_torch_model
 
 
@@ -50,8 +50,9 @@ def add_onnx_weights(
 
     with torch.no_grad():
 
-        input_data = [t.data for t in get_test_inputs(model_spec)]
-        input_tensors = [torch.from_numpy(d) for d in input_data]
+        sample = get_test_inputs(model_spec)
+        input_data = [sample[get_member_id(ipt)].data.data for ipt in model_spec.inputs]
+        input_tensors = [torch.from_numpy(ipt) for ipt in input_data]
         model = load_torch_model(state_dict_weights_descr)
 
         expected_tensors = model(*input_tensors)

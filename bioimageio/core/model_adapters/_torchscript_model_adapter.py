@@ -5,10 +5,11 @@ from typing import Any, List, Optional, Sequence, Tuple, Union
 import numpy as np
 from numpy.typing import NDArray
 
-from bioimageio.core.tensor import Tensor
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.utils import download
 
+from ..axis import AxisId
+from ..tensor import Tensor
 from ._model_adapter import ModelAdapter
 
 try:
@@ -49,11 +50,7 @@ class TorchscriptModelAdapter(ModelAdapter):
         )
         self._model.to(self.devices[0])
         self._internal_output_axes = [
-            (
-                tuple(out.axes)
-                if isinstance(out.axes, str)
-                else tuple(a.id for a in out.axes)
-            )
+            tuple(AxisId(a) if isinstance(a, str) else a.id for a in out.axes)
             for out in model_description.outputs
         ]
 
@@ -61,7 +58,7 @@ class TorchscriptModelAdapter(ModelAdapter):
         assert torch is not None
         with torch.no_grad():
             torch_tensor = [
-                None if b is None else torch.from_numpy(b.data).to(self.devices[0])
+                None if b is None else torch.from_numpy(b.data.data).to(self.devices[0])
                 for b in batch
             ]
             _result: Union[  # pyright: ignore[reportUnknownVariableType]

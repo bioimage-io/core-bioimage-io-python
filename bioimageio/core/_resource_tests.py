@@ -126,7 +126,7 @@ def _test_model_inference(
         with create_prediction_pipeline(
             bioimageio_model=model, devices=devices, weight_format=weight_format
         ) as prediction_pipeline:
-            results = prediction_pipeline.predict(inputs)
+            results = prediction_pipeline.predict_sample_without_blocking(inputs)
 
         if len(results.members) != len(expected.members):
             error = f"Expected {len(expected.members)} outputs, but got {len(results.members)}"
@@ -251,7 +251,7 @@ def _test_model_inference_parametrized(
         ) as prediction_pipeline:
             for n, batch_size, inputs, exptected_output_shape in generate_test_cases():
                 error: Optional[str] = None
-                result = prediction_pipeline.predict(inputs)
+                result = prediction_pipeline.predict_sample_with_blocking(inputs)
                 if len(result.members) != len(exptected_output_shape):
                     error = (
                         f"Expected {len(exptected_output_shape)} outputs,"

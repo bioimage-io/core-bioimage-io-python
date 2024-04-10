@@ -5,6 +5,7 @@ from typing import Any, List, Optional, Sequence, Tuple, Union
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.utils import download
 
+from ..axis import AxisId
 from ..digest_spec import import_callable
 from ..tensor import Tensor
 from ._model_adapter import ModelAdapter
@@ -31,7 +32,7 @@ class PytorchModelAdapter(ModelAdapter):
             raise ImportError("torch")
         super().__init__()
         self.output_dims = [
-            tuple(a if isinstance(a, str) else a.id for a in out.axes)
+            tuple(AxisId(a) if isinstance(a, str) else a.id for a in out.axes)
             for out in outputs
         ]
         self._network = self.get_network(weights)
@@ -52,7 +53,7 @@ class PytorchModelAdapter(ModelAdapter):
             raise ImportError("torch")
         with torch.no_grad():
             tensors = [
-                None if ipt is None else torch.from_numpy(ipt.data)
+                None if ipt is None else torch.from_numpy(ipt.data.data)
                 for ipt in input_tensors
             ]
             tensors = [

@@ -166,10 +166,6 @@ class SampleBlockBase(Generic[BlockT]):
     def inner_shape(self) -> PerMember[PerAxis[int]]:
         return {mid: b.inner_shape for mid, b in self.blocks.items()}
 
-    @property
-    @abstractmethod
-    def origin_shape(self) -> PerMember[PerAxis[int]]: ...
-
 
 @dataclass
 class LinearSampleAxisTransform(LinearAxisTransform):
@@ -188,7 +184,7 @@ class SampleBlockMeta(SampleBlockBase[BlockMeta]):
                 a: (
                     trf
                     if isinstance(trf, int)
-                    else trf.compute(self.origin_shape[trf.member][trf.axis])
+                    else trf.compute(self.sample_shape[trf.member][trf.axis])
                 )
                 for a, trf in new_axes[m].items()
             }

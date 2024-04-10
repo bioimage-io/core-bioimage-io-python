@@ -215,7 +215,7 @@ def get_input_halo(model: v0_5.ModelDescr, output_halo: PerMember[PerAxis[Halo]]
             assert (
                 total_input_halo == int(total_input_halo) and total_input_halo % 2 == 0
             )
-            input_halo.setdefault(t, {})[a] = Halo(
+            input_halo.setdefault(s.tensor_id, {})[a] = Halo(
                 int(total_input_halo // 2), int(total_input_halo // 2)
             )
 
