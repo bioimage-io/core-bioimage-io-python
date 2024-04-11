@@ -106,15 +106,17 @@ class BlockMeta:
         return Frozen(
             {
                 a: PadWidth(
-                    max(
-                        0,
-                        (self.halo[a].left if a in self.halo else 0)
-                        - (self.inner_slice[a].start + self.outer_slice[a].start),
+                    (
+                        self.halo[a].left
+                        - (self.inner_slice[a].start - self.outer_slice[a].start)
+                        if a in self.halo
+                        else 0
                     ),
-                    max(
-                        0,
-                        (self.halo[a].right if a in self.halo else 0)
-                        - (self.outer_slice[a].stop + self.inner_slice[a].stop),
+                    (
+                        self.halo[a].right
+                        - (self.outer_slice[a].stop - self.inner_slice[a].stop)
+                        if a in self.halo
+                        else 0
                     ),
                 )
                 for a in self.inner_slice
@@ -249,6 +251,9 @@ def split_shape_into_blocks(
         tuple(shape),
         set(block_shape),
     )
+    if any(shape[a] < block_shape[a] for a in block_shape):
+        raise ValueError(f"shape {shape} is smaller than block shape {block_shape}")
+
     assert all(a in shape for a in halo), (tuple(shape), set(halo))
 
     # fill in default halo (0) and block axis length (from tensor shape)
