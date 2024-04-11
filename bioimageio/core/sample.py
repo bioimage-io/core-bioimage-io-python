@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-from abc import abstractmethod
 from dataclasses import dataclass, field
-from itertools import islice
+from math import ceil
 from typing import (
-    Any,
     Dict,
-    Generator,
     Generic,
     Iterable,
     Optional,
@@ -111,7 +108,6 @@ class Sample:
         fill_value: float = float("nan"),
     ) -> Self:
         members: PerMember[Tensor] = {}
-        sample_blocks = list(iter(sample_blocks))
         for member_blocks in sample_blocks:
             for m, block in member_blocks.blocks.items():
                 if m not in members:
@@ -213,9 +209,16 @@ class SampleBlockMeta(SampleBlockBase[BlockMeta]):
                         a: (
                             Halo(0, 0)
                             if isinstance(trf, int)
+                            or trf.axis not in self.blocks[trf.member].halo
                             else Halo(
-                                self.blocks[trf.member].halo[trf.axis].left,
-                                self.blocks[trf.member].halo[trf.axis].right,
+                                ceil(
+                                    self.blocks[trf.member].halo[trf.axis].left
+                                    * trf.scale
+                                ),
+                                ceil(
+                                    self.blocks[trf.member].halo[trf.axis].right
+                                    * trf.scale
+                                ),
                             )
                         )
                         for a, trf in new_axes[m].items()
