@@ -86,7 +86,8 @@ class Sample:
             sample_shape=self.shape,
             blocks={
                 m: Block(
-                    data,
+                    sample_shape=self.shape[m],
+                    data=data,
                     inner_slice={
                         a: SliceInfo(0, s) for a, s in data.tagged_shape.items()
                     },
@@ -108,8 +109,8 @@ class Sample:
         fill_value: float = float("nan"),
     ) -> Self:
         members: PerMember[Tensor] = {}
-        for member_blocks in sample_blocks:
-            for m, block in member_blocks.blocks.items():
+        for sample_block in sample_blocks:
+            for m, block in sample_block.blocks.items():
                 if m not in members:
                     if -1 in block.sample_shape.values():
                         raise NotImplementedError(
@@ -236,11 +237,12 @@ class SampleBlockMeta(SampleBlockBase[BlockMeta]):
             sample_shape=self.sample_shape,
             blocks={
                 m: Block(
-                    data[m],
+                    sample_shape=self.sample_shape[m],
                     inner_slice=b.inner_slice,
                     halo=b.halo,
                     block_index=b.block_index,
                     blocks_in_sample=b.blocks_in_sample,
+                    data=data[m],
                 )
                 for m, b in self.blocks.items()
             },

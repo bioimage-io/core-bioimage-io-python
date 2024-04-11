@@ -21,30 +21,12 @@ from .common import (
 from .tensor import Tensor
 
 
-@dataclass(init=False, frozen=True)
+@dataclass(frozen=True)
 class Block(BlockMeta):
     """A block/tile of a (larger) tensor"""
 
     data: Tensor
     """the block's tensor, e.g. a (padded) slice of some larger, original tensor"""
-
-    def __init__(
-        self,
-        data: Tensor,
-        *,
-        inner_slice: PerAxis[SliceInfo],
-        halo: PerAxis[Halo],
-        block_index: int,
-        blocks_in_sample: int,
-    ):
-        object.__setattr__(self, "data", data)
-        super().__init__(
-            sample_shape=data.tagged_shape,
-            inner_slice=inner_slice,
-            halo=halo,
-            block_index=block_index,
-            blocks_in_sample=blocks_in_sample,
-        )
 
     @property
     def inner_data(self):
@@ -71,6 +53,7 @@ class Block(BlockMeta):
     ) -> Self:
         return cls(
             data=sample_member[block.outer_slice].pad(block.padding, pad_mode),
+            sample_shape=sample_member.tagged_shape,
             inner_slice=block.inner_slice,
             halo=block.halo,
             block_index=block.block_index,
