@@ -190,18 +190,21 @@ class PredictionPipeline:
             halo=self._default_input_halo,
             pad_mode="reflect",
         )
-        input_blocks = tqdm(
+        input_blocks = list(input_blocks)
+        predicted_blocks: List[SampleBlock] = []
+        for b in tqdm(
             input_blocks,
             desc=f"predict sample {sample.id or ''} with {self.model_description.id or self.model_description.name}",
             unit="block",
+            unit_divisor=1,
             total=n_blocks,
-        )
-        predicted_blocks = (
-            self.predict_sample_block(
-                b, skip_preprocessing=True, skip_postprocessing=True
+        ):
+            predicted_blocks.append(
+                self.predict_sample_block(
+                    b, skip_preprocessing=True, skip_postprocessing=True
+                )
             )
-            for b in input_blocks
-        )
+
         predicted_sample = Sample.from_blocks(predicted_blocks)
         if not skip_postprocessing:
             self.apply_postprocessing(predicted_sample)
