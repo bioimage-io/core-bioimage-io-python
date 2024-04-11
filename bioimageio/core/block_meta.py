@@ -188,9 +188,14 @@ class BlockMeta:
 
     def __post_init__(self):
         # freeze mutable inputs
-        object.__setattr__(self, "sample_shape", Frozen(self.sample_shape))
-        object.__setattr__(self, "inner_slice", Frozen(self.inner_slice))
-        object.__setattr__(self, "halo", Frozen(self.halo))
+        if not isinstance(self.sample_shape, Frozen):
+            object.__setattr__(self, "sample_shape", Frozen(self.sample_shape))
+
+        if not isinstance(self.inner_slice, Frozen):
+            object.__setattr__(self, "inner_slice", Frozen(self.inner_slice))
+
+        if not isinstance(self.halo, Frozen):
+            object.__setattr__(self, "halo", Frozen(self.halo))
 
         assert all(
             a in self.sample_shape for a in self.inner_slice

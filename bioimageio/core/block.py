@@ -16,7 +16,6 @@ from .common import (
     Halo,
     HaloLike,
     PadMode,
-    SliceInfo,
     TotalNumberOfBlocks,
 )
 from .tensor import Tensor
