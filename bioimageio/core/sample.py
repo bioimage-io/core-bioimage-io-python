@@ -196,8 +196,8 @@ class SampleBlockMeta(SampleBlockBase[BlockMeta]):
                     if isinstance(trf, int)
                     or trf.axis not in self.blocks[trf.member].halo
                     else Halo(
-                        ceil(self.blocks[trf.member].halo[trf.axis].left * trf.scale),
-                        ceil(self.blocks[trf.member].halo[trf.axis].right * trf.scale),
+                        round(self.blocks[trf.member].halo[trf.axis].left * trf.scale),
+                        round(self.blocks[trf.member].halo[trf.axis].right * trf.scale),
                     )
                 )
                 for a, trf in new_axes[m].items()
