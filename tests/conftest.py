@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import subprocess
 import warnings
+from itertools import chain
 from typing import Dict, List
 
 from loguru import logger
@@ -39,90 +40,124 @@ except ImportError:
     keras = None
 
 skip_tensorflow = tensorflow is None
-skip_tensorflow_js = True  # TODO: add a tensorflow_js example model
 
 warnings.warn(f"testing with bioimageio.spec {bioimageio_spec_version}")
 
+# TODO: use models from new collection on S3
+MODEL_SOURCES: Dict[str, str] = {
+    "hpa_densenet": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/hpa-densenet/rdf.yaml"
+    ),
+    "stardist": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models"
+        "/stardist_example_model/v0_4.bioimageio.yaml"
+    ),
+    "shape_change": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
+        "upsample_test_model/v0_4.bioimageio.yaml"
+    ),
+    "stardist_wrong_shape": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
+        "stardist_example_model/rdf_wrong_shape.yaml"
+    ),
+    "stardist_wrong_shape2": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
+        "stardist_example_model/rdf_wrong_shape2_v0_4.yaml"
+    ),
+    "unet2d_diff_output_shape": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
+        "unet2d_diff_output_shape/v0_4.bioimageio.yaml"
+    ),
+    "unet2d_expand_output_shape": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
+        "unet2d_nuclei_broad/expand_output_shape_v0_4.bioimageio.yaml"
+    ),
+    "unet2d_fixed_shape": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
+        "unet2d_fixed_shape/v0_4.bioimageio.yaml"
+    ),
+    "unet2d_keras_tf2": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
+        "unet2d_keras_tf2/v0_4.bioimageio.yaml"
+    ),
+    "unet2d_keras": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
+        "unet2d_keras_tf/v0_4.bioimageio.yaml"
+    ),
+    "unet2d_multi_tensor": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
+        "unet2d_multi_tensor/v0_4.bioimageio.yaml"
+    ),
+    "unet2d_nuclei_broad_model": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
+        "unet2d_nuclei_broad/bioimageio.yaml"
+    ),
+}
+
 # test models for various frameworks
-TORCH_MODELS = [
-    "unet2d_fixed_shape",
-    "unet2d_multi_tensor",
-    "unet2d_nuclei_broad_model",
-    "unet2d_diff_output_shape",
-    "shape_change",
-]
-TORCHSCRIPT_MODELS = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
-ONNX_MODELS = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model", "hpa_densenet"]
-TENSORFLOW1_MODELS = ["stardist"]
-TENSORFLOW2_MODELS = ["unet2d_keras_tf2"]
-KERAS_TF1_MODELS = ["unet2d_keras"]
-KERAS_TF2_MODELS = ["unet2d_keras_tf2"]
-TENSORFLOW_JS_MODELS: List[str] = []
+TORCH_MODELS = (
+    []
+    if torch is None
+    else [
+        "shape_change",
+        "unet2d_diff_output_shape",
+        "unet2d_expand_output_shape",
+        "unet2d_fixed_shape",
+        "unet2d_multi_tensor",
+        "unet2d_nuclei_broad_model",
+    ]
+)
+TORCHSCRIPT_MODELS = (
+    []
+    if torch is None
+    else [
+        "unet2d_multi_tensor",
+        "unet2d_nuclei_broad_model",
+    ]
+)
+ONNX_MODELS = (
+    []
+    if onnxruntime is None
+    else [
+        "hpa_densenet",
+        "unet2d_multi_tensor",
+        "unet2d_nuclei_broad_model",
+    ]
+)
+TENSORFLOW_MODELS = (
+    []
+    if tensorflow is None
+    else (
+        [
+            "hpa_densenet",
+            "stardist",
+        ]
+        if tf_major_version == 1
+        else [
+            "unet2d_keras_tf2",
+        ]
+    )
+)
+KERAS_MODELS = (
+    []
+    if keras is None
+    else ["unet2d_keras"] if tf_major_version == 1 else ["unet2d_keras_tf2"]
+)
+TENSORFLOW_JS_MODELS: List[str] = []  # TODO: add a tensorflow_js example model
 
-
-MODEL_SOURCES: Dict[str, str] = {}
-if keras is not None:
-    MODEL_SOURCES.update(
-        {
-            "unet2d_keras": (
-                "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
-                "unet2d_keras_tf/v0_4.bioimageio.yaml"
-            ),
-            "unet2d_keras_tf2": (
-                "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
-                "unet2d_keras_tf2/v0_4.bioimageio.yaml"
-            ),
-        }
-    )
-if torch is not None:
-    MODEL_SOURCES.update(
-        {
-            "unet2d_nuclei_broad_model": (
-                "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
-                "unet2d_nuclei_broad/bioimageio.yaml"
-            ),
-            "unet2d_expand_output_shape": (
-                "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
-                "unet2d_nuclei_broad/expand_output_shape_v0_4.bioimageio.yaml"
-            ),
-            "unet2d_fixed_shape": (
-                "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
-                "unet2d_fixed_shape/v0_4.bioimageio.yaml"
-            ),
-            "unet2d_multi_tensor": (
-                "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
-                "unet2d_multi_tensor/v0_4.bioimageio.yaml"
-            ),
-            "unet2d_diff_output_shape": (
-                "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
-                "unet2d_diff_output_shape/v0_4.bioimageio.yaml"
-            ),
-            "shape_change": (
-                "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
-                "upsample_test_model/v0_4.bioimageio.yaml"
-            ),
-        }
-    )
-if tensorflow is not None:
-    MODEL_SOURCES.update(
-        {
-            "hpa_densenet": (
-                "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/hpa-densenet/rdf.yaml"
-            ),
-            "stardist": (
-                "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models"
-                "/stardist_example_model/v0_4.bioimageio.yaml"
-            ),
-            "stardist_wrong_shape": (
-                "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
-                "stardist_example_model/rdf_wrong_shape.yaml"
-            ),
-            "stardist_wrong_shape2": (
-                "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
-                "stardist_example_model/rdf_wrong_shape2_v0_4.yaml"
-            ),
-        }
-    )
+ALL_MODELS = sorted(
+    {
+        m
+        for m in chain(
+            TORCH_MODELS,
+            TORCHSCRIPT_MODELS,
+            ONNX_MODELS,
+            TENSORFLOW_MODELS,
+            KERAS_MODELS,
+            TENSORFLOW_JS_MODELS,
+        )
+    }
+)
 
 
 @fixture(scope="session")
@@ -145,52 +180,39 @@ def mamba_cmd():
 #
 
 
-@fixture(params=[] if skip_torch else TORCH_MODELS)
+@fixture(params=TORCH_MODELS)
 def any_torch_model(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
 
 
-@fixture(params=[] if skip_torch else TORCHSCRIPT_MODELS)
+@fixture(params=TORCHSCRIPT_MODELS)
 def any_torchscript_model(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
 
 
-@fixture(params=[] if skip_onnx else ONNX_MODELS)
+@fixture(params=ONNX_MODELS)
 def any_onnx_model(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
 
 
-@fixture(
-    params=(
-        []
-        if skip_tensorflow
-        else TENSORFLOW1_MODELS if tf_major_version == 1 else TENSORFLOW2_MODELS
-    )
-)
+@fixture(params=TENSORFLOW_MODELS)
 def any_tensorflow_model(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
 
 
-@fixture(
-    params=(
-        []
-        if skip_tensorflow
-        else KERAS_TF1_MODELS if tf_major_version == 1 else KERAS_TF2_MODELS
-    )
-)
+@fixture(params=KERAS_MODELS)
 def any_keras_model(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
 
 
-@fixture(params=[] if skip_tensorflow_js else TENSORFLOW_JS_MODELS)
+@fixture(params=TENSORFLOW_JS_MODELS)
 def any_tensorflow_js_model(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
 
 
 # fixture to test with all models that should run in the current environment
-# we exclude stardist_wrong_shape here because it is not a valid model
-# and included only to test that validation for this model fails
-@fixture(params=set(MODEL_SOURCES) - {"stardist_wrong_shape", "stardist_wrong_shape2"})
+# we exclude any 'wrong' model here
+@fixture(params=sorted({m for m in ALL_MODELS if "wrong" not in m}))
 def any_model(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
 
@@ -223,8 +245,8 @@ def convert_to_onnx(request: FixtureRequest):
 @fixture(
     params=(
         []
-        if skip_tensorflow
-        else ["unet2d_keras" if tf_major_version == 1 else "unet2d_keras_tf2"]
+        if tf_major_version is None
+        else ["unet2d_keras"] if tf_major_version == 1 else ["unet2d_keras_tf2"]
     )
 )
 def unet2d_keras(request: FixtureRequest):
@@ -262,22 +284,18 @@ def shape_change_model(request: FixtureRequest):
 
 
 # written as model group to automatically skip on missing tensorflow 1
-@fixture(
-    params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist_wrong_shape"]
-)
+@fixture(params=["stardist_wrong_shape"] if tf_major_version == 1 else [])
 def stardist_wrong_shape(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
 
 
 # written as model group to automatically skip on missing tensorflow 1
-@fixture(
-    params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist_wrong_shape2"]
-)
+@fixture(params=["stardist_wrong_shape2"] if tf_major_version == 1 else [])
 def stardist_wrong_shape2(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
 
 
 # written as model group to automatically skip on missing tensorflow 1
-@fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist"])
+@fixture(params=["stardist"] if tf_major_version == 1 else [])
 def stardist(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
