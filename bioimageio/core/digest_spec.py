@@ -338,8 +338,11 @@ def get_io_sample_block_metas(
 
 def create_sample_for_model(
     model: AnyModelDescr,
+    *,
     stat: Optional[Stat] = None,
-    **inputs: NDArray[Any],
+    sample_id: SampleId = None,
+    inputs: Optional[PerMember[NDArray[Any]]] = None,  # TODO: make non-optional
+    **kwargs: NDArray[Any],  # TODO: deprecate in favor of `inputs`
 ) -> Sample:
     """Create a sample from a single set of input(s) for a specific bioimage.io model
 
@@ -348,25 +351,25 @@ def create_sample_for_model(
         stat: dictionary with sample and dataset statistics (may be updated in-place!)
         inputs: the input(s) constituting a single sample.
     """
-    if len(inputs) > len(model.inputs):
-        raise ValueError(
-            f"Got {len(inputs)} inputs, but expected at most {len(model.inputs)}"
-        )
+    inputs = {MemberId(k): v for k, v in {**kwargs, **(inputs or {})}.items()}
 
-    missing_inputs = {
-        get_member_id(ipt)
-        for ipt in model.inputs
-        if str(get_member_id(ipt)) not in inputs
-        and not (isinstance(ipt, v0_5.InputTensorDescr) and ipt.optional)
-    }
-    if missing_inputs:
-        raise ValueError(f"Missing non-optional input tensors {missing_inputs}")
+    model_inputs = {get_member_id(d): d for d in model.inputs}
+    if unknown := {k for k in inputs if k not in model_inputs}:
+        raise ValueError(f"Got unexpected inputs: {unknown}")
+
+    if missing := {
+        k
+        for k, v in model_inputs.items()
+        if k not in inputs and not (isinstance(v, v0_5.InputTensorDescr) and v.optional)
+    }:
+        raise ValueError(f"Missing non-optional model inputs: {missing}")
 
     return Sample(
         members={
-            m: Tensor.from_numpy(inputs[str(m)], dims=get_axes_infos(ipt))
-            for ipt in model.inputs
-            if str((m := get_member_id(ipt))) in inputs
+            m: Tensor.from_numpy(inputs[m], dims=get_axes_infos(ipt))
+            for m, ipt in model_inputs.items()
+            if m in inputs
         },
         stat={} if stat is None else stat,
+        id=sample_id,
     )
