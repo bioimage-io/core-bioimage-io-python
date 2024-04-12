@@ -21,7 +21,7 @@ from bioimageio.core.sample import Sample, SampleBlock, SampleBlockWithOrigin
 from bioimageio.spec.model import v0_4, v0_5
 
 from ._op_base import BlockedOperator, Operator
-from .axis import AxisId
+from .axis import AxisId, PerAxis
 from .common import DTypeStr, MemberId
 from .stat_calculators import StatsCalculator
 from .stat_measures import (
@@ -69,13 +69,10 @@ class _SimpleOperator(BlockedOperator, ABC):
     def required_measures(self) -> Collection[Measure]:
         return set()
 
-    # @property
-    # def required_tensors(self) -> Set[MemberId]:
-    #     return {self.input}
-
-    # @property
-    # def produced_tensors(self) -> Set[MemberId]:
-    #     return {self.output}
+    @abstractmethod
+    def get_sample_output_shape(
+        self, sample_input_shape: PerAxis[int]
+    ) -> PerAxis[int]: ...
 
     def __call__(self, sample: Union[Sample, SampleBlock]) -> None:
         input_tensor = sample.members[self.input]
@@ -91,6 +88,7 @@ class _SimpleOperator(BlockedOperator, ABC):
         elif isinstance(sample, SampleBlock):
             b = sample.blocks[self.input]
             sample.blocks[self.output] = Block(
+                sample_shape=self.get_sample_output_shape(sample.shape[self.input]),
                 data=output_tensor,
                 inner_slice=b.inner_slice,
                 halo=b.halo,
@@ -201,6 +199,11 @@ class Binarize(_SimpleOperator):
     def _apply(self, input: Tensor, stat: Stat) -> Tensor:
         return input > self.threshold
 
+    def get_sample_output_shape(
+        self, sample_input_shape: Mapping[AxisId, int]
+    ) -> Mapping[AxisId, int]:
+        return sample_input_shape
+
     @classmethod
     def from_proc_descr(
         cls, descr: Union[v0_4.BinarizeDescr, v0_5.BinarizeDescr], member_id: MemberId
@@ -235,6 +238,11 @@ class Clip(_SimpleOperator):
 
     def _apply(self, input: Tensor, stat: Stat) -> Tensor:
         return input.clip(self.min, self.max)
+
+    def get_sample_output_shape(
+        self, sample_input_shape: Mapping[AxisId, int]
+    ) -> Mapping[AxisId, int]:
+        return sample_input_shape
 
     @classmethod
     def from_proc_descr(
@@ -273,6 +281,11 @@ class ScaleLinear(_SimpleOperator):
 
     def _apply(self, input: Tensor, stat: Stat) -> Tensor:
         return input * self.gain + self.offset
+
+    def get_sample_output_shape(
+        self, sample_input_shape: Mapping[AxisId, int]
+    ) -> Mapping[AxisId, int]:
+        return sample_input_shape
 
     @classmethod
     def from_proc_descr(
@@ -341,6 +354,11 @@ class ScaleMeanVariance(_SimpleOperator):
         ref_mean = stat[self.ref_mean]
         ref_std = stat[self.ref_std] + self.eps
         return (input - mean) / std * ref_std + ref_mean
+
+    def get_sample_output_shape(
+        self, sample_input_shape: Mapping[AxisId, int]
+    ) -> Mapping[AxisId, int]:
+        return sample_input_shape
 
     @classmethod
     def from_proc_descr(
@@ -415,6 +433,11 @@ class ScaleRange(_SimpleOperator):
     def required_measures(self):
         return {self.lower, self.upper}
 
+    def get_sample_output_shape(
+        self, sample_input_shape: Mapping[AxisId, int]
+    ) -> Mapping[AxisId, int]:
+        return sample_input_shape
+
     @classmethod
     def from_proc_descr(
         cls,
@@ -475,6 +498,11 @@ class Sigmoid(_SimpleOperator):
     def required_measures(self) -> Collection[Measure]:
         return {}
 
+    def get_sample_output_shape(
+        self, sample_input_shape: Mapping[AxisId, int]
+    ) -> Mapping[AxisId, int]:
+        return sample_input_shape
+
     @classmethod
     def from_proc_descr(
         cls, descr: Union[v0_4.SigmoidDescr, v0_5.SigmoidDescr], member_id: MemberId
@@ -501,6 +529,11 @@ class ZeroMeanUnitVariance(_SimpleOperator):
     @property
     def required_measures(self) -> Set[Union[MeanMeasure, StdMeasure]]:
         return {self.mean, self.std}
+
+    def get_sample_output_shape(
+        self, sample_input_shape: Mapping[AxisId, int]
+    ) -> Mapping[AxisId, int]:
+        return sample_input_shape
 
     @classmethod
     def from_proc_descr(
@@ -550,6 +583,11 @@ class FixedZeroMeanUnitVariance(_SimpleOperator):
             or isinstance(self.std, (int, float))
             or self.mean.dims == self.std.dims
         )
+
+    def get_sample_output_shape(
+        self, sample_input_shape: Mapping[AxisId, int]
+    ) -> Mapping[AxisId, int]:
+        return sample_input_shape
 
     @classmethod
     def from_proc_descr(
