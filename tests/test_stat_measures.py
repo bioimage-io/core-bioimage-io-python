@@ -37,7 +37,7 @@ def test_individual_normal_measure(
     )
 
     expected = getattr(data, name)(dim=axes)
-    sample = Sample(members={data_id: data})
+    sample = Sample(members={data_id: data}, stat={}, id=None)
     actual = measure.compute(sample)
     xr.testing.assert_allclose(expected.data, actual.data)
 
@@ -56,7 +56,7 @@ def test_individual_percentile_measure(axes: Optional[Tuple[AxisId, ...]]):
     data = Tensor(
         np.random.random((5, 6, 3)), dims=(AxisId("x"), AxisId("y"), AxisId("c"))
     )
-    actual = calc.compute(Sample(members={tid: data}))
+    actual = calc.compute(Sample(members={tid: data}, stat={}, id=None))
     for m in measures:
         expected = data.quantile(q=m.q, dim=m.axes)
         actual_data = actual[m]

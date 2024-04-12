@@ -24,7 +24,7 @@ def test_scale_linear(tid: MemberId):
     offset = xr.DataArray([1, 2, 42], dims=("c"))
     gain = xr.DataArray([1, 2, 3], dims=("c"))
     data = xr.DataArray(np.arange(6).reshape((1, 2, 3)), dims=("x", "y", "c"))
-    sample = Sample(members={tid: Tensor.from_xarray(data)})
+    sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
 
     op = ScaleLinear(input=tid, output=tid, offset=offset, gain=gain)
     op(sample)
@@ -38,7 +38,7 @@ def test_scale_linear_no_channel(tid: MemberId):
 
     op = ScaleLinear(tid, tid, offset=1, gain=2)
     data = xr.DataArray(np.arange(6).reshape(2, 3), dims=("x", "y"))
-    sample = Sample(members={tid: Tensor.from_xarray(data)})
+    sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
     op(sample)
 
     expected = xr.DataArray(np.array([[1, 3, 5], [7, 9, 11]]), dims=("x", "y"))
@@ -57,7 +57,7 @@ def test_zero_mean_unit_variance(tid: MemberId):
     from bioimageio.core.proc_ops import ZeroMeanUnitVariance
 
     data = xr.DataArray(np.arange(9).reshape(3, 3), dims=("x", "y"))
-    sample = Sample(members={tid: Tensor.from_xarray(data)})
+    sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
     m = SampleMean(tid)
     std = SampleStd(tid)
     op = ZeroMeanUnitVariance(tid, tid, m, std)
@@ -100,7 +100,7 @@ def test_zero_mean_unit_variance_fixed(tid: MemberId):
         ),
         dims=("b", "c", "x"),
     )
-    sample = Sample(members={tid: Tensor.from_xarray(data)})
+    sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
     op(sample)
     xr.testing.assert_allclose(expected, sample.members[tid].data)
 
@@ -116,7 +116,7 @@ def test_zero_mean_unit_across_axes(tid: MemberId):
         SampleMean(tid, (AxisId("x"), AxisId("y"))),
         SampleStd(tid, (AxisId("x"), AxisId("y"))),
     )
-    sample = Sample(members={tid: Tensor.from_xarray(data)})
+    sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
     sample.stat = compute_measures(op.required_measures, [sample])
 
     expected = xr.concat(
@@ -136,7 +136,7 @@ def test_zero_mean_unit_variance_fixed2(tid: MemberId):
     op = FixedZeroMeanUnitVariance(tid, tid, mean=mean, std=std, eps=eps)
 
     data = xr.DataArray(np_data, dims=("x", "y"))
-    sample = Sample(members={tid: Tensor.from_xarray(data)})
+    sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
     expected = xr.DataArray((np_data - mean) / (std + eps), dims=("x", "y"))
     op(sample)
     xr.testing.assert_allclose(expected, sample.members[tid].data)
@@ -147,7 +147,7 @@ def test_binarize(tid: MemberId):
 
     op = Binarize(tid, tid, threshold=14)
     data = xr.DataArray(np.arange(30).reshape((2, 3, 5)), dims=("x", "y", "c"))
-    sample = Sample(members={tid: Tensor.from_xarray(data)})
+    sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
     expected = xr.zeros_like(data)
     expected[{"x": slice(1, None)}] = 1
     op(sample)
@@ -165,7 +165,7 @@ def test_binarize2(tid: MemberId):
     threshold = 0.5
     exp = xr.DataArray(np_data > threshold, dims=axes)
 
-    sample = Sample(members={tid: Tensor.from_xarray(data)})
+    sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
     binarize = Binarize(tid, tid, threshold=threshold)
     binarize(sample)
     xr.testing.assert_allclose(exp, sample.members[tid].data)
@@ -176,7 +176,7 @@ def test_clip(tid: MemberId):
 
     op = Clip(tid, tid, min=3, max=5)
     data = xr.DataArray(np.arange(9).reshape(3, 3), dims=("x", "y"))
-    sample = Sample(members={tid: Tensor.from_xarray(data)})
+    sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
 
     expected = xr.DataArray(
         np.array([[3, 3, 3], [3, 4, 5], [5, 5, 5]]), dims=("x", "y")
@@ -189,7 +189,7 @@ def test_combination_of_op_steps_with_dims_specified(tid: MemberId):
     from bioimageio.core.proc_ops import ZeroMeanUnitVariance
 
     data = xr.DataArray(np.arange(18).reshape((2, 3, 3)), dims=("c", "x", "y"))
-    sample = Sample(members={tid: Tensor.from_xarray(data)})
+    sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
     op = ZeroMeanUnitVariance(
         tid,
         tid,
@@ -249,7 +249,9 @@ def test_scale_mean_variance(tid: MemberId, axes: Optional[Tuple[AxisId, ...]]):
         members={
             tid: Tensor.from_xarray(ipt_data),
             MemberId("ref_name"): Tensor.from_xarray(ref_data),
-        }
+        },
+        stat={},
+        id=None,
     )
     sample.stat = compute_measures(op.required_measures, [sample])
     op(sample)
@@ -279,7 +281,9 @@ def test_scale_mean_variance_per_channel(tid: MemberId, axes_str: Optional[str])
         members={
             tid: Tensor.from_xarray(ipt_data),
             MemberId("ref_name"): Tensor.from_xarray(ref_data),
-        }
+        },
+        stat={},
+        id=None,
     )
     sample.stat = compute_measures(op.required_measures, [sample])
     op(sample)
@@ -299,7 +303,7 @@ def test_scale_range(tid: MemberId):
     op = ScaleRange(tid, tid)
     np_data = np.arange(9).reshape(3, 3).astype("float32")
     data = xr.DataArray(np_data, dims=("x", "y"))
-    sample = Sample(members={tid: Tensor.from_xarray(data)})
+    sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
     sample.stat = compute_measures(op.required_measures, [sample])
 
     eps = 1.0e-6
@@ -323,7 +327,7 @@ def test_scale_range_axes(tid: MemberId):
 
     np_data = np.arange(18).reshape((2, 3, 3)).astype("float32")
     data = Tensor.from_xarray(xr.DataArray(np_data, dims=("c", "x", "y")))
-    sample = Sample(members={tid: data})
+    sample = Sample(members={tid: data}, stat={}, id=None)
 
     p_low_direct = lower_quantile.compute(sample)
     p_up_direct = upper_quantile.compute(sample)
@@ -354,7 +358,7 @@ def test_sigmoid(tid: MemberId):
     axes = ("c", "y", "x")
     np_data = np.random.rand(*shape)
     data = xr.DataArray(np_data, dims=axes)
-    sample = Sample(members={tid: Tensor.from_xarray(data)})
+    sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
     sigmoid = Sigmoid(tid, tid)
     sigmoid(sample)
 

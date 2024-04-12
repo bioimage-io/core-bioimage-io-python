@@ -33,7 +33,7 @@ from bioimageio.spec.utils import load_array
 
 from .axis import AxisId, AxisInfo, PerAxis
 from .block_meta import split_multiple_shapes_into_blocks
-from .common import Halo, MemberId, PerMember, TotalNumberOfBlocks
+from .common import Halo, MemberId, PerMember, SampleId, TotalNumberOfBlocks
 from .sample import (
     LinearSampleAxisTransform,
     Sample,
@@ -162,7 +162,9 @@ def get_test_inputs(model: AnyModelDescr) -> Sample:
         members={
             m: Tensor.from_numpy(arr, dims=ax)
             for m, arr, ax in zip(member_ids, arrays, axes)
-        }
+        },
+        stat={},
+        id="test-input",
     )
 
 
@@ -181,7 +183,9 @@ def get_test_outputs(model: AnyModelDescr) -> Sample:
         members={
             m: Tensor.from_numpy(arr, dims=ax)
             for m, arr, ax in zip(member_ids, arrays, axes)
-        }
+        },
+        stat={},
+        id="test-output",
     )
 
 

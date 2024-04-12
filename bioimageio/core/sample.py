@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from math import ceil, floor
 from typing import (
     Callable,
     Dict,
     Generic,
-    Hashable,
     Iterable,
     Optional,
     Tuple,
@@ -49,10 +48,10 @@ class Sample:
     members: Dict[MemberId, Tensor]
     """the sample's tensors"""
 
-    stat: Stat = field(default_factory=dict)
+    stat: Stat
     """sample and dataset statistics"""
 
-    id: Optional[SampleId] = None
+    id: SampleId
     """identifier within the sample's dataset"""
 
     @property
@@ -151,7 +150,7 @@ class SampleBlockBase(Generic[BlockT]):
     sample_shape: PerMember[PerAxis[int]]
     """the sample shape this block represents a part of"""
 
-    sample_id: Optional[Hashable]
+    sample_id: SampleId
     """identifier for the sample within its dataset"""
 
     blocks: Dict[MemberId, BlockT]
@@ -316,7 +315,7 @@ def sample_block_meta_generator(
     blocks: Iterable[PerMember[BlockMeta]],
     *,
     sample_shape: PerMember[PerAxis[int]],
-    sample_id: Optional[Hashable],
+    sample_id: SampleId,
 ):
     for member_blocks in blocks:
         cons = _ConsolidatedMemberBlocks(member_blocks)

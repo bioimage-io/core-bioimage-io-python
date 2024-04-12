@@ -20,7 +20,10 @@ def create_random_dataset(tid: MemberId, axes: Tuple[AxisId, ...]):
     n = 3
     sizes = list(range(n, len(axes) + n))
     data = np.asarray(np.random.rand(*sizes))
-    ds = [Sample(members={tid: Tensor(data[i : i + 1], dims=axes)}) for i in range(n)]
+    ds = [
+        Sample(members={tid: Tensor(data[i : i + 1], dims=axes)}, stat={}, id=None)
+        for i in range(n)
+    ]
     return Tensor(data, dims=axes), ds
 
 
