@@ -143,6 +143,7 @@ class ModelAdapter(ABC):
         """
         Run forward pass of model to get model predictions
         """
+        # TODO: handle tensor.transpose in here and make _forward_impl the abstract impl
 
     @abstractmethod
     def unload(self):
