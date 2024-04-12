@@ -19,7 +19,7 @@ from bioimageio.spec.model.v0_5 import WeightsFormat
 
 from ._op_base import BlockedOperator
 from .axis import AxisId, PerAxis
-from .common import Halo, MemberId, PerMember
+from .common import Halo, MemberId, PerMember, SampleId
 from .digest_spec import (
     get_block_transform,
     get_input_halo,
@@ -30,7 +30,7 @@ from .model_adapters import get_weight_formats as get_weight_formats
 from .proc_ops import Processing
 from .proc_setup import setup_pre_and_postprocessing
 from .sample import Sample, SampleBlock, SampleBlockWithOrigin
-from .stat_measures import DatasetMeasure, MeasureValue
+from .stat_measures import DatasetMeasure, MeasureValue, Stat
 from .tensor import Tensor
 
 Predict_IO = TypeVar(
@@ -73,7 +73,7 @@ class PredictionPipeline:
         self.model_description = model_description
         if isinstance(model_description, v0_4.ModelDescr):
             self._default_input_halo: PerMember[PerAxis[Halo]] = {}
-            self._block_transform = {}
+            self._block_transform = None
         else:
             default_output_halo = {
                 t.id: {
@@ -110,6 +110,13 @@ class PredictionPipeline:
         skip_preprocessing: bool = False,
         skip_postprocessing: bool = False,
     ) -> SampleBlock:
+        if isinstance(self.model_description, v0_4.ModelDescr):
+            raise NotImplementedError(
+                f"predict_sample_block not implemented for model {self.model_description.format_version}"
+            )
+        else:
+            assert self._block_transform is not None
+
         if not skip_preprocessing:
             self.apply_preprocessing(sample_block)
 
@@ -120,7 +127,7 @@ class PredictionPipeline:
                 for tid, out in zip(
                     self._output_ids,
                     self._adapter.forward(
-                        *(sample_block.members[t] for t in self._input_ids)
+                        *(sample_block.members.get(t) for t in self._input_ids)
                     ),
                 )
                 if out is not None
@@ -142,14 +149,35 @@ class PredictionPipeline:
         The sample's tensor shapes have to match the model's input tensor description.
         If that is not the case, consider `predict_sample_with_blocking`"""
 
-        block = sample.as_single_block()
-        predicted_block = self.predict_sample_block(
-            block,
-            skip_preprocessing=skip_preprocessing,
-            skip_postprocessing=skip_postprocessing,
+        if not skip_preprocessing:
+            self.apply_preprocessing(sample)
+
+        output = Sample(
+            members={
+                out_id: out
+                for out_id, out in zip(
+                    self._output_ids,
+                    self._adapter.forward(
+                        *(sample.members.get(in_id) for in_id in self._input_ids)
+                    ),
+                )
+                if out is not None
+            },
+            stat=sample.stat,
+            id=self.get_output_sample_id(sample.id),
         )
-        predicted_sample = Sample.from_blocks([predicted_block])
-        return predicted_sample
+        if not skip_postprocessing:
+            self.apply_postprocessing(output)
+
+        return output
+
+    def get_output_sample_id(self, input_sample_id: SampleId):
+        if input_sample_id is None:
+            return None
+        else:
+            return f"{input_sample_id}_" + (
+                self.model_description.id or self.model_description.name
+            )
 
     def predict_sample_with_blocking(
         self,
@@ -311,11 +339,12 @@ def create_prediction_pipeline(
     input_ids = get_member_ids(bioimageio_model.inputs)
 
     def dataset():
-        for x in dataset_for_initial_statistics:
+        common_stat: Stat = {}
+        for i, x in enumerate(dataset_for_initial_statistics):
             if isinstance(x, Sample):
                 yield x
             else:
-                yield Sample(members=dict(zip(input_ids, x)))
+                yield Sample(members=dict(zip(input_ids, x)), stat=common_stat, id=i)
 
     preprocessing, postprocessing = setup_pre_and_postprocessing(
         bioimageio_model,
