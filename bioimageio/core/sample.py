@@ -6,6 +6,7 @@ from typing import (
     Callable,
     Dict,
     Generic,
+    Hashable,
     Iterable,
     Optional,
     Tuple,
@@ -85,6 +86,7 @@ class Sample:
             halo = {}
         return SampleBlockWithOrigin(
             sample_shape=self.shape,
+            sample_id=self.id,
             blocks={
                 m: Block(
                     sample_shape=self.shape[m],
@@ -112,7 +114,12 @@ class Sample:
         fill_value: float = float("nan"),
     ) -> Self:
         members: PerMember[Tensor] = {}
+        stat: Stat = {}
+        sample_id = None
         for sample_block in sample_blocks:
+            assert sample_id is None or sample_id == sample_block.sample_id
+            sample_id = sample_block.sample_id
+            stat = sample_block.stat
             for m, block in sample_block.blocks.items():
                 if m not in members:
                     if -1 in block.sample_shape.values():
@@ -131,7 +138,7 @@ class Sample:
 
                 members[m][block.inner_slice] = block.inner_data
 
-        return cls(members=members)
+        return cls(members=members, stat=stat, id=sample_id)
 
 
 BlockT = TypeVar("BlockT", Block, BlockMeta)
@@ -143,6 +150,9 @@ class SampleBlockBase(Generic[BlockT]):
 
     sample_shape: PerMember[PerAxis[int]]
     """the sample shape this block represents a part of"""
+
+    sample_id: Optional[Hashable]
+    """identifier for the sample within its dataset"""
 
     blocks: Dict[MemberId, BlockT]
     """Individual tensor blocks comprising this sample block"""
@@ -235,6 +245,7 @@ class SampleBlockMeta(SampleBlockBase[BlockMeta]):
                 for m in new_axes
             },
             sample_shape=sample_shape,
+            sample_id=self.sample_id,
             block_index=self.block_index,
             blocks_in_sample=self.blocks_in_sample,
         )
@@ -242,6 +253,7 @@ class SampleBlockMeta(SampleBlockBase[BlockMeta]):
     def with_data(self, data: PerMember[Tensor], *, stat: Stat) -> SampleBlock:
         return SampleBlock(
             sample_shape=self.sample_shape,
+            sample_id=self.sample_id,
             blocks={
                 m: Block(
                     sample_shape=self.sample_shape[m],
@@ -275,6 +287,7 @@ class SampleBlock(SampleBlockBase[Block]):
         self, new_axes: PerMember[PerAxis[Union[LinearSampleAxisTransform, int]]]
     ) -> SampleBlockMeta:
         return SampleBlockMeta(
+            sample_id=self.sample_id,
             blocks=dict(self.blocks),
             sample_shape=self.sample_shape,
             block_index=self.block_index,
@@ -288,22 +301,31 @@ class SampleBlockWithOrigin(SampleBlock):
     """the sample this sample black was taken from"""
 
 
+class _ConsolidatedMemberBlocks:
+    def __init__(self, blocks: PerMember[BlockMeta]):
+        super().__init__()
+        block_indices = {b.block_index for b in blocks.values()}
+        assert len(block_indices) == 1
+        self.block_index = block_indices.pop()
+        blocks_in_samples = {b.blocks_in_sample for b in blocks.values()}
+        assert len(blocks_in_samples) == 1
+        self.blocks_in_sample = blocks_in_samples.pop()
+
+
 def sample_block_meta_generator(
     blocks: Iterable[PerMember[BlockMeta]],
     *,
     sample_shape: PerMember[PerAxis[int]],
+    sample_id: Optional[Hashable],
 ):
     for member_blocks in blocks:
-        block_indices = {block.block_index for block in member_blocks.values()}
-        assert len(block_indices) == 1
-        blocks_in_samples = {block.blocks_in_sample for block in member_blocks.values()}
-        assert len(blocks_in_samples) == 1
-
+        cons = _ConsolidatedMemberBlocks(member_blocks)
         yield SampleBlockMeta(
             blocks=dict(member_blocks),
             sample_shape=sample_shape,
-            block_index=block_indices.pop(),
-            blocks_in_sample=blocks_in_samples.pop(),
+            sample_id=sample_id,
+            block_index=cons.block_index,
+            blocks_in_sample=cons.blocks_in_sample,
         )
 
 
@@ -314,10 +336,7 @@ def sample_block_generator(
     pad_mode: PadMode,
 ):
     for member_blocks in blocks:
-        block_indices = {block.block_index for block in member_blocks.values()}
-        assert len(block_indices) == 1
-        blocks_in_samples = {block.blocks_in_sample for block in member_blocks.values()}
-        assert len(blocks_in_samples) == 1
+        cons = _ConsolidatedMemberBlocks(member_blocks)
         yield SampleBlockWithOrigin(
             blocks={
                 m: Block.from_sample_member(
@@ -328,6 +347,7 @@ def sample_block_generator(
             sample_shape=origin.shape,
             origin=origin,
             stat=origin.stat,
-            block_index=block_indices.pop(),
-            blocks_in_sample=blocks_in_samples.pop(),
+            sample_id=origin.id,
+            block_index=cons.block_index,
+            blocks_in_sample=cons.blocks_in_sample,
         )

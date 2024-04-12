@@ -324,9 +324,13 @@ def get_io_sample_block_metas(
     return n_input_blocks, (
         IO_SampleBlockMeta(ipt, out)
         for ipt, out in zip(
-            sample_block_meta_generator(input_blocks, sample_shape=input_sample_shape),
             sample_block_meta_generator(
-                output_blocks, sample_shape=output_sample_shape
+                input_blocks, sample_shape=input_sample_shape, sample_id=None
+            ),
+            sample_block_meta_generator(
+                output_blocks,
+                sample_shape=output_sample_shape,
+                sample_id=None,
             ),
         )
     )
