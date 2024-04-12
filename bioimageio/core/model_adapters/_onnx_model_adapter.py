@@ -5,6 +5,7 @@ from numpy.typing import NDArray
 
 from bioimageio.core.tensor import Tensor
 from bioimageio.spec.model import v0_4, v0_5
+from bioimageio.spec.utils import download
 
 from ._model_adapter import ModelAdapter
 
@@ -36,7 +37,9 @@ class ONNXModelAdapter(ModelAdapter):
         if model_description.weights.onnx is None:
             raise ValueError("No ONNX weights specified for {model_description.name}")
 
-        self._session = rt.InferenceSession(str(model_description.weights.onnx.source))
+        self._session = rt.InferenceSession(
+            str(download(model_description.weights.onnx.source).path)
+        )
         onnx_inputs = self._session.get_inputs()  # type: ignore
         self._input_names: List[str] = [ipt.name for ipt in onnx_inputs]  # type: ignore
 
