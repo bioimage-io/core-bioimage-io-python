@@ -231,7 +231,9 @@ def _test_model_inference_parametrized(
                         },
                     )
                     for t in model.inputs
-                }
+                },
+                stat=test_inputs.stat,
+                id=test_inputs.id,
             )
             expected_output_shapes = {
                 t.id: {
