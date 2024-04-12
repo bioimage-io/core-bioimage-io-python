@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence
 
 import imageio
 from loguru import logger
@@ -9,7 +9,9 @@ from bioimageio.spec.model import AnyModelDescr
 from bioimageio.spec.utils import load_array
 
 from .axis import Axis, AxisLike
-from .digest_spec import create_sample_for_model, get_axes_infos
+from .common import MemberId, PerMember, SampleId
+from .digest_spec import get_axes_infos, get_member_id
+from .sample import Sample
 from .stat_measures import Stat
 from .tensor import Tensor
 
@@ -35,26 +37,44 @@ def load_tensor(path: Path, axes: Optional[Sequence[AxisLike]] = None) -> Tensor
 
 
 def load_sample_for_model(
-    *paths: Path,
+    *,
     model: AnyModelDescr,
-    axes: Optional[Sequence[Sequence[AxisLike]]] = None,
+    paths: PerMember[Path],
+    axes: Optional[PerMember[Sequence[AxisLike]]] = None,
     stat: Optional[Stat] = None,
+    sample_id: Optional[SampleId] = None,
 ):
     """load a single sample from `paths` that can be processed by `model`"""
 
     if axes is None:
-        axes = [get_axes_infos(ipt) for ipt in model.inputs[: len(paths)]]
-        logger.warning(
-            "loading paths with default input axes: {} (from {})",
-            axes,
-            model.id or model.name,
-        )
-    elif len(axes) != len(paths):
-        raise ValueError(f"got {len(paths)} paths, but {len(axes)} axes hints!")
+        axes = {}
 
-    arrays = [load_image(p, is_volume=True) for p in paths]
-    return create_sample_for_model(
-        arrays,
-        model,
+    # make sure members are keyed by MemberId, not string
+    paths = {MemberId(k): v for k, v in paths.items()}
+    axes = {MemberId(k): v for k, v in axes.items()}
+
+    model_inputs = {get_member_id(d): d for d in model.inputs}
+
+    if unknown := {k for k in paths if k not in model_inputs}:
+        raise ValueError(f"Got unexpected paths for {unknown}")
+
+    if unknown := {k for k in axes if k not in model_inputs}:
+        raise ValueError(f"Got unexpected axes hints for: {unknown}")
+
+    members: Dict[MemberId, Tensor] = {}
+    for m, p in paths.items():
+        if m not in axes:
+            axes[m] = get_axes_infos(model_inputs[m])
+            logger.warning(
+                "loading paths with {}'s default input axes {} for input '{}'",
+                axes[m],
+                model.id or model.name,
+                m,
+            )
+        members[m] = load_tensor(p, axes[m])
+
+    return Sample(
+        members=members,
         stat={} if stat is None else stat,
+        id=sample_id or tuple(sorted(paths.values())),
     )
