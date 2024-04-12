@@ -29,24 +29,26 @@ def _test_device_management(model_package: Path, weight_format: WeightsFormat):
 
     inputs = get_test_inputs(bio_model)
     with pred_pipe as pp:
-        outputs = pp.forward(*inputs)
-
-    assert isinstance(outputs, list)
+        outputs = pp.predict_sample_without_blocking(inputs)
 
     expected_outputs = get_test_outputs(bio_model)
 
-    assert len(outputs) == len(expected_outputs)
-    for out, exp in zip(outputs, expected_outputs):
+    assert len(outputs.shape) == len(expected_outputs.shape)
+    for m in expected_outputs.members:
+        out = outputs.members[m].data
         assert out is not None
+        exp = expected_outputs.members[m].data
         assert_array_almost_equal(out, exp, decimal=4)
 
-    # repeat inference with context manager to test load/unload/load/forward
+    # repeat inference with context manager to test load/predict/unload/load/predict
     with pred_pipe as pp:
-        outputs = pp.forward(*inputs)
+        outputs = pp.predict_sample_without_blocking(inputs)
 
-    assert len(outputs) == len(expected_outputs)
-    for out, exp in zip(outputs, expected_outputs):
+    assert len(outputs.shape) == len(expected_outputs.shape)
+    for m in expected_outputs.members:
+        out = outputs.members[m].data
         assert out is not None
+        exp = expected_outputs.members[m].data
         assert_array_almost_equal(out, exp, decimal=4)
 
 
