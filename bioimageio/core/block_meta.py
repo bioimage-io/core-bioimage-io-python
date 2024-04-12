@@ -1,9 +1,10 @@
 import itertools
 from dataclasses import dataclass
 from functools import cached_property
-from math import prod
+from math import floor, prod
 from typing import (
     Any,
+    Callable,
     Collection,
     Dict,
     Generator,
@@ -37,8 +38,8 @@ class LinearAxisTransform:
     scale: float
     offset: int
 
-    def compute(self, s: int) -> int:
-        return int(s * self.scale) + self.offset
+    def compute(self, s: int, round: Callable[[float], int] = floor) -> int:
+        return round(s * self.scale) + self.offset
 
 
 @dataclass(frozen=True)

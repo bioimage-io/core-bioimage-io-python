@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from math import ceil
+from math import ceil, floor
 from typing import (
+    Callable,
     Dict,
     Generic,
     Iterable,
@@ -17,7 +18,7 @@ from typing_extensions import Self
 
 from bioimageio.core.block import Block
 
-from .axis import PerAxis
+from .axis import AxisId, PerAxis
 from .block_meta import (
     BlockMeta,
     LinearAxisTransform,
@@ -187,43 +188,50 @@ class SampleBlockMeta(SampleBlockBase[BlockMeta]):
             }
             for m in new_axes
         }
+
+        def get_member_halo(m: MemberId, round: Callable[[float], int]):
+            return {
+                a: (
+                    Halo(0, 0)
+                    if isinstance(trf, int)
+                    or trf.axis not in self.blocks[trf.member].halo
+                    else Halo(
+                        ceil(self.blocks[trf.member].halo[trf.axis].left * trf.scale),
+                        ceil(self.blocks[trf.member].halo[trf.axis].right * trf.scale),
+                    )
+                )
+                for a, trf in new_axes[m].items()
+            }
+
+        halo: Dict[MemberId, Dict[AxisId, Halo]] = {}
+        for m in new_axes:
+            halo[m] = get_member_halo(m, floor)
+            assert halo[m] == get_member_halo(
+                m, ceil
+            ), f"failed to unambiguously scale halo {halo[m]} with {new_axes[m]}"
+
+        inner_slice = {
+            m: {
+                a: (
+                    SliceInfo(0, trf)
+                    if isinstance(trf, int)
+                    else SliceInfo(
+                        trf.compute(
+                            self.blocks[trf.member].inner_slice[trf.axis].start
+                        ),
+                        trf.compute(self.blocks[trf.member].inner_slice[trf.axis].stop),
+                    )
+                )
+                for a, trf in new_axes[m].items()
+            }
+            for m in new_axes
+        }
         return self.__class__(
             blocks={
                 m: BlockMeta(
                     sample_shape=sample_shape[m],
-                    inner_slice={
-                        a: (
-                            SliceInfo(0, trf)
-                            if isinstance(trf, int)
-                            else SliceInfo(
-                                trf.compute(
-                                    self.blocks[trf.member].inner_slice[trf.axis].start
-                                ),
-                                trf.compute(
-                                    self.blocks[trf.member].inner_slice[trf.axis].stop
-                                ),
-                            )
-                        )
-                        for a, trf in new_axes[m].items()
-                    },
-                    halo={
-                        a: (
-                            Halo(0, 0)
-                            if isinstance(trf, int)
-                            or trf.axis not in self.blocks[trf.member].halo
-                            else Halo(
-                                ceil(
-                                    self.blocks[trf.member].halo[trf.axis].left
-                                    * trf.scale
-                                ),
-                                ceil(
-                                    self.blocks[trf.member].halo[trf.axis].right
-                                    * trf.scale
-                                ),
-                            )
-                        )
-                        for a, trf in new_axes[m].items()
-                    },
+                    inner_slice=inner_slice[m],
+                    halo=halo[m],
                     block_index=self.block_index,
                     blocks_in_sample=self.blocks_in_sample,
                 )
