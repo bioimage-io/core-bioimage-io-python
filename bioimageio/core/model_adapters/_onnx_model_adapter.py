@@ -3,10 +3,11 @@ from typing import Any, List, Optional, Sequence, Union
 
 from numpy.typing import NDArray
 
-from bioimageio.core.tensor import Tensor
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.utils import download
 
+from ..digest_spec import get_axes_infos
+from ..tensor import Tensor
 from ._model_adapter import ModelAdapter
 
 try:
@@ -27,11 +28,7 @@ class ONNXModelAdapter(ModelAdapter):
 
         super().__init__()
         self._internal_output_axes = [
-            (
-                tuple(out.axes)
-                if isinstance(out.axes, str)
-                else tuple(a.id for a in out.axes)
-            )
+            tuple(a.id for a in get_axes_infos(out))
             for out in model_description.outputs
         ]
         if model_description.weights.onnx is None:
@@ -50,7 +47,7 @@ class ONNXModelAdapter(ModelAdapter):
 
     def forward(self, *input_tensors: Optional[Tensor]) -> List[Optional[Tensor]]:
         assert len(input_tensors) == len(self._input_names)
-        input_arrays = [None if ipt is None else ipt.data for ipt in input_tensors]
+        input_arrays = [None if ipt is None else ipt.data.data for ipt in input_tensors]
         result: Union[Sequence[Optional[NDArray[Any]]], Optional[NDArray[Any]]]
         result = self._session.run(  # pyright: ignore[reportUnknownVariableType]
             None, dict(zip(self._input_names, input_arrays))
