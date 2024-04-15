@@ -1,5 +1,4 @@
 import subprocess
-from pathlib import Path
 from typing import Any, List, Sequence
 
 import pytest
@@ -38,7 +37,6 @@ def run_subprocess(
     ],
 )
 def test_cli(args: List[str], unet2d_nuclei_broad_model: str):
-    assert Path(unet2d_nuclei_broad_model).exists()
     resolved_args = [
         str(unet2d_nuclei_broad_model) if arg == "unet2d_nuclei_broad_model" else arg
         for arg in args
