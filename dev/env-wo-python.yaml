@@ -8,6 +8,7 @@ dependencies:
   - black
   # - crick  # currently requires python<=3.9
   - filelock
+  - fire
   - imageio>=2.5
   - jupyter
   - jupyter-black
@@ -31,7 +32,6 @@ dependencies:
   - ruyaml
   - torchvision
   - tqdm
-  - typer
   - typing-extensions
   - xarray
   - pip:

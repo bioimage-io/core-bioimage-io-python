@@ -30,6 +30,7 @@ _ = setup(
     packages=find_namespace_packages(exclude=["tests"]),
     install_requires=[
         "bioimageio.spec==0.5.1.*",
+        "fire",
         "imageio>=2.5",
         "loguru",
         "numpy",
@@ -38,7 +39,6 @@ _ = setup(
         "python-dotenv",
         "ruyaml",
         "tqdm",
-        "typer",
         "typing-extensions",
         "xarray",
     ],

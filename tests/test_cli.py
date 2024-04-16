@@ -28,12 +28,12 @@ def run_subprocess(
         ],
         ["package", "unet2d_nuclei_broad_model"],
         [
-            "test-model",
+            "test",
             "unet2d_nuclei_broad_model",
             "--weight-format",
             "pytorch_state_dict",
         ],
-        ["test-model", "unet2d_nuclei_broad_model"],
+        ["test", "unet2d_nuclei_broad_model"],
     ],
 )
 def test_cli(args: List[str], unet2d_nuclei_broad_model: str):
@@ -45,7 +45,7 @@ def test_cli(args: List[str], unet2d_nuclei_broad_model: str):
     assert ret.returncode == 0, ret.stdout
 
 
-@pytest.mark.parametrize("args", [["test-model", "stardist_wrong_shape"]])
+@pytest.mark.parametrize("args", [["test", "stardist_wrong_shape"]])
 def test_cli_fails(args: List[str], stardist_wrong_shape: FilePath):
     resolved_args = [
         str(stardist_wrong_shape) if arg == "stardist_wrong_shape" else arg

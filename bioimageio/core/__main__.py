@@ -1,164 +1,80 @@
-import enum
 import sys
 from pathlib import Path
-from typing import List, Optional
+from typing import List, Optional, Union
 
-import typer
-from typing_extensions import Annotated
+import fire
 
-from bioimageio.core import __version__
-from bioimageio.core import test_description as _test_description
-from bioimageio.core import test_model as _test_model
+from bioimageio.core import __version__, test_description
 from bioimageio.spec import save_bioimageio_package
 from bioimageio.spec.collection import CollectionDescr
 from bioimageio.spec.dataset import DatasetDescr
 from bioimageio.spec.model import ModelDescr
+from bioimageio.spec.model.v0_5 import WeightsFormat
 from bioimageio.spec.notebook import NotebookDescr
 
-help_version = f"""bioimageio.core {__version__}
-bioimageio.spec {__version__}
-implementing:
-\tcollection RDF {CollectionDescr.implemented_format_version}
-\tdataset RDF {DatasetDescr.implemented_format_version}
-\tmodel RDF {ModelDescr.implemented_format_version}
-\tnotebook RDF {NotebookDescr.implemented_format_version}"""
+
+class Bioimageio:
+    def package(
+        self,
+        source: str,
+        path: Path = Path("bioimageio-package.zip"),
+        weight_format: Optional[WeightsFormat] = None,
+    ):
+        """Package a bioimageio resource as a zip file
+
+        Args:
+            source: RDF source e.g. `bioimageio.yaml` or `http://example.com/rdf.yaml`
+            path: output path
+            weight-format: include only this single weight-format
+        """
+        _ = save_bioimageio_package(
+            source,
+            output_path=path,
+            weights_priority_order=None if weight_format is None else (weight_format,),
+        )
+
+    def test(
+        self,
+        source: str,
+        weight_format: Optional[WeightsFormat] = None,
+        *,
+        devices: Optional[Union[str, List[str]]] = None,
+        decimal: int = 4,
+    ):
+        """test a bioimageio resource
+
+        Args:
+            source: Path or URL to the bioimageio resource description file
+                    (bioimageio.yaml or rdf.yaml) or to a zipped resource
+            weight_format: (model only) The weight format to use
+            devices: Device(s) to use for testing
+            decimal: Precision for numerical comparisons
+        """
+        summary = test_description(
+            source,
+            weight_format=None if weight_format is None else weight_format,
+            devices=[devices] if isinstance(devices, str) else devices,
+            decimal=decimal,
+        )
+        print(f"\ntesting model {source}...")
+        print(summary.format())
+        sys.exit(0 if summary.status == "passed" else 1)
 
 
-# prevent rewrapping with \b\n: https://click.palletsprojects.com/en/7.x/documentation/#preventing-rewrapping
-app = typer.Typer(
-    help="\b\n" + help_version,
-    context_settings={
-        "help_option_names": ["-h", "--help", "--version"]
-    },  # make --version display help with version
-)  # https://typer.tiangolo.com/
+Bioimageio.__doc__ = f"""
+work with resources shared on bioimage.io
 
+library versions:
+  bioimageio.core {__version__}
+  bioimageio.spec {__version__}
 
-@app.callback()
-def callback():
-    typer.echo(help_version)
+spec format versions:
+        model RDF {ModelDescr.implemented_format_version}
+      dataset RDF {DatasetDescr.implemented_format_version}
+     notebook RDF {NotebookDescr.implemented_format_version}
+   collection RDF {CollectionDescr.implemented_format_version}
 
-
-# if we want to use something like "choice" for the weight formats, we need to use an enum, see:
-# https://github.com/tiangolo/typer/issues/182
-
-
-class WeightsFormatEnum(enum.Enum):
-    keras_hdf5 = "keras_hdf5"
-    onnx = "onnx"
-    pytorch_state_dict = "pytorch_state_dict"
-    tensorflow_js = "tensorflow_js"
-    tensorflow_saved_model_bundle = "tensorflow_saved_model_bundle"
-    torchscript = "torchscript"
-
-
-# Enum with int values does not work with click.Choice: https://github.com/pallets/click/issues/784
-# so a simple Enum with auto int values is not an option.
-
-
-@app.command()
-def package(
-    source: Annotated[str, typer.Argument(help="path or url to a bioimageio RDF")],
-    path: Annotated[Path, typer.Argument(help="Save package as")] = Path(
-        "bioimageio-package.zip"
-    ),
-    weights_priority_order: Annotated[
-        Optional[List[WeightsFormatEnum]],
-        typer.Option(
-            "--weights-priority-order",
-            "--weight-format",
-            "-w",
-            help="For model packages only. "
-            + "If given, only the first matching weights entry is included. "
-            + "Defaults to including all weights present in source.",
-            show_default=False,
-        ),
-    ] = None,
-):
-    # typer bug: typer returns empty tuple instead of None if weights_priority_order is not given
-    weights_priority_order = (
-        weights_priority_order or None
-    )  # TODO: check if this is still the case
-
-    _ = save_bioimageio_package(
-        source,
-        output_path=path,
-        weights_priority_order=(
-            None
-            if weights_priority_order is None
-            else [wpo.name for wpo in weights_priority_order]
-        ),
-    )
-
-
-@app.command()
-def test_model(
-    model_rdf: Annotated[
-        str,
-        typer.Argument(
-            help="Path or URL to the model resource description file (rdf.yaml) or zipped model."
-        ),
-    ],
-    weight_format: Annotated[
-        Optional[WeightsFormatEnum], typer.Option(help="The weight format to use.")
-    ] = None,
-    devices: Annotated[
-        Optional[List[str]], typer.Option(help="Devices for running the model.")
-    ] = None,
-    decimal: Annotated[int, typer.Option(help="The test precision.")] = 4,
-):
-    # this is a weird typer bug: default devices are empty tuple although they should be None
-    devices = devices or None
-
-    summary = _test_model(
-        model_rdf,
-        weight_format=None if weight_format is None else weight_format.value,
-        devices=devices,
-        decimal=decimal,
-    )
-    print(f"\ntesting model {model_rdf}...")
-    print(summary.format())
-    sys.exit(0 if summary.status == "passed" else 1)
-
-
-test_model.__doc__ = _test_model.__doc__
-
-
-@app.command()
-def test_resource(
-    rdf: Annotated[
-        str,
-        typer.Argument(
-            help="Path or URL to the resource description file (rdf.yaml) or zipped resource package."
-        ),
-    ],
-    weight_format: Annotated[
-        Optional[WeightsFormatEnum],
-        typer.Option(help="(for model only) The weight format to use."),
-    ] = None,
-    devices: Annotated[
-        Optional[List[str]],
-        typer.Option(help="(for model only) Devices for running the model."),
-    ] = None,
-    decimal: Annotated[
-        int, typer.Option(help="(for model only) The test precision.")
-    ] = 4,
-):
-    # this is a weird typer bug: default devices are empty tuple although they should be None
-    if devices is None or len(devices) == 0:
-        devices = None
-
-    summary = _test_description(
-        rdf,
-        weight_format=None if weight_format is None else weight_format.value,
-        devices=devices,
-        decimal=decimal,
-    )
-    print(summary.format())
-    sys.exit(0 if summary.status == "passed" else 1)
-
-
-test_resource.__doc__ = _test_description.__doc__
-
+"""
 
 # TODO: add predict commands
 # @app.command()
@@ -302,6 +218,5 @@ test_resource.__doc__ = _test_description.__doc__
 #         keras_converter.convert_weights_to_tensorflow_saved_model_bundle.__doc__
 #     )
 
-
 if __name__ == "__main__":
-    app()
+    fire.Fire(Bioimageio, name="bioimageio")
