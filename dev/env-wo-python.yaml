@@ -27,7 +27,7 @@ dependencies:
   - python-dotenv
   # - python=3.9  # removed
   - pytorch>=2.1
-  - ruff
+  # - ruff  # removed
   - ruyaml
   - torchvision
   - tqdm
