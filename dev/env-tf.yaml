@@ -28,6 +28,7 @@ dependencies:
   - python-dotenv
   # - python=3.9  # removed
   # - pytorch>=2.1 # removed
+  - rich
   # - ruff  # removed
   - ruyaml
   - tensorflow>=2.15 # added

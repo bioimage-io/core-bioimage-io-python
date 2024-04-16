@@ -28,6 +28,7 @@ dependencies:
   - python-dotenv
   - python=3.8 # changed
   - pytorch>=2.1
+  - rich
   - ruff
   - ruyaml
   - torchvision
