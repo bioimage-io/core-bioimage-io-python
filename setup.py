@@ -69,5 +69,5 @@ _ = setup(
         "Bug Reports": "https://github.com/bioimage-io/core-bioimage-io-python/issues",
         "Source": "https://github.com/bioimage-io/core-bioimage-io-python",
     },
-    entry_points={"console_scripts": ["bioimageio = bioimageio.core.__main__:app"]},
+    entry_points={"console_scripts": ["bioimageio = bioimageio.core.__main__:main"]},
 )

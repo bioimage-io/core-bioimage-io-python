@@ -218,5 +218,10 @@ spec format versions:
 #         keras_converter.convert_weights_to_tensorflow_saved_model_bundle.__doc__
 #     )
 
-if __name__ == "__main__":
+
+def main():
     fire.Fire(Bioimageio, name="bioimageio")
+
+
+if __name__ == "__main__":
+    main()
