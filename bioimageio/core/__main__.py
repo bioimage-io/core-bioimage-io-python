@@ -65,7 +65,8 @@ def package(
         Optional[List[WeightsFormatEnum]],
         typer.Option(
             "--weights-priority-order",
-            "-wpo",
+            "--weight-format",
+            "-w",
             help="For model packages only. "
             + "If given, only the first matching weights entry is included. "
             + "Defaults to including all weights present in source.",
@@ -73,7 +74,7 @@ def package(
         ),
     ] = None,
 ):
-    # typer bug: typer returns empty tuple instead of None if weights_order_priority is not given
+    # typer bug: typer returns empty tuple instead of None if weights_priority_order is not given
     weights_priority_order = (
         weights_priority_order or None
     )  # TODO: check if this is still the case
