@@ -12,7 +12,7 @@ dependencies:
   - imageio>=2.5
   - jupyter
   - jupyter-black
-  - keras>=2.15
+  - keras>=2.15 # changed
   - loguru
   - numpy
   - onnxruntime
