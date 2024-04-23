@@ -110,6 +110,10 @@ The model specification and its validation tools can be found at <https://github
 
 ## Changelog
 
+### 0.5.11post1
+
+* re-release of 0.5.11 to fix spec pinning for conda release (in conda-forge feedstock recipe)
+
 ### 0.5.10
 
 * [Fix critical bug in predict with tiling](https://github.com/bioimage-io/core-bioimage-io-python/pull/359)
