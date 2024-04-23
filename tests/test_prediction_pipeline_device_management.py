@@ -18,7 +18,7 @@ def _test_device_management(model_package: Path, weight_format: WeightsFormat):
     from bioimageio.core._prediction_pipeline import create_prediction_pipeline
     from bioimageio.core.digest_spec import get_test_inputs, get_test_outputs
 
-    if torch.cuda.device_count() == 0:
+    if not hasattr(torch, "cuda") or torch.cuda.device_count() == 0:
         raise TooFewDevicesException("Need at least one cuda device for this test")
 
     bio_model = load_description(model_package)
