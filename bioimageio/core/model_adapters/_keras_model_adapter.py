@@ -79,7 +79,7 @@ class KerasModelAdapter(ModelAdapter):
     def forward(self, *input_tensors: Optional[Tensor]) -> List[Optional[Tensor]]:
         _result: Union[Sequence[NDArray[Any]], NDArray[Any]]
         _result = self._network.predict(  # pyright: ignore[reportUnknownVariableType]
-            *input_tensors
+            *[None if t is None else t.data.data for t in input_tensors]
         )
         if isinstance(_result, (tuple, list)):
             result: Sequence[NDArray[Any]] = _result
