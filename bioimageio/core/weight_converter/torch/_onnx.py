@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Any, List, Sequence, cast
 
 import numpy as np
-import torch
 from numpy.testing import assert_array_almost_equal
 
 from bioimageio.spec import load_description
@@ -13,6 +12,11 @@ from bioimageio.spec.model import v0_4, v0_5
 
 from ...digest_spec import get_member_id, get_test_inputs
 from ...weight_converter.torch._utils import load_torch_model
+
+try:
+    import torch
+except ImportError:
+    torch = None
 
 
 def add_onnx_weights(
@@ -48,6 +52,7 @@ def add_onnx_weights(
             "The provided model does not have weights in the pytorch state dict format"
         )
 
+    assert torch is not None
     with torch.no_grad():
 
         sample = get_test_inputs(model_spec)

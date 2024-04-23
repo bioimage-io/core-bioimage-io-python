@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import List, Sequence, Union
 
 import numpy as np
-import torch
 from numpy.testing import assert_array_almost_equal
 from typing_extensions import Any, assert_never
 
@@ -12,14 +11,21 @@ from bioimageio.spec.model.v0_5 import Version
 
 from ._utils import load_torch_model
 
+try:
+    import torch
+except ImportError:
+    torch = None
+
 
 # FIXME: remove Any
 def _check_predictions(
     model: Any,
     scripted_model: Any,
     model_spec: "v0_4.ModelDescr | v0_5.ModelDescr",
-    input_data: Sequence[torch.Tensor],
+    input_data: Sequence["torch.Tensor"],
 ):
+    assert torch is not None
+
     def _check(input_: Sequence[torch.Tensor]) -> None:
         expected_tensors = model(*input_)
         if isinstance(expected_tensors, torch.Tensor):
