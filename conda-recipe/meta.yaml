@@ -49,7 +49,11 @@ test:
     - tests
   requires:
     {% for dep in setup_py_data['extras_require']['dev'] %}
+      {% if dep.startswith('torch>=') %}  # pip: torch  -> conda: pytorch
+    - py{{ dep.lower() }}
+      {% else %}
     - {{ dep.lower() }}
+      {% endif %}
     {% endfor %}
   commands:
     - pytest
