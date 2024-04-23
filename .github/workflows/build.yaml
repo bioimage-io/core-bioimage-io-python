@@ -104,10 +104,7 @@ jobs:
           python=${{ matrix.python-version }}
         post-cleanup: 'all'
     - name: additional setup
-      run: |
-        conda remove --yes --force bioimageio.spec || true  # allow failure for cached env
-        pip install --no-deps git+https://github.com/bioimage-io/spec-bioimage-io
-        pip install --no-deps -e .
+      run: pip install --no-deps -e .
     - name: pytest-spec-tf
       run: pytest --disable-pytest-warnings
 
