@@ -1,84 +1,14 @@
-import logging
-import os
+from __future__ import annotations
+
 import subprocess
 import warnings
+from itertools import chain
+from typing import Dict, List
 
-import pytest
+from loguru import logger
+from pytest import FixtureRequest, fixture
 
-os.environ["BIOIMAGEIO_COUNT_RDF_DOWNLOADS"] = "false"  # disable tracking before bioimageio imports
-from bioimageio.core import export_resource_package
 from bioimageio.spec import __version__ as bioimageio_spec_version
-
-
-logger = logging.getLogger(__name__)
-warnings.warn(f"testing with bioimageio.spec {bioimageio_spec_version}")
-
-# test models for various frameworks
-torch_models = [
-    "unet2d_fixed_shape",
-    "unet2d_multi_tensor",
-    "unet2d_nuclei_broad_model",
-    "unet2d_diff_output_shape",
-    "shape_change",
-]
-torchscript_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model"]
-onnx_models = ["unet2d_multi_tensor", "unet2d_nuclei_broad_model", "hpa_densenet"]
-tensorflow1_models = ["stardist"]
-tensorflow2_models = ["unet2d_keras_tf2"]
-keras_tf1_models = ["unet2d_keras"]
-keras_tf2_models = ["unet2d_keras_tf2"]
-tensorflow_js_models = []
-
-
-model_sources = {
-    "unet2d_keras": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
-        "unet2d_keras_tf/rdf.yaml"
-    ),
-    "unet2d_keras_tf2": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
-        "unet2d_keras_tf2/rdf.yaml"
-    ),
-    "unet2d_nuclei_broad_model": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
-        "unet2d_nuclei_broad/rdf.yaml"
-    ),
-    "unet2d_expand_output_shape": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
-        "unet2d_nuclei_broad/rdf_expand_output_shape.yaml"
-    ),
-    "unet2d_fixed_shape": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
-        "unet2d_fixed_shape/rdf.yaml"
-    ),
-    "unet2d_multi_tensor": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
-        "unet2d_multi_tensor/rdf.yaml"
-    ),
-    "unet2d_diff_output_shape": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
-        "unet2d_diff_output_shape/rdf.yaml"
-    ),
-    "hpa_densenet": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/hpa-densenet/rdf.yaml"
-    ),
-    "stardist": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models"
-        "/stardist_example_model/rdf.yaml"
-    ),
-    "stardist_wrong_shape": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
-        "stardist_example_model/rdf_wrong_shape.yaml"
-    ),
-    "stardist_wrong_shape2": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
-        "stardist_example_model/rdf_wrong_shape2.yaml"
-    ),
-    "shape_change": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_specs/models/"
-        "upsample_test_model/rdf.yaml"
-    ),
-}
 
 try:
     import torch
@@ -91,58 +21,158 @@ except ImportError:
 skip_torch = torch is None
 
 try:
-    import onnxruntime
+    import onnxruntime  # type: ignore
 except ImportError:
     onnxruntime = None
 skip_onnx = onnxruntime is None
 
 try:
-    import tensorflow
+    import tensorflow  # type: ignore
 
-    tf_major_version = int(tensorflow.__version__.split(".")[0])
+    tf_major_version = int(tensorflow.__version__.split(".")[0])  # type: ignore
 except ImportError:
     tensorflow = None
     tf_major_version = None
+
+try:
+    import keras  # type: ignore
+except ImportError:
+    keras = None
+
 skip_tensorflow = tensorflow is None
-skip_tensorflow_js = True  # TODO: add a tensorflow_js example model
 
-# load all model packages we need for testing
-load_model_packages = set()
-if not skip_torch:
-    load_model_packages |= set(torch_models + torchscript_models)
+warnings.warn(f"testing with bioimageio.spec {bioimageio_spec_version}")
 
-if not skip_onnx:
-    load_model_packages |= set(onnx_models)
+# TODO: use models from new collection on S3
+MODEL_SOURCES: Dict[str, str] = {
+    "hpa_densenet": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/hpa-densenet/rdf.yaml"
+    ),
+    "stardist": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models"
+        "/stardist_example_model/v0_4.bioimageio.yaml"
+    ),
+    "shape_change": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
+        "upsample_test_model/v0_4.bioimageio.yaml"
+    ),
+    "stardist_wrong_shape": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
+        "stardist_example_model/rdf_wrong_shape.yaml"
+    ),
+    "stardist_wrong_shape2": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
+        "stardist_example_model/rdf_wrong_shape2_v0_4.yaml"
+    ),
+    "unet2d_diff_output_shape": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
+        "unet2d_diff_output_shape/v0_4.bioimageio.yaml"
+    ),
+    "unet2d_expand_output_shape": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
+        "unet2d_nuclei_broad/expand_output_shape_v0_4.bioimageio.yaml"
+    ),
+    "unet2d_fixed_shape": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
+        "unet2d_fixed_shape/v0_4.bioimageio.yaml"
+    ),
+    "unet2d_keras_tf2": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
+        "unet2d_keras_tf2/v0_4.bioimageio.yaml"
+    ),
+    "unet2d_keras": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
+        "unet2d_keras_tf/v0_4.bioimageio.yaml"
+    ),
+    "unet2d_multi_tensor": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
+        "unet2d_multi_tensor/v0_4.bioimageio.yaml"
+    ),
+    "unet2d_nuclei_broad_model": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
+        "unet2d_nuclei_broad/bioimageio.yaml"
+    ),
+}
 
-if not skip_tensorflow:
-    load_model_packages |= set(tensorflow_js_models)
-    if tf_major_version == 1:
-        load_model_packages |= set(keras_tf1_models)
-        load_model_packages |= set(tensorflow1_models)
-        load_model_packages.add("stardist_wrong_shape")
-        load_model_packages.add("stardist_wrong_shape2")
-    elif tf_major_version == 2:
-        load_model_packages |= set(keras_tf2_models)
-        load_model_packages |= set(tensorflow2_models)
+# test models for various frameworks
+TORCH_MODELS = (
+    []
+    if torch is None
+    else [
+        "shape_change",
+        "unet2d_diff_output_shape",
+        "unet2d_expand_output_shape",
+        "unet2d_fixed_shape",
+        "unet2d_multi_tensor",
+        "unet2d_nuclei_broad_model",
+    ]
+)
+TORCHSCRIPT_MODELS = (
+    []
+    if torch is None
+    else [
+        "unet2d_multi_tensor",
+        "unet2d_nuclei_broad_model",
+    ]
+)
+ONNX_MODELS = (
+    []
+    if onnxruntime is None
+    else [
+        "hpa_densenet",
+        "unet2d_multi_tensor",
+        "unet2d_nuclei_broad_model",
+    ]
+)
+TENSORFLOW_MODELS = (
+    []
+    if tensorflow is None
+    else (
+        [
+            "hpa_densenet",
+            "stardist",
+        ]
+        if tf_major_version == 1
+        else [
+            "unet2d_keras_tf2",
+        ]
+    )
+)
+KERAS_MODELS = (
+    []
+    if keras is None
+    else ["unet2d_keras"] if tf_major_version == 1 else ["unet2d_keras_tf2"]
+)
+TENSORFLOW_JS_MODELS: List[str] = []  # TODO: add a tensorflow_js example model
+
+ALL_MODELS = sorted(
+    {
+        m
+        for m in chain(
+            TORCH_MODELS,
+            TORCHSCRIPT_MODELS,
+            ONNX_MODELS,
+            TENSORFLOW_MODELS,
+            KERAS_MODELS,
+            TENSORFLOW_JS_MODELS,
+        )
+    }
+)
 
 
-def pytest_configure():
-    # explicit skip flags needed for some tests
-    pytest.skip_torch = skip_torch
-    pytest.skip_onnx = skip_onnx
-
-    # load all model packages used in tests
-    pytest.model_packages = {name: export_resource_package(model_sources[name]) for name in load_model_packages}
-
-    pytest.mamba_cmd = "micromamba"
+@fixture(scope="session")
+def mamba_cmd():
+    mamba_cmd = "micromamba"
     try:
-        subprocess.run(["which", pytest.mamba_cmd], check=True)
+        _ = subprocess.run(["which", mamba_cmd], check=True)
     except (subprocess.CalledProcessError, FileNotFoundError):
-        pytest.mamba_cmd = "mamba"
+        mamba_cmd = "mamba"
         try:
-            subprocess.run(["which", pytest.mamba_cmd], check=True)
+            _ = subprocess.run(["which", mamba_cmd], check=True)
         except (subprocess.CalledProcessError, FileNotFoundError):
-            pytest.mamba_cmd = None
+            mamba_cmd = None
+
+    return mamba_cmd
 
 
 #
@@ -150,42 +180,41 @@ def pytest_configure():
 #
 
 
-@pytest.fixture(params=[] if skip_torch else torch_models)
-def any_torch_model(request):
-    return pytest.model_packages[request.param]
+@fixture(params=TORCH_MODELS)
+def any_torch_model(request: FixtureRequest):
+    return MODEL_SOURCES[request.param]
 
 
-@pytest.fixture(params=[] if skip_torch else torchscript_models)
-def any_torchscript_model(request):
-    return pytest.model_packages[request.param]
+@fixture(params=TORCHSCRIPT_MODELS)
+def any_torchscript_model(request: FixtureRequest):
+    return MODEL_SOURCES[request.param]
 
 
-@pytest.fixture(params=[] if skip_onnx else onnx_models)
-def any_onnx_model(request):
-    return pytest.model_packages[request.param]
+@fixture(params=ONNX_MODELS)
+def any_onnx_model(request: FixtureRequest):
+    return MODEL_SOURCES[request.param]
 
 
-@pytest.fixture(params=[] if skip_tensorflow else tensorflow1_models if tf_major_version == 1 else tensorflow2_models)
-def any_tensorflow_model(request):
-    return pytest.model_packages[request.param]
+@fixture(params=TENSORFLOW_MODELS)
+def any_tensorflow_model(request: FixtureRequest):
+    return MODEL_SOURCES[request.param]
 
 
-@pytest.fixture(params=[] if skip_tensorflow else keras_tf1_models if tf_major_version == 1 else keras_tf2_models)
-def any_keras_model(request):
-    return pytest.model_packages[request.param]
+@fixture(params=KERAS_MODELS)
+def any_keras_model(request: FixtureRequest):
+    return MODEL_SOURCES[request.param]
 
 
-@pytest.fixture(params=[] if skip_tensorflow_js else tensorflow_js_models)
-def any_tensorflow_js_model(request):
-    return pytest.model_packages[request.param]
+@fixture(params=TENSORFLOW_JS_MODELS)
+def any_tensorflow_js_model(request: FixtureRequest):
+    return MODEL_SOURCES[request.param]
 
 
 # fixture to test with all models that should run in the current environment
-# we exclude stardist_wrong_shape here because it is not a valid model
-# and included only to test that validation for this model fails
-@pytest.fixture(params=load_model_packages - {"stardist_wrong_shape", "stardist_wrong_shape2"})
-def any_model(request):
-    return pytest.model_packages[request.param]
+# we exclude any 'wrong' model here
+@fixture(params=sorted({m for m in ALL_MODELS if "wrong" not in m}))
+def any_model(request: FixtureRequest):
+    return MODEL_SOURCES[request.param]
 
 
 # TODO it would be nice to just generate fixtures for all the individual models dynamically
@@ -195,64 +224,78 @@ def any_model(request):
 #
 
 
-@pytest.fixture(params=[] if skip_torch else ["unet2d_nuclei_broad_model", "unet2d_fixed_shape"])
-def unet2d_fixed_shape_or_not(request):
-    return pytest.model_packages[request.param]
+@fixture(
+    params=[] if skip_torch else ["unet2d_nuclei_broad_model", "unet2d_fixed_shape"]
+)
+def unet2d_fixed_shape_or_not(request: FixtureRequest):
+    return MODEL_SOURCES[request.param]
 
 
-@pytest.fixture(params=[] if skip_onnx or skip_torch else ["unet2d_nuclei_broad_model", "unet2d_multi_tensor"])
-def convert_to_onnx(request):
-    return pytest.model_packages[request.param]
+@fixture(
+    params=(
+        []
+        if skip_onnx or skip_torch
+        else ["unet2d_nuclei_broad_model", "unet2d_multi_tensor"]
+    )
+)
+def convert_to_onnx(request: FixtureRequest):
+    return MODEL_SOURCES[request.param]
 
 
-@pytest.fixture(params=[] if skip_tensorflow else ["unet2d_keras" if tf_major_version == 1 else "unet2d_keras_tf2"])
-def unet2d_keras(request):
-    return pytest.model_packages[request.param]
-
-
-# written as model group to automatically skip on missing torch
-@pytest.fixture(params=[] if skip_torch else ["unet2d_nuclei_broad_model"])
-def unet2d_nuclei_broad_model(request):
-    return pytest.model_packages[request.param]
-
-
-# written as model group to automatically skip on missing torch
-@pytest.fixture(params=[] if skip_torch else ["unet2d_diff_output_shape"])
-def unet2d_diff_output_shape(request):
-    return pytest.model_packages[request.param]
-
-
-# written as model group to automatically skip on missing torch
-@pytest.fixture(params=[] if skip_torch else ["unet2d_expand_output_shape"])
-def unet2d_expand_output_shape(request):
-    return pytest.model_packages[request.param]
+@fixture(
+    params=(
+        []
+        if tf_major_version is None
+        else ["unet2d_keras"] if tf_major_version == 1 else ["unet2d_keras_tf2"]
+    )
+)
+def unet2d_keras(request: FixtureRequest):
+    return MODEL_SOURCES[request.param]
 
 
 # written as model group to automatically skip on missing torch
-@pytest.fixture(params=[] if skip_torch else ["unet2d_fixed_shape"])
-def unet2d_fixed_shape(request):
-    return pytest.model_packages[request.param]
+@fixture(params=[] if skip_torch else ["unet2d_nuclei_broad_model"])
+def unet2d_nuclei_broad_model(request: FixtureRequest):
+    return MODEL_SOURCES[request.param]
 
 
 # written as model group to automatically skip on missing torch
-@pytest.fixture(params=[] if skip_torch else ["shape_change"])
-def shape_change_model(request):
-    return pytest.model_packages[request.param]
+@fixture(params=[] if skip_torch else ["unet2d_diff_output_shape"])
+def unet2d_diff_output_shape(request: FixtureRequest):
+    return MODEL_SOURCES[request.param]
+
+
+# written as model group to automatically skip on missing torch
+@fixture(params=[] if skip_torch else ["unet2d_expand_output_shape"])
+def unet2d_expand_output_shape(request: FixtureRequest):
+    return MODEL_SOURCES[request.param]
+
+
+# written as model group to automatically skip on missing torch
+@fixture(params=[] if skip_torch else ["unet2d_fixed_shape"])
+def unet2d_fixed_shape(request: FixtureRequest):
+    return MODEL_SOURCES[request.param]
+
+
+# written as model group to automatically skip on missing torch
+@fixture(params=[] if skip_torch else ["shape_change"])
+def shape_change_model(request: FixtureRequest):
+    return MODEL_SOURCES[request.param]
 
 
 # written as model group to automatically skip on missing tensorflow 1
-@pytest.fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist_wrong_shape"])
-def stardist_wrong_shape(request):
-    return pytest.model_packages[request.param]
+@fixture(params=["stardist_wrong_shape"] if tf_major_version == 1 else [])
+def stardist_wrong_shape(request: FixtureRequest):
+    return MODEL_SOURCES[request.param]
 
 
 # written as model group to automatically skip on missing tensorflow 1
-@pytest.fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist_wrong_shape2"])
-def stardist_wrong_shape2(request):
-    return pytest.model_packages[request.param]
+@fixture(params=["stardist_wrong_shape2"] if tf_major_version == 1 else [])
+def stardist_wrong_shape2(request: FixtureRequest):
+    return MODEL_SOURCES[request.param]
 
 
 # written as model group to automatically skip on missing tensorflow 1
-@pytest.fixture(params=[] if skip_tensorflow or tf_major_version != 1 else ["stardist"])
-def stardist(request):
-    return pytest.model_packages[request.param]
+@fixture(params=["stardist"] if tf_major_version == 1 else [])
+def stardist(request: FixtureRequest):
+    return MODEL_SOURCES[request.param]

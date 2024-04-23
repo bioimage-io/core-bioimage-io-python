@@ -4,92 +4,101 @@ Python specific core utilities for running models in the [BioImage Model Zoo](ht
 
 ## Installation
 
-### Via Conda
+### Via Mamba/Conda
 
 The `bioimageio.core` package can be installed from conda-forge via
 
-```
-conda install -c conda-forge bioimageio.core
+```console
+mamba install -c conda-forge bioimageio.core
 ```
 
-if you don't install any additional deep learning libraries, you will only be able to use general convenience functionality, but not any functionality for model prediction.
+If you do not install any additional deep learning libraries, you will only be able to use general convenience
+functionality, but not any functionality for model prediction.
 To install additional deep learning libraries use:
 
 * Pytorch/Torchscript:
 
-  ```bash
-  # cpu installation (if you don't have an nvidia graphics card)
-  conda install -c pytorch -c conda-forge bioimageio.core pytorch torchvision cpuonly
+  CPU installation (if you don't have an nvidia graphics card):
 
-  # gpu installation (for cuda 11.6, please choose the appropriate cuda version for your system)
-  conda install -c pytorch -c nvidia -c conda-forge bioimageio.core pytorch torchvision pytorch-cuda=11.6
+  ```console
+  mamba install -c pytorch -c conda-forge bioimageio.core pytorch torchvision cpuonly
+  ```
+
+  GPU installation (for cuda 11.6, please choose the appropriate cuda version for your system):
+
+  ```console
+  mamba install -c pytorch -c nvidia -c conda-forge bioimageio.core pytorch torchvision pytorch-cuda=11.8
   ```
 
   Note that the pytorch installation instructions may change in the future. For the latest instructions please refer to [pytorch.org](https://pytorch.org/).
 
 * Tensorflow
 
-  ```bash
-  # currently only cpu version supported
-  conda install -c conda-forge bioimageio.core tensorflow
+  Currently only CPU version supported
+
+  ```console
+  mamba install -c conda-forge bioimageio.core tensorflow
   ```
 
 * ONNXRuntime
 
-  ```bash
-  # currently only cpu version supported
-  conda install -c conda-forge bioimageio.core onnxruntime
+  Currently only cpu version supported
+
+  ```console
+  mamba install -c conda-forge bioimageio.core onnxruntime
   ```
 
 ### Via pip
 
-The package is also available via pip:
+The package is also available via pip
+(e.g. with recommended extras `onnx` and `pytorch`):
 
-```
-pip install bioimageio.core
+```console
+pip install bioimageio.core[onnx,pytorch]
 ```
 
 ### Set up Development Environment
 
 To set up a development conda environment run the following commands:
 
-```
-conda env create -f dev/environment-base.yaml
-conda activate bio-core-dev
+```console
+mamba env create -f dev/env.yaml
+mamba activate core
 pip install -e . --no-deps
 ```
 
 There are different environment files that only install tensorflow or pytorch as dependencies available.
 
-## Command Line
+## 💻 Command Line
 
-`bioimageio.core` installs a command line interface for testing models and other functionality. You can list all the available commands via:
+`bioimageio.core` installs a command line interface (CLI) for testing models and other functionality.
+You can list all the available commands via:
 
-```
+```console
 bioimageio
 ```
 
 Check that a model adheres to the model spec:
 
-```
+```console
 bioimageio validate <MODEL>
 ```
 
 Test a model (including prediction for the test input):
 
-```
+```console
 bioimageio test-model <MODEL>
 ```
 
 Run prediction for an image stored on disc:
 
-```
+```console
 bioimageio predict-image <MODEL> --inputs <INPUT> --outputs <OUTPUT>
 ```
 
 Run prediction for multiple images stored on disc:
 
-```
+```console
 bioimagei predict-images -m <MODEL> -i <INPUT_PATTERN> - o <OUTPUT_FOLDER>
 ```
 

@@ -1,0 +1,40 @@
+# modified copy of env.yaml
+name: core-tf # changed
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - bioimageio.spec>=0.5.2.post1
+  - black
+  # - crick  # currently requires python<=3.9
+  - filelock
+  - fire
+  - imageio>=2.5
+  - jupyter
+  - jupyter-black
+  - keras>=2.15 # changed
+  - loguru
+  - numpy
+  - onnxruntime
+  - packaging>=17.0
+  - pip
+  - pre-commit
+  - psutil
+  - pydantic
+  - pydantic-settings
+  - pyright
+  - pytest
+  - pytest-xdist
+  - python-dotenv
+  # - python=3.9  # removed
+  # - pytorch>=2.1 # removed
+  - rich
+  # - ruff  # removed
+  - ruyaml
+  - tensorflow>=2.15 # added
+  # - torchvision  # removed
+  - tqdm
+  - typing-extensions
+  - xarray
+  - pip:
+      - -e ..

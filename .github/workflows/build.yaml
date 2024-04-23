@@ -1,0 +1,159 @@
+name: Test and Deploy bioimageio.core
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ "**" ]
+
+defaults:
+  run:
+    shell: micromamba-shell {0}
+
+jobs:
+  black:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: psf/black@stable
+        with:
+          options: "--check --verbose"
+          src: "."
+          jupyter: true
+          version: "24.3"
+
+  test-spec-conda:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Conda environment with Micromamba
+      if: matrix.python-version != '3.8'
+      uses: mamba-org/setup-micromamba@v1
+      with:
+        cache-downloads: true
+        cache-environment: true
+        environment-file: dev/env-wo-python.yaml
+        create-args: >-
+          python=${{ matrix.python-version }}
+        post-cleanup: 'all'
+    - name: Install py3.8 environment
+      if: matrix.python-version == '3.8'
+      uses: mamba-org/setup-micromamba@v1
+      with:
+        cache-downloads: true
+        cache-environment: true
+        environment-file: dev/env-py38.yaml
+        post-cleanup: 'all'
+    - name: additional setup
+      run: pip install --no-deps -e .
+    - name: pytest-spec-conda
+      run: pytest --disable-pytest-warnings
+
+  test-spec-main:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.8', '3.12']
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Conda environment with Micromamba
+      if: matrix.python-version != '3.8'
+      uses: mamba-org/setup-micromamba@v1
+      with:
+        cache-downloads: true
+        cache-environment: true
+        environment-file: dev/env-wo-python.yaml
+        create-args: >-
+          python=${{ matrix.python-version }}
+        post-cleanup: 'all'
+    - name: Install py3.8 environment
+      if: matrix.python-version == '3.8'
+      uses: mamba-org/setup-micromamba@v1
+      with:
+        cache-downloads: true
+        cache-environment: true
+        environment-file: dev/env-py38.yaml
+        post-cleanup: 'all'
+    - name: additional setup
+      run: |
+        conda remove --yes --force bioimageio.spec || true  # allow failure for cached env
+        pip install --no-deps git+https://github.com/bioimage-io/spec-bioimage-io
+        pip install --no-deps -e .
+    - name: pytest-spec-main
+      run: pytest --disable-pytest-warnings
+
+  test-tf:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.11']
+    steps:
+    - uses: actions/checkout@v4
+    - name: Install Conda environment with Micromamba
+      uses: mamba-org/setup-micromamba@v1
+      with:
+        cache-downloads: true
+        cache-environment: true
+        environment-file: dev/env-tf.yaml
+        condarc: |
+          channel-priority: flexible
+        create-args: >-
+          python=${{ matrix.python-version }}
+        post-cleanup: 'all'
+    - name: additional setup
+      run: pip install --no-deps -e .
+    - name: pytest-spec-tf
+      run: pytest --disable-pytest-warnings
+
+  conda-build:
+    runs-on: ubuntu-latest
+    needs: test-spec-conda
+    steps:
+    - name: checkout
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    - name: Install Conda environment with Micromamba
+      uses: mamba-org/setup-micromamba@v1
+      with:
+        cache-downloads: true
+        cache-environment: true
+        environment-name: build-env
+        condarc: |
+          channels:
+          - conda-forge
+        create-args: |
+          boa
+    - name: linux conda build
+      run: |
+        conda mambabuild -c conda-forge conda-recipe
+
+  docs:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      - run: pip install -e .[dev]
+      - id: get_version
+        run: python -c 'import bioimageio.core;print(f"version={bioimageio.core.__version__}")' >> $GITHUB_OUTPUT
+      - name: Generate developer docs
+        run: |
+          pdoc \
+          --logo https://bioimage.io/static/img/bioimage-io-logo.svg \
+          --logo-link https://bioimage.io/ \
+          --favicon https://bioimage.io/static/img/bioimage-io-icon-small.svg \
+          --footer-text 'bioimageio.core ${{steps.get_version.outputs.version}}' \
+          -o ./dist bioimageio.core
+      - run: cp README.md ./dist/README.md
+      - name: Deploy to gh-pages 🚀
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: dist

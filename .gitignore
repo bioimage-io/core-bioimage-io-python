@@ -1,8 +1,10 @@
-build/
-dist/
 .idea/
-*.egg-info/
-cache
-**/tmp
 .tox/
+*.egg-info/
 *.pyc
+**/tmp
+build/
+cache
+dist/
+docs/
+typings/pooch/
