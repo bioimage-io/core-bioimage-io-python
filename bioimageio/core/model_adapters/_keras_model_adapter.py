@@ -4,12 +4,13 @@ from typing import Any, List, Optional, Sequence, Union
 from loguru import logger
 from numpy.typing import NDArray
 
-from bioimageio.core.tensor import Tensor
 from bioimageio.spec._internal.io_utils import download
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import Version
 
 from .._settings import settings
+from ..digest_spec import get_axes_infos
+from ..tensor import Tensor
 from ._model_adapter import ModelAdapter
 
 os.environ["KERAS_BACKEND"] = settings.keras_backend
@@ -74,7 +75,10 @@ class KerasModelAdapter(ModelAdapter):
         weight_path = download(model_description.weights.keras_hdf5.source).path
 
         self._network = keras.models.load_model(weight_path)
-        self._output_axes = [tuple(out.axes) for out in model_description.outputs]
+        self._output_axes = [
+            tuple(a.id for a in get_axes_infos(out))
+            for out in model_description.outputs
+        ]
 
     def forward(self, *input_tensors: Optional[Tensor]) -> List[Optional[Tensor]]:
         _result: Union[Sequence[NDArray[Any]], NDArray[Any]]
@@ -87,7 +91,11 @@ class KerasModelAdapter(ModelAdapter):
             result = [_result]  # type: ignore
 
         assert len(result) == len(self._output_axes)
-        return [Tensor(r, dims=axes) for r, axes, in zip(result, self._output_axes)]
+        ret: List[Optional[Tensor]] = []
+        ret.extend(
+            [Tensor(r, dims=axes) for r, axes, in zip(result, self._output_axes)]
+        )
+        return ret
 
     def unload(self) -> None:
         logger.warning(

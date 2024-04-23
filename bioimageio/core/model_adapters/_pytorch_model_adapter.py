@@ -6,7 +6,7 @@ from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.utils import download
 
 from ..axis import AxisId
-from ..digest_spec import import_callable
+from ..digest_spec import get_axes_infos, import_callable
 from ..tensor import Tensor
 from ._model_adapter import ModelAdapter
 
@@ -31,10 +31,7 @@ class PytorchModelAdapter(ModelAdapter):
         if torch is None:
             raise ImportError("torch")
         super().__init__()
-        self.output_dims = [
-            tuple(AxisId(a) if isinstance(a, str) else a.id for a in out.axes)
-            for out in outputs
-        ]
+        self.output_dims = [tuple(a.id for a in get_axes_infos(out)) for out in outputs]
         self._network = self.get_network(weights)
         self._devices = self.get_devices(devices)
         self._network = self._network.to(self._devices[0])
