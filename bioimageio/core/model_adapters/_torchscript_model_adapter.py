@@ -8,7 +8,7 @@ from numpy.typing import NDArray
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.utils import download
 
-from ..axis import AxisId
+from ..digest_spec import get_axes_infos
 from ..tensor import Tensor
 from ._model_adapter import ModelAdapter
 
@@ -45,12 +45,10 @@ class TorchscriptModelAdapter(ModelAdapter):
                 "Multiple devices for single torchscript model not yet implemented"
             )
 
-        self._model = torch.jit.load(  # pyright: ignore[reportPrivateImportUsage]
-            weight_path
-        )
+        self._model = torch.jit.load(weight_path)
         self._model.to(self.devices[0])
         self._internal_output_axes = [
-            tuple(AxisId(a) if isinstance(a, str) else a.id for a in out.axes)
+            tuple(a.id for a in get_axes_infos(out))
             for out in model_description.outputs
         ]
 

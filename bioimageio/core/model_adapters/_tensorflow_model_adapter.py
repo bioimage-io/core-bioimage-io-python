@@ -4,11 +4,12 @@ from typing import List, Literal, Optional, Sequence, Union
 
 import numpy as np
 
-from bioimageio.core.tensor import Tensor
 from bioimageio.spec.common import FileSource
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.utils import download
 
+from ..digest_spec import get_axes_infos
+from ..tensor import Tensor
 from ._model_adapter import ModelAdapter
 
 try:
@@ -73,11 +74,7 @@ class TensorflowModelAdapterBase(ModelAdapter):
         weight_file = self.require_unzipped(weights.source)
         self._network = self._get_network(weight_file)
         self._internal_output_axes = [
-            (
-                tuple(out.axes)
-                if isinstance(out.axes, str)
-                else tuple(a.id for a in out.axes)
-            )
+            tuple(a.id for a in get_axes_infos(out))
             for out in model_description.outputs
         ]
 
