@@ -57,6 +57,7 @@ _ = setup(
             "onnxruntime",
             "packaging>=17.0",
             "pre-commit",
+            "pdoc",
             "psutil",  # parallel pytest with 'pytest -n auto'
             "pyright",
             "pytest-xdist",  # parallel pytest

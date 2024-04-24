@@ -17,6 +17,7 @@ dependencies:
   - numpy
   - onnxruntime
   - packaging>=17.0
+  - pdoc
   - pip
   - pre-commit
   - psutil
