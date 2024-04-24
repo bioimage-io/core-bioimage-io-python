@@ -134,6 +134,9 @@ jobs:
   docs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -l {0}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
