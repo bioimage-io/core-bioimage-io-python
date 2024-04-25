@@ -20,7 +20,7 @@ from typing import (
 from numpy.typing import NDArray
 from typing_extensions import Unpack, assert_never
 
-from bioimageio.spec._internal.io_utils import HashKwargs, download
+from bioimageio.spec._internal.io import HashKwargs, download
 from bioimageio.spec.common import FileSource
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 from bioimageio.spec.model.v0_4 import CallableFromDepencency, CallableFromFile
@@ -51,7 +51,7 @@ def import_callable(node: type, /) -> Callable[..., Any]:
 
 
 @import_callable.register
-def _(node: CallableFromDepencency) -> Callable[..., Any]:
+def _(node: CallableFromDepencency, **kwargs: Unpack[HashKwargs]) -> Callable[..., Any]:
     module = importlib.import_module(node.module_name)
     c = getattr(module, str(node.callable_name))
     if not callable(c):
@@ -61,7 +61,9 @@ def _(node: CallableFromDepencency) -> Callable[..., Any]:
 
 
 @import_callable.register
-def _(node: ArchitectureFromLibraryDescr) -> Callable[..., Any]:
+def _(
+    node: ArchitectureFromLibraryDescr, **kwargs: Unpack[HashKwargs]
+) -> Callable[..., Any]:
     module = importlib.import_module(node.import_from)
     c = getattr(module, str(node.callable))
     if not callable(c):
