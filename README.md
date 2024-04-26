@@ -1,6 +1,6 @@
 # core-bioimage-io-python
 
-Python specific core utilities for [bioimage.io]("https://bioimage.io") resources (in particular models).
+Python specific core utilities for bioimage.io resources (in particular models).
 
 ## Installation
 
@@ -69,7 +69,7 @@ pip install -e . --no-deps
 
 There are different environment files available that only install tensorflow or pytorch as dependencies.
 
-## 💻 Command Line
+## 💻 Use the Command Line Interface
 
 `bioimageio.core` installs a command line interface (CLI) for testing models and other functionality.
 You can list all the available commands via:
@@ -104,7 +104,7 @@ bioimagei predict-images -m <MODEL> -i <INPUT_PATTERN> - o <OUTPUT_FOLDER>
 
 `<INPUT_PATTERN>` is a `glob` pattern to select the desired images, e.g. `/path/to/my/images/*.tif`.
 
-## 🐍 From python
+## 🐍 Use in Python
 
 `bioimageio.core` is a python package that implements prediction with bioimageio models
 including standardized pre- and postprocessing operations.
@@ -115,6 +115,8 @@ In addition bioimageio.core provides functionality to convert model weight forma
 To get an overview of this functionality, check out these example notebooks:
 
 * [model creation/loading with bioimageio.spec](https://github.com/bioimage-io/spec-bioimage-io/blob/main/example_use/load_model_and_create_your_own.ipynb)
+
+and the [developer documentation](https://bioimage-io.github.io/core-bioimage-io-python/bioimageio/core.html).
 
 ## Model Specification
 
