@@ -1,6 +1,6 @@
 # core-bioimage-io-python
 
-Python specific core utilities for running models in the [BioImage Model Zoo](https://bioimage.io).
+Python specific core utilities for [bioimage.io]("https://bioimage.io") resources (in particular models).
 
 ## Installation
 
@@ -67,7 +67,7 @@ mamba activate core
 pip install -e . --no-deps
 ```
 
-There are different environment files that only install tensorflow or pytorch as dependencies available.
+There are different environment files available that only install tensorflow or pytorch as dependencies.
 
 ## 💻 Command Line
 
@@ -106,12 +106,15 @@ bioimagei predict-images -m <MODEL> -i <INPUT_PATTERN> - o <OUTPUT_FOLDER>
 
 ## From python
 
-`bioimageio.core` is a python library that implements loading models, running prediction with them and more.
-To get an overview of this functionality, check out the example notebooks:
+`bioimageio.core` is a python package that implements prediction with bioimageio models
+including standardized pre- and postprocessing operations.
+These models are described by---and can be loaded with---the bioimageio.spec package.
 
-* [example/model_usage](https://github.com/bioimage-io/core-bioimage-io-python/blob/main/example/model_usage.ipynb) for how to load models and run prediction with them
-* [example/model_creation](https://github.com/bioimage-io/core-bioimage-io-python/blob/main/example/model_creation.ipynb) for how to create bioimage.io compatible model packages
-* [example/dataset_statistics_demo](https://github.com/bioimage-io/core-bioimage-io-python/blob/main/example/dataset_statistics_demo.ipynb) for how to use the dataset statistics for advanced pre-and-postprocessing
+In addition bioimageio.core provides functionality to convert model weight formats.
+
+To get an overview of this functionality, check out these example notebooks:
+
+* [model creation/loading with bioimageio.spec](https://github.com/bioimage-io/spec-bioimage-io/blob/main/example_use/load_model_and_create_your_own.ipynb)
 
 ## Model Specification
 
