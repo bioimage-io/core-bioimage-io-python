@@ -1,3 +1,5 @@
+"""The `Bioimageio` class defined here has static methods that constitute the `bioimageio` command line interface (using fire)"""
+
 import sys
 from pathlib import Path
 from typing import List, Optional, Union
@@ -14,7 +16,7 @@ from bioimageio.spec.notebook import NotebookDescr
 
 
 class Bioimageio:
-    """CLI to work with resources shared on bioimage.io"""
+    """🦒 CLI to work with resources shared on bioimage.io"""
 
     @staticmethod
     def package(

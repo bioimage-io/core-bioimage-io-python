@@ -104,7 +104,7 @@ bioimagei predict-images -m <MODEL> -i <INPUT_PATTERN> - o <OUTPUT_FOLDER>
 
 `<INPUT_PATTERN>` is a `glob` pattern to select the desired images, e.g. `/path/to/my/images/*.tif`.
 
-## From python
+## 🐍 From python
 
 `bioimageio.core` is a python package that implements prediction with bioimageio models
 including standardized pre- and postprocessing operations.
