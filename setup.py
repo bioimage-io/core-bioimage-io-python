@@ -37,6 +37,7 @@ _ = setup(
         "pydantic-settings",
         "pydantic",
         "python-dotenv",
+        "requests",
         "ruyaml",
         "tqdm",
         "typing-extensions",
