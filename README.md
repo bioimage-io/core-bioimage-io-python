@@ -122,6 +122,15 @@ The model specification and its validation tools can be found at <https://github
 
 ## Changelog
 
+### 0.6.1
+
+* Fix [#378](https://github.com/bioimage-io/core-bioimage-io-python/pull/378) (with [#379](https://github.com/bioimage-io/core-bioimage-io-python/pull/379))*
+
+### 0.6.0
+
+* add compatibility with new bioimageio.spec 0.5 (0.5.2post1)
+* improve interfaces
+
 ### 0.5.10
 
 * [Fix critical bug in predict with tiling](https://github.com/bioimage-io/core-bioimage-io-python/pull/359)
