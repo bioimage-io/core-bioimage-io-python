@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import importlib.util
-from functools import singledispatch
 from itertools import chain
 from typing import (
     Any,
@@ -20,7 +19,7 @@ from typing import (
 from numpy.typing import NDArray
 from typing_extensions import Unpack, assert_never
 
-from bioimageio.spec._internal.io import HashKwargs, download
+from bioimageio.spec._internal.io_utils import HashKwargs, download
 from bioimageio.spec.common import FileSource
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 from bioimageio.spec.model.v0_4 import CallableFromDepencency, CallableFromFile
@@ -44,42 +43,30 @@ from .stat_measures import Stat
 from .tensor import Tensor
 
 
-@singledispatch
-def import_callable(node: type, /) -> Callable[..., Any]:
-    """import a callable (e.g. a torch.nn.Module) from a spec node describing it"""
-    raise TypeError(type(node))
-
-
-@import_callable.register
-def _(node: CallableFromDepencency, **kwargs: Unpack[HashKwargs]) -> Callable[..., Any]:
-    module = importlib.import_module(node.module_name)
-    c = getattr(module, str(node.callable_name))
-    if not callable(c):
-        raise ValueError(f"{node} (imported: {c}) is not callable")
-
-    return c
-
-
-@import_callable.register
-def _(
-    node: ArchitectureFromLibraryDescr, **kwargs: Unpack[HashKwargs]
+def import_callable(
+    node: Union[CallableFromDepencency, ArchitectureFromLibraryDescr],
+    /,
+    **kwargs: Unpack[HashKwargs],
 ) -> Callable[..., Any]:
-    module = importlib.import_module(node.import_from)
-    c = getattr(module, str(node.callable))
+    """import a callable (e.g. a torch.nn.Module) from a spec node describing it"""
+    if isinstance(node, CallableFromDepencency):
+        module = importlib.import_module(node.module_name)
+        c = getattr(module, str(node.callable_name))
+    elif isinstance(node, ArchitectureFromLibraryDescr):
+        module = importlib.import_module(node.import_from)
+        c = getattr(module, str(node.callable))
+    elif isinstance(node, CallableFromFile):
+        c = _import_from_file_impl(node.source_file, str(node.callable_name), **kwargs)
+    elif isinstance(node, ArchitectureFromFileDescr):
+        c = _import_from_file_impl(node.source, str(node.callable), sha256=node.sha256)
+
+    else:
+        assert_never(node)
+
     if not callable(c):
         raise ValueError(f"{node} (imported: {c}) is not callable")
 
     return c
-
-
-@import_callable.register
-def _(node: CallableFromFile, **kwargs: Unpack[HashKwargs]):
-    return _import_from_file_impl(node.source_file, str(node.callable_name), **kwargs)
-
-
-@import_callable.register
-def _(node: ArchitectureFromFileDescr, **kwargs: Unpack[HashKwargs]):
-    return _import_from_file_impl(node.source, str(node.callable), sha256=node.sha256)
 
 
 def _import_from_file_impl(
