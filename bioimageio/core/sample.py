@@ -251,18 +251,16 @@ class SampleBlockMeta(SampleBlockBase[BlockMeta]):
 
     def with_data(self, data: PerMember[Tensor], *, stat: Stat) -> SampleBlock:
         return SampleBlock(
-            sample_shape=self.sample_shape,
+            sample_shape={
+                m: {
+                    a: data[m].tagged_shape[a] if s == -1 else s
+                    for a, s in member_shape.items()
+                }
+                for m, member_shape in self.sample_shape.items()
+            },
             sample_id=self.sample_id,
             blocks={
-                m: Block(
-                    sample_shape=self.sample_shape[m],
-                    inner_slice=b.inner_slice,
-                    halo=b.halo,
-                    block_index=b.block_index,
-                    blocks_in_sample=b.blocks_in_sample,
-                    data=data[m],
-                )
-                for m, b in self.blocks.items()
+                m: Block.from_meta(b, data=data[m]) for m, b in self.blocks.items()
             },
             stat=stat,
             block_index=self.block_index,

@@ -16,6 +16,7 @@ from .common import (
     Halo,
     HaloLike,
     PadMode,
+    SliceInfo,
     TotalNumberOfBlocks,
 )
 from .tensor import Tensor
@@ -34,6 +35,7 @@ class Block(BlockMeta):
 
     def __post_init__(self):
         super().__post_init__()
+        assert not any(v == -1 for v in self.sample_shape.values()), self.sample_shape
         for a, s in self.data.sizes.items():
             slice_ = self.inner_slice[a]
             halo = self.halo.get(a, Halo(0, 0))
@@ -64,6 +66,27 @@ class Block(BlockMeta):
         self, new_axes: PerAxis[Union[LinearAxisTransform, int]]
     ) -> Self:
         raise NotImplementedError
+
+    @classmethod
+    def from_meta(cls, meta: BlockMeta, data: Tensor) -> Self:
+        return cls(
+            sample_shape={
+                k: data.tagged_shape[k] if v == -1 else v
+                for k, v in meta.sample_shape.items()
+            },
+            inner_slice={
+                k: (
+                    SliceInfo(start=v.start, stop=data.tagged_shape[k])
+                    if v.stop == -1
+                    else v
+                )
+                for k, v in meta.inner_slice.items()
+            },
+            halo=meta.halo,
+            block_index=meta.block_index,
+            blocks_in_sample=meta.blocks_in_sample,
+            data=data,
+        )
 
 
 def split_tensor_into_blocks(
