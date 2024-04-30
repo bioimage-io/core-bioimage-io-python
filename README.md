@@ -124,6 +124,10 @@ The model specification and its validation tools can be found at <https://github
 
 ## Changelog
 
+### 0.6.2
+
+* Fix [#384](https://github.com/bioimage-io/core-bioimage-io-python/issues/384)
+
 ### 0.6.1
 
 * Fix [#378](https://github.com/bioimage-io/core-bioimage-io-python/pull/378) (with [#379](https://github.com/bioimage-io/core-bioimage-io-python/pull/379))*
