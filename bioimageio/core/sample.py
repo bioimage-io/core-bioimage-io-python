@@ -254,15 +254,7 @@ class SampleBlockMeta(SampleBlockBase[BlockMeta]):
             sample_shape=self.sample_shape,
             sample_id=self.sample_id,
             blocks={
-                m: Block(
-                    sample_shape=self.sample_shape[m],
-                    inner_slice=b.inner_slice,
-                    halo=b.halo,
-                    block_index=b.block_index,
-                    blocks_in_sample=b.blocks_in_sample,
-                    data=data[m],
-                )
-                for m, b in self.blocks.items()
+                m: Block.from_meta(b, data=data[m]) for m, b in self.blocks.items()
             },
             stat=stat,
             block_index=self.block_index,
