@@ -124,6 +124,11 @@ The model specification and its validation tools can be found at <https://github
 
 ## Changelog
 
+### 0.6.3
+
+* Fix [#386](https://github.com/bioimage-io/core-bioimage-io-python/issues/386)
+* (in model inference testing) stop assuming model inputs are tileable
+
 ### 0.6.2
 
 * Fix [#384](https://github.com/bioimage-io/core-bioimage-io-python/issues/384)

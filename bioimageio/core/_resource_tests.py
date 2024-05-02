@@ -253,7 +253,7 @@ def _test_model_inference_parametrized(
         ) as prediction_pipeline:
             for n, batch_size, inputs, exptected_output_shape in generate_test_cases():
                 error: Optional[str] = None
-                result = prediction_pipeline.predict_sample_with_blocking(inputs)
+                result = prediction_pipeline.predict_sample_without_blocking(inputs)
                 if len(result.members) != len(exptected_output_shape):
                     error = (
                         f"Expected {len(exptected_output_shape)} outputs,"
