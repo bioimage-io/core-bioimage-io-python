@@ -73,6 +73,9 @@ class _SimpleOperator(BlockedOperator, ABC):
     def get_output_shape(self, input_shape: PerAxis[int]) -> PerAxis[int]: ...
 
     def __call__(self, sample: Union[Sample, SampleBlock]) -> None:
+        if self.input not in sample.members:
+            return
+
         input_tensor = sample.members[self.input]
         output_tensor = self._apply(input_tensor, sample.stat)
 
