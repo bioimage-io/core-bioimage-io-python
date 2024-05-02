@@ -44,7 +44,7 @@
     </ul>
 
 
-            <footer>bioimageio.core 0.6.2</footer>
+            <footer>bioimageio.core 0.6.3</footer>
 
         <a class="attribution" title="pdoc: Python API documentation generator" href="https://pdoc.dev" target="_blank">
             built with <span class="visually-hidden">pdoc</span><img
@@ -318,7 +318,7 @@ bioimageio<wbr>.<a href="./../core.html">core</a><wbr>._resource_tests    </h1>
 </span><span id="L-253"><a href="#L-253"><span class="linenos">253</span></a>        <span class="p">)</span> <span class="k">as</span> <span class="n">prediction_pipeline</span><span class="p">:</span>
 </span><span id="L-254"><a href="#L-254"><span class="linenos">254</span></a>            <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">exptected_output_shape</span> <span class="ow">in</span> <span class="n">generate_test_cases</span><span class="p">():</span>
 </span><span id="L-255"><a href="#L-255"><span class="linenos">255</span></a>                <span class="n">error</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="L-256"><a href="#L-256"><span class="linenos">256</span></a>                <span class="n">result</span> <span class="o">=</span> <span class="n">prediction_pipeline</span><span class="o">.</span><span class="n">predict_sample_with_blocking</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
+</span><span id="L-256"><a href="#L-256"><span class="linenos">256</span></a>                <span class="n">result</span> <span class="o">=</span> <span class="n">prediction_pipeline</span><span class="o">.</span><span class="n">predict_sample_without_blocking</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
 </span><span id="L-257"><a href="#L-257"><span class="linenos">257</span></a>                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="o">.</span><span class="n">members</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">exptected_output_shape</span><span class="p">):</span>
 </span><span id="L-258"><a href="#L-258"><span class="linenos">258</span></a>                    <span class="n">error</span> <span class="o">=</span> <span class="p">(</span>
 </span><span id="L-259"><a href="#L-259"><span class="linenos">259</span></a>                        <span class="sa">f</span><span class="s2">&quot;Expected </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">exptected_output_shape</span><span class="p">)</span><span class="si">}</span><span class="s2"> outputs,&quot;</span>
