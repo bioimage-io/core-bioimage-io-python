@@ -1,3 +1,4 @@
+import traceback
 import warnings
 from abc import ABC, abstractmethod
 from typing import List, Optional, Sequence, Tuple, Union, final
@@ -76,7 +77,7 @@ class ModelAdapter(ABC):
                         devices=devices,
                     )
                 except Exception as e:
-                    errors.append(f"{wf}: {e}")
+                    errors.append(f"{wf}: {e}\n{traceback.format_stack()}")
             elif (
                 wf == "tensorflow_saved_model_bundle"
                 and weights.tensorflow_saved_model_bundle is not None
@@ -88,7 +89,7 @@ class ModelAdapter(ABC):
                         model_description=model_description, devices=devices
                     )
                 except Exception as e:
-                    errors.append(f"{wf}: {e}")
+                    errors.append(f"{wf}: {e}\n{traceback.format_stack()}")
             elif wf == "onnx" and weights.onnx is not None:
                 try:
                     from ._onnx_model_adapter import ONNXModelAdapter
@@ -97,7 +98,7 @@ class ModelAdapter(ABC):
                         model_description=model_description, devices=devices
                     )
                 except Exception as e:
-                    errors.append(f"{wf}: {e}")
+                    errors.append(f"{wf}: {e}\n{traceback.format_stack()}")
             elif wf == "torchscript" and weights.torchscript is not None:
                 try:
                     from ._torchscript_model_adapter import TorchscriptModelAdapter
@@ -106,7 +107,7 @@ class ModelAdapter(ABC):
                         model_description=model_description, devices=devices
                     )
                 except Exception as e:
-                    errors.append(f"{wf}: {e}")
+                    errors.append(f"{wf}: {e}\n{traceback.format_stack()}")
             elif wf == "keras_hdf5" and weights.keras_hdf5 is not None:
                 # keras can either be installed as a separate package or used as part of tensorflow
                 # we try to first import the keras model adapter using the separate package and,
@@ -124,7 +125,7 @@ class ModelAdapter(ABC):
                         model_description=model_description, devices=devices
                     )
                 except Exception as e:
-                    errors.append(f"{wf}: {e}")
+                    errors.append(f"{wf}: {e}\n{traceback.format_stack()}")
 
         assert errors
         error_list = "\n - ".join(errors)
