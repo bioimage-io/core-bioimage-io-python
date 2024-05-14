@@ -7,7 +7,10 @@ from typing import List, Optional, Union
 import fire
 
 from bioimageio.core import __version__, test_description
-from bioimageio.spec import save_bioimageio_package
+from bioimageio.spec import (
+    load_description_and_validate_format_only,
+    save_bioimageio_package,
+)
 from bioimageio.spec.collection import CollectionDescr
 from bioimageio.spec.dataset import DatasetDescr
 from bioimageio.spec.model import ModelDescr
@@ -54,13 +57,28 @@ class Bioimageio:
             devices: Device(s) to use for testing
             decimal: Precision for numerical comparisons
         """
+        print(f"\ntesting {source}...")
         summary = test_description(
             source,
             weight_format=None if weight_format is None else weight_format,
             devices=[devices] if isinstance(devices, str) else devices,
             decimal=decimal,
         )
-        print(f"\ntesting model {source}...")
+        print(summary.format())
+        sys.exit(0 if summary.status == "passed" else 1)
+
+    @staticmethod
+    def validate_format(
+        source: str,
+    ):
+        """validate the meta data format of a bioimageio resource description
+
+        Args:
+            source: Path or URL to the bioimageio resource description file
+                    (bioimageio.yaml or rdf.yaml) or to a zipped resource
+        """
+        print(f"\validating meta data format of {source}...")
+        summary = load_description_and_validate_format_only(source)
         print(summary.format())
         sys.exit(0 if summary.status == "passed" else 1)
 
