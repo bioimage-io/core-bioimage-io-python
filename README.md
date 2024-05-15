@@ -124,6 +124,11 @@ The model specification and its validation tools can be found at <https://github
 
 ## Changelog
 
+### 0.6.4
+
+* add `bioimageio validate-format` command
+* improve error messages and display of command results
+
 ### 0.6.3
 
 * Fix [#386](https://github.com/bioimage-io/core-bioimage-io-python/issues/386)
