@@ -3,6 +3,7 @@ import warnings
 from typing import Dict, Hashable, List, Literal, Optional, Set, Tuple, Union
 
 import numpy as np
+from loguru import logger
 
 from bioimageio.core.sample import Sample
 from bioimageio.spec import (
@@ -117,6 +118,8 @@ def _test_model_inference(
     devices: Optional[List[str]],
     decimal: int,
 ) -> None:
+    test_name = "Reproduce test outputs from test inputs"
+    logger.info("starting '{}'", test_name)
     error: Optional[str] = None
     tb: List[str] = []
     try:
@@ -150,7 +153,7 @@ def _test_model_inference(
 
     model.validation_summary.add_detail(
         ValidationDetail(
-            name="Reproduce test outputs from test inputs",
+            name=test_name,
             status="passed" if error is None else "failed",
             errors=(
                 []
@@ -185,6 +188,10 @@ def _test_model_inference_parametrized(
 ) -> None:
     if not test_cases:
         return
+
+    logger.info(
+        "Testing inference with {} different input tensor sizes", len(test_cases)
+    )
 
     if not any(
         isinstance(a.size, v0_5.ParameterizedSize)
