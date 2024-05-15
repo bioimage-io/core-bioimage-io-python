@@ -64,7 +64,7 @@ class Bioimageio:
             devices=[devices] if isinstance(devices, str) else devices,
             decimal=decimal,
         )
-        print(summary.format())
+        summary.display()
         sys.exit(0 if summary.status == "passed" else 1)
 
     @staticmethod
@@ -79,7 +79,7 @@ class Bioimageio:
         """
         print(f"\validating meta data format of {source}...")
         summary = load_description_and_validate_format_only(source)
-        print(summary.format())
+        summary.display()
         sys.exit(0 if summary.status == "passed" else 1)
 
 
