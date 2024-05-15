@@ -12,8 +12,11 @@ from ._model_adapter import ModelAdapter
 
 try:
     import torch
-except Exception:
+except Exception as e:
     torch = None
+    torch_error = str(e)
+else:
+    torch_error = None
 
 
 class PytorchModelAdapter(ModelAdapter):
@@ -29,7 +32,8 @@ class PytorchModelAdapter(ModelAdapter):
         devices: Optional[Sequence[str]] = None,
     ):
         if torch is None:
-            raise ImportError("failed to import torch")
+            raise ImportError(f"failed to import torch: {torch_error}")
+
         super().__init__()
         self.output_dims = [tuple(a.id for a in get_axes_infos(out)) for out in outputs]
         self._network = self.get_network(weights)

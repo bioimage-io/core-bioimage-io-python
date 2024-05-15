@@ -14,8 +14,11 @@ from ._model_adapter import ModelAdapter
 
 try:
     import torch
-except Exception:
+except Exception as e:
     torch = None
+    torch_error = str(e)
+else:
+    torch_error = None
 
 
 class TorchscriptModelAdapter(ModelAdapter):
@@ -26,7 +29,7 @@ class TorchscriptModelAdapter(ModelAdapter):
         devices: Optional[Sequence[str]] = None,
     ):
         if torch is None:
-            raise ImportError("torch")
+            raise ImportError(f"failed to import torch: {torch_error}")
 
         super().__init__()
         if model_description.weights.torchscript is None:

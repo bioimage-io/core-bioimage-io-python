@@ -12,8 +12,11 @@ from ._model_adapter import ModelAdapter
 
 try:
     import onnxruntime as rt
-except Exception:
+except Exception as e:
     rt = None
+    rt_error = str(e)
+else:
+    rt_error = None
 
 
 class ONNXModelAdapter(ModelAdapter):
@@ -24,7 +27,7 @@ class ONNXModelAdapter(ModelAdapter):
         devices: Optional[Sequence[str]] = None,
     ):
         if rt is None:
-            raise ImportError("onnxruntime")
+            raise ImportError(f"failed to import onnxruntime: {rt_error}")
 
         super().__init__()
         self._internal_output_axes = [

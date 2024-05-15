@@ -26,10 +26,14 @@ try:
 except Exception:
     try:
         import keras  # pyright: ignore[reportMissingImports]
-    except Exception:
+    except Exception as e:
         keras = None
-
+        keras_error = str(e)
+    else:
+        keras_error = None
     tf_version = None
+else:
+    keras_error = None
 
 
 class KerasModelAdapter(ModelAdapter):
@@ -40,7 +44,7 @@ class KerasModelAdapter(ModelAdapter):
         devices: Optional[Sequence[str]] = None,
     ) -> None:
         if keras is None:
-            raise ImportError("keras")
+            raise ImportError(f"failed to import keras: {keras_error}")
 
         super().__init__()
         if model_description.weights.keras_hdf5 is None:

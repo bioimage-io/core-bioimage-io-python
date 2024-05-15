@@ -14,8 +14,11 @@ from ._model_adapter import ModelAdapter
 
 try:
     import tensorflow as tf  # pyright: ignore[reportMissingImports]
-except Exception:
+except Exception as e:
     tf = None
+    tf_error = str(e)
+else:
+    tf_error = None
 
 
 class TensorflowModelAdapterBase(ModelAdapter):
@@ -34,7 +37,7 @@ class TensorflowModelAdapterBase(ModelAdapter):
         model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
     ):
         if tf is None:
-            raise ImportError("tensorflow")
+            raise ImportError(f"failed to import tensorflow: {tf_error}")
 
         super().__init__()
         self.model_description = model_description
