@@ -124,6 +124,10 @@ The model specification and its validation tools can be found at <https://github
 
 ## Changelog
 
+### 0.6.5
+
+* improve adapter error messages
+
 ### 0.6.4
 
 * add `bioimageio validate-format` command
