@@ -36,3 +36,4 @@ __version__ = VERSION
 # aliases
 test_resource = test_description
 load_resource = load_description
+load_model = load_description
