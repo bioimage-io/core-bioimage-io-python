@@ -33,4 +33,6 @@ from .utils import VERSION
 
 __version__ = VERSION
 
+# aliases
 test_resource = test_description
+load_resource = load_description
