@@ -124,6 +124,10 @@ The model specification and its validation tools can be found at <https://github
 
 ## Changelog
 
+### 0.6.6
+
+* add aliases to match previous API more closely
+
 ### 0.6.5
 
 * improve adapter error messages
