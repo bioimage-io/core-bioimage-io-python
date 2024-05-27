@@ -1,12 +1,15 @@
 from pathlib import Path
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence, Union
 
 import imageio
+import numpy as np
+import xarray as xr
 from loguru import logger
 from numpy.typing import NDArray
+from typing_extensions import assert_never
 
-from bioimageio.spec.model import AnyModelDescr
-from bioimageio.spec.utils import load_array
+from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
+from bioimageio.spec.utils import load_array, save_array
 
 from .axis import Axis, AxisLike
 from .common import MemberId, PerMember, SampleId
@@ -26,6 +29,7 @@ def load_image(path: Path, is_volume: bool) -> NDArray[Any]:
 
 
 def load_tensor(path: Path, axes: Optional[Sequence[AxisLike]] = None) -> Tensor:
+    # TODO: load axis meta data
     array = load_image(
         path,
         is_volume=(
@@ -34,6 +38,50 @@ def load_tensor(path: Path, axes: Optional[Sequence[AxisLike]] = None) -> Tensor
     )
 
     return Tensor.from_numpy(array, dims=axes)
+
+
+def get_tensor(
+    src: Union[Tensor, xr.DataArray, NDArray[Any], Path],
+    ipt: Union[v0_4.InputTensorDescr, v0_5.InputTensorDescr],
+):
+    """helper to cast/load various tensor sources"""
+
+    if isinstance(src, Tensor):
+        return src
+
+    if isinstance(src, xr.DataArray):
+        return Tensor.from_xarray(src)
+
+    if isinstance(src, np.ndarray):
+        return Tensor.from_numpy(src, dims=get_axes_infos(ipt))
+
+    if isinstance(src, Path):
+        return load_tensor(src, axes=get_axes_infos(ipt))
+
+    assert_never(src)
+
+
+def save_tensor(path: Path, tensor: Tensor) -> None:
+    # TODO: save axis meta data
+    data: NDArray[Any] = tensor.data.to_numpy()
+    if path.suffix == ".npy":
+        save_array(path, data)
+    else:
+        imageio.volwrite(path, data)
+
+
+def save_sample(path: Union[Path, str], sample: Sample) -> None:
+    """save a sample to path
+
+    `path` must contain `{member_id}` and may contain `{sample_id}`,
+    which are resolved with the `sample` object.
+    """
+    path = str(path).format(sample_id=sample.id)
+    if "{member_id}" not in path:
+        raise ValueError(f"missing `{{member_id}}` in path {path}")
+
+    for m, t in sample.members.items():
+        save_tensor(Path(path.format(member_id=m)), t)
 
 
 def load_sample_for_model(

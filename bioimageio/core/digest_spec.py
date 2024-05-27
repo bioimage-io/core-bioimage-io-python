@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 from itertools import chain
+from pathlib import Path
 from typing import (
     Any,
     Callable,
@@ -16,6 +17,7 @@ from typing import (
     Union,
 )
 
+import xarray as xr
 from numpy.typing import NDArray
 from typing_extensions import Unpack, assert_never
 
@@ -33,6 +35,7 @@ from bioimageio.spec.utils import load_array
 from .axis import AxisId, AxisInfo, PerAxis
 from .block_meta import split_multiple_shapes_into_blocks
 from .common import Halo, MemberId, PerMember, SampleId, TotalNumberOfBlocks
+from .io import get_tensor
 from .sample import (
     LinearSampleAxisTransform,
     Sample,
@@ -334,7 +337,9 @@ def create_sample_for_model(
     *,
     stat: Optional[Stat] = None,
     sample_id: SampleId = None,
-    inputs: Optional[PerMember[NDArray[Any]]] = None,  # TODO: make non-optional
+    inputs: Optional[
+        PerMember[Union[Tensor, xr.DataArray, NDArray[Any], Path]]
+    ] = None,  # TODO: make non-optional
     **kwargs: NDArray[Any],  # TODO: deprecate in favor of `inputs`
 ) -> Sample:
     """Create a sample from a single set of input(s) for a specific bioimage.io model
@@ -359,7 +364,7 @@ def create_sample_for_model(
 
     return Sample(
         members={
-            m: Tensor.from_numpy(inputs[m], dims=get_axes_infos(ipt))
+            m: get_tensor(inputs[m], ipt)
             for m, ipt in model_inputs.items()
             if m in inputs
         },
