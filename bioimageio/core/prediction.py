@@ -8,11 +8,9 @@ import collections
 from pathlib import Path
 from typing import (
     Any,
-    Generator,
     Hashable,
     Iterable,
     Iterator,
-    List,
     Mapping,
     Optional,
     Tuple,
