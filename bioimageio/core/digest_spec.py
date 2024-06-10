@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 from itertools import chain
+from pathlib import Path
 from typing import (
     Any,
     Callable,
@@ -16,9 +17,15 @@ from typing import (
     Union,
 )
 
+import numpy as np
+import xarray as xr
+from loguru import logger
 from numpy.typing import NDArray
 from typing_extensions import Unpack, assert_never
 
+from bioimageio.core.common import MemberId, PerMember, SampleId
+from bioimageio.core.io import load_tensor
+from bioimageio.core.sample import Sample
 from bioimageio.spec._internal.io_utils import HashKwargs, download
 from bioimageio.spec.common import FileSource
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
@@ -30,7 +37,7 @@ from bioimageio.spec.model.v0_5 import (
 )
 from bioimageio.spec.utils import load_array
 
-from .axis import AxisId, AxisInfo, PerAxis
+from .axis import AxisId, AxisInfo, AxisLike, PerAxis
 from .block_meta import split_multiple_shapes_into_blocks
 from .common import Halo, MemberId, PerMember, SampleId, TotalNumberOfBlocks
 from .sample import (
@@ -329,12 +336,35 @@ def get_io_sample_block_metas(
     )
 
 
+def get_tensor(
+    src: Union[Tensor, xr.DataArray, NDArray[Any], Path],
+    ipt: Union[v0_4.InputTensorDescr, v0_5.InputTensorDescr],
+):
+    """helper to cast/load various tensor sources"""
+
+    if isinstance(src, Tensor):
+        return src
+
+    if isinstance(src, xr.DataArray):
+        return Tensor.from_xarray(src)
+
+    if isinstance(src, np.ndarray):
+        return Tensor.from_numpy(src, dims=get_axes_infos(ipt))
+
+    if isinstance(src, Path):
+        return load_tensor(src, axes=get_axes_infos(ipt))
+
+    assert_never(src)
+
+
 def create_sample_for_model(
     model: AnyModelDescr,
     *,
     stat: Optional[Stat] = None,
     sample_id: SampleId = None,
-    inputs: Optional[PerMember[NDArray[Any]]] = None,  # TODO: make non-optional
+    inputs: Optional[
+        PerMember[Union[Tensor, xr.DataArray, NDArray[Any], Path]]
+    ] = None,  # TODO: make non-optional
     **kwargs: NDArray[Any],  # TODO: deprecate in favor of `inputs`
 ) -> Sample:
     """Create a sample from a single set of input(s) for a specific bioimage.io model
@@ -359,10 +389,54 @@ def create_sample_for_model(
 
     return Sample(
         members={
-            m: Tensor.from_numpy(inputs[m], dims=get_axes_infos(ipt))
+            m: get_tensor(inputs[m], ipt)
             for m, ipt in model_inputs.items()
             if m in inputs
         },
         stat={} if stat is None else stat,
         id=sample_id,
+    )
+
+
+def load_sample_for_model(
+    *,
+    model: AnyModelDescr,
+    paths: PerMember[Path],
+    axes: Optional[PerMember[Sequence[AxisLike]]] = None,
+    stat: Optional[Stat] = None,
+    sample_id: Optional[SampleId] = None,
+):
+    """load a single sample from `paths` that can be processed by `model`"""
+
+    if axes is None:
+        axes = {}
+
+    # make sure members are keyed by MemberId, not string
+    paths = {MemberId(k): v for k, v in paths.items()}
+    axes = {MemberId(k): v for k, v in axes.items()}
+
+    model_inputs = {get_member_id(d): d for d in model.inputs}
+
+    if unknown := {k for k in paths if k not in model_inputs}:
+        raise ValueError(f"Got unexpected paths for {unknown}")
+
+    if unknown := {k for k in axes if k not in model_inputs}:
+        raise ValueError(f"Got unexpected axes hints for: {unknown}")
+
+    members: Dict[MemberId, Tensor] = {}
+    for m, p in paths.items():
+        if m not in axes:
+            axes[m] = get_axes_infos(model_inputs[m])
+            logger.warning(
+                "loading paths with {}'s default input axes {} for input '{}'",
+                axes[m],
+                model.id or model.name,
+                m,
+            )
+        members[m] = load_tensor(p, axes[m])
+
+    return Sample(
+        members=members,
+        stat={} if stat is None else stat,
+        id=sample_id or tuple(sorted(paths.values())),
     )

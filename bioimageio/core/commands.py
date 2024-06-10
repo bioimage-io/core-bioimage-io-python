@@ -11,7 +11,6 @@ from bioimageio.spec import (
     load_description_and_validate_format_only,
     save_bioimageio_package,
 )
-from bioimageio.spec.collection import CollectionDescr
 from bioimageio.spec.dataset import DatasetDescr
 from bioimageio.spec.model import ModelDescr
 from bioimageio.spec.model.v0_5 import WeightsFormat
@@ -94,7 +93,6 @@ spec format versions:
         model RDF {ModelDescr.implemented_format_version}
       dataset RDF {DatasetDescr.implemented_format_version}
      notebook RDF {NotebookDescr.implemented_format_version}
-   collection RDF {CollectionDescr.implemented_format_version}
 
 """
 
