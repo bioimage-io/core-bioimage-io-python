@@ -54,7 +54,7 @@ The package is also available via pip
 (e.g. with recommended extras `onnx` and `pytorch`):
 
 ```console
-pip install bioimageio.core[onnx,pytorch]
+pip install "bioimageio.core[onnx,pytorch]"
 ```
 
 ### Set up Development Environment
