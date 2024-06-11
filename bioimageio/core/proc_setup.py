@@ -11,10 +11,18 @@ from typing import (
 
 from typing_extensions import assert_never
 
+from bioimageio.core.common import MemberId
+from bioimageio.core.digest_spec import get_member_ids
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 from bioimageio.spec.model.v0_5 import TensorId
 
-from .proc_ops import AddKnownDatasetStats, Processing, UpdateStats, get_proc_class
+from .proc_ops import (
+    AddKnownDatasetStats,
+    EnsureDtype,
+    Processing,
+    UpdateStats,
+    get_proc_class,
+)
 from .sample import Sample
 from .stat_calculators import StatsCalculator
 from .stat_measures import DatasetMeasure, Measure, MeasureValue
@@ -87,12 +95,8 @@ def _prepare_setup_pre_and_postprocessing(model: AnyModelDescr) -> _SetupProcess
     pre_measures: Set[Measure] = set()
     post_measures: Set[Measure] = set()
 
-    if isinstance(model, v0_4.ModelDescr):
-        input_ids = {TensorId(str(d.name)) for d in model.inputs}
-        output_ids = {TensorId(str(d.name)) for d in model.outputs}
-    else:
-        input_ids = {d.id for d in model.inputs}
-        output_ids = {d.id for d in model.outputs}
+    input_ids = set(get_member_ids(model.inputs))
+    output_ids = set(get_member_ids(model.outputs))
 
     def prepare_procs(tensor_descrs: Sequence[TensorDescr]):
         procs: List[Processing] = []

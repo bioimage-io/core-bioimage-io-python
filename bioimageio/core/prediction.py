@@ -39,7 +39,7 @@ def predict(
     model: Union[
         PermissiveFileSource, v0_4.ModelDescr, v0_5.ModelDescr, PredictionPipeline
     ],
-    inputs: PerMember[Union[Tensor, xr.DataArray, NDArray[Any], Path]],
+    inputs: Union[Sample, PerMember[Union[Tensor, xr.DataArray, NDArray[Any], Path]]],
     sample_id: Hashable = "sample",
     blocksize_parameter: Optional[
         Union[
@@ -56,7 +56,7 @@ def predict(
     Args:
         model: model to predict with.
             May be given as RDF source, model description or prediction pipeline.
-        inputs: the named input(s) for this model as a dictionary
+        inputs: the input sample or the named input(s) for this model as a dictionary
         sample_id: the sample id.
         blocksize_parameter: (optional) tile the input into blocks parametrized by
             blocksize according to any parametrized axis sizes defined in the model RDF
@@ -82,9 +82,12 @@ def predict(
 
         pp = create_prediction_pipeline(model)
 
-    sample = create_sample_for_model(
-        pp.model_description, inputs=inputs, sample_id=sample_id
-    )
+    if isinstance(inputs, Sample):
+        sample = inputs
+    else:
+        sample = create_sample_for_model(
+            pp.model_description, inputs=inputs, sample_id=sample_id
+        )
 
     if blocksize_parameter is None:
         output = pp.predict_sample_without_blocking(
