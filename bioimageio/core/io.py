@@ -1,18 +1,13 @@
 from pathlib import Path
-from typing import Any, Dict, Optional, Sequence
+from typing import Any, Optional, Sequence, Union
 
 import imageio
-from loguru import logger
 from numpy.typing import NDArray
 
-from bioimageio.spec.model import AnyModelDescr
-from bioimageio.spec.utils import load_array
+from bioimageio.spec.utils import load_array, save_array
 
 from .axis import Axis, AxisLike
-from .common import MemberId, PerMember, SampleId
-from .digest_spec import get_axes_infos, get_member_id
 from .sample import Sample
-from .stat_measures import Stat
 from .tensor import Tensor
 
 
@@ -26,6 +21,7 @@ def load_image(path: Path, is_volume: bool) -> NDArray[Any]:
 
 
 def load_tensor(path: Path, axes: Optional[Sequence[AxisLike]] = None) -> Tensor:
+    # TODO: load axis meta data
     array = load_image(
         path,
         is_volume=(
@@ -36,45 +32,25 @@ def load_tensor(path: Path, axes: Optional[Sequence[AxisLike]] = None) -> Tensor
     return Tensor.from_numpy(array, dims=axes)
 
 
-def load_sample_for_model(
-    *,
-    model: AnyModelDescr,
-    paths: PerMember[Path],
-    axes: Optional[PerMember[Sequence[AxisLike]]] = None,
-    stat: Optional[Stat] = None,
-    sample_id: Optional[SampleId] = None,
-):
-    """load a single sample from `paths` that can be processed by `model`"""
+def save_tensor(path: Path, tensor: Tensor) -> None:
+    # TODO: save axis meta data
+    data: NDArray[Any] = tensor.data.to_numpy()
+    if path.suffix == ".npy":
+        save_array(path, data)
+    else:
+        imageio.volwrite(path, data)
 
-    if axes is None:
-        axes = {}
 
-    # make sure members are keyed by MemberId, not string
-    paths = {MemberId(k): v for k, v in paths.items()}
-    axes = {MemberId(k): v for k, v in axes.items()}
+def save_sample(path: Union[Path, str], sample: Sample) -> None:
+    """save a sample to path
 
-    model_inputs = {get_member_id(d): d for d in model.inputs}
+    `path` must contain `{member_id}` and may contain `{sample_id}`,
+    which are resolved with the `sample` object.
+    """
+    if "{member_id}" not in path:
+        raise ValueError(f"missing `{{member_id}}` in path {path}")
 
-    if unknown := {k for k in paths if k not in model_inputs}:
-        raise ValueError(f"Got unexpected paths for {unknown}")
+    path = str(path).format(sample_id=sample.id, member_id="{member_id}")
 
-    if unknown := {k for k in axes if k not in model_inputs}:
-        raise ValueError(f"Got unexpected axes hints for: {unknown}")
-
-    members: Dict[MemberId, Tensor] = {}
-    for m, p in paths.items():
-        if m not in axes:
-            axes[m] = get_axes_infos(model_inputs[m])
-            logger.warning(
-                "loading paths with {}'s default input axes {} for input '{}'",
-                axes[m],
-                model.id or model.name,
-                m,
-            )
-        members[m] = load_tensor(p, axes[m])
-
-    return Sample(
-        members=members,
-        stat={} if stat is None else stat,
-        id=sample_id or tuple(sorted(paths.values())),
-    )
+    for m, t in sample.members.items():
+        save_tensor(Path(path.format(member_id=m)), t)

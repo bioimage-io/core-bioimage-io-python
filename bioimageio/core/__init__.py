@@ -27,10 +27,15 @@ from .axis import Axis as Axis
 from .axis import AxisId as AxisId
 from .block_meta import BlockMeta as BlockMeta
 from .common import MemberId as MemberId
+from .prediction import predict as predict
+from .prediction import predict_many as predict_many
 from .sample import Sample as Sample
 from .tensor import Tensor as Tensor
 from .utils import VERSION
 
 __version__ = VERSION
 
+# aliases
 test_resource = test_description
+load_resource = load_description
+load_model = load_description

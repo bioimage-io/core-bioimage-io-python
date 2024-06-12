@@ -54,7 +54,7 @@ The package is also available via pip
 (e.g. with recommended extras `onnx` and `pytorch`):
 
 ```console
-pip install bioimageio.core[onnx,pytorch]
+pip install "bioimageio.core[onnx,pytorch]"
 ```
 
 ### Set up Development Environment
@@ -114,7 +114,7 @@ In addition bioimageio.core provides functionality to convert model weight forma
 
 To get an overview of this functionality, check out these example notebooks:
 
-* [model creation/loading with bioimageio.spec](https://github.com/bioimage-io/spec-bioimage-io/blob/main/example_use/load_model_and_create_your_own.ipynb)
+* [model creation/loading with bioimageio.spec](https://github.com/bioimage-io/spec-bioimage-io/blob/main/example/load_model_and_create_your_own.ipynb)
 
 and the [developer documentation](https://bioimage-io.github.io/core-bioimage-io-python/bioimageio/core.html).
 
@@ -123,6 +123,14 @@ and the [developer documentation](https://bioimage-io.github.io/core-bioimage-io
 The model specification and its validation tools can be found at <https://github.com/bioimage-io/spec-bioimage-io>.
 
 ## Changelog
+
+### 0.6.7
+
+* `predict()` argument `inputs` may be sample
+
+### 0.6.6
+
+* add aliases to match previous API more closely
 
 ### 0.6.5
 
