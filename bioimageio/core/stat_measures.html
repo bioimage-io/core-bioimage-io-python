@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="generator" content="pdoc 14.5.0"/>
+    <meta name="generator" content="pdoc 14.5.1"/>
     <title>bioimageio.core.stat_measures API documentation</title>
             <link rel="icon" href="https://bioimage.io/static/img/bioimage-io-icon-small.svg"/>
 
@@ -447,33 +447,33 @@ Protocol classes can be generic, they are defined as::</p>
 
     </div>
     <a class="headerlink" href="#SampleLike.__init__"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="SampleLike.__init__-1739"><a href="#SampleLike.__init__-1739"><span class="linenos">1739</span></a><span class="k">def</span> <span class="nf">_no_init_or_replace_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-</span><span id="SampleLike.__init__-1740"><a href="#SampleLike.__init__-1740"><span class="linenos">1740</span></a>    <span class="bp">cls</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
-</span><span id="SampleLike.__init__-1741"><a href="#SampleLike.__init__-1741"><span class="linenos">1741</span></a>
-</span><span id="SampleLike.__init__-1742"><a href="#SampleLike.__init__-1742"><span class="linenos">1742</span></a>    <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_is_protocol</span><span class="p">:</span>
-</span><span id="SampleLike.__init__-1743"><a href="#SampleLike.__init__-1743"><span class="linenos">1743</span></a>        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Protocols cannot be instantiated&#39;</span><span class="p">)</span>
-</span><span id="SampleLike.__init__-1744"><a href="#SampleLike.__init__-1744"><span class="linenos">1744</span></a>
-</span><span id="SampleLike.__init__-1745"><a href="#SampleLike.__init__-1745"><span class="linenos">1745</span></a>    <span class="c1"># Already using a custom `__init__`. No need to calculate correct</span>
-</span><span id="SampleLike.__init__-1746"><a href="#SampleLike.__init__-1746"><span class="linenos">1746</span></a>    <span class="c1"># `__init__` to call. This can lead to RecursionError. See bpo-45121.</span>
-</span><span id="SampleLike.__init__-1747"><a href="#SampleLike.__init__-1747"><span class="linenos">1747</span></a>    <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="fm">__init__</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">_no_init_or_replace_init</span><span class="p">:</span>
-</span><span id="SampleLike.__init__-1748"><a href="#SampleLike.__init__-1748"><span class="linenos">1748</span></a>        <span class="k">return</span>
-</span><span id="SampleLike.__init__-1749"><a href="#SampleLike.__init__-1749"><span class="linenos">1749</span></a>
-</span><span id="SampleLike.__init__-1750"><a href="#SampleLike.__init__-1750"><span class="linenos">1750</span></a>    <span class="c1"># Initially, `__init__` of a protocol subclass is set to `_no_init_or_replace_init`.</span>
-</span><span id="SampleLike.__init__-1751"><a href="#SampleLike.__init__-1751"><span class="linenos">1751</span></a>    <span class="c1"># The first instantiation of the subclass will call `_no_init_or_replace_init` which</span>
-</span><span id="SampleLike.__init__-1752"><a href="#SampleLike.__init__-1752"><span class="linenos">1752</span></a>    <span class="c1"># searches for a proper new `__init__` in the MRO. The new `__init__`</span>
-</span><span id="SampleLike.__init__-1753"><a href="#SampleLike.__init__-1753"><span class="linenos">1753</span></a>    <span class="c1"># replaces the subclass&#39; old `__init__` (ie `_no_init_or_replace_init`). Subsequent</span>
-</span><span id="SampleLike.__init__-1754"><a href="#SampleLike.__init__-1754"><span class="linenos">1754</span></a>    <span class="c1"># instantiation of the protocol subclass will thus use the new</span>
-</span><span id="SampleLike.__init__-1755"><a href="#SampleLike.__init__-1755"><span class="linenos">1755</span></a>    <span class="c1"># `__init__` and no longer call `_no_init_or_replace_init`.</span>
-</span><span id="SampleLike.__init__-1756"><a href="#SampleLike.__init__-1756"><span class="linenos">1756</span></a>    <span class="k">for</span> <span class="n">base</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__mro__</span><span class="p">:</span>
-</span><span id="SampleLike.__init__-1757"><a href="#SampleLike.__init__-1757"><span class="linenos">1757</span></a>        <span class="n">init</span> <span class="o">=</span> <span class="n">base</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;__init__&#39;</span><span class="p">,</span> <span class="n">_no_init_or_replace_init</span><span class="p">)</span>
-</span><span id="SampleLike.__init__-1758"><a href="#SampleLike.__init__-1758"><span class="linenos">1758</span></a>        <span class="k">if</span> <span class="n">init</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">_no_init_or_replace_init</span><span class="p">:</span>
-</span><span id="SampleLike.__init__-1759"><a href="#SampleLike.__init__-1759"><span class="linenos">1759</span></a>            <span class="bp">cls</span><span class="o">.</span><span class="fm">__init__</span> <span class="o">=</span> <span class="n">init</span>
-</span><span id="SampleLike.__init__-1760"><a href="#SampleLike.__init__-1760"><span class="linenos">1760</span></a>            <span class="k">break</span>
-</span><span id="SampleLike.__init__-1761"><a href="#SampleLike.__init__-1761"><span class="linenos">1761</span></a>    <span class="k">else</span><span class="p">:</span>
-</span><span id="SampleLike.__init__-1762"><a href="#SampleLike.__init__-1762"><span class="linenos">1762</span></a>        <span class="c1"># should not happen</span>
-</span><span id="SampleLike.__init__-1763"><a href="#SampleLike.__init__-1763"><span class="linenos">1763</span></a>        <span class="bp">cls</span><span class="o">.</span><span class="fm">__init__</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__init__</span>
-</span><span id="SampleLike.__init__-1764"><a href="#SampleLike.__init__-1764"><span class="linenos">1764</span></a>
-</span><span id="SampleLike.__init__-1765"><a href="#SampleLike.__init__-1765"><span class="linenos">1765</span></a>    <span class="bp">cls</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="SampleLike.__init__-1758"><a href="#SampleLike.__init__-1758"><span class="linenos">1758</span></a><span class="k">def</span> <span class="nf">_no_init_or_replace_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+</span><span id="SampleLike.__init__-1759"><a href="#SampleLike.__init__-1759"><span class="linenos">1759</span></a>    <span class="bp">cls</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+</span><span id="SampleLike.__init__-1760"><a href="#SampleLike.__init__-1760"><span class="linenos">1760</span></a>
+</span><span id="SampleLike.__init__-1761"><a href="#SampleLike.__init__-1761"><span class="linenos">1761</span></a>    <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_is_protocol</span><span class="p">:</span>
+</span><span id="SampleLike.__init__-1762"><a href="#SampleLike.__init__-1762"><span class="linenos">1762</span></a>        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Protocols cannot be instantiated&#39;</span><span class="p">)</span>
+</span><span id="SampleLike.__init__-1763"><a href="#SampleLike.__init__-1763"><span class="linenos">1763</span></a>
+</span><span id="SampleLike.__init__-1764"><a href="#SampleLike.__init__-1764"><span class="linenos">1764</span></a>    <span class="c1"># Already using a custom `__init__`. No need to calculate correct</span>
+</span><span id="SampleLike.__init__-1765"><a href="#SampleLike.__init__-1765"><span class="linenos">1765</span></a>    <span class="c1"># `__init__` to call. This can lead to RecursionError. See bpo-45121.</span>
+</span><span id="SampleLike.__init__-1766"><a href="#SampleLike.__init__-1766"><span class="linenos">1766</span></a>    <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="fm">__init__</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">_no_init_or_replace_init</span><span class="p">:</span>
+</span><span id="SampleLike.__init__-1767"><a href="#SampleLike.__init__-1767"><span class="linenos">1767</span></a>        <span class="k">return</span>
+</span><span id="SampleLike.__init__-1768"><a href="#SampleLike.__init__-1768"><span class="linenos">1768</span></a>
+</span><span id="SampleLike.__init__-1769"><a href="#SampleLike.__init__-1769"><span class="linenos">1769</span></a>    <span class="c1"># Initially, `__init__` of a protocol subclass is set to `_no_init_or_replace_init`.</span>
+</span><span id="SampleLike.__init__-1770"><a href="#SampleLike.__init__-1770"><span class="linenos">1770</span></a>    <span class="c1"># The first instantiation of the subclass will call `_no_init_or_replace_init` which</span>
+</span><span id="SampleLike.__init__-1771"><a href="#SampleLike.__init__-1771"><span class="linenos">1771</span></a>    <span class="c1"># searches for a proper new `__init__` in the MRO. The new `__init__`</span>
+</span><span id="SampleLike.__init__-1772"><a href="#SampleLike.__init__-1772"><span class="linenos">1772</span></a>    <span class="c1"># replaces the subclass&#39; old `__init__` (ie `_no_init_or_replace_init`). Subsequent</span>
+</span><span id="SampleLike.__init__-1773"><a href="#SampleLike.__init__-1773"><span class="linenos">1773</span></a>    <span class="c1"># instantiation of the protocol subclass will thus use the new</span>
+</span><span id="SampleLike.__init__-1774"><a href="#SampleLike.__init__-1774"><span class="linenos">1774</span></a>    <span class="c1"># `__init__` and no longer call `_no_init_or_replace_init`.</span>
+</span><span id="SampleLike.__init__-1775"><a href="#SampleLike.__init__-1775"><span class="linenos">1775</span></a>    <span class="k">for</span> <span class="n">base</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__mro__</span><span class="p">:</span>
+</span><span id="SampleLike.__init__-1776"><a href="#SampleLike.__init__-1776"><span class="linenos">1776</span></a>        <span class="n">init</span> <span class="o">=</span> <span class="n">base</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;__init__&#39;</span><span class="p">,</span> <span class="n">_no_init_or_replace_init</span><span class="p">)</span>
+</span><span id="SampleLike.__init__-1777"><a href="#SampleLike.__init__-1777"><span class="linenos">1777</span></a>        <span class="k">if</span> <span class="n">init</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">_no_init_or_replace_init</span><span class="p">:</span>
+</span><span id="SampleLike.__init__-1778"><a href="#SampleLike.__init__-1778"><span class="linenos">1778</span></a>            <span class="bp">cls</span><span class="o">.</span><span class="fm">__init__</span> <span class="o">=</span> <span class="n">init</span>
+</span><span id="SampleLike.__init__-1779"><a href="#SampleLike.__init__-1779"><span class="linenos">1779</span></a>            <span class="k">break</span>
+</span><span id="SampleLike.__init__-1780"><a href="#SampleLike.__init__-1780"><span class="linenos">1780</span></a>    <span class="k">else</span><span class="p">:</span>
+</span><span id="SampleLike.__init__-1781"><a href="#SampleLike.__init__-1781"><span class="linenos">1781</span></a>        <span class="c1"># should not happen</span>
+</span><span id="SampleLike.__init__-1782"><a href="#SampleLike.__init__-1782"><span class="linenos">1782</span></a>        <span class="bp">cls</span><span class="o">.</span><span class="fm">__init__</span> <span class="o">=</span> <span class="nb">object</span><span class="o">.</span><span class="fm">__init__</span>
+</span><span id="SampleLike.__init__-1783"><a href="#SampleLike.__init__-1783"><span class="linenos">1783</span></a>
+</span><span id="SampleLike.__init__-1784"><a href="#SampleLike.__init__-1784"><span class="linenos">1784</span></a>    <span class="bp">cls</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </span></pre></div>
 
 
