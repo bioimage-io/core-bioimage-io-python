@@ -42,7 +42,7 @@ class PytorchModelAdapter(ModelAdapter):
 
         self._primary_device = self._devices[0]
         state: Any = torch.load(
-            download(weights.source).path,
+            download(weights).path,
             map_location=self._primary_device,  # pyright: ignore[reportUnknownArgumentType]
         )
         self._network.load_state_dict(state)
