@@ -98,9 +98,18 @@ class TensorflowModelAdapterBase(ModelAdapter):
         weight_file = self.require_unzipped(weight_file)
         assert tf is not None
         if self.use_keras_api:
-            return tf.keras.models.load_model(
-                weight_file, compile=False
-            )  # pyright: ignore[reportUnknownVariableType]
+            try:
+                return tf.keras.layers.TFSMLayer(
+                    weight_file, trainable=False, call_endpoint="serve"
+                )  # pyright: ignore[reportUnknownVariableType]
+            except Exception as e:
+                try:
+                    return tf.keras.layers.TFSMLayer(
+                        weight_file, trainable=False, call_endpoint="serve_default"
+                    )  # pyright: ignore[reportUnknownVariableType]
+                except Exception:
+                    warnings.warn(f"error with `call_endpiont='serve': {e}")
+                    raise e
         else:
             # NOTE in tf1 the model needs to be loaded inside of the session, so we cannot preload the model
             return str(weight_file)
