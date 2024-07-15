@@ -109,7 +109,9 @@ class TensorflowModelAdapterBase(ModelAdapter):
                         weight_file, trainable=False, call_endpoint="serving_default"
                     )  # pyright: ignore[reportUnknownVariableType]
                 except Exception as ee:
-                    logger.warning(f"error with `call_endpiont='serving_default': {ee}")
+                    logger.opt(exception=ee).info(
+                        "keras.layers.TFSMLayer error for alternative call_endpoint='serving_default'"
+                    )
                     raise e
         else:
             # NOTE in tf1 the model needs to be loaded inside of the session, so we cannot preload the model
