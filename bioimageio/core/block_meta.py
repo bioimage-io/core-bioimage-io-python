@@ -161,8 +161,8 @@ class BlockMeta:
         return Frozen(
             {
                 a: SliceInfo(
-                    self.padding[a].left,
-                    self.padding[a].left + self.inner_shape[a],
+                    self.halo[a].left,
+                    self.halo[a].left + self.inner_shape[a],
                 )
                 for a in self.inner_slice
             }
