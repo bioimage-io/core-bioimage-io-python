@@ -3,6 +3,7 @@ import zipfile
 from typing import List, Literal, Optional, Sequence, Union
 
 import numpy as np
+from loguru import logger
 
 from bioimageio.spec.common import FileSource
 from bioimageio.spec.model import v0_4, v0_5
@@ -46,19 +47,19 @@ class TensorflowModelAdapterBase(ModelAdapter):
         )
         model_tf_version = weights.tensorflow_version
         if model_tf_version is None:
-            warnings.warn(
+            logger.warning(
                 "The model does not specify the tensorflow version."
                 + f"Cannot check if it is compatible with intalled tensorflow {tf_version}."
             )
         elif model_tf_version > tf_version:
-            warnings.warn(
+            logger.warning(
                 f"The model specifies a newer tensorflow version than installed: {model_tf_version} > {tf_version}."
             )
         elif (model_tf_version.major, model_tf_version.minor) != (
             tf_version.major,
             tf_version.minor,
         ):
-            warnings.warn(
+            logger.warning(
                 "The tensorflow version specified by the model does not match the installed: "
                 + f"{model_tf_version} != {tf_version}."
             )
@@ -70,7 +71,7 @@ class TensorflowModelAdapterBase(ModelAdapter):
 
         # TODO tf device management
         if devices is not None:
-            warnings.warn(
+            logger.warning(
                 f"Device management is not implemented for tensorflow yet, ignoring the devices {devices}"
             )
 
@@ -108,7 +109,7 @@ class TensorflowModelAdapterBase(ModelAdapter):
                         weight_file, trainable=False, call_endpoint="serve_default"
                     )  # pyright: ignore[reportUnknownVariableType]
                 except Exception:
-                    warnings.warn(f"error with `call_endpiont='serve': {e}")
+                    logger.warning(f"error with `call_endpiont='serve': {e}")
                     raise e
         else:
             # NOTE in tf1 the model needs to be loaded inside of the session, so we cannot preload the model
@@ -239,7 +240,7 @@ class TensorflowModelAdapterBase(ModelAdapter):
         ]
 
     def unload(self) -> None:
-        warnings.warn(
+        logger.warning(
             "Device management is not implemented for keras yet, cannot unload model"
         )
 
