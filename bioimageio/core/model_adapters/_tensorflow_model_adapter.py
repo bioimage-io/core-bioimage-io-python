@@ -200,14 +200,9 @@ class TensorflowModelAdapterBase(ModelAdapter):
             None if ipt is None else tf.convert_to_tensor(ipt) for ipt in input_tensors
         ]
 
-        try:
-            result = (  # pyright: ignore[reportUnknownVariableType]
-                self._network.forward(*tf_tensor)
-            )
-        except AttributeError:
-            result = (  # pyright: ignore[reportUnknownVariableType]
-                self._network.predict(*tf_tensor)
-            )
+        result = self._network.call(  # pyright: ignore[reportUnknownVariableType]
+            *tf_tensor
+        )
 
         if not isinstance(result, (tuple, list)):
             result = [result]  # pyright: ignore[reportUnknownVariableType]
