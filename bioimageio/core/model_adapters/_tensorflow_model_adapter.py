@@ -101,12 +101,12 @@ class TensorflowModelAdapterBase(ModelAdapter):
         if self.use_keras_api:
             try:
                 return tf.keras.layers.TFSMLayer(
-                    weight_file, trainable=False, call_endpoint="serve"
+                    weight_file, call_endpoint="serve"
                 )  # pyright: ignore[reportUnknownVariableType]
             except Exception as e:
                 try:
                     return tf.keras.layers.TFSMLayer(
-                        weight_file, trainable=False, call_endpoint="serving_default"
+                        weight_file, call_endpoint="serving_default"
                     )  # pyright: ignore[reportUnknownVariableType]
                 except Exception as ee:
                     logger.opt(exception=ee).info(
