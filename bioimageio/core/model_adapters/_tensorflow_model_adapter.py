@@ -200,19 +200,15 @@ class TensorflowModelAdapterBase(ModelAdapter):
             None if ipt is None else tf.convert_to_tensor(ipt) for ipt in input_tensors
         ]
 
-        result = self._network.call(  # pyright: ignore[reportUnknownVariableType]
-            *tf_tensor
-        )
+        result = self._network(*tf_tensor)  # pyright: ignore[reportUnknownVariableType]
 
-        if not isinstance(result, (tuple, list)):
-            result = [result]  # pyright: ignore[reportUnknownVariableType]
+        assert isinstance(result, dict)
+
+        # TODO: Use RDF's `outputs[i].id` here
+        result = list(result.values())
 
         return [  # pyright: ignore[reportUnknownVariableType]
-            (
-                None
-                if r is None
-                else r if isinstance(r, np.ndarray) else tf.make_ndarray(r)
-            )
+            (None if r is None else r if isinstance(r, np.ndarray) else r.numpy())
             for r in result  # pyright: ignore[reportUnknownVariableType]
         ]
 
