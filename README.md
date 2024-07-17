@@ -124,6 +124,11 @@ The model specification and its validation tools can be found at <https://github
 
 ## Changelog
 
+### 0.6.8 (to be released)
+
+* testing model inference will now check all weight formats
+  (previously only the first one for which model adapter creation succeeded had been checked)
+
 ### 0.6.7
 
 * `predict()` argument `inputs` may be sample
