@@ -60,7 +60,7 @@ class ModelAdapter(ABC):
             )
 
         weights = model_description.weights
-        errors: List[Tuple[str, str]] = []
+        errors: List[Tuple[WeightsFormat, Exception]] = []
         weight_format_priority_order = (
             DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER
             if weight_format_priority_order is None
@@ -82,7 +82,7 @@ class ModelAdapter(ABC):
                         devices=devices,
                     )
                 except Exception as e:
-                    errors.append((wf, str(e)))
+                    errors.append((wf, e))
             elif (
                 wf == "tensorflow_saved_model_bundle"
                 and weights.tensorflow_saved_model_bundle is not None
@@ -94,7 +94,7 @@ class ModelAdapter(ABC):
                         model_description=model_description, devices=devices
                     )
                 except Exception as e:
-                    errors.append((wf, str(e)))
+                    errors.append((wf, e))
             elif wf == "onnx" and weights.onnx is not None:
                 try:
                     from ._onnx_model_adapter import ONNXModelAdapter
@@ -103,7 +103,7 @@ class ModelAdapter(ABC):
                         model_description=model_description, devices=devices
                     )
                 except Exception as e:
-                    errors.append((wf, str(e)))
+                    errors.append((wf, e))
             elif wf == "torchscript" and weights.torchscript is not None:
                 try:
                     from ._torchscript_model_adapter import TorchscriptModelAdapter
@@ -112,7 +112,7 @@ class ModelAdapter(ABC):
                         model_description=model_description, devices=devices
                     )
                 except Exception as e:
-                    errors.append((wf, str(e)))
+                    errors.append((wf, e))
             elif wf == "keras_hdf5" and weights.keras_hdf5 is not None:
                 # keras can either be installed as a separate package or used as part of tensorflow
                 # we try to first import the keras model adapter using the separate package and,
@@ -130,22 +130,22 @@ class ModelAdapter(ABC):
                         model_description=model_description, devices=devices
                     )
                 except Exception as e:
-                    errors.append((wf, str(e)))
+                    errors.append((wf, e))
 
         assert errors
         if len(weight_format_priority_order) == 1:
             assert len(errors) == 1
             raise ValueError(
-                f"The '{weight_format_priority_order[0]}' model adapter could not be created for"
-                + f" '{model_description.id or model_description.name}'"
-                + f" in this environment:\n{errors[0][1]}.\n\n"
+                f"The '{weight_format_priority_order[0]}' model adapter could not be created"
+                + f" in this environment:\n{errors[0][1].__class__.__name__}({errors[0][1]}).\n\n"
             )
 
         else:
-            error_list = "\n - ".join(f"{wf}: {e}" for wf, e in errors)
+            error_list = "\n - ".join(
+                f"{wf}: {e.__class__.__name__}({e})" for wf, e in errors
+            )
             raise ValueError(
-                "None of the weight format specific model adapters could be created for"
-                + f" '{model_description.id or model_description.name}'"
+                "None of the weight format specific model adapters could be created"
                 + f" in this environment. Errors are:\n\n{error_list}.\n\n"
             )
 
