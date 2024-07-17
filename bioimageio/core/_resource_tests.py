@@ -1,5 +1,6 @@
 import traceback
 import warnings
+from itertools import product
 from typing import Dict, Hashable, List, Literal, Optional, Set, Tuple, Union
 
 import numpy as np
@@ -179,31 +180,38 @@ def _test_model_inference_parametrized(
     model: v0_5.ModelDescr,
     weight_format: Optional[WeightsFormat],
     devices: Optional[List[str]],
-    test_cases: Set[Tuple[v0_5.ParameterizedSize.N, BatchSize]] = {
-        (0, 2),
-        (1, 3),
-        (2, 1),
-        (3, 2),
-    },
 ) -> None:
-    if not test_cases:
-        return
-
-    logger.info(
-        "Testing inference with {} different input tensor sizes", len(test_cases)
-    )
-
     if not any(
         isinstance(a.size, v0_5.ParameterizedSize)
         for ipt in model.inputs
         for a in ipt.axes
     ):
         # no parameterized sizes => set n=0
-        test_cases = {(0, b) for _n, b in test_cases}
+        ns: Set[v0_5.ParameterizedSize.N] = {0}
+    else:
+        ns = {0, 1, 2}
 
-    if not any(isinstance(a, v0_5.BatchAxis) for ipt in model.inputs for a in ipt.axes):
-        # no batch axis => set b=1
-        test_cases = {(n, 1) for n, _b in test_cases}
+    given_batch_sizes = {
+        a.size
+        for ipt in model.inputs
+        for a in ipt.axes
+        if isinstance(a, v0_5.BatchAxis)
+    }
+    if given_batch_sizes:
+        batch_sizes = {gbs for gbs in given_batch_sizes if gbs is not None}
+        if not batch_sizes:
+            # only arbitrary batch sizes
+            batch_sizes = {1, 2}
+    else:
+        # no batch axis
+        batch_sizes = {1}
+
+    test_cases: Set[Tuple[v0_5.ParameterizedSize.N, BatchSize]] = {
+        (n, b) for n, b in product(sorted(ns), sorted(batch_sizes))
+    }
+    logger.info(
+        "Testing inference with {} different input tensor sizes", len(test_cases)
+    )
 
     def generate_test_cases():
         tested: Set[Hashable] = set()
