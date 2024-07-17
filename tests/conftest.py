@@ -115,23 +115,12 @@ TORCHSCRIPT_MODELS = (
         "unet2d_nuclei_broad_model",
     ]
 )
-ONNX_MODELS = (
-    []
-    if onnxruntime is None
-    else [
-        "hpa_densenet",
-        "unet2d_multi_tensor",
-        "unet2d_nuclei_broad_model",
-    ]
-)
+ONNX_MODELS = [] if onnxruntime is None else ["hpa_densenet"]
 TENSORFLOW_MODELS = (
     []
     if tensorflow is None
     else (
-        [
-            "hpa_densenet",
-            "stardist",
-        ]
+        ["stardist"]
         if tf_major_version == 1
         else [
             "unet2d_keras_tf2",
