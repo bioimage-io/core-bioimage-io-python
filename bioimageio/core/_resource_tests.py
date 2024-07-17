@@ -103,9 +103,16 @@ def load_description_and_test(
         _test_expected_resource_type(rd, expected_type)
 
     if isinstance(rd, (v0_4.ModelDescr, v0_5.ModelDescr)):
-        _test_model_inference(rd, weight_format, devices, decimal)
-        if not isinstance(rd, v0_4.ModelDescr):
-            _test_model_inference_parametrized(rd, weight_format, devices)
+        if weight_format is None:
+            weight_formats: List[WeightsFormat] = [
+                w for w, we in rd.weights if we is not None
+            ]  # pyright: ignore[reportAssignmentType]
+        else:
+            weight_formats = [weight_format]
+        for w in weight_formats:
+            _test_model_inference(rd, w, devices, decimal)
+            if not isinstance(rd, v0_4.ModelDescr):
+                _test_model_inference_parametrized(rd, w, devices)
 
     # TODO: add execution of jupyter notebooks
     # TODO: add more tests
@@ -115,7 +122,7 @@ def load_description_and_test(
 
 def _test_model_inference(
     model: Union[v0_4.ModelDescr, v0_5.ModelDescr],
-    weight_format: Optional[WeightsFormat],
+    weight_format: WeightsFormat,
     devices: Optional[List[str]],
     decimal: int,
 ) -> None:
@@ -161,11 +168,7 @@ def _test_model_inference(
                 if error is None
                 else [
                     ErrorEntry(
-                        loc=(
-                            ("weights",)
-                            if weight_format is None
-                            else ("weights", weight_format)
-                        ),
+                        loc=("weights", weight_format),
                         msg=error,
                         type="bioimageio.core",
                         traceback=tb,
@@ -178,7 +181,7 @@ def _test_model_inference(
 
 def _test_model_inference_parametrized(
     model: v0_5.ModelDescr,
-    weight_format: Optional[WeightsFormat],
+    weight_format: WeightsFormat,
     devices: Optional[List[str]],
 ) -> None:
     if not any(
@@ -300,19 +303,15 @@ def _test_model_inference_parametrized(
 
                 model.validation_summary.add_detail(
                     ValidationDetail(
-                        name="Run inference for inputs with batch_size:"
-                        + f" {batch_size} and size parameter n: {n}",
+                        name=f"Run {weight_format} inference for inputs with"
+                        + f" batch_size: {batch_size} and size parameter n: {n}",
                         status="passed" if error is None else "failed",
                         errors=(
                             []
                             if error is None
                             else [
                                 ErrorEntry(
-                                    loc=(
-                                        ("weights",)
-                                        if weight_format is None
-                                        else ("weights", weight_format)
-                                    ),
+                                    loc=("weights", weight_format),
                                     msg=error,
                                     type="bioimageio.core",
                                 )
@@ -325,15 +324,11 @@ def _test_model_inference_parametrized(
         tb = traceback.format_tb(e.__traceback__)
         model.validation_summary.add_detail(
             ValidationDetail(
-                name="Run inference for parametrized inputs",
+                name=f"Run {weight_format} inference for parametrized inputs",
                 status="failed",
                 errors=[
                     ErrorEntry(
-                        loc=(
-                            ("weights",)
-                            if weight_format is None
-                            else ("weights", weight_format)
-                        ),
+                        loc=("weights", weight_format),
                         msg=error,
                         type="bioimageio.core",
                         traceback=tb,
