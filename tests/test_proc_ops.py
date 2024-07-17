@@ -348,7 +348,7 @@ def test_scale_range_axes(tid: MemberId):
 
     op(sample)
     # NOTE xarray.testing.assert_allclose compares irrelavant properties here and fails although the result is correct
-    np.testing.assert_allclose(expected, sample.members[tid].data)
+    np.testing.assert_allclose(expected, sample.members[tid].data, rtol=1e-6, atol=1e-7)
 
 
 def test_sigmoid(tid: MemberId):

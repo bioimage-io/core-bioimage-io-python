@@ -1,8 +1,8 @@
-import warnings
 import zipfile
 from typing import List, Literal, Optional, Sequence, Union
 
 import numpy as np
+from loguru import logger
 
 from bioimageio.spec.common import FileSource
 from bioimageio.spec.model import v0_4, v0_5
@@ -46,19 +46,19 @@ class TensorflowModelAdapterBase(ModelAdapter):
         )
         model_tf_version = weights.tensorflow_version
         if model_tf_version is None:
-            warnings.warn(
+            logger.warning(
                 "The model does not specify the tensorflow version."
                 + f"Cannot check if it is compatible with intalled tensorflow {tf_version}."
             )
         elif model_tf_version > tf_version:
-            warnings.warn(
+            logger.warning(
                 f"The model specifies a newer tensorflow version than installed: {model_tf_version} > {tf_version}."
             )
         elif (model_tf_version.major, model_tf_version.minor) != (
             tf_version.major,
             tf_version.minor,
         ):
-            warnings.warn(
+            logger.warning(
                 "The tensorflow version specified by the model does not match the installed: "
                 + f"{model_tf_version} != {tf_version}."
             )
@@ -70,7 +70,7 @@ class TensorflowModelAdapterBase(ModelAdapter):
 
         # TODO tf device management
         if devices is not None:
-            warnings.warn(
+            logger.warning(
                 f"Device management is not implemented for tensorflow yet, ignoring the devices {devices}"
             )
 
@@ -98,9 +98,20 @@ class TensorflowModelAdapterBase(ModelAdapter):
         weight_file = self.require_unzipped(weight_file)
         assert tf is not None
         if self.use_keras_api:
-            return tf.keras.models.load_model(
-                weight_file, compile=False
-            )  # pyright: ignore[reportUnknownVariableType]
+            try:
+                return tf.keras.layers.TFSMLayer(
+                    weight_file, call_endpoint="serve"
+                )  # pyright: ignore[reportUnknownVariableType]
+            except Exception as e:
+                try:
+                    return tf.keras.layers.TFSMLayer(
+                        weight_file, call_endpoint="serving_default"
+                    )  # pyright: ignore[reportUnknownVariableType]
+                except Exception as ee:
+                    logger.opt(exception=ee).info(
+                        "keras.layers.TFSMLayer error for alternative call_endpoint='serving_default'"
+                    )
+                    raise e
         else:
             # NOTE in tf1 the model needs to be loaded inside of the session, so we cannot preload the model
             return str(weight_file)
@@ -189,24 +200,15 @@ class TensorflowModelAdapterBase(ModelAdapter):
             None if ipt is None else tf.convert_to_tensor(ipt) for ipt in input_tensors
         ]
 
-        try:
-            result = (  # pyright: ignore[reportUnknownVariableType]
-                self._network.forward(*tf_tensor)
-            )
-        except AttributeError:
-            result = (  # pyright: ignore[reportUnknownVariableType]
-                self._network.predict(*tf_tensor)
-            )
+        result = self._network(*tf_tensor)  # pyright: ignore[reportUnknownVariableType]
 
-        if not isinstance(result, (tuple, list)):
-            result = [result]  # pyright: ignore[reportUnknownVariableType]
+        assert isinstance(result, dict)
+
+        # TODO: Use RDF's `outputs[i].id` here
+        result = list(result.values())
 
         return [  # pyright: ignore[reportUnknownVariableType]
-            (
-                None
-                if r is None
-                else r if isinstance(r, np.ndarray) else tf.make_ndarray(r)
-            )
+            (None if r is None else r if isinstance(r, np.ndarray) else r.numpy())
             for r in result  # pyright: ignore[reportUnknownVariableType]
         ]
 
@@ -230,7 +232,7 @@ class TensorflowModelAdapterBase(ModelAdapter):
         ]
 
     def unload(self) -> None:
-        warnings.warn(
+        logger.warning(
             "Device management is not implemented for keras yet, cannot unload model"
         )
 

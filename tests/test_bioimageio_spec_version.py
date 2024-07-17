@@ -23,14 +23,23 @@ def test_bioimageio_spec_version(mamba_cmd: Optional[str]):
     )
     full_out = mamba_repoquery.stdout  # full output includes mamba banner
     search = json.loads(full_out[full_out.find("{") :])  # json output starts at '{'
-    rmaj, rmin, rpatch, *_ = search["result"]["pkgs"][0]["version"].split(".")
+    latest_spec = max(search["result"]["pkgs"], key=lambda entry: entry["timestamp"])
+    rmaj, rmin, rpatch, *_ = latest_spec["version"].split(".")
     released = Version(f"{rmaj}.{rmin}.{rpatch}")
 
     # get currently pinned bioimageio.spec version
     meta = metadata("bioimageio.core")
     req = meta["Requires-Dist"]
-    assert req.startswith("bioimageio.spec ==")
-    spec_ver = req[len("bioimageio.spec ==") :]
+    valid_starts = ("bioimageio.spec ==", "bioimageio.spec==")
+    for start in valid_starts:
+        if req.startswith(start):
+            spec_ver = req[len(start) :]
+            break
+    else:
+        raise ValueError(
+            f"Expected bioimageio.sepc pin to start with any of {valid_starts}"
+        )
+
     assert spec_ver.count(".") == 3
     pmaj, pmin, ppatch, post = spec_ver.split(".")
     assert (
