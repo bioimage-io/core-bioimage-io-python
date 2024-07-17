@@ -50,6 +50,7 @@ class TorchscriptModelAdapter(ModelAdapter):
 
         self._model = torch.jit.load(weight_path)
         self._model.to(self.devices[0])
+        self._model = self._model.eval()
         self._internal_output_axes = [
             tuple(a.id for a in get_axes_infos(out))
             for out in model_description.outputs
