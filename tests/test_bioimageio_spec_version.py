@@ -23,7 +23,8 @@ def test_bioimageio_spec_version(mamba_cmd: Optional[str]):
     )
     full_out = mamba_repoquery.stdout  # full output includes mamba banner
     search = json.loads(full_out[full_out.find("{") :])  # json output starts at '{'
-    rmaj, rmin, rpatch, *_ = search["result"]["pkgs"][0]["version"].split(".")
+    latest_spec = max(search["result"]["pkgs"], key=lambda entry: entry["timestamp"])
+    rmaj, rmin, rpatch, *_ = latest_spec["version"].split(".")
     released = Version(f"{rmaj}.{rmin}.{rpatch}")
 
     # get currently pinned bioimageio.spec version
