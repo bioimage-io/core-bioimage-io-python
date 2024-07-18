@@ -1,6 +1,6 @@
 ![License](https://img.shields.io/github/license/bioimage-io/core-bioimage-io-python.svg)
-![PyPI](https://img.shields.io/pypi/v/bioimageio-core.svg?style=popout)
-![conda-version](https://anaconda.org/conda-forge/bioimageio.core/badges/version.svg)
+[![PyPI](https://img.shields.io/pypi/v/bioimageio-core.svg?style=popout)](https://pypi.org/project/bioimageio.core/)
+[![conda-version](https://anaconda.org/conda-forge/bioimageio.core/badges/version.svg)](https://anaconda.org/conda-forge/bioimageio.core/)
 [![downloads](https://static.pepy.tech/badge/bioimageio.core)](https://pepy.tech/project/bioimageio.core)
 [![conda-forge downloads](https://img.shields.io/conda/dn/conda-forge/bioimageio.core.svg?label=conda-forge)](https://anaconda.org/conda-forge/bioimageio.core/)
 ![code style](https://img.shields.io/badge/code%20style-black-000000.svg)
