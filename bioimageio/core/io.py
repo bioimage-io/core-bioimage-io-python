@@ -47,7 +47,7 @@ def save_sample(path: Union[Path, str], sample: Sample) -> None:
     `path` must contain `{member_id}` and may contain `{sample_id}`,
     which are resolved with the `sample` object.
     """
-    if "{member_id}" not in path:
+    if "{member_id}" not in str(path):
         raise ValueError(f"missing `{{member_id}}` in path {path}")
 
     path = str(path).format(sample_id=sample.id, member_id="{member_id}")

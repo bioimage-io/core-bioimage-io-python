@@ -1,18 +1,27 @@
 """The `Bioimageio` class defined here has static methods that constitute the `bioimageio` command line interface (using fire)"""
 
+import difflib
 import sys
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 import fire
+from tqdm import tqdm
 
 from bioimageio.core import __version__, test_description
+from bioimageio.core._prediction_pipeline import create_prediction_pipeline
+from bioimageio.core.common import MemberId
+from bioimageio.core.digest_spec import load_sample_for_model
+from bioimageio.core.io import save_sample
+from bioimageio.core.stat_measures import Stat
 from bioimageio.spec import (
+    InvalidDescr,
+    load_description,
     load_description_and_validate_format_only,
     save_bioimageio_package,
 )
 from bioimageio.spec.dataset import DatasetDescr
-from bioimageio.spec.model import ModelDescr
+from bioimageio.spec.model import ModelDescr, v0_4, v0_5
 from bioimageio.spec.model.v0_5 import WeightsFormat
 from bioimageio.spec.notebook import NotebookDescr
 
@@ -81,6 +90,93 @@ class Bioimageio:
         summary.display()
         sys.exit(0 if summary.status == "passed" else 1)
 
+    @staticmethod
+    def predict(
+        model: str,
+        output_pattern: str = "{detected_sample_name}_{i:04}/{member_id}.npy",
+        overwrite: bool = False,
+        with_blocking: bool = False,
+        # precomputed_stats: Path,  # TODO: add arg to read precomputed stats as yaml or json
+        **inputs: str,
+    ):
+        if "{member_id}" not in output_pattern:
+            raise ValueError("'{member_id}' must be included in output_pattern")
+
+        glob_matched_inputs: Dict[MemberId, List[Path]] = {}
+        n_glob_matches: Dict[int, List[str]] = {}
+        seq_matcher: Optional[difflib.SequenceMatcher[str]] = None
+        detected_sample_name = "sample"
+        for name, pattern in inputs.items():
+            paths = sorted(Path().glob(pattern))
+            if not paths:
+                raise FileNotFoundError(f"No file matched glob pattern '{pattern}'")
+
+            glob_matched_inputs[MemberId(name)] = paths
+            n_glob_matches.setdefault(len(paths), []).append(pattern)
+            if seq_matcher is None:
+                seq_matcher = difflib.SequenceMatcher(a=paths[0].name)
+            else:
+                seq_matcher.set_seq2(paths[0].name)
+                detected_sample_name = "_".join(
+                    paths[0].name[m.b : m.b + m.size]
+                    for m in seq_matcher.get_matching_blocks()
+                    if m.size > 3
+                )
+
+        if len(n_glob_matches) > 1:
+            raise ValueError(
+                f"Different match counts for input glob patterns: '{n_glob_matches}'"
+            )
+        n_inputs = list(n_glob_matches)[0]
+        if n_inputs == 0:
+            raise FileNotFoundError(
+                f"Did not find any input files at {inputs} respectively"
+            )
+
+        if n_inputs > 1 and "{i}" not in output_pattern and "{i:" not in output_pattern:
+            raise ValueError(
+                f"Found multiple input samples, thus `output_pattern` ({output_pattern})"
+                + " must include a replacement field for `i` delimited by {}, e.g. {i}."
+                + " See https://docs.python.org/3/library/string.html#formatstrings for formatting details."
+            )
+
+        model_descr = load_description(model)
+        model_descr.validation_summary.display()
+        if isinstance(model_descr, InvalidDescr):
+            raise ValueError(f"model is invalid")
+
+        if not isinstance(model_descr, (v0_4.ModelDescr, v0_5.ModelDescr)):
+            raise ValueError(
+                f"expected a model resource, but got resource type '{model_descr.type}'"
+            )
+
+        pp = create_prediction_pipeline(model_descr)
+        predict_method = (
+            pp.predict_sample_with_blocking
+            if with_blocking
+            else pp.predict_sample_without_blocking
+        )
+        stat: Stat = {}
+        for i in tqdm(range(n_inputs), total=n_inputs, desc="predict"):
+            output_path = Path(
+                output_pattern.format(
+                    detected_sample_name=detected_sample_name,
+                    i=i,
+                    member_id="{member_id}",
+                )
+            )
+            if not overwrite and output_path.exists():
+                raise FileExistsError(output_path)
+
+            input_sample = load_sample_for_model(
+                model=model_descr,
+                paths={name: paths[i] for name, paths in glob_matched_inputs.items()},
+                stat=stat,
+                sample_id=f"{detected_sample_name}_{i}",
+            )
+            output_sample = predict_method(input_sample)
+            save_sample(output_path, output_sample)
+
 
 assert isinstance(Bioimageio.__doc__, str)
 Bioimageio.__doc__ += f"""
@@ -95,6 +191,7 @@ spec format versions:
      notebook RDF {NotebookDescr.implemented_format_version}
 
 """
+
 
 # TODO: add predict commands
 # @app.command()
