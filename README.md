@@ -9,6 +9,64 @@
 
 Python specific core utilities for bioimage.io resources (in particular models).
 
+## Get started
+
+To get started we recommend installing bioimageio.core with conda together with a deep
+learning framework, e.g. pytorch, and run a few `bioimageio` commands to see what
+bioimage.core offers.
+
+1. install with conda (for more details on conda environments, [checkout the ])
+
+```console
+install -c conda-forge bioimageio.core pytorch
+```
+
+2. run the test for a model
+
+```console
+bioimageio test powerful-chipmunk
+
+testing powerful-chipmunk...
+2024-07-24 17:10:37.470 | INFO     | bioimageio.spec._internal.io_utils:open_bioimageio_yaml:112 - loading powerful-chipmunk from https://uk1s3.embassy.ebi.ac.uk/public-datasets/bioimage.io/powerful-chipmunk/1/files/rdf.yaml
+Updating data from 'https://uk1s3.embassy.ebi.ac.uk/public-datasets/bioimage.io/powerful-chipmunk/1/files/rdf.yaml' to file 'C:\Users\fbeut\AppData\Local\bioimageio\bioimageio\Cache\d968304289dc978b9221e813dc757a3a-rdf.yaml'.
+100%|#####################################| 2.92k/2.92k [00:00<00:00, 1.53MB/s]
+computing SHA256 of 1e659a86d8dd8a7c6cfb3315f4447f5d-weights.pt (result: 3bd9c518c8473f1e35abb7624f82f3aa92f1015e66fb1f6a9d08444e1f2f5698): 100%|██████████████████████████████████████████████████████████████████████████████████████████████████| 884/884 [00:00<00:00, 1006.20it/s]
+computing SHA256 of 97a83ece802cfc5ba362aa76b5f77c3a-weights-torchscript.pt (result: 4e568fd81c0ffa06ce13061327c3f673e1bac808891135badd3b0fcdacee086b): 100%|██████████████████████████████████████████████████████████████████████████████████████| 885/885 [00:00<00:00, 1229.39it/s]
+2024-07-24 17:10:44.596 | INFO     | bioimageio.core._resource_tests:_test_model_inference:130 - starting 'Reproduce test outputs from test inputs'
+2024-07-24 17:11:00.136 | INFO     | bioimageio.core._resource_tests:_test_model_inference:130 - starting 'Reproduce test outputs from test inputs'
+
+
+  ✔️                 bioimageio validation passed
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  source            https://uk1s3.embassy.ebi.ac.uk/public-datasets/bioimage.io/powerful-chipmunk/1/files/rdf.yaml
+  format version    model 0.4.10
+  bioimageio.spec   0.5.3post4
+  bioimageio.core   0.6.8
+
+
+
+  ❓   location                                     detail
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ✔️                                                 initialized ModelDescr to describe model 0.4.10
+
+  ✔️                                                 bioimageio.spec format validation model 0.4.10
+  🔍   context.perform_io_checks                    True
+  🔍   context.root                                 https://uk1s3.embassy.ebi.ac.uk/public-datasets/bioimage.io/powerful-chipmunk/1/files
+  🔍   context.known_files.weights.pt               3bd9c518c8473f1e35abb7624f82f3aa92f1015e66fb1f6a9d08444e1f2f5698
+  🔍   context.known_files.weights-torchscript.pt   4e568fd81c0ffa06ce13061327c3f673e1bac808891135badd3b0fcdacee086b
+  🔍   context.warning_level                        error
+
+  ✔️                                                 Reproduce test outputs from test inputs
+
+  ✔️                                                 Reproduce test outputs from test inputs
+```
+
+3. run prediction on your data
+
+```console
+bioimageio predict powerful-chipmunk <path to your input data>
+```
+
 ## Installation
 
 ### Via Mamba/Conda
