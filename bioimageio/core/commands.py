@@ -37,7 +37,10 @@ class Bioimageio:
         path: str = "bioimageio-package.zip",
         weight_format: Optional[WeightsFormat] = None,
     ):
-        """Package a bioimageio resource as a zip file
+        """Package a bioimageio resource as a zip file.
+
+        Note: If `path` does not have a `.zip` suffix this command will save the
+              package as an unzipped folder instead.
 
         Args:
             source: RDF source e.g. `bioimageio.yaml` or `http://example.com/rdf.yaml`
