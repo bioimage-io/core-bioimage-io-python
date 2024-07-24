@@ -8,6 +8,7 @@ from typing import Dict, List, Optional, Union
 import fire
 from tqdm import tqdm
 
+import bioimageio.spec.generic
 from bioimageio.core import __version__, test_description
 from bioimageio.core._prediction_pipeline import create_prediction_pipeline
 from bioimageio.core.common import MemberId
@@ -21,7 +22,7 @@ from bioimageio.spec import (
     save_bioimageio_package,
 )
 from bioimageio.spec.dataset import DatasetDescr
-from bioimageio.spec.model import ModelDescr, v0_4, v0_5
+from bioimageio.spec.model import ModelDescr
 from bioimageio.spec.model.v0_5 import WeightsFormat
 from bioimageio.spec.notebook import NotebookDescr
 
@@ -143,12 +144,20 @@ class Bioimageio:
         model_descr = load_description(model)
         model_descr.validation_summary.display()
         if isinstance(model_descr, InvalidDescr):
-            raise ValueError(f"model is invalid")
+            raise ValueError("model is invalid")
 
-        if not isinstance(model_descr, (v0_4.ModelDescr, v0_5.ModelDescr)):
+        if model_descr.type != "model":
             raise ValueError(
                 f"expected a model resource, but got resource type '{model_descr.type}'"
             )
+
+        assert not isinstance(
+            model_descr,
+            (
+                bioimageio.spec.generic.v0_2.GenericDescr,
+                bioimageio.spec.generic.v0_3.GenericDescr,
+            ),
+        )
 
         pp = create_prediction_pipeline(model_descr)
         predict_method = (
