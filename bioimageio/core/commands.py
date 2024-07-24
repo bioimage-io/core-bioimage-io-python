@@ -20,6 +20,7 @@ from bioimageio.spec import (
     load_description,
     load_description_and_validate_format_only,
     save_bioimageio_package,
+    save_bioimageio_package_as_folder,
 )
 from bioimageio.spec.dataset import DatasetDescr
 from bioimageio.spec.model import ModelDescr
@@ -33,7 +34,7 @@ class Bioimageio:
     @staticmethod
     def package(
         source: str,
-        path: Path = Path("bioimageio-package.zip"),
+        path: str = "bioimageio-package.zip",
         weight_format: Optional[WeightsFormat] = None,
     ):
         """Package a bioimageio resource as a zip file
@@ -43,11 +44,23 @@ class Bioimageio:
             path: output path
             weight-format: include only this single weight-format
         """
-        _ = save_bioimageio_package(
-            source,
-            output_path=path,
-            weights_priority_order=None if weight_format is None else (weight_format,),
-        )
+        output_path = Path(path)
+        if output_path.suffix == ".zip":
+            _ = save_bioimageio_package(
+                source,
+                output_path=output_path,
+                weights_priority_order=(
+                    None if weight_format is None else (weight_format,)
+                ),
+            )
+        else:
+            _ = save_bioimageio_package_as_folder(
+                source,
+                output_path=output_path,
+                weights_priority_order=(
+                    None if weight_format is None else (weight_format,)
+                ),
+            )
 
     @staticmethod
     def test(
