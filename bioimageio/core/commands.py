@@ -21,7 +21,7 @@ from bioimageio.spec import (
     save_bioimageio_package_as_folder,
 )
 from bioimageio.spec.dataset import DatasetDescr
-from bioimageio.spec.model import ModelDescr
+from bioimageio.spec.model import ModelDescr, v0_4
 from bioimageio.spec.model.v0_5 import WeightsFormat
 from bioimageio.spec.notebook import NotebookDescr
 
@@ -114,11 +114,19 @@ class Bioimageio:
         # precomputed_stats: Path,  # TODO: add arg to read precomputed stats as yaml or json
         **inputs: str,
     ):
-        if "{member_id}" not in output_pattern:
-            raise ValueError("'{member_id}' must be included in output_pattern")
-
         if not inputs:
             model_descr = load_model_description(model, perform_io_checks=False)
+            input_ids = [
+                ipt.name if isinstance(model_descr, v0_4.ModelDescr) else ipt.id
+                for ipt in model_descr.inputs
+            ]
+            input_flags = [f"--{ipt} <input path (pattern)>" for ipt in input_ids]
+            raise ValueError(
+                f"expected inputs {input_flags} for model {model_descr.id or model_descr.name}"
+            )
+
+        if "{member_id}" not in output_pattern:
+            raise ValueError("'{member_id}' must be included in output_pattern")
 
         glob_matched_inputs: Dict[MemberId, List[Path]] = {}
         n_glob_matches: Dict[int, List[str]] = {}
