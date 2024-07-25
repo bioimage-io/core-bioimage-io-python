@@ -8,7 +8,6 @@ from typing import Dict, List, Optional, Union
 import fire
 from tqdm import tqdm
 
-import bioimageio.spec.generic
 from bioimageio.core import __version__, test_description
 from bioimageio.core._prediction_pipeline import create_prediction_pipeline
 from bioimageio.core.common import MemberId
@@ -16,9 +15,8 @@ from bioimageio.core.digest_spec import load_sample_for_model
 from bioimageio.core.io import save_sample
 from bioimageio.core.stat_measures import Stat
 from bioimageio.spec import (
-    InvalidDescr,
-    load_description,
     load_description_and_validate_format_only,
+    load_model_description,
     save_bioimageio_package,
     save_bioimageio_package_as_folder,
 )
@@ -119,6 +117,9 @@ class Bioimageio:
         if "{member_id}" not in output_pattern:
             raise ValueError("'{member_id}' must be included in output_pattern")
 
+        if not inputs:
+            model_descr = load_model_description(model, perform_io_checks=False)
+
         glob_matched_inputs: Dict[MemberId, List[Path]] = {}
         n_glob_matches: Dict[int, List[str]] = {}
         seq_matcher: Optional[difflib.SequenceMatcher[str]] = None
@@ -157,24 +158,7 @@ class Bioimageio:
                 + " See https://docs.python.org/3/library/string.html#formatstrings for formatting details."
             )
 
-        model_descr = load_description(model)
-        model_descr.validation_summary.display()
-        if isinstance(model_descr, InvalidDescr):
-            raise ValueError("model is invalid")
-
-        if model_descr.type != "model":
-            raise ValueError(
-                f"expected a model resource, but got resource type '{model_descr.type}'"
-            )
-
-        assert not isinstance(
-            model_descr,
-            (
-                bioimageio.spec.generic.v0_2.GenericDescr,
-                bioimageio.spec.generic.v0_3.GenericDescr,
-            ),
-        )
-
+        model_descr = load_model_description(model)
         pp = create_prediction_pipeline(model_descr)
         predict_method = (
             pp.predict_sample_with_blocking
