@@ -190,7 +190,7 @@ def _test_model_inference_parametrized(
         for a in ipt.axes
     ):
         # no parameterized sizes => set n=0
-        ns: Set[v0_5.ParameterizedSize.N] = {0}
+        ns: Set[v0_5.ParameterizedSize_N] = {0}
     else:
         ns = {0, 1, 2}
 
@@ -209,7 +209,7 @@ def _test_model_inference_parametrized(
         # no batch axis
         batch_sizes = {1}
 
-    test_cases: Set[Tuple[v0_5.ParameterizedSize.N, BatchSize]] = {
+    test_cases: Set[Tuple[v0_5.ParameterizedSize_N, BatchSize]] = {
         (n, b) for n, b in product(sorted(ns), sorted(batch_sizes))
     }
     logger.info(

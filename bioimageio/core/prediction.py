@@ -37,8 +37,8 @@ def predict(
     sample_id: Hashable = "sample",
     blocksize_parameter: Optional[
         Union[
-            v0_5.ParameterizedSize.N,
-            Mapping[Tuple[MemberId, AxisId], v0_5.ParameterizedSize.N],
+            v0_5.ParameterizedSize_N,
+            Mapping[Tuple[MemberId, AxisId], v0_5.ParameterizedSize_N],
         ]
     ] = None,
     skip_preprocessing: bool = False,
@@ -111,8 +111,8 @@ def predict_many(
     sample_id: str = "sample{i:03}",
     blocksize_parameter: Optional[
         Union[
-            v0_5.ParameterizedSize.N,
-            Mapping[Tuple[MemberId, AxisId], v0_5.ParameterizedSize.N],
+            v0_5.ParameterizedSize_N,
+            Mapping[Tuple[MemberId, AxisId], v0_5.ParameterizedSize_N],
         ]
     ] = None,
     skip_preprocessing: bool = False,

@@ -55,8 +55,8 @@ class PredictionPipeline:
         postprocessing: List[Processing],
         model_adapter: ModelAdapter,
         default_ns: Union[
-            v0_5.ParameterizedSize.N,
-            Mapping[Tuple[MemberId, AxisId], v0_5.ParameterizedSize.N],
+            v0_5.ParameterizedSize_N,
+            Mapping[Tuple[MemberId, AxisId], v0_5.ParameterizedSize_N],
         ] = 10,
         default_batch_size: int = 1,
     ) -> None:
@@ -186,8 +186,8 @@ class PredictionPipeline:
         skip_postprocessing: bool = False,
         ns: Optional[
             Union[
-                v0_5.ParameterizedSize.N,
-                Mapping[Tuple[MemberId, AxisId], v0_5.ParameterizedSize.N],
+                v0_5.ParameterizedSize_N,
+                Mapping[Tuple[MemberId, AxisId], v0_5.ParameterizedSize_N],
             ]
         ] = None,
         batch_size: Optional[int] = None,
@@ -310,8 +310,8 @@ def create_prediction_pipeline(
     ),
     model_adapter: Optional[ModelAdapter] = None,
     ns: Union[
-        v0_5.ParameterizedSize.N,
-        Mapping[Tuple[MemberId, AxisId], v0_5.ParameterizedSize.N],
+        v0_5.ParameterizedSize_N,
+        Mapping[Tuple[MemberId, AxisId], v0_5.ParameterizedSize_N],
     ] = 10,
     **deprecated_kwargs: Any,
 ) -> PredictionPipeline:

@@ -274,7 +274,7 @@ def get_block_transform(model: v0_5.ModelDescr):
 def get_io_sample_block_metas(
     model: v0_5.ModelDescr,
     input_sample_shape: PerMember[PerAxis[int]],
-    ns: Mapping[Tuple[MemberId, AxisId], ParameterizedSize.N],
+    ns: Mapping[Tuple[MemberId, AxisId], ParameterizedSize_N],
     batch_size: int = 1,
 ) -> Tuple[TotalNumberOfBlocks, Iterable[IO_SampleBlockMeta]]:
     """returns an iterable yielding meta data for corresponding input and output samples"""
