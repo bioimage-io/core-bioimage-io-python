@@ -126,7 +126,7 @@ def _test_model_inference(
     devices: Optional[List[str]],
     decimal: int,
 ) -> None:
-    test_name = "Reproduce test outputs from test inputs"
+    test_name = f"Reproduce test outputs from test inputs ({weight_format})"
     logger.info("starting '{}'", test_name)
     error: Optional[str] = None
     tb: List[str] = []
