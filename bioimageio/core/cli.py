@@ -336,7 +336,7 @@ class Bioimageio(
 ):
     """bioimageio - CLI for bioimage.io resources 🦒"""
 
-    validate_format: CliSubCommand[ValidateFormatCmd] = Field(alias="validate-format")
+    validate_format: CliSubCommand[ValidateFormatCmd]
     "Check a resource's metadata format"
 
     test: CliSubCommand[TestCmd]
