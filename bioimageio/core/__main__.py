@@ -1,5 +1,10 @@
 from bioimageio.core.cli import Bioimageio
 
-if __name__ == "__main__":
+
+def main():
     cli = Bioimageio()  # pyright: ignore[reportCallIssue]
     cli.run()
+
+
+if __name__ == "__main__":
+    main()
