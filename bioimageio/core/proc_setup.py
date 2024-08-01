@@ -63,11 +63,15 @@ def setup_pre_and_postprocessing(
         for m in prep_meas | post_meas
         if fixed_dataset_stats is None or m not in fixed_dataset_stats
     }
-    initial_stats_calc = StatsCalculator(missing_dataset_stats)
-    for sample in dataset_for_initial_statistics:
-        initial_stats_calc.update(sample)
+    if missing_dataset_stats:
+        initial_stats_calc = StatsCalculator(missing_dataset_stats)
+        for sample in dataset_for_initial_statistics:
+            initial_stats_calc.update(sample)
 
-    initial_stats = initial_stats_calc.finalize()
+        initial_stats = initial_stats_calc.finalize()
+    else:
+        initial_stats = {}
+
     prep.insert(
         0,
         UpdateStats(
