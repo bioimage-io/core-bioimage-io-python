@@ -30,11 +30,10 @@ _ = setup(
     packages=find_namespace_packages(exclude=["tests"]),
     install_requires=[
         "bioimageio.spec ==0.5.3.1",
-        "fire",
         "imageio>=2.5",
         "loguru",
         "numpy",
-        "pydantic-settings",
+        "pydantic-settings >=2.3",
         "pydantic",
         "python-dotenv",
         "requests",
