@@ -35,6 +35,7 @@ def load_tensor(path: Path, axes: Optional[Sequence[AxisLike]] = None) -> Tensor
 def save_tensor(path: Path, tensor: Tensor) -> None:
     # TODO: save axis meta data
     data: NDArray[Any] = tensor.data.to_numpy()
+    path.parent.mkdir(exist_ok=True, parents=True)
     if path.suffix == ".npy":
         save_array(path, data)
     else:
