@@ -1,4 +1,5 @@
-from bioimageio.core.commands import main
+from bioimageio.core.cli import Bioimageio
 
 if __name__ == "__main__":
-    main()
+    cli = Bioimageio()  # pyright: ignore[reportCallIssue]
+    cli.run()
