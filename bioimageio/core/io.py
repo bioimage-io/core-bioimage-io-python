@@ -1,9 +1,11 @@
+import collections.abc
 from pathlib import Path
 from typing import Any, Optional, Sequence, Union
 
 import imageio
 from numpy.typing import NDArray
 
+from bioimageio.core.common import PerMember
 from bioimageio.spec.utils import load_array, save_array
 
 from .axis import Axis, AxisLike
@@ -42,16 +44,20 @@ def save_tensor(path: Path, tensor: Tensor) -> None:
         imageio.volwrite(path, data)
 
 
-def save_sample(path: Union[Path, str], sample: Sample) -> None:
+def save_sample(path: Union[Path, str, PerMember[Path]], sample: Sample) -> None:
     """save a sample to path
 
-    `path` must contain `{member_id}` and may contain `{sample_id}`,
+    If `path` is a pathlib.Path or a string it must contain `{member_id}` and may contain `{sample_id}`,
     which are resolved with the `sample` object.
     """
-    if "{member_id}" not in str(path):
+
+    if not isinstance(path, collections.abc.Mapping) and "{member_id}" not in str(path):
         raise ValueError(f"missing `{{member_id}}` in path {path}")
 
-    path = str(path).format(sample_id=sample.id, member_id="{member_id}")
-
     for m, t in sample.members.items():
-        save_tensor(Path(path.format(member_id=m)), t)
+        if isinstance(path, collections.abc.Mapping):
+            p = path[m]
+        else:
+            p = Path(str(path).format(sample_id=sample.id, member_id=m))
+
+        save_tensor(p, t)
