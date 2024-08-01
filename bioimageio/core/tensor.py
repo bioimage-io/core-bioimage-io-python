@@ -56,11 +56,7 @@ class Tensor(MagicTensorOpsMixin):
         dims: Sequence[AxisId],
     ) -> None:
         super().__init__()
-        if any(not isinstance(d, AxisId) for d in dims):
-            raise TypeError(
-                f"Expected sequence of `AxisId`, but got {list(map(type, dims))}"
-            )
-
+        dims = tuple(AxisId(d) for d in dims)
         self._data = xr.DataArray(array, dims=dims)
 
     def __array__(self, dtype: DTypeLike = None):
