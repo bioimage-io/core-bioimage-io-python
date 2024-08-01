@@ -21,7 +21,7 @@ bioimage.core offers.
 install -c conda-forge bioimageio.core pytorch
 ```
 
-2. run the test for a model
+1. test a model
 
 ```console
 bioimageio test powerful-chipmunk
@@ -61,11 +61,43 @@ computing SHA256 of 97a83ece802cfc5ba362aa76b5f77c3a-weights-torchscript.pt (res
   ✔️                                                 Reproduce test outputs from test inputs
 ```
 
-3. run prediction on your data
+1. run prediction on your data
 
-```console
-bioimageio predict powerful-chipmunk <path to your input data>
-```
+- display the `bioimageio-predict` command interface
+
+  ```console
+  > bioimageio predict -h
+  usage: bioimageio predict [-h] [--inputs {str,Sequence[str]}] [--outputs {str,Sequence[str]}] [--overwrite bool]
+                            [--blockwise bool] [--stats Path]
+                            SOURCE
+
+  bioimageio-predict - Run inference on your data with a bioimage.io model.
+
+  positional arguments:
+    SOURCE                Url/path to a bioimageio.yaml/rdf.yaml file or a bioimage.io resource identifier, e.g.
+                          'affable-shark'
+
+  optional arguments:
+    -h, --help            show this help message and exit
+    --inputs {str,Sequence[str]}
+                          model inputs Either a single path/glob pattern including `{tensor_id}` to be used for all
+                          model inputs, or a list of paths/glob patterns for each model input respectively. For models
+                          with a single input a single path/glob pattern with `{tensor_id}` is also accepted.
+                          (default: model_inputs/*/{tensor_id}.*)
+    --outputs {str,Sequence[str]}
+                          output paths analog to `inputs` (default: outputs_{model_id}/{sample_id}/{tensor_id}.npy)
+    --overwrite bool      allow overwriting existing output files (default: False)
+    --blockwise bool      process inputs blockwise (default: False)
+    --stats Path          path to dataset statistics (will be written if it does not exist, but the model requires
+                          statistical dataset measures) (default: model_inputs\dataset_statistics.json)
+  ```
+
+- locate your input data
+- predict away!
+
+  ```console
+  bioimageio predict affable-shark
+  ```
 
 ## Installation
 
@@ -81,7 +113,7 @@ If you do not install any additional deep learning libraries, you will only be a
 functionality, but not any functionality for model prediction.
 To install additional deep learning libraries use:
 
-* Pytorch/Torchscript:
+- Pytorch/Torchscript:
 
   CPU installation (if you don't have an nvidia graphics card):
 
@@ -97,7 +129,7 @@ To install additional deep learning libraries use:
 
   Note that the pytorch installation instructions may change in the future. For the latest instructions please refer to [pytorch.org](https://pytorch.org/).
 
-* Tensorflow
+- Tensorflow
 
   Currently only CPU version supported
 
@@ -105,7 +137,7 @@ To install additional deep learning libraries use:
   mamba install -c conda-forge bioimageio.core tensorflow
   ```
 
-* ONNXRuntime
+- ONNXRuntime
 
   Currently only cpu version supported
 
@@ -179,7 +211,7 @@ In addition bioimageio.core provides functionality to convert model weight forma
 
 To get an overview of this functionality, check out these example notebooks:
 
-* [model creation/loading with bioimageio.spec](https://github.com/bioimage-io/spec-bioimage-io/blob/main/example/load_model_and_create_your_own.ipynb)
+- [model creation/loading with bioimageio.spec](https://github.com/bioimage-io/spec-bioimage-io/blob/main/example/load_model_and_create_your_own.ipynb)
 
 and the [developer documentation](https://bioimage-io.github.io/core-bioimage-io-python/bioimageio/core.html).
 
@@ -191,45 +223,45 @@ The model specification and its validation tools can be found at <https://github
 
 ### 0.6.8
 
-* testing model inference will now check all weight formats
+- testing model inference will now check all weight formats
   (previously only the first one for which model adapter creation succeeded had been checked)
-* fix predict with blocking (Thanks @thodkatz)
+- fix predict with blocking (Thanks @thodkatz)
 
 ### 0.6.7
 
-* `predict()` argument `inputs` may be sample
+- `predict()` argument `inputs` may be sample
 
 ### 0.6.6
 
-* add aliases to match previous API more closely
+- add aliases to match previous API more closely
 
 ### 0.6.5
 
-* improve adapter error messages
+- improve adapter error messages
 
 ### 0.6.4
 
-* add `bioimageio validate-format` command
-* improve error messages and display of command results
+- add `bioimageio validate-format` command
+- improve error messages and display of command results
 
 ### 0.6.3
 
-* Fix [#386](https://github.com/bioimage-io/core-bioimage-io-python/issues/386)
-* (in model inference testing) stop assuming model inputs are tileable
+- Fix [#386](https://github.com/bioimage-io/core-bioimage-io-python/issues/386)
+- (in model inference testing) stop assuming model inputs are tileable
 
 ### 0.6.2
 
-* Fix [#384](https://github.com/bioimage-io/core-bioimage-io-python/issues/384)
+- Fix [#384](https://github.com/bioimage-io/core-bioimage-io-python/issues/384)
 
 ### 0.6.1
 
-* Fix [#378](https://github.com/bioimage-io/core-bioimage-io-python/pull/378) (with [#379](https://github.com/bioimage-io/core-bioimage-io-python/pull/379))*
+- Fix [#378](https://github.com/bioimage-io/core-bioimage-io-python/pull/378) (with [#379](https://github.com/bioimage-io/core-bioimage-io-python/pull/379))*
 
 ### 0.6.0
 
-* add compatibility with new bioimageio.spec 0.5 (0.5.2post1)
-* improve interfaces
+- add compatibility with new bioimageio.spec 0.5 (0.5.2post1)
+- improve interfaces
 
 ### 0.5.10
 
-* [Fix critical bug in predict with tiling](https://github.com/bioimage-io/core-bioimage-io-python/pull/359)
+- [Fix critical bug in predict with tiling](https://github.com/bioimage-io/core-bioimage-io-python/pull/359)
