@@ -99,7 +99,7 @@ class TestCmd(CmdBase, WithSource):
 class PackageCmd(CmdBase, WithSource):
     """bioimageio-package - save a resource's metadata with its associated files."""
 
-    path: CliPositionalArg[Path] = Path("bioimageio-package.zip")
+    path: CliPositionalArg[Path] = Path("{resource_id}.zip")
     """The path to write the (zipped) package to.
     If it does not have a `.zip` suffix
     this command will save the package as an unzipped folder instead."""
@@ -112,7 +112,11 @@ class PackageCmd(CmdBase, WithSource):
             self.descr.validation_summary.display()
             raise ValueError("resource description is invalid")
 
-        package(self.descr, self.path, weight_format=self.weight_format)
+        package(
+            self.descr,
+            Path(str(self.path).format(resource_id=self.descr.id)),
+            weight_format=self.weight_format,
+        )
 
 
 def _get_stat(
@@ -297,7 +301,8 @@ class PredictCmd(CmdBase, WithSource):
                 yield load_sample_for_model(
                     model=model_descr,
                     paths={
-                        MemberId(name): paths[i] for name, paths in glob_matched_inputs.items()
+                        MemberId(name): paths[i]
+                        for name, paths in glob_matched_inputs.items()
                     },
                     stat=s,
                     sample_id=sample_id,
