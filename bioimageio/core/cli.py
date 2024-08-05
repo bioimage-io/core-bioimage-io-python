@@ -174,6 +174,10 @@ class PredictCmd(CmdBase, WithSource):
     or a list of paths/glob patterns for each model input respectively.
 
     For models with a single input a single path/glob pattern with `{tensor_id}` is also accepted.
+
+    `.npy` and any file extension supported by imageio
+    (listed at https://imageio.readthedocs.io/en/stable/formats/index.html#all-formats)
+    are supported.
     """
 
     outputs: Union[str, Sequence[str]] = (
