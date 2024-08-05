@@ -99,6 +99,23 @@ computing SHA256 of 97a83ece802cfc5ba362aa76b5f77c3a-weights-torchscript.pt (res
   bioimageio predict affable-shark
   ```
 
+- for convenience the command line arguments may be given in a `bioimageio-cli.json` or `bioimageio-cli.yaml` file.
+  The YAML file takes priority over the JSON file.
+  Addtional command line arguments take the highest priority.
+
+  ```yaml
+  # bioimageio-cli.yaml
+  inputs: inputs/*_{tensor_id}.h5
+  outputs: outputs_{model_id}/{sample_id}_{tensor_id}.h5
+  overwrite: true
+  blockwise: true
+  stats: inputs/dataset_statistics.json
+  ```
+
+  ```console
+  bioimageio predict affable-shark
+  ```
+
 ## Installation
 
 ### Via Mamba/Conda
