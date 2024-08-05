@@ -23,6 +23,7 @@ def run_subprocess(
         [
             "package",
             "unet2d_nuclei_broad_model",
+            "output.zip",
             "--weight_format",
             "pytorch_state_dict",
         ],
