@@ -23,14 +23,14 @@ def run_subprocess(
         [
             "package",
             "unet2d_nuclei_broad_model",
-            "--weight-format",
+            "--weight_format",
             "pytorch_state_dict",
         ],
         ["package", "unet2d_nuclei_broad_model"],
         [
             "test",
             "unet2d_nuclei_broad_model",
-            "--weight-format",
+            "--weight_format",
             "pytorch_state_dict",
         ],
         ["test", "unet2d_nuclei_broad_model"],

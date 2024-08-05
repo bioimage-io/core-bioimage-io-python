@@ -58,8 +58,8 @@ def test_zero_mean_unit_variance(tid: MemberId):
 
     data = xr.DataArray(np.arange(9).reshape(3, 3), dims=("x", "y"))
     sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
-    m = SampleMean(tid)
-    std = SampleStd(tid)
+    m = SampleMean(member_id=tid)
+    std = SampleStd(member_id=tid)
     op = ZeroMeanUnitVariance(tid, tid, m, std)
     req = op.required_measures
     sample.stat = compute_measures(req, [sample])
@@ -113,8 +113,8 @@ def test_zero_mean_unit_across_axes(tid: MemberId):
     op = ZeroMeanUnitVariance(
         tid,
         tid,
-        SampleMean(tid, (AxisId("x"), AxisId("y"))),
-        SampleStd(tid, (AxisId("x"), AxisId("y"))),
+        SampleMean(member_id=tid, axes=(AxisId("x"), AxisId("y"))),
+        SampleStd(member_id=tid, axes=(AxisId("x"), AxisId("y"))),
     )
     sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
     sample.stat = compute_measures(op.required_measures, [sample])
@@ -194,12 +194,12 @@ def test_combination_of_op_steps_with_dims_specified(tid: MemberId):
         tid,
         tid,
         SampleMean(
-            tid,
-            (AxisId("x"), AxisId("y")),
+            member_id=tid,
+            axes=(AxisId("x"), AxisId("y")),
         ),
         SampleStd(
-            tid,
-            (AxisId("x"), AxisId("y")),
+            member_id=tid,
+            axes=(AxisId("x"), AxisId("y")),
         ),
     )
     sample.stat = compute_measures(op.required_measures, [sample])
@@ -325,8 +325,8 @@ def test_scale_range_axes(tid: MemberId):
 
     eps = 1.0e-6
 
-    lower_quantile = SampleQuantile(tid, 0.1, axes=(AxisId("x"), AxisId("y")))
-    upper_quantile = SampleQuantile(tid, 0.9, axes=(AxisId("x"), AxisId("y")))
+    lower_quantile = SampleQuantile(member_id=tid, q=0.1, axes=(AxisId("x"), AxisId("y")))
+    upper_quantile = SampleQuantile(member_id=tid, q=0.9, axes=(AxisId("x"), AxisId("y")))
     op = ScaleRange(tid, tid, lower_quantile, upper_quantile, eps=eps)
 
     np_data = np.arange(18).reshape((2, 3, 3)).astype("float32")

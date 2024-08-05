@@ -48,9 +48,9 @@ def test_mean_var_std_calculator(axes: Union[None, str, Tuple[str, ...]]):
         calc.update(s)
 
     actual = calc.finalize()
-    actual_mean = actual[DatasetMean(tid, axes=axes)]
-    actual_var = actual[DatasetVar(tid, axes=axes)]
-    actual_std = actual[DatasetStd(tid, axes=axes)]
+    actual_mean = actual[DatasetMean(member_id=tid, axes=axes)]
+    actual_var = actual[DatasetVar(member_id=tid, axes=axes)]
+    actual_std = actual[DatasetStd(member_id=tid, axes=axes)]
 
     assert_allclose(
         actual_mean if isinstance(actual_mean, (int, float)) else actual_mean.data,
