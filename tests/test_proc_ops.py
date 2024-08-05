@@ -325,8 +325,12 @@ def test_scale_range_axes(tid: MemberId):
 
     eps = 1.0e-6
 
-    lower_quantile = SampleQuantile(member_id=tid, q=0.1, axes=(AxisId("x"), AxisId("y")))
-    upper_quantile = SampleQuantile(member_id=tid, q=0.9, axes=(AxisId("x"), AxisId("y")))
+    lower_quantile = SampleQuantile(
+        member_id=tid, q=0.1, axes=(AxisId("x"), AxisId("y"))
+    )
+    upper_quantile = SampleQuantile(
+        member_id=tid, q=0.9, axes=(AxisId("x"), AxisId("y"))
+    )
     op = ScaleRange(tid, tid, lower_quantile, upper_quantile, eps=eps)
 
     np_data = np.arange(18).reshape((2, 3, 3)).astype("float32")
