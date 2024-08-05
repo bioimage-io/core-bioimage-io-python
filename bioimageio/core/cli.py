@@ -297,7 +297,7 @@ class PredictCmd(CmdBase, WithSource):
                 yield load_sample_for_model(
                     model=model_descr,
                     paths={
-                        name: paths[i] for name, paths in glob_matched_inputs.items()
+                        MemberId(name): paths[i] for name, paths in glob_matched_inputs.items()
                     },
                     stat=s,
                     sample_id=sample_id,
