@@ -90,7 +90,6 @@ class WithSource(ArgMixin):
             )
 
 
-
 class ValidateFormatCmd(CmdBase, WithSource):
     """bioimageio-validate-format - validate the meta data format of a bioimageio resource."""
 
@@ -113,7 +112,12 @@ class TestCmd(CmdBase, WithSource):
     """Precision for numerical comparisons"""
 
     def run(self):
-        test(self.descr, weight_format=self.weight_format, devices=self.devices,decimal= self.decimal)
+        test(
+            self.descr,
+            weight_format=self.weight_format,
+            devices=self.devices,
+            decimal=self.decimal,
+        )
 
 
 class PackageCmd(CmdBase, WithSource):
