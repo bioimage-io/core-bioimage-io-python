@@ -6,6 +6,8 @@ from typing import (
     List,
     Mapping,
     Sequence,
+    Tuple,
+    Type,
     Union,
 )
 
@@ -14,7 +16,12 @@ from pydantic import BaseModel, ConfigDict, TypeAdapter
 from pydantic_settings import (
     BaseSettings,
     CliPositionalArg,
+    CliSettingsSource,
     CliSubCommand,
+    JsonConfigSettingsSource,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+    YamlConfigSettingsSource,
 )
 from tqdm import tqdm
 
@@ -341,6 +348,10 @@ class Bioimageio(
 ):
     """bioimageio - CLI for bioimage.io resources 🦒"""
 
+    model_config = SettingsConfigDict(
+        json_file="bioimageio-cli.json", yaml_file="bioimageio-cli.yaml"
+    )
+
     validate_format: CliSubCommand[ValidateFormatCmd]
     "Check a resource's metadata format"
 
@@ -352,6 +363,25 @@ class Bioimageio(
 
     predict: CliSubCommand[PredictCmd]
     "Predict with a model resource"
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: Type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> Tuple[PydanticBaseSettingsSource, ...]:
+        cli: CliSettingsSource[BaseSettings] = CliSettingsSource(
+            settings_cls, cli_parse_args=True
+        )
+        return (
+            cli,
+            init_settings,
+            YamlConfigSettingsSource(settings_cls),
+            JsonConfigSettingsSource(settings_cls),
+        )
 
     def run(self):
         cmd = self.validate_format or self.test or self.package or self.predict
