@@ -10,7 +10,7 @@ from typing import (
 )
 
 from loguru import logger
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
+from pydantic import BaseModel, ConfigDict, TypeAdapter
 from pydantic_settings import (
     BaseSettings,
     CliPositionalArg,
@@ -99,7 +99,7 @@ class TestCmd(CmdBase, WithSource):
 class PackageCmd(CmdBase, WithSource):
     """bioimageio-package - save a resource's metadata with its associated files."""
 
-    path: CliPositionalArg[Path]
+    path: CliPositionalArg[Path] = Path("bioimageio-package.zip")
     """The path to write the (zipped) package to.
     If it does not have a `.zip` suffix
     this command will save the package as an unzipped folder instead."""
