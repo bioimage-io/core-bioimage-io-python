@@ -238,6 +238,12 @@ The model specification and its validation tools can be found at <https://github
 
 ## Changelog
 
+### 0.6.9
+
+- improve bioimageio command line interface (details in #157)
+  - add `predict` command
+  - package command input `path` is now required
+
 ### 0.6.8
 
 - testing model inference will now check all weight formats
