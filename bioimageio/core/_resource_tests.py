@@ -1,7 +1,7 @@
 import traceback
 import warnings
 from itertools import product
-from typing import Dict, Hashable, List, Literal, Optional, Set, Tuple, Union
+from typing import Dict, Hashable, List, Literal, Optional, Sequence, Set, Tuple, Union
 
 import numpy as np
 from loguru import logger
@@ -52,7 +52,7 @@ def test_description(
     *,
     format_version: Union[Literal["discover", "latest"], str] = "discover",
     weight_format: Optional[WeightsFormat] = None,
-    devices: Optional[List[str]] = None,
+    devices: Optional[Sequence[str]] = None,
     decimal: int = 4,
     expected_type: Optional[str] = None,
 ) -> ValidationSummary:
@@ -73,7 +73,7 @@ def load_description_and_test(
     *,
     format_version: Union[Literal["discover", "latest"], str] = "discover",
     weight_format: Optional[WeightsFormat] = None,
-    devices: Optional[List[str]] = None,
+    devices: Optional[Sequence[str]] = None,
     decimal: int = 4,
     expected_type: Optional[str] = None,
 ) -> Union[ResourceDescr, InvalidDescr]:
@@ -123,7 +123,7 @@ def load_description_and_test(
 def _test_model_inference(
     model: Union[v0_4.ModelDescr, v0_5.ModelDescr],
     weight_format: WeightsFormat,
-    devices: Optional[List[str]],
+    devices: Optional[Sequence[str]],
     decimal: int,
 ) -> None:
     test_name = f"Reproduce test outputs from test inputs ({weight_format})"
@@ -182,7 +182,7 @@ def _test_model_inference(
 def _test_model_inference_parametrized(
     model: v0_5.ModelDescr,
     weight_format: WeightsFormat,
-    devices: Optional[List[str]],
+    devices: Optional[Sequence[str]],
 ) -> None:
     if not any(
         isinstance(a.size, v0_5.ParameterizedSize)

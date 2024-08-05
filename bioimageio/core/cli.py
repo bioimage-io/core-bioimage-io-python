@@ -5,6 +5,7 @@ from typing import (
     Iterable,
     List,
     Mapping,
+    Optional,
     Sequence,
     Tuple,
     Type,
@@ -89,6 +90,7 @@ class WithSource(ArgMixin):
             )
 
 
+
 class ValidateFormatCmd(CmdBase, WithSource):
     """bioimageio-validate-format - validate the meta data format of a bioimageio resource."""
 
@@ -99,8 +101,19 @@ class ValidateFormatCmd(CmdBase, WithSource):
 class TestCmd(CmdBase, WithSource):
     """bioimageio-test - Test a bioimageio resource (beyond meta data formatting)"""
 
+    weight_format: WeightFormatArg = "all"
+    """The weight format to limit testing to.
+
+    (only relevant for model resources)"""
+
+    devices: Optional[Union[str, Sequence[str]]] = None
+    """Device(s) to use for testing"""
+
+    decimal: int = 4
+    """Precision for numerical comparisons"""
+
     def run(self):
-        test(self.descr)
+        test(self.descr, weight_format=self.weight_format, devices=self.devices,decimal= self.decimal)
 
 
 class PackageCmd(CmdBase, WithSource):

@@ -3,7 +3,7 @@ defined in the `cli` module."""
 
 import sys
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional, Sequence, Union
 
 from typing_extensions import Literal
 
@@ -23,7 +23,7 @@ def test(
     descr: Union[ResourceDescr, InvalidDescr],
     *,
     weight_format: WeightFormatArg = "all",
-    devices: Optional[Union[str, List[str]]] = None,
+    devices: Optional[Union[str, Sequence[str]]] = None,
     decimal: int = 4,
 ):
     """test a bioimageio resource
