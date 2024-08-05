@@ -106,7 +106,7 @@ class TestCmd(CmdBase, WithSource):
 class PackageCmd(CmdBase, WithSource):
     """bioimageio-package - save a resource's metadata with its associated files."""
 
-    path: CliPositionalArg[Path] = Path("{resource_id}.zip")
+    path: CliPositionalArg[Path]
     """The path to write the (zipped) package to.
     If it does not have a `.zip` suffix
     this command will save the package as an unzipped folder instead."""
@@ -121,7 +121,7 @@ class PackageCmd(CmdBase, WithSource):
 
         package(
             self.descr,
-            Path(str(self.path).format(resource_id=self.descr.id)),
+            self.path,
             weight_format=self.weight_format,
         )
 
