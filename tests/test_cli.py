@@ -27,7 +27,7 @@ def run_subprocess(
             "--weight_format",
             "pytorch_state_dict",
         ],
-        ["package", "unet2d_nuclei_broad_model"],
+        ["package", "unet2d_nuclei_broad_model", "output.zip"],
         [
             "test",
             "unet2d_nuclei_broad_model",
