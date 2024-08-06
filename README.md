@@ -27,14 +27,6 @@ install -c conda-forge bioimageio.core pytorch
 bioimageio test powerful-chipmunk
 
 testing powerful-chipmunk...
-2024-07-24 17:10:37.470 | INFO     | bioimageio.spec._internal.io_utils:open_bioimageio_yaml:112 - loading powerful-chipmunk from https://uk1s3.embassy.ebi.ac.uk/public-datasets/bioimage.io/powerful-chipmunk/1/files/rdf.yaml
-Updating data from 'https://uk1s3.embassy.ebi.ac.uk/public-datasets/bioimage.io/powerful-chipmunk/1/files/rdf.yaml' to file 'C:\Users\fbeut\AppData\Local\bioimageio\bioimageio\Cache\d968304289dc978b9221e813dc757a3a-rdf.yaml'.
-100%|#####################################| 2.92k/2.92k [00:00<00:00, 1.53MB/s]
-computing SHA256 of 1e659a86d8dd8a7c6cfb3315f4447f5d-weights.pt (result: 3bd9c518c8473f1e35abb7624f82f3aa92f1015e66fb1f6a9d08444e1f2f5698): 100%|██████████████████████████████████████████████████████████████████████████████████████████████████| 884/884 [00:00<00:00, 1006.20it/s]
-computing SHA256 of 97a83ece802cfc5ba362aa76b5f77c3a-weights-torchscript.pt (result: 4e568fd81c0ffa06ce13061327c3f673e1bac808891135badd3b0fcdacee086b): 100%|██████████████████████████████████████████████████████████████████████████████████████| 885/885 [00:00<00:00, 1229.39it/s]
-2024-07-24 17:10:44.596 | INFO     | bioimageio.core._resource_tests:_test_model_inference:130 - starting 'Reproduce test outputs from test inputs'
-2024-07-24 17:11:00.136 | INFO     | bioimageio.core._resource_tests:_test_model_inference:130 - starting 'Reproduce test outputs from test inputs'
-
 
   ✔️                 bioimageio validation passed
  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -110,10 +102,6 @@ computing SHA256 of 97a83ece802cfc5ba362aa76b5f77c3a-weights-torchscript.pt (res
   overwrite: true
   blockwise: true
   stats: inputs/dataset_statistics.json
-  ```
-
-  ```console
-  bioimageio predict affable-shark
   ```
 
 ## Installation
