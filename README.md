@@ -15,7 +15,7 @@ To get started we recommend installing bioimageio.core with conda together with 
 learning framework, e.g. pytorch, and run a few `bioimageio` commands to see what
 bioimage.core offers.
 
-1. install with conda (for more details on conda environments, [checkout the ])
+1. install with conda (for more details on conda environments, [checkout the conda docs](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html))
 
 ```console
 install -c conda-forge bioimageio.core pytorch
