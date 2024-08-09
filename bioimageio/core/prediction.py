@@ -1,10 +1,4 @@
-"""convenience functions for prediction coming soon.
-For now, please use `create_prediction_pipeline` to get a `PredictionPipeline`
-and then `PredictionPipeline.predict_sample(sample)`
-e..g load samples with core.io.load_sample_for_model()
-"""
-
-import collections
+import collections.abc
 from pathlib import Path
 from typing import (
     Any,
@@ -43,8 +37,8 @@ def predict(
     sample_id: Hashable = "sample",
     blocksize_parameter: Optional[
         Union[
-            v0_5.ParameterizedSize.N,
-            Mapping[Tuple[MemberId, AxisId], v0_5.ParameterizedSize.N],
+            v0_5.ParameterizedSize_N,
+            Mapping[Tuple[MemberId, AxisId], v0_5.ParameterizedSize_N],
         ]
     ] = None,
     skip_preprocessing: bool = False,
@@ -117,8 +111,8 @@ def predict_many(
     sample_id: str = "sample{i:03}",
     blocksize_parameter: Optional[
         Union[
-            v0_5.ParameterizedSize.N,
-            Mapping[Tuple[MemberId, AxisId], v0_5.ParameterizedSize.N],
+            v0_5.ParameterizedSize_N,
+            Mapping[Tuple[MemberId, AxisId], v0_5.ParameterizedSize_N],
         ]
     ] = None,
     skip_preprocessing: bool = False,
@@ -169,7 +163,10 @@ def predict_many(
         sample_id = str(sample_id)
         if "{i}" not in sample_id and "{i:" not in sample_id:
             sample_id += "{i:03}"
-        for i, ipts in tqdm(enumerate(inputs)):
+
+        total = len(inputs) if isinstance(inputs, collections.abc.Sized) else None
+
+        for i, ipts in tqdm(enumerate(inputs), total=total):
             yield predict(
                 model=pp,
                 inputs=ipts,

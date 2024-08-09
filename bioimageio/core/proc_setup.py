@@ -25,7 +25,14 @@ from .proc_ops import (
 )
 from .sample import Sample
 from .stat_calculators import StatsCalculator
-from .stat_measures import DatasetMeasure, Measure, MeasureValue
+from .stat_measures import (
+    DatasetMeasure,
+    DatasetMeasureBase,
+    Measure,
+    MeasureValue,
+    SampleMeasure,
+    SampleMeasureBase,
+)
 
 TensorDescr = Union[
     v0_4.InputTensorDescr,
@@ -63,11 +70,15 @@ def setup_pre_and_postprocessing(
         for m in prep_meas | post_meas
         if fixed_dataset_stats is None or m not in fixed_dataset_stats
     }
-    initial_stats_calc = StatsCalculator(missing_dataset_stats)
-    for sample in dataset_for_initial_statistics:
-        initial_stats_calc.update(sample)
+    if missing_dataset_stats:
+        initial_stats_calc = StatsCalculator(missing_dataset_stats)
+        for sample in dataset_for_initial_statistics:
+            initial_stats_calc.update(sample)
 
-    initial_stats = initial_stats_calc.finalize()
+        initial_stats = initial_stats_calc.finalize()
+    else:
+        initial_stats = {}
+
     prep.insert(
         0,
         UpdateStats(
@@ -89,6 +100,42 @@ def setup_pre_and_postprocessing(
         post.insert(0, AddKnownDatasetStats(fixed_dataset_stats))
 
     return PreAndPostprocessing(prep, post)
+
+
+class RequiredMeasures(NamedTuple):
+    pre: Set[Measure]
+    post: Set[Measure]
+
+
+class RequiredDatasetMeasures(NamedTuple):
+    pre: Set[DatasetMeasure]
+    post: Set[DatasetMeasure]
+
+
+class RequiredSampleMeasures(NamedTuple):
+    pre: Set[SampleMeasure]
+    post: Set[SampleMeasure]
+
+
+def get_requried_measures(model: AnyModelDescr) -> RequiredMeasures:
+    s = _prepare_setup_pre_and_postprocessing(model)
+    return RequiredMeasures(s.pre_measures, s.post_measures)
+
+
+def get_required_dataset_measures(model: AnyModelDescr) -> RequiredDatasetMeasures:
+    s = _prepare_setup_pre_and_postprocessing(model)
+    return RequiredDatasetMeasures(
+        {m for m in s.pre_measures if isinstance(m, DatasetMeasureBase)},
+        {m for m in s.post_measures if isinstance(m, DatasetMeasureBase)},
+    )
+
+
+def get_requried_sample_measures(model: AnyModelDescr) -> RequiredSampleMeasures:
+    s = _prepare_setup_pre_and_postprocessing(model)
+    return RequiredSampleMeasures(
+        {m for m in s.pre_measures if isinstance(m, SampleMeasureBase)},
+        {m for m in s.post_measures if isinstance(m, SampleMeasureBase)},
+    )
 
 
 def _prepare_setup_pre_and_postprocessing(model: AnyModelDescr) -> _SetupProcessing:

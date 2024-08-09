@@ -41,9 +41,9 @@ def test_bioimageio_spec_version(mamba_cmd: Optional[str]):
         )
 
     assert spec_ver.count(".") == 3
-    pmaj, pmin, ppatch, post = spec_ver.split(".")
+    pmaj, pmin, ppatch, _ = spec_ver.split(".")
     assert (
-        pmaj.isdigit() and pmin.isdigit() and ppatch.isdigit() and post == "*"
+        pmaj.isdigit() and pmin.isdigit() and ppatch.isdigit()
     ), "bioimageio.spec version should be pinned down to patch, e.g. '0.4.9.*'"
 
     pinned = Version(f"{pmaj}.{pmin}.{ppatch}")

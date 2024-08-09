@@ -9,6 +9,101 @@
 
 Python specific core utilities for bioimage.io resources (in particular models).
 
+## Get started
+
+To get started we recommend installing bioimageio.core with conda together with a deep
+learning framework, e.g. pytorch, and run a few `bioimageio` commands to see what
+bioimage.core offers.
+
+1. install with conda (for more details on conda environments, [checkout the conda docs](https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html))
+
+```console
+install -c conda-forge bioimageio.core pytorch
+```
+
+1. test a model
+
+```console
+bioimageio test powerful-chipmunk
+
+testing powerful-chipmunk...
+
+  ✔️                 bioimageio validation passed
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  source            https://uk1s3.embassy.ebi.ac.uk/public-datasets/bioimage.io/powerful-chipmunk/1/files/rdf.yaml
+  format version    model 0.4.10
+  bioimageio.spec   0.5.3post4
+  bioimageio.core   0.6.8
+
+
+
+  ❓   location                                     detail
+ ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ✔️                                                 initialized ModelDescr to describe model 0.4.10
+
+  ✔️                                                 bioimageio.spec format validation model 0.4.10
+  🔍   context.perform_io_checks                    True
+  🔍   context.root                                 https://uk1s3.embassy.ebi.ac.uk/public-datasets/bioimage.io/powerful-chipmunk/1/files
+  🔍   context.known_files.weights.pt               3bd9c518c8473f1e35abb7624f82f3aa92f1015e66fb1f6a9d08444e1f2f5698
+  🔍   context.known_files.weights-torchscript.pt   4e568fd81c0ffa06ce13061327c3f673e1bac808891135badd3b0fcdacee086b
+  🔍   context.warning_level                        error
+
+  ✔️                                                 Reproduce test outputs from test inputs
+
+  ✔️                                                 Reproduce test outputs from test inputs
+```
+
+1. run prediction on your data
+
+- display the `bioimageio-predict` command interface
+
+  ```console
+  > bioimageio predict -h
+  usage: bioimageio predict [-h] [--inputs {str,Sequence[str]}] [--outputs {str,Sequence[str]}] [--overwrite bool]
+                            [--blockwise bool] [--stats Path]
+                            SOURCE
+
+  bioimageio-predict - Run inference on your data with a bioimage.io model.
+
+  positional arguments:
+    SOURCE                Url/path to a bioimageio.yaml/rdf.yaml file or a bioimage.io resource identifier, e.g.
+                          'affable-shark'
+
+  optional arguments:
+    -h, --help            show this help message and exit
+    --inputs {str,Sequence[str]}
+                          model inputs Either a single path/glob pattern including `{tensor_id}` to be used for all
+                          model inputs, or a list of paths/glob patterns for each model input respectively. For models
+                          with a single input a single path/glob pattern with `{tensor_id}` is also accepted.
+                          (default: model_inputs/*/{tensor_id}.*)
+    --outputs {str,Sequence[str]}
+                          output paths analog to `inputs` (default: outputs_{model_id}/{sample_id}/{tensor_id}.npy)
+    --overwrite bool      allow overwriting existing output files (default: False)
+    --blockwise bool      process inputs blockwise (default: False)
+    --stats Path          path to dataset statistics (will be written if it does not exist, but the model requires
+                          statistical dataset measures) (default: model_inputs\dataset_statistics.json)
+  ```
+
+- locate your input data
+- predict away!
+
+  ```console
+  bioimageio predict affable-shark
+  ```
+
+- for convenience the command line arguments may be given in a `bioimageio-cli.json` or `bioimageio-cli.yaml` file.
+  The YAML file takes priority over the JSON file.
+  Addtional command line arguments take the highest priority.
+
+  ```yaml
+  # bioimageio-cli.yaml
+  inputs: inputs/*_{tensor_id}.h5
+  outputs: outputs_{model_id}/{sample_id}_{tensor_id}.h5
+  overwrite: true
+  blockwise: true
+  stats: inputs/dataset_statistics.json
+  ```
+
 ## Installation
 
 ### Via Mamba/Conda
@@ -23,7 +118,7 @@ If you do not install any additional deep learning libraries, you will only be a
 functionality, but not any functionality for model prediction.
 To install additional deep learning libraries use:
 
-* Pytorch/Torchscript:
+- Pytorch/Torchscript:
 
   CPU installation (if you don't have an nvidia graphics card):
 
@@ -39,7 +134,7 @@ To install additional deep learning libraries use:
 
   Note that the pytorch installation instructions may change in the future. For the latest instructions please refer to [pytorch.org](https://pytorch.org/).
 
-* Tensorflow
+- Tensorflow
 
   Currently only CPU version supported
 
@@ -47,7 +142,7 @@ To install additional deep learning libraries use:
   mamba install -c conda-forge bioimageio.core tensorflow
   ```
 
-* ONNXRuntime
+- ONNXRuntime
 
   Currently only cpu version supported
 
@@ -121,7 +216,7 @@ In addition bioimageio.core provides functionality to convert model weight forma
 
 To get an overview of this functionality, check out these example notebooks:
 
-* [model creation/loading with bioimageio.spec](https://github.com/bioimage-io/spec-bioimage-io/blob/main/example/load_model_and_create_your_own.ipynb)
+- [model creation/loading with bioimageio.spec](https://github.com/bioimage-io/spec-bioimage-io/blob/main/example/load_model_and_create_your_own.ipynb)
 
 and the [developer documentation](https://bioimage-io.github.io/core-bioimage-io-python/bioimageio/core.html).
 
@@ -131,47 +226,53 @@ The model specification and its validation tools can be found at <https://github
 
 ## Changelog
 
+### 0.6.9
+
+- improve bioimageio command line interface (details in #157)
+  - add `predict` command
+  - package command input `path` is now required
+
 ### 0.6.8
 
-* testing model inference will now check all weight formats
+- testing model inference will now check all weight formats
   (previously only the first one for which model adapter creation succeeded had been checked)
-* fix predict with blocking (Thanks @thodkatz)
+- fix predict with blocking (Thanks @thodkatz)
 
 ### 0.6.7
 
-* `predict()` argument `inputs` may be sample
+- `predict()` argument `inputs` may be sample
 
 ### 0.6.6
 
-* add aliases to match previous API more closely
+- add aliases to match previous API more closely
 
 ### 0.6.5
 
-* improve adapter error messages
+- improve adapter error messages
 
 ### 0.6.4
 
-* add `bioimageio validate-format` command
-* improve error messages and display of command results
+- add `bioimageio validate-format` command
+- improve error messages and display of command results
 
 ### 0.6.3
 
-* Fix [#386](https://github.com/bioimage-io/core-bioimage-io-python/issues/386)
-* (in model inference testing) stop assuming model inputs are tileable
+- Fix [#386](https://github.com/bioimage-io/core-bioimage-io-python/issues/386)
+- (in model inference testing) stop assuming model inputs are tileable
 
 ### 0.6.2
 
-* Fix [#384](https://github.com/bioimage-io/core-bioimage-io-python/issues/384)
+- Fix [#384](https://github.com/bioimage-io/core-bioimage-io-python/issues/384)
 
 ### 0.6.1
 
-* Fix [#378](https://github.com/bioimage-io/core-bioimage-io-python/pull/378) (with [#379](https://github.com/bioimage-io/core-bioimage-io-python/pull/379))*
+- Fix [#378](https://github.com/bioimage-io/core-bioimage-io-python/pull/378) (with [#379](https://github.com/bioimage-io/core-bioimage-io-python/pull/379))*
 
 ### 0.6.0
 
-* add compatibility with new bioimageio.spec 0.5 (0.5.2post1)
-* improve interfaces
+- add compatibility with new bioimageio.spec 0.5 (0.5.2post1)
+- improve interfaces
 
 ### 0.5.10
 
-* [Fix critical bug in predict with tiling](https://github.com/bioimage-io/core-bioimage-io-python/pull/359)
+- [Fix critical bug in predict with tiling](https://github.com/bioimage-io/core-bioimage-io-python/pull/359)
