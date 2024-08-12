@@ -2,6 +2,7 @@ import json
 import shutil
 import subprocess
 import sys
+from argparse import RawTextHelpFormatter
 from difflib import SequenceMatcher
 from functools import cached_property
 from pathlib import Path
@@ -553,7 +554,9 @@ class Bioimageio(
         file_secret_settings: PydanticBaseSettingsSource,
     ) -> Tuple[PydanticBaseSettingsSource, ...]:
         cli: CliSettingsSource[BaseSettings] = CliSettingsSource(
-            settings_cls, cli_parse_args=True
+            settings_cls,
+            cli_parse_args=True,
+            formatter_class=RawTextHelpFormatter,
         )
         sys_args = pformat(sys.argv)
         logger.info("starting CLI with arguments:\n{}", sys_args)
