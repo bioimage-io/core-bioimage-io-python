@@ -290,6 +290,7 @@ class PredictCmd(CmdBase, WithSource):
         )
         inputs001: List[str] = []
         example_path = Path(f"{self.descr_id}_example")
+        example_path.mkdir(exist_ok=True)
 
         for t, src in zip(input_ids, example_inputs):
             local = download(src).path
