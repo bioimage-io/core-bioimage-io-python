@@ -288,6 +288,9 @@ class PredictCmd(CmdBase, WithSource):
             if isinstance(model_descr, v0_4.ModelDescr)
             else [ipt.sample_tensor or ipt.test_tensor for ipt in model_descr.inputs]
         )
+        if not example_inputs:
+            raise ValueError(f"{self.descr_id} does not specify any example inputs.")
+
         inputs001: List[str] = []
         example_path = Path(f"{self.descr_id}_example")
         example_path.mkdir(exist_ok=True)
