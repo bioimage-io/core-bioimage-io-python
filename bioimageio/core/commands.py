@@ -16,13 +16,14 @@ from bioimageio.spec import (
 )
 from bioimageio.spec.model.v0_5 import WeightsFormat
 
-WeightFormatArg = Literal[WeightsFormat, "all"]
+WeightFormatArgAll = Literal[WeightsFormat, "all"]
+WeightFormatArgAny = Literal[WeightsFormat, "any"]
 
 
 def test(
     descr: Union[ResourceDescr, InvalidDescr],
     *,
-    weight_format: WeightFormatArg = "all",
+    weight_format: WeightFormatArgAll = "all",
     devices: Optional[Union[str, Sequence[str]]] = None,
     decimal: int = 4,
 ):
@@ -62,7 +63,7 @@ def validate_format(
 
 
 def package(
-    descr: ResourceDescr, path: Path, *, weight_format: WeightFormatArg = "all"
+    descr: ResourceDescr, path: Path, *, weight_format: WeightFormatArgAll = "all"
 ):
     """Save a resource's metadata with its associated files.
 

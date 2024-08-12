@@ -47,7 +47,13 @@ from bioimageio.core import (
     __version__,
     create_prediction_pipeline,
 )
-from bioimageio.core.commands import WeightFormatArg, package, test, validate_format
+from bioimageio.core.commands import (
+    WeightFormatArgAll,
+    WeightFormatArgAny,
+    package,
+    test,
+    validate_format,
+)
 from bioimageio.core.common import SampleId
 from bioimageio.core.digest_spec import get_member_ids, load_sample_for_model
 from bioimageio.core.io import save_sample
@@ -118,7 +124,7 @@ class ValidateFormatCmd(CmdBase, WithSource):
 class TestCmd(CmdBase, WithSource):
     """bioimageio-test - Test a bioimageio resource (beyond meta data formatting)"""
 
-    weight_format: WeightFormatArg = "all"
+    weight_format: WeightFormatArgAll = "all"
     """The weight format to limit testing to.
 
     (only relevant for model resources)"""
@@ -146,7 +152,7 @@ class PackageCmd(CmdBase, WithSource):
     If it does not have a `.zip` suffix
     this command will save the package as an unzipped folder instead."""
 
-    weight_format: WeightFormatArg = "all"
+    weight_format: WeightFormatArgAll = "all"
     """The weight format to include in the package (for model descriptions only)."""
 
     def run(self):
@@ -260,6 +266,9 @@ class PredictCmd(CmdBase, WithSource):
     preview: bool = False
     """preview which files would be processed
     and what outputs would be generated."""
+
+    weight_format: WeightFormatArgAny = "any"
+    """The weight format to use."""
 
     example: bool = False
     """generate and run an example
@@ -494,7 +503,10 @@ class PredictCmd(CmdBase, WithSource):
             ).items()
         )
 
-        pp = create_prediction_pipeline(model_descr)
+        pp = create_prediction_pipeline(
+            model_descr,
+            weight_format=None if self.weight_format == "any" else self.weight_format,
+        )
         predict_method = (
             pp.predict_sample_with_blocking
             if self.blockwise
