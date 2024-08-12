@@ -204,12 +204,12 @@ class PredictCmd(CmdBase, WithSource):
     inputs: NotEmpty[Sequence[Union[str, NotEmpty[Tuple[str, ...]]]]] = (
         "{input_id}/001.tif",
     )
-    """Model input sample paths (for each input tensor).
+    """Model input sample paths (for each input tensor)
 
     The input paths are expected to have shape...
-     - `(n_samples,)` or `(n_samples,1)` for models expecting a single input tensor
-     - `(n_samples,)` containing the substring '{input_id}', or
-     - `(n_samples, n_model_inputs)` to provide each input tensor path explicitly.
+     - (n_samples,) or (n_samples,1) for models expecting a single input tensor
+     - (n_samples,) containing the substring '{input_id}', or
+     - (n_samples, n_model_inputs) to provide each input tensor path explicitly.
 
     All substrings that are replaced by metadata from the model description:
     - '{model_id}'
@@ -217,10 +217,9 @@ class PredictCmd(CmdBase, WithSource):
 
     Example inputs to process sample 'a' and 'b'
     for a model expecting a 'raw' and a 'mask' input tensor:
-    - `--inputs='[[a_raw.tif,a_mask.tif],[b_raw.tif,b_mask.tif]]'` (pure JSON style)
-    - `--inputs a_raw.tif,a_mask.tif --inputs b_raw.tif,b_mask.tif` (Argparse + lazy style)
-    - `--inputs='[a_raw.tif,a_mask.tif]','[b_raw.tif,b_mask.tif]'` (lazy + JSON style)
-    (see https://docs.pydantic.dev/latest/concepts/pydantic_settings/#lists)
+    --inputs="[[\"a_raw.tif\",\"a_mask.tif\"],[\"b_raw.tif\",\"b_mask.tif\"]]"
+    (Note that JSON double quotes need to be escaped.)
+
     Alternatively a `bioimageio-cli.yaml` (or `bioimageio-cli.json`) file may provide
     the arguments, e.g.:
     ```yaml
@@ -238,12 +237,12 @@ class PredictCmd(CmdBase, WithSource):
     outputs: Union[str, NotEmpty[Tuple[str, ...]]] = (
         "outputs_{model_id}/{output_id}/{sample_id}.tif"
     )
-    """Model output path pattern (per output tensor).
+    """Model output path pattern (per output tensor)
 
     All substrings that are replaced:
-    - '{model_id}'
-    - '{output_id}'
-    - '{sample_id}'
+    - '{model_id}' (from model description)
+    - '{output_id}' (from model description)
+    - '{sample_id}' (extracted from input paths)
     """
 
     overwrite: bool = False
@@ -262,13 +261,13 @@ class PredictCmd(CmdBase, WithSource):
     and what outputs would be generated."""
 
     example: bool = False
-    """generate an example
+    """generate and run an example
 
     1. downloads example model inputs
     2. creates a `{model_id}_example` folder
-    4. writes input arguments to `{model_id}_example/bioimageio-cli.yaml`
-    5. executes a preview dry-run
-    6. executes prediction with example input
+    3. writes input arguments to `{model_id}_example/bioimageio-cli.yaml`
+    4. executes a preview dry-run
+    5. executes prediction with example input
     """
 
     def _example(self):
