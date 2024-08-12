@@ -22,15 +22,11 @@ from typing import (
 
 from loguru import logger
 from pydantic import (
-    AliasChoices,
-    AliasGenerator,
     BaseModel,
     ConfigDict,
-    Field,
     TypeAdapter,
     model_validator,
 )
-from pydantic.alias_generators import to_snake
 from pydantic_settings import (
     BaseSettings,
     CliPositionalArg,
