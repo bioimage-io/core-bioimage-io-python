@@ -36,6 +36,9 @@ def load_tensor(path: Path, axes: Optional[Sequence[AxisLike]] = None) -> Tensor
 
 def save_tensor(path: Path, tensor: Tensor) -> None:
     # TODO: save axis meta data
+    if tensor.tagged_shape.get(AxisId("batch")) == 1:
+        logger.debug("dropping singleton batch axis for saving {path}", path)
+        tensor = tensor[{AxisId("batch"): 0}]
     data: NDArray[Any] = tensor.data.to_numpy()
     path.parent.mkdir(exist_ok=True, parents=True)
     if path.suffix == ".npy":
