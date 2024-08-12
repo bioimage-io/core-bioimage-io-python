@@ -272,7 +272,7 @@ class PredictCmd(CmdBase, WithSource):
     2. creates a `{model_id}_example` folder
     4. writes input arguments to `{model_id}_example/bioimageio-cli.yaml`
     5. executes a preview dry-run
-    6. prints out the command line to run the prediction
+    6. executes prediction with example input
     """
 
     def _example(self):
@@ -295,30 +295,60 @@ class PredictCmd(CmdBase, WithSource):
 
         inputs = [tuple(inputs001)]
         output_pattern = f"{example_path}/outputs/{{output_id}}/{{sample_id}}.tif"
-        bioimageio_cli_path = example_path / "bioimageio-cli.yaml"
+
+        bioimageio_cli_path = example_path / YAML_FILE
         stats_file = "dataset_statistics.json"
         stats = (example_path / stats_file).as_posix()
         yaml.dump(
             dict(inputs=inputs, outputs=output_pattern, stats=stats_file),
             bioimageio_cli_path,
         )
-        _ = subprocess.run(
-            [
+
+        yaml_file_content = None
+
+        # escaped double quotes
+        inputs_json = json.dumps(inputs)
+        inputs_escaped = inputs_json.replace('"', r"\"")
+        source_escaped = self.source.replace('"', r"\"")
+
+        def get_example_command(preview: bool, escape: bool = False):
+            q: str = '"' if escape else ""
+
+            return [
                 "bioimageio",
                 "predict",
-                "--preview=True",  # update once we use implicit flags, see `class Bioimageio` below
-                f"--stats='{stats}'",
-                f"--inputs='{json.dumps(inputs)}'",
-                f"--outputs='{output_pattern}'",
-                f"'{self.source}'",
+                f"--preview={preview}",  # update once we use implicit flags, see `class Bioimageio` below
+                "--overwrite=True",
+                f"--stats={q}{stats}{q}",
+                f"--inputs={q}{inputs_escaped if escape else inputs_json}{q}",
+                f"--outputs={q}{output_pattern}{q}",
+                f"{q}{source_escaped if escape else self.source}{q}",
             ]
-        )
+
+        if Path(YAML_FILE).exists():
+            logger.info(
+                "temporarily removing '{}' to execute example prediction", YAML_FILE
+            )
+            yaml_file_content = Path(YAML_FILE).read_bytes()
+
+        try:
+            _ = subprocess.run(get_example_command(True), check=True)
+            _ = subprocess.run(get_example_command(False), check=True)
+        finally:
+            if yaml_file_content is not None:
+                _ = Path(YAML_FILE).write_bytes(yaml_file_content)
+                logger.debug("restored '{}'", YAML_FILE)
+
         print(
-            "run prediction of example input using the 'bioimageio-cli.yaml':\n"
-            + f"cd {self.descr_id} && bioimageio predict '{self.source}'\n"
+            "🎉 Sucessfully ran example prediction!"
+            + "To predict the example input using the CLI example config file"
+            + f" {example_path/YAML_FILE}, execute `bioimageio predict` from {example_path}:\n"
+            + f"$ cd {str(example_path)}\n"
+            + f'$ bioimageio predict "{source_escaped}"\n\n'
             + "Alternatively run the following command"
-            + " (in the current workind directory, not the example folder):\n"
-            + f"bioimageio predict --preview=False --stats='{stats}' --inputs='{json.dumps(inputs)}' --outputs='{output_pattern}' '{self.source}'"
+            + " in the current workind directory, not the example folder:\n$ "
+            + " ".join(get_example_command(False, escape=True))
+            + f"\n(note that a local '{JSON_FILE}' or '{YAML_FILE}' may interfere with this)"
         )
 
     def run(self):
@@ -430,6 +460,7 @@ class PredictCmd(CmdBase, WithSource):
                             f"{p} already exists. use --overwrite to (re-)write outputs anyway."
                         )
         if self.preview:
+            print("🛈 bioimageio prediction preview structure:")
             pprint(
                 {
                     "{sample_id}": dict(
@@ -438,6 +469,7 @@ class PredictCmd(CmdBase, WithSource):
                     )
                 }
             )
+            print("🔎 bioimageio prediction preview output:")
             pprint(
                 {
                     s: dict(
@@ -483,6 +515,10 @@ class PredictCmd(CmdBase, WithSource):
             save_sample(sp_out, sample_out)
 
 
+JSON_FILE = "bioimageio-cli.json"
+YAML_FILE = "bioimageio-cli.yaml"
+
+
 class Bioimageio(
     BaseSettings,
     # alias_generator=AliasGenerator(
@@ -498,9 +534,7 @@ class Bioimageio(
 ):
     """bioimageio - CLI for bioimage.io resources 🦒"""
 
-    model_config = SettingsConfigDict(
-        json_file="bioimageio-cli.json", yaml_file="bioimageio-cli.yaml"
-    )
+    model_config = SettingsConfigDict(json_file=JSON_FILE, yaml_file=YAML_FILE)
 
     validate_format: CliSubCommand[ValidateFormatCmd]
     "Check a resource's metadata format"
