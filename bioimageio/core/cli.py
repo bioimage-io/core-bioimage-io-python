@@ -1,10 +1,11 @@
 import json
 import shutil
 import subprocess
+import sys
 from difflib import SequenceMatcher
 from functools import cached_property
 from pathlib import Path
-from pprint import pprint
+from pprint import pformat, pprint
 from typing import (
     Any,
     Dict,
@@ -525,6 +526,8 @@ class Bioimageio(
         cli: CliSettingsSource[BaseSettings] = CliSettingsSource(
             settings_cls, cli_parse_args=True
         )
+        sys_args = pformat(sys.argv)
+        logger.info("starting CLI with arguments:\n{}", sys_args)
         return (
             cli,
             init_settings,
@@ -535,10 +538,17 @@ class Bioimageio(
     @model_validator(mode="before")
     @classmethod
     def _log(cls, data: Any):
-        logger.debug("raw CLI input:\n{}", data)
+        logger.info(
+            "loaded CLI input:\n{}",
+            pformat({k: v for k, v in data.items() if v is not None}),
+        )
         return data
 
     def run(self):
+        logger.info(
+            "executing CLI command:\n{}",
+            pformat({k: v for k, v in self.model_dump().items() if v is not None}),
+        )
         cmd = self.validate_format or self.test or self.package or self.predict
         assert cmd is not None
         cmd.run()
