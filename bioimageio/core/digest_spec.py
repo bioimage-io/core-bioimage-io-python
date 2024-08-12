@@ -427,11 +427,11 @@ def load_sample_for_model(
     for m, p in paths.items():
         if m not in axes:
             axes[m] = get_axes_infos(model_inputs[m])
-            logger.warning(
-                "loading paths with {}'s default input axes {} for input '{}'",
-                axes[m],
-                model.id or model.name,
+            logger.debug(
+                "loading '{}' from {} with default input axes {} ",
                 m,
+                p,
+                axes[m],
             )
         members[m] = load_tensor(p, axes[m])
 

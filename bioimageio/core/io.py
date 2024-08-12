@@ -3,12 +3,13 @@ from pathlib import Path
 from typing import Any, Optional, Sequence, Union
 
 import imageio
+from loguru import logger
 from numpy.typing import NDArray
 
 from bioimageio.core.common import PerMember
 from bioimageio.spec.utils import load_array, save_array
 
-from .axis import Axis, AxisLike
+from .axis import Axis, AxisId, AxisLike
 from .sample import Sample
 from .tensor import Tensor
 
@@ -37,8 +38,10 @@ def load_tensor(path: Path, axes: Optional[Sequence[AxisLike]] = None) -> Tensor
 def save_tensor(path: Path, tensor: Tensor) -> None:
     # TODO: save axis meta data
     if tensor.tagged_shape.get(AxisId("batch")) == 1:
-        logger.debug("dropping singleton batch axis for saving {path}", path)
+        logger.debug("dropping singleton batch axis for saving {}", path)
         tensor = tensor[{AxisId("batch"): 0}]
+
+    logger.debug("writing tensor {} to {}", dict(tensor.tagged_shape), path)
     data: NDArray[Any] = tensor.data.to_numpy()
     path.parent.mkdir(exist_ok=True, parents=True)
     if path.suffix == ".npy":
