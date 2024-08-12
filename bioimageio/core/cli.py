@@ -607,7 +607,7 @@ def _get_sample_ids(
         """
         min_seq_len = min(len(s) for s in seqs)
         # cut from the start
-        for start in range(min_seq_len - 1, 0, -1):
+        for start in range(min_seq_len - 1, -1, -1):
             shortened = [s[start:] for s in seqs]
             if len(set(shortened)) == len(seqs):
                 min_seq_len -= start
