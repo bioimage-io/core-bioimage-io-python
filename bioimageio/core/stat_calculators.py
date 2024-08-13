@@ -22,6 +22,7 @@ from typing import (
 
 import numpy as np
 import xarray as xr
+from loguru import logger
 from numpy.typing import NDArray
 from typing_extensions import assert_never
 
@@ -389,7 +390,7 @@ class StatsCalculator:
         self.sample_calculators, self.dataset_calculators = get_measure_calculators(
             measures
         )
-        if initial_dataset_measures is None:
+        if not initial_dataset_measures:
             self._current_dataset_measures: Optional[
                 Dict[DatasetMeasure, MeasureValue]
             ] = None
@@ -401,7 +402,7 @@ class StatsCalculator:
                 and m not in initial_dataset_measures
             }
             if missing_dataset_meas:
-                warnings.warn(
+                logger.debug(
                     f"ignoring `initial_dataset_measure` as it is missing {missing_dataset_meas}"
                 )
                 self._current_dataset_measures = None
