@@ -195,7 +195,7 @@ def _get_stat(
     stats_calc = StatsCalculator(req_dataset_meas)
 
     for sample in tqdm(
-        dataset, total=dataset_length, descr="precomputing dataset stats", unit="sample"
+        dataset, total=dataset_length, desc="precomputing dataset stats", unit="sample"
     ):
         stats_calc.update(sample)
 
