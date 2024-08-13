@@ -1,16 +1,24 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Literal, Optional, Protocol, Tuple, TypeVar, Union
+from typing import (
+    Any,
+    Dict,
+    Literal,
+    Mapping,
+    Optional,
+    Protocol,
+    Tuple,
+    TypeVar,
+    Union,
+)
 
 import numpy as np
 from pydantic import (
     BaseModel,
     BeforeValidator,
-    ConfigDict,
     Discriminator,
     PlainSerializer,
-    TypeAdapter,
 )
 from typing_extensions import Annotated
 
@@ -19,8 +27,11 @@ from .common import MemberId, PerMember
 from .tensor import Tensor
 
 
-def tensor_custom_before_validator(data: Dict[str, Any]):
-    # custome before validation logic
+def tensor_custom_before_validator(data: Union[Tensor, Mapping[str, Any]]):
+    if isinstance(data, Tensor):
+        return data
+
+    # custom before validation logic
     return Tensor(np.asarray(data["data"]), dims=data["dims"])
 
 
