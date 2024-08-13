@@ -56,7 +56,7 @@ from bioimageio.core.commands import (
 )
 from bioimageio.core.common import SampleId
 from bioimageio.core.digest_spec import get_member_ids, load_sample_for_model
-from bioimageio.core.io import save_sample
+from bioimageio.core.io import load_dataset_stat, save_dataset_stat, save_sample
 from bioimageio.core.proc_setup import (
     DatasetMeasure,
     Measure,
@@ -178,14 +178,10 @@ def _get_stat(
         return {}
 
     req_dataset_meas, _ = get_required_dataset_measures(model_descr)
-    stat_adapter = TypeAdapter(
-        Mapping[DatasetMeasure, MeasureValue],
-        config=ConfigDict(arbitrary_types_allowed=True),
-    )
 
     if stats_path.exists():
         logger.info(f"loading precomputed dataset measures from {stats_path}")
-        stat = stat_adapter.validate_json(stats_path.read_bytes())
+        stat = load_dataset_stat(stats_path)
         for m in req_dataset_meas:
             if m not in stat:
                 raise ValueError(f"Missing {m} in {stats_path}")
@@ -200,7 +196,7 @@ def _get_stat(
         stats_calc.update(sample)
 
     stat = stats_calc.finalize()
-    _ = stats_path.write_bytes(stat_adapter.dump_json(stat))
+    save_dataset_stat(stat, stats_path)
 
     return stat
 

@@ -1,12 +1,14 @@
 import collections.abc
 from pathlib import Path
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Mapping, Optional, Sequence, Union
 
 import imageio
 from loguru import logger
 from numpy.typing import NDArray
+from pydantic import BaseModel, ConfigDict, TypeAdapter
 
 from bioimageio.core.common import PerMember
+from bioimageio.core.stat_measures import DatasetMeasure, MeasureValue
 from bioimageio.spec.utils import load_array, save_array
 
 from .axis import Axis, AxisId, AxisLike
@@ -67,3 +69,28 @@ def save_sample(path: Union[Path, str, PerMember[Path]], sample: Sample) -> None
             p = Path(str(path).format(sample_id=sample.id, member_id=m))
 
         save_tensor(p, t)
+
+
+class _SerializedDatasetStatsEntry(
+    BaseModel, frozen=True, arbitrary_types_allowed=True
+):
+    measure: DatasetMeasure
+    value: MeasureValue
+
+
+_stat_adapter = TypeAdapter(
+    Sequence[_SerializedDatasetStatsEntry],
+    config=ConfigDict(arbitrary_types_allowed=True),
+)
+
+
+def save_dataset_stat(stat: Mapping[DatasetMeasure, MeasureValue], path: Path):
+    serializable = [
+        _SerializedDatasetStatsEntry(measure=k, value=v) for k, v in stat.items()
+    ]
+    _ = path.write_bytes(_stat_adapter.dump_json(serializable))
+
+
+def load_dataset_stat(path: Path):
+    seq = _stat_adapter.validate_json(path.read_bytes())
+    return {e.measure: e.value for e in seq}
