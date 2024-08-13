@@ -93,7 +93,7 @@ class WithSource(ArgMixin):
 
     @cached_property
     def descr(self):
-        return load_description(self.source, perform_io_checks=False)
+        return load_description(self.source)
 
     @property
     def descr_id(self) -> str:
