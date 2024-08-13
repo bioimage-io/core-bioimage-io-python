@@ -173,13 +173,12 @@ class Tensor(MagicTensorOpsMixin):
                         break
 
         # add singletons if nececsary
-        for a in axis_infos:
-
+        for i, a in enumerate(axis_infos):
             if len(array.shape) >= len(dims):
                 break
 
             if a.maybe_singleton:
-                array = array[None]
+                array = np.expand_dims(array, i)
 
         if len(array.shape) != len(dims):
             raise ValueError(
