@@ -220,6 +220,11 @@ To get an overview of this functionality, check out these example notebooks:
 
 and the [developer documentation](https://bioimage-io.github.io/core-bioimage-io-python/bioimageio/core.html).
 
+## Logging level
+
+`bioimageio.spec` and `bioimageio.core` use [loguru](https://github.com/Delgan/loguru) for logging, hence the logging level
+may be controlled with the `LOGURU_LEVEL` environment variable.
+
 ## Model Specification
 
 The model specification and its validation tools can be found at <https://github.com/bioimage-io/spec-bioimage-io>.
