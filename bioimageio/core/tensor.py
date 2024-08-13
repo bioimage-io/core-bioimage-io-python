@@ -491,16 +491,18 @@ def _add_singletons(arr: NDArray[Any], axis_infos: Sequence[AxisInfo]):
         if a.maybe_singleton:
             arr = np.expand_dims(arr, i)
 
+    return arr
+
 
 def _get_array_view(
     original_array: NDArray[Any], axis_infos: Sequence[AxisInfo]
 ) -> Optional[NDArray[Any]]:
-    perms = list(permutations(original_array.shape))
+    perms = list(permutations(range(len(original_array.shape))))
     perms.insert(1, perms.pop())  # try A and A.T first
 
     for perm in perms:
         view = original_array.transpose(perm)
-        _add_singletons(view, axis_infos)
+        view = _add_singletons(view, axis_infos)
         if len(view.shape) != len(axis_infos):
             return None
 
