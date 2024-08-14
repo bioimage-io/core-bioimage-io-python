@@ -54,11 +54,13 @@ class Tensor(MagicTensorOpsMixin):
     def __init__(
         self,
         array: NDArray[Any],
-        dims: Sequence[AxisId],
+        dims: Sequence[Union[AxisId, AxisLike]],
     ) -> None:
         super().__init__()
-        dims = tuple(AxisId(d) for d in dims)
-        self._data = xr.DataArray(array, dims=dims)
+        axes = tuple(
+            a if isinstance(a, AxisId) else AxisInfo.create(a).id for a in dims
+        )
+        self._data = xr.DataArray(array, dims=axes)
 
     def __array__(self, dtype: DTypeLike = None):
         return np.asarray(self._data, dtype=dtype)
