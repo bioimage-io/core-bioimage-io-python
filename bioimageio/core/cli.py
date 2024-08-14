@@ -335,6 +335,7 @@ class PredictCmd(CmdBase, WithSource):
                 "temporarily removing '{}' to execute example prediction", YAML_FILE
             )
             yaml_file_content = Path(YAML_FILE).read_bytes()
+            Path(YAML_FILE).unlink()
 
         try:
             _ = subprocess.run(get_example_command(True), check=True)
