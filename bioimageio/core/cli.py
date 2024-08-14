@@ -1,3 +1,9 @@
+"""bioimageio CLI
+
+Note: Some docstrings use a hair space ' '
+      to place the added '(default: ...)' on a new line.
+"""
+
 import json
 import shutil
 import subprocess
@@ -22,12 +28,7 @@ from typing import (
 )
 
 from loguru import logger
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    TypeAdapter,
-    model_validator,
-)
+from pydantic import BaseModel, model_validator
 from pydantic_settings import (
     BaseSettings,
     CliPositionalArg,
@@ -89,7 +90,8 @@ class ArgMixin(BaseModel, use_attribute_docstrings=True):
 
 class WithSource(ArgMixin):
     source: CliPositionalArg[str]
-    """Url/path to a bioimageio.yaml/rdf.yaml file or a bioimage.io resource identifier, e.g. 'affable-shark'"""
+    """Url/path to a bioimageio.yaml/rdf.yaml file
+    or a bioimage.io resource identifier, e.g. 'affable-shark'"""
 
     @cached_property
     def descr(self):
@@ -223,8 +225,8 @@ class PredictCmd(CmdBase, WithSource):
     --inputs="[[\"a_raw.tif\",\"a_mask.tif\"],[\"b_raw.tif\",\"b_mask.tif\"]]"
     (Note that JSON double quotes need to be escaped.)
 
-    Alternatively a `bioimageio-cli.yaml` (or `bioimageio-cli.json`) file may provide
-    the arguments, e.g.:
+    Alternatively a `bioimageio-cli.yaml` (or `bioimageio-cli.json`) file
+    may provide the arguments, e.g.:
     ```yaml
     inputs:
     - [a_raw.tif, a_mask.tif]
@@ -235,6 +237,8 @@ class PredictCmd(CmdBase, WithSource):
      Aavailable formats are listed at
     https://imageio.readthedocs.io/en/stable/formats/index.html#all-formats.
     Some formats have additional dependencies.
+
+     
     """
 
     outputs: Union[str, NotEmpty[Tuple[str, ...]]] = (
@@ -246,6 +250,8 @@ class PredictCmd(CmdBase, WithSource):
     - '{model_id}' (from model description)
     - '{output_id}' (from model description)
     - '{sample_id}' (extracted from input paths)
+
+     
     """
 
     overwrite: bool = False
@@ -257,7 +263,8 @@ class PredictCmd(CmdBase, WithSource):
     stats: Path = Path("dataset_statistics.json")
     """path to dataset statistics
     (will be written if it does not exist,
-    but the model requires statistical dataset measures)"""
+    but the model requires statistical dataset measures)
+     """
 
     preview: bool = False
     """preview which files would be processed
@@ -274,6 +281,8 @@ class PredictCmd(CmdBase, WithSource):
     3. writes input arguments to `{model_id}_example/bioimageio-cli.yaml`
     4. executes a preview dry-run
     5. executes prediction with example input
+
+     
     """
 
     def _example(self):
@@ -305,7 +314,12 @@ class PredictCmd(CmdBase, WithSource):
         stats_file = "dataset_statistics.json"
         stats = (example_path / stats_file).as_posix()
         yaml.dump(
-            dict(inputs=inputs, outputs=output_pattern, stats=stats_file),
+            dict(
+                inputs=inputs,
+                outputs=output_pattern,
+                stats=stats_file,
+                blockwise=self.blockwise,
+            ),
             bioimageio_cli_path,
         )
 
@@ -324,6 +338,7 @@ class PredictCmd(CmdBase, WithSource):
                 "predict",
                 f"--preview={preview}",  # update once we use implicit flags, see `class Bioimageio` below
                 "--overwrite=True",
+                f"--blockwise={self.blockwise}",
                 f"--stats={q}{stats}{q}",
                 f"--inputs={q}{inputs_escaped if escape else inputs_json}{q}",
                 f"--outputs={q}{output_pattern}{q}",
@@ -346,7 +361,7 @@ class PredictCmd(CmdBase, WithSource):
                 logger.debug("restored '{}'", YAML_FILE)
 
         print(
-            "🎉 Sucessfully ran example prediction!"
+            "🎉 Sucessfully ran example prediction!\n"
             + "To predict the example input using the CLI example config file"
             + f" {example_path/YAML_FILE}, execute `bioimageio predict` from {example_path}:\n"
             + f"$ cd {str(example_path)}\n"
