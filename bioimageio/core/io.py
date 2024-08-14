@@ -1,8 +1,10 @@
 import collections.abc
+from os import PathLike
 from pathlib import Path
 from typing import Any, Mapping, Optional, Sequence, Union
 
 import imageio
+from imageio.v3 import imread, imwrite
 from loguru import logger
 from numpy.typing import NDArray
 from pydantic import BaseModel, ConfigDict, TypeAdapter
@@ -16,63 +18,49 @@ from .sample import Sample
 from .tensor import Tensor
 
 
-def load_image(path: Path, is_volume: bool) -> NDArray[Any]:
-    """load a single image as numpy array"""
+def load_image(path: Path, is_volume: Optional[bool] = None) -> NDArray[Any]:
+    """load a single image as numpy array
+
+    Args:
+        path: image path
+        is_volume: deprecated
+    """
     ext = path.suffix
     if ext == ".npy":
         return load_array(path)
     else:
-        return imageio.volread(path) if is_volume else imageio.imread(path)
+        return imread(path)  # pyright: ignore[reportUnknownVariableType]
 
 
 def load_tensor(path: Path, axes: Optional[Sequence[AxisLike]] = None) -> Tensor:
     # TODO: load axis meta data
-    array = load_image(
-        path,
-        is_volume=(
-            axes is None or sum(Axis.create(a).type != "channel" for a in axes) > 2
-        ),
-    )
+    array = load_image(path)
 
     return Tensor.from_numpy(array, dims=axes)
 
 
-def save_tensor(path: Path, tensor: Tensor) -> None:
+def save_tensor(path: PathLike[str], tensor: Tensor) -> None:
     # TODO: save axis meta data
 
     data: NDArray[Any] = tensor.data.to_numpy()
+    path = Path(path)
     path.parent.mkdir(exist_ok=True, parents=True)
     if path.suffix == ".npy":
         save_array(path, data)
     else:
-        if singleton_axes := [a for a, s in tensor.tagged_shape.items() if s == 1]:
-            tensor = tensor[{a: 0 for a in singleton_axes}]
-            singleton_axes_msg = f"(without singleton axes {singleton_axes}) "
-        else:
-            singleton_axes_msg = ""
+        # if singleton_axes := [a for a, s in tensor.tagged_shape.items() if s == 1]:
+        #     tensor = tensor[{a: 0 for a in singleton_axes}]
+        #     singleton_axes_msg = f"(without singleton axes {singleton_axes}) "
+        # else:
+        singleton_axes_msg = ""
 
-        # attempt to write a volume or an image with imageio
-        error = None
-        for d in (data, data.T):
-            for write in (  # pyright: ignore[reportUnknownVariableType]
-                imageio.volwrite,
-                imageio.imwrite,
-            ):
-                try:
-                    write(path, d)
-                except ValueError as e:
-                    error = e
-                else:
-                    logger.info(
-                        "wrote tensor {} {}to {} using imageio.{}",
-                        dict(tensor.tagged_shape),
-                        singleton_axes_msg,
-                        path,
-                        write.__name__,
-                    )
-
-        if error is not None:
-            raise error
+        logger.debug(
+            "writing tensor {} {}to {}",
+            dict(tensor.tagged_shape),
+            singleton_axes_msg,
+            path,
+        )
+        imwrite(path, data)
 
 
 def save_sample(path: Union[Path, str, PerMember[Path]], sample: Sample) -> None:
