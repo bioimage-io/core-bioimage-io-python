@@ -11,7 +11,7 @@ from bioimageio.core.common import PerMember
 from bioimageio.core.stat_measures import DatasetMeasure, MeasureValue
 from bioimageio.spec.utils import load_array, save_array
 
-from .axis import Axis, AxisId, AxisLike
+from .axis import Axis, AxisLike
 from .sample import Sample
 from .tensor import Tensor
 
@@ -39,17 +39,40 @@ def load_tensor(path: Path, axes: Optional[Sequence[AxisLike]] = None) -> Tensor
 
 def save_tensor(path: Path, tensor: Tensor) -> None:
     # TODO: save axis meta data
-    if tensor.tagged_shape.get(AxisId("batch")) == 1:
-        logger.debug("dropping singleton batch axis for saving {}", path)
-        tensor = tensor[{AxisId("batch"): 0}]
 
-    logger.debug("writing tensor {} to {}", dict(tensor.tagged_shape), path)
     data: NDArray[Any] = tensor.data.to_numpy()
     path.parent.mkdir(exist_ok=True, parents=True)
     if path.suffix == ".npy":
         save_array(path, data)
     else:
-        imageio.volwrite(path, data)
+        if singleton_axes := [a for a, s in tensor.tagged_shape.items() if s == 1]:
+            tensor = tensor[{a: 0 for a in singleton_axes}]
+            singleton_axes_msg = f"(without singleton axes {singleton_axes}) "
+        else:
+            singleton_axes_msg = ""
+
+        # attempt to write a volume or an image with imageio
+        error = None
+        for d in (data, data.T):
+            for write in (  # pyright: ignore[reportUnknownVariableType]
+                imageio.volwrite,
+                imageio.imwrite,
+            ):
+                try:
+                    write(path, d)
+                except ValueError as e:
+                    error = e
+                else:
+                    logger.info(
+                        "wrote tensor {} {}to {} using imageio.{}",
+                        dict(tensor.tagged_shape),
+                        singleton_axes_msg,
+                        path,
+                        write.__name__,
+                    )
+
+        if error is not None:
+            raise error
 
 
 def save_sample(path: Union[Path, str, PerMember[Path]], sample: Sample) -> None:
