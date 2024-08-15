@@ -3,49 +3,33 @@ import zipfile
 from pathlib import Path
 
 import pytest
-
 from bioimageio.spec import load_description
-from bioimageio.spec.model.v0_5 import ModelDescr
+from bioimageio.spec.model import v0_5
+
+from bioimageio.core.weight_converter.keras._tensorflow import (
+    convert_weights_to_tensorflow_saved_model_bundle,
+)
 
 
-@pytest.mark.skip(
-    "tensorflow converter not updated yet"
-)  # TODO: test tensorflow converter
+@pytest.mark.skip()
 def test_tensorflow_converter(any_keras_model: Path, tmp_path: Path):
-    from bioimageio.core.weight_converter.keras import (
-        convert_weights_to_tensorflow_saved_model_bundle,
-    )
-
-    out_path = tmp_path / "weights"
     model = load_description(any_keras_model)
-    assert isinstance(model, ModelDescr), model.validation_summary.format()
+    out_path = tmp_path / "weights.h5"
     ret_val = convert_weights_to_tensorflow_saved_model_bundle(model, out_path)
     assert out_path.exists()
-    assert (out_path / "variables").exists()
-    assert (out_path / "saved_model.pb").exists()
-    assert (
-        ret_val == 0
-    )  # check for correctness is done in converter and returns 0 if it passes
+    assert isinstance(ret_val, v0_5.TensorflowSavedModelBundleWeightsDescr)
+    assert ret_val.source == out_path
 
 
-@pytest.mark.skip(
-    "tensorflow converter not updated yet"
-)  # TODO: test tensorflow converter
+@pytest.mark.skip()
 def test_tensorflow_converter_zipped(any_keras_model: Path, tmp_path: Path):
-    from bioimageio.core.weight_converter.keras import (
-        convert_weights_to_tensorflow_saved_model_bundle,
-    )
-
     out_path = tmp_path / "weights.zip"
     model = load_description(any_keras_model)
-    assert isinstance(model, ModelDescr), model.validation_summary.format()
     ret_val = convert_weights_to_tensorflow_saved_model_bundle(model, out_path)
-    assert out_path.exists()
-    assert (
-        ret_val == 0
-    )  # check for correctness is done in converter and returns 0 if it passes
 
-    # make sure that the zip package was created correctly
+    assert out_path.exists()
+    assert isinstance(ret_val, v0_5.TensorflowSavedModelBundleWeightsDescr)
+
     expected_names = {"saved_model.pb", "variables/variables.index"}
     with zipfile.ZipFile(out_path, "r") as f:
         names = set([name for name in f.namelist()])

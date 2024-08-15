@@ -1,13 +1,11 @@
 # type: ignore  # TODO: type
-import warnings
+from __future__ import annotations
 from pathlib import Path
-from typing import Any, List, Sequence, cast
+from typing import Any, List, Sequence, cast, Union
 
 import numpy as np
 from numpy.testing import assert_array_almost_equal
 
-from bioimageio.spec import load_description
-from bioimageio.spec.common import InvalidDescr
 from bioimageio.spec.model import v0_4, v0_5
 
 from ...digest_spec import get_member_id, get_test_inputs
@@ -19,15 +17,15 @@ except ImportError:
     torch = None
 
 
-def add_onnx_weights(
-    model_spec: "str | Path | v0_4.ModelDescr | v0_5.ModelDescr",
+def convert_weights_to_onnx(
+    model_spec: Union[v0_4.ModelDescr, v0_5.ModelDescr],
     *,
     output_path: Path,
     use_tracing: bool = True,
     test_decimal: int = 4,
     verbose: bool = False,
-    opset_version: "int | None" = None,
-):
+    opset_version: int = 15,
+) -> v0_5.OnnxWeightsDescr:
     """Convert model weights from format 'pytorch_state_dict' to 'onnx'.
 
     Args:
@@ -36,16 +34,6 @@ def add_onnx_weights(
         use_tracing: whether to use tracing or scripting to export the onnx format
         test_decimal: precision for testing whether the results agree
     """
-    if isinstance(model_spec, (str, Path)):
-        loaded_spec = load_description(Path(model_spec))
-        if isinstance(loaded_spec, InvalidDescr):
-            raise ValueError(f"Bad resource description: {loaded_spec}")
-        if not isinstance(loaded_spec, (v0_4.ModelDescr, v0_5.ModelDescr)):
-            raise TypeError(
-                f"Path {model_spec} is a {loaded_spec.__class__.__name__}, expected a v0_4.ModelDescr or v0_5.ModelDescr"
-            )
-        model_spec = loaded_spec
-
     state_dict_weights_descr = model_spec.weights.pytorch_state_dict
     if state_dict_weights_descr is None:
         raise ValueError(
@@ -54,9 +42,10 @@ def add_onnx_weights(
 
     assert torch is not None
     with torch.no_grad():
-
         sample = get_test_inputs(model_spec)
-        input_data = [sample[get_member_id(ipt)].data.data for ipt in model_spec.inputs]
+        input_data = [
+            sample.members[get_member_id(ipt)].data.data for ipt in model_spec.inputs
+        ]
         input_tensors = [torch.from_numpy(ipt) for ipt in input_data]
         model = load_torch_model(state_dict_weights_descr)
 
@@ -81,9 +70,9 @@ def add_onnx_weights(
     try:
         import onnxruntime as rt  # pyright: ignore [reportMissingTypeStubs]
     except ImportError:
-        msg = "The onnx weights were exported, but onnx rt is not available and weights cannot be checked."
-        warnings.warn(msg)
-        return
+        raise ImportError(
+            "The onnx weights were exported, but onnx rt is not available and weights cannot be checked."
+        )
 
     # check the onnx model
     sess = rt.InferenceSession(str(output_path))
@@ -101,8 +90,11 @@ def add_onnx_weights(
     try:
         for exp, out in zip(expected_outputs, outputs):
             assert_array_almost_equal(exp, out, decimal=test_decimal)
-        return 0
     except AssertionError as e:
-        msg = f"The onnx weights were exported, but results before and after conversion do not agree:\n {str(e)}"
-        warnings.warn(msg)
-        return 1
+        raise ValueError(
+            f"Results before and after weights conversion do not agree:\n {str(e)}"
+        )
+
+    return v0_5.OnnxWeightsDescr(
+        source=output_path, parent="pytorch_state_dict", opset_version=opset_version
+    )

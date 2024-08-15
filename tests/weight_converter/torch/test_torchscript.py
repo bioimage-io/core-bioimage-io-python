@@ -1,22 +1,18 @@
 # type: ignore  # TODO enable type checking
-from pathlib import Path
-
 import pytest
+from bioimageio.spec import load_description
+from bioimageio.spec.model import v0_5
 
-from bioimageio.spec.model import v0_4, v0_5
+from bioimageio.core.weight_converter.torch._torchscript import (
+    convert_weights_to_torchscript,
+)
 
 
-@pytest.mark.skip(
-    "torchscript converter not updated yet"
-)  # TODO: test torchscript converter
-def test_torchscript_converter(
-    any_torch_model: "v0_4.ModelDescr | v0_5.ModelDescr", tmp_path: Path
-):
-    from bioimageio.core.weight_converter.torch import convert_weights_to_torchscript
-
+@pytest.mark.skip()
+def test_torchscript_converter(any_torch_model, tmp_path):
+    bio_model = load_description(any_torch_model)
     out_path = tmp_path / "weights.pt"
-    ret_val = convert_weights_to_torchscript(any_torch_model, out_path)
+    ret_val = convert_weights_to_torchscript(bio_model, out_path)
     assert out_path.exists()
-    assert (
-        ret_val == 0
-    )  # check for correctness is done in converter and returns 0 if it passes
+    assert isinstance(ret_val, v0_5.TorchscriptWeightsDescr)
+    assert ret_val.source == out_path

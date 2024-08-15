@@ -5,6 +5,9 @@ from pathlib import Path
 from typing import no_type_check
 from zipfile import ZipFile
 
+from bioimageio.spec._internal.version_type import Version
+from bioimageio.spec.model import v0_5
+
 try:
     import tensorflow.saved_model
 except Exception:
@@ -39,7 +42,7 @@ def _convert_tf1(
     input_name: str,
     output_name: str,
     zip_weights: bool,
-):
+) -> v0_5.TensorflowSavedModelBundleWeightsDescr:
     try:
         # try to build the tf model with the keras import from tensorflow
         from bioimageio.core.weight_converter.keras._tensorflow import (
@@ -77,10 +80,16 @@ def _convert_tf1(
         output_path = _zip_model_bundle(output_path)
     print("TensorFlow model exported to", output_path)
 
-    return 0
+    return v0_5.TensorflowSavedModelBundleWeightsDescr(
+        source=output_path,
+        parent="keras_hdf5",
+        tensorflow_version=Version(tensorflow.__version__),
+    )
 
 
-def _convert_tf2(keras_weight_path: Path, output_path: Path, zip_weights: bool):
+def _convert_tf2(
+    keras_weight_path: Path, output_path: Path, zip_weights: bool
+) -> v0_5.TensorflowSavedModelBundleWeightsDescr:
     try:
         # try to build the tf model with the keras import from tensorflow
         from bioimageio.core.weight_converter.keras._tensorflow import keras
@@ -95,12 +104,16 @@ def _convert_tf2(keras_weight_path: Path, output_path: Path, zip_weights: bool):
         output_path = _zip_model_bundle(output_path)
     print("TensorFlow model exported to", output_path)
 
-    return 0
+    return v0_5.TensorflowSavedModelBundleWeightsDescr(
+        source=output_path,
+        parent="keras_hdf5",
+        tensorflow_version=tensorflow.__version__,
+    )
 
 
 def convert_weights_to_tensorflow_saved_model_bundle(
     model: ModelDescr, output_path: Path
-):
+) -> v0_5.TensorflowSavedModelBundleWeightsDescr:
     """Convert model weights from format 'keras_hdf5' to 'tensorflow_saved_model_bundle'.
 
     Adapted from

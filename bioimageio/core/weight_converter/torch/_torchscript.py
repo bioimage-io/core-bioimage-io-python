@@ -1,9 +1,11 @@
 # type: ignore  # TODO: type
+from __future__ import annotations
 from pathlib import Path
 from typing import List, Sequence, Union
 
 import numpy as np
 from numpy.testing import assert_array_almost_equal
+from torch.jit import ScriptModule
 from typing_extensions import Any, assert_never
 
 from bioimageio.spec.model import v0_4, v0_5
@@ -17,12 +19,11 @@ except ImportError:
     torch = None
 
 
-# FIXME: remove Any
 def _check_predictions(
     model: Any,
     scripted_model: Any,
-    model_spec: "v0_4.ModelDescr | v0_5.ModelDescr",
-    input_data: Sequence["torch.Tensor"],
+    model_spec: v0_4.ModelDescr | v0_5.ModelDescr,
+    input_data: Sequence[torch.Tensor],
 ):
     assert torch is not None
 
@@ -77,22 +78,27 @@ def _check_predictions(
             else:
                 assert_never(axis.size)
 
-    half_step = [st // 2 for st in step]
+    input_data = input_data[0]
+    max_shape = input_data.shape
     max_steps = 4
 
     # check that input and output agree for decreasing input sizes
     for step_factor in range(1, max_steps + 1):
         slice_ = tuple(
-            slice(None) if st == 0 else slice(step_factor * st, -step_factor * st)
-            for st in half_step
-        )
-        this_input = [inp[slice_] for inp in input_data]
-        this_shape = this_input[0].shape
-        if any(tsh < msh for tsh, msh in zip(this_shape, min_shape)):
-            raise ValueError(
-                f"Mismatched shapes: {this_shape}. Expected at least {min_shape}"
+            (
+                slice(None)
+                if step_dim == 0
+                else slice(0, max_dim - step_factor * step_dim, 1)
             )
-        _check(this_input)
+            for max_dim, step_dim in zip(max_shape, step)
+        )
+        sliced_input = input_data[slice_]
+        if any(
+            sliced_dim < min_dim
+            for sliced_dim, min_dim in zip(sliced_input.shape, min_shape)
+        ):
+            return
+        _check([sliced_input])
 
 
 def convert_weights_to_torchscript(
@@ -107,7 +113,6 @@ def convert_weights_to_torchscript(
         output_path: where to save the torchscript weights
         use_tracing: whether to use tracing or scripting to export the torchscript format
     """
-
     state_dict_weights_descr = model_descr.weights.pytorch_state_dict
     if state_dict_weights_descr is None:
         raise ValueError(
@@ -118,26 +123,20 @@ def convert_weights_to_torchscript(
 
     with torch.no_grad():
         input_data = [torch.from_numpy(inp.astype("float32")) for inp in input_data]
-
         model = load_torch_model(state_dict_weights_descr)
-
-        # FIXME: remove Any
-        if use_tracing:
-            scripted_model: Any = torch.jit.trace(model, input_data)
-        else:
-            scripted_model: Any = torch.jit.script(model)
-
+        scripted_module: ScriptModule = (
+            torch.jit.trace(model, input_data)
+            if use_tracing
+            else torch.jit.script(model)
+        )
         _check_predictions(
             model=model,
-            scripted_model=scripted_model,
+            scripted_model=scripted_module,
             model_spec=model_descr,
             input_data=input_data,
         )
 
-    # save the torchscript model
-    scripted_model.save(
-        str(output_path)
-    )  # does not support Path, so need to cast to str
+    scripted_module.save(str(output_path))
 
     return v0_5.TorchscriptWeightsDescr(
         source=output_path,
