@@ -39,7 +39,7 @@ def load_tensor(path: Path, axes: Optional[Sequence[AxisLike]] = None) -> Tensor
     return Tensor.from_numpy(array, dims=axes)
 
 
-def save_tensor(path: PathLike[str], tensor: Tensor) -> None:
+def save_tensor(path: Path, tensor: Tensor) -> None:
     # TODO: save axis meta data
 
     data: NDArray[Any] = tensor.data.to_numpy()
