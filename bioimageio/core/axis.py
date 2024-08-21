@@ -80,10 +80,8 @@ class AxisInfo(Axis):
 
         axis_base = super().create(axis)
         if maybe_singleton is None:
-            if isinstance(axis, Axis):
-                maybe_singleton = axis.type in ("batch", "channel", "index")
-            elif isinstance(axis, str):
-                maybe_singleton = axis in ("b", "c", "i")
+            if isinstance(axis, (Axis, str)):
+                maybe_singleton = True
             else:
                 if axis.size is None:
                     maybe_singleton = True
