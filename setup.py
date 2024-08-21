@@ -29,7 +29,7 @@ _ = setup(
     ],
     packages=find_namespace_packages(exclude=["tests"]),
     install_requires=[
-        "bioimageio.spec ==0.5.3.1",
+        "bioimageio.spec ==0.5.3.2",
         "imageio>=2.10",
         "loguru",
         "numpy",
