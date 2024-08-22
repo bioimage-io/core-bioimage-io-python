@@ -12,6 +12,7 @@ from typing import (
 )
 
 import xarray as xr
+from loguru import logger
 from numpy.typing import NDArray
 from tqdm import tqdm
 
@@ -41,6 +42,7 @@ def predict(
             Mapping[Tuple[MemberId, AxisId], v0_5.ParameterizedSize_N],
         ]
     ] = None,
+    input_block_shape: Optional[Mapping[MemberId, Mapping[AxisId, int]]] = None,
     skip_preprocessing: bool = False,
     skip_postprocessing: bool = False,
     save_output_path: Optional[Union[Path, str]] = None,
@@ -53,7 +55,11 @@ def predict(
         inputs: the input sample or the named input(s) for this model as a dictionary
         sample_id: the sample id.
         blocksize_parameter: (optional) tile the input into blocks parametrized by
-            blocksize according to any parametrized axis sizes defined in the model RDF
+            blocksize according to any parametrized axis sizes defined in the model RDF.
+            Note: For a predetermined, fixed block shape use `input_block_shape`
+        input_block_shape: (optional) tile the input sample tensors into blocks.
+            Note: For a parameterized block shape, not dealing with the exact block shape,
+            use `blocksie_parameter`.
         skip_preprocessing: flag to skip the model's preprocessing
         skip_postprocessing: flag to skip the model's postprocessing
         save_output_path: A path with `{member_id}` `{sample_id}` in it
@@ -83,18 +89,32 @@ def predict(
             pp.model_description, inputs=inputs, sample_id=sample_id
         )
 
-    if blocksize_parameter is None:
-        output = pp.predict_sample_without_blocking(
+    if input_block_shape is not None:
+        if blocksize_parameter is not None:
+            logger.warning(
+                "ignoring blocksize_parameter={} in favor of input_block_shape={}",
+                blocksize_parameter,
+                input_block_shape,
+            )
+
+        output = pp.predict_sample_with_fixed_blocking(
             sample,
+            input_block_shape=input_block_shape,
             skip_preprocessing=skip_preprocessing,
             skip_postprocessing=skip_postprocessing,
         )
-    else:
+    elif blocksize_parameter is not None:
         output = pp.predict_sample_with_blocking(
             sample,
             skip_preprocessing=skip_preprocessing,
             skip_postprocessing=skip_postprocessing,
             ns=blocksize_parameter,
+        )
+    else:
+        output = pp.predict_sample_without_blocking(
+            sample,
+            skip_preprocessing=skip_preprocessing,
+            skip_postprocessing=skip_postprocessing,
         )
     if save_output_path:
         save_sample(save_output_path, output)

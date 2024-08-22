@@ -179,39 +179,16 @@ class PredictionPipeline:
                 self.model_description.id or self.model_description.name
             )
 
-    def predict_sample_with_blocking(
+    def predict_sample_with_fixed_blocking(
         self,
         sample: Sample,
+        input_block_shape: Mapping[MemberId, Mapping[AxisId, int]],
+        *,
         skip_preprocessing: bool = False,
         skip_postprocessing: bool = False,
-        ns: Optional[
-            Union[
-                v0_5.ParameterizedSize_N,
-                Mapping[Tuple[MemberId, AxisId], v0_5.ParameterizedSize_N],
-            ]
-        ] = None,
-        batch_size: Optional[int] = None,
     ) -> Sample:
-        """predict a sample by splitting it into blocks according to the model and the `ns` parameter"""
         if not skip_preprocessing:
             self.apply_preprocessing(sample)
-
-        if isinstance(self.model_description, v0_4.ModelDescr):
-            raise NotImplementedError(
-                "predict with blocking not implemented for v0_4.ModelDescr {self.model_description.name}"
-            )
-
-        ns = ns or self._default_ns
-        if isinstance(ns, int):
-            ns = {
-                (ipt.id, a.id): ns
-                for ipt in self.model_description.inputs
-                for a in ipt.axes
-                if isinstance(a.size, v0_5.ParameterizedSize)
-            }
-        input_block_shape = self.model_description.get_tensor_sizes(
-            ns, batch_size or self._default_batch_size
-        ).inputs
 
         n_blocks, input_blocks = sample.split_into_blocks(
             input_block_shape,
@@ -238,6 +215,47 @@ class PredictionPipeline:
             self.apply_postprocessing(predicted_sample)
 
         return predicted_sample
+
+    def predict_sample_with_blocking(
+        self,
+        sample: Sample,
+        skip_preprocessing: bool = False,
+        skip_postprocessing: bool = False,
+        ns: Optional[
+            Union[
+                v0_5.ParameterizedSize_N,
+                Mapping[Tuple[MemberId, AxisId], v0_5.ParameterizedSize_N],
+            ]
+        ] = None,
+        batch_size: Optional[int] = None,
+    ) -> Sample:
+        """predict a sample by splitting it into blocks according to the model and the `ns` parameter"""
+
+        if isinstance(self.model_description, v0_4.ModelDescr):
+            raise NotImplementedError(
+                "`predict_sample_with_blocking` not implemented for v0_4.ModelDescr"
+                + f" {self.model_description.name}."
+                + " Consider using `predict_sample_with_fixed_blocking`"
+            )
+
+        ns = ns or self._default_ns
+        if isinstance(ns, int):
+            ns = {
+                (ipt.id, a.id): ns
+                for ipt in self.model_description.inputs
+                for a in ipt.axes
+                if isinstance(a.size, v0_5.ParameterizedSize)
+            }
+        input_block_shape = self.model_description.get_tensor_sizes(
+            ns, batch_size or self._default_batch_size
+        ).inputs
+
+        return self.predict_sample_with_fixed_blocking(
+            sample,
+            input_block_shape=input_block_shape,
+            skip_preprocessing=skip_preprocessing,
+            skip_postprocessing=skip_postprocessing,
+        )
 
     # def predict(
     #     self,
