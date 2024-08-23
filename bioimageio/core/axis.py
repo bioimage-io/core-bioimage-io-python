@@ -26,19 +26,6 @@ def _get_axis_type(a: Literal["b", "t", "i", "c", "x", "y", "z"]):
 S = TypeVar("S", bound=str)
 
 
-def _get_axis_id(a: Union[Literal["b", "t", "i", "c"], S]):
-    if a == "b":
-        return AxisId("batch")
-    elif a == "t":
-        return AxisId("time")
-    elif a == "i":
-        return AxisId("index")
-    elif a == "c":
-        return AxisId("channel")
-    else:
-        return AxisId(a)
-
-
 AxisId = v0_5.AxisId
 
 T = TypeVar("T")
@@ -62,7 +49,7 @@ class Axis:
         elif isinstance(axis, Axis):
             return Axis(id=axis.id, type=axis.type)
         elif isinstance(axis, str):
-            return Axis(id=_get_axis_id(axis), type=_get_axis_type(axis))
+            return Axis(id=AxisId(axis), type=_get_axis_type(axis))
         elif isinstance(axis, v0_5.AxisBase):
             return Axis(id=AxisId(axis.id), type=axis.type)
         else:

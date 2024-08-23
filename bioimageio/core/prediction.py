@@ -59,7 +59,7 @@ def predict(
             Note: For a predetermined, fixed block shape use `input_block_shape`
         input_block_shape: (optional) tile the input sample tensors into blocks.
             Note: For a parameterized block shape, not dealing with the exact block shape,
-            use `blocksie_parameter`.
+            use `blocksize_parameter`.
         skip_preprocessing: flag to skip the model's preprocessing
         skip_postprocessing: flag to skip the model's postprocessing
         save_output_path: A path with `{member_id}` `{sample_id}` in it
