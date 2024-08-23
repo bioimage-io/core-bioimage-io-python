@@ -33,7 +33,7 @@ from bioimageio.spec.model.v0_4 import CallableFromDepencency, CallableFromFile
 from bioimageio.spec.model.v0_5 import (
     ArchitectureFromFileDescr,
     ArchitectureFromLibraryDescr,
-    ParameterizedSize,
+    ParameterizedSize_N,
 )
 from bioimageio.spec.utils import load_array
 
