@@ -4,10 +4,12 @@
 
 from bioimageio.spec import build_description as build_description
 from bioimageio.spec import dump_description as dump_description
+from bioimageio.spec import load_dataset_description as load_dataset_description
 from bioimageio.spec import load_description as load_description
 from bioimageio.spec import (
     load_description_and_validate_format_only as load_description_and_validate_format_only,
 )
+from bioimageio.spec import load_model_description as load_model_description
 from bioimageio.spec import save_bioimageio_package as save_bioimageio_package
 from bioimageio.spec import (
     save_bioimageio_package_as_folder as save_bioimageio_package_as_folder,
@@ -15,6 +17,7 @@ from bioimageio.spec import (
 from bioimageio.spec import save_bioimageio_yaml_only as save_bioimageio_yaml_only
 from bioimageio.spec import validate_format as validate_format
 
+from . import digest_spec as digest_spec
 from ._prediction_pipeline import PredictionPipeline as PredictionPipeline
 from ._prediction_pipeline import (
     create_prediction_pipeline as create_prediction_pipeline,
@@ -38,4 +41,4 @@ __version__ = VERSION
 # aliases
 test_resource = test_description
 load_resource = load_description
-load_model = load_description
+load_model = load_model_description
