@@ -41,22 +41,21 @@ from .stat_measures import (
 from .tensor import Tensor
 
 
-def convert_axis_ids(
-    axes: Union[Sequence[AxisId], v0_4.AxesInCZYX],
+def _convert_axis_ids(
+    axes: v0_4.AxesInCZYX,
     mode: Literal["per_sample", "per_dataset"],
 ) -> Tuple[AxisId, ...]:
     if not isinstance(axes, str):
         return tuple(axes)
 
-    axis_map = dict(b=AxisId("batch"), c=AxisId("channel"), i=AxisId("index"))
     if mode == "per_sample":
         ret = []
     elif mode == "per_dataset":
-        ret = [AxisId("batch")]
+        ret = [AxisId("b")]
     else:
         assert_never(mode)
 
-    ret.extend([axis_map.get(a, AxisId(a)) for a in axes])
+    ret.extend([AxisId(a) for a in axes])
     return tuple(ret)
 
 
@@ -375,7 +374,7 @@ class ScaleMeanVariance(_SimpleOperator):
         member_id: MemberId,
     ) -> Self:
         kwargs = descr.kwargs
-        axes = _get_axes(descr.kwargs)
+        _, axes = _get_axes(descr.kwargs)
 
         return cls(
             input=member_id,
@@ -395,17 +394,17 @@ def _get_axes(
         v0_4.ScaleMeanVarianceKwargs,
         v0_5.ScaleMeanVarianceKwargs,
     ]
-) -> Union[Tuple[AxisId, ...], None]:
+) -> Tuple[bool, Optional[Tuple[AxisId, ...]]]:
     if kwargs.axes is None:
-        axes = None
+        return True, None
     elif isinstance(kwargs.axes, str):
-        axes = convert_axis_ids(kwargs.axes, kwargs["mode"])
+        axes = _convert_axis_ids(kwargs.axes, kwargs["mode"])
+        return AxisId("b") in axes, axes
     elif isinstance(kwargs.axes, collections.abc.Sequence):
         axes = tuple(kwargs.axes)
+        return AxisId("batch") in axes, axes
     else:
         assert_never(kwargs.axes)
-
-    return axes
 
 
 @dataclass
@@ -458,8 +457,8 @@ class ScaleRange(_SimpleOperator):
             if kwargs.reference_tensor is None
             else MemberId(str(kwargs.reference_tensor))
         )
-        axes = _get_axes(descr.kwargs)
-        if axes is None or AxisId("batch") in axes:
+        dataset_mode, axes = _get_axes(descr.kwargs)
+        if dataset_mode:
             Percentile = DatasetPercentile
         else:
             Percentile = SampleQuantile
@@ -549,9 +548,9 @@ class ZeroMeanUnitVariance(_SimpleOperator):
         descr: Union[v0_4.ZeroMeanUnitVarianceDescr, v0_5.ZeroMeanUnitVarianceDescr],
         member_id: MemberId,
     ):
-        axes = _get_axes(descr.kwargs)
+        dataset_mode, axes = _get_axes(descr.kwargs)
 
-        if axes is None or AxisId("batch") in axes:
+        if dataset_mode:
             Mean = DatasetMean
             Std = DatasetStd
         else:
