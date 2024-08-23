@@ -34,7 +34,7 @@ PerAxis = Mapping[AxisId, T]
 BatchSize = int
 
 AxisLetter = Literal["b", "i", "t", "c", "z", "y", "x"]
-AxisLike = Union[AxisLetter, v0_5.AnyAxis, "Axis"]
+AxisLike = Union[AxisId, AxisLetter, v0_5.AnyAxis, "Axis"]
 
 
 @dataclass
