@@ -1,8 +1,9 @@
 import traceback
 import warnings
 from itertools import product
-from typing import Dict, Hashable, List, Literal, Optional, Set, Tuple, Union
+from typing import Dict, Hashable, List, Literal, Optional, Set, Tuple, Union, TypedDict
 
+from attr import dataclass
 import numpy as np
 from loguru import logger
 
@@ -35,14 +36,21 @@ def test_model(
     source: Union[v0_5.ModelDescr, PermissiveFileSource],
     weight_format: Optional[WeightsFormat] = None,
     devices: Optional[List[str]] = None,
-    decimal: int = 4,
+    absolute_tolerance: float = 1e-4,
+    relative_tolerance: float = 1e-1,
+    decimal: Optional[int] = None,
 ) -> ValidationSummary:
     """Test model inference"""
+    precision_args = _transform_precision_args(
+        absolute_tolerance=absolute_tolerance,
+        relative_tolerance=relative_tolerance,
+        decimal=decimal
+    )
     return test_description(
         source,
         weight_format=weight_format,
         devices=devices,
-        decimal=decimal,
+        **precision_args,
         expected_type="model",
     )
 
@@ -53,16 +61,23 @@ def test_description(
     format_version: Union[Literal["discover", "latest"], str] = "discover",
     weight_format: Optional[WeightsFormat] = None,
     devices: Optional[List[str]] = None,
-    decimal: int = 4,
+    absolute_tolerance: float = 1e-4,
+    relative_tolerance: float = 1e-1,
+    decimal: Optional[int] = None,
     expected_type: Optional[str] = None,
 ) -> ValidationSummary:
     """Test a bioimage.io resource dynamically, e.g. prediction of test tensors for models"""
+    precision_args = _transform_precision_args(
+        absolute_tolerance=absolute_tolerance,
+        relative_tolerance=relative_tolerance,
+        decimal=decimal
+    )
     rd = load_description_and_test(
         source,
         format_version=format_version,
         weight_format=weight_format,
         devices=devices,
-        decimal=decimal,
+        **precision_args,
         expected_type=expected_type,
     )
     return rd.validation_summary
@@ -74,10 +89,18 @@ def load_description_and_test(
     format_version: Union[Literal["discover", "latest"], str] = "discover",
     weight_format: Optional[WeightsFormat] = None,
     devices: Optional[List[str]] = None,
-    decimal: int = 4,
+    absolute_tolerance: float = 1e-4,
+    relative_tolerance: float = 1e-1,
+    decimal: Optional[int] = None,
     expected_type: Optional[str] = None,
 ) -> Union[ResourceDescr, InvalidDescr]:
     """Test RDF dynamically, e.g. model inference of test inputs"""
+    precision_args = _transform_precision_args(
+        absolute_tolerance=absolute_tolerance,
+        relative_tolerance=relative_tolerance,
+        decimal=decimal
+    )
+
     if (
         isinstance(source, ResourceDescrBase)
         and format_version != "discover"
@@ -110,7 +133,14 @@ def load_description_and_test(
         else:
             weight_formats = [weight_format]
         for w in weight_formats:
-            _test_model_inference(rd, w, devices, decimal)
+            # Note: new_precision_args is created like this to avoid type check errors
+            new_precision_args: Dict[str,float] = {}
+            new_precision_args["absolute_tolerance"] = precision_args.get("absolute_tolerance")
+            new_precision_args["relative_tolerance"] = precision_args.get("relative_tolerance")
+
+            _test_model_inference(
+                rd, w, devices, **new_precision_args
+            )
             if not isinstance(rd, v0_4.ModelDescr):
                 _test_model_inference_parametrized(rd, w, devices)
 
@@ -119,12 +149,42 @@ def load_description_and_test(
 
     return rd
 
+class CombinedPrecisionArgs(TypedDict):
+    absolute_tolerance: float
+    relative_tolerance: float
+    decimal: Optional[int]
+
+def _transform_precision_args(
+    absolute_tolerance: float, relative_tolerance: float, decimal: Optional[int]
+) -> CombinedPrecisionArgs:
+    if decimal is None:
+        return {
+            "absolute_tolerance": absolute_tolerance,
+            "relative_tolerance": relative_tolerance,
+            "decimal": decimal,
+        }
+
+    warnings.warn(
+        "The argument `decimal` has been depricated in favour of " +
+        "`relative_tolerance` and `absolute_tolerance`, and different validation " + 
+        "logic, using `numpy.testing.assert_allclose, see " + 
+        "'https://numpy.org/doc/stable/reference/generated/" +
+        "numpy.testing.assert_allclose.html'. Passing a value for `decimal` will " +
+        "cause validation to revert to the old behaviour."
+    )
+    return {
+        "absolute_tolerance": 10**(-decimal),
+        "relative_tolerance": 0,
+        "decimal": None
+    }
+
 
 def _test_model_inference(
     model: Union[v0_4.ModelDescr, v0_5.ModelDescr],
     weight_format: WeightsFormat,
     devices: Optional[List[str]],
-    decimal: int,
+    absolute_tolerance: float,
+    relative_tolerance: float,
 ) -> None:
     test_name = "Reproduce test outputs from test inputs"
     logger.info("starting '{}'", test_name)
@@ -149,8 +209,11 @@ def _test_model_inference(
                     error = "Output tensors for test case may not be None"
                     break
                 try:
-                    np.testing.assert_array_almost_equal(
-                        res.data, exp.data, decimal=decimal
+                    np.testing.assert_allclose(
+                        res.data,
+                        exp.data,
+                        rtol=relative_tolerance,
+                        atol=absolute_tolerance,
                     )
                 except AssertionError as e:
                     error = f"Output and expected output disagree:\n {e}"
