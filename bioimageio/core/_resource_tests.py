@@ -149,14 +149,24 @@ def load_description_and_test(
 
     return rd
 
-class CombinedPrecisionArgs(TypedDict):
+class PrecisionArgs(TypedDict):
+    """
+    Arguments, both deprecated and current, for setting the precision during validation.
+    """
     absolute_tolerance: float
     relative_tolerance: float
     decimal: Optional[int]
 
 def _transform_precision_args(
     absolute_tolerance: float, relative_tolerance: float, decimal: Optional[int]
-) -> CombinedPrecisionArgs:
+) -> PrecisionArgs:
+    """
+    Transform the precision arguments to conform with the current implementation.
+    
+    If the deprecated `decimal` argument is used it overrides the new behaviour with
+    the old behaviour.
+    """
+    # Already conforms with current implementation
     if decimal is None:
         return {
             "absolute_tolerance": absolute_tolerance,
@@ -166,12 +176,14 @@ def _transform_precision_args(
 
     warnings.warn(
         "The argument `decimal` has been depricated in favour of " +
-        "`relative_tolerance` and `absolute_tolerance`, and different validation " + 
+        "`relative_tolerance` and `absolute_tolerance`, with different validation " + 
         "logic, using `numpy.testing.assert_allclose, see " + 
         "'https://numpy.org/doc/stable/reference/generated/" +
         "numpy.testing.assert_allclose.html'. Passing a value for `decimal` will " +
         "cause validation to revert to the old behaviour."
     )
+    # decimal overrides new behaviour, 
+    #   have to convert the params to emulate old behaviour
     return {
         "absolute_tolerance": 10**(-decimal),
         "relative_tolerance": 0,
