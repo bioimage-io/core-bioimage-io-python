@@ -44,7 +44,7 @@ def test_model(
     precision_args = _handle_legacy_precision_args(
         absolute_tolerance=absolute_tolerance,
         relative_tolerance=relative_tolerance,
-        decimal=decimal
+        decimal=decimal,
     )
     return test_description(
         source,
@@ -70,7 +70,7 @@ def test_description(
     precision_args = _handle_legacy_precision_args(
         absolute_tolerance=absolute_tolerance,
         relative_tolerance=relative_tolerance,
-        decimal=decimal
+        decimal=decimal,
     )
     rd = load_description_and_test(
         source,
@@ -98,7 +98,7 @@ def load_description_and_test(
     precision_args = _handle_legacy_precision_args(
         absolute_tolerance=absolute_tolerance,
         relative_tolerance=relative_tolerance,
-        decimal=decimal
+        decimal=decimal,
     )
 
     if (
@@ -134,13 +134,15 @@ def load_description_and_test(
             weight_formats = [weight_format]
         for w in weight_formats:
             # Note: new_precision_args is created like this to avoid type check errors
-            new_precision_args: Dict[str,float] = {}
-            new_precision_args["absolute_tolerance"] = precision_args.get("absolute_tolerance")
-            new_precision_args["relative_tolerance"] = precision_args.get("relative_tolerance")
-
-            _test_model_inference(
-                rd, w, devices, **new_precision_args
+            new_precision_args: Dict[str, float] = {}
+            new_precision_args["absolute_tolerance"] = precision_args.get(
+                "absolute_tolerance"
             )
+            new_precision_args["relative_tolerance"] = precision_args.get(
+                "relative_tolerance"
+            )
+
+            _test_model_inference(rd, w, devices, **new_precision_args)
             if not isinstance(rd, v0_4.ModelDescr):
                 _test_model_inference_parametrized(rd, w, devices)
 
@@ -148,47 +150,6 @@ def load_description_and_test(
     # TODO: add more tests
 
     return rd
-
-class PrecisionArgs(TypedDict):
-    """
-    Arguments, both deprecated and current, for setting the precision during validation.
-    """
-    absolute_tolerance: float
-    relative_tolerance: float
-    decimal: Optional[int]
-
-def _handle_legacy_precision_args(
-    absolute_tolerance: float, relative_tolerance: float, decimal: Optional[int]
-) -> PrecisionArgs:
-    """
-    Transform the precision arguments to conform with the current implementation.
-    
-    If the deprecated `decimal` argument is used it overrides the new behaviour with
-    the old behaviour.
-    """
-    # Already conforms with current implementation
-    if decimal is None:
-        return {
-            "absolute_tolerance": absolute_tolerance,
-            "relative_tolerance": relative_tolerance,
-            "decimal": decimal,
-        }
-
-    warnings.warn(
-        "The argument `decimal` has been depricated in favour of " +
-        "`relative_tolerance` and `absolute_tolerance`, with different validation " + 
-        "logic, using `numpy.testing.assert_allclose, see " + 
-        "'https://numpy.org/doc/stable/reference/generated/" +
-        "numpy.testing.assert_allclose.html'. Passing a value for `decimal` will " +
-        "cause validation to revert to the old behaviour."
-    )
-    # decimal overrides new behaviour, 
-    #   have to convert the params to emulate old behaviour
-    return {
-        "absolute_tolerance": 10**(-decimal),
-        "relative_tolerance": 0,
-        "decimal": None
-    }
 
 
 def _test_model_inference(
@@ -434,6 +395,50 @@ def _test_expected_resource_type(
             ),
         )
     )
+
+
+class PrecisionArgs(TypedDict):
+    """
+    Arguments, both deprecated and current, for setting the precision during validation.
+    """
+
+    absolute_tolerance: float
+    relative_tolerance: float
+    decimal: Optional[int]
+
+
+def _handle_legacy_precision_args(
+    absolute_tolerance: float, relative_tolerance: float, decimal: Optional[int]
+) -> PrecisionArgs:
+    """
+    Transform the precision arguments to conform with the current implementation.
+
+    If the deprecated `decimal` argument is used it overrides the new behaviour with
+    the old behaviour.
+    """
+    # Already conforms with current implementation
+    if decimal is None:
+        return {
+            "absolute_tolerance": absolute_tolerance,
+            "relative_tolerance": relative_tolerance,
+            "decimal": decimal,
+        }
+
+    warnings.warn(
+        "The argument `decimal` has been depricated in favour of "
+        + "`relative_tolerance` and `absolute_tolerance`, with different validation "
+        + "logic, using `numpy.testing.assert_allclose, see "
+        + "'https://numpy.org/doc/stable/reference/generated/"
+        + "numpy.testing.assert_allclose.html'. Passing a value for `decimal` will "
+        + "cause validation to revert to the old behaviour."
+    )
+    # decimal overrides new behaviour,
+    #   have to convert the params to emulate old behaviour
+    return {
+        "absolute_tolerance": 10 ** (-decimal),
+        "relative_tolerance": 0,
+        "decimal": None,
+    }
 
 
 # def debug_model(
