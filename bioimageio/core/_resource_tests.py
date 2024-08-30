@@ -40,16 +40,14 @@ def test_model(
     decimal: Optional[int] = None,
 ) -> ValidationSummary:
     """Test model inference"""
-    precision_args = _handle_legacy_precision_args(
-        absolute_tolerance=absolute_tolerance,
-        relative_tolerance=relative_tolerance,
-        decimal=decimal,
-    )
+    # NOTE: `decimal` is a legacy argument and is handled in `_test_model_inference`
     return test_description(
         source,
         weight_format=weight_format,
         devices=devices,
-        **precision_args,
+        absolute_tolerance=absolute_tolerance,
+        relative_tolerance=relative_tolerance,
+        decimal=decimal,
         expected_type="model",
     )
 
@@ -66,17 +64,15 @@ def test_description(
     expected_type: Optional[str] = None,
 ) -> ValidationSummary:
     """Test a bioimage.io resource dynamically, e.g. prediction of test tensors for models"""
-    precision_args = _handle_legacy_precision_args(
-        absolute_tolerance=absolute_tolerance,
-        relative_tolerance=relative_tolerance,
-        decimal=decimal,
-    )
+    # NOTE: `decimal` is a legacy argument and is handled in `_test_model_inference`
     rd = load_description_and_test(
         source,
         format_version=format_version,
         weight_format=weight_format,
         devices=devices,
-        **precision_args,
+        absolute_tolerance=absolute_tolerance,
+        relative_tolerance=relative_tolerance,
+        decimal=decimal,
         expected_type=expected_type,
     )
     return rd.validation_summary
@@ -94,12 +90,7 @@ def load_description_and_test(
     expected_type: Optional[str] = None,
 ) -> Union[ResourceDescr, InvalidDescr]:
     """Test RDF dynamically, e.g. model inference of test inputs"""
-    precision_args = _handle_legacy_precision_args(
-        absolute_tolerance=absolute_tolerance,
-        relative_tolerance=relative_tolerance,
-        decimal=decimal,
-    )
-
+    # NOTE: `decimal` is a legacy argument and is handled in `_test_model_inference`
     if (
         isinstance(source, ResourceDescrBase)
         and format_version != "discover"
@@ -132,16 +123,9 @@ def load_description_and_test(
         else:
             weight_formats = [weight_format]
         for w in weight_formats:
-            # Note: new_precision_args is created like this to avoid type check errors
-            new_precision_args: Dict[str, float] = {}
-            new_precision_args["absolute_tolerance"] = precision_args.get(
-                "absolute_tolerance"
+            _test_model_inference(
+                rd, w, devices, absolute_tolerance, relative_tolerance, decimal
             )
-            new_precision_args["relative_tolerance"] = precision_args.get(
-                "relative_tolerance"
-            )
-
-            _test_model_inference(rd, w, devices, **new_precision_args)
             if not isinstance(rd, v0_4.ModelDescr):
                 _test_model_inference_parametrized(rd, w, devices)
 
@@ -157,11 +141,19 @@ def _test_model_inference(
     devices: Optional[List[str]],
     absolute_tolerance: float,
     relative_tolerance: float,
+    decimal: Optional[int],
 ) -> None:
     test_name = "Reproduce test outputs from test inputs"
     logger.info("starting '{}'", test_name)
     error: Optional[str] = None
     tb: List[str] = []
+
+    precision_args = _handle_legacy_precision_args(
+        absolute_tolerance=absolute_tolerance,
+        relative_tolerance=relative_tolerance,
+        decimal=decimal,
+    )
+
     try:
         inputs = get_test_inputs(model)
         expected = get_test_outputs(model)
@@ -184,8 +176,8 @@ def _test_model_inference(
                     np.testing.assert_allclose(
                         res.data,
                         exp.data,
-                        rtol=relative_tolerance,
-                        atol=absolute_tolerance,
+                        rtol=precision_args["relative_tolerance"],
+                        atol=precision_args["absolute_tolerance"],
                     )
                 except AssertionError as e:
                     error = f"Output and expected output disagree:\n {e}"
@@ -396,19 +388,9 @@ def _test_expected_resource_type(
     )
 
 
-class PrecisionArgs(TypedDict):
-    """
-    Arguments, both deprecated and current, for setting the precision during validation.
-    """
-
-    absolute_tolerance: float
-    relative_tolerance: float
-    decimal: Optional[int]
-
-
 def _handle_legacy_precision_args(
     absolute_tolerance: float, relative_tolerance: float, decimal: Optional[int]
-) -> PrecisionArgs:
+) -> Dict[str, float]:
     """
     Transform the precision arguments to conform with the current implementation.
 
@@ -420,7 +402,6 @@ def _handle_legacy_precision_args(
         return {
             "absolute_tolerance": absolute_tolerance,
             "relative_tolerance": relative_tolerance,
-            "decimal": decimal,
         }
 
     warnings.warn(
@@ -436,7 +417,6 @@ def _handle_legacy_precision_args(
     return {
         "absolute_tolerance": 1.5 * 10 ** (-decimal),
         "relative_tolerance": 0,
-        "decimal": None,
     }
 
 
