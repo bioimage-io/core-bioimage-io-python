@@ -41,7 +41,7 @@ def test_model(
     decimal: Optional[int] = None,
 ) -> ValidationSummary:
     """Test model inference"""
-    precision_args = _transform_precision_args(
+    precision_args = _handle_legacy_precision_args(
         absolute_tolerance=absolute_tolerance,
         relative_tolerance=relative_tolerance,
         decimal=decimal
@@ -67,7 +67,7 @@ def test_description(
     expected_type: Optional[str] = None,
 ) -> ValidationSummary:
     """Test a bioimage.io resource dynamically, e.g. prediction of test tensors for models"""
-    precision_args = _transform_precision_args(
+    precision_args = _handle_legacy_precision_args(
         absolute_tolerance=absolute_tolerance,
         relative_tolerance=relative_tolerance,
         decimal=decimal
@@ -95,7 +95,7 @@ def load_description_and_test(
     expected_type: Optional[str] = None,
 ) -> Union[ResourceDescr, InvalidDescr]:
     """Test RDF dynamically, e.g. model inference of test inputs"""
-    precision_args = _transform_precision_args(
+    precision_args = _handle_legacy_precision_args(
         absolute_tolerance=absolute_tolerance,
         relative_tolerance=relative_tolerance,
         decimal=decimal
@@ -157,7 +157,7 @@ class PrecisionArgs(TypedDict):
     relative_tolerance: float
     decimal: Optional[int]
 
-def _transform_precision_args(
+def _handle_legacy_precision_args(
     absolute_tolerance: float, relative_tolerance: float, decimal: Optional[int]
 ) -> PrecisionArgs:
     """
