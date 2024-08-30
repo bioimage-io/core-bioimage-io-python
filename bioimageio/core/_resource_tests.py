@@ -434,7 +434,7 @@ def _handle_legacy_precision_args(
     # decimal overrides new behaviour,
     #   have to convert the params to emulate old behaviour
     return {
-        "absolute_tolerance": 10 ** (-decimal),
+        "absolute_tolerance": 1.5 * 10 ** (-decimal),
         "relative_tolerance": 0,
         "decimal": None,
     }
