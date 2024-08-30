@@ -36,7 +36,7 @@ def test_model(
     weight_format: Optional[WeightsFormat] = None,
     devices: Optional[List[str]] = None,
     absolute_tolerance: float = 1e-4,
-    relative_tolerance: float = 1e-1,
+    relative_tolerance: float = 1e-4,
     decimal: Optional[int] = None,
 ) -> ValidationSummary:
     """Test model inference"""
@@ -59,7 +59,7 @@ def test_description(
     weight_format: Optional[WeightsFormat] = None,
     devices: Optional[List[str]] = None,
     absolute_tolerance: float = 1e-4,
-    relative_tolerance: float = 1e-1,
+    relative_tolerance: float = 1e-4,
     decimal: Optional[int] = None,
     expected_type: Optional[str] = None,
 ) -> ValidationSummary:
@@ -85,7 +85,7 @@ def load_description_and_test(
     weight_format: Optional[WeightsFormat] = None,
     devices: Optional[List[str]] = None,
     absolute_tolerance: float = 1e-4,
-    relative_tolerance: float = 1e-1,
+    relative_tolerance: float = 1e-4,
     decimal: Optional[int] = None,
     expected_type: Optional[str] = None,
 ) -> Union[ResourceDescr, InvalidDescr]:
