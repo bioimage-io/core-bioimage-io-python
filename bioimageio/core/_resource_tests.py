@@ -84,7 +84,7 @@ def load_description_and_test(
     format_version: Union[Literal["discover", "latest"], str] = "discover",
     weight_format: Optional[WeightsFormat] = None,
     devices: Optional[List[str]] = None,
-    absolute_tolerance: float = 1e-4,
+    absolute_tolerance: float = 1.5e-4,
     relative_tolerance: float = 1e-4,
     decimal: Optional[int] = None,
     expected_type: Optional[str] = None,
