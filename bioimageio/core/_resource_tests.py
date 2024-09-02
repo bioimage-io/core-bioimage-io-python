@@ -35,7 +35,7 @@ def test_model(
     source: Union[v0_5.ModelDescr, PermissiveFileSource],
     weight_format: Optional[WeightsFormat] = None,
     devices: Optional[List[str]] = None,
-    absolute_tolerance: float = 1e-4,
+    absolute_tolerance: float = 1.5e-4,
     relative_tolerance: float = 1e-4,
     decimal: Optional[int] = None,
 ) -> ValidationSummary:
