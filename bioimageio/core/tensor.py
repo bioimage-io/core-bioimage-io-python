@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import collections.abc
+from itertools import permutations
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -53,15 +54,13 @@ class Tensor(MagicTensorOpsMixin):
     def __init__(
         self,
         array: NDArray[Any],
-        dims: Sequence[AxisId],
+        dims: Sequence[Union[AxisId, AxisLike]],
     ) -> None:
         super().__init__()
-        if any(not isinstance(d, AxisId) for d in dims):
-            raise TypeError(
-                f"Expected sequence of `AxisId`, but got {list(map(type, dims))}"
-            )
-
-        self._data = xr.DataArray(array, dims=dims)
+        axes = tuple(
+            a if isinstance(a, AxisId) else AxisInfo.create(a).id for a in dims
+        )
+        self._data = xr.DataArray(array, dims=axes)
 
     def __array__(self, dtype: DTypeLike = None):
         return np.asarray(self._data, dtype=dtype)
@@ -168,29 +167,14 @@ class Tensor(MagicTensorOpsMixin):
 
         axis_infos = [AxisInfo.create(a) for a in dims]
         original_shape = tuple(array.shape)
-        if len(array.shape) > len(dims):
-            # remove singletons
-            for i, s in enumerate(array.shape):
-                if s == 1:
-                    array = np.take(array, 0, axis=i)
-                    if len(array.shape) == len(dims):
-                        break
 
-        # add singletons if nececsary
-        for a in axis_infos:
-
-            if len(array.shape) >= len(dims):
-                break
-
-            if a.maybe_singleton:
-                array = array[None]
-
-        if len(array.shape) != len(dims):
+        successful_view = _get_array_view(array, axis_infos)
+        if successful_view is None:
             raise ValueError(
                 f"Array shape {original_shape} does not map to axes {dims}"
             )
 
-        return Tensor(array, dims=tuple(a.id for a in axis_infos))
+        return Tensor(successful_view, dims=tuple(a.id for a in axis_infos))
 
     @property
     def data(self):
@@ -490,3 +474,44 @@ class Tensor(MagicTensorOpsMixin):
             raise ValueError(f"Could not guess an axis mapping for {array.shape}")
 
         return cls(array, dims=tuple(a.id for a in current_axes))
+
+
+def _add_singletons(arr: NDArray[Any], axis_infos: Sequence[AxisInfo]):
+    if len(arr.shape) > len(axis_infos):
+        # remove singletons
+        for i, s in enumerate(arr.shape):
+            if s == 1:
+                arr = np.take(arr, 0, axis=i)
+                if len(arr.shape) == len(axis_infos):
+                    break
+
+    # add singletons if nececsary
+    for i, a in enumerate(axis_infos):
+        if len(arr.shape) >= len(axis_infos):
+            break
+
+        if a.maybe_singleton:
+            arr = np.expand_dims(arr, i)
+
+    return arr
+
+
+def _get_array_view(
+    original_array: NDArray[Any], axis_infos: Sequence[AxisInfo]
+) -> Optional[NDArray[Any]]:
+    perms = list(permutations(range(len(original_array.shape))))
+    perms.insert(1, perms.pop())  # try A and A.T first
+
+    for perm in perms:
+        view = original_array.transpose(perm)
+        view = _add_singletons(view, axis_infos)
+        if len(view.shape) != len(axis_infos):
+            return None
+
+        for s, a in zip(view.shape, axis_infos):
+            if s == 1 and not a.maybe_singleton:
+                break
+        else:
+            return view
+
+    return None

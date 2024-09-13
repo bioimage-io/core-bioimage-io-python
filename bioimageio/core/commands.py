@@ -1,195 +1,104 @@
-"""The `Bioimageio` class defined here has static methods that constitute the `bioimageio` command line interface (using fire)"""
+"""These functions implement the logic of the bioimageio command line interface
+defined in the `cli` module."""
 
 import sys
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional, Sequence, Union
 
-import fire
+from typing_extensions import Literal
 
-from bioimageio.core import __version__, test_description
+from bioimageio.core import test_description
 from bioimageio.spec import (
-    load_description_and_validate_format_only,
+    InvalidDescr,
+    ResourceDescr,
     save_bioimageio_package,
+    save_bioimageio_package_as_folder,
 )
-from bioimageio.spec.dataset import DatasetDescr
-from bioimageio.spec.model import ModelDescr
 from bioimageio.spec.model.v0_5 import WeightsFormat
-from bioimageio.spec.notebook import NotebookDescr
+
+WeightFormatArgAll = Literal[WeightsFormat, "all"]
+WeightFormatArgAny = Literal[WeightsFormat, "any"]
 
 
-class Bioimageio:
-    """🦒 CLI to work with resources shared on bioimage.io"""
+def test(
+    descr: Union[ResourceDescr, InvalidDescr],
+    *,
+    weight_format: WeightFormatArgAll = "all",
+    devices: Optional[Union[str, Sequence[str]]] = None,
+    decimal: int = 4,
+):
+    """test a bioimageio resource
 
-    @staticmethod
-    def package(
-        source: str,
-        path: Path = Path("bioimageio-package.zip"),
-        weight_format: Optional[WeightsFormat] = None,
-    ):
-        """Package a bioimageio resource as a zip file
+    Args:
+        source: Path or URL to the bioimageio resource description file
+                (bioimageio.yaml or rdf.yaml) or to a zipped resource
+        weight_format: (model only) The weight format to use
+        devices: Device(s) to use for testing
+        decimal: Precision for numerical comparisons
+    """
+    if isinstance(descr, InvalidDescr):
+        descr.validation_summary.display()
+        sys.exit(1)
 
-        Args:
-            source: RDF source e.g. `bioimageio.yaml` or `http://example.com/rdf.yaml`
-            path: output path
-            weight-format: include only this single weight-format
-        """
+    summary = test_description(
+        descr,
+        weight_format=None if weight_format == "all" else weight_format,
+        devices=[devices] if isinstance(devices, str) else devices,
+        decimal=decimal,
+    )
+    summary.display()
+    sys.exit(0 if summary.status == "passed" else 1)
+
+
+def validate_format(
+    descr: Union[ResourceDescr, InvalidDescr],
+):
+    """validate the meta data format of a bioimageio resource
+
+    Args:
+        descr: a bioimageio resource description
+    """
+    descr.validation_summary.display()
+    sys.exit(0 if descr.validation_summary.status == "passed" else 1)
+
+
+def package(
+    descr: ResourceDescr, path: Path, *, weight_format: WeightFormatArgAll = "all"
+):
+    """Save a resource's metadata with its associated files.
+
+    Note: If `path` does not have a `.zip` suffix this command will save the
+          package as an unzipped folder instead.
+
+    Args:
+        descr: a bioimageio resource description
+        path: output path
+        weight-format: include only this single weight-format (if not 'all').
+    """
+    if isinstance(descr, InvalidDescr):
+        descr.validation_summary.display()
+        raise ValueError("resource description is invalid")
+
+    if weight_format == "all":
+        weights_priority_order = None
+    else:
+        weights_priority_order = (weight_format,)
+
+    if path.suffix == ".zip":
         _ = save_bioimageio_package(
-            source,
+            descr,
             output_path=path,
-            weights_priority_order=None if weight_format is None else (weight_format,),
+            weights_priority_order=weights_priority_order,
+        )
+    else:
+        _ = save_bioimageio_package_as_folder(
+            descr,
+            output_path=path,
+            weights_priority_order=weights_priority_order,
         )
 
-    @staticmethod
-    def test(
-        source: str,
-        weight_format: Optional[WeightsFormat] = None,
-        *,
-        devices: Optional[Union[str, List[str]]] = None,
-        decimal: int = 4,
-    ):
-        """test a bioimageio resource
 
-        Args:
-            source: Path or URL to the bioimageio resource description file
-                    (bioimageio.yaml or rdf.yaml) or to a zipped resource
-            weight_format: (model only) The weight format to use
-            devices: Device(s) to use for testing
-            decimal: Precision for numerical comparisons
-        """
-        print(f"\ntesting {source}...")
-        summary = test_description(
-            source,
-            weight_format=None if weight_format is None else weight_format,
-            devices=[devices] if isinstance(devices, str) else devices,
-            decimal=decimal,
-        )
-        summary.display()
-        sys.exit(0 if summary.status == "passed" else 1)
-
-    @staticmethod
-    def validate_format(
-        source: str,
-    ):
-        """validate the meta data format of a bioimageio resource description
-
-        Args:
-            source: Path or URL to the bioimageio resource description file
-                    (bioimageio.yaml or rdf.yaml) or to a zipped resource
-        """
-        print(f"\validating meta data format of {source}...")
-        summary = load_description_and_validate_format_only(source)
-        summary.display()
-        sys.exit(0 if summary.status == "passed" else 1)
-
-
-assert isinstance(Bioimageio.__doc__, str)
-Bioimageio.__doc__ += f"""
-
-library versions:
-  bioimageio.core {__version__}
-  bioimageio.spec {__version__}
-
-spec format versions:
-        model RDF {ModelDescr.implemented_format_version}
-      dataset RDF {DatasetDescr.implemented_format_version}
-     notebook RDF {NotebookDescr.implemented_format_version}
-
-"""
-
-# TODO: add predict commands
-# @app.command()
-# def predict_image(
-#     model_rdf: Annotated[
-#         Path, typer.Argument(help="Path to the model resource description file (rdf.yaml) or zipped model.")
-#     ],
-#     inputs: Annotated[List[Path], typer.Option(help="Path(s) to the model input(s).")],
-#     outputs: Annotated[List[Path], typer.Option(help="Path(s) for saveing the model output(s).")],
-#     # NOTE: typer currently doesn't support union types, so we only support boolean here
-#     # padding: Optional[Union[str, bool]] = typer.Argument(
-#     #     None, help="Padding to apply in each dimension passed as json encoded string."
-#     # ),
-#     # tiling: Optional[Union[str, bool]] = typer.Argument(
-#     #     None, help="Padding to apply in each dimension passed as json encoded string."
-#     # ),
-#     padding: Annotated[
-#         Optional[bool], typer.Option(help="Whether to pad the image to a size suited for the model.")
-#     ] = None,
-#     tiling: Annotated[Optional[bool], typer.Option(help="Whether to run prediction in tiling mode.")] = None,
-#     weight_format: Annotated[Optional[WeightsFormatEnum], typer.Option(help="The weight format to use.")] = None,
-#     devices: Annotated[Optional[List[str]], typer.Option(help="Devices for running the model.")] = None,
-# ):
-#     if isinstance(padding, str):
-#         padding = json.loads(padding.replace("'", '"'))
-#         assert isinstance(padding, dict)
-#     if isinstance(tiling, str):
-#         tiling = json.loads(tiling.replace("'", '"'))
-#         assert isinstance(tiling, dict)
-
-#     # this is a weird typer bug: default devices are empty tuple although they should be None
-#     if devices is None or len(devices) == 0:
-#         devices = None
-
-#     prediction.predict_image(
-#         model_rdf, inputs, outputs, padding, tiling, None if weight_format is None else weight_format.value, devices
-#     )
-
-
-# predict_image.__doc__ = prediction.predict_image.__doc__
-
-
-# @app.command()
-# def predict_images(
-#     model_rdf: Annotated[
-#         Path, typer.Argument(help="Path to the model resource description file (rdf.yaml) or zipped model.")
-#     ],
-#     input_pattern: Annotated[str, typer.Argument(help="Glob pattern for the input images.")],
-#     output_folder: Annotated[str, typer.Argument(help="Folder to save the outputs.")],
-#     output_extension: Annotated[Optional[str], typer.Argument(help="Optional output extension.")] = None,
-#     # NOTE: typer currently doesn't support union types, so we only support boolean here
-#     # padding: Optional[Union[str, bool]] = typer.Argument(
-#     #     None, help="Padding to apply in each dimension passed as json encoded string."
-#     # ),
-#     # tiling: Optional[Union[str, bool]] = typer.Argument(
-#     #     None, help="Padding to apply in each dimension passed as json encoded string."
-#     # ),
-#     padding: Annotated[
-#         Optional[bool], typer.Option(help="Whether to pad the image to a size suited for the model.")
-#     ] = None,
-#     tiling: Annotated[Optional[bool], typer.Option(help="Whether to run prediction in tiling mode.")] = None,
-#     weight_format: Annotated[Optional[WeightsFormatEnum], typer.Option(help="The weight format to use.")] = None,
-#     devices: Annotated[Optional[List[str]], typer.Option(help="Devices for running the model.")] = None,
-# ):
-#     input_files = glob(input_pattern)
-#     input_names = [os.path.split(infile)[1] for infile in input_files]
-#     output_files = [os.path.join(output_folder, fname) for fname in input_names]
-#     if output_extension is not None:
-#         output_files = [f"{os.path.splitext(outfile)[0]}{output_extension}" for outfile in output_files]
-
-#     if isinstance(padding, str):
-#         padding = json.loads(padding.replace("'", '"'))
-#         assert isinstance(padding, dict)
-#     if isinstance(tiling, str):
-#         tiling = json.loads(tiling.replace("'", '"'))
-#         assert isinstance(tiling, dict)
-
-#     # this is a weird typer bug: default devices are empty tuple although they should be None
-#     if len(devices) == 0:
-#         devices = None
-#     prediction.predict_images(
-#         model_rdf,
-#         input_files,
-#         output_files,
-#         padding=padding,
-#         tiling=tiling,
-#         weight_format=None if weight_format is None else weight_format.value,
-#         devices=devices,
-#         verbose=True,
-#     )
-
-
-# predict_images.__doc__ = prediction.predict_images.__doc__
-
-
+# TODO: add convert command(s)
 # if torch_converter is not None:
 
 #     @app.command()
@@ -237,11 +146,3 @@ spec format versions:
 #     convert_keras_weights_to_tensorflow.__doc__ = (
 #         keras_converter.convert_weights_to_tensorflow_saved_model_bundle.__doc__
 #     )
-
-
-def main():
-    fire.Fire(Bioimageio, name="bioimageio")
-
-
-if __name__ == "__main__":
-    main()

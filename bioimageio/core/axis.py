@@ -26,19 +26,6 @@ def _get_axis_type(a: Literal["b", "t", "i", "c", "x", "y", "z"]):
 S = TypeVar("S", bound=str)
 
 
-def _get_axis_id(a: Union[Literal["b", "t", "i", "c"], S]):
-    if a == "b":
-        return AxisId("batch")
-    elif a == "t":
-        return AxisId("time")
-    elif a == "i":
-        return AxisId("index")
-    elif a == "c":
-        return AxisId("channel")
-    else:
-        return AxisId(a)
-
-
 AxisId = v0_5.AxisId
 
 T = TypeVar("T")
@@ -47,7 +34,7 @@ PerAxis = Mapping[AxisId, T]
 BatchSize = int
 
 AxisLetter = Literal["b", "i", "t", "c", "z", "y", "x"]
-AxisLike = Union[AxisLetter, v0_5.AnyAxis, "Axis"]
+AxisLike = Union[AxisId, AxisLetter, v0_5.AnyAxis, "Axis"]
 
 
 @dataclass
@@ -62,7 +49,7 @@ class Axis:
         elif isinstance(axis, Axis):
             return Axis(id=axis.id, type=axis.type)
         elif isinstance(axis, str):
-            return Axis(id=_get_axis_id(axis), type=_get_axis_type(axis))
+            return Axis(id=AxisId(axis), type=_get_axis_type(axis))
         elif isinstance(axis, v0_5.AxisBase):
             return Axis(id=AxisId(axis.id), type=axis.type)
         else:
@@ -71,7 +58,7 @@ class Axis:
 
 @dataclass
 class AxisInfo(Axis):
-    maybe_singleton: bool
+    maybe_singleton: bool  # TODO: replace 'maybe_singleton' with size min/max for better axis guessing
 
     @classmethod
     def create(cls, axis: AxisLike, maybe_singleton: Optional[bool] = None) -> AxisInfo:
@@ -80,10 +67,8 @@ class AxisInfo(Axis):
 
         axis_base = super().create(axis)
         if maybe_singleton is None:
-            if isinstance(axis, Axis):
-                maybe_singleton = False
-            elif isinstance(axis, str):
-                maybe_singleton = axis == "b"
+            if isinstance(axis, (Axis, str)):
+                maybe_singleton = True
             else:
                 if axis.size is None:
                     maybe_singleton = True
@@ -91,7 +76,7 @@ class AxisInfo(Axis):
                     maybe_singleton = axis.size == 1
                 elif isinstance(axis.size, v0_5.SizeReference):
                     maybe_singleton = (
-                        False  # TODO: check if singleton is ok for a `SizeReference`
+                        True  # TODO: check if singleton is ok for a `SizeReference`
                     )
                 elif isinstance(
                     axis.size, (v0_5.ParameterizedSize, v0_5.DataDependentSize)

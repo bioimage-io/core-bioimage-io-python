@@ -1,7 +1,7 @@
 import traceback
 import warnings
 from itertools import product
-from typing import Dict, Hashable, List, Literal, Optional, Set, Tuple, Union
+from typing import Dict, Hashable, List, Literal, Optional, Sequence, Set, Tuple, Union
 
 import numpy as np
 from loguru import logger
@@ -57,7 +57,7 @@ def test_description(
     *,
     format_version: Union[Literal["discover", "latest"], str] = "discover",
     weight_format: Optional[WeightsFormat] = None,
-    devices: Optional[List[str]] = None,
+    devices: Optional[Sequence[str]] = None,
     absolute_tolerance: float = 1.5e-4,
     relative_tolerance: float = 1e-4,
     decimal: Optional[int] = None,
@@ -83,7 +83,7 @@ def load_description_and_test(
     *,
     format_version: Union[Literal["discover", "latest"], str] = "discover",
     weight_format: Optional[WeightsFormat] = None,
-    devices: Optional[List[str]] = None,
+    devices: Optional[Sequence[str]] = None,
     absolute_tolerance: float = 1.5e-4,
     relative_tolerance: float = 1e-4,
     decimal: Optional[int] = None,
@@ -138,12 +138,12 @@ def load_description_and_test(
 def _test_model_inference(
     model: Union[v0_4.ModelDescr, v0_5.ModelDescr],
     weight_format: WeightsFormat,
-    devices: Optional[List[str]],
+    devices: Optional[Sequence[str]],
     absolute_tolerance: float,
     relative_tolerance: float,
     decimal: Optional[int],
 ) -> None:
-    test_name = "Reproduce test outputs from test inputs"
+    test_name = f"Reproduce test outputs from test inputs ({weight_format})"
     logger.info("starting '{}'", test_name)
     error: Optional[str] = None
     tb: List[str] = []
@@ -209,7 +209,7 @@ def _test_model_inference(
 def _test_model_inference_parametrized(
     model: v0_5.ModelDescr,
     weight_format: WeightsFormat,
-    devices: Optional[List[str]],
+    devices: Optional[Sequence[str]],
 ) -> None:
     if not any(
         isinstance(a.size, v0_5.ParameterizedSize)
@@ -217,7 +217,7 @@ def _test_model_inference_parametrized(
         for a in ipt.axes
     ):
         # no parameterized sizes => set n=0
-        ns: Set[v0_5.ParameterizedSize.N] = {0}
+        ns: Set[v0_5.ParameterizedSize_N] = {0}
     else:
         ns = {0, 1, 2}
 
@@ -236,7 +236,7 @@ def _test_model_inference_parametrized(
         # no batch axis
         batch_sizes = {1}
 
-    test_cases: Set[Tuple[v0_5.ParameterizedSize.N, BatchSize]] = {
+    test_cases: Set[Tuple[v0_5.ParameterizedSize_N, BatchSize]] = {
         (n, b) for n, b in product(sorted(ns), sorted(batch_sizes))
     }
     logger.info(

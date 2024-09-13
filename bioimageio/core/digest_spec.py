@@ -33,7 +33,7 @@ from bioimageio.spec.model.v0_4 import CallableFromDepencency, CallableFromFile
 from bioimageio.spec.model.v0_5 import (
     ArchitectureFromFileDescr,
     ArchitectureFromLibraryDescr,
-    ParameterizedSize,
+    ParameterizedSize_N,
 )
 from bioimageio.spec.utils import load_array
 
@@ -274,7 +274,7 @@ def get_block_transform(model: v0_5.ModelDescr):
 def get_io_sample_block_metas(
     model: v0_5.ModelDescr,
     input_sample_shape: PerMember[PerAxis[int]],
-    ns: Mapping[Tuple[MemberId, AxisId], ParameterizedSize.N],
+    ns: Mapping[Tuple[MemberId, AxisId], ParameterizedSize_N],
     batch_size: int = 1,
 ) -> Tuple[TotalNumberOfBlocks, Iterable[IO_SampleBlockMeta]]:
     """returns an iterable yielding meta data for corresponding input and output samples"""
@@ -427,11 +427,11 @@ def load_sample_for_model(
     for m, p in paths.items():
         if m not in axes:
             axes[m] = get_axes_infos(model_inputs[m])
-            logger.warning(
-                "loading paths with {}'s default input axes {} for input '{}'",
-                axes[m],
-                model.id or model.name,
+            logger.debug(
+                "loading '{}' from {} with default input axes {} ",
                 m,
+                p,
+                axes[m],
             )
         members[m] = load_tensor(p, axes[m])
 
