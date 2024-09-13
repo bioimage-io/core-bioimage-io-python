@@ -53,7 +53,6 @@ _ = setup(
             "filelock",
             "jupyter",
             "jupyter-black",
-            "ipykernel",
             "matplotlib",
             "keras>=3.0",
             "onnxruntime",
