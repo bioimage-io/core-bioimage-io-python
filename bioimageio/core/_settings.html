@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="generator" content="pdoc 14.6.1"/>
+    <meta name="generator" content="pdoc 14.7.0"/>
     <title>bioimageio.core._settings API documentation</title>
             <link rel="icon" href="https://bioimage.io/static/img/bioimage-io-icon-small.svg"/>
 
@@ -56,7 +56,7 @@
     </ul>
 
 
-            <footer>bioimageio.core 0.6.8</footer>
+            <footer>bioimageio.core 0.6.9</footer>
 
         <a class="attribution" title="pdoc: Python API documentation generator" href="https://pdoc.dev" target="_blank">
             built with <span class="visually-hidden">pdoc</span><img
@@ -138,18 +138,20 @@ bioimageio<wbr>.<a href="./../core.html">core</a><wbr>._settings    </h1>
                                 <div class="attr variable">
             <span class="name">model_config</span>        =
 <input id="Settings.model_config-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
-            <label class="view-value-button pdoc-button" for="Settings.model_config-view-value"></label><span class="default_value">{&#39;extra&#39;: &#39;ignore&#39;, &#39;arbitrary_types_allowed&#39;: True, &#39;validate_default&#39;: True, &#39;case_sensitive&#39;: False, &#39;env_prefix&#39;: &#39;BIOIMAGEIO_&#39;, &#39;env_file&#39;: &#39;.env&#39;, &#39;env_file_encoding&#39;: &#39;utf-8&#39;, &#39;env_ignore_empty&#39;: False, &#39;env_nested_delimiter&#39;: None, &#39;env_parse_none_str&#39;: None, &#39;env_parse_enums&#39;: None, &#39;cli_prog_name&#39;: None, &#39;cli_parse_args&#39;: None, &#39;cli_settings_source&#39;: None, &#39;cli_parse_none_str&#39;: None, &#39;cli_hide_none_type&#39;: False, &#39;cli_avoid_json&#39;: False, &#39;cli_enforce_required&#39;: False, &#39;cli_use_class_docs_for_groups&#39;: False, &#39;cli_exit_on_error&#39;: True, &#39;cli_prefix&#39;: &#39;&#39;, &#39;json_file&#39;: None, &#39;json_file_encoding&#39;: None, &#39;yaml_file&#39;: None, &#39;yaml_file_encoding&#39;: None, &#39;toml_file&#39;: None, &#39;secrets_dir&#39;: None, &#39;protected_namespaces&#39;: (&#39;model_&#39;, &#39;settings_&#39;)}</span>
+            <label class="view-value-button pdoc-button" for="Settings.model_config-view-value"></label><span class="default_value">{&#39;extra&#39;: &#39;ignore&#39;, &#39;arbitrary_types_allowed&#39;: True, &#39;validate_default&#39;: True, &#39;case_sensitive&#39;: False, &#39;env_prefix&#39;: &#39;BIOIMAGEIO_&#39;, &#39;nested_model_default_partial_update&#39;: False, &#39;env_file&#39;: &#39;.env&#39;, &#39;env_file_encoding&#39;: &#39;utf-8&#39;, &#39;env_ignore_empty&#39;: False, &#39;env_nested_delimiter&#39;: None, &#39;env_parse_none_str&#39;: None, &#39;env_parse_enums&#39;: None, &#39;cli_prog_name&#39;: None, &#39;cli_parse_args&#39;: None, &#39;cli_settings_source&#39;: None, &#39;cli_parse_none_str&#39;: None, &#39;cli_hide_none_type&#39;: False, &#39;cli_avoid_json&#39;: False, &#39;cli_enforce_required&#39;: False, &#39;cli_use_class_docs_for_groups&#39;: False, &#39;cli_exit_on_error&#39;: True, &#39;cli_prefix&#39;: &#39;&#39;, &#39;cli_implicit_flags&#39;: False, &#39;json_file&#39;: None, &#39;json_file_encoding&#39;: None, &#39;yaml_file&#39;: None, &#39;yaml_file_encoding&#39;: None, &#39;toml_file&#39;: None, &#39;secrets_dir&#39;: None, &#39;protected_namespaces&#39;: (&#39;model_&#39;, &#39;settings_&#39;)}</span>
 
         
     </div>
     <a class="headerlink" href="#Settings.model_config"></a>
     
-    
+            <div class="docstring"><p>Configuration for the model, should be a dictionary conforming to [<code>ConfigDict</code>][pydantic.config.ConfigDict].</p>
+</div>
+
 
                             </div>
                             <div id="Settings.model_fields" class="classattr">
                                 <div class="attr variable">
-            <span class="name">model_fields</span>        =
+            <span class="name">model_fields</span><span class="annotation">: ClassVar[Dict[str, pydantic.fields.FieldInfo]]</span>        =
 <input id="Settings.model_fields-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
             <label class="view-value-button pdoc-button" for="Settings.model_fields-view-value"></label><span class="default_value">{&#39;cache_path&#39;: FieldInfo(annotation=Path, required=False, default=PosixPath(&#39;/home/runner/.cache/bioimageio&#39;)), &#39;id_map&#39;: FieldInfo(annotation=str, required=False, default=&#39;https://uk1s3.embassy.ebi.ac.uk/public-datasets/bioimage.io/id_map.json&#39;), &#39;id_map_draft&#39;: FieldInfo(annotation=str, required=False, default=&#39;https://uk1s3.embassy.ebi.ac.uk/public-datasets/bioimage.io/id_map_draft.json&#39;), &#39;resolve_draft&#39;: FieldInfo(annotation=bool, required=False, default=True), &#39;perform_io_checks&#39;: FieldInfo(annotation=bool, required=False, default=True), &#39;log_warnings&#39;: FieldInfo(annotation=bool, required=False, default=True), &#39;github_username&#39;: FieldInfo(annotation=Union[str, NoneType], required=False, default=None), &#39;github_token&#39;: FieldInfo(annotation=Union[str, NoneType], required=False, default=None), &#39;CI&#39;: FieldInfo(annotation=Union[bool, str], required=False, default=False, alias=&#39;CI&#39;, alias_priority=2), &#39;user_agent&#39;: FieldInfo(annotation=Union[str, NoneType], required=False, default=None), &#39;keras_backend&#39;: FieldInfo(annotation=Literal[&#39;torch&#39;, &#39;tensorflow&#39;, &#39;jax&#39;], required=False, default=&#39;torch&#39;, alias=&#39;KERAS_BACKEND&#39;, alias_priority=2)}</span>
 
@@ -157,19 +159,26 @@ bioimageio<wbr>.<a href="./../core.html">core</a><wbr>._settings    </h1>
     </div>
     <a class="headerlink" href="#Settings.model_fields"></a>
     
-    
+            <div class="docstring"><p>Metadata about the fields defined on the model,
+mapping of field names to [<code>FieldInfo</code>][pydantic.fields.FieldInfo] objects.</p>
+
+<p>This replaces <code>Model.__fields__</code> from Pydantic V1.</p>
+</div>
+
 
                             </div>
                             <div id="Settings.model_computed_fields" class="classattr">
                                 <div class="attr variable">
-            <span class="name">model_computed_fields</span>        =
+            <span class="name">model_computed_fields</span><span class="annotation">: ClassVar[Dict[str, pydantic.fields.ComputedFieldInfo]]</span>        =
 <span class="default_value">{}</span>
 
         
     </div>
     <a class="headerlink" href="#Settings.model_computed_fields"></a>
     
-    
+            <div class="docstring"><p>A dictionary of computed field names and their corresponding <code>ComputedFieldInfo</code> objects.</p>
+</div>
+
 
                             </div>
                             <div class="inherited">

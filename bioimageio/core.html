@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="generator" content="pdoc 14.6.1"/>
+    <meta name="generator" content="pdoc 14.7.0"/>
     <title>bioimageio.core API documentation</title>
             <link rel="icon" href="https://bioimage.io/static/img/bioimage-io-icon-small.svg"/>
 
@@ -27,9 +27,10 @@
             <ul>
   <li><a href="#core-bioimage-io-python">core-bioimage-io-python</a>
   <ul>
-    <li><a href="#installation">Installation</a></li>
+    <li><a href="#get-started">Get started</a></li>
     <li><a href="#use-the-command-line-interface">💻 Use the Command Line Interface</a></li>
     <li><a href="#use-in-python">🐍 Use in Python</a></li>
+    <li><a href="#logging-level">Logging level</a></li>
     <li><a href="#model-specification">Model Specification</a></li>
     <li><a href="#changelog">Changelog</a></li>
   </ul></li>
@@ -41,6 +42,7 @@
                     <li><a href="core/axis.html">axis</a></li>
                     <li><a href="core/block.html">block</a></li>
                     <li><a href="core/block_meta.html">block_meta</a></li>
+                    <li><a href="core/cli.html">cli</a></li>
                     <li><a href="core/commands.html">commands</a></li>
                     <li><a href="core/common.html">common</a></li>
                     <li><a href="core/dataset.html">dataset</a></li>
@@ -72,7 +74,7 @@
     </ul>
 
 
-            <footer>bioimageio.core 0.6.8</footer>
+            <footer>bioimageio.core 0.6.9</footer>
 
         <a class="attribution" title="pdoc: Python API documentation generator" href="https://pdoc.dev" target="_blank">
             built with <span class="visually-hidden">pdoc</span><img
@@ -97,39 +99,304 @@ bioimageio<wbr>.core    </h1>
 
 <p>Python specific core utilities for bioimage.io resources (in particular models).</p>
 
-<h2 id="installation">Installation</h2>
+<h2 id="get-started">Get started</h2>
 
-<h3 id="via-mambaconda">Via Mamba/Conda</h3>
+<p>To get started we recommend installing <a href="">bioimageio.core</a> with conda together with a deep
+learning framework, e.g. pytorch, and run a few <code>bioimageio</code> commands to see what
+bioimage.core has to offer:</p>
 
-<p>The <code><a href="">bioimageio.core</a></code> package can be installed from conda-forge via</p>
+<ol>
+<li><p>install with conda (for more details on conda environments, <a href="https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html">checkout the conda docs</a>)</p>
 
 <div class="pdoc-code codehilite">
-<pre><span></span><code><span class="go">mamba install -c conda-forge <a href="">bioimageio.core</a></span>
+<pre><span></span><code><span class="go">conda install -c conda-forge <a href="">bioimageio.core</a> pytorch</span>
+</code></pre>
+</div></li>
+
+<li><p>test a model</p>
+
+<div class="pdoc-code codehilite">
+<pre><span></span><code><span class="gp">$ </span>bioimageio<span class="w"> </span><span class="nb">test</span><span class="w"> </span>powerful-chipmunk
+<span class="go">...</span>
 </code></pre>
 </div>
 
-<p>If you do not install any additional deep learning libraries, you will only be able to use general convenience
-functionality, but not any functionality for model prediction.
-To install additional deep learning libraries use:</p>
+<p><details>
+<summary>(Click to expand output)</summary></p>
+
+<div class="pdoc-code codehilite">
+<pre><span></span><code><span class="go">  ✔️                 bioimageio validation passed</span>
+<span class="go">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
+<span class="go">  source            https://uk1s3.embassy.ebi.ac.uk/public-datasets/bioimage.io/powerful-chipmunk/1/files/rdf.yaml</span>
+<span class="go">  format version    model 0.4.10</span>
+<span class="go">  bioimageio.spec   0.5.3post4</span>
+<span class="go">  <a href="">bioimageio.core</a>   0.6.8</span>
+
+
+
+<span class="go">  ❓   location                                     detail</span>
+<span class="go">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
+<span class="go">  ✔️                                                 initialized ModelDescr to describe model 0.4.10</span>
+
+<span class="go">  ✔️                                                 bioimageio.spec format validation model 0.4.10</span>
+<span class="go">  🔍   context.perform_io_checks                    True</span>
+<span class="go">  🔍   context.root                                 https://uk1s3.embassy.ebi.ac.uk/public-datasets/bioimage.io/powerful-chipmunk/1/files</span>
+<span class="go">  🔍   context.known_files.weights.pt               3bd9c518c8473f1e35abb7624f82f3aa92f1015e66fb1f6a9d08444e1f2f5698</span>
+<span class="go">  🔍   context.known_files.weights-torchscript.pt   4e568fd81c0ffa06ce13061327c3f673e1bac808891135badd3b0fcdacee086b</span>
+<span class="go">  🔍   context.warning_level                        error</span>
+
+<span class="go">  ✔️                                                 Reproduce test outputs from test inputs</span>
+
+<span class="go">  ✔️                                                 Reproduce test outputs from test inputs</span>
+</code></pre>
+</div>
+
+<p></details></p>
+
+<p>or</p>
+
+<div class="pdoc-code codehilite">
+<pre><span></span><code><span class="gp">$ </span>bioimageio<span class="w"> </span><span class="nb">test</span><span class="w"> </span>impartial-shrimp
+<span class="go">...</span>
+</code></pre>
+</div>
+
+<p><details><summary>(Click to expand output)</summary></p>
+
+<div class="pdoc-code codehilite">
+<pre><span></span><code><span class="go">  ✔️                 bioimageio validation passed</span>
+<span class="go">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
+<span class="go">  source            https://uk1s3.embassy.ebi.ac.uk/public-datasets/bioimage.io/impartial-shrimp/1.1/files/rdf.yaml</span>
+<span class="go">  format version    model 0.5.3</span>
+<span class="go">  bioimageio.spec   0.5.3.2</span>
+<span class="go">  <a href="">bioimageio.core</a>   0.6.9</span>
+
+
+<span class="go">  ❓   location                    detail</span>
+<span class="go">━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</span>
+<span class="go">  ✔️                                initialized ModelDescr to describe model 0.5.3</span>
+
+
+<span class="go">  ✔️                                bioimageio.spec format validation model 0.5.3</span>
+
+<span class="go">  🔍   context.perform_io_checks   False</span>
+<span class="go">  🔍   context.warning_level       error</span>
+
+<span class="go">  ✔️                                Reproduce test outputs from test inputs (pytorch_state_dict)</span>
+
+
+<span class="go">  ✔️                                Run pytorch_state_dict inference for inputs with batch_size: 1 and size parameter n:</span>
+
+<span class="go">                                  0</span>
+
+<span class="go">  ✔️                                Run pytorch_state_dict inference for inputs with batch_size: 2 and size parameter n:</span>
+
+<span class="go">                                  0</span>
+
+<span class="go">  ✔️                                Run pytorch_state_dict inference for inputs with batch_size: 1 and size parameter n:</span>
+
+<span class="go">                                  1</span>
+
+<span class="go">  ✔️                                Run pytorch_state_dict inference for inputs with batch_size: 2 and size parameter n:</span>
+
+<span class="go">                                  1</span>
+
+<span class="go">  ✔️                                Run pytorch_state_dict inference for inputs with batch_size: 1 and size parameter n:</span>
+
+<span class="go">                                  2</span>
+
+<span class="go">  ✔️                                Run pytorch_state_dict inference for inputs with batch_size: 2 and size parameter n:</span>
+
+<span class="go">                                  2</span>
+
+<span class="go">  ✔️                                Reproduce test outputs from test inputs (torchscript)</span>
+
+
+<span class="go">  ✔️                                Run torchscript inference for inputs with batch_size: 1 and size parameter n: 0</span>
+
+
+<span class="go">  ✔️                                Run torchscript inference for inputs with batch_size: 2 and size parameter n: 0</span>
+
+
+<span class="go">  ✔️                                Run torchscript inference for inputs with batch_size: 1 and size parameter n: 1</span>
+
+
+<span class="go">  ✔️                                Run torchscript inference for inputs with batch_size: 2 and size parameter n: 1</span>
+
+
+<span class="go">  ✔️                                Run torchscript inference for inputs with batch_size: 1 and size parameter n: 2</span>
+
+
+<span class="go">  ✔️                                Run torchscript inference for inputs with batch_size: 2 and size parameter n: 2</span>
+</code></pre>
+</div>
+
+<p></details></p></li>
+<li>run prediction on your data</li>
+</ol>
 
 <ul>
-<li><p>Pytorch/Torchscript:</p>
-
-<p>CPU installation (if you don't have an nvidia graphics card):</p>
+<li><p>display the <code>bioimageio-predict</code> command help to get an overview:</p>
 
 <div class="pdoc-code codehilite">
-<pre><span></span><code><span class="go">mamba install -c pytorch -c conda-forge <a href="">bioimageio.core</a> pytorch torchvision cpuonly</span>
+<pre><span></span><code><span class="gp">$ </span>bioimageio<span class="w"> </span>predict<span class="w"> </span>--help
+<span class="go">...</span>
 </code></pre>
 </div>
+
+<p><details>
+<summary>(Click to expand output)</summary></p>
+
+<div class="pdoc-code codehilite">
+<pre><span></span><code><span class="go">usage: bioimageio predict [-h] [--inputs Sequence[Union[str,Annotated[Tuple[str,...],MinLenmin_length=1]]]]</span>
+<span class="go">                          [--outputs {str,Tuple[str,...]}] [--overwrite bool] [--blockwise bool] [--stats Path]</span>
+<span class="go">                          [--preview bool]</span>
+<span class="go">                          [--weight_format {typing.Literal[&#39;keras_hdf5&#39;,&#39;onnx&#39;,&#39;pytorch_state_dict&#39;,&#39;tensorflow_js&#39;,&#39;tensorflow_saved_model_bundle&#39;,&#39;torchscript&#39;],any}]</span>
+<span class="go">                          [--example bool]</span>
+<span class="go">                          SOURCE</span>
+
+<span class="go">bioimageio-predict - Run inference on your data with a bioimage.io model.</span>
+
+<span class="go">positional arguments:</span>
+<span class="go">  SOURCE                Url/path to a bioimageio.yaml/rdf.yaml file</span>
+<span class="go">                        or a bioimage.io resource identifier, e.g. &#39;affable-shark&#39;</span>
+
+<span class="go">optional arguments:</span>
+<span class="go">  -h, --help            show this help message and exit</span>
+<span class="go">  --inputs Sequence[Union[str,Annotated[Tuple[str,...],MinLen(min_length=1)]]]</span>
+<span class="go">                        Model input sample paths (for each input tensor)</span>
+
+<span class="go">                        The input paths are expected to have shape...</span>
+<span class="go">                        - (n_samples,) or (n_samples,1) for models expecting a single input tensor</span>
+<span class="go">                        - (n_samples,) containing the substring &#39;{input_id}&#39;, or</span>
+<span class="go">                        - (n_samples, n_model_inputs) to provide each input tensor path explicitly.</span>
+
+<span class="go">                        All substrings that are replaced by metadata from the model description:</span>
+<span class="go">                        - &#39;{model_id}&#39;</span>
+<span class="go">                        - &#39;{input_id}&#39;</span>
+
+<span class="go">                        Example inputs to process sample &#39;a&#39; and &#39;b&#39;</span>
+<span class="go">                        for a model expecting a &#39;raw&#39; and a &#39;mask&#39; input tensor:</span>
+<span class="go">                        --inputs=&quot;[[&quot;a_raw.tif&quot;,&quot;a_mask.tif&quot;],[&quot;b_raw.tif&quot;,&quot;b_mask.tif&quot;]]&quot;</span>
+<span class="go">                        (Note that JSON double quotes need to be escaped.)</span>
+
+<span class="go">                        Alternatively a `bioimageio-cli.yaml` (or `bioimageio-cli.json`) file</span>
+<span class="go">                        may provide the arguments, e.g.:</span>
+<span class="go">                        ```yaml</span>
+<span class="go">                        inputs:</span>
+<span class="go">                        - [a_raw.tif, a_mask.tif]</span>
+<span class="go">                        - [b_raw.tif, b_mask.tif]</span>
+<span class="go">                   </span>
+</code></pre>
+</div>
+
+<pre><code>                    `.npy` and any file extension supported by imageio are supported.
+                    Aavailable formats are listed at
+                    https://imageio.readthedocs.io/en/stable/formats/index.html#all-formats.
+                    Some formats have additional dependencies.
+
+                      (default: ('{input_id}/001.tif',))
+</code></pre>
+
+<p>--outputs {str,Tuple[str,...]}
+                        Model output path pattern (per output tensor)</p>
+
+<pre><code>                    All substrings that are replaced:
+                    - '{model_id}' (from model description)
+                    - '{output_id}' (from model description)
+                    - '{sample_id}' (extracted from input paths)
+
+                      (default: outputs_{model_id}/{output_id}/{sample_id}.tif)
+</code></pre>
+
+<p>--overwrite bool      allow overwriting existing output files (default: False)
+  --blockwise bool      process inputs blockwise (default: False)
+  --stats Path          path to dataset statistics
+                        (will be written if it does not exist,
+                        but the model requires statistical dataset measures)
+                          (default: dataset_statistics.json)
+  --preview bool        preview which files would be processed
+                        and what outputs would be generated. (default: False)
+  --weight_format {typing.Literal['keras_hdf5','onnx','pytorch_state_dict','tensorflow_js','tensorflow_saved_model_bundle','torchscript'],any}
+                        The weight format to use. (default: any)
+  --example bool        generate and run an example</p>
+
+<pre><code>                    1. downloads example model inputs
+                    2. creates a `{model_id}_example` folder
+                    3. writes input arguments to `{model_id}_example/bioimageio-cli.yaml`
+                    4. executes a preview dry-run
+                    5. executes prediction with example input
+
+                      (default: False)
+</code></pre></li>
+</ul>
+
+<pre><code>
+    &lt;/details&gt;
+
+- create an example and run prediction locally!
+
+    ```console
+    $ bioimageio predict impartial-shrimp --example=True
+    ...
+</code></pre>
+
+<pre><code>&lt;details&gt;
+&lt;summary&gt;(Click to expand output)&lt;/summary&gt;
+
+```console
+🛈 bioimageio prediction preview structure:
+{'{sample_id}': {'inputs': {'{input_id}': '&lt;input path&gt;'},
+                'outputs': {'{output_id}': '&lt;output path&gt;'}}}
+🔎 bioimageio prediction preview output:
+{'1': {'inputs': {'input0': 'impartial-shrimp_example/input0/001.tif'},
+      'outputs': {'output0': 'impartial-shrimp_example/outputs/output0/1.tif'}}}
+predict with impartial-shrimp: 100%|███████████████████████████████████████████████████| 1/1 [00:21&lt;00:00, 21.76s/sample]
+🎉 Sucessfully ran example prediction!
+To predict the example input using the CLI example config file impartial-shrimp_example\bioimageio-cli.yaml, execute `bioimageio predict` from impartial-shrimp_example:
+$ cd impartial-shrimp_example
+$ bioimageio predict "impartial-shrimp"
+
+Alternatively run the following command in the current workind directory, not the example folder:
+$ bioimageio predict --preview=False --overwrite=True --stats="impartial-shrimp_example/dataset_statistics.json" --inputs="[[\"impartial-shrimp_example/input0/001.tif\"]]" --outputs="impartial-shrimp_example/outputs/{output_id}/{sample_id}.tif" "impartial-shrimp"
+(note that a local 'bioimageio-cli.json' or 'bioimageio-cli.yaml' may interfere with this)
+</code></pre>
+
+<pre><code>
+  &lt;/details&gt;
+
+## Installation
+
+### Via Mamba/Conda
+
+The `<a href="">bioimageio.core</a>` package can be installed from conda-forge via
+
+```console
+mamba install -c conda-forge <a href="">bioimageio.core</a>
+```
+
+If you do not install any additional deep learning libraries, you will only be able to use general convenience
+functionality, but not any functionality for model prediction.
+To install additional deep learning libraries use:
+
+- Pytorch/Torchscript:
+
+  CPU installation (if you don't have an nvidia graphics card):
+
+  ```console
+  mamba install -c pytorch -c conda-forge <a href="">bioimageio.core</a> pytorch torchvision cpuonly
+</code></pre>
 
 <p>GPU installation (for cuda 11.6, please choose the appropriate cuda version for your system):</p>
 
-<div class="pdoc-code codehilite">
+<p><div class="pdoc-code codehilite">
 <pre><span></span><code><span class="go">mamba install -c pytorch -c nvidia -c conda-forge <a href="">bioimageio.core</a> pytorch torchvision pytorch-cuda=11.8</span>
 </code></pre>
-</div>
+</div></p>
 
-<p>Note that the pytorch installation instructions may change in the future. For the latest instructions please refer to <a href="https://pytorch.org/">pytorch.org</a>.</p></li>
+<p>Note that the pytorch installation instructions may change in the future. For the latest instructions please refer to <a href="https://pytorch.org/">pytorch.org</a>.</p>
+
+<ul>
 <li><p>Tensorflow</p>
 
 <p>Currently only CPU version supported</p>
@@ -182,35 +449,20 @@ You can list all the available commands via:</p>
 </code></pre>
 </div>
 
-<p>Check that a model adheres to the model spec:</p>
+<h3 id="cli-inputs-from-file">CLI inputs from file</h3>
+
+<p>For convenience the command line options (not arguments) may be given in a <code>bioimageio-cli.json</code>
+or <code>bioimageio-cli.yaml</code> file, e.g.:</p>
 
 <div class="pdoc-code codehilite">
-<pre><span></span><code><span class="go">bioimageio validate &lt;MODEL&gt;</span>
+<pre><span></span><code><span class="c1"># bioimageio-cli.yaml</span>
+<span class="nt">inputs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">inputs/*_{tensor_id}.h5</span>
+<span class="nt">outputs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">outputs_{model_id}/{sample_id}_{tensor_id}.h5</span>
+<span class="nt">overwrite</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="nt">blockwise</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="nt">stats</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">inputs/dataset_statistics.json</span>
 </code></pre>
 </div>
-
-<p>Test a model (including prediction for the test input):</p>
-
-<div class="pdoc-code codehilite">
-<pre><span></span><code><span class="go">bioimageio test-model &lt;MODEL&gt;</span>
-</code></pre>
-</div>
-
-<p>Run prediction for an image stored on disc:</p>
-
-<div class="pdoc-code codehilite">
-<pre><span></span><code><span class="go">bioimageio predict-image &lt;MODEL&gt; --inputs &lt;INPUT&gt; --outputs &lt;OUTPUT&gt;</span>
-</code></pre>
-</div>
-
-<p>Run prediction for multiple images stored on disc:</p>
-
-<div class="pdoc-code codehilite">
-<pre><span></span><code><span class="go">bioimagei predict-images -m &lt;MODEL&gt; -i &lt;INPUT_PATTERN&gt; - o &lt;OUTPUT_FOLDER&gt;</span>
-</code></pre>
-</div>
-
-<p><code>&lt;INPUT_PATTERN&gt;</code> is a <code>glob</code> pattern to select the desired images, e.g. <code>/path/to/my/images/*.tif</code>.</p>
 
 <h2 id="use-in-python">🐍 Use in Python</h2>
 
@@ -228,11 +480,26 @@ These models are described by---and can be loaded with---the bioimageio.spec pac
 
 <p>and the <a href="https://bioimage-io.github.io/core-bioimage-io-python/bioimageio/core.html">developer documentation</a>.</p>
 
+<h2 id="logging-level">Logging level</h2>
+
+<p><code>bioimageio.spec</code> and <code><a href="">bioimageio.core</a></code> use <a href="https://github.com/Delgan/loguru">loguru</a> for logging, hence the logging level
+may be controlled with the <code>LOGURU_LEVEL</code> environment variable.</p>
+
 <h2 id="model-specification">Model Specification</h2>
 
 <p>The model specification and its validation tools can be found at <a href="https://github.com/bioimage-io/spec-bioimage-io">https://github.com/bioimage-io/spec-bioimage-io</a>.</p>
 
 <h2 id="changelog">Changelog</h2>
+
+<h3 id="069">0.6.9</h3>
+
+<ul>
+<li>improve bioimageio command line interface (details in #157)
+<ul>
+<li>add <code>predict</code> command</li>
+<li>package command input <code>path</code> is now required</li>
+</ul></li>
+</ul>
 
 <h3 id="068">0.6.8</h3>
 
@@ -310,41 +577,44 @@ These models are described by---and can be loaded with---the bioimageio.spec pac
 </span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a>
 </span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="kn">from</span> <span class="nn">bioimageio.spec</span> <span class="kn">import</span> <span class="n">build_description</span> <span class="k">as</span> <span class="n">build_description</span>
 </span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a><span class="kn">from</span> <span class="nn">bioimageio.spec</span> <span class="kn">import</span> <span class="n">dump_description</span> <span class="k">as</span> <span class="n">dump_description</span>
-</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="kn">from</span> <span class="nn">bioimageio.spec</span> <span class="kn">import</span> <span class="n">load_description</span> <span class="k">as</span> <span class="n">load_description</span>
-</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="kn">from</span> <span class="nn">bioimageio.spec</span> <span class="kn">import</span> <span class="p">(</span>
-</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a>    <span class="n">load_description_and_validate_format_only</span> <span class="k">as</span> <span class="n">load_description_and_validate_format_only</span><span class="p">,</span>
-</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="p">)</span>
-</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="kn">from</span> <span class="nn">bioimageio.spec</span> <span class="kn">import</span> <span class="n">save_bioimageio_package</span> <span class="k">as</span> <span class="n">save_bioimageio_package</span>
-</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="kn">from</span> <span class="nn">bioimageio.spec</span> <span class="kn">import</span> <span class="p">(</span>
-</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a>    <span class="n">save_bioimageio_package_as_folder</span> <span class="k">as</span> <span class="n">save_bioimageio_package_as_folder</span><span class="p">,</span>
-</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="p">)</span>
-</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="kn">from</span> <span class="nn">bioimageio.spec</span> <span class="kn">import</span> <span class="n">save_bioimageio_yaml_only</span> <span class="k">as</span> <span class="n">save_bioimageio_yaml_only</span>
-</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="kn">from</span> <span class="nn">bioimageio.spec</span> <span class="kn">import</span> <span class="n">validate_format</span> <span class="k">as</span> <span class="n">validate_format</span>
-</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a>
-</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a><span class="kn">from</span> <span class="nn">._prediction_pipeline</span> <span class="kn">import</span> <span class="n">PredictionPipeline</span> <span class="k">as</span> <span class="n">PredictionPipeline</span>
-</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a><span class="kn">from</span> <span class="nn">._prediction_pipeline</span> <span class="kn">import</span> <span class="p">(</span>
-</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>    <span class="n">create_prediction_pipeline</span> <span class="k">as</span> <span class="n">create_prediction_pipeline</span><span class="p">,</span>
-</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a><span class="p">)</span>
-</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a><span class="kn">from</span> <span class="nn">._resource_tests</span> <span class="kn">import</span> <span class="n">load_description_and_test</span> <span class="k">as</span> <span class="n">load_description_and_test</span>
-</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a><span class="kn">from</span> <span class="nn">._resource_tests</span> <span class="kn">import</span> <span class="n">test_description</span> <span class="k">as</span> <span class="n">test_description</span>
-</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a><span class="kn">from</span> <span class="nn">._resource_tests</span> <span class="kn">import</span> <span class="n">test_model</span> <span class="k">as</span> <span class="n">test_model</span>
-</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a><span class="kn">from</span> <span class="nn">._settings</span> <span class="kn">import</span> <span class="n">settings</span> <span class="k">as</span> <span class="n">settings</span>
-</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a><span class="kn">from</span> <span class="nn">.axis</span> <span class="kn">import</span> <span class="n">Axis</span> <span class="k">as</span> <span class="n">Axis</span>
-</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a><span class="kn">from</span> <span class="nn">.axis</span> <span class="kn">import</span> <span class="n">AxisId</span> <span class="k">as</span> <span class="n">AxisId</span>
-</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a><span class="kn">from</span> <span class="nn">.block_meta</span> <span class="kn">import</span> <span class="n">BlockMeta</span> <span class="k">as</span> <span class="n">BlockMeta</span>
-</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a><span class="kn">from</span> <span class="nn">.common</span> <span class="kn">import</span> <span class="n">MemberId</span> <span class="k">as</span> <span class="n">MemberId</span>
-</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a><span class="kn">from</span> <span class="nn">.prediction</span> <span class="kn">import</span> <span class="n">predict</span> <span class="k">as</span> <span class="n">predict</span>
-</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a><span class="kn">from</span> <span class="nn">.prediction</span> <span class="kn">import</span> <span class="n">predict_many</span> <span class="k">as</span> <span class="n">predict_many</span>
-</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a><span class="kn">from</span> <span class="nn">.sample</span> <span class="kn">import</span> <span class="n">Sample</span> <span class="k">as</span> <span class="n">Sample</span>
-</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a><span class="kn">from</span> <span class="nn">.tensor</span> <span class="kn">import</span> <span class="n">Tensor</span> <span class="k">as</span> <span class="n">Tensor</span>
-</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a><span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">VERSION</span>
-</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a>
-</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a><span class="n">__version__</span> <span class="o">=</span> <span class="n">VERSION</span>
-</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a>
-</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a><span class="c1"># aliases</span>
-</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a><span class="n">test_resource</span> <span class="o">=</span> <span class="n">test_description</span>
-</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a><span class="n">load_resource</span> <span class="o">=</span> <span class="n">load_description</span>
-</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a><span class="n">load_model</span> <span class="o">=</span> <span class="n">load_description</span>
+</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="kn">from</span> <span class="nn">bioimageio.spec</span> <span class="kn">import</span> <span class="n">load_dataset_description</span> <span class="k">as</span> <span class="n">load_dataset_description</span>
+</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="kn">from</span> <span class="nn">bioimageio.spec</span> <span class="kn">import</span> <span class="n">load_description</span> <span class="k">as</span> <span class="n">load_description</span>
+</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="kn">from</span> <span class="nn">bioimageio.spec</span> <span class="kn">import</span> <span class="p">(</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a>    <span class="n">load_description_and_validate_format_only</span> <span class="k">as</span> <span class="n">load_description_and_validate_format_only</span><span class="p">,</span>
+</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="p">)</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="kn">from</span> <span class="nn">bioimageio.spec</span> <span class="kn">import</span> <span class="n">load_model_description</span> <span class="k">as</span> <span class="n">load_model_description</span>
+</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="kn">from</span> <span class="nn">bioimageio.spec</span> <span class="kn">import</span> <span class="n">save_bioimageio_package</span> <span class="k">as</span> <span class="n">save_bioimageio_package</span>
+</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="kn">from</span> <span class="nn">bioimageio.spec</span> <span class="kn">import</span> <span class="p">(</span>
+</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a>    <span class="n">save_bioimageio_package_as_folder</span> <span class="k">as</span> <span class="n">save_bioimageio_package_as_folder</span><span class="p">,</span>
+</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="p">)</span>
+</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="kn">from</span> <span class="nn">bioimageio.spec</span> <span class="kn">import</span> <span class="n">save_bioimageio_yaml_only</span> <span class="k">as</span> <span class="n">save_bioimageio_yaml_only</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a><span class="kn">from</span> <span class="nn">bioimageio.spec</span> <span class="kn">import</span> <span class="n">validate_format</span> <span class="k">as</span> <span class="n">validate_format</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>
+</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a><span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">digest_spec</span> <span class="k">as</span> <span class="n">digest_spec</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a><span class="kn">from</span> <span class="nn">._prediction_pipeline</span> <span class="kn">import</span> <span class="n">PredictionPipeline</span> <span class="k">as</span> <span class="n">PredictionPipeline</span>
+</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a><span class="kn">from</span> <span class="nn">._prediction_pipeline</span> <span class="kn">import</span> <span class="p">(</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a>    <span class="n">create_prediction_pipeline</span> <span class="k">as</span> <span class="n">create_prediction_pipeline</span><span class="p">,</span>
+</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a><span class="p">)</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a><span class="kn">from</span> <span class="nn">._resource_tests</span> <span class="kn">import</span> <span class="n">load_description_and_test</span> <span class="k">as</span> <span class="n">load_description_and_test</span>
+</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a><span class="kn">from</span> <span class="nn">._resource_tests</span> <span class="kn">import</span> <span class="n">test_description</span> <span class="k">as</span> <span class="n">test_description</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a><span class="kn">from</span> <span class="nn">._resource_tests</span> <span class="kn">import</span> <span class="n">test_model</span> <span class="k">as</span> <span class="n">test_model</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a><span class="kn">from</span> <span class="nn">._settings</span> <span class="kn">import</span> <span class="n">settings</span> <span class="k">as</span> <span class="n">settings</span>
+</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a><span class="kn">from</span> <span class="nn">.axis</span> <span class="kn">import</span> <span class="n">Axis</span> <span class="k">as</span> <span class="n">Axis</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a><span class="kn">from</span> <span class="nn">.axis</span> <span class="kn">import</span> <span class="n">AxisId</span> <span class="k">as</span> <span class="n">AxisId</span>
+</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a><span class="kn">from</span> <span class="nn">.block_meta</span> <span class="kn">import</span> <span class="n">BlockMeta</span> <span class="k">as</span> <span class="n">BlockMeta</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a><span class="kn">from</span> <span class="nn">.common</span> <span class="kn">import</span> <span class="n">MemberId</span> <span class="k">as</span> <span class="n">MemberId</span>
+</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a><span class="kn">from</span> <span class="nn">.prediction</span> <span class="kn">import</span> <span class="n">predict</span> <span class="k">as</span> <span class="n">predict</span>
+</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a><span class="kn">from</span> <span class="nn">.prediction</span> <span class="kn">import</span> <span class="n">predict_many</span> <span class="k">as</span> <span class="n">predict_many</span>
+</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a><span class="kn">from</span> <span class="nn">.sample</span> <span class="kn">import</span> <span class="n">Sample</span> <span class="k">as</span> <span class="n">Sample</span>
+</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a><span class="kn">from</span> <span class="nn">.tensor</span> <span class="kn">import</span> <span class="n">Tensor</span> <span class="k">as</span> <span class="n">Tensor</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a><span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">VERSION</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a>
+</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a><span class="n">__version__</span> <span class="o">=</span> <span class="n">VERSION</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>
+</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a><span class="c1"># aliases</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a><span class="n">test_resource</span> <span class="o">=</span> <span class="n">test_description</span>
+</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a><span class="n">load_resource</span> <span class="o">=</span> <span class="n">load_description</span>
+</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a><span class="n">load_model</span> <span class="o">=</span> <span class="n">load_model_description</span>
 </span></pre></div>
 
 
@@ -354,7 +624,7 @@ These models are described by---and can be loaded with---the bioimageio.spec pac
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">test_resource</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">source</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">v0_2</span><span class="o">.</span><span class="n">ApplicationDescr</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">v0_3</span><span class="o">.</span><span class="n">ApplicationDescr</span><span class="p">],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;format_version&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)],</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">v0_2</span><span class="o">.</span><span class="n">DatasetDescr</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">v0_3</span><span class="o">.</span><span class="n">DatasetDescr</span><span class="p">],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;format_version&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)],</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">v0_4</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">v0_5</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;format_version&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)],</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">notebook</span><span class="o">.</span><span class="n">v0_2</span><span class="o">.</span><span class="n">NotebookDescr</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">notebook</span><span class="o">.</span><span class="n">v0_3</span><span class="o">.</span><span class="n">NotebookDescr</span><span class="p">],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;format_version&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)]],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;type&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)],</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">generic</span><span class="o">.</span><span class="n">v0_2</span><span class="o">.</span><span class="n">GenericDescr</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">generic</span><span class="o">.</span><span class="n">v0_3</span><span class="o">.</span><span class="n">GenericDescr</span><span class="p">],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;format_version&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)],</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_internal</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">HttpUrl</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_internal</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">RelativeFilePath</span><span class="p">,</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span> <span class="n">PathType</span><span class="p">(</span><span class="n">path_type</span><span class="o">=</span><span class="s1">&#39;file&#39;</span><span class="p">)]],</span> <span class="n">FieldInfo</span><span class="p">(</span><span class="n">annotation</span><span class="o">=</span><span class="n">NoneType</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="p">[</span><span class="n">_PydanticGeneralMetadata</span><span class="p">(</span><span class="n">union_mode</span><span class="o">=</span><span class="s1">&#39;left_to_right&#39;</span><span class="p">)])],</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">pydantic_core</span><span class="o">.</span><span class="n">_pydantic_core</span><span class="o">.</span><span class="n">Url</span><span class="p">,</span> <span class="n">UrlConstraints</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">2083</span><span class="p">,</span> <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;http&#39;</span><span class="p">,</span> <span class="s1">&#39;https&#39;</span><span class="p">],</span> <span class="n">host_required</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">default_host</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">default_port</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">default_path</span><span class="o">=</span><span class="kc">None</span><span class="p">)],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">YamlValue</span><span class="p">]]</span>,</span><span class="param">	<span class="o">*</span>,</span><span class="param">	<span class="n">format_version</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;discover&#39;</span><span class="p">,</span> <span class="s1">&#39;latest&#39;</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;discover&#39;</span>,</span><span class="param">	<span class="n">weight_format</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;keras_hdf5&#39;</span><span class="p">,</span> <span class="s1">&#39;onnx&#39;</span><span class="p">,</span> <span class="s1">&#39;pytorch_state_dict&#39;</span><span class="p">,</span> <span class="s1">&#39;tensorflow_js&#39;</span><span class="p">,</span> <span class="s1">&#39;tensorflow_saved_model_bundle&#39;</span><span class="p">,</span> <span class="s1">&#39;torchscript&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">devices</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">absolute_tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.00015</span>,</span><span class="param">	<span class="n">relative_tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0001</span>,</span><span class="param">	<span class="n">decimal</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">expected_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></span><span class="return-annotation">) -> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">summary</span><span class="o">.</span><span class="n">ValidationSummary</span>:</span></span>
+        <span class="name">test_resource</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">source</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">v0_2</span><span class="o">.</span><span class="n">ApplicationDescr</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">v0_3</span><span class="o">.</span><span class="n">ApplicationDescr</span><span class="p">],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;format_version&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)],</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">v0_2</span><span class="o">.</span><span class="n">DatasetDescr</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">v0_3</span><span class="o">.</span><span class="n">DatasetDescr</span><span class="p">],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;format_version&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)],</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">v0_4</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">v0_5</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;format_version&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)],</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">notebook</span><span class="o">.</span><span class="n">v0_2</span><span class="o">.</span><span class="n">NotebookDescr</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">notebook</span><span class="o">.</span><span class="n">v0_3</span><span class="o">.</span><span class="n">NotebookDescr</span><span class="p">],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;format_version&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)]],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;type&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)],</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">generic</span><span class="o">.</span><span class="n">v0_2</span><span class="o">.</span><span class="n">GenericDescr</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">generic</span><span class="o">.</span><span class="n">v0_3</span><span class="o">.</span><span class="n">GenericDescr</span><span class="p">],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;format_version&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)],</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_internal</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">HttpUrl</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_internal</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">RelativeFilePath</span><span class="p">,</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span> <span class="n">PathType</span><span class="p">(</span><span class="n">path_type</span><span class="o">=</span><span class="s1">&#39;file&#39;</span><span class="p">)]],</span> <span class="n">FieldInfo</span><span class="p">(</span><span class="n">annotation</span><span class="o">=</span><span class="n">NoneType</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="p">[</span><span class="n">_PydanticGeneralMetadata</span><span class="p">(</span><span class="n">union_mode</span><span class="o">=</span><span class="s1">&#39;left_to_right&#39;</span><span class="p">)])],</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">pydantic_core</span><span class="o">.</span><span class="n">_pydantic_core</span><span class="o">.</span><span class="n">Url</span><span class="p">,</span> <span class="n">UrlConstraints</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">2083</span><span class="p">,</span> <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;http&#39;</span><span class="p">,</span> <span class="s1">&#39;https&#39;</span><span class="p">],</span> <span class="n">host_required</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">default_host</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">default_port</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">default_path</span><span class="o">=</span><span class="kc">None</span><span class="p">)],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">YamlValue</span><span class="p">]]</span>,</span><span class="param">	<span class="o">*</span>,</span><span class="param">	<span class="n">format_version</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;discover&#39;</span><span class="p">,</span> <span class="s1">&#39;latest&#39;</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;discover&#39;</span>,</span><span class="param">	<span class="n">weight_format</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;keras_hdf5&#39;</span><span class="p">,</span> <span class="s1">&#39;onnx&#39;</span><span class="p">,</span> <span class="s1">&#39;pytorch_state_dict&#39;</span><span class="p">,</span> <span class="s1">&#39;tensorflow_js&#39;</span><span class="p">,</span> <span class="s1">&#39;tensorflow_saved_model_bundle&#39;</span><span class="p">,</span> <span class="s1">&#39;torchscript&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">devices</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">absolute_tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.00015</span>,</span><span class="param">	<span class="n">relative_tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0001</span>,</span><span class="param">	<span class="n">decimal</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>,</span><span class="param">	<span class="n">expected_type</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></span><span class="return-annotation">) -> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">summary</span><span class="o">.</span><span class="n">ValidationSummary</span>:</span></span>
 
                 <label class="view-source-button" for="test_resource-view-source"><span>View Source</span></label>
 
@@ -365,7 +635,7 @@ These models are described by---and can be loaded with---the bioimageio.spec pac
 </span><span id="test_resource-58"><a href="#test_resource-58"><span class="linenos">58</span></a>    <span class="o">*</span><span class="p">,</span>
 </span><span id="test_resource-59"><a href="#test_resource-59"><span class="linenos">59</span></a>    <span class="n">format_version</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;discover&quot;</span><span class="p">,</span> <span class="s2">&quot;latest&quot;</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;discover&quot;</span><span class="p">,</span>
 </span><span id="test_resource-60"><a href="#test_resource-60"><span class="linenos">60</span></a>    <span class="n">weight_format</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">WeightsFormat</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="test_resource-61"><a href="#test_resource-61"><span class="linenos">61</span></a>    <span class="n">devices</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="test_resource-61"><a href="#test_resource-61"><span class="linenos">61</span></a>    <span class="n">devices</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 </span><span id="test_resource-62"><a href="#test_resource-62"><span class="linenos">62</span></a>    <span class="n">absolute_tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.5e-4</span><span class="p">,</span>
 </span><span id="test_resource-63"><a href="#test_resource-63"><span class="linenos">63</span></a>    <span class="n">relative_tolerance</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-4</span><span class="p">,</span>
 </span><span id="test_resource-64"><a href="#test_resource-64"><span class="linenos">64</span></a>    <span class="n">decimal</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -474,74 +744,35 @@ These models are described by---and can be loaded with---the bioimageio.spec pac
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">load_model</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">source</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_internal</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">HttpUrl</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_internal</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">RelativeFilePath</span><span class="p">,</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span> <span class="n">PathType</span><span class="p">(</span><span class="n">path_type</span><span class="o">=</span><span class="s1">&#39;file&#39;</span><span class="p">)]],</span> <span class="n">FieldInfo</span><span class="p">(</span><span class="n">annotation</span><span class="o">=</span><span class="n">NoneType</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="p">[</span><span class="n">_PydanticGeneralMetadata</span><span class="p">(</span><span class="n">union_mode</span><span class="o">=</span><span class="s1">&#39;left_to_right&#39;</span><span class="p">)])],</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">pydantic_core</span><span class="o">.</span><span class="n">_pydantic_core</span><span class="o">.</span><span class="n">Url</span><span class="p">,</span> <span class="n">UrlConstraints</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">2083</span><span class="p">,</span> <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;http&#39;</span><span class="p">,</span> <span class="s1">&#39;https&#39;</span><span class="p">],</span> <span class="n">host_required</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">default_host</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">default_port</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">default_path</span><span class="o">=</span><span class="kc">None</span><span class="p">)]]</span>,</span><span class="param">	<span class="o">/</span>,</span><span class="param">	<span class="o">*</span>,</span><span class="param">	<span class="n">format_version</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;discover&#39;</span><span class="p">],</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;latest&#39;</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;discover&#39;</span>,</span><span class="param">	<span class="n">perform_io_checks</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>,</span><span class="param">	<span class="n">known_files</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_internal</span><span class="o">.</span><span class="n">io_basics</span><span class="o">.</span><span class="n">Sha256</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span></span><span class="return-annotation">) -> <span class="n">Union</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">v0_2</span><span class="o">.</span><span class="n">ApplicationDescr</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">v0_3</span><span class="o">.</span><span class="n">ApplicationDescr</span><span class="p">],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;format_version&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)],</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">v0_2</span><span class="o">.</span><span class="n">DatasetDescr</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">v0_3</span><span class="o">.</span><span class="n">DatasetDescr</span><span class="p">],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;format_version&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)],</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">v0_4</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">v0_5</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;format_version&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)],</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">notebook</span><span class="o">.</span><span class="n">v0_2</span><span class="o">.</span><span class="n">NotebookDescr</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">notebook</span><span class="o">.</span><span class="n">v0_3</span><span class="o">.</span><span class="n">NotebookDescr</span><span class="p">],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;format_version&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)]],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;type&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)],</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">generic</span><span class="o">.</span><span class="n">v0_2</span><span class="o">.</span><span class="n">GenericDescr</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">generic</span><span class="o">.</span><span class="n">v0_3</span><span class="o">.</span><span class="n">GenericDescr</span><span class="p">],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;format_version&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)],</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_internal</span><span class="o">.</span><span class="n">common_nodes</span><span class="o">.</span><span class="n">InvalidDescr</span><span class="p">]</span>:</span></span>
+        <span class="name">load_model</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">source</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_internal</span><span class="o">.</span><span class="n">url</span><span class="o">.</span><span class="n">HttpUrl</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_internal</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">RelativeFilePath</span><span class="p">,</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span> <span class="n">PathType</span><span class="p">(</span><span class="n">path_type</span><span class="o">=</span><span class="s1">&#39;file&#39;</span><span class="p">)]],</span> <span class="n">FieldInfo</span><span class="p">(</span><span class="n">annotation</span><span class="o">=</span><span class="n">NoneType</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="p">[</span><span class="n">_PydanticGeneralMetadata</span><span class="p">(</span><span class="n">union_mode</span><span class="o">=</span><span class="s1">&#39;left_to_right&#39;</span><span class="p">)])],</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">pydantic_core</span><span class="o">.</span><span class="n">_pydantic_core</span><span class="o">.</span><span class="n">Url</span><span class="p">,</span> <span class="n">UrlConstraints</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">2083</span><span class="p">,</span> <span class="n">allowed_schemes</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;http&#39;</span><span class="p">,</span> <span class="s1">&#39;https&#39;</span><span class="p">],</span> <span class="n">host_required</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">default_host</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">default_port</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">default_path</span><span class="o">=</span><span class="kc">None</span><span class="p">)]]</span>,</span><span class="param">	<span class="o">/</span>,</span><span class="param">	<span class="o">*</span>,</span><span class="param">	<span class="n">format_version</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;discover&#39;</span><span class="p">],</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;latest&#39;</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;discover&#39;</span>,</span><span class="param">	<span class="n">perform_io_checks</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>,</span><span class="param">	<span class="n">known_files</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_internal</span><span class="o">.</span><span class="n">io_basics</span><span class="o">.</span><span class="n">Sha256</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span></span><span class="return-annotation">) -> <span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">v0_4</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">v0_5</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;format_version&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)]</span>:</span></span>
 
                 <label class="view-source-button" for="load_model-view-source"><span>View Source</span></label>
 
     </div>
     <a class="headerlink" href="#load_model"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="load_model-29"><a href="#load_model-29"><span class="linenos">29</span></a><span class="k">def</span> <span class="nf">load_description</span><span class="p">(</span>
-</span><span id="load_model-30"><a href="#load_model-30"><span class="linenos">30</span></a>    <span class="n">source</span><span class="p">:</span> <span class="n">PermissiveFileSource</span><span class="p">,</span>
-</span><span id="load_model-31"><a href="#load_model-31"><span class="linenos">31</span></a>    <span class="o">/</span><span class="p">,</span>
-</span><span id="load_model-32"><a href="#load_model-32"><span class="linenos">32</span></a>    <span class="o">*</span><span class="p">,</span>
-</span><span id="load_model-33"><a href="#load_model-33"><span class="linenos">33</span></a>    <span class="n">format_version</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;discover&quot;</span><span class="p">],</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;latest&quot;</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">DISCOVER</span><span class="p">,</span>
-</span><span id="load_model-34"><a href="#load_model-34"><span class="linenos">34</span></a>    <span class="n">perform_io_checks</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">perform_io_checks</span><span class="p">,</span>
-</span><span id="load_model-35"><a href="#load_model-35"><span class="linenos">35</span></a>    <span class="n">known_files</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Sha256</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-</span><span id="load_model-36"><a href="#load_model-36"><span class="linenos">36</span></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">ResourceDescr</span><span class="p">,</span> <span class="n">InvalidDescr</span><span class="p">]:</span>
-</span><span id="load_model-37"><a href="#load_model-37"><span class="linenos">37</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;load a bioimage.io resource description</span>
-</span><span id="load_model-38"><a href="#load_model-38"><span class="linenos">38</span></a>
-</span><span id="load_model-39"><a href="#load_model-39"><span class="linenos">39</span></a><span class="sd">    Args:</span>
-</span><span id="load_model-40"><a href="#load_model-40"><span class="linenos">40</span></a><span class="sd">        source: Path or URL to an rdf.yaml or a bioimage.io package</span>
-</span><span id="load_model-41"><a href="#load_model-41"><span class="linenos">41</span></a><span class="sd">                (zip-file with rdf.yaml in it).</span>
-</span><span id="load_model-42"><a href="#load_model-42"><span class="linenos">42</span></a><span class="sd">        format_version: (optional) Use this argument to load the resource and</span>
-</span><span id="load_model-43"><a href="#load_model-43"><span class="linenos">43</span></a><span class="sd">                        convert its metadata to a higher format_version.</span>
-</span><span id="load_model-44"><a href="#load_model-44"><span class="linenos">44</span></a><span class="sd">        perform_io_checks: Wether or not to perform validation that requires file io,</span>
-</span><span id="load_model-45"><a href="#load_model-45"><span class="linenos">45</span></a><span class="sd">                           e.g. downloading a remote files. The existence of local</span>
-</span><span id="load_model-46"><a href="#load_model-46"><span class="linenos">46</span></a><span class="sd">                           absolute file paths is still being checked.</span>
-</span><span id="load_model-47"><a href="#load_model-47"><span class="linenos">47</span></a><span class="sd">        known_files: Allows to bypass download and hashing of referenced files</span>
-</span><span id="load_model-48"><a href="#load_model-48"><span class="linenos">48</span></a><span class="sd">                     (even if perform_io_checks is True).</span>
-</span><span id="load_model-49"><a href="#load_model-49"><span class="linenos">49</span></a>
-</span><span id="load_model-50"><a href="#load_model-50"><span class="linenos">50</span></a><span class="sd">    Returns:</span>
-</span><span id="load_model-51"><a href="#load_model-51"><span class="linenos">51</span></a><span class="sd">        An object holding all metadata of the bioimage.io resource</span>
-</span><span id="load_model-52"><a href="#load_model-52"><span class="linenos">52</span></a>
-</span><span id="load_model-53"><a href="#load_model-53"><span class="linenos">53</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="load_model-54"><a href="#load_model-54"><span class="linenos">54</span></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">ResourceDescrBase</span><span class="p">):</span>
-</span><span id="load_model-55"><a href="#load_model-55"><span class="linenos">55</span></a>        <span class="n">name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">source</span><span class="p">)[:</span><span class="mi">10</span><span class="p">]</span><span class="si">}</span><span class="s2">...&quot;</span><span class="p">)</span>
-</span><span id="load_model-56"><a href="#load_model-56"><span class="linenos">56</span></a>        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;returning already loaded description &#39;</span><span class="si">{}</span><span class="s2">&#39; as is&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
-</span><span id="load_model-57"><a href="#load_model-57"><span class="linenos">57</span></a>        <span class="k">return</span> <span class="n">source</span>  <span class="c1"># pyright: ignore[reportReturnType]</span>
-</span><span id="load_model-58"><a href="#load_model-58"><span class="linenos">58</span></a>
-</span><span id="load_model-59"><a href="#load_model-59"><span class="linenos">59</span></a>    <span class="n">opened</span> <span class="o">=</span> <span class="n">open_bioimageio_yaml</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
-</span><span id="load_model-60"><a href="#load_model-60"><span class="linenos">60</span></a>
-</span><span id="load_model-61"><a href="#load_model-61"><span class="linenos">61</span></a>    <span class="n">context</span> <span class="o">=</span> <span class="n">validation_context_var</span><span class="o">.</span><span class="n">get</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span>
-</span><span id="load_model-62"><a href="#load_model-62"><span class="linenos">62</span></a>        <span class="n">root</span><span class="o">=</span><span class="n">opened</span><span class="o">.</span><span class="n">original_root</span><span class="p">,</span>
-</span><span id="load_model-63"><a href="#load_model-63"><span class="linenos">63</span></a>        <span class="n">file_name</span><span class="o">=</span><span class="n">opened</span><span class="o">.</span><span class="n">original_file_name</span><span class="p">,</span>
-</span><span id="load_model-64"><a href="#load_model-64"><span class="linenos">64</span></a>        <span class="n">perform_io_checks</span><span class="o">=</span><span class="n">perform_io_checks</span><span class="p">,</span>
-</span><span id="load_model-65"><a href="#load_model-65"><span class="linenos">65</span></a>        <span class="n">known_files</span><span class="o">=</span><span class="n">known_files</span><span class="p">,</span>
-</span><span id="load_model-66"><a href="#load_model-66"><span class="linenos">66</span></a>    <span class="p">)</span>
-</span><span id="load_model-67"><a href="#load_model-67"><span class="linenos">67</span></a>
-</span><span id="load_model-68"><a href="#load_model-68"><span class="linenos">68</span></a>    <span class="k">return</span> <span class="n">build_description</span><span class="p">(</span>
-</span><span id="load_model-69"><a href="#load_model-69"><span class="linenos">69</span></a>        <span class="n">opened</span><span class="o">.</span><span class="n">content</span><span class="p">,</span>
-</span><span id="load_model-70"><a href="#load_model-70"><span class="linenos">70</span></a>        <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">,</span>
-</span><span id="load_model-71"><a href="#load_model-71"><span class="linenos">71</span></a>        <span class="n">format_version</span><span class="o">=</span><span class="n">format_version</span><span class="p">,</span>
-</span><span id="load_model-72"><a href="#load_model-72"><span class="linenos">72</span></a>    <span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="load_model-75"><a href="#load_model-75"><span class="linenos">75</span></a><span class="k">def</span> <span class="nf">load_model_description</span><span class="p">(</span>
+</span><span id="load_model-76"><a href="#load_model-76"><span class="linenos">76</span></a>    <span class="n">source</span><span class="p">:</span> <span class="n">PermissiveFileSource</span><span class="p">,</span>
+</span><span id="load_model-77"><a href="#load_model-77"><span class="linenos">77</span></a>    <span class="o">/</span><span class="p">,</span>
+</span><span id="load_model-78"><a href="#load_model-78"><span class="linenos">78</span></a>    <span class="o">*</span><span class="p">,</span>
+</span><span id="load_model-79"><a href="#load_model-79"><span class="linenos">79</span></a>    <span class="n">format_version</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;discover&quot;</span><span class="p">],</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;latest&quot;</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">DISCOVER</span><span class="p">,</span>
+</span><span id="load_model-80"><a href="#load_model-80"><span class="linenos">80</span></a>    <span class="n">perform_io_checks</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">perform_io_checks</span><span class="p">,</span>
+</span><span id="load_model-81"><a href="#load_model-81"><span class="linenos">81</span></a>    <span class="n">known_files</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Sha256</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="load_model-82"><a href="#load_model-82"><span class="linenos">82</span></a><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnyModelDescr</span><span class="p">:</span>
+</span><span id="load_model-83"><a href="#load_model-83"><span class="linenos">83</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;same as `load_description`, but addtionally ensures that the loaded</span>
+</span><span id="load_model-84"><a href="#load_model-84"><span class="linenos">84</span></a><span class="sd">    description is valid and of type &#39;model&#39;.</span>
+</span><span id="load_model-85"><a href="#load_model-85"><span class="linenos">85</span></a><span class="sd">    &quot;&quot;&quot;</span>
+</span><span id="load_model-86"><a href="#load_model-86"><span class="linenos">86</span></a>    <span class="n">rd</span> <span class="o">=</span> <span class="n">load_description</span><span class="p">(</span>
+</span><span id="load_model-87"><a href="#load_model-87"><span class="linenos">87</span></a>        <span class="n">source</span><span class="p">,</span>
+</span><span id="load_model-88"><a href="#load_model-88"><span class="linenos">88</span></a>        <span class="n">format_version</span><span class="o">=</span><span class="n">format_version</span><span class="p">,</span>
+</span><span id="load_model-89"><a href="#load_model-89"><span class="linenos">89</span></a>        <span class="n">perform_io_checks</span><span class="o">=</span><span class="n">perform_io_checks</span><span class="p">,</span>
+</span><span id="load_model-90"><a href="#load_model-90"><span class="linenos">90</span></a>        <span class="n">known_files</span><span class="o">=</span><span class="n">known_files</span><span class="p">,</span>
+</span><span id="load_model-91"><a href="#load_model-91"><span class="linenos">91</span></a>    <span class="p">)</span>
+</span><span id="load_model-92"><a href="#load_model-92"><span class="linenos">92</span></a>    <span class="k">return</span> <span class="n">ensure_description_is_model</span><span class="p">(</span><span class="n">rd</span><span class="p">)</span>
 </span></pre></div>
 
 
-            <div class="docstring"><p>load a bioimage.io resource description</p>
-
-<p>Args:
-    source: Path or URL to an rdf.yaml or a bioimage.io package
-            (zip-file with rdf.yaml in it).
-    format_version: (optional) Use this argument to load the resource and
-                    convert its metadata to a higher format_version.
-    perform_io_checks: Wether or not to perform validation that requires file io,
-                       e.g. downloading a remote files. The existence of local
-                       absolute file paths is still being checked.
-    known_files: Allows to bypass download and hashing of referenced files
-                 (even if perform_io_checks is True).</p>
-
-<p>Returns:
-    An object holding all metadata of the bioimage.io resource</p>
+            <div class="docstring"><p>same as <code>load_description</code>, but addtionally ensures that the loaded
+description is valid and of type 'model'.</p>
 </div>
 
 
