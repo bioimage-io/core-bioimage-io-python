@@ -161,7 +161,7 @@ def predict_many(
                 f"Missing `{{member_id}}` in save_output_path={save_output_path}"
             )
 
-        if not isinstance(inputs, collections.Mapping) and "{sample_id}" not in str(
+        if not isinstance(inputs, collections.abc.Mapping) and "{sample_id}" not in str(
             save_output_path
         ):
             raise ValueError(
@@ -179,7 +179,7 @@ def predict_many(
 
         pp = create_prediction_pipeline(model)
 
-    if not isinstance(inputs, collections.Mapping):
+    if not isinstance(inputs, collections.abc.Mapping):
         sample_id = str(sample_id)
         if "{i}" not in sample_id and "{i:" not in sample_id:
             sample_id += "{i:03}"
