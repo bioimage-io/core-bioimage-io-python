@@ -77,11 +77,12 @@ jobs:
         cache-environment: true
         environment-file: dev/env-py38.yaml
         post-cleanup: 'all'
-    - name: additional setup
+    - name: additional setup spec
       run: |
         conda remove --yes --force bioimageio.spec || true  # allow failure for cached env
         pip install --no-deps git+https://github.com/bioimage-io/spec-bioimage-io
-        pip install --no-deps -e .
+    - name: additional setup core
+      run: pip install --no-deps -e .
     - name: pytest-spec-main
       run: pytest --disable-pytest-warnings
 
