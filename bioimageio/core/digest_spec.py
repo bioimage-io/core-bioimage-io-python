@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import sys
 from itertools import chain
 from pathlib import Path
 from typing import (
@@ -80,15 +81,21 @@ def _import_from_file_impl(
     source: FileSource, callable_name: str, **kwargs: Unpack[HashKwargs]
 ):
     local_file = download(source, **kwargs)
-    module_name = local_file.path.stem
-    importlib_spec = importlib.util.spec_from_file_location(
-        module_name, local_file.path
-    )
-    if importlib_spec is None:
-        raise ImportError(f"Failed to import {module_name} from {source}.")
+    module_name = local_file.path.stem.replace("-", "_").replace(" ", "_")
+    if module_name in sys.modules:
+        logger.info(f"attempting to reload previously loaded '{module_name}'")
+        dep = sys.modules[module_name]
+        dep = importlib.reload(dep)  # reload in case source file has changed
+    else:
+        importlib_spec = importlib.util.spec_from_file_location(
+            module_name, local_file.path
+        )
+        if importlib_spec is None:
+            raise ImportError(f"Failed to import {module_name} from {source}.")
 
-    dep = importlib.util.module_from_spec(importlib_spec)
-    importlib_spec.loader.exec_module(dep)  # type: ignore  # todo: possible to use "loader.load_module"?
+        dep = importlib.util.module_from_spec(importlib_spec)
+        importlib_spec.loader.exec_module(dep)  # type: ignore  # todo: possible to use "loader.load_module"?
+
     return getattr(dep, callable_name)
 
 
