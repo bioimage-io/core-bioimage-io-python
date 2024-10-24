@@ -182,7 +182,9 @@ def _get_stat(
     req_dataset_meas, _ = get_required_dataset_measures(model_descr)
 
     if stats_path.exists():
-        logger.info(f"loading precomputed dataset measures from {stats_path}")
+        logger.opt(depth=1).info(
+            f"loading precomputed dataset measures from {stats_path}"
+        )
         stat = load_dataset_stat(stats_path)
         for m in req_dataset_meas:
             if m not in stat:
