@@ -4,6 +4,7 @@
 [![downloads](https://static.pepy.tech/badge/bioimageio.core)](https://pepy.tech/project/bioimageio.core)
 [![conda-forge downloads](https://img.shields.io/conda/dn/conda-forge/bioimageio.core.svg?label=conda-forge)](https://anaconda.org/conda-forge/bioimageio.core/)
 ![code style](https://img.shields.io/badge/code%20style-black-000000.svg)
+[![coverage](https://bioimage-io.github.io/core-bioimage-io-python/coverage/coverage-badge.svg)](https://bioimage-io.github.io/core-bioimage-io-python/coverage/index.html)
 
 # core-bioimage-io-python
 
