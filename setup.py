@@ -61,6 +61,7 @@ _ = setup(
             "pdoc",
             "psutil",  # parallel pytest with 'pytest -n auto'
             "pyright",
+            "pytest-cov",
             "pytest-xdist",  # parallel pytest
             "pytest",
             "torch>=1.6",

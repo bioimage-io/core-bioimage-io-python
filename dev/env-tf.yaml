@@ -25,6 +25,7 @@ dependencies:
   - pydantic-settings
   - pyright
   - pytest
+  - pytest-cov
   - pytest-xdist
   - python-dotenv
   # - python=3.9  # removed

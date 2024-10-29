@@ -1,3 +1,5 @@
+__pycache__/
+.coverage
 .env
 .idea/
 .tox/
@@ -6,6 +8,7 @@
 **/tmp
 build/
 cache
+coverage.xml
 dist/
 docs/
 typings/pooch/
