@@ -8,10 +8,11 @@ import json
 import shutil
 import subprocess
 import sys
+import zipfile
 from argparse import RawTextHelpFormatter
 from difflib import SequenceMatcher
 from functools import cached_property
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from pprint import pformat, pprint
 from typing import (
     Any,
@@ -41,6 +42,7 @@ from pydantic_settings import (
 )
 from ruyaml import YAML
 from tqdm import tqdm
+from typing_extensions import assert_never
 
 from bioimageio.core import (
     MemberId,
@@ -302,10 +304,23 @@ class PredictCmd(CmdBase, WithSource):
 
         for t, src in zip(input_ids, example_inputs):
             local = download(src).path
-            dst = Path(f"{example_path}/{t}/001{''.join(local.suffixes)}")
+            if isinstance(local, Path):
+                suffixes = local.suffixes
+            elif isinstance(local, zipfile.Path):
+                # .suffixes for zipfile.Path only added in py 3.11
+                suffixes = PurePosixPath(local.at).suffixes
+            else:
+                assert_never(local)
+
+            dst = Path(f"{example_path}/{t}/001{''.join(suffixes)}")
             dst.parent.mkdir(parents=True, exist_ok=True)
             inputs001.append(dst.as_posix())
-            shutil.copy(local, dst)
+            if isinstance(local, Path):
+                shutil.copy(local, dst)
+            elif isinstance(local, zipfile.Path):
+                _ = local.root.extract(local.at, path=dst)
+            else:
+                assert_never(local)
 
         inputs = [tuple(inputs001)]
         output_pattern = f"{example_path}/outputs/{{output_id}}/{{sample_id}}.tif"
