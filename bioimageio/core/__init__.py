@@ -2,43 +2,71 @@
 .. include:: ../../README.md
 """
 
-from bioimageio.spec import build_description as build_description
-from bioimageio.spec import dump_description as dump_description
-from bioimageio.spec import load_dataset_description as load_dataset_description
-from bioimageio.spec import load_description as load_description
+from bioimageio.core.stat_measures import Stat
 from bioimageio.spec import (
-    load_description_and_validate_format_only as load_description_and_validate_format_only,
+    build_description,
+    dump_description,
+    load_dataset_description,
+    load_description,
+    load_description_and_validate_format_only,
+    load_model_description,
+    save_bioimageio_package,
+    save_bioimageio_package_as_folder,
+    save_bioimageio_yaml_only,
+    validate_format,
 )
-from bioimageio.spec import load_model_description as load_model_description
-from bioimageio.spec import save_bioimageio_package as save_bioimageio_package
-from bioimageio.spec import (
-    save_bioimageio_package_as_folder as save_bioimageio_package_as_folder,
-)
-from bioimageio.spec import save_bioimageio_yaml_only as save_bioimageio_yaml_only
-from bioimageio.spec import validate_format as validate_format
 
-from . import digest_spec as digest_spec
-from ._prediction_pipeline import PredictionPipeline as PredictionPipeline
-from ._prediction_pipeline import (
-    create_prediction_pipeline as create_prediction_pipeline,
-)
-from ._resource_tests import load_description_and_test as load_description_and_test
-from ._resource_tests import test_description as test_description
-from ._resource_tests import test_model as test_model
-from ._settings import settings as settings
-from .axis import Axis as Axis
-from .axis import AxisId as AxisId
-from .block_meta import BlockMeta as BlockMeta
-from .common import MemberId as MemberId
-from .prediction import predict as predict
-from .prediction import predict_many as predict_many
-from .sample import Sample as Sample
-from .tensor import Tensor as Tensor
+from . import digest_spec
+from ._prediction_pipeline import PredictionPipeline, create_prediction_pipeline
+from ._resource_tests import load_description_and_test, test_description, test_model
+from ._settings import settings
+from .axis import Axis, AxisId
+from .block_meta import BlockMeta
+from .common import MemberId
+from .prediction import predict, predict_many
+from .sample import Sample
+from .stat_calculators import compute_dataset_measures
+from .tensor import Tensor
 from .utils import VERSION
 
 __version__ = VERSION
+
 
 # aliases
 test_resource = test_description
 load_resource = load_description
 load_model = load_model_description
+
+__all__ = [
+    "__version__",
+    "Axis",
+    "AxisId",
+    "BlockMeta",
+    "build_description",
+    "compute_dataset_measures",
+    "create_prediction_pipeline",
+    "digest_spec",
+    "dump_description",
+    "load_dataset_description",
+    "load_description_and_test",
+    "load_description_and_validate_format_only",
+    "load_description",
+    "load_model_description",
+    "load_model",
+    "load_resource",
+    "MemberId",
+    "predict_many",
+    "predict",
+    "PredictionPipeline",
+    "Sample",
+    "save_bioimageio_package_as_folder",
+    "save_bioimageio_package",
+    "save_bioimageio_yaml_only",
+    "settings",
+    "Stat",
+    "Tensor",
+    "test_description",
+    "test_model",
+    "test_resource",
+    "validate_format",
+]
