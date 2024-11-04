@@ -1,3 +1,7 @@
-from ._model_adapter import ModelAdapter as ModelAdapter
-from ._model_adapter import create_model_adapter as create_model_adapter
-from ._model_adapter import get_weight_formats as get_weight_formats
+from ._model_adapter import ModelAdapter, create_model_adapter, get_weight_formats
+
+__all__ = [
+    "ModelAdapter",
+    "create_model_adapter",
+    "get_weight_formats",
+]
