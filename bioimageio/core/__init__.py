@@ -16,7 +16,23 @@ from bioimageio.spec import (
     validate_format,
 )
 
-from . import digest_spec
+from . import (
+    axis,
+    block_meta,
+    cli,
+    commands,
+    common,
+    digest_spec,
+    io,
+    model_adapters,
+    prediction,
+    proc_ops,
+    proc_setup,
+    sample,
+    stat_calculators,
+    stat_measures,
+    tensor,
+)
 from ._prediction_pipeline import PredictionPipeline, create_prediction_pipeline
 from ._resource_tests import load_description_and_test, test_description, test_model
 from ._settings import settings
@@ -34,19 +50,28 @@ __version__ = VERSION
 
 # aliases
 test_resource = test_description
+"""alias of `test_description`"""
 load_resource = load_description
+"""alias of `load_description`"""
 load_model = load_model_description
+"""alias of `load_model_description`"""
 
 __all__ = [
     "__version__",
+    "axis",
     "Axis",
     "AxisId",
+    "block_meta",
     "BlockMeta",
     "build_description",
+    "cli",
+    "commands",
+    "common",
     "compute_dataset_measures",
     "create_prediction_pipeline",
     "digest_spec",
     "dump_description",
+    "io",
     "load_dataset_description",
     "load_description_and_test",
     "load_description_and_validate_format_only",
@@ -55,15 +80,23 @@ __all__ = [
     "load_model",
     "load_resource",
     "MemberId",
+    "model_adapters",
     "predict_many",
     "predict",
+    "prediction",
     "PredictionPipeline",
+    "proc_ops",
+    "proc_setup",
+    "sample",
     "Sample",
     "save_bioimageio_package_as_folder",
     "save_bioimageio_package",
     "save_bioimageio_yaml_only",
     "settings",
+    "stat_calculators",
+    "stat_measures",
     "Stat",
+    "tensor",
     "Tensor",
     "test_description",
     "test_model",
