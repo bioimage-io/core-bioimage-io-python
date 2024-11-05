@@ -1735,14 +1735,20 @@ without overrepresenting block edge regions.</p>
 <p>Use <code><a href="#load_description">load_description</a></code> if you want to build a resource description from an rdf.yaml
 or bioimage.io zip-package.</p>
 
-<p>Args:
-    content: loaded rdf.yaml file (loaded with YAML, not bioimageio.spec)
-    context: validation context to use during validation
-    format_version: (optional) use this argument to load the resource and
-                    convert its metadata to a higher format_version</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    An object holding all metadata of the bioimage.io resource</p>
+<ul>
+<li><strong>content:</strong>  loaded rdf.yaml file (loaded with YAML, not bioimageio.spec)</li>
+<li><strong>context:</strong>  validation context to use during validation</li>
+<li><strong>format_version:</strong>  (optional) use this argument to load the resource and
+convert its metadata to a higher format_version</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>An object holding all metadata of the bioimage.io resource</p>
+</blockquote>
 </div>
 
 
@@ -1752,7 +1758,7 @@ or bioimage.io zip-package.</p>
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">compute_dataset_measures</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">measures</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">stat_measures</span><span class="o">.</span><span class="n">DatasetMean</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">stat_measures</span><span class="o">.</span><span class="n">DatasetStd</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">stat_measures</span><span class="o">.</span><span class="n">DatasetVar</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">stat_measures</span><span class="o">.</span><span class="n">DatasetPercentile</span><span class="p">],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)]]</span>,</span><span class="param">	<span class="n">dataset</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n"><a href="#Sample">Sample</a></span><span class="p">]</span></span><span class="return-annotation">) -> <span class="n">Dict</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">stat_measures</span><span class="o">.</span><span class="n">DatasetMean</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">stat_measures</span><span class="o">.</span><span class="n">DatasetStd</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">stat_measures</span><span class="o">.</span><span class="n">DatasetVar</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">stat_measures</span><span class="o">.</span><span class="n">DatasetPercentile</span><span class="p">],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)],</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Annotated</span><span class="p">[</span><span class="n"><a href="#Tensor">Tensor</a></span><span class="p">,</span> <span class="n">BeforeValidator</span><span class="p">(</span><span class="n">func</span><span class="o">=&lt;</span><span class="n">function</span> <span class="n">tensor_custom_before_validator</span> <span class="n">at</span> <span class="mh">0x7f5d188ff1a0</span><span class="o">&gt;</span><span class="p">,</span> <span class="n">json_schema_input_type</span><span class="o">=</span><span class="n">PydanticUndefined</span><span class="p">),</span> <span class="n">PlainSerializer</span><span class="p">(</span><span class="n">func</span><span class="o">=&lt;</span><span class="n">function</span> <span class="n">tensor_custom_serializer</span> <span class="n">at</span> <span class="mh">0x7f5d09cacd60</span><span class="o">&gt;</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="n">PydanticUndefined</span><span class="p">,</span> <span class="n">when_used</span><span class="o">=</span><span class="s1">&#39;always&#39;</span><span class="p">)]]]</span>:</span></span>
+        <span class="name">compute_dataset_measures</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">measures</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">stat_measures</span><span class="o">.</span><span class="n">DatasetMean</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">stat_measures</span><span class="o">.</span><span class="n">DatasetStd</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">stat_measures</span><span class="o">.</span><span class="n">DatasetVar</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">stat_measures</span><span class="o">.</span><span class="n">DatasetPercentile</span><span class="p">],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)]]</span>,</span><span class="param">	<span class="n">dataset</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n"><a href="#Sample">Sample</a></span><span class="p">]</span></span><span class="return-annotation">) -> <span class="n">Dict</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">stat_measures</span><span class="o">.</span><span class="n">DatasetMean</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">stat_measures</span><span class="o">.</span><span class="n">DatasetStd</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">stat_measures</span><span class="o">.</span><span class="n">DatasetVar</span><span class="p">,</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">stat_measures</span><span class="o">.</span><span class="n">DatasetPercentile</span><span class="p">],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)],</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Annotated</span><span class="p">[</span><span class="n"><a href="#Tensor">Tensor</a></span><span class="p">,</span> <span class="n">BeforeValidator</span><span class="p">(</span><span class="n">func</span><span class="o">=&lt;</span><span class="n">function</span> <span class="n">tensor_custom_before_validator</span> <span class="n">at</span> <span class="mh">0x7f917e4b71a0</span><span class="o">&gt;</span><span class="p">,</span> <span class="n">json_schema_input_type</span><span class="o">=</span><span class="n">PydanticUndefined</span><span class="p">),</span> <span class="n">PlainSerializer</span><span class="p">(</span><span class="n">func</span><span class="o">=&lt;</span><span class="n">function</span> <span class="n">tensor_custom_serializer</span> <span class="n">at</span> <span class="mh">0x7f916f9d8d60</span><span class="o">&gt;</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="n">PydanticUndefined</span><span class="p">,</span> <span class="n">when_used</span><span class="o">=</span><span class="s1">&#39;always&#39;</span><span class="p">)]]]</span>:</span></span>
 
                 <label class="view-source-button" for="compute_dataset_measures-view-source"><span>View Source</span></label>
 
@@ -2059,19 +2065,25 @@ description is valid and of type 'dataset'.</p>
 
             <div class="docstring"><p>load a bioimage.io resource description</p>
 
-<p>Args:
-    source: Path or URL to an rdf.yaml or a bioimage.io package
-            (zip-file with rdf.yaml in it).
-    format_version: (optional) Use this argument to load the resource and
-                    convert its metadata to a higher format_version.
-    perform_io_checks: Wether or not to perform validation that requires file io,
-                       e.g. downloading a remote files. The existence of local
-                       absolute file paths is still being checked.
-    known_files: Allows to bypass download and hashing of referenced files
-                 (even if perform_io_checks is True).</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    Validation summary of the bioimage.io resource found at <code>source</code>.</p>
+<ul>
+<li><strong>source:</strong>  Path or URL to an rdf.yaml or a bioimage.io package
+(zip-file with rdf.yaml in it).</li>
+<li><strong>format_version:</strong>  (optional) Use this argument to load the resource and
+convert its metadata to a higher format_version.</li>
+<li><strong>perform_io_checks:</strong>  Wether or not to perform validation that requires file io,
+e.g. downloading a remote files. The existence of local
+absolute file paths is still being checked.</li>
+<li><strong>known_files:</strong>  Allows to bypass download and hashing of referenced files
+(even if perform_io_checks is True).</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>Validation summary of the bioimage.io resource found at <code>source</code>.</p>
+</blockquote>
 </div>
 
 
@@ -2136,19 +2148,25 @@ description is valid and of type 'dataset'.</p>
 
             <div class="docstring"><p>load a bioimage.io resource description</p>
 
-<p>Args:
-    source: Path or URL to an rdf.yaml or a bioimage.io package
-            (zip-file with rdf.yaml in it).
-    format_version: (optional) Use this argument to load the resource and
-                    convert its metadata to a higher format_version.
-    perform_io_checks: Wether or not to perform validation that requires file io,
-                       e.g. downloading a remote files. The existence of local
-                       absolute file paths is still being checked.
-    known_files: Allows to bypass download and hashing of referenced files
-                 (even if perform_io_checks is True).</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    An object holding all metadata of the bioimage.io resource</p>
+<ul>
+<li><strong>source:</strong>  Path or URL to an rdf.yaml or a bioimage.io package
+(zip-file with rdf.yaml in it).</li>
+<li><strong>format_version:</strong>  (optional) Use this argument to load the resource and
+convert its metadata to a higher format_version.</li>
+<li><strong>perform_io_checks:</strong>  Wether or not to perform validation that requires file io,
+e.g. downloading a remote files. The existence of local
+absolute file paths is still being checked.</li>
+<li><strong>known_files:</strong>  Allows to bypass download and hashing of referenced files
+(even if perform_io_checks is True).</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>An object holding all metadata of the bioimage.io resource</p>
+</blockquote>
 </div>
 
 
@@ -2289,19 +2307,25 @@ description is valid and of type 'model'.</p>
 
             <div class="docstring"><p>load a bioimage.io resource description</p>
 
-<p>Args:
-    source: Path or URL to an rdf.yaml or a bioimage.io package
-            (zip-file with rdf.yaml in it).
-    format_version: (optional) Use this argument to load the resource and
-                    convert its metadata to a higher format_version.
-    perform_io_checks: Wether or not to perform validation that requires file io,
-                       e.g. downloading a remote files. The existence of local
-                       absolute file paths is still being checked.
-    known_files: Allows to bypass download and hashing of referenced files
-                 (even if perform_io_checks is True).</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    An object holding all metadata of the bioimage.io resource</p>
+<ul>
+<li><strong>source:</strong>  Path or URL to an rdf.yaml or a bioimage.io package
+(zip-file with rdf.yaml in it).</li>
+<li><strong>format_version:</strong>  (optional) Use this argument to load the resource and
+convert its metadata to a higher format_version.</li>
+<li><strong>perform_io_checks:</strong>  Wether or not to perform validation that requires file io,
+e.g. downloading a remote files. The existence of local
+absolute file paths is still being checked.</li>
+<li><strong>known_files:</strong>  Allows to bypass download and hashing of referenced files
+(even if perform_io_checks is True).</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>An object holding all metadata of the bioimage.io resource</p>
+</blockquote>
 </div>
 
 
@@ -2408,19 +2432,22 @@ description is valid and of type 'model'.</p>
 
             <div class="docstring"><p>Run prediction for a multiple sets of inputs with a bioimage.io model</p>
 
-<p>Args:
-    model: model to predict with.
-        May be given as RDF source, model description or prediction pipeline.
-    inputs: An iterable of the named input(s) for this model as a dictionary.
-    sample_id: the sample id.
-        note: <code>{i}</code> will be formatted as the i-th sample.
-        If <code>{i}</code> (or <code>{i:</code>) is not present and <code>inputs</code> is an iterable <code>{i:03}</code> is appended.
-    blocksize_parameter: (optional) tile the input into blocks parametrized by
-        blocksize according to any parametrized axis sizes defined in the model RDF
-    skip_preprocessing: flag to skip the model's preprocessing
-    skip_postprocessing: flag to skip the model's postprocessing
-    save_output_path: A path with <code>{member_id}</code> <code>{sample_id}</code> in it
-        to save the output to.</p>
+<h6 id="arguments">Arguments:</h6>
+
+<ul>
+<li><strong>model:</strong>  model to predict with.
+May be given as RDF source, model description or prediction pipeline.</li>
+<li><strong>inputs:</strong>  An iterable of the named input(s) for this model as a dictionary.</li>
+<li><strong>sample_id:</strong>  the sample id.
+note: <code>{i}</code> will be formatted as the i-th sample.
+If <code>{i}</code> (or <code>{i:</code>) is not present and <code>inputs</code> is an iterable <code>{i:03}</code> is appended.</li>
+<li><strong>blocksize_parameter:</strong>  (optional) tile the input into blocks parametrized by
+blocksize according to any parametrized axis sizes defined in the model RDF</li>
+<li><strong>skip_preprocessing:</strong>  flag to skip the model's preprocessing</li>
+<li><strong>skip_postprocessing:</strong>  flag to skip the model's postprocessing</li>
+<li><strong>save_output_path:</strong>  A path with <code>{member_id}</code> <code>{sample_id}</code> in it
+to save the output to.</li>
+</ul>
 </div>
 
 
@@ -2532,21 +2559,24 @@ description is valid and of type 'model'.</p>
 
             <div class="docstring"><p>Run prediction for a single set of input(s) with a bioimage.io model</p>
 
-<p>Args:
-    model: model to predict with.
-        May be given as RDF source, model description or prediction pipeline.
-    inputs: the input sample or the named input(s) for this model as a dictionary
-    sample_id: the sample id.
-    blocksize_parameter: (optional) tile the input into blocks parametrized by
-        blocksize according to any parametrized axis sizes defined in the model RDF.
-        Note: For a predetermined, fixed block shape use <code>input_block_shape</code>
-    input_block_shape: (optional) tile the input sample tensors into blocks.
-        Note: For a parameterized block shape, not dealing with the exact block shape,
-        use <code>blocksize_parameter</code>.
-    skip_preprocessing: flag to skip the model's preprocessing
-    skip_postprocessing: flag to skip the model's postprocessing
-    save_output_path: A path with <code>{member_id}</code> <code>{sample_id}</code> in it
-        to save the output to.</p>
+<h6 id="arguments">Arguments:</h6>
+
+<ul>
+<li><strong>model:</strong>  model to predict with.
+May be given as RDF source, model description or prediction pipeline.</li>
+<li><strong>inputs:</strong>  the input sample or the named input(s) for this model as a dictionary</li>
+<li><strong>sample_id:</strong>  the sample id.</li>
+<li><strong>blocksize_parameter:</strong>  (optional) tile the input into blocks parametrized by
+blocksize according to any parametrized axis sizes defined in the model RDF.
+Note: For a predetermined, fixed block shape use <code>input_block_shape</code></li>
+<li><strong>input_block_shape:</strong>  (optional) tile the input sample tensors into blocks.
+Note: For a parameterized block shape, not dealing with the exact block shape,
+use <code>blocksize_parameter</code>.</li>
+<li><strong>skip_preprocessing:</strong>  flag to skip the model's preprocessing</li>
+<li><strong>skip_postprocessing:</strong>  flag to skip the model's postprocessing</li>
+<li><strong>save_output_path:</strong>  A path with <code>{member_id}</code> <code>{sample_id}</code> in it
+to save the output to.</li>
+</ul>
 </div>
 
 
@@ -3416,7 +3446,7 @@ If that is not the case, consider <code><a href="#PredictionPipeline.predict_sam
                             </div>
                             <div id="Sample.stat" class="classattr">
                                 <div class="attr variable">
-            <span class="name">stat</span><span class="annotation">: Dict[Annotated[Union[Annotated[Union[bioimageio.core.stat_measures.SampleMean, bioimageio.core.stat_measures.SampleStd, bioimageio.core.stat_measures.SampleVar, bioimageio.core.stat_measures.SampleQuantile], Discriminator(discriminator=&#39;name&#39;, custom_error_type=None, custom_error_message=None, custom_error_context=None)], Annotated[Union[bioimageio.core.stat_measures.DatasetMean, bioimageio.core.stat_measures.DatasetStd, bioimageio.core.stat_measures.DatasetVar, bioimageio.core.stat_measures.DatasetPercentile], Discriminator(discriminator=&#39;name&#39;, custom_error_type=None, custom_error_message=None, custom_error_context=None)]], Discriminator(discriminator=&#39;scope&#39;, custom_error_type=None, custom_error_message=None, custom_error_context=None)], Union[float, Annotated[<a href="#Tensor">Tensor</a>, BeforeValidator(func=&lt;function tensor_custom_before_validator at 0x7f5d188ff1a0&gt;, json_schema_input_type=PydanticUndefined), PlainSerializer(func=&lt;function tensor_custom_serializer at 0x7f5d09cacd60&gt;, return_type=PydanticUndefined, when_used=&#39;always&#39;)]]]</span>
+            <span class="name">stat</span><span class="annotation">: Dict[Annotated[Union[Annotated[Union[bioimageio.core.stat_measures.SampleMean, bioimageio.core.stat_measures.SampleStd, bioimageio.core.stat_measures.SampleVar, bioimageio.core.stat_measures.SampleQuantile], Discriminator(discriminator=&#39;name&#39;, custom_error_type=None, custom_error_message=None, custom_error_context=None)], Annotated[Union[bioimageio.core.stat_measures.DatasetMean, bioimageio.core.stat_measures.DatasetStd, bioimageio.core.stat_measures.DatasetVar, bioimageio.core.stat_measures.DatasetPercentile], Discriminator(discriminator=&#39;name&#39;, custom_error_type=None, custom_error_message=None, custom_error_context=None)]], Discriminator(discriminator=&#39;scope&#39;, custom_error_type=None, custom_error_message=None, custom_error_context=None)], Union[float, Annotated[<a href="#Tensor">Tensor</a>, BeforeValidator(func=&lt;function tensor_custom_before_validator at 0x7f917e4b71a0&gt;, json_schema_input_type=PydanticUndefined), PlainSerializer(func=&lt;function tensor_custom_serializer at 0x7f916f9d8d60&gt;, return_type=PydanticUndefined, when_used=&#39;always&#39;)]]]</span>
 
         
     </div>
@@ -3651,14 +3681,20 @@ If that is not the case, consider <code><a href="#PredictionPipeline.predict_sam
 
             <div class="docstring"><p>Write the content of a bioimage.io resource package to a folder.</p>
 
-<p>Args:
-    source: bioimageio resource description
-    output_path: file path to write package to
-    weights_priority_order: If given only the first weights format present in the model is included.
-                            If none of the prioritized weights formats is found all are included.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    directory path to bioimageio package folder</p>
+<ul>
+<li><strong>source:</strong>  bioimageio resource description</li>
+<li><strong>output_path:</strong>  file path to write package to</li>
+<li><strong>weights_priority_order:</strong>  If given only the first weights format present in the model is included.
+If none of the prioritized weights formats is found all are included.</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>directory path to bioimageio package folder</p>
+</blockquote>
 </div>
 
 
@@ -3738,17 +3774,23 @@ If that is not the case, consider <code><a href="#PredictionPipeline.predict_sam
 
             <div class="docstring"><p>Package a bioimageio resource as a zip file.</p>
 
-<p>Args:
-    rd: bioimageio resource description
-    compression: The numeric constant of compression method.
-    compression_level: Compression level to use when writing files to the archive.
-                       See <a href="https://docs.python.org/3/library/zipfile.html#zipfile.ZipFile">https://docs.python.org/3/library/zipfile.html#zipfile.ZipFile</a>
-    output_path: file path to write package to
-    weights_priority_order: If given only the first weights format present in the model is included.
-                            If none of the prioritized weights formats is found all are included.</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Returns:
-    path to zipped bioimageio package</p>
+<ul>
+<li><strong>rd:</strong>  bioimageio resource description</li>
+<li><strong>compression:</strong>  The numeric constant of compression method.</li>
+<li><strong>compression_level:</strong>  Compression level to use when writing files to the archive.
+See <a href="https://docs.python.org/3/library/zipfile.html#zipfile.ZipFile">https://docs.python.org/3/library/zipfile.html#zipfile.ZipFile</a></li>
+<li><strong>output_path:</strong>  file path to write package to</li>
+<li><strong>weights_priority_order:</strong>  If given only the first weights format present in the model is included.
+If none of the prioritized weights formats is found all are included.</li>
+</ul>
+
+<h6 id="returns">Returns:</h6>
+
+<blockquote>
+  <p>path to zipped bioimageio package</p>
+</blockquote>
 </div>
 
 
@@ -4376,13 +4418,19 @@ and improved type annotations.</p>
 
             <div class="docstring"><p>create a <code><a href="#Tensor">Tensor</a></code> from a numpy array</p>
 
-<p>Args:
-    array: the nd numpy array
-    axes: A description of the array's axes,
-        if None axes are guessed (which might fail and raise a ValueError.)</p>
+<h6 id="arguments">Arguments:</h6>
 
-<p>Raises:
-    ValueError: if <code>axes</code> is None and axes guessing fails.</p>
+<ul>
+<li><strong>array:</strong>  the nd numpy array</li>
+<li><strong>axes:</strong>  A description of the array's axes,
+if None axes are guessed (which might fail and raise a ValueError.)</li>
+</ul>
+
+<h6 id="raises">Raises:</h6>
+
+<ul>
+<li><strong>ValueError:</strong>  if <code>axes</code> is None and axes guessing fails.</li>
+</ul>
 </div>
 
 
@@ -4982,8 +5030,11 @@ At least one of max or min must be given.</p>
 
             <div class="docstring"><p>return a transposed tensor</p>
 
-<p>Args:
-    axes: the desired tensor axes</p>
+<h6 id="arguments">Arguments:</h6>
+
+<ul>
+<li><strong>axes:</strong>  the desired tensor axes</li>
+</ul>
 </div>
 
 
