@@ -11,14 +11,12 @@ from typing import (
 
 from typing_extensions import assert_never
 
-from bioimageio.core.common import MemberId
-from bioimageio.core.digest_spec import get_member_ids
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 from bioimageio.spec.model.v0_5 import TensorId
 
+from .digest_spec import get_member_ids
 from .proc_ops import (
     AddKnownDatasetStats,
-    EnsureDtype,
     Processing,
     UpdateStats,
     get_proc_class,

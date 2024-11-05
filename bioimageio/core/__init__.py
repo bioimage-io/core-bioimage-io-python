@@ -2,7 +2,6 @@
 .. include:: ../../README.md
 """
 
-from bioimageio.core.stat_measures import Stat
 from bioimageio.spec import (
     build_description,
     dump_description,
@@ -42,6 +41,7 @@ from .common import MemberId
 from .prediction import predict, predict_many
 from .sample import Sample
 from .stat_calculators import compute_dataset_measures
+from .stat_measures import Stat
 from .tensor import Tensor
 from .utils import VERSION
 

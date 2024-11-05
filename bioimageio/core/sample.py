@@ -16,9 +16,8 @@ from typing import (
 import numpy as np
 from typing_extensions import Self
 
-from bioimageio.core.block import Block
-
 from .axis import AxisId, PerAxis
+from .block import Block
 from .block_meta import (
     BlockMeta,
     LinearAxisTransform,

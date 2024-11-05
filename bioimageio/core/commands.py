@@ -3,11 +3,10 @@ defined in the `cli` module."""
 
 import sys
 from pathlib import Path
-from typing import List, Optional, Sequence, Union
+from typing import Optional, Sequence, Union
 
 from typing_extensions import Literal
 
-from bioimageio.core import test_description
 from bioimageio.spec import (
     InvalidDescr,
     ResourceDescr,
@@ -15,6 +14,8 @@ from bioimageio.spec import (
     save_bioimageio_package_as_folder,
 )
 from bioimageio.spec.model.v0_5 import WeightsFormat
+
+from ._resource_tests import test_description
 
 WeightFormatArgAll = Literal[WeightsFormat, "all"]
 WeightFormatArgAny = Literal[WeightsFormat, "any"]

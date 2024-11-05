@@ -23,9 +23,6 @@ from loguru import logger
 from numpy.typing import NDArray
 from typing_extensions import Unpack, assert_never
 
-from bioimageio.core.common import MemberId, PerMember, SampleId
-from bioimageio.core.io import load_tensor
-from bioimageio.core.sample import Sample
 from bioimageio.spec._internal.io import resolve_and_extract
 from bioimageio.spec._internal.io_utils import HashKwargs
 from bioimageio.spec.common import FileSource
@@ -41,6 +38,7 @@ from bioimageio.spec.utils import load_array
 from .axis import AxisId, AxisInfo, AxisLike, PerAxis
 from .block_meta import split_multiple_shapes_into_blocks
 from .common import Halo, MemberId, PerMember, SampleId, TotalNumberOfBlocks
+from .io import load_tensor
 from .sample import (
     LinearSampleAxisTransform,
     Sample,

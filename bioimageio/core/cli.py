@@ -44,40 +44,34 @@ from ruyaml import YAML
 from tqdm import tqdm
 from typing_extensions import assert_never
 
-from bioimageio.core import (
-    MemberId,
-    Sample,
-    __version__,
-    create_prediction_pipeline,
-)
-from bioimageio.core.commands import (
+from bioimageio.spec import AnyModelDescr, InvalidDescr, load_description
+from bioimageio.spec._internal.types import NotEmpty
+from bioimageio.spec.dataset import DatasetDescr
+from bioimageio.spec.model import ModelDescr, v0_4, v0_5
+from bioimageio.spec.notebook import NotebookDescr
+from bioimageio.spec.utils import download, ensure_description_is_model
+
+from .commands import (
     WeightFormatArgAll,
     WeightFormatArgAny,
     package,
     test,
     validate_format,
 )
-from bioimageio.core.common import SampleId
-from bioimageio.core.digest_spec import get_member_ids, load_sample_for_model
-from bioimageio.core.io import load_dataset_stat, save_dataset_stat, save_sample
-from bioimageio.core.proc_setup import (
+from .common import MemberId, SampleId
+from .digest_spec import get_member_ids, load_sample_for_model
+from .io import load_dataset_stat, save_dataset_stat, save_sample
+from .prediction import create_prediction_pipeline
+from .proc_setup import (
     DatasetMeasure,
     Measure,
     MeasureValue,
     StatsCalculator,
     get_required_dataset_measures,
 )
-from bioimageio.core.stat_measures import Stat
-from bioimageio.spec import (
-    AnyModelDescr,
-    InvalidDescr,
-    load_description,
-)
-from bioimageio.spec._internal.types import NotEmpty
-from bioimageio.spec.dataset import DatasetDescr
-from bioimageio.spec.model import ModelDescr, v0_4, v0_5
-from bioimageio.spec.notebook import NotebookDescr
-from bioimageio.spec.utils import download, ensure_description_is_model
+from .sample import Sample
+from .stat_measures import Stat
+from .utils import VERSION
 
 yaml = YAML(typ="safe")
 
@@ -633,8 +627,8 @@ assert isinstance(Bioimageio.__doc__, str)
 Bioimageio.__doc__ += f"""
 
 library versions:
-  bioimageio.core {__version__}
-  bioimageio.spec {__version__}
+  bioimageio.core {VERSION}
+  bioimageio.spec {VERSION}
 
 spec format versions:
         model RDF {ModelDescr.implemented_format_version}

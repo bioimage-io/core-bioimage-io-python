@@ -6,7 +6,6 @@ from typing import Dict, Hashable, List, Literal, Optional, Sequence, Set, Tuple
 import numpy as np
 from loguru import logger
 
-from bioimageio.core.sample import Sample
 from bioimageio.spec import (
     InvalidDescr,
     ResourceDescr,
@@ -28,6 +27,7 @@ from bioimageio.spec.summary import (
 from ._prediction_pipeline import create_prediction_pipeline
 from .axis import AxisId, BatchSize
 from .digest_spec import get_test_inputs, get_test_outputs
+from .sample import Sample
 from .utils import VERSION
 
 

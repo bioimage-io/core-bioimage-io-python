@@ -1,20 +1,18 @@
 import collections.abc
-from os import PathLike
 from pathlib import Path
 from typing import Any, Mapping, Optional, Sequence, Union
 
-import imageio
 from imageio.v3 import imread, imwrite
 from loguru import logger
 from numpy.typing import NDArray
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
-from bioimageio.core.common import PerMember
-from bioimageio.core.stat_measures import DatasetMeasure, MeasureValue
 from bioimageio.spec.utils import load_array, save_array
 
-from .axis import Axis, AxisLike
+from .axis import AxisLike
+from .common import PerMember
 from .sample import Sample
+from .stat_measures import DatasetMeasure, MeasureValue
 from .tensor import Tensor
 
 
