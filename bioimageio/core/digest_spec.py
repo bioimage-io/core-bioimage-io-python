@@ -26,7 +26,8 @@ from typing_extensions import Unpack, assert_never
 from bioimageio.core.common import MemberId, PerMember, SampleId
 from bioimageio.core.io import load_tensor
 from bioimageio.core.sample import Sample
-from bioimageio.spec._internal.io_utils import HashKwargs, download
+from bioimageio.spec._internal.io import resolve_and_extract
+from bioimageio.spec._internal.io_utils import HashKwargs
 from bioimageio.spec.common import FileSource
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 from bioimageio.spec.model.v0_4 import CallableFromDepencency, CallableFromFile
@@ -79,7 +80,7 @@ def import_callable(
 def _import_from_file_impl(
     source: FileSource, callable_name: str, **kwargs: Unpack[HashKwargs]
 ):
-    local_file = download(source, **kwargs)
+    local_file = resolve_and_extract(source, **kwargs)
     module_name = local_file.path.stem
     importlib_spec = importlib.util.spec_from_file_location(
         module_name, local_file.path
