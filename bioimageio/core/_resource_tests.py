@@ -15,6 +15,7 @@ from bioimageio.spec import (
 )
 from bioimageio.spec._internal.common_nodes import ResourceDescrBase
 from bioimageio.spec.common import BioimageioYamlContent, PermissiveFileSource
+from bioimageio.spec.conda_env import get_conda_env
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import WeightsFormat
 from bioimageio.spec.summary import (
@@ -189,7 +190,9 @@ def _test_model_inference(
     model.validation_summary.add_detail(
         ValidationDetail(
             name=test_name,
+            loc=("weights", weight_format),
             status="passed" if error is None else "failed",
+            recommended_env=get_conda_env(entry=dict(model.weights)[weight_format]),
             errors=(
                 []
                 if error is None
@@ -332,6 +335,7 @@ def _test_model_inference_parametrized(
                     ValidationDetail(
                         name=f"Run {weight_format} inference for inputs with"
                         + f" batch_size: {batch_size} and size parameter n: {n}",
+                        loc=("weights", weight_format),
                         status="passed" if error is None else "failed",
                         errors=(
                             []
@@ -353,6 +357,7 @@ def _test_model_inference_parametrized(
             ValidationDetail(
                 name=f"Run {weight_format} inference for parametrized inputs",
                 status="failed",
+                loc=("weights", weight_format),
                 errors=[
                     ErrorEntry(
                         loc=("weights", weight_format),
@@ -373,6 +378,7 @@ def _test_expected_resource_type(
         ValidationDetail(
             name="Has expected resource type",
             status="passed" if has_expected_type else "failed",
+            loc=("type",),
             errors=(
                 []
                 if has_expected_type
