@@ -287,14 +287,6 @@ def get_io_sample_block_metas(
         t: {aa: s for (tt, aa), s in block_axis_sizes.inputs.items() if tt == t}
         for t in {tt for tt, _ in block_axis_sizes.inputs}
     }
-    output_block_shape = {
-        t: {
-            aa: s
-            for (tt, aa), s in block_axis_sizes.outputs.items()
-            if tt == t and not isinstance(s, tuple)
-        }
-        for t in {tt for tt, _ in block_axis_sizes.outputs}
-    }
     output_halo = {
         t.id: {
             a.id: Halo(a.halo, a.halo) for a in t.axes if isinstance(a, v0_5.WithHalo)
@@ -303,36 +295,14 @@ def get_io_sample_block_metas(
     }
     input_halo = get_input_halo(model, output_halo)
 
-    # TODO: fix output_sample_shape_data_dep
-    #  (below only valid if input_sample_shape is a valid model input,
-    #   which is not a valid assumption)
-    output_sample_shape_data_dep = model.get_output_tensor_sizes(input_sample_shape)
-
-    output_sample_shape = {
-        t: {
-            a: -1 if isinstance(s, tuple) else s
-            for a, s in output_sample_shape_data_dep[t].items()
-        }
-        for t in output_sample_shape_data_dep
-    }
     n_input_blocks, input_blocks = split_multiple_shapes_into_blocks(
         input_sample_shape, input_block_shape, halo=input_halo
     )
-    n_output_blocks, output_blocks = split_multiple_shapes_into_blocks(
-        output_sample_shape, output_block_shape, halo=output_halo
-    )
-    assert n_input_blocks == n_output_blocks
+    block_transform = get_block_transform(model)
     return n_input_blocks, (
-        IO_SampleBlockMeta(ipt, out)
-        for ipt, out in zip(
-            sample_block_meta_generator(
-                input_blocks, sample_shape=input_sample_shape, sample_id=None
-            ),
-            sample_block_meta_generator(
-                output_blocks,
-                sample_shape=output_sample_shape,
-                sample_id=None,
-            ),
+        IO_SampleBlockMeta(ipt, ipt.get_transformed(block_transform))
+        for ipt in sample_block_meta_generator(
+            input_blocks, sample_shape=input_sample_shape, sample_id=None
         )
     )
 
