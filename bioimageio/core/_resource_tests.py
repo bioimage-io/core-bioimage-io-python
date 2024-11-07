@@ -15,7 +15,7 @@ from bioimageio.spec import (
 )
 from bioimageio.spec._internal.common_nodes import ResourceDescrBase
 from bioimageio.spec.common import BioimageioYamlContent, PermissiveFileSource
-from bioimageio.spec.conda_env import get_conda_env
+from bioimageio.spec.get_conda_env import get_conda_env
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import WeightsFormat
 from bioimageio.spec.summary import (
@@ -109,7 +109,7 @@ def load_description_and_test(
     else:
         rd = load_description(source, format_version=format_version)
 
-    rd.validation_summary.env.append(
+    rd.validation_summary.env.add(
         InstalledPackage(name="bioimageio.core", version=VERSION)
     )
 
