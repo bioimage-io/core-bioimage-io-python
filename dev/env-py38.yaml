@@ -2,13 +2,12 @@
 name: core38
 channels:
   - conda-forge
-  - defaults
+  - nodefaults
 dependencies:
   - bioimageio.spec>=0.5.3.3
   - black
   - crick # uncommented
   - filelock
-  - fire
   - imageio>=2.5
   - jupyter
   - jupyter-black
@@ -27,7 +26,6 @@ dependencies:
   - pytest
   - pytest-cov
   - pytest-xdist
-  - python-dotenv
   - python=3.8 # changed
   - pytorch>=2.1
   - requests

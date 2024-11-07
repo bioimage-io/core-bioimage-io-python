@@ -35,7 +35,6 @@ _ = setup(
         "numpy",
         "pydantic-settings >=2.3",
         "pydantic",
-        "python-dotenv",
         "requests",
         "ruyaml",
         "tqdm",
