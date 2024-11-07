@@ -293,8 +293,10 @@ class SampleBlock(SampleBlockBase[Block]):
 
 @dataclass
 class SampleBlockWithOrigin(SampleBlock):
+    """A `SampleBlock` with a reference (`origin`) to the whole `Sample`"""
+
     origin: Sample
-    """the sample this sample black was taken from"""
+    """the sample this sample block was taken from"""
 
 
 class _ConsolidatedMemberBlocks:
@@ -330,7 +332,7 @@ def sample_block_generator(
     *,
     origin: Sample,
     pad_mode: PadMode,
-):
+) -> Iterable[SampleBlockWithOrigin]:
     for member_blocks in blocks:
         cons = _ConsolidatedMemberBlocks(member_blocks)
         yield SampleBlockWithOrigin(

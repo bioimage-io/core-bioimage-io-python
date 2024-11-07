@@ -190,8 +190,8 @@ class IO_SampleBlockMeta(NamedTuple):
 
 
 def get_input_halo(model: v0_5.ModelDescr, output_halo: PerMember[PerAxis[Halo]]):
-    """returns which halo input tensors need to be divided into blocks with such that
-    `output_halo` can be cropped from their outputs without intorducing gaps."""
+    """returns which halo input tensors need to be divided into blocks with, such that
+    `output_halo` can be cropped from their outputs without introducing gaps."""
     input_halo: Dict[MemberId, Dict[AxisId, Halo]] = {}
     outputs = {t.id: t for t in model.outputs}
     all_tensors = {**{t.id: t for t in model.inputs}, **outputs}
@@ -221,8 +221,10 @@ def get_input_halo(model: v0_5.ModelDescr, output_halo: PerMember[PerAxis[Halo]]
     return input_halo
 
 
-def get_block_transform(model: v0_5.ModelDescr):
-    """returns how a model's output tensor shapes relate to its input shapes"""
+def get_block_transform(
+    model: v0_5.ModelDescr,
+) -> PerMember[PerAxis[Union[LinearSampleAxisTransform, int]]]:
+    """returns how a model's output tensor shapes relates to its input shapes"""
     ret: Dict[MemberId, Dict[AxisId, Union[LinearSampleAxisTransform, int]]] = {}
     batch_axis_trf = None
     for ipt in model.inputs:
