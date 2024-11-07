@@ -211,9 +211,11 @@ class SampleBlockMeta(SampleBlockBase[BlockMeta]):
         halo: Dict[MemberId, Dict[AxisId, Halo]] = {}
         for m in new_axes:
             halo[m] = get_member_halo(m, floor)
-            assert halo[m] == get_member_halo(
-                m, ceil
-            ), f"failed to unambiguously scale halo {halo[m]} with {new_axes[m]}"
+            if halo[m] != get_member_halo(m, ceil):
+                raise ValueError(
+                    f"failed to unambiguously scale halo {halo[m]} with {new_axes[m]}"
+                    + f" for {m}."
+                )
 
         inner_slice = {
             m: {
