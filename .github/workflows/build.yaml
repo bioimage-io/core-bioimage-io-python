@@ -172,12 +172,17 @@ jobs:
       - name: Generate developer docs
         run: |
           pdoc \
+          --docformat google \
           --logo https://bioimage.io/static/img/bioimage-io-logo.svg \
           --logo-link https://bioimage.io/ \
           --favicon https://bioimage.io/static/img/bioimage-io-icon-small.svg \
           --footer-text 'bioimageio.core ${{steps.get_version.outputs.version}}' \
           -o ./dist bioimageio.core
       - run: cp README.md ./dist/README.md
+      - name: copy rendered presentations
+        run: |
+          mkdir ./dist/presentations
+          cp -r ./presentations/*.html ./dist/presentations/
       - name: Deploy to gh-pages 🚀
         uses: JamesIves/github-pages-deploy-action@v4
         with:
