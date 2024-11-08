@@ -1,13 +1,21 @@
 [tool.black]
 line-length = 88
-extend_exclude = "^/presentations/"
+extend_exclude = "^/presentations/ | ^/scripts/pdoc/original.py | ^/scripts/pdoc/patched.py"
 target-version = ["py38", "py39", "py310", "py311", "py312"]
+preview = true
 
 [tool.pyright]
-exclude = ["**/node_modules", "**/__pycache__", "tests/old_*", "presentations"]
+exclude = [
+    "**/__pycache__",
+    "**/node_modules",
+    "presentations",
+    "scripts/pdoc/original.py",
+    "scripts/pdoc/patched.py",
+    "tests/old_*",
+]
 include = ["bioimageio", "scripts", "tests"]
 pythonPlatform = "All"
-pythonVersion = "3.13"
+pythonVersion = "3.12"
 reportDuplicateImport = "error"
 reportImplicitStringConcatenation = "error"
 reportIncompatibleMethodOverride = true
@@ -35,8 +43,13 @@ addopts = "--cov=bioimageio --cov-report=xml -n auto --capture=no --doctest-modu
 
 [tool.ruff]
 line-length = 88
+target-version = "py312"
 include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
-exclude = ["presentations"]
+exclude = [
+    "presentations",
+    "scripts/pdoc/original.py",
+    "scripts/pdoc/patched.py",
+]
 
 [tool.coverage.report]
 exclude_also = ["if TYPE_CHECKING:", "assert_never\\("]
