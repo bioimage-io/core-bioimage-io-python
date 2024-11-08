@@ -1,9 +1,10 @@
 [tool.black]
 line-length = 88
+extend_exclude = "^/presentations/"
 target-version = ["py38", "py39", "py310", "py311", "py312"]
 
 [tool.pyright]
-exclude = ["**/node_modules", "**/__pycache__", "tests/old_*"]
+exclude = ["**/node_modules", "**/__pycache__", "tests/old_*", "presentations"]
 include = ["bioimageio", "scripts", "tests"]
 pythonPlatform = "All"
 pythonVersion = "3.8"
@@ -35,4 +36,5 @@ addopts = "--cov=bioimageio --cov-report=xml -n auto --capture=no --doctest-modu
 [tool.ruff]
 line-length = 88
 include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
+exclude = ["presentations"]
 target-version = "py38"
