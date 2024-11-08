@@ -180,7 +180,9 @@ jobs:
           -o ./dist bioimageio.core
       - run: cp README.md ./dist/README.md
       - name: copy rendered presentations
-        run: cp -r ./presentations/*.html ./dist/presentations
+        run: |
+          mkdir ./dist/presentations
+          cp -r ./presentations/*.html ./dist/presentations/
       - name: Deploy to gh-pages 🚀
         uses: JamesIves/github-pages-deploy-action@v4
         with:
