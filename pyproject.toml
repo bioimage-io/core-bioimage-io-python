@@ -36,3 +36,6 @@ addopts = "--cov=bioimageio --cov-report=xml -n auto --capture=no --doctest-modu
 line-length = 88
 include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
 target-version = "py312"
+
+[tool.coverage.report]
+exclude_also = ["if TYPE_CHECKING:", "assert_never\\("]
