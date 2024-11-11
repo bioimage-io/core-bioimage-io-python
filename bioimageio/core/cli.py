@@ -639,7 +639,7 @@ spec format versions:
 
 
 def _get_sample_ids(
-    input_paths: Sequence[Mapping[MemberId, Path]]
+    input_paths: Sequence[Mapping[MemberId, Path]],
 ) -> Sequence[SampleId]:
     """Get sample ids for given input paths, based on the common path per sample.
 

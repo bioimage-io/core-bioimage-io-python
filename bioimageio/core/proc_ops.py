@@ -393,7 +393,7 @@ def _get_axes(
         v0_5.ScaleRangeKwargs,
         v0_4.ScaleMeanVarianceKwargs,
         v0_5.ScaleMeanVarianceKwargs,
-    ]
+    ],
 ) -> Tuple[bool, Optional[Tuple[AxisId, ...]]]:
     if kwargs.axes is None:
         return True, None

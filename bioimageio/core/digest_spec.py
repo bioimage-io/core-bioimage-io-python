@@ -97,7 +97,7 @@ def get_axes_infos(
         v0_4.OutputTensorDescr,
         v0_5.InputTensorDescr,
         v0_5.OutputTensorDescr,
-    ]
+    ],
 ) -> List[AxisInfo]:
     """get a unified, simplified axis representation from spec axes"""
     return [
@@ -116,7 +116,7 @@ def get_member_id(
         v0_4.OutputTensorDescr,
         v0_5.InputTensorDescr,
         v0_5.OutputTensorDescr,
-    ]
+    ],
 ) -> MemberId:
     """get the normalized tensor ID, usable as a sample member ID"""
 
@@ -138,7 +138,7 @@ def get_member_ids(
             v0_5.InputTensorDescr,
             v0_5.OutputTensorDescr,
         ]
-    ]
+    ],
 ) -> List[MemberId]:
     """get normalized tensor IDs to be used as sample member IDs"""
     return [get_member_id(descr) for descr in tensor_descriptions]
