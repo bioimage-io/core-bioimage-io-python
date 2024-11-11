@@ -8,11 +8,10 @@ import json
 import shutil
 import subprocess
 import sys
-import zipfile
 from argparse import RawTextHelpFormatter
 from difflib import SequenceMatcher
 from functools import cached_property
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from pprint import pformat, pprint
 from typing import (
     Any,
@@ -29,7 +28,7 @@ from typing import (
 )
 
 from loguru import logger
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 from pydantic_settings import (
     BaseSettings,
     CliPositionalArg,
@@ -114,14 +113,14 @@ class WithSource(ArgMixin):
 
 
 class ValidateFormatCmd(CmdBase, WithSource):
-    """bioimageio-validate-format - validate the meta data format of a bioimageio resource."""
+    """validate the meta data format of a bioimageio resource."""
 
     def run(self):
         validate_format(self.descr)
 
 
 class TestCmd(CmdBase, WithSource):
-    """bioimageio-test - Test a bioimageio resource (beyond meta data formatting)"""
+    """Test a bioimageio resource (beyond meta data formatting)"""
 
     weight_format: WeightFormatArgAll = "all"
     """The weight format to limit testing to.
@@ -144,7 +143,7 @@ class TestCmd(CmdBase, WithSource):
 
 
 class PackageCmd(CmdBase, WithSource):
-    """bioimageio-package - save a resource's metadata with its associated files."""
+    """save a resource's metadata with its associated files."""
 
     path: CliPositionalArg[Path]
     """The path to write the (zipped) package to.
@@ -201,7 +200,7 @@ def _get_stat(
 
 
 class PredictCmd(CmdBase, WithSource):
-    """bioimageio-predict - Run inference on your data with a bioimage.io model."""
+    """Run inference on your data with a bioimage.io model."""
 
     inputs: NotEmpty[Sequence[Union[str, NotEmpty[Tuple[str, ...]]]]] = (
         "{input_id}/001.tif",
@@ -547,22 +546,20 @@ YAML_FILE = "bioimageio-cli.yaml"
 
 class Bioimageio(
     BaseSettings,
-    # alias_generator=AliasGenerator(
-    #     validation_alias=lambda s: AliasChoices(s, to_snake(s).replace("_", "-"))
-    # ),
-    # TODO: investigate how to allow a validation alias for subcommands
-    #       ('validate-format' vs 'validate_format')
     cli_parse_args=True,
     cli_prog_name="bioimageio",
     cli_use_class_docs_for_groups=True,
-    # cli_implicit_flags=True, # TODO: make flags implicit, see https://github.com/pydantic/pydantic-settings/issues/361
+    cli_implicit_flags=True,
     use_attribute_docstrings=True,
 ):
     """bioimageio - CLI for bioimage.io resources 🦒"""
 
-    model_config = SettingsConfigDict(json_file=JSON_FILE, yaml_file=YAML_FILE)
+    model_config = SettingsConfigDict(
+        json_file=JSON_FILE,
+        yaml_file=YAML_FILE,
+    )
 
-    validate_format: CliSubCommand[ValidateFormatCmd]
+    validate_format: CliSubCommand[ValidateFormatCmd] = Field(alias="validate-format")
     "Check a resource's metadata format"
 
     test: CliSubCommand[TestCmd]
