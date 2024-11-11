@@ -1,6 +1,6 @@
 [tool.black]
 line-length = 88
-extend_exclude = "^/presentations/ | ^/scripts/pdoc/original.py | ^/scripts/pdoc/patched.py"
+extend_exclude = "/presentations/"
 target-version = ["py38", "py39", "py310", "py311", "py312"]
 preview = true
 
