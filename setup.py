@@ -33,7 +33,7 @@ _ = setup(
         "imageio>=2.10",
         "loguru",
         "numpy",
-        "pydantic-settings >=2.3",
+        "pydantic-settings >=2.5",
         "pydantic",
         "requests",
         "ruyaml",

@@ -76,11 +76,11 @@ from .utils import VERSION
 yaml = YAML(typ="safe")
 
 
-class CmdBase(BaseModel, use_attribute_docstrings=True):
+class CmdBase(BaseModel, use_attribute_docstrings=True, cli_implicit_flags=True):
     pass
 
 
-class ArgMixin(BaseModel, use_attribute_docstrings=True):
+class ArgMixin(BaseModel, use_attribute_docstrings=True, cli_implicit_flags=True):
     pass
 
 
