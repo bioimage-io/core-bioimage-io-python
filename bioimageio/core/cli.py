@@ -45,6 +45,7 @@ from tqdm import tqdm
 from typing_extensions import assert_never
 
 from bioimageio.spec import AnyModelDescr, InvalidDescr, load_description
+from bioimageio.spec._internal.io_basics import ZipPath
 from bioimageio.spec._internal.types import NotEmpty
 from bioimageio.spec.dataset import DatasetDescr
 from bioimageio.spec.model import ModelDescr, v0_4, v0_5
@@ -298,20 +299,12 @@ class PredictCmd(CmdBase, WithSource):
 
         for t, src in zip(input_ids, example_inputs):
             local = download(src).path
-            if isinstance(local, Path):
-                suffixes = local.suffixes
-            elif isinstance(local, zipfile.Path):
-                # .suffixes for zipfile.Path only added in py 3.11
-                suffixes = PurePosixPath(local.at).suffixes
-            else:
-                assert_never(local)
-
-            dst = Path(f"{example_path}/{t}/001{''.join(suffixes)}")
+            dst = Path(f"{example_path}/{t}/001{''.join(local.suffixes)}")
             dst.parent.mkdir(parents=True, exist_ok=True)
             inputs001.append(dst.as_posix())
             if isinstance(local, Path):
                 shutil.copy(local, dst)
-            elif isinstance(local, zipfile.Path):
+            elif isinstance(local, ZipPath):
                 _ = local.root.extract(local.at, path=dst)
             else:
                 assert_never(local)
