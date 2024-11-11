@@ -36,6 +36,6 @@ def test_bioimageio_spec_version(conda_cmd: Optional[str]):
             f"Expected bioimageio.sepc pin to start with any of {valid_starts}"
         )
 
-    assert spec_ver.count(".") == 4
+    assert spec_ver.count(".") == 3
     pinned = Version(spec_ver)
     assert pinned == released, "bioimageio.spec not pinned to the latest version"
