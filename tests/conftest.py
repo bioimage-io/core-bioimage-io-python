@@ -150,18 +150,14 @@ ALL_MODELS = sorted(
 
 
 @fixture(scope="session")
-def mamba_cmd():
-    mamba_cmd = "micromamba"
+def conda_cmd():
+    conda_cmd = "conda"
     try:
-        _ = subprocess.run(["which", mamba_cmd], check=True)
+        _ = subprocess.run(["which", conda_cmd], check=True)
     except (subprocess.CalledProcessError, FileNotFoundError):
-        mamba_cmd = "mamba"
-        try:
-            _ = subprocess.run(["which", mamba_cmd], check=True)
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            mamba_cmd = None
+        conda_cmd = None
 
-    return mamba_cmd
+    return conda_cmd
 
 
 #
