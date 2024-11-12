@@ -1,5 +1,6 @@
-"""These functions implement the logic of the bioimageio command line interface
-defined in the `cli` module."""
+"""deprecated,
+use the CLI object `bioimageio.core.cli.Bioimageio` programmatically instead.
+"""
 
 import sys
 from pathlib import Path
@@ -97,53 +98,3 @@ def package(
             output_path=path,
             weights_priority_order=weights_priority_order,
         )
-
-
-# TODO: add convert command(s)
-# if torch_converter is not None:
-
-#     @app.command()
-#     def convert_torch_weights_to_onnx(
-#         model_rdf: Path = typer.Argument(
-#             ..., help="Path to the model resource description file (rdf.yaml) or zipped model."
-#         ),
-#         output_path: Path = typer.Argument(..., help="Where to save the onnx weights."),
-#         opset_version: Optional[int] = typer.Argument(12, help="Onnx opset version."),
-#         use_tracing: bool = typer.Option(True, help="Whether to use torch.jit tracing or scripting."),
-#         verbose: bool = typer.Option(True, help="Verbosity"),
-#     ):
-#         ret_code = torch_converter.convert_weights_to_onnx(model_rdf, output_path, opset_version, use_tracing, verbose)
-#         sys.exit(ret_code)
-
-#     convert_torch_weights_to_onnx.__doc__ = torch_converter.convert_weights_to_onnx.__doc__
-
-#     @app.command()
-#     def convert_torch_weights_to_torchscript(
-#         model_rdf: Path = typer.Argument(
-#             ..., help="Path to the model resource description file (rdf.yaml) or zipped model."
-#         ),
-#         output_path: Path = typer.Argument(..., help="Where to save the torchscript weights."),
-#         use_tracing: bool = typer.Option(True, help="Whether to use torch.jit tracing or scripting."),
-#     ):
-#         torch_converter.convert_weights_to_torchscript(model_rdf, output_path, use_tracing)
-#         sys.exit(0)
-
-#     convert_torch_weights_to_torchscript.__doc__ = torch_converter.convert_weights_to_torchscript.__doc__
-
-
-# if keras_converter is not None:
-
-#     @app.command()
-#     def convert_keras_weights_to_tensorflow(
-#         model_rdf: Annotated[
-#             Path, typer.Argument(help="Path to the model resource description file (rdf.yaml) or zipped model.")
-#         ],
-#         output_path: Annotated[Path, typer.Argument(help="Where to save the tensorflow weights.")],
-#     ):
-#         rd = load_description(model_rdf)
-#         ret_code = keras_converter.convert_weights_to_tensorflow_saved_model_bundle(rd, output_path)
-#         sys.exit(ret_code)
-
-#     convert_keras_weights_to_tensorflow.__doc__ = (
-#         keras_converter.convert_weights_to_tensorflow_saved_model_bundle.__doc__
-#     )
