@@ -337,9 +337,10 @@ class PredictCmd(CmdBase, WithSource):
             return [
                 "bioimageio",
                 "predict",
-                f"--{'' if preview else 'no-'}preview",  # update once we use implicit flags, see `class Bioimageio` below
+                # --no-preview not supported for py=3.8
+                *(["--preview"] if preview else []),
                 "--overwrite",
-                f"--{'' if self.blockwise else 'no-'}blockwise",
+                *(["--blockwise"] if self.blockwise else []),
                 f"--stats={q}{stats}{q}",
                 f"--inputs={q}{inputs_escaped if escape else inputs_json}{q}",
                 f"--outputs={q}{output_pattern}{q}",
