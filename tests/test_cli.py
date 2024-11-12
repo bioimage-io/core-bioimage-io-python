@@ -35,7 +35,7 @@ def run_subprocess(
             "pytorch_state_dict",
         ],
         ["test", "unet2d_nuclei_broad_model"],
-        ["predict", "--example"],
+        ["predict", "--example", "unet2d_nuclei_broad_model"],
     ],
 )
 def test_cli(args: List[str], unet2d_nuclei_broad_model: str):
