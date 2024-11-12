@@ -337,9 +337,9 @@ class PredictCmd(CmdBase, WithSource):
             return [
                 "bioimageio",
                 "predict",
-                f"--preview={preview}",  # update once we use implicit flags, see `class Bioimageio` below
-                "--overwrite=True",
-                f"--blockwise={self.blockwise}",
+                f"--{'' if preview else 'no-'}preview",  # update once we use implicit flags, see `class Bioimageio` below
+                "--overwrite",
+                f"--{'' if self.blockwise else 'no-'}blockwise",
                 f"--stats={q}{stats}{q}",
                 f"--inputs={q}{inputs_escaped if escape else inputs_json}{q}",
                 f"--outputs={q}{output_pattern}{q}",
