@@ -1,3 +1,99 @@
+from pathlib import Path
+from typing import Literal, Mapping, NamedTuple, assert_never
+
+import numpy as np
+import pytest
+import xarray as xr
+
+from bioimageio.core import (
+    AxisId,
+    MemberId,
+    PredictionPipeline,
+    Sample,
+    create_prediction_pipeline,
+    load_model,
+    predict,
+)
+from bioimageio.core.digest_spec import get_test_inputs, get_test_outputs
+from bioimageio.spec import AnyModelDescr
+
+
+class Prep(NamedTuple):
+    model: AnyModelDescr
+    prediction_pipeline: PredictionPipeline
+    input_sample: Sample
+    output_sample: Sample
+
+
+@pytest.fixture(scope="module")
+def prep(any_model: str):
+    model = load_model(any_model, perform_io_checks=False)
+    input_sample = get_test_inputs(model)
+    output_sample = get_test_outputs(model)
+    return Prep(model, create_prediction_pipeline(model), input_sample, output_sample)
+
+
+def test_predict_with_pipeline(prep: Prep):
+    out = predict(
+        model=prep.prediction_pipeline,
+        inputs=prep.input_sample,
+    )
+    assert out == prep.output_sample
+
+
+@pytest.mark.parameterize("tensor_input", ["numpy", "xarray"])
+def test_predict_with_model_description(
+    tensor_input: Literal["numpy", "xarray"], prep: Prep
+):
+    if tensor_input == "xarray":
+        ipt = {m: t.data for m, t in prep.input_sample.members.items()}
+        assert all(isinstance(v, xr.DataArray) for v in ipt.values())
+    elif tensor_input == "numpy":
+        ipt = {m: t.data.data for m, t in prep.input_sample.members.items()}
+        assert all(isinstance(v, np.ndarray) for v in ipt.values())
+    else:
+        assert_never(tensor_input)
+
+    out = predict(
+        model=prep.model,
+        inputs=ipt,
+        sample_id=prep.input_sample.id,
+        skip_preprocessing=False,
+        skip_postprocessing=False,
+    )
+    assert out == prep.output_sample
+
+
+@pytest.mark.parameterize("with_proces", [True, False])
+def test_predict_with_blocking(with_procs: bool, prep: Prep):
+    input_block_shape: Mapping[MemberId, Mapping[AxisId, int]] = {
+        list(prep.input_sample.members)[0]: {
+            "x": 32,  # pyright: ignore[reportAssignmentType]
+            AxisId("y"): 32,
+        }
+    }
+    out = predict(
+        model=prep.prediction_pipeline,
+        inputs=prep.input_sample,
+        input_block_shape=input_block_shape,
+        sample_id=prep.input_sample.id,
+        skip_preprocessing=with_procs,
+        skip_postprocessing=with_procs,
+    )
+    assert out == prep.output_sample
+
+
+def test_predict_save_output(prep: Prep, tmp_path: Path):
+    save_path = tmp_path / "{member_id}_{sample_id}.h5"
+    out = predict(
+        model=prep.prediction_pipeline,
+        inputs=prep.input_sample,
+        save_output_path=save_path,
+    )
+    assert out == prep.output_sample
+    assert save_path.parent.exists()
+
+
 # TODO: update
 # from pathlib import Path
 
