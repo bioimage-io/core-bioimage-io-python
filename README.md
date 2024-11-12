@@ -375,6 +375,21 @@ The model specification and its validation tools can be found at <https://github
 
 ## Changelog
 
+### 0.7.0 (to be released)
+
+- breaking:
+  - bioimageio CLI now has implicit boolean flags
+- non-breaking:
+  - use new `ValidationDetail.recommended_env` in `ValidationSummary`
+  - improve `get_io_sample_block_metas()`
+    - now works for sufficiently large, but not exactly shaped inputs
+  - update to support `zipfile.ZipFile` object with bioimageio.spec==0.5.3.4
+  - add io helpers `resolve` and `resolve_and_extract`
+
+### 0.6.10
+
+- fix #423
+
 ### 0.6.9
 
 - improve bioimageio command line interface (details in #157)
