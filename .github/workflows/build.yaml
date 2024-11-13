@@ -49,8 +49,20 @@ jobs:
         post-cleanup: 'all'
     - name: additional setup
       run: pip install --no-deps -e .
+    - name: Get Date
+      id: get-date
+      run: |
+        echo "date=$(date +'%Y-%b')"
+        echo "date=$(date +'%Y-%b')" >> $GITHUB_OUTPUT
+      shell: bash
+    - uses: actions/cache@v4
+      with:
+        path: bioimageio_cache
+        key: "test-spec-conda-${{ steps.get-date.outputs.date }}"
     - name: pytest-spec-conda
       run: pytest --disable-pytest-warnings
+      env:
+        BIOIMAGEIO_CACHE_PATH: bioimageio_cache
 
   test-spec-main:
     runs-on: ubuntu-latest
@@ -83,8 +95,20 @@ jobs:
         pip install --no-deps git+https://github.com/bioimage-io/spec-bioimage-io
     - name: additional setup core
       run: pip install --no-deps -e .
+    - name: Get Date
+      id: get-date
+      run: |
+        echo "date=$(date +'%Y-%b')"
+        echo "date=$(date +'%Y-%b')" >> $GITHUB_OUTPUT
+      shell: bash
+    - uses: actions/cache@v4
+      with:
+        path: bioimageio_cache
+        key: "test-spec-main-${{ steps.get-date.outputs.date }}"
     - name: pytest-spec-main
       run: pytest --disable-pytest-warnings
+      env:
+        BIOIMAGEIO_CACHE_PATH: bioimageio_cache
     - if: matrix.python-version == '3.12' && github.event_name == 'pull_request'
       uses: orgoro/coverage@v3.2
       with:
@@ -123,8 +147,20 @@ jobs:
         post-cleanup: 'all'
     - name: additional setup
       run: pip install --no-deps -e .
+    - name: Get Date
+      id: get-date
+      run: |
+        echo "date=$(date +'%Y-%b')"
+        echo "date=$(date +'%Y-%b')" >> $GITHUB_OUTPUT
+      shell: bash
+    - uses: actions/cache@v4
+      with:
+        path: bioimageio_cache
+        key: "test-tf-${{ steps.get-date.outputs.date }}"
     - name: pytest-spec-tf
       run: pytest --disable-pytest-warnings
+      env:
+        BIOIMAGEIO_CACHE_PATH: bioimageio_cache
 
   conda-build:
     runs-on: ubuntu-latest
