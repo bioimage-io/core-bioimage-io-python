@@ -6,10 +6,10 @@ import pytest
 from bioimageio.core import load_model
 from bioimageio.core.commands import package, validate_format
 from bioimageio.core.commands import test as command_tst
-from bioimageio.spec.model import ModelDescr
+from bioimageio.spec import AnyModelDescr
 
 
-@pytest.mark.fixture(scope="module")
+@pytest.fixture(scope="module")
 def model(unet2d_nuclei_broad_model: str):
     return load_model(unet2d_nuclei_broad_model, perform_io_checks=False)
 
@@ -23,14 +23,14 @@ def model(unet2d_nuclei_broad_model: str):
 )
 def test_package(
     weight_format: Literal["all", "pytorch_state_dict"],
-    model: ModelDescr,
+    model: AnyModelDescr,
     tmp_path: Path,
 ):
-    _ = package(model, weight_format=weight_format, path=tmp_path / "out.zip")
+    assert package(model, weight_format=weight_format, path=tmp_path / "out.zip") == 0
 
 
-def test_validate_format(model: ModelDescr):
-    _ = validate_format(model)
+def test_validate_format(model: AnyModelDescr):
+    assert validate_format(model) == 0
 
 
 @pytest.mark.parametrize(
@@ -39,6 +39,6 @@ def test_validate_format(model: ModelDescr):
 def test_test(
     weight_format: Literal["all", "pytorch_state_dict"],
     devices: Optional[str],
-    model: ModelDescr,
+    model: AnyModelDescr,
 ):
-    _ = command_tst(model, weight_format=weight_format, devices=devices)
+    assert command_tst(model, weight_format=weight_format, devices=devices) == 0

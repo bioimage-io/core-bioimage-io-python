@@ -1,8 +1,6 @@
-"""deprecated,
-use the CLI object `bioimageio.core.cli.Bioimageio` programmatically instead.
-"""
+"""These functions implement the logic of the bioimageio command line interface
+defined in `bioimageio.core.cli`."""
 
-import sys
 from pathlib import Path
 from typing import Optional, Sequence, Union
 
@@ -28,7 +26,7 @@ def test(
     weight_format: WeightFormatArgAll = "all",
     devices: Optional[Union[str, Sequence[str]]] = None,
     decimal: int = 4,
-):
+) -> int:
     """test a bioimageio resource
 
     Args:
@@ -40,7 +38,7 @@ def test(
     """
     if isinstance(descr, InvalidDescr):
         descr.validation_summary.display()
-        sys.exit(1)
+        return 1
 
     summary = test_description(
         descr,
@@ -49,7 +47,7 @@ def test(
         decimal=decimal,
     )
     summary.display()
-    sys.exit(0 if summary.status == "passed" else 1)
+    return 0 if summary.status == "passed" else 1
 
 
 def validate_format(
@@ -61,7 +59,7 @@ def validate_format(
         descr: a bioimageio resource description
     """
     descr.validation_summary.display()
-    sys.exit(0 if descr.validation_summary.status == "passed" else 1)
+    return 0 if descr.validation_summary.status == "passed" else 1
 
 
 def package(
@@ -98,3 +96,4 @@ def package(
             output_path=path,
             weights_priority_order=weights_priority_order,
         )
+    return 0

@@ -159,7 +159,7 @@ def get_test_inputs(model: AnyModelDescr) -> Sample:
             for m, arr, ax in zip(member_ids, arrays, axes)
         },
         stat={},
-        id="test-input",
+        id="test-sample",
     )
 
 
@@ -180,7 +180,7 @@ def get_test_outputs(model: AnyModelDescr) -> Sample:
             for m, arr, ax in zip(member_ids, arrays, axes)
         },
         stat={},
-        id="test-output",
+        id="test-sample",
     )
 
 

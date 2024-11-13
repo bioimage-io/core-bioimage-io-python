@@ -116,7 +116,7 @@ class ValidateFormatCmd(CmdBase, WithSource):
     """validate the meta data format of a bioimageio resource."""
 
     def run(self):
-        validate_format(self.descr)
+        sys.exit(validate_format(self.descr))
 
 
 class TestCmd(CmdBase, WithSource):
@@ -134,11 +134,13 @@ class TestCmd(CmdBase, WithSource):
     """Precision for numerical comparisons"""
 
     def run(self):
-        test(
-            self.descr,
-            weight_format=self.weight_format,
-            devices=self.devices,
-            decimal=self.decimal,
+        sys.exit(
+            test(
+                self.descr,
+                weight_format=self.weight_format,
+                devices=self.devices,
+                decimal=self.decimal,
+            )
         )
 
 
@@ -158,10 +160,12 @@ class PackageCmd(CmdBase, WithSource):
             self.descr.validation_summary.display()
             raise ValueError("resource description is invalid")
 
-        package(
-            self.descr,
-            self.path,
-            weight_format=self.weight_format,
+        sys.exit(
+            package(
+                self.descr,
+                self.path,
+                weight_format=self.weight_format,
+            )
         )
 
 
