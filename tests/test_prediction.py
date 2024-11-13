@@ -41,7 +41,7 @@ def test_predict_with_pipeline(prep: Prep):
     assert out == prep.output_sample
 
 
-@pytest.mark.parameterize("tensor_input", ["numpy", "xarray"])
+@pytest.mark.parametrize("tensor_input", ["numpy", "xarray"])
 def test_predict_with_model_description(
     tensor_input: Literal["numpy", "xarray"], prep: Prep
 ):
@@ -64,7 +64,7 @@ def test_predict_with_model_description(
     assert out == prep.output_sample
 
 
-@pytest.mark.parameterize("with_proces", [True, False])
+@pytest.mark.parametrize("with_proces", [True, False])
 def test_predict_with_blocking(with_procs: bool, prep: Prep):
     input_block_shape: Mapping[MemberId, Mapping[AxisId, int]] = {
         list(prep.input_sample.members)[0]: {
