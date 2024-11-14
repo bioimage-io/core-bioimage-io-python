@@ -409,15 +409,16 @@ def _handle_legacy_precision_args(
             "absolute_tolerance": absolute_tolerance,
             "relative_tolerance": relative_tolerance,
         }
+    else:
+        warnings.warn(
+            "The argument `decimal` has been depricated in favour of "
+            + "`relative_tolerance` and `absolute_tolerance`, with different validation "
+            + "logic, using `numpy.testing.assert_allclose, see "
+            + "'https://numpy.org/doc/stable/reference/generated/"
+            + "numpy.testing.assert_allclose.html'. Passing a value for `decimal` will "
+            + "cause validation to revert to the old behaviour."
+        )
 
-    warnings.warn(
-        "The argument `decimal` has been depricated in favour of "
-        + "`relative_tolerance` and `absolute_tolerance`, with different validation "
-        + "logic, using `numpy.testing.assert_allclose, see "
-        + "'https://numpy.org/doc/stable/reference/generated/"
-        + "numpy.testing.assert_allclose.html'. Passing a value for `decimal` will "
-        + "cause validation to revert to the old behaviour."
-    )
     # decimal overrides new behaviour,
     #   have to convert the params to emulate old behaviour
     return {
@@ -426,6 +427,7 @@ def _handle_legacy_precision_args(
     }
 
 
+# TODO: Implement `debug_model()`
 # def debug_model(
 #     model_rdf: Union[RawResourceDescr, ResourceDescr, URI, Path, str],
 #     *,
