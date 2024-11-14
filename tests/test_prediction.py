@@ -1,9 +1,10 @@
 from pathlib import Path
-from typing import Literal, Mapping, NamedTuple, assert_never
+from typing import Literal, Mapping, NamedTuple
 
 import numpy as np
 import pytest
 import xarray as xr
+from typing_extensions import assert_never
 
 from bioimageio.core import (
     AxisId,
