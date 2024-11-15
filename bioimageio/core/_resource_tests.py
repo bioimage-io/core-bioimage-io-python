@@ -32,6 +32,67 @@ from .sample import Sample
 from .utils import VERSION
 
 
+def enable_determinism(mode: Literal["seed_only", "full"]):
+    """Seed and configure ML frameworks for maximum reproducibility.
+    May degrade performance. Only recommended for testing reproducibility!
+
+    Seed any random generators and (if **mode**=="full") request ML frameworks to use
+    deterministic algorithms.
+    Notes:
+        - **mode** == "full"  might degrade performance and throw exceptions.
+        - Subsequent inference calls might still differ. Call before each function
+          (sequence) that is expected to be reproducible.
+        - Degraded performance: Use for testing reproducibility only!
+        - Recipes:
+            - [PyTorch](https://pytorch.org/docs/stable/notes/randomness.html)
+            - [Keras](https://keras.io/examples/keras_recipes/reproducibility_recipes/)
+            - [NumPy](https://numpy.org/doc/2.0/reference/random/generated/numpy.random.seed.html)
+    """
+    try:
+        try:
+            import numpy.random
+        except ImportError:
+            pass
+        else:
+            numpy.random.seed(0)
+    except Exception as e:
+        logger.debug(str(e))
+
+    try:
+        try:
+            import torch
+        except ImportError:
+            pass
+        else:
+            _ = torch.manual_seed(0)
+            torch.use_deterministic_algorithms(mode == "full")
+    except Exception as e:
+        logger.debug(str(e))
+
+    try:
+        try:
+            import keras
+        except ImportError:
+            pass
+        else:
+            keras.utils.set_random_seed(0)
+    except Exception as e:
+        logger.debug(str(e))
+
+    try:
+        try:
+            import tensorflow as tf  # pyright: ignore[reportMissingImports]
+        except ImportError:
+            pass
+        else:
+            tf.random.seed(0)
+            if mode == "full":
+                tf.config.experimental.enable_op_determinism()
+            # TODO: find possibility to switch it off again??
+    except Exception as e:
+        logger.debug(str(e))
+
+
 def test_model(
     source: Union[v0_5.ModelDescr, PermissiveFileSource],
     weight_format: Optional[WeightsFormat] = None,

@@ -33,7 +33,12 @@ from . import (
     tensor,
 )
 from ._prediction_pipeline import PredictionPipeline, create_prediction_pipeline
-from ._resource_tests import load_description_and_test, test_description, test_model
+from ._resource_tests import (
+    enable_determinism,
+    load_description_and_test,
+    test_description,
+    test_model,
+)
 from ._settings import settings
 from .axis import Axis, AxisId
 from .block_meta import BlockMeta
@@ -71,6 +76,7 @@ __all__ = [
     "create_prediction_pipeline",
     "digest_spec",
     "dump_description",
+    "enable_determinism",
     "io",
     "load_dataset_description",
     "load_description_and_test",
