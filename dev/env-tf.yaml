@@ -8,6 +8,7 @@ dependencies:
   - black
   # - crick  # currently requires python<=3.9
   - filelock
+  - h5py
   - imageio>=2.5
   - jupyter
   - jupyter-black

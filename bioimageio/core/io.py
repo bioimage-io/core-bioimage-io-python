@@ -1,7 +1,10 @@
 import collections.abc
-from pathlib import Path
-from typing import Any, Mapping, Optional, Sequence, Union
+import warnings
+from pathlib import Path, PurePosixPath
+from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
+import h5py
+import numpy as np
 from imageio.v3 import imread, imwrite
 from loguru import logger
 from numpy.typing import NDArray
@@ -15,6 +18,8 @@ from .sample import Sample
 from .stat_measures import DatasetMeasure, MeasureValue
 from .tensor import Tensor
 
+DEFAULT_H5_DATASET_PATH = "data"
+
 
 def load_image(path: Path, is_volume: Optional[bool] = None) -> NDArray[Any]:
     """load a single image as numpy array
@@ -23,9 +28,38 @@ def load_image(path: Path, is_volume: Optional[bool] = None) -> NDArray[Any]:
         path: image path
         is_volume: deprecated
     """
-    ext = path.suffix
-    if ext == ".npy":
+    if is_volume is not None:
+        warnings.warn("**is_volume** is deprecated and will be removed soon.")
+
+    file_path, subpath = _split_dataset_path(Path(path))
+
+    if file_path.suffix == ".npy":
+        if subpath is not None:
+            raise ValueError(f"Unexpected subpath {subpath} for .npy path {path}")
         return load_array(path)
+    elif file_path.suffix in (".h5", ".hdf", ".hdf5"):
+        if subpath is None:
+            dataset_path = DEFAULT_H5_DATASET_PATH
+        else:
+            dataset_path = str(subpath)
+
+        with h5py.File(file_path, "r") as f:
+            h5_dataset = f.get(  # pyright: ignore[reportUnknownVariableType]
+                dataset_path
+            )
+            if not isinstance(h5_dataset, h5py.Dataset):
+                raise ValueError(
+                    f"{path} is not of type {h5py.Dataset}, but has type "
+                    + str(
+                        type(h5_dataset)  # pyright: ignore[reportUnknownArgumentType]
+                    )
+                )
+            image: NDArray[Any]
+            image = h5_dataset[:]  # pyright: ignore[reportUnknownVariableType]
+            assert isinstance(image, np.ndarray), type(
+                image  # pyright: ignore[reportUnknownArgumentType]
+            )
+            return image  # pyright: ignore[reportUnknownVariableType]
     else:
         return imread(path)  # pyright: ignore[reportUnknownVariableType]
 
@@ -37,14 +71,53 @@ def load_tensor(path: Path, axes: Optional[Sequence[AxisLike]] = None) -> Tensor
     return Tensor.from_numpy(array, dims=axes)
 
 
+def _split_dataset_path(path: Path) -> Tuple[Path, Optional[PurePosixPath]]:
+    """Split off subpath (e.g. internal  h5 dataset path)
+    from a file path following a file extension.
+
+    Examples:
+        >>> _split_dataset_path(Path("my_file.h5/dataset"))
+        (Path("my_file.h5"), PurePosixPath("dataset"))
+
+        If no suffix is detected the path is returned with
+        >>> _split_dataset_path(Path("my_plain_file"))
+        (Path("my_plain_file"), None)
+
+    """
+    if path.suffix:
+        return path, None
+
+    for p in path.parents:
+        if p.suffix:
+            return p, PurePosixPath(path.relative_to(p))
+
+    return path, None
+
+
 def save_tensor(path: Path, tensor: Tensor) -> None:
     # TODO: save axis meta data
 
     data: NDArray[Any] = tensor.data.to_numpy()
-    path = Path(path)
-    path.parent.mkdir(exist_ok=True, parents=True)
-    if path.suffix == ".npy":
-        save_array(path, data)
+    file_path, subpath = _split_dataset_path(Path(path))
+    if not file_path.suffix:
+        raise ValueError(f"No suffix (needed to decide file format) found in {path}")
+
+    file_path.parent.mkdir(exist_ok=True, parents=True)
+    if file_path.suffix == ".npy":
+        if subpath is not None:
+            raise ValueError(f"Unexpected subpath {subpath} found in .npy path {path}")
+        save_array(file_path, data)
+    elif file_path.suffix in (".h5", ".hdf", ".hdf5"):
+        if subpath is None:
+            dataset_path = DEFAULT_H5_DATASET_PATH
+        else:
+            dataset_path = str(subpath)
+
+        with h5py.File(file_path, "a") as f:
+            if dataset_path in f:
+                del f[dataset_path]
+
+            _ = f.create_dataset(dataset_path, data=data, chunks=True)
     else:
         # if singleton_axes := [a for a, s in tensor.tagged_shape.items() if s == 1]:
         #     tensor = tensor[{a: 0 for a in singleton_axes}]

@@ -26,10 +26,12 @@ _ = setup(
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
     ],
     packages=find_namespace_packages(exclude=["tests"]),
     install_requires=[
         "bioimageio.spec ==0.5.3.3",
+        "h5py",
         "imageio>=2.10",
         "loguru",
         "numpy",

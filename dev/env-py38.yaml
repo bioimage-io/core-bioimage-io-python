@@ -8,6 +8,7 @@ dependencies:
   - black
   - crick # uncommented
   - filelock
+  - h5py
   - imageio>=2.5
   - jupyter
   - jupyter-black
