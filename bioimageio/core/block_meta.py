@@ -355,7 +355,7 @@ def split_multiple_shapes_into_blocks(
             halo=halo.get(t, {}),
             stride=strides.get(t),
         )
-        assert n_blocks[t] > 0
+        assert n_blocks[t] > 0, n_blocks
 
     assert len(blocks) > 0, blocks
     assert len(n_blocks) > 0, n_blocks

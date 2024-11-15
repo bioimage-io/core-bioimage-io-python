@@ -91,16 +91,17 @@ def test_predict_with_blocking(with_procs: bool, prep: Prep):
 
 
 def test_predict_with_fixed_blocking(prep: Prep):
-    block_along = list(prep.input_sample.members)[0]
+    block_along = list(prep.input_sample.members)
     input_block_shape: Mapping[MemberId, Mapping[AxisId, int]] = {
-        block_along: {
+        ba: {
             "x": min(  # pyright: ignore[reportAssignmentType]
-                32, prep.input_sample.members[block_along].tagged_shape[AxisId("x")]
+                128, prep.input_sample.members[ba].tagged_shape[AxisId("x")]
             ),
             AxisId("y"): min(
-                32, prep.input_sample.members[block_along].tagged_shape[AxisId("y")]
+                128, prep.input_sample.members[ba].tagged_shape[AxisId("y")]
             ),
         }
+        for ba in block_along
     }
     try:
         out = predict(
