@@ -39,7 +39,7 @@ class TensorflowModelAdapterBase(ModelAdapter):
         if tf is None:
             raise ImportError(f"failed to import tensorflow: {tf_error}")
 
-        super().__init__()
+        super().__init__()  # TODO: make ModelAdapter a dataclass
         self.model_description = model_description
         tf_version = v0_5.Version(
             tf.__version__  # pyright: ignore[reportUnknownArgumentType]

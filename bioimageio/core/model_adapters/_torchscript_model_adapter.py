@@ -27,11 +27,12 @@ class TorchscriptModelAdapter(ModelAdapter):
         *,
         model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
         devices: Optional[Sequence[str]] = None,
+        use_deterministic_algorithms: bool = False,
     ):
         if torch is None:
             raise ImportError(f"failed to import torch: {torch_error}")
 
-        super().__init__()
+        super().__init__(use_deterministic_algorithms=use_deterministic_algorithms)
         if model_description.weights.torchscript is None:
             raise ValueError(
                 f"No torchscript weights found for model {model_description.name}"
@@ -57,7 +58,14 @@ class TorchscriptModelAdapter(ModelAdapter):
         ]
 
     def forward(self, *batch: Optional[Tensor]) -> List[Optional[Tensor]]:
-        assert torch is not None
+        if torch is None:
+            raise ImportError("torch")
+
+        if self.use_deterministic_algorithms:
+            _ = torch.manual_seed(0)
+            np.random.seed(0)
+            torch.use_deterministic_algorithms()
+
         with torch.no_grad():
             torch_tensor = [
                 None if b is None else torch.from_numpy(b.data.data).to(self.devices[0])

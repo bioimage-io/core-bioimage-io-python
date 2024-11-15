@@ -1,6 +1,6 @@
 import warnings
 from abc import ABC, abstractmethod
-from typing import List, Optional, Sequence, Tuple, Union, final
+from typing import List, Literal, Optional, Sequence, Tuple, Union, final
 
 from bioimageio.spec.model import v0_4, v0_5
 
@@ -39,6 +39,12 @@ class ModelAdapter(ABC):
     ```
     """
 
+    def __init__(
+        self, *, determinism_mode: Literal["off", "seed_only", "deterministic"]
+    ):
+        super().__init__()
+        self.determinism_mode = determinism_mode
+
     @final
     @classmethod
     def create(
@@ -47,11 +53,21 @@ class ModelAdapter(ABC):
         *,
         devices: Optional[Sequence[str]] = None,
         weight_format_priority_order: Optional[Sequence[WeightsFormat]] = None,
+        determinism_mode: bool = False,
     ):
         """
         Creates model adapter based on the passed spec
         Note: All specific adapters should happen inside this function to prevent different framework
-        initializations interfering with each other
+        initializations interfering with each other.
+
+        Args:
+            model_description: Model to create adapter for.
+            devices: Devices to use.
+            weight_format_priority_order: Order in which to attempt to initialize the
+                framework specific `ModelAdapter`. First error-free instantiation wins.
+            determinism_mode: Request ML framework to use deterministic
+                algorithms for increased reproducibility. Only use for testing -- may
+                reduce inference performance!
         """
         if not isinstance(model_description, (v0_4.ModelDescr, v0_5.ModelDescr)):
             raise TypeError(
@@ -79,6 +95,7 @@ class ModelAdapter(ABC):
                         outputs=model_description.outputs,
                         weights=weights.pytorch_state_dict,
                         devices=devices,
+                        determinism_mode=determinism_mode,
                     )
                 except Exception as e:
                     errors.append((wf, e))
@@ -90,7 +107,9 @@ class ModelAdapter(ABC):
                     from ._tensorflow_model_adapter import TensorflowModelAdapter
 
                     return TensorflowModelAdapter(
-                        model_description=model_description, devices=devices
+                        model_description=model_description,
+                        devices=devices,
+                        determinism_mode=determinism_mode,
                     )
                 except Exception as e:
                     errors.append((wf, e))
@@ -99,7 +118,9 @@ class ModelAdapter(ABC):
                     from ._onnx_model_adapter import ONNXModelAdapter
 
                     return ONNXModelAdapter(
-                        model_description=model_description, devices=devices
+                        model_description=model_description,
+                        devices=devices,
+                        determinism_mode=determinism_mode,
                     )
                 except Exception as e:
                     errors.append((wf, e))
@@ -108,7 +129,9 @@ class ModelAdapter(ABC):
                     from ._torchscript_model_adapter import TorchscriptModelAdapter
 
                     return TorchscriptModelAdapter(
-                        model_description=model_description, devices=devices
+                        model_description=model_description,
+                        devices=devices,
+                        determinism_mode=determinism_mode,
                     )
                 except Exception as e:
                     errors.append((wf, e))
@@ -126,7 +149,9 @@ class ModelAdapter(ABC):
                         from ._tensorflow_model_adapter import KerasModelAdapter
 
                     return KerasModelAdapter(
-                        model_description=model_description, devices=devices
+                        model_description=model_description,
+                        devices=devices,
+                        determinism_mode=determinism_mode,
                     )
                 except Exception as e:
                     errors.append((wf, e))
