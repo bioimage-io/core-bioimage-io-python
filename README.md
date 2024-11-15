@@ -375,7 +375,7 @@ The model specification and its validation tools can be found at <https://github
 
 ## Changelog
 
-### 0.7.0 (to be released)
+### 0.7.0
 
 - breaking:
   - bioimageio CLI now has implicit boolean flags

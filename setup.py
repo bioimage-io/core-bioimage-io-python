@@ -30,7 +30,7 @@ _ = setup(
     ],
     packages=find_namespace_packages(exclude=["tests"]),
     install_requires=[
-        "bioimageio.spec ==0.5.3.3",
+        "bioimageio.spec ==0.5.3.4",
         "h5py",
         "imageio>=2.10",
         "loguru",

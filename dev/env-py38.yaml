@@ -4,7 +4,7 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - bioimageio.spec>=0.5.3.3
+  - bioimageio.spec>=0.5.3.4
   - black
   - crick # uncommented
   - filelock
