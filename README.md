@@ -385,6 +385,9 @@ The model specification and its validation tools can be found at <https://github
     - now works for sufficiently large, but not exactly shaped inputs
   - update to support `zipfile.ZipFile` object with bioimageio.spec==0.5.3.4
   - add io helpers `resolve` and `resolve_and_extract`
+  - added `enable_determinism` function and **determinism** input argument for testing with seeded
+    random generators and optionally (determinsim=="full") instructing DL frameworks to use
+    deterministic algorithms.
 
 ### 0.6.10
 
