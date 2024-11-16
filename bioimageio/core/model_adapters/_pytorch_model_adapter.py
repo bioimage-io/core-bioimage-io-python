@@ -2,6 +2,8 @@ import gc
 import warnings
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
+import numpy as np
+
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.utils import download
 
@@ -52,6 +54,12 @@ class PytorchModelAdapter(ModelAdapter):
     def forward(self, *input_tensors: Optional[Tensor]) -> List[Optional[Tensor]]:
         if torch is None:
             raise ImportError("torch")
+
+        torch.use_deterministic_algorithms(self.use_deterministic_algorithms==)
+        if self.use_deterministic_algorithms:
+            _ = torch.manual_seed(0)
+            np.random.seed(0)
+
         with torch.no_grad():
             tensors = [
                 None if ipt is None else torch.from_numpy(ipt.data.data)
