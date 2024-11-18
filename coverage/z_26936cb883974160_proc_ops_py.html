@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Coverage for bioimageio/core/proc_ops.py: 75%</title>
+    <title>Coverage for bioimageio/core/proc_ops.py: 77%</title>
     <link rel="icon" sizes="32x32" href="favicon_32_cb_58284776.png">
     <link rel="stylesheet" href="style_cb_8e611ae1.css" type="text/css">
     <script src="coverage_html_cb_6fb7b396.js" defer></script>
@@ -12,7 +12,7 @@
     <div class="content">
         <h1>
             <span class="text">Coverage for </span><b>bioimageio/core/proc_ops.py</b>:
-            <span class="pc_cov">75%</span>
+            <span class="pc_cov">77%</span>
         </h1>
         <aside id="help_panel_wrapper">
             <input id="help_panel_state" type="checkbox">
@@ -54,18 +54,18 @@
             </div>
         </aside>
         <h2>
-            <span class="text">328 statements &nbsp;</span>
+            <span class="text">321 statements &nbsp;</span>
             <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">247<span class="text"> run</span></button>
-            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">81<span class="text"> missing</span></button>
-            <button type="button" class="exc show_exc button_toggle_exc" value="exc" data-shortcut="x" title="Toggle lines excluded">0<span class="text"> excluded</span></button>
+            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">74<span class="text"> missing</span></button>
+            <button type="button" class="exc show_exc button_toggle_exc" value="exc" data-shortcut="x" title="Toggle lines excluded">7<span class="text"> excluded</span></button>
         </h2>
         <p class="text">
             <a id="prevFileLink" class="nav" href="z_26936cb883974160_prediction_py.html">&#xab; prev</a> &nbsp; &nbsp;
             <a id="indexLink" class="nav" href="index.html">&Hat; index</a> &nbsp; &nbsp;
             <a id="nextFileLink" class="nav" href="z_26936cb883974160_proc_setup_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
-            <a class="nav" href="https://coverage.readthedocs.io/en/7.6.4">coverage.py v7.6.4</a>,
-            created at 2024-11-08 13:19 +0000
+            <a class="nav" href="https://coverage.readthedocs.io/en/7.6.7">coverage.py v7.6.7</a>,
+            created at 2024-11-18 23:36 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -98,13 +98,13 @@
     <p class="run"><span class="n"><a id="t16" href="#t16">16</a></span><span class="t"><span class="key">import</span> <span class="nam">xarray</span> <span class="key">as</span> <span class="nam">xr</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t17" href="#t17">17</a></span><span class="t"><span class="key">from</span> <span class="nam">typing_extensions</span> <span class="key">import</span> <span class="nam">Self</span><span class="op">,</span> <span class="nam">assert_never</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t18" href="#t18">18</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t19" href="#t19">19</a></span><span class="t"><span class="key">from</span> <span class="nam">bioimageio</span><span class="op">.</span><span class="nam">core</span><span class="op">.</span><span class="nam">block</span> <span class="key">import</span> <span class="nam">Block</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t20" href="#t20">20</a></span><span class="t"><span class="key">from</span> <span class="nam">bioimageio</span><span class="op">.</span><span class="nam">core</span><span class="op">.</span><span class="nam">sample</span> <span class="key">import</span> <span class="nam">Sample</span><span class="op">,</span> <span class="nam">SampleBlock</span><span class="op">,</span> <span class="nam">SampleBlockWithOrigin</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t21" href="#t21">21</a></span><span class="t"><span class="key">from</span> <span class="nam">bioimageio</span><span class="op">.</span><span class="nam">spec</span><span class="op">.</span><span class="nam">model</span> <span class="key">import</span> <span class="nam">v0_4</span><span class="op">,</span> <span class="nam">v0_5</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t22" href="#t22">22</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t23" href="#t23">23</a></span><span class="t"><span class="key">from</span> <span class="op">.</span><span class="nam">_op_base</span> <span class="key">import</span> <span class="nam">BlockedOperator</span><span class="op">,</span> <span class="nam">Operator</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t24" href="#t24">24</a></span><span class="t"><span class="key">from</span> <span class="op">.</span><span class="nam">axis</span> <span class="key">import</span> <span class="nam">AxisId</span><span class="op">,</span> <span class="nam">PerAxis</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t25" href="#t25">25</a></span><span class="t"><span class="key">from</span> <span class="op">.</span><span class="nam">common</span> <span class="key">import</span> <span class="nam">DTypeStr</span><span class="op">,</span> <span class="nam">MemberId</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t19" href="#t19">19</a></span><span class="t"><span class="key">from</span> <span class="nam">bioimageio</span><span class="op">.</span><span class="nam">spec</span><span class="op">.</span><span class="nam">model</span> <span class="key">import</span> <span class="nam">v0_4</span><span class="op">,</span> <span class="nam">v0_5</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t20" href="#t20">20</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t21" href="#t21">21</a></span><span class="t"><span class="key">from</span> <span class="op">.</span><span class="nam">_op_base</span> <span class="key">import</span> <span class="nam">BlockedOperator</span><span class="op">,</span> <span class="nam">Operator</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t22" href="#t22">22</a></span><span class="t"><span class="key">from</span> <span class="op">.</span><span class="nam">axis</span> <span class="key">import</span> <span class="nam">AxisId</span><span class="op">,</span> <span class="nam">PerAxis</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t23" href="#t23">23</a></span><span class="t"><span class="key">from</span> <span class="op">.</span><span class="nam">block</span> <span class="key">import</span> <span class="nam">Block</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t24" href="#t24">24</a></span><span class="t"><span class="key">from</span> <span class="op">.</span><span class="nam">common</span> <span class="key">import</span> <span class="nam">DTypeStr</span><span class="op">,</span> <span class="nam">MemberId</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t25" href="#t25">25</a></span><span class="t"><span class="key">from</span> <span class="op">.</span><span class="nam">sample</span> <span class="key">import</span> <span class="nam">Sample</span><span class="op">,</span> <span class="nam">SampleBlock</span><span class="op">,</span> <span class="nam">SampleBlockWithOrigin</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t26" href="#t26">26</a></span><span class="t"><span class="key">from</span> <span class="op">.</span><span class="nam">stat_calculators</span> <span class="key">import</span> <span class="nam">StatsCalculator</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t27" href="#t27">27</a></span><span class="t"><span class="key">from</span> <span class="op">.</span><span class="nam">stat_measures</span> <span class="key">import</span> <span class="op">(</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t28" href="#t28">28</a></span><span class="t">    <span class="nam">DatasetMean</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
@@ -135,7 +135,7 @@
     <p class="mis show_mis"><span class="n"><a id="t53" href="#t53">53</a></span><span class="t">    <span class="key">elif</span> <span class="nam">mode</span> <span class="op">==</span> <span class="str">"per_dataset"</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t54" href="#t54">54</a></span><span class="t">        <span class="nam">ret</span> <span class="op">=</span> <span class="op">[</span><span class="nam">AxisId</span><span class="op">(</span><span class="str">"b"</span><span class="op">)</span><span class="op">]</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t55" href="#t55">55</a></span><span class="t">    <span class="key">else</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t56" href="#t56">56</a></span><span class="t">        <span class="nam">assert_never</span><span class="op">(</span><span class="nam">mode</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="exc show_exc"><span class="n"><a id="t56" href="#t56">56</a></span><span class="t">        <span class="nam">assert_never</span><span class="op">(</span><span class="nam">mode</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t57" href="#t57">57</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t58" href="#t58">58</a></span><span class="t">    <span class="nam">ret</span><span class="op">.</span><span class="nam">extend</span><span class="op">(</span><span class="op">[</span><span class="nam">AxisId</span><span class="op">(</span><span class="nam">a</span><span class="op">)</span> <span class="key">for</span> <span class="nam">a</span> <span class="key">in</span> <span class="nam">axes</span><span class="op">]</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t59" href="#t59">59</a></span><span class="t">    <span class="key">return</span> <span class="nam">tuple</span><span class="op">(</span><span class="nam">ret</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
@@ -178,7 +178,7 @@
     <p class="pln"><span class="n"><a id="t96" href="#t96">96</a></span><span class="t">                <span class="nam">blocks_in_sample</span><span class="op">=</span><span class="nam">b</span><span class="op">.</span><span class="nam">blocks_in_sample</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t97" href="#t97">97</a></span><span class="t">            <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t98" href="#t98">98</a></span><span class="t">        <span class="key">else</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t99" href="#t99">99</a></span><span class="t">            <span class="nam">assert_never</span><span class="op">(</span><span class="nam">sample</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="exc show_exc"><span class="n"><a id="t99" href="#t99">99</a></span><span class="t">            <span class="nam">assert_never</span><span class="op">(</span><span class="nam">sample</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t100" href="#t100">100</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t101" href="#t101">101</a></span><span class="t">    <span class="op">@</span><span class="nam">abstractmethod</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t102" href="#t102">102</a></span><span class="t">    <span class="key">def</span> <span class="nam">_apply</span><span class="op">(</span><span class="nam">self</span><span class="op">,</span> <span class="nam">input</span><span class="op">:</span> <span class="nam">Tensor</span><span class="op">,</span> <span class="nam">stat</span><span class="op">:</span> <span class="nam">Stat</span><span class="op">)</span> <span class="op">-></span> <span class="nam">Tensor</span><span class="op">:</span> <span class="op">...</span>&nbsp;</span><span class="r"></span></p>
@@ -302,7 +302,7 @@
     <p class="pln"><span class="n"><a id="t220" href="#t220">220</a></span><span class="t">                <span class="nam">axis</span><span class="op">=</span><span class="nam">descr</span><span class="op">.</span><span class="nam">kwargs</span><span class="op">.</span><span class="nam">axis</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t221" href="#t221">221</a></span><span class="t">            <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t222" href="#t222">222</a></span><span class="t">        <span class="key">else</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t223" href="#t223">223</a></span><span class="t">            <span class="nam">assert_never</span><span class="op">(</span><span class="nam">descr</span><span class="op">.</span><span class="nam">kwargs</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="exc show_exc"><span class="n"><a id="t223" href="#t223">223</a></span><span class="t">            <span class="nam">assert_never</span><span class="op">(</span><span class="nam">descr</span><span class="op">.</span><span class="nam">kwargs</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t224" href="#t224">224</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t225" href="#t225">225</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t226" href="#t226">226</a></span><span class="t"><span class="op">@</span><span class="nam">dataclass</span>&nbsp;</span><span class="r"></span></p>
@@ -386,7 +386,7 @@
     <p class="run"><span class="n"><a id="t304" href="#t304">304</a></span><span class="t">        <span class="key">elif</span> <span class="nam">isinstance</span><span class="op">(</span><span class="nam">kwargs</span><span class="op">,</span> <span class="op">(</span><span class="nam">v0_4</span><span class="op">.</span><span class="nam">ScaleLinearKwargs</span><span class="op">,</span> <span class="nam">v0_5</span><span class="op">.</span><span class="nam">ScaleLinearKwargs</span><span class="op">)</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t305" href="#t305">305</a></span><span class="t">            <span class="nam">axis</span> <span class="op">=</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t306" href="#t306">306</a></span><span class="t">        <span class="key">else</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t307" href="#t307">307</a></span><span class="t">            <span class="nam">assert_never</span><span class="op">(</span><span class="nam">kwargs</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="exc show_exc"><span class="n"><a id="t307" href="#t307">307</a></span><span class="t">            <span class="nam">assert_never</span><span class="op">(</span><span class="nam">kwargs</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t308" href="#t308">308</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t309" href="#t309">309</a></span><span class="t">        <span class="key">if</span> <span class="nam">axis</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t310" href="#t310">310</a></span><span class="t">            <span class="nam">gain</span> <span class="op">=</span> <span class="nam">xr</span><span class="op">.</span><span class="nam">DataArray</span><span class="op">(</span><span class="nam">np</span><span class="op">.</span><span class="nam">atleast_1d</span><span class="op">(</span><span class="nam">kwargs</span><span class="op">.</span><span class="nam">gain</span><span class="op">)</span><span class="op">,</span> <span class="nam">dims</span><span class="op">=</span><span class="nam">axis</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
@@ -475,7 +475,7 @@
     <p class="pln"><span class="n"><a id="t393" href="#t393">393</a></span><span class="t">        <span class="nam">v0_5</span><span class="op">.</span><span class="nam">ScaleRangeKwargs</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t394" href="#t394">394</a></span><span class="t">        <span class="nam">v0_4</span><span class="op">.</span><span class="nam">ScaleMeanVarianceKwargs</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t395" href="#t395">395</a></span><span class="t">        <span class="nam">v0_5</span><span class="op">.</span><span class="nam">ScaleMeanVarianceKwargs</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t396" href="#t396">396</a></span><span class="t">    <span class="op">]</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t396" href="#t396">396</a></span><span class="t">    <span class="op">]</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t397" href="#t397">397</a></span><span class="t"><span class="op">)</span> <span class="op">-></span> <span class="nam">Tuple</span><span class="op">[</span><span class="nam">bool</span><span class="op">,</span> <span class="nam">Optional</span><span class="op">[</span><span class="nam">Tuple</span><span class="op">[</span><span class="nam">AxisId</span><span class="op">,</span> <span class="op">...</span><span class="op">]</span><span class="op">]</span><span class="op">]</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t398" href="#t398">398</a></span><span class="t">    <span class="key">if</span> <span class="nam">kwargs</span><span class="op">.</span><span class="nam">axes</span> <span class="key">is</span> <span class="key">None</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t399" href="#t399">399</a></span><span class="t">        <span class="key">return</span> <span class="key">True</span><span class="op">,</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
@@ -486,7 +486,7 @@
     <p class="run"><span class="n"><a id="t404" href="#t404">404</a></span><span class="t">        <span class="nam">axes</span> <span class="op">=</span> <span class="nam">tuple</span><span class="op">(</span><span class="nam">kwargs</span><span class="op">.</span><span class="nam">axes</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t405" href="#t405">405</a></span><span class="t">        <span class="key">return</span> <span class="nam">AxisId</span><span class="op">(</span><span class="str">"batch"</span><span class="op">)</span> <span class="key">in</span> <span class="nam">axes</span><span class="op">,</span> <span class="nam">axes</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t406" href="#t406">406</a></span><span class="t">    <span class="key">else</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t407" href="#t407">407</a></span><span class="t">        <span class="nam">assert_never</span><span class="op">(</span><span class="nam">kwargs</span><span class="op">.</span><span class="nam">axes</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="exc show_exc"><span class="n"><a id="t407" href="#t407">407</a></span><span class="t">        <span class="nam">assert_never</span><span class="op">(</span><span class="nam">kwargs</span><span class="op">.</span><span class="nam">axes</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t408" href="#t408">408</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t409" href="#t409">409</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t410" href="#t410">410</a></span><span class="t"><span class="op">@</span><span class="nam">dataclass</span>&nbsp;</span><span class="r"></span></p>
@@ -689,7 +689,7 @@
     <p class="mis show_mis"><span class="n"><a id="t607" href="#t607">607</a></span><span class="t">        <span class="key">elif</span> <span class="nam">isinstance</span><span class="op">(</span><span class="nam">descr</span><span class="op">.</span><span class="nam">kwargs</span><span class="op">,</span> <span class="nam">v0_5</span><span class="op">.</span><span class="nam">FixedZeroMeanUnitVarianceAlongAxisKwargs</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t608" href="#t608">608</a></span><span class="t">            <span class="nam">dims</span> <span class="op">=</span> <span class="op">(</span><span class="nam">descr</span><span class="op">.</span><span class="nam">kwargs</span><span class="op">.</span><span class="nam">axis</span><span class="op">,</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t609" href="#t609">609</a></span><span class="t">        <span class="key">else</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t610" href="#t610">610</a></span><span class="t">            <span class="nam">assert_never</span><span class="op">(</span><span class="nam">descr</span><span class="op">.</span><span class="nam">kwargs</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="exc show_exc"><span class="n"><a id="t610" href="#t610">610</a></span><span class="t">            <span class="nam">assert_never</span><span class="op">(</span><span class="nam">descr</span><span class="op">.</span><span class="nam">kwargs</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t611" href="#t611">611</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t612" href="#t612">612</a></span><span class="t">        <span class="key">return</span> <span class="nam">cls</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t613" href="#t613">613</a></span><span class="t">            <span class="nam">input</span><span class="op">=</span><span class="nam">member_id</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
@@ -769,7 +769,7 @@
     <p class="pln"><span class="n"><a id="t687" href="#t687">687</a></span><span class="t">    <span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t688" href="#t688">688</a></span><span class="t">        <span class="key">return</span> <span class="nam">ZeroMeanUnitVariance</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t689" href="#t689">689</a></span><span class="t">    <span class="key">else</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t690" href="#t690">690</a></span><span class="t">        <span class="nam">assert_never</span><span class="op">(</span><span class="nam">proc_spec</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="exc show_exc"><span class="n"><a id="t690" href="#t690">690</a></span><span class="t">        <span class="nam">assert_never</span><span class="op">(</span><span class="nam">proc_spec</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
 </main>
 <footer>
     <div class="content">
@@ -778,8 +778,8 @@
             <a class="nav" href="index.html">&Hat; index</a> &nbsp; &nbsp;
             <a class="nav" href="z_26936cb883974160_proc_setup_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
-            <a class="nav" href="https://coverage.readthedocs.io/en/7.6.4">coverage.py v7.6.4</a>,
-            created at 2024-11-08 13:19 +0000
+            <a class="nav" href="https://coverage.readthedocs.io/en/7.6.7">coverage.py v7.6.7</a>,
+            created at 2024-11-18 23:36 +0000
         </p>
     </div>
 </footer>
