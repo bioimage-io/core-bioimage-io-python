@@ -39,7 +39,6 @@ _ = setup(
         "pydantic",
         "requests",
         "ruyaml",
-        "tifffile >=2020.7.4",  # TODO: remove (is in spec)
         "tqdm",
         "typing-extensions",
         "xarray",

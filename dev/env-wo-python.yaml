@@ -34,7 +34,6 @@ dependencies:
   - rich
   - ruff
   - ruyaml
-  - tifffile>=2020.7.4
   - torchvision
   - tqdm
   - typing-extensions

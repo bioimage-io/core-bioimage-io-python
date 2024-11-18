@@ -33,7 +33,6 @@ dependencies:
   - rich
   # - ruff  # removed
   - ruyaml
-  - tifffile>=2020.7.4
   - tensorflow>=2.15 # added
   # - torchvision  # removed
   - tqdm
