@@ -383,7 +383,7 @@ The model specification and its validation tools can be found at <https://github
   - use new `ValidationDetail.recommended_env` in `ValidationSummary`
   - improve `get_io_sample_block_metas()`
     - now works for sufficiently large, but not exactly shaped inputs
-  - update to support `zipfile.ZipFile` object with bioimageio.spec==0.5.3.4
+  - update to support `zipfile.ZipFile` object with bioimageio.spec==0.5.3.5
   - add io helpers `resolve` and `resolve_and_extract`
   - added `enable_determinism` function and **determinism** input argument for testing with seeded
     random generators and optionally (determinsim=="full") instructing DL frameworks to use
