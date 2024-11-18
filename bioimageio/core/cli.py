@@ -28,7 +28,7 @@ from typing import (
 )
 
 from loguru import logger
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 from pydantic_settings import (
     BaseSettings,
     CliPositionalArg,
@@ -41,50 +41,46 @@ from pydantic_settings import (
 )
 from ruyaml import YAML
 from tqdm import tqdm
+from typing_extensions import assert_never
 
-from bioimageio.core import (
-    MemberId,
-    Sample,
-    __version__,
-    create_prediction_pipeline,
-)
-from bioimageio.core.commands import (
-    WeightFormatArgAll,
-    WeightFormatArgAny,
-    package,
-    test,
-    validate_format,
-)
-from bioimageio.core.common import SampleId
-from bioimageio.core.digest_spec import get_member_ids, load_sample_for_model
-from bioimageio.core.io import load_dataset_stat, save_dataset_stat, save_sample
-from bioimageio.core.proc_setup import (
-    DatasetMeasure,
-    Measure,
-    MeasureValue,
-    StatsCalculator,
-    get_required_dataset_measures,
-)
-from bioimageio.core.stat_measures import Stat
-from bioimageio.spec import (
-    AnyModelDescr,
-    InvalidDescr,
-    load_description,
-)
+from bioimageio.spec import AnyModelDescr, InvalidDescr, load_description
+from bioimageio.spec._internal.io_basics import ZipPath
 from bioimageio.spec._internal.types import NotEmpty
 from bioimageio.spec.dataset import DatasetDescr
 from bioimageio.spec.model import ModelDescr, v0_4, v0_5
 from bioimageio.spec.notebook import NotebookDescr
 from bioimageio.spec.utils import download, ensure_description_is_model
 
+from .commands import (
+    WeightFormatArgAll,
+    WeightFormatArgAny,
+    package,
+    test,
+    validate_format,
+)
+from .common import MemberId, SampleId
+from .digest_spec import get_member_ids, load_sample_for_model
+from .io import load_dataset_stat, save_dataset_stat, save_sample
+from .prediction import create_prediction_pipeline
+from .proc_setup import (
+    DatasetMeasure,
+    Measure,
+    MeasureValue,
+    StatsCalculator,
+    get_required_dataset_measures,
+)
+from .sample import Sample
+from .stat_measures import Stat
+from .utils import VERSION
+
 yaml = YAML(typ="safe")
 
 
-class CmdBase(BaseModel, use_attribute_docstrings=True):
+class CmdBase(BaseModel, use_attribute_docstrings=True, cli_implicit_flags=True):
     pass
 
 
-class ArgMixin(BaseModel, use_attribute_docstrings=True):
+class ArgMixin(BaseModel, use_attribute_docstrings=True, cli_implicit_flags=True):
     pass
 
 
@@ -117,14 +113,14 @@ class WithSource(ArgMixin):
 
 
 class ValidateFormatCmd(CmdBase, WithSource):
-    """bioimageio-validate-format - validate the meta data format of a bioimageio resource."""
+    """validate the meta data format of a bioimageio resource."""
 
     def run(self):
-        validate_format(self.descr)
+        sys.exit(validate_format(self.descr))
 
 
 class TestCmd(CmdBase, WithSource):
-    """bioimageio-test - Test a bioimageio resource (beyond meta data formatting)"""
+    """Test a bioimageio resource (beyond meta data formatting)"""
 
     weight_format: WeightFormatArgAll = "all"
     """The weight format to limit testing to.
@@ -138,16 +134,18 @@ class TestCmd(CmdBase, WithSource):
     """Precision for numerical comparisons"""
 
     def run(self):
-        test(
-            self.descr,
-            weight_format=self.weight_format,
-            devices=self.devices,
-            decimal=self.decimal,
+        sys.exit(
+            test(
+                self.descr,
+                weight_format=self.weight_format,
+                devices=self.devices,
+                decimal=self.decimal,
+            )
         )
 
 
 class PackageCmd(CmdBase, WithSource):
-    """bioimageio-package - save a resource's metadata with its associated files."""
+    """save a resource's metadata with its associated files."""
 
     path: CliPositionalArg[Path]
     """The path to write the (zipped) package to.
@@ -162,10 +160,12 @@ class PackageCmd(CmdBase, WithSource):
             self.descr.validation_summary.display()
             raise ValueError("resource description is invalid")
 
-        package(
-            self.descr,
-            self.path,
-            weight_format=self.weight_format,
+        sys.exit(
+            package(
+                self.descr,
+                self.path,
+                weight_format=self.weight_format,
+            )
         )
 
 
@@ -204,7 +204,7 @@ def _get_stat(
 
 
 class PredictCmd(CmdBase, WithSource):
-    """bioimageio-predict - Run inference on your data with a bioimage.io model."""
+    """Run inference on your data with a bioimage.io model."""
 
     inputs: NotEmpty[Sequence[Union[str, NotEmpty[Tuple[str, ...]]]]] = (
         "{input_id}/001.tif",
@@ -305,7 +305,12 @@ class PredictCmd(CmdBase, WithSource):
             dst = Path(f"{example_path}/{t}/001{''.join(local.suffixes)}")
             dst.parent.mkdir(parents=True, exist_ok=True)
             inputs001.append(dst.as_posix())
-            shutil.copy(local, dst)
+            if isinstance(local, Path):
+                shutil.copy(local, dst)
+            elif isinstance(local, ZipPath):
+                _ = local.root.extract(local.at, path=dst)
+            else:
+                assert_never(local)
 
         inputs = [tuple(inputs001)]
         output_pattern = f"{example_path}/outputs/{{output_id}}/{{sample_id}}.tif"
@@ -336,9 +341,10 @@ class PredictCmd(CmdBase, WithSource):
             return [
                 "bioimageio",
                 "predict",
-                f"--preview={preview}",  # update once we use implicit flags, see `class Bioimageio` below
-                "--overwrite=True",
-                f"--blockwise={self.blockwise}",
+                # --no-preview not supported for py=3.8
+                *(["--preview"] if preview else []),
+                "--overwrite",
+                *(["--blockwise"] if self.blockwise else []),
                 f"--stats={q}{stats}{q}",
                 f"--inputs={q}{inputs_escaped if escape else inputs_json}{q}",
                 f"--outputs={q}{output_pattern}{q}",
@@ -545,22 +551,20 @@ YAML_FILE = "bioimageio-cli.yaml"
 
 class Bioimageio(
     BaseSettings,
-    # alias_generator=AliasGenerator(
-    #     validation_alias=lambda s: AliasChoices(s, to_snake(s).replace("_", "-"))
-    # ),
-    # TODO: investigate how to allow a validation alias for subcommands
-    #       ('validate-format' vs 'validate_format')
     cli_parse_args=True,
     cli_prog_name="bioimageio",
     cli_use_class_docs_for_groups=True,
-    # cli_implicit_flags=True, # TODO: make flags implicit, see https://github.com/pydantic/pydantic-settings/issues/361
+    cli_implicit_flags=True,
     use_attribute_docstrings=True,
 ):
     """bioimageio - CLI for bioimage.io resources 🦒"""
 
-    model_config = SettingsConfigDict(json_file=JSON_FILE, yaml_file=YAML_FILE)
+    model_config = SettingsConfigDict(
+        json_file=JSON_FILE,
+        yaml_file=YAML_FILE,
+    )
 
-    validate_format: CliSubCommand[ValidateFormatCmd]
+    validate_format: CliSubCommand[ValidateFormatCmd] = Field(alias="validate-format")
     "Check a resource's metadata format"
 
     test: CliSubCommand[TestCmd]
@@ -618,8 +622,8 @@ assert isinstance(Bioimageio.__doc__, str)
 Bioimageio.__doc__ += f"""
 
 library versions:
-  bioimageio.core {__version__}
-  bioimageio.spec {__version__}
+  bioimageio.core {VERSION}
+  bioimageio.spec {VERSION}
 
 spec format versions:
         model RDF {ModelDescr.implemented_format_version}
@@ -630,7 +634,7 @@ spec format versions:
 
 
 def _get_sample_ids(
-    input_paths: Sequence[Mapping[MemberId, Path]]
+    input_paths: Sequence[Mapping[MemberId, Path]],
 ) -> Sequence[SampleId]:
     """Get sample ids for given input paths, based on the common path per sample.
 

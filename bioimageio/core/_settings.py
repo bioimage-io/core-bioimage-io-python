@@ -10,7 +10,7 @@ _ = load_dotenv()
 
 
 class Settings(SpecSettings):
-    """environment variables"""
+    """environment variables for bioimageio.spec and bioimageio.core"""
 
     keras_backend: Annotated[
         Literal["torch", "tensorflow", "jax"], Field(alias="KERAS_BACKEND")
@@ -18,3 +18,4 @@ class Settings(SpecSettings):
 
 
 settings = Settings()
+"""parsed environment variables for bioimageio.spec and bioimageio.core"""

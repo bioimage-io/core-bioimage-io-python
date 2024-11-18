@@ -150,18 +150,14 @@ ALL_MODELS = sorted(
 
 
 @fixture(scope="session")
-def mamba_cmd():
-    mamba_cmd = "micromamba"
+def conda_cmd():
+    conda_cmd = "conda"
     try:
-        _ = subprocess.run(["which", mamba_cmd], check=True)
+        _ = subprocess.run(["which", conda_cmd], check=True)
     except (subprocess.CalledProcessError, FileNotFoundError):
-        mamba_cmd = "mamba"
-        try:
-            _ = subprocess.run(["which", mamba_cmd], check=True)
-        except (subprocess.CalledProcessError, FileNotFoundError):
-            mamba_cmd = None
+        conda_cmd = None
 
-    return mamba_cmd
+    return conda_cmd
 
 
 #
@@ -169,39 +165,39 @@ def mamba_cmd():
 #
 
 
-@fixture(params=TORCH_MODELS)
+@fixture(scope="session", params=TORCH_MODELS)
 def any_torch_model(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
 
 
-@fixture(params=TORCHSCRIPT_MODELS)
+@fixture(scope="session", params=TORCHSCRIPT_MODELS)
 def any_torchscript_model(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
 
 
-@fixture(params=ONNX_MODELS)
+@fixture(scope="session", params=ONNX_MODELS)
 def any_onnx_model(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
 
 
-@fixture(params=TENSORFLOW_MODELS)
+@fixture(scope="session", params=TENSORFLOW_MODELS)
 def any_tensorflow_model(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
 
 
-@fixture(params=KERAS_MODELS)
+@fixture(scope="session", params=KERAS_MODELS)
 def any_keras_model(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
 
 
-@fixture(params=TENSORFLOW_JS_MODELS)
+@fixture(scope="session", params=TENSORFLOW_JS_MODELS)
 def any_tensorflow_js_model(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
 
 
 # fixture to test with all models that should run in the current environment
 # we exclude any 'wrong' model here
-@fixture(params=sorted({m for m in ALL_MODELS if "wrong" not in m}))
+@fixture(scope="session", params=sorted({m for m in ALL_MODELS if "wrong" not in m}))
 def any_model(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
 
@@ -243,48 +239,52 @@ def unet2d_keras(request: FixtureRequest):
 
 
 # written as model group to automatically skip on missing torch
-@fixture(params=[] if skip_torch else ["unet2d_nuclei_broad_model"])
+@fixture(scope="session", params=[] if skip_torch else ["unet2d_nuclei_broad_model"])
 def unet2d_nuclei_broad_model(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
 
 
 # written as model group to automatically skip on missing torch
-@fixture(params=[] if skip_torch else ["unet2d_diff_output_shape"])
+@fixture(scope="session", params=[] if skip_torch else ["unet2d_diff_output_shape"])
 def unet2d_diff_output_shape(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
 
 
 # written as model group to automatically skip on missing torch
-@fixture(params=[] if skip_torch else ["unet2d_expand_output_shape"])
+@fixture(scope="session", params=[] if skip_torch else ["unet2d_expand_output_shape"])
 def unet2d_expand_output_shape(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
 
 
 # written as model group to automatically skip on missing torch
-@fixture(params=[] if skip_torch else ["unet2d_fixed_shape"])
+@fixture(scope="session", params=[] if skip_torch else ["unet2d_fixed_shape"])
 def unet2d_fixed_shape(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
 
 
 # written as model group to automatically skip on missing torch
-@fixture(params=[] if skip_torch else ["shape_change"])
+@fixture(scope="session", params=[] if skip_torch else ["shape_change"])
 def shape_change_model(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
 
 
 # written as model group to automatically skip on missing tensorflow 1
-@fixture(params=["stardist_wrong_shape"] if tf_major_version == 1 else [])
+@fixture(
+    scope="session", params=["stardist_wrong_shape"] if tf_major_version == 1 else []
+)
 def stardist_wrong_shape(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
 
 
 # written as model group to automatically skip on missing tensorflow 1
-@fixture(params=["stardist_wrong_shape2"] if tf_major_version == 1 else [])
+@fixture(
+    scope="session", params=["stardist_wrong_shape2"] if tf_major_version == 1 else []
+)
 def stardist_wrong_shape2(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
 
 
 # written as model group to automatically skip on missing tensorflow 1
-@fixture(params=["stardist"] if tf_major_version == 1 else [])
+@fixture(scope="session", params=["stardist"] if tf_major_version == 1 else [])
 def stardist(request: FixtureRequest):
     return MODEL_SOURCES[request.param]

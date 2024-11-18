@@ -49,14 +49,29 @@ jobs:
         post-cleanup: 'all'
     - name: additional setup
       run: pip install --no-deps -e .
+    - name: Get Date
+      id: get-date
+      run: |
+        echo "date=$(date +'%Y-%b')"
+        echo "date=$(date +'%Y-%b')" >> $GITHUB_OUTPUT
+      shell: bash
+    - uses: actions/cache@v4
+      with:
+        path: bioimageio_cache
+        key: "test-spec-conda-${{ steps.get-date.outputs.date }}"
     - name: pytest-spec-conda
       run: pytest --disable-pytest-warnings
+      env:
+        BIOIMAGEIO_CACHE_PATH: bioimageio_cache
 
   test-spec-main:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         python-version: ['3.8', '3.12']
+        include:
+          - python-version: '3.12'
+            is-dev-version: true
     steps:
     - uses: actions/checkout@v4
     - name: Install Conda environment with Micromamba
@@ -83,19 +98,31 @@ jobs:
         pip install --no-deps git+https://github.com/bioimage-io/spec-bioimage-io
     - name: additional setup core
       run: pip install --no-deps -e .
+    - name: Get Date
+      id: get-date
+      run: |
+        echo "date=$(date +'%Y-%b')"
+        echo "date=$(date +'%Y-%b')" >> $GITHUB_OUTPUT
+      shell: bash
+    - uses: actions/cache@v4
+      with:
+        path: bioimageio_cache
+        key: "test-spec-main-${{ steps.get-date.outputs.date }}"
     - name: pytest-spec-main
       run: pytest --disable-pytest-warnings
-    - if: matrix.python-version == '3.12' && github.event_name == 'pull_request'
+      env:
+        BIOIMAGEIO_CACHE_PATH: bioimageio_cache
+    - if: matrix.is-dev-version && github.event_name == 'pull_request'
       uses: orgoro/coverage@v3.2
       with:
         coverageFile: coverage.xml
         token: ${{ secrets.GITHUB_TOKEN }}
-    - if: matrix.python-version == '3.12' && github.ref == 'refs/heads/main'
+    - if: matrix.is-dev-version && github.ref == 'refs/heads/main'
       run: |
         pip install genbadge[coverage]
         genbadge coverage --input-file coverage.xml --output-file ./dist/coverage/coverage-badge.svg
         coverage html -d dist/coverage
-    - if: matrix.python-version == '3.12' && github.ref == 'refs/heads/main'
+    - if: matrix.is-dev-version && github.ref == 'refs/heads/main'
       uses: actions/upload-artifact@v4
       with:
         name: coverage
@@ -103,15 +130,51 @@ jobs:
         path: dist
 
 
-  test-tf:
+  test-spec-main-tf:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.9', '3.11']
+        python-version: ['3.9', '3.12']
     steps:
     - uses: actions/checkout@v4
-    - name: Install Conda environment with Micromamba
-      uses: mamba-org/setup-micromamba@v1
+    - uses: mamba-org/setup-micromamba@v1
+      with:
+        cache-downloads: true
+        cache-environment: true
+        environment-file: dev/env-tf.yaml
+        condarc: |
+          channel-priority: flexible
+        create-args: >-
+          python=${{ matrix.python-version }}
+        post-cleanup: 'all'
+    - name: additional setup spec
+      run: |
+        conda remove --yes --force bioimageio.spec || true  # allow failure for cached env
+        pip install --no-deps git+https://github.com/bioimage-io/spec-bioimage-io
+    - name: additional setup core
+      run: pip install --no-deps -e .
+    - name: Get Date
+      id: get-date
+      run: |
+        echo "date=$(date +'%Y-%b')"
+        echo "date=$(date +'%Y-%b')" >> $GITHUB_OUTPUT
+      shell: bash
+    - uses: actions/cache@v4
+      with:
+        path: bioimageio_cache
+        key: "test-spec-main-tf-${{ steps.get-date.outputs.date }}"
+    - run: pytest --disable-pytest-warnings
+      env:
+        BIOIMAGEIO_CACHE_PATH: bioimageio_cache
+
+  test-spec-conda-tf:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.12']
+    steps:
+    - uses: actions/checkout@v4
+    - uses: mamba-org/setup-micromamba@v1
       with:
         cache-downloads: true
         cache-environment: true
@@ -123,8 +186,20 @@ jobs:
         post-cleanup: 'all'
     - name: additional setup
       run: pip install --no-deps -e .
+    - name: Get Date
+      id: get-date
+      run: |
+        echo "date=$(date +'%Y-%b')"
+        echo "date=$(date +'%Y-%b')" >> $GITHUB_OUTPUT
+      shell: bash
+    - uses: actions/cache@v4
+      with:
+        path: bioimageio_cache
+        key: "test-spec-conda-tf-${{ steps.get-date.outputs.date }}"
     - name: pytest-spec-tf
       run: pytest --disable-pytest-warnings
+      env:
+        BIOIMAGEIO_CACHE_PATH: bioimageio_cache
 
   conda-build:
     runs-on: ubuntu-latest
@@ -164,20 +239,11 @@ jobs:
           path: dist
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
+          python-version: '3.13'
           cache: 'pip'
       - run: pip install -e .[dev]
-      - id: get_version
-        run: python -c 'import bioimageio.core;print(f"version={bioimageio.core.__version__}")' >> $GITHUB_OUTPUT
       - name: Generate developer docs
-        run: |
-          pdoc \
-          --docformat google \
-          --logo https://bioimage.io/static/img/bioimage-io-logo.svg \
-          --logo-link https://bioimage.io/ \
-          --favicon https://bioimage.io/static/img/bioimage-io-icon-small.svg \
-          --footer-text 'bioimageio.core ${{steps.get_version.outputs.version}}' \
-          -o ./dist bioimageio.core
+        run: ./scripts/pdoc/run.sh
       - run: cp README.md ./dist/README.md
       - name: copy rendered presentations
         run: |

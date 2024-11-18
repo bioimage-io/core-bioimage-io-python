@@ -6,7 +6,6 @@ from typing import Dict, Hashable, List, Literal, Optional, Sequence, Set, Tuple
 import numpy as np
 from loguru import logger
 
-from bioimageio.core.sample import Sample
 from bioimageio.spec import (
     InvalidDescr,
     ResourceDescr,
@@ -16,6 +15,7 @@ from bioimageio.spec import (
 )
 from bioimageio.spec._internal.common_nodes import ResourceDescrBase
 from bioimageio.spec.common import BioimageioYamlContent, PermissiveFileSource
+from bioimageio.spec.get_conda_env import get_conda_env
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import WeightsFormat
 from bioimageio.spec.summary import (
@@ -28,7 +28,69 @@ from bioimageio.spec.summary import (
 from ._prediction_pipeline import create_prediction_pipeline
 from .axis import AxisId, BatchSize
 from .digest_spec import get_test_inputs, get_test_outputs
+from .sample import Sample
 from .utils import VERSION
+
+
+def enable_determinism(mode: Literal["seed_only", "full"]):
+    """Seed and configure ML frameworks for maximum reproducibility.
+    May degrade performance. Only recommended for testing reproducibility!
+
+    Seed any random generators and (if **mode**=="full") request ML frameworks to use
+    deterministic algorithms.
+    Notes:
+        - **mode** == "full"  might degrade performance and throw exceptions.
+        - Subsequent inference calls might still differ. Call before each function
+          (sequence) that is expected to be reproducible.
+        - Degraded performance: Use for testing reproducibility only!
+        - Recipes:
+            - [PyTorch](https://pytorch.org/docs/stable/notes/randomness.html)
+            - [Keras](https://keras.io/examples/keras_recipes/reproducibility_recipes/)
+            - [NumPy](https://numpy.org/doc/2.0/reference/random/generated/numpy.random.seed.html)
+    """
+    try:
+        try:
+            import numpy.random
+        except ImportError:
+            pass
+        else:
+            numpy.random.seed(0)
+    except Exception as e:
+        logger.debug(str(e))
+
+    try:
+        try:
+            import torch
+        except ImportError:
+            pass
+        else:
+            _ = torch.manual_seed(0)
+            torch.use_deterministic_algorithms(mode == "full")
+    except Exception as e:
+        logger.debug(str(e))
+
+    try:
+        try:
+            import keras
+        except ImportError:
+            pass
+        else:
+            keras.utils.set_random_seed(0)
+    except Exception as e:
+        logger.debug(str(e))
+
+    try:
+        try:
+            import tensorflow as tf  # pyright: ignore[reportMissingImports]
+        except ImportError:
+            pass
+        else:
+            tf.random.seed(0)
+            if mode == "full":
+                tf.config.experimental.enable_op_determinism()
+            # TODO: find possibility to switch it off again??
+    except Exception as e:
+        logger.debug(str(e))
 
 
 def test_model(
@@ -38,9 +100,10 @@ def test_model(
     absolute_tolerance: float = 1.5e-4,
     relative_tolerance: float = 1e-4,
     decimal: Optional[int] = None,
+    *,
+    determinism: Literal["seed_only", "full"] = "seed_only",
 ) -> ValidationSummary:
     """Test model inference"""
-    # NOTE: `decimal` is a legacy argument and is handled in `_test_model_inference`
     return test_description(
         source,
         weight_format=weight_format,
@@ -48,6 +111,7 @@ def test_model(
         absolute_tolerance=absolute_tolerance,
         relative_tolerance=relative_tolerance,
         decimal=decimal,
+        determinism=determinism,
         expected_type="model",
     )
 
@@ -61,10 +125,10 @@ def test_description(
     absolute_tolerance: float = 1.5e-4,
     relative_tolerance: float = 1e-4,
     decimal: Optional[int] = None,
+    determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Optional[str] = None,
 ) -> ValidationSummary:
     """Test a bioimage.io resource dynamically, e.g. prediction of test tensors for models"""
-    # NOTE: `decimal` is a legacy argument and is handled in `_test_model_inference`
     rd = load_description_and_test(
         source,
         format_version=format_version,
@@ -73,6 +137,7 @@ def test_description(
         absolute_tolerance=absolute_tolerance,
         relative_tolerance=relative_tolerance,
         decimal=decimal,
+        determinism=determinism,
         expected_type=expected_type,
     )
     return rd.validation_summary
@@ -87,10 +152,10 @@ def load_description_and_test(
     absolute_tolerance: float = 1.5e-4,
     relative_tolerance: float = 1e-4,
     decimal: Optional[int] = None,
+    determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Optional[str] = None,
 ) -> Union[ResourceDescr, InvalidDescr]:
     """Test RDF dynamically, e.g. model inference of test inputs"""
-    # NOTE: `decimal` is a legacy argument and is handled in `_test_model_inference`
     if (
         isinstance(source, ResourceDescrBase)
         and format_version != "discover"
@@ -108,7 +173,7 @@ def load_description_and_test(
     else:
         rd = load_description(source, format_version=format_version)
 
-    rd.validation_summary.env.append(
+    rd.validation_summary.env.add(
         InstalledPackage(name="bioimageio.core", version=VERSION)
     )
 
@@ -122,10 +187,25 @@ def load_description_and_test(
             ]  # pyright: ignore[reportAssignmentType]
         else:
             weight_formats = [weight_format]
-        for w in weight_formats:
-            _test_model_inference(
-                rd, w, devices, absolute_tolerance, relative_tolerance, decimal
+
+        if decimal is None:
+            atol = absolute_tolerance
+            rtol = relative_tolerance
+        else:
+            warnings.warn(
+                "The argument `decimal` has been deprecated in favour of"
+                + " `relative_tolerance` and `absolute_tolerance`, with different"
+                + " validation logic, using `numpy.testing.assert_allclose, see"
+                + " 'https://numpy.org/doc/stable/reference/generated/"
+                + " numpy.testing.assert_allclose.html'. Passing a value for `decimal`"
+                + " will cause validation to revert to the old behaviour."
             )
+            atol = 1.5 * 10 ** (-decimal)
+            rtol = 0
+
+        enable_determinism(determinism)
+        for w in weight_formats:
+            _test_model_inference(rd, w, devices, atol, rtol)
             if not isinstance(rd, v0_4.ModelDescr):
                 _test_model_inference_parametrized(rd, w, devices)
 
@@ -139,20 +219,13 @@ def _test_model_inference(
     model: Union[v0_4.ModelDescr, v0_5.ModelDescr],
     weight_format: WeightsFormat,
     devices: Optional[Sequence[str]],
-    absolute_tolerance: float,
-    relative_tolerance: float,
-    decimal: Optional[int],
+    atol: float,
+    rtol: float,
 ) -> None:
     test_name = f"Reproduce test outputs from test inputs ({weight_format})"
     logger.info("starting '{}'", test_name)
     error: Optional[str] = None
     tb: List[str] = []
-
-    precision_args = _handle_legacy_precision_args(
-        absolute_tolerance=absolute_tolerance,
-        relative_tolerance=relative_tolerance,
-        decimal=decimal,
-    )
 
     try:
         inputs = get_test_inputs(model)
@@ -176,8 +249,8 @@ def _test_model_inference(
                     np.testing.assert_allclose(
                         res.data,
                         exp.data,
-                        rtol=precision_args["relative_tolerance"],
-                        atol=precision_args["absolute_tolerance"],
+                        rtol=rtol,
+                        atol=atol,
                     )
                 except AssertionError as e:
                     error = f"Output and expected output disagree:\n {e}"
@@ -189,7 +262,9 @@ def _test_model_inference(
     model.validation_summary.add_detail(
         ValidationDetail(
             name=test_name,
+            loc=("weights", weight_format),
             status="passed" if error is None else "failed",
+            recommended_env=get_conda_env(entry=dict(model.weights)[weight_format]),
             errors=(
                 []
                 if error is None
@@ -332,6 +407,7 @@ def _test_model_inference_parametrized(
                     ValidationDetail(
                         name=f"Run {weight_format} inference for inputs with"
                         + f" batch_size: {batch_size} and size parameter n: {n}",
+                        loc=("weights", weight_format),
                         status="passed" if error is None else "failed",
                         errors=(
                             []
@@ -353,6 +429,7 @@ def _test_model_inference_parametrized(
             ValidationDetail(
                 name=f"Run {weight_format} inference for parametrized inputs",
                 status="failed",
+                loc=("weights", weight_format),
                 errors=[
                     ErrorEntry(
                         loc=("weights", weight_format),
@@ -373,6 +450,7 @@ def _test_expected_resource_type(
         ValidationDetail(
             name="Has expected resource type",
             status="passed" if has_expected_type else "failed",
+            loc=("type",),
             errors=(
                 []
                 if has_expected_type
@@ -388,38 +466,7 @@ def _test_expected_resource_type(
     )
 
 
-def _handle_legacy_precision_args(
-    absolute_tolerance: float, relative_tolerance: float, decimal: Optional[int]
-) -> Dict[str, float]:
-    """
-    Transform the precision arguments to conform with the current implementation.
-
-    If the deprecated `decimal` argument is used it overrides the new behaviour with
-    the old behaviour.
-    """
-    # Already conforms with current implementation
-    if decimal is None:
-        return {
-            "absolute_tolerance": absolute_tolerance,
-            "relative_tolerance": relative_tolerance,
-        }
-
-    warnings.warn(
-        "The argument `decimal` has been depricated in favour of "
-        + "`relative_tolerance` and `absolute_tolerance`, with different validation "
-        + "logic, using `numpy.testing.assert_allclose, see "
-        + "'https://numpy.org/doc/stable/reference/generated/"
-        + "numpy.testing.assert_allclose.html'. Passing a value for `decimal` will "
-        + "cause validation to revert to the old behaviour."
-    )
-    # decimal overrides new behaviour,
-    #   have to convert the params to emulate old behaviour
-    return {
-        "absolute_tolerance": 1.5 * 10 ** (-decimal),
-        "relative_tolerance": 0,
-    }
-
-
+# TODO: Implement `debug_model()`
 # def debug_model(
 #     model_rdf: Union[RawResourceDescr, ResourceDescr, URI, Path, str],
 #     *,

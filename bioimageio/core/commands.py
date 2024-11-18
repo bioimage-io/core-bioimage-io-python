@@ -1,13 +1,11 @@
 """These functions implement the logic of the bioimageio command line interface
-defined in the `cli` module."""
+defined in `bioimageio.core.cli`."""
 
-import sys
 from pathlib import Path
-from typing import List, Optional, Sequence, Union
+from typing import Optional, Sequence, Union
 
 from typing_extensions import Literal
 
-from bioimageio.core import test_description
 from bioimageio.spec import (
     InvalidDescr,
     ResourceDescr,
@@ -15,6 +13,8 @@ from bioimageio.spec import (
     save_bioimageio_package_as_folder,
 )
 from bioimageio.spec.model.v0_5 import WeightsFormat
+
+from ._resource_tests import test_description
 
 WeightFormatArgAll = Literal[WeightsFormat, "all"]
 WeightFormatArgAny = Literal[WeightsFormat, "any"]
@@ -26,7 +26,7 @@ def test(
     weight_format: WeightFormatArgAll = "all",
     devices: Optional[Union[str, Sequence[str]]] = None,
     decimal: int = 4,
-):
+) -> int:
     """test a bioimageio resource
 
     Args:
@@ -38,7 +38,7 @@ def test(
     """
     if isinstance(descr, InvalidDescr):
         descr.validation_summary.display()
-        sys.exit(1)
+        return 1
 
     summary = test_description(
         descr,
@@ -47,7 +47,7 @@ def test(
         decimal=decimal,
     )
     summary.display()
-    sys.exit(0 if summary.status == "passed" else 1)
+    return 0 if summary.status == "passed" else 1
 
 
 def validate_format(
@@ -59,7 +59,7 @@ def validate_format(
         descr: a bioimageio resource description
     """
     descr.validation_summary.display()
-    sys.exit(0 if descr.validation_summary.status == "passed" else 1)
+    return 0 if descr.validation_summary.status == "passed" else 1
 
 
 def package(
@@ -96,53 +96,4 @@ def package(
             output_path=path,
             weights_priority_order=weights_priority_order,
         )
-
-
-# TODO: add convert command(s)
-# if torch_converter is not None:
-
-#     @app.command()
-#     def convert_torch_weights_to_onnx(
-#         model_rdf: Path = typer.Argument(
-#             ..., help="Path to the model resource description file (rdf.yaml) or zipped model."
-#         ),
-#         output_path: Path = typer.Argument(..., help="Where to save the onnx weights."),
-#         opset_version: Optional[int] = typer.Argument(12, help="Onnx opset version."),
-#         use_tracing: bool = typer.Option(True, help="Whether to use torch.jit tracing or scripting."),
-#         verbose: bool = typer.Option(True, help="Verbosity"),
-#     ):
-#         ret_code = torch_converter.convert_weights_to_onnx(model_rdf, output_path, opset_version, use_tracing, verbose)
-#         sys.exit(ret_code)
-
-#     convert_torch_weights_to_onnx.__doc__ = torch_converter.convert_weights_to_onnx.__doc__
-
-#     @app.command()
-#     def convert_torch_weights_to_torchscript(
-#         model_rdf: Path = typer.Argument(
-#             ..., help="Path to the model resource description file (rdf.yaml) or zipped model."
-#         ),
-#         output_path: Path = typer.Argument(..., help="Where to save the torchscript weights."),
-#         use_tracing: bool = typer.Option(True, help="Whether to use torch.jit tracing or scripting."),
-#     ):
-#         torch_converter.convert_weights_to_torchscript(model_rdf, output_path, use_tracing)
-#         sys.exit(0)
-
-#     convert_torch_weights_to_torchscript.__doc__ = torch_converter.convert_weights_to_torchscript.__doc__
-
-
-# if keras_converter is not None:
-
-#     @app.command()
-#     def convert_keras_weights_to_tensorflow(
-#         model_rdf: Annotated[
-#             Path, typer.Argument(help="Path to the model resource description file (rdf.yaml) or zipped model.")
-#         ],
-#         output_path: Annotated[Path, typer.Argument(help="Where to save the tensorflow weights.")],
-#     ):
-#         rd = load_description(model_rdf)
-#         ret_code = keras_converter.convert_weights_to_tensorflow_saved_model_bundle(rd, output_path)
-#         sys.exit(ret_code)
-
-#     convert_keras_weights_to_tensorflow.__doc__ = (
-#         keras_converter.convert_weights_to_tensorflow_saved_model_bundle.__doc__
-#     )
+    return 0

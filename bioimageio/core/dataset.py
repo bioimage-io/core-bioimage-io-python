@@ -1,5 +1,5 @@
 from typing import Iterable
 
-from bioimageio.core.sample import Sample
+from .sample import Sample
 
 Dataset = Iterable[Sample]

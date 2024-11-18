@@ -16,9 +16,8 @@ from typing import (
 import numpy as np
 from typing_extensions import Self
 
-from bioimageio.core.block import Block
-
 from .axis import AxisId, PerAxis
+from .block import Block
 from .block_meta import (
     BlockMeta,
     LinearAxisTransform,
@@ -212,9 +211,11 @@ class SampleBlockMeta(SampleBlockBase[BlockMeta]):
         halo: Dict[MemberId, Dict[AxisId, Halo]] = {}
         for m in new_axes:
             halo[m] = get_member_halo(m, floor)
-            assert halo[m] == get_member_halo(
-                m, ceil
-            ), f"failed to unambiguously scale halo {halo[m]} with {new_axes[m]}"
+            if halo[m] != get_member_halo(m, ceil):
+                raise ValueError(
+                    f"failed to unambiguously scale halo {halo[m]} with {new_axes[m]}"
+                    + f" for {m}."
+                )
 
         inner_slice = {
             m: {
@@ -294,8 +295,10 @@ class SampleBlock(SampleBlockBase[Block]):
 
 @dataclass
 class SampleBlockWithOrigin(SampleBlock):
+    """A `SampleBlock` with a reference (`origin`) to the whole `Sample`"""
+
     origin: Sample
-    """the sample this sample black was taken from"""
+    """the sample this sample block was taken from"""
 
 
 class _ConsolidatedMemberBlocks:
@@ -331,7 +334,7 @@ def sample_block_generator(
     *,
     origin: Sample,
     pad_mode: PadMode,
-):
+) -> Iterable[SampleBlockWithOrigin]:
     for member_blocks in blocks:
         cons = _ConsolidatedMemberBlocks(member_blocks)
         yield SampleBlockWithOrigin(

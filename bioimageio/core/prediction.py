@@ -16,15 +16,15 @@ from loguru import logger
 from numpy.typing import NDArray
 from tqdm import tqdm
 
-from bioimageio.core.axis import AxisId
-from bioimageio.core.io import save_sample
 from bioimageio.spec import load_description
 from bioimageio.spec.common import PermissiveFileSource
 from bioimageio.spec.model import v0_4, v0_5
 
 from ._prediction_pipeline import PredictionPipeline, create_prediction_pipeline
+from .axis import AxisId
 from .common import MemberId, PerMember
 from .digest_spec import create_sample_for_model
+from .io import save_sample
 from .sample import Sample
 from .tensor import Tensor
 

@@ -2,13 +2,13 @@
 name: core-tf # changed
 channels:
   - conda-forge
-  - defaults
+  - nodefaults
 dependencies:
-  - bioimageio.spec>=0.5.3.3
+  - bioimageio.spec>=0.5.3.5
   - black
   # - crick  # currently requires python<=3.9
   - filelock
-  - fire
+  - h5py
   - imageio>=2.5
   - jupyter
   - jupyter-black
@@ -27,7 +27,6 @@ dependencies:
   - pytest
   - pytest-cov
   - pytest-xdist
-  - python-dotenv
   # - python=3.9  # removed
   # - pytorch>=2.1 # removed
   - requests

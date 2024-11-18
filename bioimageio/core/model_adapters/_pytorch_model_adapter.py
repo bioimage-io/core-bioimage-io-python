@@ -102,7 +102,7 @@ class PytorchModelAdapter(ModelAdapter):
     def get_network(  # pyright: ignore[reportUnknownParameterType]
         weight_spec: Union[
             v0_4.PytorchStateDictWeightsDescr, v0_5.PytorchStateDictWeightsDescr
-        ]
+        ],
     ) -> "torch.nn.Module":  # pyright: ignore[reportInvalidTypeForm]
         if torch is None:
             raise ImportError("torch")

@@ -1,4 +1,15 @@
+from typing import Literal
+
+import pytest
+
 from bioimageio.spec import InvalidDescr
+
+
+@pytest.mark.parametrize("mode", ["seed_only", "full"])
+def test_enable_determinism(mode: Literal["seed_only", "full"]):
+    from bioimageio.core import enable_determinism
+
+    enable_determinism(mode)
 
 
 def test_error_for_wrong_shape(stardist_wrong_shape: str):

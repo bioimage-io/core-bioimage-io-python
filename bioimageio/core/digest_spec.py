@@ -23,10 +23,8 @@ from loguru import logger
 from numpy.typing import NDArray
 from typing_extensions import Unpack, assert_never
 
-from bioimageio.core.common import MemberId, PerMember, SampleId
-from bioimageio.core.io import load_tensor
-from bioimageio.core.sample import Sample
-from bioimageio.spec._internal.io_utils import HashKwargs, download
+from bioimageio.spec._internal.io import resolve_and_extract
+from bioimageio.spec._internal.io_utils import HashKwargs
 from bioimageio.spec.common import FileSource
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 from bioimageio.spec.model.v0_4 import CallableFromDepencency, CallableFromFile
@@ -40,6 +38,7 @@ from bioimageio.spec.utils import load_array
 from .axis import AxisId, AxisInfo, AxisLike, PerAxis
 from .block_meta import split_multiple_shapes_into_blocks
 from .common import Halo, MemberId, PerMember, SampleId, TotalNumberOfBlocks
+from .io import load_tensor
 from .sample import (
     LinearSampleAxisTransform,
     Sample,
@@ -79,7 +78,7 @@ def import_callable(
 def _import_from_file_impl(
     source: FileSource, callable_name: str, **kwargs: Unpack[HashKwargs]
 ):
-    local_file = download(source, **kwargs)
+    local_file = resolve_and_extract(source, **kwargs)
     module_name = local_file.path.stem
     importlib_spec = importlib.util.spec_from_file_location(
         module_name, local_file.path
@@ -98,7 +97,7 @@ def get_axes_infos(
         v0_4.OutputTensorDescr,
         v0_5.InputTensorDescr,
         v0_5.OutputTensorDescr,
-    ]
+    ],
 ) -> List[AxisInfo]:
     """get a unified, simplified axis representation from spec axes"""
     return [
@@ -117,7 +116,7 @@ def get_member_id(
         v0_4.OutputTensorDescr,
         v0_5.InputTensorDescr,
         v0_5.OutputTensorDescr,
-    ]
+    ],
 ) -> MemberId:
     """get the normalized tensor ID, usable as a sample member ID"""
 
@@ -139,7 +138,7 @@ def get_member_ids(
             v0_5.InputTensorDescr,
             v0_5.OutputTensorDescr,
         ]
-    ]
+    ],
 ) -> List[MemberId]:
     """get normalized tensor IDs to be used as sample member IDs"""
     return [get_member_id(descr) for descr in tensor_descriptions]
@@ -160,7 +159,7 @@ def get_test_inputs(model: AnyModelDescr) -> Sample:
             for m, arr, ax in zip(member_ids, arrays, axes)
         },
         stat={},
-        id="test-input",
+        id="test-sample",
     )
 
 
@@ -181,7 +180,7 @@ def get_test_outputs(model: AnyModelDescr) -> Sample:
             for m, arr, ax in zip(member_ids, arrays, axes)
         },
         stat={},
-        id="test-output",
+        id="test-sample",
     )
 
 
@@ -191,8 +190,8 @@ class IO_SampleBlockMeta(NamedTuple):
 
 
 def get_input_halo(model: v0_5.ModelDescr, output_halo: PerMember[PerAxis[Halo]]):
-    """returns which halo input tensors need to be divided into blocks with such that
-    `output_halo` can be cropped from their outputs without intorducing gaps."""
+    """returns which halo input tensors need to be divided into blocks with, such that
+    `output_halo` can be cropped from their outputs without introducing gaps."""
     input_halo: Dict[MemberId, Dict[AxisId, Halo]] = {}
     outputs = {t.id: t for t in model.outputs}
     all_tensors = {**{t.id: t for t in model.inputs}, **outputs}
@@ -222,8 +221,10 @@ def get_input_halo(model: v0_5.ModelDescr, output_halo: PerMember[PerAxis[Halo]]
     return input_halo
 
 
-def get_block_transform(model: v0_5.ModelDescr):
-    """returns how a model's output tensor shapes relate to its input shapes"""
+def get_block_transform(
+    model: v0_5.ModelDescr,
+) -> PerMember[PerAxis[Union[LinearSampleAxisTransform, int]]]:
+    """returns how a model's output tensor shapes relates to its input shapes"""
     ret: Dict[MemberId, Dict[AxisId, Union[LinearSampleAxisTransform, int]]] = {}
     batch_axis_trf = None
     for ipt in model.inputs:
@@ -286,14 +287,6 @@ def get_io_sample_block_metas(
         t: {aa: s for (tt, aa), s in block_axis_sizes.inputs.items() if tt == t}
         for t in {tt for tt, _ in block_axis_sizes.inputs}
     }
-    output_block_shape = {
-        t: {
-            aa: s
-            for (tt, aa), s in block_axis_sizes.outputs.items()
-            if tt == t and not isinstance(s, tuple)
-        }
-        for t in {tt for tt, _ in block_axis_sizes.outputs}
-    }
     output_halo = {
         t.id: {
             a.id: Halo(a.halo, a.halo) for a in t.axes if isinstance(a, v0_5.WithHalo)
@@ -302,36 +295,14 @@ def get_io_sample_block_metas(
     }
     input_halo = get_input_halo(model, output_halo)
 
-    # TODO: fix output_sample_shape_data_dep
-    #  (below only valid if input_sample_shape is a valid model input,
-    #   which is not a valid assumption)
-    output_sample_shape_data_dep = model.get_output_tensor_sizes(input_sample_shape)
-
-    output_sample_shape = {
-        t: {
-            a: -1 if isinstance(s, tuple) else s
-            for a, s in output_sample_shape_data_dep[t].items()
-        }
-        for t in output_sample_shape_data_dep
-    }
     n_input_blocks, input_blocks = split_multiple_shapes_into_blocks(
         input_sample_shape, input_block_shape, halo=input_halo
     )
-    n_output_blocks, output_blocks = split_multiple_shapes_into_blocks(
-        output_sample_shape, output_block_shape, halo=output_halo
-    )
-    assert n_input_blocks == n_output_blocks
+    block_transform = get_block_transform(model)
     return n_input_blocks, (
-        IO_SampleBlockMeta(ipt, out)
-        for ipt, out in zip(
-            sample_block_meta_generator(
-                input_blocks, sample_shape=input_sample_shape, sample_id=None
-            ),
-            sample_block_meta_generator(
-                output_blocks,
-                sample_shape=output_sample_shape,
-                sample_id=None,
-            ),
+        IO_SampleBlockMeta(ipt, ipt.get_transformed(block_transform))
+        for ipt in sample_block_meta_generator(
+            input_blocks, sample_shape=input_sample_shape, sample_id=None
         )
     )
 

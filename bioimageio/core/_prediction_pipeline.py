@@ -164,7 +164,7 @@ class PredictionPipeline:
                 if out is not None
             },
             stat=sample.stat,
-            id=self.get_output_sample_id(sample.id),
+            id=sample.id,
         )
         if not skip_postprocessing:
             self.apply_postprocessing(output)
@@ -172,12 +172,12 @@ class PredictionPipeline:
         return output
 
     def get_output_sample_id(self, input_sample_id: SampleId):
-        if input_sample_id is None:
-            return None
-        else:
-            return f"{input_sample_id}_" + (
-                self.model_description.id or self.model_description.name
-            )
+        warnings.warn(
+            "`PredictionPipeline.get_output_sample_id()` is deprecated and will be"
+            + " removed soon. Output sample id is equal to input sample id, hence this"
+            + " function is not needed."
+        )
+        return input_sample_id
 
     def predict_sample_with_fixed_blocking(
         self,

@@ -6,26 +6,22 @@ import pytest
 from packaging.version import Version
 
 
-def test_bioimageio_spec_version(mamba_cmd: Optional[str]):
-    if mamba_cmd is None:
+def test_bioimageio_spec_version(conda_cmd: Optional[str]):
+    if conda_cmd is None:
         pytest.skip("requires mamba")
 
     from importlib.metadata import metadata
 
     # get latest released bioimageio.spec version
-    mamba_repoquery = subprocess.run(
-        f"{mamba_cmd} repoquery search -c conda-forge --json bioimageio.spec".split(
-            " "
-        ),
+    conda_search = subprocess.run(
+        f"{conda_cmd} search --json -f conda-forge::bioimageio.spec>=0.5.3.2".split(),
         encoding="utf-8",
         capture_output=True,
         check=True,
     )
-    full_out = mamba_repoquery.stdout  # full output includes mamba banner
-    search = json.loads(full_out[full_out.find("{") :])  # json output starts at '{'
-    latest_spec = max(search["result"]["pkgs"], key=lambda entry: entry["timestamp"])
-    rmaj, rmin, rpatch, *_ = latest_spec["version"].split(".")
-    released = Version(f"{rmaj}.{rmin}.{rpatch}")
+    result = json.loads(conda_search.stdout)
+    latest_spec = max(result["bioimageio.spec"], key=lambda entry: entry["timestamp"])
+    released = Version(latest_spec["version"])
 
     # get currently pinned bioimageio.spec version
     meta = metadata("bioimageio.core")
@@ -41,10 +37,5 @@ def test_bioimageio_spec_version(mamba_cmd: Optional[str]):
         )
 
     assert spec_ver.count(".") == 3
-    pmaj, pmin, ppatch, _ = spec_ver.split(".")
-    assert (
-        pmaj.isdigit() and pmin.isdigit() and ppatch.isdigit()
-    ), "bioimageio.spec version should be pinned down to patch, e.g. '0.4.9.*'"
-
-    pinned = Version(f"{pmaj}.{pmin}.{ppatch}")
+    pinned = Version(spec_ver)
     assert pinned == released, "bioimageio.spec not pinned to the latest version"
