@@ -6,9 +6,9 @@
 ![code style](https://img.shields.io/badge/code%20style-black-000000.svg)
 [![coverage](https://bioimage-io.github.io/core-bioimage-io-python/coverage/coverage-badge.svg)](https://bioimage-io.github.io/core-bioimage-io-python/coverage/index.html)
 
-# core-bioimage-io-python
+# bioimageio.core
 
-Python specific core utilities for bioimage.io resources (in particular models).
+Python specific core utilities for bioimage.io resources (in particular DL models).
 
 ## Get started
 
