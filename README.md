@@ -256,9 +256,9 @@ bioimage.core has to offer:
     Alternatively run the following command in the current workind directory, not the example folder:
     $ bioimageio predict --preview=False --overwrite=True --stats="impartial-shrimp_example/dataset_statistics.json" --inputs="[[\"impartial-shrimp_example/input0/001.tif\"]]" --outputs="impartial-shrimp_example/outputs/{output_id}/{sample_id}.tif" "impartial-shrimp"
     (note that a local 'bioimageio-cli.json' or 'bioimageio-cli.yaml' may interfere with this)
-  ```
+    ```
 
-  </details>
+    </details>
 
 ## Installation
 

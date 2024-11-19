@@ -35,6 +35,7 @@
   <li><a href="#bioimageiocore">bioimageio.core</a>
   <ul>
     <li><a href="#get-started">Get started</a></li>
+    <li><a href="#installation">Installation</a></li>
     <li><a href="#use-the-command-line-interface">💻 Use the Command Line Interface</a></li>
     <li><a href="#use-in-python">🐍 Use in Python</a></li>
     <li><a href="#logging-level">Logging level</a></li>
@@ -642,59 +643,64 @@ bioimage.core has to offer:</p>
 <pre><code>&lt;details&gt;
 &lt;summary&gt;(Click to expand output)&lt;/summary&gt;
 
-```console
-🛈 bioimageio prediction preview structure:
-{'{sample_id}': {'inputs': {'{input_id}': '&lt;input path&gt;'},
-                'outputs': {'{output_id}': '&lt;output path&gt;'}}}
-🔎 bioimageio prediction preview output:
-{'1': {'inputs': {'input0': 'impartial-shrimp_example/input0/001.tif'},
-      'outputs': {'output0': 'impartial-shrimp_example/outputs/output0/1.tif'}}}
-predict with impartial-shrimp: 100%|███████████████████████████████████████████████████| 1/1 [00:21&lt;00:00, 21.76s/sample]
-🎉 Sucessfully ran example prediction!
-To predict the example input using the CLI example config file impartial-shrimp_example\bioimageio-cli.yaml, execute `bioimageio predict` from impartial-shrimp_example:
-$ cd impartial-shrimp_example
-$ bioimageio predict "impartial-shrimp"
 
-Alternatively run the following command in the current workind directory, not the example folder:
-$ bioimageio predict --preview=False --overwrite=True --stats="impartial-shrimp_example/dataset_statistics.json" --inputs="[[\"impartial-shrimp_example/input0/001.tif\"]]" --outputs="impartial-shrimp_example/outputs/{output_id}/{sample_id}.tif" "impartial-shrimp"
-(note that a local 'bioimageio-cli.json' or 'bioimageio-cli.yaml' may interfere with this)
+<div class="pdoc-code codehilite">
+<pre><span></span><code><span class="go">🛈 bioimageio prediction preview structure:</span>
+<span class="go">{&#39;{sample_id}&#39;: {&#39;inputs&#39;: {&#39;{input_id}&#39;: &#39;&lt;input path&gt;&#39;},</span>
+<span class="go">                &#39;outputs&#39;: {&#39;{output_id}&#39;: &#39;&lt;output path&gt;&#39;}}}</span>
+<span class="go">🔎 bioimageio prediction preview output:</span>
+<span class="go">{&#39;1&#39;: {&#39;inputs&#39;: {&#39;input0&#39;: &#39;impartial-shrimp_example/input0/001.tif&#39;},</span>
+<span class="go">      &#39;outputs&#39;: {&#39;output0&#39;: &#39;impartial-shrimp_example/outputs/output0/1.tif&#39;}}}</span>
+<span class="go">predict with impartial-shrimp: 100%|███████████████████████████████████████████████████| 1/1 [00:21&lt;00:00, 21.76s/sample]</span>
+<span class="go">🎉 Sucessfully ran example prediction!</span>
+<span class="go">To predict the example input using the CLI example config file impartial-shrimp_example\bioimageio-cli.yaml, execute `bioimageio predict` from impartial-shrimp_example:</span>
+<span class="gp">$ </span><span class="nb">cd</span><span class="w"> </span>impartial-shrimp_example
+<span class="gp">$ </span>bioimageio<span class="w"> </span>predict<span class="w"> </span><span class="s2">&quot;impartial-shrimp&quot;</span>
+
+<span class="go">Alternatively run the following command in the current workind directory, not the example folder:</span>
+<span class="gp">$ </span>bioimageio<span class="w"> </span>predict<span class="w"> </span>--preview<span class="o">=</span>False<span class="w"> </span>--overwrite<span class="o">=</span>True<span class="w"> </span>--stats<span class="o">=</span><span class="s2">&quot;impartial-shrimp_example/dataset_statistics.json&quot;</span><span class="w"> </span>--inputs<span class="o">=</span><span class="s2">&quot;[[\&quot;impartial-shrimp_example/input0/001.tif\&quot;]]&quot;</span><span class="w"> </span>--outputs<span class="o">=</span><span class="s2">&quot;impartial-shrimp_example/outputs/{output_id}/{sample_id}.tif&quot;</span><span class="w"> </span><span class="s2">&quot;impartial-shrimp&quot;</span>
+<span class="gp gp-VirtualEnv">(note that a local &#39;bioimageio-cli.json&#39; or &#39;bioimageio-cli.yaml&#39; may interfere with this)</span>
+</code></pre>
+</div>
+
+
+
+&lt;/details&gt;
 </code></pre>
 
-<pre><code>
-  &lt;/details&gt;
+<h2 id="installation">Installation</h2>
 
-## Installation
+<h3 id="via-mambaconda">Via Mamba/Conda</h3>
 
-### Via Mamba/Conda
+<p>The <code><a href="">bioimageio.core</a></code> package can be installed from conda-forge via</p>
 
-The `<a href="">bioimageio.core</a>` package can be installed from conda-forge via
+<div class="pdoc-code codehilite">
+<pre><span></span><code><span class="go">mamba install -c conda-forge <a href="">bioimageio.core</a></span>
+</code></pre>
+</div>
 
-```console
-mamba install -c conda-forge <a href="">bioimageio.core</a>
-```
-
-If you do not install any additional deep learning libraries, you will only be able to use general convenience
+<p>If you do not install any additional deep learning libraries, you will only be able to use general convenience
 functionality, but not any functionality for model prediction.
-To install additional deep learning libraries use:
+To install additional deep learning libraries use:</p>
 
-- Pytorch/Torchscript:
+<ul>
+<li><p>Pytorch/Torchscript:</p>
 
-  CPU installation (if you don't have an nvidia graphics card):
+<p>CPU installation (if you don't have an nvidia graphics card):</p>
 
-  ```console
-  mamba install -c pytorch -c conda-forge <a href="">bioimageio.core</a> pytorch torchvision cpuonly
+<div class="pdoc-code codehilite">
+<pre><span></span><code><span class="go">mamba install -c pytorch -c conda-forge <a href="">bioimageio.core</a> pytorch torchvision cpuonly</span>
 </code></pre>
+</div>
 
 <p>GPU installation (for cuda 11.6, please choose the appropriate cuda version for your system):</p>
 
-<p><div class="pdoc-code codehilite">
+<div class="pdoc-code codehilite">
 <pre><span></span><code><span class="go">mamba install -c pytorch -c nvidia -c conda-forge <a href="">bioimageio.core</a> pytorch torchvision pytorch-cuda=11.8</span>
 </code></pre>
-</div></p>
+</div>
 
-<p>Note that the pytorch installation instructions may change in the future. For the latest instructions please refer to <a href="https://pytorch.org/">pytorch.org</a>.</p>
-
-<ul>
+<p>Note that the pytorch installation instructions may change in the future. For the latest instructions please refer to <a href="https://pytorch.org/">pytorch.org</a>.</p></li>
 <li><p>Tensorflow</p>
 
 <p>Currently only CPU version supported</p>
@@ -1849,7 +1855,7 @@ convert its metadata to a higher format_version</li>
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">compute_dataset_measures</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">measures</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n"><a href="core/stat_measures.html#DatasetMean">bioimageio.core.stat_measures.DatasetMean</a></span><span class="p">,</span> <span class="n"><a href="core/stat_measures.html#DatasetStd">bioimageio.core.stat_measures.DatasetStd</a></span><span class="p">,</span> <span class="n"><a href="core/stat_measures.html#DatasetVar">bioimageio.core.stat_measures.DatasetVar</a></span><span class="p">,</span> <span class="n"><a href="core/stat_measures.html#DatasetPercentile">bioimageio.core.stat_measures.DatasetPercentile</a></span><span class="p">],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)]]</span>,</span><span class="param">	<span class="n">dataset</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n"><a href="#Sample">Sample</a></span><span class="p">]</span></span><span class="return-annotation">) -> <span class="n">Dict</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n"><a href="core/stat_measures.html#DatasetMean">bioimageio.core.stat_measures.DatasetMean</a></span><span class="p">,</span> <span class="n"><a href="core/stat_measures.html#DatasetStd">bioimageio.core.stat_measures.DatasetStd</a></span><span class="p">,</span> <span class="n"><a href="core/stat_measures.html#DatasetVar">bioimageio.core.stat_measures.DatasetVar</a></span><span class="p">,</span> <span class="n"><a href="core/stat_measures.html#DatasetPercentile">bioimageio.core.stat_measures.DatasetPercentile</a></span><span class="p">],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)],</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Annotated</span><span class="p">[</span><span class="n"><a href="#Tensor">Tensor</a></span><span class="p">,</span> <span class="n">BeforeValidator</span><span class="p">(</span><span class="n">func</span><span class="o">=&lt;</span><span class="n">function</span> <span class="n">tensor_custom_before_validator</span> <span class="n">at</span> <span class="mh">0x7f1c4fafe840</span><span class="o">&gt;</span><span class="p">,</span> <span class="n">json_schema_input_type</span><span class="o">=</span><span class="n">PydanticUndefined</span><span class="p">),</span> <span class="n">PlainSerializer</span><span class="p">(</span><span class="n">func</span><span class="o">=&lt;</span><span class="n">function</span> <span class="n">tensor_custom_serializer</span> <span class="n">at</span> <span class="mh">0x7f1c4fafea20</span><span class="o">&gt;</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="n">PydanticUndefined</span><span class="p">,</span> <span class="n">when_used</span><span class="o">=</span><span class="s1">&#39;always&#39;</span><span class="p">)]]]</span>:</span></span>
+        <span class="name">compute_dataset_measures</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="n">measures</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n"><a href="core/stat_measures.html#DatasetMean">bioimageio.core.stat_measures.DatasetMean</a></span><span class="p">,</span> <span class="n"><a href="core/stat_measures.html#DatasetStd">bioimageio.core.stat_measures.DatasetStd</a></span><span class="p">,</span> <span class="n"><a href="core/stat_measures.html#DatasetVar">bioimageio.core.stat_measures.DatasetVar</a></span><span class="p">,</span> <span class="n"><a href="core/stat_measures.html#DatasetPercentile">bioimageio.core.stat_measures.DatasetPercentile</a></span><span class="p">],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)]]</span>,</span><span class="param">	<span class="n">dataset</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n"><a href="#Sample">Sample</a></span><span class="p">]</span></span><span class="return-annotation">) -> <span class="n">Dict</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n"><a href="core/stat_measures.html#DatasetMean">bioimageio.core.stat_measures.DatasetMean</a></span><span class="p">,</span> <span class="n"><a href="core/stat_measures.html#DatasetStd">bioimageio.core.stat_measures.DatasetStd</a></span><span class="p">,</span> <span class="n"><a href="core/stat_measures.html#DatasetVar">bioimageio.core.stat_measures.DatasetVar</a></span><span class="p">,</span> <span class="n"><a href="core/stat_measures.html#DatasetPercentile">bioimageio.core.stat_measures.DatasetPercentile</a></span><span class="p">],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;name&#39;</span><span class="p">,</span> <span class="n">custom_error_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_message</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">custom_error_context</span><span class="o">=</span><span class="kc">None</span><span class="p">)],</span> <span class="n">Union</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Annotated</span><span class="p">[</span><span class="n"><a href="#Tensor">Tensor</a></span><span class="p">,</span> <span class="n">BeforeValidator</span><span class="p">(</span><span class="n">func</span><span class="o">=&lt;</span><span class="n">function</span> <span class="n">tensor_custom_before_validator</span> <span class="n">at</span> <span class="mh">0x7f9a7099e840</span><span class="o">&gt;</span><span class="p">,</span> <span class="n">json_schema_input_type</span><span class="o">=</span><span class="n">PydanticUndefined</span><span class="p">),</span> <span class="n">PlainSerializer</span><span class="p">(</span><span class="n">func</span><span class="o">=&lt;</span><span class="n">function</span> <span class="n">tensor_custom_serializer</span> <span class="n">at</span> <span class="mh">0x7f9a7099ea20</span><span class="o">&gt;</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="n">PydanticUndefined</span><span class="p">,</span> <span class="n">when_used</span><span class="o">=</span><span class="s1">&#39;always&#39;</span><span class="p">)]]]</span>:</span></span>
 
                 <label class="view-source-button" for="compute_dataset_measures-view-source"><span>View Source</span></label>
 
@@ -3642,7 +3648,7 @@ If that is not the case, consider <code><a href="#PredictionPipeline.predict_sam
                             </div>
                             <div id="Sample.stat" class="classattr">
                                 <div class="attr variable">
-            <span class="name">stat</span><span class="annotation">: Dict[Annotated[Union[Annotated[Union[<a href="core/stat_measures.html#SampleMean">bioimageio.core.stat_measures.SampleMean</a>, <a href="core/stat_measures.html#SampleStd">bioimageio.core.stat_measures.SampleStd</a>, <a href="core/stat_measures.html#SampleVar">bioimageio.core.stat_measures.SampleVar</a>, <a href="core/stat_measures.html#SampleQuantile">bioimageio.core.stat_measures.SampleQuantile</a>], Discriminator(discriminator=&#39;name&#39;, custom_error_type=None, custom_error_message=None, custom_error_context=None)], Annotated[Union[<a href="core/stat_measures.html#DatasetMean">bioimageio.core.stat_measures.DatasetMean</a>, <a href="core/stat_measures.html#DatasetStd">bioimageio.core.stat_measures.DatasetStd</a>, <a href="core/stat_measures.html#DatasetVar">bioimageio.core.stat_measures.DatasetVar</a>, <a href="core/stat_measures.html#DatasetPercentile">bioimageio.core.stat_measures.DatasetPercentile</a>], Discriminator(discriminator=&#39;name&#39;, custom_error_type=None, custom_error_message=None, custom_error_context=None)]], Discriminator(discriminator=&#39;scope&#39;, custom_error_type=None, custom_error_message=None, custom_error_context=None)], Union[float, Annotated[<a href="#Tensor">Tensor</a>, BeforeValidator(func=&lt;function tensor_custom_before_validator at 0x7f1c4fafe840&gt;, json_schema_input_type=PydanticUndefined), PlainSerializer(func=&lt;function tensor_custom_serializer at 0x7f1c4fafea20&gt;, return_type=PydanticUndefined, when_used=&#39;always&#39;)]]]</span>
+            <span class="name">stat</span><span class="annotation">: Dict[Annotated[Union[Annotated[Union[<a href="core/stat_measures.html#SampleMean">bioimageio.core.stat_measures.SampleMean</a>, <a href="core/stat_measures.html#SampleStd">bioimageio.core.stat_measures.SampleStd</a>, <a href="core/stat_measures.html#SampleVar">bioimageio.core.stat_measures.SampleVar</a>, <a href="core/stat_measures.html#SampleQuantile">bioimageio.core.stat_measures.SampleQuantile</a>], Discriminator(discriminator=&#39;name&#39;, custom_error_type=None, custom_error_message=None, custom_error_context=None)], Annotated[Union[<a href="core/stat_measures.html#DatasetMean">bioimageio.core.stat_measures.DatasetMean</a>, <a href="core/stat_measures.html#DatasetStd">bioimageio.core.stat_measures.DatasetStd</a>, <a href="core/stat_measures.html#DatasetVar">bioimageio.core.stat_measures.DatasetVar</a>, <a href="core/stat_measures.html#DatasetPercentile">bioimageio.core.stat_measures.DatasetPercentile</a>], Discriminator(discriminator=&#39;name&#39;, custom_error_type=None, custom_error_message=None, custom_error_context=None)]], Discriminator(discriminator=&#39;scope&#39;, custom_error_type=None, custom_error_message=None, custom_error_context=None)], Union[float, Annotated[<a href="#Tensor">Tensor</a>, BeforeValidator(func=&lt;function tensor_custom_before_validator at 0x7f9a7099e840&gt;, json_schema_input_type=PydanticUndefined), PlainSerializer(func=&lt;function tensor_custom_serializer at 0x7f9a7099ea20&gt;, return_type=PydanticUndefined, when_used=&#39;always&#39;)]]]</span>
 
         
     </div>
