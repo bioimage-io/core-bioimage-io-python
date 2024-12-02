@@ -137,7 +137,7 @@ class ModelAdapter(ABC):
             raise ValueError(
                 f"The '{weight_format_priority_order[0]}' model adapter could not be created"
                 + f" in this environment:\n{errors[0][1].__class__.__name__}({errors[0][1]}).\n\n"
-            )
+            ) from errors[0][1]
 
         else:
             error_list = "\n - ".join(
