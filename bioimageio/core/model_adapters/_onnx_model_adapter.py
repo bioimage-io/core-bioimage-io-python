@@ -1,22 +1,15 @@
 import warnings
 from typing import Any, List, Optional, Sequence, Union
 
-from numpy.typing import NDArray
+import onnxruntime as rt
 
+from bioimageio.spec._internal.type_guards import is_list, is_tuple
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.utils import download
 
 from ..digest_spec import get_axes_infos
 from ..tensor import Tensor
 from ._model_adapter import ModelAdapter
-
-try:
-    import onnxruntime as rt
-except Exception as e:
-    rt = None
-    rt_error = str(e)
-else:
-    rt_error = None
 
 
 class ONNXModelAdapter(ModelAdapter):
@@ -26,9 +19,6 @@ class ONNXModelAdapter(ModelAdapter):
         model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
         devices: Optional[Sequence[str]] = None,
     ):
-        if rt is None:
-            raise ImportError(f"failed to import onnxruntime: {rt_error}")
-
         super().__init__()
         self._internal_output_axes = [
             tuple(a.id for a in get_axes_infos(out))
@@ -51,14 +41,13 @@ class ONNXModelAdapter(ModelAdapter):
     def forward(self, *input_tensors: Optional[Tensor]) -> List[Optional[Tensor]]:
         assert len(input_tensors) == len(self._input_names)
         input_arrays = [None if ipt is None else ipt.data.data for ipt in input_tensors]
-        result: Union[Sequence[Optional[NDArray[Any]]], Optional[NDArray[Any]]]
-        result = self._session.run(  # pyright: ignore[reportUnknownVariableType]
+        result: Any = self._session.run(
             None, dict(zip(self._input_names, input_arrays))
         )
-        if isinstance(result, (list, tuple)):
-            result_seq: Sequence[Optional[NDArray[Any]]] = result
+        if is_list(result) or is_tuple(result):
+            result_seq = result
         else:
-            result_seq = [result]  # type: ignore
+            result_seq = [result]
 
         return [
             None if r is None else Tensor(r, dims=axes)
