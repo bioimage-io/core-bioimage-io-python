@@ -1,24 +1,16 @@
 import gc
 import warnings
-from typing import Any, List, Optional, Sequence, Tuple, Union
+from typing import Any, List, Optional, Sequence, Union
 
-import numpy as np
-from numpy.typing import NDArray
+import torch
 
+from bioimageio.spec._internal.type_guards import is_list, is_ndarray, is_tuple
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.utils import download
 
 from ..digest_spec import get_axes_infos
 from ..tensor import Tensor
 from ._model_adapter import ModelAdapter
-
-try:
-    import torch
-except Exception as e:
-    torch = None
-    torch_error = str(e)
-else:
-    torch_error = None
 
 
 class TorchscriptModelAdapter(ModelAdapter):
@@ -28,9 +20,6 @@ class TorchscriptModelAdapter(ModelAdapter):
         model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
         devices: Optional[Sequence[str]] = None,
     ):
-        if torch is None:
-            raise ImportError(f"failed to import torch: {torch_error}")
-
         super().__init__()
         if model_description.weights.torchscript is None:
             raise ValueError(
@@ -57,19 +46,14 @@ class TorchscriptModelAdapter(ModelAdapter):
         ]
 
     def forward(self, *batch: Optional[Tensor]) -> List[Optional[Tensor]]:
-        assert torch is not None
         with torch.no_grad():
             torch_tensor = [
                 None if b is None else torch.from_numpy(b.data.data).to(self.devices[0])
                 for b in batch
             ]
-            _result: Union[  # pyright: ignore[reportUnknownVariableType]
-                Tuple[Optional[NDArray[Any]], ...],
-                List[Optional[NDArray[Any]]],
-                Optional[NDArray[Any]],
-            ] = self._model.forward(*torch_tensor)
-            if isinstance(_result, (tuple, list)):
-                result: Sequence[Optional[NDArray[Any]]] = _result
+            _result: Any = self._model.forward(*torch_tensor)
+            if is_list(_result) or is_tuple(_result):
+                result: Sequence[Any] = _result
             else:
                 result = [_result]
 
@@ -77,19 +61,18 @@ class TorchscriptModelAdapter(ModelAdapter):
                 (
                     None
                     if r is None
-                    else r.cpu().numpy() if not isinstance(r, np.ndarray) else r
+                    else r.cpu().numpy() if isinstance(r, torch.Tensor) else r
                 )
                 for r in result
             ]
 
         assert len(result) == len(self._internal_output_axes)
         return [
-            None if r is None else Tensor(r, dims=axes)
+            None if r is None else Tensor(r, dims=axes) if is_ndarray(r) else r
             for r, axes in zip(result, self._internal_output_axes)
         ]
 
     def unload(self) -> None:
-        assert torch is not None
         self._devices = None
         del self._model
         _ = gc.collect()  # deallocate memory
