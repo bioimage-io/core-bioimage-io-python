@@ -1,22 +1,22 @@
 import gc
 import warnings
-from typing import Any, List, Optional, Sequence, Tuple, Union
+from contextlib import nullcontext
+from io import TextIOWrapper
+from pathlib import Path
+from typing import Any, List, Literal, Optional, Sequence, Tuple, Union
 
+import torch
+from loguru import logger
+from torch import nn
+from typing_extensions import assert_never
+
+from bioimageio.spec.common import ZipPath
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.utils import download
 
-from ..axis import AxisId
 from ..digest_spec import get_axes_infos, import_callable
 from ..tensor import Tensor
 from ._model_adapter import ModelAdapter
-
-try:
-    import torch
-except Exception as e:
-    torch = None
-    torch_error = str(e)
-else:
-    torch_error = None
 
 
 class PytorchModelAdapter(ModelAdapter):
@@ -29,48 +29,41 @@ class PytorchModelAdapter(ModelAdapter):
         weights: Union[
             v0_4.PytorchStateDictWeightsDescr, v0_5.PytorchStateDictWeightsDescr
         ],
-        devices: Optional[Sequence[str]] = None,
+        devices: Optional[Sequence[Union[str, torch.device]]] = None,
+        mode: Literal["eval", "train"] = "eval",
     ):
-        if torch is None:
-            raise ImportError(f"failed to import torch: {torch_error}")
-
         super().__init__()
         self.output_dims = [tuple(a.id for a in get_axes_infos(out)) for out in outputs]
-        self._network = self.get_network(weights)
-        self._devices = self.get_devices(devices)
-        self._network = self._network.to(self._devices[0])
+        devices = self.get_devices(devices)
+        self._network = self.get_network(weights, load_state=True, devices=devices)
+        if mode == "eval":
+            self._network = self._network.eval()
+        elif mode == "train":
+            self._network = self._network.train()
+        else:
+            assert_never(mode)
 
-        self._primary_device = self._devices[0]
-        state: Any = torch.load(
-            download(weights).path,
-            map_location=self._primary_device,  # pyright: ignore[reportUnknownArgumentType]
-        )
-        self._network.load_state_dict(state)
-
-        self._network = self._network.eval()
+        self._mode: Literal["eval", "train"] = mode
+        self._primary_device = devices[0]
 
     def forward(self, *input_tensors: Optional[Tensor]) -> List[Optional[Tensor]]:
-        if torch is None:
-            raise ImportError("torch")
-        with torch.no_grad():
+        if self._mode == "eval":
+            ctxt = torch.no_grad
+        elif self._mode == "train":
+            ctxt = nullcontext
+        else:
+            assert_never(self._mode)
+
+        with ctxt():
             tensors = [
                 None if ipt is None else torch.from_numpy(ipt.data.data)
                 for ipt in input_tensors
             ]
             tensors = [
-                (
-                    None
-                    if t is None
-                    else t.to(
-                        self._primary_device  # pyright: ignore[reportUnknownArgumentType]
-                    )
-                )
-                for t in tensors
+                (None if t is None else t.to(self._primary_device)) for t in tensors
             ]
             result: Union[Tuple[Any, ...], List[Any], Any]
-            result = self._network(  # pyright: ignore[reportUnknownVariableType]
-                *tensors
-            )
+            result = self._network(*tensors)
             if not isinstance(result, (tuple, list)):
                 result = [result]
 
@@ -98,14 +91,16 @@ class PytorchModelAdapter(ModelAdapter):
         assert torch is not None
         torch.cuda.empty_cache()  # release reserved memory
 
-    @staticmethod
-    def get_network(  # pyright: ignore[reportUnknownParameterType]
+    @classmethod
+    def get_network(
+        cls,
         weight_spec: Union[
             v0_4.PytorchStateDictWeightsDescr, v0_5.PytorchStateDictWeightsDescr
         ],
-    ) -> "torch.nn.Module":  # pyright: ignore[reportInvalidTypeForm]
-        if torch is None:
-            raise ImportError("torch")
+        *,
+        load_state: bool = False,
+        devices: Optional[Sequence[Union[str, torch.device]]] = None,
+    ) -> nn.Module:
         arch = import_callable(
             weight_spec.architecture,
             sha256=(
@@ -120,19 +115,47 @@ class PytorchModelAdapter(ModelAdapter):
             else weight_spec.architecture.kwargs
         )
         network = arch(**model_kwargs)
-        if not isinstance(network, torch.nn.Module):
+        if not isinstance(network, nn.Module):
             raise ValueError(
                 f"calling {weight_spec.architecture.callable} did not return a torch.nn.Module"
             )
 
+        if load_state or devices:
+            use_devices = cls.get_devices(devices)
+            network = network.to(use_devices[0])
+            if load_state:
+                network = cls.load_state(
+                    network,
+                    path=download(weight_spec).path,
+                    devices=use_devices,
+                )
         return network
 
     @staticmethod
-    def get_devices(  # pyright: ignore[reportUnknownParameterType]
-        devices: Optional[Sequence[str]] = None,
-    ) -> List["torch.device"]:  # pyright: ignore[reportInvalidTypeForm]
-        if torch is None:
-            raise ImportError("torch")
+    def load_state(
+        network: nn.Module,
+        path: Union[Path, ZipPath],
+        devices: Sequence[torch.device],
+    ) -> nn.Module:
+        network = network.to(devices[0])
+        with path.open("rb") as f:
+            assert not isinstance(f, TextIOWrapper)
+            state = torch.load(f, map_location=devices[0])
+
+        incompatible = network.load_state_dict(state)
+        if incompatible.missing_keys:
+            logger.warning("Missing state dict keys: {}", incompatible.missing_keys)
+
+        if incompatible.unexpected_keys:
+            logger.warning(
+                "Unexpected state dict keys: {}", incompatible.unexpected_keys
+            )
+        return network
+
+    @staticmethod
+    def get_devices(
+        devices: Optional[Sequence[Union[torch.device, str]]] = None,
+    ) -> List[torch.device]:
         if not devices:
             torch_devices = [
                 (
