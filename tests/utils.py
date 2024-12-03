@@ -1,8 +1,13 @@
 import os
 from functools import wraps
-from typing import Any, Protocol, Type
+from typing import Any, Protocol, Sequence, Type
 
 import pytest
+
+
+class ParameterSet(Protocol):
+    def __init__(self, values: Sequence[Any], marks: Any, id: str) -> None:
+        super().__init__()
 
 
 class test_func(Protocol):
