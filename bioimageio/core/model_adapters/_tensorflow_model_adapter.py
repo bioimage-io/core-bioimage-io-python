@@ -1,24 +1,20 @@
 import zipfile
+from io import TextIOWrapper
+from pathlib import Path
+from shutil import copyfileobj
 from typing import List, Literal, Optional, Sequence, Union
 
 import numpy as np
+import tensorflow as tf  # pyright: ignore[reportMissingImports]
 from loguru import logger
 
-from bioimageio.spec.common import FileSource
+from bioimageio.spec.common import FileSource, ZipPath
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.utils import download
 
 from ..digest_spec import get_axes_infos
 from ..tensor import Tensor
 from ._model_adapter import ModelAdapter
-
-try:
-    import tensorflow as tf  # pyright: ignore[reportMissingImports]
-except Exception as e:
-    tf = None
-    tf_error = str(e)
-else:
-    tf_error = None
 
 
 class TensorflowModelAdapterBase(ModelAdapter):
@@ -36,9 +32,6 @@ class TensorflowModelAdapterBase(ModelAdapter):
         ],
         model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
     ):
-        if tf is None:
-            raise ImportError(f"failed to import tensorflow: {tf_error}")
-
         super().__init__()
         self.model_description = model_description
         tf_version = v0_5.Version(
@@ -81,16 +74,29 @@ class TensorflowModelAdapterBase(ModelAdapter):
             for out in model_description.outputs
         ]
 
+    # TODO: check how to load tf weights without unzipping
     def require_unzipped(self, weight_file: FileSource):
-        loacl_weights_file = download(weight_file).path
-        if zipfile.is_zipfile(loacl_weights_file):
-            out_path = loacl_weights_file.with_suffix(".unzipped")
-            with zipfile.ZipFile(loacl_weights_file, "r") as f:
+        local_weights_file = download(weight_file).path
+        if isinstance(local_weights_file, ZipPath):
+            # weights file is in a bioimageio zip package
+            out_path = (
+                Path("bioimageio_unzipped_tf_weights") / local_weights_file.filename
+            )
+            with local_weights_file.open("rb") as src, out_path.open("wb") as dst:
+                assert not isinstance(src, TextIOWrapper)
+                copyfileobj(src, dst)
+
+            local_weights_file = out_path
+
+        if zipfile.is_zipfile(local_weights_file):
+            # weights file itself is a zipfile
+            out_path = local_weights_file.with_suffix(".unzipped")
+            with zipfile.ZipFile(local_weights_file, "r") as f:
                 f.extractall(out_path)
 
             return out_path
         else:
-            return loacl_weights_file
+            return local_weights_file
 
     def _get_network(  # pyright: ignore[reportUnknownParameterType]
         self, weight_file: FileSource
