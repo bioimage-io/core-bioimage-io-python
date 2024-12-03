@@ -27,6 +27,9 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+        include:
+          - python-version: '3.12'
+            run-expensive-tests: true
     steps:
     - uses: actions/checkout@v4
     - name: Install Conda environment with Micromamba
@@ -63,6 +66,8 @@ jobs:
       run: pytest --disable-pytest-warnings
       env:
         BIOIMAGEIO_CACHE_PATH: bioimageio_cache
+        RUN_EXPENSIVE_TESTS: ${{ matrix.run-expensive-tests && 'true' || 'false' }}
+
 
   test-spec-main:
     runs-on: ubuntu-latest
@@ -71,7 +76,8 @@ jobs:
         python-version: ['3.8', '3.12']
         include:
           - python-version: '3.12'
-            is-dev-version: true
+            report-coverage: true
+            run-expensive-tests: true
     steps:
     - uses: actions/checkout@v4
     - name: Install Conda environment with Micromamba
@@ -112,17 +118,18 @@ jobs:
       run: pytest --disable-pytest-warnings
       env:
         BIOIMAGEIO_CACHE_PATH: bioimageio_cache
-    - if: matrix.is-dev-version && github.event_name == 'pull_request'
+        RUN_EXPENSIVE_TESTS: ${{ matrix.run-expensive-tests && 'true' || 'false' }}
+    - if: matrix.report-coverage && github.event_name == 'pull_request'
       uses: orgoro/coverage@v3.2
       with:
         coverageFile: coverage.xml
         token: ${{ secrets.GITHUB_TOKEN }}
-    - if: matrix.is-dev-version && github.ref == 'refs/heads/main'
+    - if: matrix.report-coverage && github.ref == 'refs/heads/main'
       run: |
         pip install genbadge[coverage]
         genbadge coverage --input-file coverage.xml --output-file ./dist/coverage/coverage-badge.svg
         coverage html -d dist/coverage
-    - if: matrix.is-dev-version && github.ref == 'refs/heads/main'
+    - if: matrix.report-coverage && github.ref == 'refs/heads/main'
       uses: actions/upload-artifact@v4
       with:
         name: coverage

@@ -2,9 +2,9 @@ from pathlib import Path
 
 from numpy.testing import assert_array_almost_equal
 
-from bioimageio.core.utils.testing import skip_on
 from bioimageio.spec.model.v0_4 import ModelDescr as ModelDescr04
 from bioimageio.spec.model.v0_5 import ModelDescr, WeightsFormat
+from tests.utils import skip_on
 
 
 class TooFewDevicesException(Exception):
