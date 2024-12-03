@@ -15,6 +15,7 @@ dependencies:
   - jupyter-black
   - keras>=2.15 # changed
   - loguru
+  - matplotlib
   - numpy
   - onnxruntime
   - packaging>=17.0
@@ -40,4 +41,4 @@ dependencies:
   - typing-extensions
   - xarray
   - pip:
-      - -e ..
+      - -e --no-deps ..
