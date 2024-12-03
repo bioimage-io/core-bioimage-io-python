@@ -14,7 +14,7 @@ from bioimageio.spec import (
     load_description,
 )
 from bioimageio.spec._internal.common_nodes import ResourceDescrBase
-from bioimageio.spec.common import BioimageioYamlContent, PermissiveFileSource
+from bioimageio.spec.common import BioimageioYamlContent, PermissiveFileSource, Sha256
 from bioimageio.spec.get_conda_env import get_conda_env
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import WeightsFormat
@@ -102,6 +102,7 @@ def test_model(
     decimal: Optional[int] = None,
     *,
     determinism: Literal["seed_only", "full"] = "seed_only",
+    sha256: Optional[Sha256] = None,
 ) -> ValidationSummary:
     """Test model inference"""
     return test_description(
@@ -113,6 +114,7 @@ def test_model(
         decimal=decimal,
         determinism=determinism,
         expected_type="model",
+        sha256=sha256,
     )
 
 
@@ -127,6 +129,7 @@ def test_description(
     decimal: Optional[int] = None,
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Optional[str] = None,
+    sha256: Optional[Sha256] = None,
 ) -> ValidationSummary:
     """Test a bioimage.io resource dynamically, e.g. prediction of test tensors for models"""
     rd = load_description_and_test(
@@ -139,6 +142,7 @@ def test_description(
         decimal=decimal,
         determinism=determinism,
         expected_type=expected_type,
+        sha256=sha256,
     )
     return rd.validation_summary
 
@@ -154,6 +158,7 @@ def load_description_and_test(
     decimal: Optional[int] = None,
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Optional[str] = None,
+    sha256: Optional[Sha256] = None,
 ) -> Union[ResourceDescr, InvalidDescr]:
     """Test RDF dynamically, e.g. model inference of test inputs"""
     if (
@@ -171,7 +176,7 @@ def load_description_and_test(
     elif isinstance(source, dict):
         rd = build_description(source, format_version=format_version)
     else:
-        rd = load_description(source, format_version=format_version)
+        rd = load_description(source, format_version=format_version, sha256=sha256)
 
     rd.validation_summary.env.add(
         InstalledPackage(name="bioimageio.core", version=VERSION)
