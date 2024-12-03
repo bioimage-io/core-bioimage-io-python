@@ -3,6 +3,7 @@ name: core-tf # changed
 channels:
   - conda-forge
   - nodefaults
+  # - pytroch # removed
 dependencies:
   - bioimageio.spec>=0.5.3.5
   - black
@@ -28,7 +29,7 @@ dependencies:
   - pytest-cov
   - pytest-xdist
   # - python=3.9  # removed
-  # - pytorch>=2.1 # removed
+  # - pytorch>=2.1,<3 # removed
   - requests
   - rich
   # - ruff  # removed

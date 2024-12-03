@@ -3,7 +3,7 @@ name: core
 channels:
   - conda-forge
   - nodefaults
-  - pytorch # added
+  - pytorch
 dependencies:
   - bioimageio.spec>=0.5.3.5
   - black
@@ -13,7 +13,7 @@ dependencies:
   - imageio>=2.5
   - jupyter
   - jupyter-black
-  - keras>=3.0
+  - keras>=3.0,<4
   - loguru
   - numpy
   - onnxruntime
@@ -29,7 +29,7 @@ dependencies:
   - pytest-cov
   - pytest-xdist
   # - python=3.9  # removed
-  - pytorch>=2.1
+  - pytorch>=2.1,<3
   - requests
   - rich
   - ruff
