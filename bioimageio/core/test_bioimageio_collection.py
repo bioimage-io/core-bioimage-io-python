@@ -17,7 +17,7 @@ def _get_latest_rdf_sources():
     for entry in entries:
         version = entry["versions"][0]
         ret[f"{entry['concept']}/{version['v']}"] = (
-            HttpUrl(version["source"]),
+            HttpUrl(version["source"]),  # pyright: ignore[reportCallIssue]
             Sha256(version["sha256"]),
         )
 

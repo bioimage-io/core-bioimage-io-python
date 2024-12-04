@@ -5,7 +5,7 @@ channels:
   - nodefaults
   # - pytroch # removed
 dependencies:
-  - bioimageio.spec>=0.5.3.5
+  - bioimageio.spec>=0.5.3.6
   - black
   # - crick  # currently requires python<=3.9
   - filelock
