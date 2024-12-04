@@ -1,20 +1,15 @@
-# type: ignore  # TODO: type
 from pathlib import Path
 from typing import List, Sequence, Union
 
 import numpy as np
+import torch
 from numpy.testing import assert_array_almost_equal
 from typing_extensions import Any, assert_never
 
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import Version
 
-from ._utils import load_torch_model
-
-try:
-    import torch
-except ImportError:
-    torch = None
+from ...model_adapters._pytorch_model_adapter import PytorchModelAdapter
 
 
 # FIXME: remove Any
@@ -119,7 +114,9 @@ def convert_weights_to_torchscript(
     with torch.no_grad():
         input_data = [torch.from_numpy(inp.astype("float32")) for inp in input_data]
 
-        model = load_torch_model(state_dict_weights_descr)
+        model = PytorchModelAdapter.get_network(
+            state_dict_weights_descr, load_state=True
+        )
 
         # FIXME: remove Any
         if use_tracing:
