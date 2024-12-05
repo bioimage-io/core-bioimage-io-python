@@ -10,8 +10,8 @@ from bioimageio.spec.model.v0_5 import Version
 
 from .._settings import settings
 from ..digest_spec import get_axes_infos
+from ..model_adapters import ModelAdapter
 from ..tensor import Tensor
-from ._model_adapter import ModelAdapter
 
 os.environ["KERAS_BACKEND"] = settings.keras_backend
 
