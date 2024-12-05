@@ -1,6 +1,7 @@
 """These functions implement the logic of the bioimageio command line interface
 defined in `bioimageio.core.cli`."""
 
+import json
 from pathlib import Path
 from typing import Optional, Sequence, Union
 
@@ -26,6 +27,7 @@ def test(
     weight_format: WeightFormatArgAll = "all",
     devices: Optional[Union[str, Sequence[str]]] = None,
     decimal: int = 4,
+    summary_path: Optional[Path] = None,
 ) -> int:
     """test a bioimageio resource
 
@@ -35,6 +37,7 @@ def test(
         weight_format: (model only) The weight format to use
         devices: Device(s) to use for testing
         decimal: Precision for numerical comparisons
+        summary_path: Path to save validation summary as JSON file.
     """
     if isinstance(descr, InvalidDescr):
         descr.validation_summary.display()
@@ -47,6 +50,9 @@ def test(
         decimal=decimal,
     )
     summary.display()
+    if summary_path is not None:
+        _ = summary_path.write_text(summary.model_dump_json(indent=4))
+
     return 0 if summary.status == "passed" else 1
 
 

@@ -133,6 +133,9 @@ class TestCmd(CmdBase, WithSource):
     decimal: int = 4
     """Precision for numerical comparisons"""
 
+    summary_path: Optional[Path] = None
+    """Path to save validation summary as JSON file."""
+
     def run(self):
         sys.exit(
             test(
@@ -140,6 +143,7 @@ class TestCmd(CmdBase, WithSource):
                 weight_format=self.weight_format,
                 devices=self.devices,
                 decimal=self.decimal,
+                summary_path=self.summary_path,
             )
         )
 
