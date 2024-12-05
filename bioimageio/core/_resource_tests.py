@@ -94,7 +94,7 @@ def enable_determinism(mode: Literal["seed_only", "full"]):
 
 
 def test_model(
-    source: Union[v0_5.ModelDescr, PermissiveFileSource],
+    source: Union[v0_4.ModelDescr, v0_5.ModelDescr, PermissiveFileSource],
     weight_format: Optional[WeightsFormat] = None,
     devices: Optional[List[str]] = None,
     absolute_tolerance: float = 1.5e-4,
