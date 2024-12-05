@@ -32,6 +32,7 @@ from . import (
     stat_measures,
     tensor,
 )
+from ._dynamic_conda_env import test_description_in_conda_env
 from ._prediction_pipeline import PredictionPipeline, create_prediction_pipeline
 from ._resource_tests import (
     enable_determinism,
@@ -104,6 +105,7 @@ __all__ = [
     "Stat",
     "tensor",
     "Tensor",
+    "test_description_in_conda_env",
     "test_description",
     "test_model",
     "test_resource",
