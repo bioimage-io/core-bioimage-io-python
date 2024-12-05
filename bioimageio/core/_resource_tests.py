@@ -81,11 +81,11 @@ def enable_determinism(mode: Literal["seed_only", "full"]):
 
     try:
         try:
-            import tensorflow as tf  # pyright: ignore[reportMissingImports]
+            import tensorflow as tf
         except ImportError:
             pass
         else:
-            tf.random.seed(0)
+            tf.random.set_seed(0)
             if mode == "full":
                 tf.config.experimental.enable_op_determinism()
             # TODO: find possibility to switch it off again??
