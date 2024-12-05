@@ -113,14 +113,14 @@ class WithSource(ArgMixin):
 
 
 class ValidateFormatCmd(CmdBase, WithSource):
-    """validate the meta data format of a bioimageio resource."""
+    """Validate the meta data format of a bioimageio resource."""
 
     def run(self):
         sys.exit(validate_format(self.descr))
 
 
 class TestCmd(CmdBase, WithSource):
-    """Test a bioimageio resource (beyond meta data formatting)"""
+    """Test a bioimageio resource (beyond meta data formatting)."""
 
     weight_format: WeightFormatArgAll = "all"
     """The weight format to limit testing to.
@@ -149,7 +149,7 @@ class TestCmd(CmdBase, WithSource):
 
 
 class PackageCmd(CmdBase, WithSource):
-    """save a resource's metadata with its associated files."""
+    """Save a resource's metadata with its associated files."""
 
     path: CliPositionalArg[Path]
     """The path to write the (zipped) package to.
