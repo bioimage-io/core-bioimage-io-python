@@ -104,6 +104,7 @@ __all__ = [
     "Stat",
     "tensor",
     "Tensor",
+    "test_description_in_conda_env",
     "test_description",
     "test_model",
     "test_resource",

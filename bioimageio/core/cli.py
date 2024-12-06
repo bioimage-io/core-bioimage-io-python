@@ -18,6 +18,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Literal,
     Mapping,
     Optional,
     Sequence,
@@ -113,14 +114,14 @@ class WithSource(ArgMixin):
 
 
 class ValidateFormatCmd(CmdBase, WithSource):
-    """validate the meta data format of a bioimageio resource."""
+    """Validate the meta data format of a bioimageio resource."""
 
     def run(self):
         sys.exit(validate_format(self.descr))
 
 
 class TestCmd(CmdBase, WithSource):
-    """Test a bioimageio resource (beyond meta data formatting)"""
+    """Test a bioimageio resource (beyond meta data formatting)."""
 
     weight_format: WeightFormatArgAll = "all"
     """The weight format to limit testing to.
@@ -133,6 +134,21 @@ class TestCmd(CmdBase, WithSource):
     decimal: int = 4
     """Precision for numerical comparisons"""
 
+    runtime_env: Union[Literal["currently-active", "as-described"], Path] = Field(
+        "currently-active", alias="runtime-env"
+    )
+    """The python environment to run the tests in
+
+        - `"currently-active"`: use active Python interpreter
+        - `"as-described"`: generate a conda environment YAML file based on the model
+            weights description.
+        - A path to a conda environment YAML.
+          Note: The `bioimageio.core` dependency will be added automatically if not present.
+    """
+
+    summary_path: Optional[Path] = Field(None, alias="summary-path")
+    """Path to save validation summary as JSON file."""
+
     def run(self):
         sys.exit(
             test(
@@ -140,12 +156,14 @@ class TestCmd(CmdBase, WithSource):
                 weight_format=self.weight_format,
                 devices=self.devices,
                 decimal=self.decimal,
+                summary_path=self.summary_path,
+                runtime_env=self.runtime_env,
             )
         )
 
 
 class PackageCmd(CmdBase, WithSource):
-    """save a resource's metadata with its associated files."""
+    """Save a resource's metadata with its associated files."""
 
     path: CliPositionalArg[Path]
     """The path to write the (zipped) package to.
@@ -551,10 +569,10 @@ YAML_FILE = "bioimageio-cli.yaml"
 
 class Bioimageio(
     BaseSettings,
+    cli_implicit_flags=True,
     cli_parse_args=True,
     cli_prog_name="bioimageio",
     cli_use_class_docs_for_groups=True,
-    cli_implicit_flags=True,
     use_attribute_docstrings=True,
 ):
     """bioimageio - CLI for bioimage.io resources 🦒"""

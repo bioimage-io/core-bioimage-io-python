@@ -26,15 +26,14 @@ def test(
     weight_format: WeightFormatArgAll = "all",
     devices: Optional[Union[str, Sequence[str]]] = None,
     decimal: int = 4,
+    summary_path: Optional[Path] = None,
+    runtime_env: Union[
+        Literal["currently-active", "as-described"], Path
+    ] = "currently-active",
 ) -> int:
-    """test a bioimageio resource
+    """Test a bioimageio resource.
 
-    Args:
-        source: Path or URL to the bioimageio resource description file
-                (bioimageio.yaml or rdf.yaml) or to a zipped resource
-        weight_format: (model only) The weight format to use
-        devices: Device(s) to use for testing
-        decimal: Precision for numerical comparisons
+    Arguments as described in `bioimageio.core.cli.TestCmd`
     """
     if isinstance(descr, InvalidDescr):
         descr.validation_summary.display()
@@ -45,8 +44,12 @@ def test(
         weight_format=None if weight_format == "all" else weight_format,
         devices=[devices] if isinstance(devices, str) else devices,
         decimal=decimal,
+        runtime_env=runtime_env,
     )
     summary.display()
+    if summary_path is not None:
+        _ = summary_path.write_text(summary.model_dump_json(indent=4))
+
     return 0 if summary.status == "passed" else 1
 
 
