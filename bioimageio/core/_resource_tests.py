@@ -37,6 +37,7 @@ from bioimageio.spec import (
 from bioimageio.spec._internal.common_nodes import ResourceDescrBase
 from bioimageio.spec._internal.io import is_yaml_value
 from bioimageio.spec._internal.io_utils import read_yaml, write_yaml
+from bioimageio.spec.common import BioimageioYamlContent, PermissiveFileSource, Sha256
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import WeightsFormat
 from bioimageio.spec.summary import (
@@ -192,7 +193,7 @@ def test_description(
             decimal=decimal,
             determinism=determinism,
             expected_type=expected_type,
-        sha256=sha256,
+            sha256=sha256,
         )
         return rd.validation_summary
 

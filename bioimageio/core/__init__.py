@@ -41,6 +41,7 @@ from ._resource_tests import (
 )
 from ._settings import settings
 from .axis import Axis, AxisId
+from .backends import create_model_adapter
 from .block_meta import BlockMeta
 from .common import MemberId
 from .prediction import predict, predict_many
@@ -73,6 +74,7 @@ __all__ = [
     "commands",
     "common",
     "compute_dataset_measures",
+    "create_model_adapter",
     "create_prediction_pipeline",
     "digest_spec",
     "dump_description",
@@ -104,7 +106,6 @@ __all__ = [
     "Stat",
     "tensor",
     "Tensor",
-    "test_description_in_conda_env",
     "test_description",
     "test_model",
     "test_resource",

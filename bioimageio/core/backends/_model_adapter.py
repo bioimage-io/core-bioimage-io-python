@@ -73,7 +73,7 @@ class ModelAdapter(ABC):
         for wf in weight_format_priority_order:
             if wf == "pytorch_state_dict" and weights.pytorch_state_dict is not None:
                 try:
-                    from ._pytorch_model_adapter import PytorchModelAdapter
+                    from .pytorch_backend import PytorchModelAdapter
 
                     return PytorchModelAdapter(
                         outputs=model_description.outputs,
@@ -87,7 +87,7 @@ class ModelAdapter(ABC):
                 and weights.tensorflow_saved_model_bundle is not None
             ):
                 try:
-                    from ._tensorflow_model_adapter import TensorflowModelAdapter
+                    from .tensorflow_backend import TensorflowModelAdapter
 
                     return TensorflowModelAdapter(
                         model_description=model_description, devices=devices
@@ -96,7 +96,7 @@ class ModelAdapter(ABC):
                     errors.append((wf, e))
             elif wf == "onnx" and weights.onnx is not None:
                 try:
-                    from ._onnx_model_adapter import ONNXModelAdapter
+                    from .onnx_backend import ONNXModelAdapter
 
                     return ONNXModelAdapter(
                         model_description=model_description, devices=devices
@@ -105,7 +105,7 @@ class ModelAdapter(ABC):
                     errors.append((wf, e))
             elif wf == "torchscript" and weights.torchscript is not None:
                 try:
-                    from ._torchscript_model_adapter import TorchscriptModelAdapter
+                    from .torchscript_backend import TorchscriptModelAdapter
 
                     return TorchscriptModelAdapter(
                         model_description=model_description, devices=devices
@@ -117,13 +117,10 @@ class ModelAdapter(ABC):
                 # we try to first import the keras model adapter using the separate package and,
                 # if it is not available, try to load the one using tf
                 try:
-                    from ._keras import (
-                        KerasModelAdapter,
-                        keras,  # type: ignore
-                    )
-
-                    if keras is None:
-                        from ._tensorflow_model_adapter import KerasModelAdapter
+                    try:
+                        from .keras_backend import KerasModelAdapter
+                    except Exception:
+                        from .tensorflow_backend import KerasModelAdapter
 
                     return KerasModelAdapter(
                         model_description=model_description, devices=devices
@@ -134,10 +131,11 @@ class ModelAdapter(ABC):
         assert errors
         if len(weight_format_priority_order) == 1:
             assert len(errors) == 1
+            wf, e = errors[0]
             raise ValueError(
-                f"The '{weight_format_priority_order[0]}' model adapter could not be created"
-                + f" in this environment:\n{errors[0][1].__class__.__name__}({errors[0][1]}).\n\n"
-            ) from errors[0][1]
+                f"The '{wf}' model adapter could not be created"
+                + f" in this environment:\n{e.__class__.__name__}({e}).\n\n"
+            ) from e
 
         else:
             error_list = "\n - ".join(
@@ -165,13 +163,3 @@ class ModelAdapter(ABC):
         Unload model from any devices, freeing their memory.
         The moder adapter should be considered unusable afterwards.
         """
-
-
-def get_weight_formats() -> List[str]:
-    """
-    Return list of supported weight types
-    """
-    return list(DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER)
-
-
-create_model_adapter = ModelAdapter.create

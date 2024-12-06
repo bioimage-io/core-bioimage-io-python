@@ -10,30 +10,22 @@ from bioimageio.spec.model.v0_5 import Version
 
 from .._settings import settings
 from ..digest_spec import get_axes_infos
-from ..model_adapters import ModelAdapter
 from ..tensor import Tensor
+from ._model_adapter import ModelAdapter
 
 os.environ["KERAS_BACKEND"] = settings.keras_backend
 
 # by default, we use the keras integrated with tensorflow
+# TODO: check if we should prefer keras
 try:
-    import tensorflow as tf  # pyright: ignore[reportMissingImports]
-    from tensorflow import (  # pyright: ignore[reportMissingImports]
-        keras,  # pyright: ignore[reportUnknownVariableType]
+    import tensorflow as tf
+    from tensorflow import (
+        keras,  # pyright: ignore[reportUnknownVariableType,reportAttributeAccessIssue]
     )
 
-    tf_version = Version(tf.__version__)  # pyright: ignore[reportUnknownArgumentType]
+    tf_version = Version(tf.__version__)
 except Exception:
-    try:
-        import keras  # pyright: ignore[reportMissingImports]
-    except Exception as e:
-        keras = None
-        keras_error = str(e)
-    else:
-        keras_error = None
-    tf_version = None
-else:
-    keras_error = None
+    import keras
 
 
 class KerasModelAdapter(ModelAdapter):
@@ -43,9 +35,6 @@ class KerasModelAdapter(ModelAdapter):
         model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
         devices: Optional[Sequence[str]] = None,
     ) -> None:
-        if keras is None:
-            raise ImportError(f"failed to import keras: {keras_error}")
-
         super().__init__()
         if model_description.weights.keras_hdf5 is None:
             raise ValueError("model has not keras_hdf5 weights specified")
@@ -86,18 +75,26 @@ class KerasModelAdapter(ModelAdapter):
 
     def forward(self, *input_tensors: Optional[Tensor]) -> List[Optional[Tensor]]:
         _result: Union[Sequence[NDArray[Any]], NDArray[Any]]
-        _result = self._network.predict(  # pyright: ignore[reportUnknownVariableType]
+        _result = self._network.predict(  # type: ignore
             *[None if t is None else t.data.data for t in input_tensors]
         )
         if isinstance(_result, (tuple, list)):
-            result: Sequence[NDArray[Any]] = _result
+            result = _result  # pyright: ignore[reportUnknownVariableType]
         else:
             result = [_result]  # type: ignore
 
-        assert len(result) == len(self._output_axes)
+        assert len(result) == len(  # pyright: ignore[reportUnknownArgumentType]
+            self._output_axes
+        )
         ret: List[Optional[Tensor]] = []
         ret.extend(
-            [Tensor(r, dims=axes) for r, axes, in zip(result, self._output_axes)]
+            [
+                Tensor(r, dims=axes)  # pyright: ignore[reportArgumentType]
+                for r, axes, in zip(  # pyright: ignore[reportUnknownVariableType]
+                    result,  # pyright: ignore[reportUnknownArgumentType]
+                    self._output_axes,
+                )
+            ]
         )
         return ret
 
