@@ -1,21 +1,43 @@
+import hashlib
+import platform
+import subprocess
 import traceback
 import warnings
+from io import StringIO
 from itertools import product
-from typing import Dict, Hashable, List, Literal, Optional, Sequence, Set, Tuple, Union
+from pathlib import Path
+from tempfile import TemporaryDirectory
+from typing import (
+    Callable,
+    Dict,
+    Hashable,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 
 import numpy as np
 from loguru import logger
+from typing_extensions import assert_never, get_args
 
 from bioimageio.spec import (
+    BioimageioCondaEnv,
     InvalidDescr,
     ResourceDescr,
     build_description,
     dump_description,
+    get_conda_env,
     load_description,
+    save_bioimageio_package,
 )
 from bioimageio.spec._internal.common_nodes import ResourceDescrBase
+from bioimageio.spec._internal.io import is_yaml_value
+from bioimageio.spec._internal.io_utils import read_yaml, write_yaml
 from bioimageio.spec.common import BioimageioYamlContent, PermissiveFileSource
-from bioimageio.spec.get_conda_env import get_conda_env
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import WeightsFormat
 from bioimageio.spec.summary import (
@@ -116,6 +138,11 @@ def test_model(
     )
 
 
+def default_run_command(args: Sequence[str]):
+    logger.info("running '{}'...", " ".join(args))
+    _ = subprocess.run(args, shell=True, text=True, check=True)
+
+
 def test_description(
     source: Union[ResourceDescr, PermissiveFileSource, BioimageioYamlContent],
     *,
@@ -127,20 +154,193 @@ def test_description(
     decimal: Optional[int] = None,
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Optional[str] = None,
+    runtime_env: Union[
+        Literal["currently-active", "as-described"], Path, BioimageioCondaEnv
+    ] = ("currently-active"),
+    run_command: Callable[[Sequence[str]], None] = default_run_command,
 ) -> ValidationSummary:
-    """Test a bioimage.io resource dynamically, e.g. prediction of test tensors for models"""
-    rd = load_description_and_test(
-        source,
-        format_version=format_version,
-        weight_format=weight_format,
-        devices=devices,
-        absolute_tolerance=absolute_tolerance,
-        relative_tolerance=relative_tolerance,
-        decimal=decimal,
-        determinism=determinism,
-        expected_type=expected_type,
+    """Test a bioimage.io resource dynamically, e.g. prediction of test tensors for models.
+
+    Args:
+        source: model description source.
+        weight_format: Weight format to test.
+            Default: All weight formats present in **source**.
+        devices: Devices to test with, e.g. 'cpu', 'cuda'.
+            Default (may be weight format dependent): ['cuda'] if available, ['cpu'] otherwise.
+        absolute_tolerance: Maximum absolute tolerance of reproduced output tensors.
+        relative_tolerance: Maximum relative tolerance of reproduced output tensors.
+        determinism: Modes to improve reproducibility of test outputs.
+        runtime_env: (Experimental feature!) The Python environment to run the tests in
+            - `"currently-active"`: Use active Python interpreter.
+            - `"as-described"`: Use `bioimageio.spec.get_conda_env` to generate a conda
+                environment YAML file based on the model weights description.
+            - A `BioimageioCondaEnv` or a path to a conda environment YAML file.
+                Note: The `bioimageio.core` dependency will be added automatically if not present.
+        run_command: (Experimental feature!) Function to execute (conda) terminal commands in a subprocess
+            (ignored if **runtime_env** is `"currently-active"`).
+    """
+    if runtime_env == "currently-active":
+        rd = load_description_and_test(
+            source,
+            format_version=format_version,
+            weight_format=weight_format,
+            devices=devices,
+            absolute_tolerance=absolute_tolerance,
+            relative_tolerance=relative_tolerance,
+            decimal=decimal,
+            determinism=determinism,
+            expected_type=expected_type,
+        )
+        return rd.validation_summary
+
+    if runtime_env == "as-described":
+        conda_env = None
+    elif isinstance(runtime_env, (str, Path)):
+        conda_env = BioimageioCondaEnv.model_validate(read_yaml(Path(runtime_env)))
+    elif isinstance(runtime_env, BioimageioCondaEnv):
+        conda_env = runtime_env
+    else:
+        assert_never(runtime_env)
+
+    with TemporaryDirectory(ignore_cleanup_errors=True) as _d:
+        working_dir = Path(_d)
+        if isinstance(source, (dict, ResourceDescrBase)):
+            file_source = save_bioimageio_package(
+                source, output_path=working_dir / "package.zip"
+            )
+        else:
+            file_source = source
+
+        return _test_in_env(
+            file_source,
+            working_dir=working_dir,
+            weight_format=weight_format,
+            conda_env=conda_env,
+            devices=devices,
+            absolute_tolerance=absolute_tolerance,
+            relative_tolerance=relative_tolerance,
+            determinism=determinism,
+            run_command=run_command,
+        )
+
+
+def _test_in_env(
+    source: PermissiveFileSource,
+    *,
+    working_dir: Path,
+    weight_format: Optional[WeightsFormat],
+    conda_env: Optional[BioimageioCondaEnv],
+    devices: Optional[Sequence[str]],
+    absolute_tolerance: float,
+    relative_tolerance: float,
+    determinism: Literal["seed_only", "full"],
+    run_command: Callable[[Sequence[str]], None],
+) -> ValidationSummary:
+    descr = load_description(source)
+
+    if not isinstance(descr, (v0_4.ModelDescr, v0_5.ModelDescr)):
+        raise NotImplementedError("Not yet implemented for non-model resources")
+
+    if weight_format is None:
+        all_present_wfs = [
+            wf for wf in get_args(WeightsFormat) if getattr(descr.weights, wf)
+        ]
+        ignore_wfs = [wf for wf in all_present_wfs if wf in ["tensorflow_js"]]
+        logger.info(
+            "Found weight formats {}. Start testing all{}...",
+            all_present_wfs,
+            f" (except: {', '.join(ignore_wfs)}) " if ignore_wfs else "",
+        )
+        summary = _test_in_env(
+            source,
+            working_dir=working_dir / all_present_wfs[0],
+            weight_format=all_present_wfs[0],
+            devices=devices,
+            absolute_tolerance=absolute_tolerance,
+            relative_tolerance=relative_tolerance,
+            determinism=determinism,
+            conda_env=conda_env,
+            run_command=run_command,
+        )
+        for wf in all_present_wfs[1:]:
+            additional_summary = _test_in_env(
+                source,
+                working_dir=working_dir / wf,
+                weight_format=wf,
+                devices=devices,
+                absolute_tolerance=absolute_tolerance,
+                relative_tolerance=relative_tolerance,
+                determinism=determinism,
+                conda_env=conda_env,
+                run_command=run_command,
+            )
+            for d in additional_summary.details:
+                # TODO: filter reduntant details; group details
+                summary.add_detail(d)
+        return summary
+
+    if weight_format == "pytorch_state_dict":
+        wf = descr.weights.pytorch_state_dict
+    elif weight_format == "torchscript":
+        wf = descr.weights.torchscript
+    elif weight_format == "keras_hdf5":
+        wf = descr.weights.keras_hdf5
+    elif weight_format == "onnx":
+        wf = descr.weights.onnx
+    elif weight_format == "tensorflow_saved_model_bundle":
+        wf = descr.weights.tensorflow_saved_model_bundle
+    elif weight_format == "tensorflow_js":
+        raise RuntimeError(
+            "testing 'tensorflow_js' is not supported by bioimageio.core"
+        )
+    else:
+        assert_never(weight_format)
+
+    assert wf is not None
+    if conda_env is None:
+        conda_env = get_conda_env(entry=wf)
+
+    # remove name as we crate a name based on the env description hash value
+    conda_env.name = None
+
+    dumped_env = conda_env.model_dump(mode="json", exclude_none=True)
+    if not is_yaml_value(dumped_env):
+        raise ValueError(f"Failed to dump conda env to valid YAML {conda_env}")
+
+    env_io = StringIO()
+    write_yaml(dumped_env, file=env_io)
+    encoded_env = env_io.getvalue().encode()
+    env_name = hashlib.sha256(encoded_env).hexdigest()
+
+    try:
+        run_command(["where" if platform.system() == "Windows" else "which", "conda"])
+    except Exception as e:
+        raise RuntimeError("Conda not available") from e
+
+    working_dir.mkdir(parents=True, exist_ok=True)
+    try:
+        run_command(["conda", "activate", env_name])
+    except Exception:
+        path = working_dir / "env.yaml"
+        _ = path.write_bytes(encoded_env)
+        logger.debug("written conda env to {}", path)
+        run_command(["conda", "env", "create", f"--file={path}", f"--name={env_name}"])
+        run_command(["conda", "activate", env_name])
+
+    summary_path = working_dir / "summary.json"
+    run_command(
+        [
+            "conda",
+            "run",
+            "-n",
+            env_name,
+            "bioimageio",
+            "test",
+            str(source),
+            f"--summary-path={summary_path}",
+        ]
     )
-    return rd.validation_summary
+    return ValidationSummary.model_validate_json(summary_path.read_bytes())
 
 
 def load_description_and_test(

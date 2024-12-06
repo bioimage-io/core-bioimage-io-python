@@ -18,6 +18,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Literal,
     Mapping,
     Optional,
     Sequence,
@@ -133,7 +134,19 @@ class TestCmd(CmdBase, WithSource):
     decimal: int = 4
     """Precision for numerical comparisons"""
 
-    summary_path: Optional[Path] = None
+    runtime_env: Union[Literal["currently-active", "as-described"], Path] = Field(
+        "currently-active", alias="runtime-env"
+    )
+    """The python environment to run the tests in
+
+        - `"currently-active"`: use active Python interpreter
+        - `"as-described"`: generate a conda environment YAML file based on the model
+            weights description.
+        - A path to a conda environment YAML.
+          Note: The `bioimageio.core` dependency will be added automatically if not present.
+    """
+
+    summary_path: Optional[Path] = Field(None, alias="summary-path")
     """Path to save validation summary as JSON file."""
 
     def run(self):
@@ -144,6 +157,7 @@ class TestCmd(CmdBase, WithSource):
                 devices=self.devices,
                 decimal=self.decimal,
                 summary_path=self.summary_path,
+                runtime_env=self.runtime_env,
             )
         )
 
@@ -555,10 +569,10 @@ YAML_FILE = "bioimageio-cli.yaml"
 
 class Bioimageio(
     BaseSettings,
+    cli_implicit_flags=True,
     cli_parse_args=True,
     cli_prog_name="bioimageio",
     cli_use_class_docs_for_groups=True,
-    cli_implicit_flags=True,
     use_attribute_docstrings=True,
 ):
     """bioimageio - CLI for bioimage.io resources 🦒"""
