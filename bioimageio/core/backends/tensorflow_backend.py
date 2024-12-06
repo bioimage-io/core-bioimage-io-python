@@ -1,24 +1,20 @@
 import zipfile
+from io import TextIOWrapper
+from pathlib import Path
+from shutil import copyfileobj
 from typing import List, Literal, Optional, Sequence, Union
 
 import numpy as np
+import tensorflow as tf
 from loguru import logger
 
-from bioimageio.spec.common import FileSource
+from bioimageio.spec.common import FileSource, ZipPath
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.utils import download
 
 from ..digest_spec import get_axes_infos
 from ..tensor import Tensor
 from ._model_adapter import ModelAdapter
-
-try:
-    import tensorflow as tf  # pyright: ignore[reportMissingImports]
-except Exception as e:
-    tf = None
-    tf_error = str(e)
-else:
-    tf_error = None
 
 
 class TensorflowModelAdapterBase(ModelAdapter):
@@ -36,14 +32,9 @@ class TensorflowModelAdapterBase(ModelAdapter):
         ],
         model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
     ):
-        if tf is None:
-            raise ImportError(f"failed to import tensorflow: {tf_error}")
-
         super().__init__()
         self.model_description = model_description
-        tf_version = v0_5.Version(
-            tf.__version__  # pyright: ignore[reportUnknownArgumentType]
-        )
+        tf_version = v0_5.Version(tf.__version__)
         model_tf_version = weights.tensorflow_version
         if model_tf_version is None:
             logger.warning(
@@ -81,16 +72,29 @@ class TensorflowModelAdapterBase(ModelAdapter):
             for out in model_description.outputs
         ]
 
+    # TODO: check how to load tf weights without unzipping
     def require_unzipped(self, weight_file: FileSource):
-        loacl_weights_file = download(weight_file).path
-        if zipfile.is_zipfile(loacl_weights_file):
-            out_path = loacl_weights_file.with_suffix(".unzipped")
-            with zipfile.ZipFile(loacl_weights_file, "r") as f:
+        local_weights_file = download(weight_file).path
+        if isinstance(local_weights_file, ZipPath):
+            # weights file is in a bioimageio zip package
+            out_path = (
+                Path("bioimageio_unzipped_tf_weights") / local_weights_file.filename
+            )
+            with local_weights_file.open("rb") as src, out_path.open("wb") as dst:
+                assert not isinstance(src, TextIOWrapper)
+                copyfileobj(src, dst)
+
+            local_weights_file = out_path
+
+        if zipfile.is_zipfile(local_weights_file):
+            # weights file itself is a zipfile
+            out_path = local_weights_file.with_suffix(".unzipped")
+            with zipfile.ZipFile(local_weights_file, "r") as f:
                 f.extractall(out_path)
 
             return out_path
         else:
-            return loacl_weights_file
+            return local_weights_file
 
     def _get_network(  # pyright: ignore[reportUnknownParameterType]
         self, weight_file: FileSource
@@ -99,14 +103,15 @@ class TensorflowModelAdapterBase(ModelAdapter):
         assert tf is not None
         if self.use_keras_api:
             try:
-                return tf.keras.layers.TFSMLayer(
-                    weight_file, call_endpoint="serve"
-                )  # pyright: ignore[reportUnknownVariableType]
+                return tf.keras.layers.TFSMLayer(  # pyright: ignore[reportAttributeAccessIssue,reportUnknownVariableType]
+                    weight_file,
+                    call_endpoint="serve",
+                )
             except Exception as e:
                 try:
-                    return tf.keras.layers.TFSMLayer(
+                    return tf.keras.layers.TFSMLayer(  # pyright: ignore[reportAttributeAccessIssue,reportUnknownVariableType]
                         weight_file, call_endpoint="serving_default"
-                    )  # pyright: ignore[reportUnknownVariableType]
+                    )
                 except Exception as ee:
                     logger.opt(exception=ee).info(
                         "keras.layers.TFSMLayer error for alternative call_endpoint='serving_default'"
@@ -132,19 +137,19 @@ class TensorflowModelAdapterBase(ModelAdapter):
         ]
         # TODO read from spec
         tag = (  # pyright: ignore[reportUnknownVariableType]
-            tf.saved_model.tag_constants.SERVING
+            tf.saved_model.tag_constants.SERVING  # pyright: ignore[reportAttributeAccessIssue]
         )
         signature_key = (  # pyright: ignore[reportUnknownVariableType]
-            tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY
+            tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY  # pyright: ignore[reportAttributeAccessIssue]
         )
 
-        graph = tf.Graph()  # pyright: ignore[reportUnknownVariableType]
+        graph = tf.Graph()
         with graph.as_default():
-            with tf.Session(
+            with tf.Session(  # pyright: ignore[reportAttributeAccessIssue]
                 graph=graph
             ) as sess:  # pyright: ignore[reportUnknownVariableType]
                 # load the model and the signature
-                graph_def = tf.saved_model.loader.load(  # pyright: ignore[reportUnknownVariableType]
+                graph_def = tf.saved_model.loader.load(  # pyright: ignore[reportUnknownVariableType,reportAttributeAccessIssue]
                     sess, [tag], self._network
                 )
                 signature = (  # pyright: ignore[reportUnknownVariableType]
@@ -158,12 +163,16 @@ class TensorflowModelAdapterBase(ModelAdapter):
                 out_names = [  # pyright: ignore[reportUnknownVariableType]
                     signature[signature_key].outputs[key].name for key in output_keys
                 ]
-                in_tensors = [  # pyright: ignore[reportUnknownVariableType]
-                    graph.get_tensor_by_name(name)
+                in_tensors = [
+                    graph.get_tensor_by_name(
+                        name  # pyright: ignore[reportUnknownArgumentType]
+                    )
                     for name in in_names  # pyright: ignore[reportUnknownVariableType]
                 ]
-                out_tensors = [  # pyright: ignore[reportUnknownVariableType]
-                    graph.get_tensor_by_name(name)
+                out_tensors = [
+                    graph.get_tensor_by_name(
+                        name  # pyright: ignore[reportUnknownArgumentType]
+                    )
                     for name in out_names  # pyright: ignore[reportUnknownVariableType]
                 ]
 
@@ -172,13 +181,13 @@ class TensorflowModelAdapterBase(ModelAdapter):
                     dict(
                         zip(
                             out_names,  # pyright: ignore[reportUnknownArgumentType]
-                            out_tensors,  # pyright: ignore[reportUnknownArgumentType]
+                            out_tensors,
                         )
                     ),
                     dict(
                         zip(
-                            in_tensors,  # pyright: ignore[reportUnknownArgumentType]
-                            input_tensors,
+                            in_tensors,
+                            [None if t is None else t.data for t in input_tensors],
                         )
                     ),
                 )
@@ -196,7 +205,7 @@ class TensorflowModelAdapterBase(ModelAdapter):
         assert self.use_keras_api
         assert not isinstance(self._network, str)
         assert tf is not None
-        tf_tensor = [  # pyright: ignore[reportUnknownVariableType]
+        tf_tensor = [
             None if ipt is None else tf.convert_to_tensor(ipt) for ipt in input_tensors
         ]
 
@@ -205,7 +214,9 @@ class TensorflowModelAdapterBase(ModelAdapter):
         assert isinstance(result, dict)
 
         # TODO: Use RDF's `outputs[i].id` here
-        result = list(result.values())
+        result = list(  # pyright: ignore[reportUnknownVariableType]
+            result.values()  # pyright: ignore[reportUnknownArgumentType]
+        )
 
         return [  # pyright: ignore[reportUnknownVariableType]
             (None if r is None else r if isinstance(r, np.ndarray) else r.numpy())
@@ -213,18 +224,21 @@ class TensorflowModelAdapterBase(ModelAdapter):
         ]
 
     def forward(self, *input_tensors: Optional[Tensor]) -> List[Optional[Tensor]]:
-        data = [None if ipt is None else ipt.data for ipt in input_tensors]
         if self.use_keras_api:
             result = self._forward_keras(  # pyright: ignore[reportUnknownVariableType]
-                *data
+                *input_tensors
             )
         else:
             result = self._forward_tf(  # pyright: ignore[reportUnknownVariableType]
-                *data
+                *input_tensors
             )
 
         return [
-            None if r is None else Tensor(r, dims=axes)
+            (
+                None
+                if r is None
+                else Tensor(r, dims=axes)  # pyright: ignore[reportUnknownArgumentType]
+            )
             for r, axes in zip(  # pyright: ignore[reportUnknownVariableType]
                 result,  # pyright: ignore[reportUnknownArgumentType]
                 self._internal_output_axes,

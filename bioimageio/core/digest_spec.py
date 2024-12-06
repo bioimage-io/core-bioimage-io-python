@@ -50,7 +50,12 @@ from .tensor import Tensor
 
 
 def import_callable(
-    node: Union[CallableFromDepencency, ArchitectureFromLibraryDescr],
+    node: Union[
+        ArchitectureFromFileDescr,
+        ArchitectureFromLibraryDescr,
+        CallableFromDepencency,
+        CallableFromFile,
+    ],
     /,
     **kwargs: Unpack[HashKwargs],
 ) -> Callable[..., Any]:
@@ -65,7 +70,6 @@ def import_callable(
         c = _import_from_file_impl(node.source_file, str(node.callable_name), **kwargs)
     elif isinstance(node, ArchitectureFromFileDescr):
         c = _import_from_file_impl(node.source, str(node.callable), sha256=node.sha256)
-
     else:
         assert_never(node)
 

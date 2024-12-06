@@ -3,9 +3,9 @@ name: core
 channels:
   - conda-forge
   - nodefaults
-  - pytorch # added
+  - pytorch
 dependencies:
-  - bioimageio.spec>=0.5.3.5
+  - bioimageio.spec>=0.5.3.6
   - black
   # - crick  # currently requires python<=3.9
   - filelock
@@ -13,8 +13,9 @@ dependencies:
   - imageio>=2.5
   - jupyter
   - jupyter-black
-  - keras>=3.0
+  - keras>=3.0,<4
   - loguru
+  - matplotlib
   - numpy
   - onnxruntime
   - packaging>=17.0
@@ -29,14 +30,15 @@ dependencies:
   - pytest-cov
   - pytest-xdist
   # - python=3.9  # removed
-  - pytorch>=2.1
+  - pytorch>=2.1,<3
   - requests
   - rich
   - ruff
   - ruyaml
+  - tensorflow>=2,<3
   - torchvision
   - tqdm
   - typing-extensions
   - xarray
   - pip:
-      - -e ..
+      - -e --no-deps ..
