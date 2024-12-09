@@ -1,28 +1,19 @@
-import abc
-import os
-import shutil
 from pathlib import Path
-from typing import Any, List, Sequence, Union, cast, no_type_check
-from zipfile import ZipFile
+from typing import Any, List, Sequence, Union, cast
 
 import numpy as np
 import torch
 from numpy.testing import assert_array_almost_equal
-from torch.jit import ScriptModule
-from typing_extensions import assert_never
 
+from bioimageio.core.backends.pytorch_backend import load_torch_model
 from bioimageio.core.digest_spec import get_member_id, get_test_inputs
-from bioimageio.core.model_adapters._pytorch_model_adapter import PytorchModelAdapter
-from bioimageio.spec._internal.io_utils import download
-from bioimageio.spec._internal.version_type import Version
 from bioimageio.spec.model import v0_4, v0_5
-from bioimageio.spec.model.v0_5 import WeightsEntryDescrBase
 
 
 def convert(
     model_descr: Union[v0_4.ModelDescr, v0_5.ModelDescr],
     *,
-    # output_path: Path,
+    output_path: Path,
     use_tracing: bool = True,
     test_decimal: int = 4,
     verbose: bool = False,
@@ -81,7 +72,7 @@ def convert(
         ]
 
         if use_tracing:
-            torch.onnx.export(
+            _ = torch.onnx.export(
                 model,
                 (tuple(input_tensors) if len(input_tensors) > 1 else input_tensors[0]),
                 str(output_path),

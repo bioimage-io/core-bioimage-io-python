@@ -1,16 +1,13 @@
-import zipfile
-from io import TextIOWrapper
 from pathlib import Path
-from shutil import copyfileobj
 from typing import List, Literal, Optional, Sequence, Union
 
 import numpy as np
 import tensorflow as tf
 from loguru import logger
 
-from bioimageio.spec.common import FileSource, ZipPath
+from bioimageio.core.io import ensure_unzipped
+from bioimageio.spec.common import FileSource
 from bioimageio.spec.model import v0_4, v0_5
-from bioimageio.spec.utils import download
 
 from ..digest_spec import get_axes_infos
 from ..tensor import Tensor
@@ -65,41 +62,22 @@ class TensorflowModelAdapterBase(ModelAdapter):
                 f"Device management is not implemented for tensorflow yet, ignoring the devices {devices}"
             )
 
-        weight_file = self.require_unzipped(weights.source)
+        # TODO: check how to load tf weights without unzipping
+        weight_file = ensure_unzipped(
+            weights.source, Path("bioimageio_unzipped_tf_weights")
+        )
         self._network = self._get_network(weight_file)
         self._internal_output_axes = [
             tuple(a.id for a in get_axes_infos(out))
             for out in model_description.outputs
         ]
 
-    # TODO: check how to load tf weights without unzipping
-    def require_unzipped(self, weight_file: FileSource):
-        local_weights_file = download(weight_file).path
-        if isinstance(local_weights_file, ZipPath):
-            # weights file is in a bioimageio zip package
-            out_path = (
-                Path("bioimageio_unzipped_tf_weights") / local_weights_file.filename
-            )
-            with local_weights_file.open("rb") as src, out_path.open("wb") as dst:
-                assert not isinstance(src, TextIOWrapper)
-                copyfileobj(src, dst)
-
-            local_weights_file = out_path
-
-        if zipfile.is_zipfile(local_weights_file):
-            # weights file itself is a zipfile
-            out_path = local_weights_file.with_suffix(".unzipped")
-            with zipfile.ZipFile(local_weights_file, "r") as f:
-                f.extractall(out_path)
-
-            return out_path
-        else:
-            return local_weights_file
-
     def _get_network(  # pyright: ignore[reportUnknownParameterType]
         self, weight_file: FileSource
     ):
-        weight_file = self.require_unzipped(weight_file)
+        weight_file = ensure_unzipped(
+            weight_file, Path("bioimageio_unzipped_tf_weights")
+        )
         assert tf is not None
         if self.use_keras_api:
             try:

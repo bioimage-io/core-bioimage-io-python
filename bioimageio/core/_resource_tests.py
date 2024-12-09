@@ -428,7 +428,7 @@ def _test_model_inference(
     rtol: float,
 ) -> None:
     test_name = f"Reproduce test outputs from test inputs ({weight_format})"
-    logger.info("starting '{}'", test_name)
+    logger.debug("starting '{}'", test_name)
     error: Optional[str] = None
     tb: List[str] = []
 
@@ -516,11 +516,13 @@ def _test_model_inference_parametrized(
         # no batch axis
         batch_sizes = {1}
 
-    test_cases: Set[Tuple[v0_5.ParameterizedSize_N, BatchSize]] = {
-        (n, b) for n, b in product(sorted(ns), sorted(batch_sizes))
+    test_cases: Set[Tuple[BatchSize, v0_5.ParameterizedSize_N]] = {
+        (b, n) for b, n in product(sorted(batch_sizes), sorted(ns))
     }
     logger.info(
-        "Testing inference with {} different input tensor sizes", len(test_cases)
+        "Testing inference with {} different inputs (B, N): {}",
+        len(test_cases),
+        test_cases,
     )
 
     def generate_test_cases():
@@ -534,7 +536,7 @@ def _test_model_inference_parametrized(
                 if isinstance(a.size, v0_5.ParameterizedSize)
             }
 
-        for n, batch_size in sorted(test_cases):
+        for batch_size, n in sorted(test_cases):
             input_target_sizes, expected_output_sizes = model.get_axis_sizes(
                 get_ns(n), batch_size=batch_size
             )

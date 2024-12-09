@@ -1,3 +1,5 @@
+"""utils to test bioimageio.core"""
+
 import os
 from functools import wraps
 from typing import Any, Protocol, Sequence, Type

@@ -34,12 +34,12 @@ class PytorchModelAdapter(ModelAdapter):
     ):
         super().__init__()
         self.output_dims = [tuple(a.id for a in get_axes_infos(out)) for out in outputs]
-        devices = self.get_devices(devices)
-        self._network = self.get_network(weights, load_state=True, devices=devices)
+        devices = get_devices(devices)
+        self._model = load_torch_model(weights, load_state=True, devices=devices)
         if mode == "eval":
-            self._network = self._network.eval()
+            self._model = self._model.eval()
         elif mode == "train":
-            self._network = self._network.train()
+            self._model = self._model.train()
         else:
             assert_never(mode)
 
@@ -63,7 +63,7 @@ class PytorchModelAdapter(ModelAdapter):
                 (None if t is None else t.to(self._primary_device)) for t in tensors
             ]
             result: Union[Tuple[Any, ...], List[Any], Any]
-            result = self._network(*tensors)
+            result = self._model(*tensors)
             if not isinstance(result, (tuple, list)):
                 result = [result]
 
@@ -86,91 +86,84 @@ class PytorchModelAdapter(ModelAdapter):
         ]
 
     def unload(self) -> None:
-        del self._network
+        del self._model
         _ = gc.collect()  # deallocate memory
         assert torch is not None
         torch.cuda.empty_cache()  # release reserved memory
 
-    @classmethod
-    def get_network(
-        cls,
-        weight_spec: Union[
-            v0_4.PytorchStateDictWeightsDescr, v0_5.PytorchStateDictWeightsDescr
-        ],
-        *,
-        load_state: bool = False,
-        devices: Optional[Sequence[Union[str, torch.device]]] = None,
-    ) -> nn.Module:
-        arch = import_callable(
-            weight_spec.architecture,
-            sha256=(
-                weight_spec.architecture_sha256
-                if isinstance(weight_spec, v0_4.PytorchStateDictWeightsDescr)
-                else weight_spec.sha256
-            ),
-        )
-        model_kwargs = (
-            weight_spec.kwargs
+
+def load_torch_model(
+    weight_spec: Union[
+        v0_4.PytorchStateDictWeightsDescr, v0_5.PytorchStateDictWeightsDescr
+    ],
+    *,
+    load_state: bool = False,
+    devices: Optional[Sequence[Union[str, torch.device]]] = None,
+) -> nn.Module:
+    arch = import_callable(
+        weight_spec.architecture,
+        sha256=(
+            weight_spec.architecture_sha256
             if isinstance(weight_spec, v0_4.PytorchStateDictWeightsDescr)
-            else weight_spec.architecture.kwargs
+            else weight_spec.sha256
+        ),
+    )
+    model_kwargs = (
+        weight_spec.kwargs
+        if isinstance(weight_spec, v0_4.PytorchStateDictWeightsDescr)
+        else weight_spec.architecture.kwargs
+    )
+    network = arch(**model_kwargs)
+    if not isinstance(network, nn.Module):
+        raise ValueError(
+            f"calling {weight_spec.architecture.callable} did not return a torch.nn.Module"
         )
-        network = arch(**model_kwargs)
-        if not isinstance(network, nn.Module):
-            raise ValueError(
-                f"calling {weight_spec.architecture.callable} did not return a torch.nn.Module"
+
+    if load_state or devices:
+        use_devices = get_devices(devices)
+        network = network.to(use_devices[0])
+        if load_state:
+            network = load_torch_state_dict(
+                network,
+                path=download(weight_spec).path,
+                devices=use_devices,
             )
+    return network
 
-        if load_state or devices:
-            use_devices = cls.get_devices(devices)
-            network = network.to(use_devices[0])
-            if load_state:
-                network = cls.load_state(
-                    network,
-                    path=download(weight_spec).path,
-                    devices=use_devices,
-                )
-        return network
 
-    @staticmethod
-    def load_state(
-        network: nn.Module,
-        path: Union[Path, ZipPath],
-        devices: Sequence[torch.device],
-    ) -> nn.Module:
-        network = network.to(devices[0])
-        with path.open("rb") as f:
-            assert not isinstance(f, TextIOWrapper)
-            state = torch.load(f, map_location=devices[0])
+def load_torch_state_dict(
+    model: nn.Module,
+    path: Union[Path, ZipPath],
+    devices: Sequence[torch.device],
+) -> nn.Module:
+    model = model.to(devices[0])
+    with path.open("rb") as f:
+        assert not isinstance(f, TextIOWrapper)
+        state = torch.load(f, map_location=devices[0])
 
-        incompatible = network.load_state_dict(state)
-        if incompatible.missing_keys:
-            logger.warning("Missing state dict keys: {}", incompatible.missing_keys)
+    incompatible = model.load_state_dict(state)
+    if incompatible.missing_keys:
+        logger.warning("Missing state dict keys: {}", incompatible.missing_keys)
 
-        if incompatible.unexpected_keys:
-            logger.warning(
-                "Unexpected state dict keys: {}", incompatible.unexpected_keys
-            )
-        return network
+    if incompatible.unexpected_keys:
+        logger.warning("Unexpected state dict keys: {}", incompatible.unexpected_keys)
+    return model
 
-    @staticmethod
-    def get_devices(
-        devices: Optional[Sequence[Union[torch.device, str]]] = None,
-    ) -> List[torch.device]:
-        if not devices:
-            torch_devices = [
-                (
-                    torch.device("cuda")
-                    if torch.cuda.is_available()
-                    else torch.device("cpu")
-                )
-            ]
-        else:
-            torch_devices = [torch.device(d) for d in devices]
 
-        if len(torch_devices) > 1:
-            warnings.warn(
-                f"Multiple devices for single pytorch model not yet implemented; ignoring {torch_devices[1:]}"
-            )
-            torch_devices = torch_devices[:1]
+def get_devices(
+    devices: Optional[Sequence[Union[torch.device, str]]] = None,
+) -> List[torch.device]:
+    if not devices:
+        torch_devices = [
+            (torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu"))
+        ]
+    else:
+        torch_devices = [torch.device(d) for d in devices]
 
-        return torch_devices
+    if len(torch_devices) > 1:
+        warnings.warn(
+            f"Multiple devices for single pytorch model not yet implemented; ignoring {torch_devices[1:]}"
+        )
+        torch_devices = torch_devices[:1]
+
+    return torch_devices

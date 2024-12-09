@@ -1,6 +1,9 @@
 import collections.abc
 import warnings
+import zipfile
+from io import TextIOWrapper
 from pathlib import Path, PurePosixPath
+from shutil import copyfileobj
 from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
 import h5py
@@ -10,7 +13,8 @@ from loguru import logger
 from numpy.typing import NDArray
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 
-from bioimageio.spec.utils import load_array, save_array
+from bioimageio.spec.common import FileSource, ZipPath
+from bioimageio.spec.utils import download, load_array, save_array
 
 from .axis import AxisLike
 from .common import PerMember
@@ -176,3 +180,27 @@ def save_dataset_stat(stat: Mapping[DatasetMeasure, MeasureValue], path: Path):
 def load_dataset_stat(path: Path):
     seq = _stat_adapter.validate_json(path.read_bytes())
     return {e.measure: e.value for e in seq}
+
+
+def ensure_unzipped(source: Union[FileSource, ZipPath], folder: Path):
+    """unzip a (downloaded) **source** to a file in **folder** if source is a zip archive.
+    Always returns the path to the unzipped source (maybe source itself)"""
+    local_weights_file = download(source).path
+    if isinstance(local_weights_file, ZipPath):
+        # source is inside a zip archive
+        out_path = folder / local_weights_file.filename
+        with local_weights_file.open("rb") as src, out_path.open("wb") as dst:
+            assert not isinstance(src, TextIOWrapper)
+            copyfileobj(src, dst)
+
+        local_weights_file = out_path
+
+    if zipfile.is_zipfile(local_weights_file):
+        # source itself is a zipfile
+        out_path = folder / local_weights_file.with_suffix(".unzipped").name
+        with zipfile.ZipFile(local_weights_file, "r") as f:
+            f.extractall(out_path)
+
+        return out_path
+    else:
+        return local_weights_file
