@@ -5,10 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from bioimageio.core.weight_converters import (
-    Pytorch2Onnx,
-    Tensorflow2Bundled,
-)
+from bioimageio.core import test_model
 from bioimageio.spec import load_description
 from bioimageio.spec.model import v0_5
 
@@ -40,13 +37,17 @@ def test_onnx_converter(convert_to_onnx, tmp_path):
     assert isinstance(ret_val, v0_5.OnnxWeightsDescr)
     assert ret_val.opset_version == opset_version
     assert ret_val.source == out_path
+    bio_model.weights.onnx = ret_val
+    summary = test_model(bio_model, weights_format="onnx")
+    assert summary.status == "passed", summary.format()
 
 
 def test_tensorflow_converter(any_keras_model: Path, tmp_path: Path):
+    from bioimageio.core.weight_converters.keras_to_tensorflow import convert
+
     model = load_description(any_keras_model)
     out_path = tmp_path / "weights.h5"
-    util = Tensorflow2Bundled()
-    ret_val = util.convert(model, out_path)
+    ret_val = convert(model, output_path=out_path)
     assert out_path.exists()
     assert isinstance(ret_val, v0_5.TensorflowSavedModelBundleWeightsDescr)
     assert ret_val.source == out_path
