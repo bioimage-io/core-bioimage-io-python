@@ -163,3 +163,6 @@ class ModelAdapter(ABC):
         Unload model from any devices, freeing their memory.
         The moder adapter should be considered unusable afterwards.
         """
+
+
+create_model_adapter = ModelAdapter.create
