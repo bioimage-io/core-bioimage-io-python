@@ -56,6 +56,7 @@ _ = setup(
             "jupyter",
             "jupyter-black",
             "matplotlib",
+            "onnx",
             "onnxruntime",
             "packaging>=17.0",
             "pre-commit",

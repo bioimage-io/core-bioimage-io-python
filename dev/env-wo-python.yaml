@@ -17,6 +17,7 @@ dependencies:
   - loguru
   - matplotlib
   - numpy
+  - onnx
   - onnxruntime
   - packaging>=17.0
   - pdoc
