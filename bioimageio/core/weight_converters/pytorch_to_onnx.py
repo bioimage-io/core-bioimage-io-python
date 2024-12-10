@@ -7,6 +7,7 @@ from numpy.testing import assert_array_almost_equal
 
 from bioimageio.core.backends.pytorch_backend import load_torch_model
 from bioimageio.core.digest_spec import get_member_id, get_test_inputs
+from bioimageio.core.proc_setup import get_pre_and_postprocessing
 from bioimageio.spec.model import v0_4, v0_5
 
 
@@ -61,6 +62,10 @@ def convert(
         input_data = [
             sample.members[get_member_id(ipt)].data.data for ipt in model_descr.inputs
         ]
+        procs = get_pre_and_postprocessing(
+            model_descr, dataset_for_initial_statistics=[sample]
+        )
+        procs.pre(sample)
         input_tensors = [torch.from_numpy(ipt) for ipt in input_data]
         model = load_torch_model(state_dict_weights_descr)
 
@@ -74,7 +79,7 @@ def convert(
         if use_tracing:
             _ = torch.onnx.export(
                 model,
-                (tuple(input_tensors) if len(input_tensors) > 1 else input_tensors[0]),
+                tuple(input_tensors),
                 str(output_path),
                 verbose=verbose,
                 opset_version=opset_version,
