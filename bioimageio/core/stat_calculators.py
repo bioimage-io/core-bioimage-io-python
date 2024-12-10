@@ -137,7 +137,7 @@ class MeanVarStdCalculator:
         else:
             n = int(np.prod([tensor.sizes[d] for d in self._axes]))
 
-        var = xr.dot(c, c, dims=self._axes) / n
+        var = xr.dot(c, c, dim=self._axes) / n
         assert isinstance(var, xr.DataArray)
         std = np.sqrt(var)
         assert isinstance(std, xr.DataArray)
