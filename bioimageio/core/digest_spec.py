@@ -339,7 +339,7 @@ def create_sample_for_model(
     sample_id: SampleId = None,
     inputs: Optional[
         PerMember[Union[Tensor, xr.DataArray, NDArray[Any], Path]]
-    ] = None,  # TODO: make non-optional
+    ] = None,  # TODO: make non-optional  # TODO: accept tuple of tensor sources
     **kwargs: NDArray[Any],  # TODO: deprecate in favor of `inputs`
 ) -> Sample:
     """Create a sample from a single set of input(s) for a specific bioimage.io model
