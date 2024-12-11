@@ -27,13 +27,12 @@ def test_pytorch_to_torchscript(any_torch_model, tmp_path):
 def test_pytorch_to_onnx(convert_to_onnx, tmp_path):
     from bioimageio.core.weight_converters.pytorch_to_onnx import convert
 
-    model_descr = load_description(convert_to_onnx)
+    model_descr = load_description(convert_to_onnx, format_version="latest")
     out_path = tmp_path / "weights.onnx"
     opset_version = 15
     ret_val = convert(
         model_descr=model_descr,
         output_path=out_path,
-        test_decimal=3,
         opset_version=opset_version,
     )
     assert os.path.exists(out_path)

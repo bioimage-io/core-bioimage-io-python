@@ -3,7 +3,7 @@ from typing import Any, List, Sequence, Union, cast
 
 import numpy as np
 import torch
-from numpy.testing import assert_array_almost_equal
+from numpy.testing import assert_allclose
 
 from bioimageio.core.backends.pytorch_backend import load_torch_model
 from bioimageio.core.digest_spec import get_member_id, get_test_inputs
@@ -16,7 +16,8 @@ def convert(
     *,
     output_path: Path,
     use_tracing: bool = True,
-    test_decimal: int = 4,
+    relative_tolerance: float = 1e-07,
+    absolute_tolerance: float = 0,
     verbose: bool = False,
     opset_version: int = 15,
 ) -> v0_5.OnnxWeightsDescr:
@@ -31,10 +32,6 @@ def convert(
             The file path where the ONNX model will be saved.
         use_tracing (bool, optional):
             Whether to use tracing or scripting to export the ONNX format. Defaults to True.
-        test_decimal (int, optional):
-            The decimal precision for comparing the results between the original and converted models.
-            This is used in the `assert_array_almost_equal` function to check if the outputs match.
-            Defaults to 4.
         verbose (bool, optional):
             If True, will print out detailed information during the ONNX export process. Defaults to False.
         opset_version (int, optional):
@@ -57,29 +54,29 @@ def convert(
             "The provided model does not have weights in the pytorch state dict format"
         )
 
+    sample = get_test_inputs(model_descr)
+    procs = get_pre_and_postprocessing(
+        model_descr, dataset_for_initial_statistics=[sample]
+    )
+    procs.pre(sample)
+    inputs_numpy = [
+        sample.members[get_member_id(ipt)].data.data for ipt in model_descr.inputs
+    ]
+    inputs_torch = [torch.from_numpy(ipt) for ipt in inputs_numpy]
+    model = load_torch_model(state_dict_weights_descr)
     with torch.no_grad():
-        sample = get_test_inputs(model_descr)
-        input_data = [
-            sample.members[get_member_id(ipt)].data.data for ipt in model_descr.inputs
-        ]
-        procs = get_pre_and_postprocessing(
-            model_descr, dataset_for_initial_statistics=[sample]
-        )
-        procs.pre(sample)
-        input_tensors = [torch.from_numpy(ipt) for ipt in input_data]
-        model = load_torch_model(state_dict_weights_descr)
+        outputs_original_torch = model(*inputs_torch)
+        if isinstance(outputs_original_torch, torch.Tensor):
+            outputs_original_torch = [outputs_original_torch]
 
-        expected_tensors = model(*input_tensors)
-        if isinstance(expected_tensors, torch.Tensor):
-            expected_tensors = [expected_tensors]
-        expected_outputs: List[np.ndarray[Any, Any]] = [
-            out.numpy() for out in expected_tensors
+        outputs_original: List[np.ndarray[Any, Any]] = [
+            out.numpy() for out in outputs_original_torch
         ]
 
         if use_tracing:
             _ = torch.onnx.export(
                 model,
-                tuple(input_tensors),
+                tuple(inputs_torch),
                 str(output_path),
                 verbose=verbose,
                 opset_version=opset_version,
@@ -98,22 +95,24 @@ def convert(
     sess = rt.InferenceSession(str(output_path))
     onnx_input_node_args = cast(
         List[Any], sess.get_inputs()
-    )  # fixme: remove cast, try using rt.NodeArg instead of Any
-    onnx_inputs = {
+    )  # FIXME: remove cast, try using rt.NodeArg instead of Any
+    inputs_onnx = {
         input_name.name: inp
-        for input_name, inp in zip(onnx_input_node_args, input_data)
+        for input_name, inp in zip(onnx_input_node_args, inputs_numpy)
     }
-    outputs = cast(
-        Sequence[np.ndarray[Any, Any]], sess.run(None, onnx_inputs)
+    outputs_onnx = cast(
+        Sequence[np.ndarray[Any, Any]], sess.run(None, inputs_onnx)
     )  # FIXME: remove cast
 
     try:
-        for exp, out in zip(expected_outputs, outputs):
-            assert_array_almost_equal(exp, out, decimal=test_decimal)
+        for out_original, out_onnx in zip(outputs_original, outputs_onnx):
+            assert_allclose(
+                out_original, out_onnx, rtol=relative_tolerance, atol=absolute_tolerance
+            )
     except AssertionError as e:
-        raise ValueError(
-            f"Results before and after weights conversion do not agree:\n {str(e)}"
-        )
+        raise AssertionError(
+            "Inference results of using original and converted weights do not match"
+        ) from e
 
     return v0_5.OnnxWeightsDescr(
         source=output_path, parent="pytorch_state_dict", opset_version=opset_version
