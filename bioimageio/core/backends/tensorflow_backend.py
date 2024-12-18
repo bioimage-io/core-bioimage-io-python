@@ -1,16 +1,15 @@
 from pathlib import Path
-from typing import List, Literal, Optional, Sequence, Union
+from typing import Any, List, Literal, Optional, Sequence, Union
 
 import numpy as np
 import tensorflow as tf
 from loguru import logger
+from numpy.typing import NDArray
 
 from bioimageio.core.io import ensure_unzipped
 from bioimageio.spec.common import FileSource
-from bioimageio.spec.model import v0_4, v0_5
+from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 
-from ..digest_spec import get_axes_infos
-from ..tensor import Tensor
 from ._model_adapter import ModelAdapter
 
 
@@ -29,8 +28,7 @@ class TensorflowModelAdapterBase(ModelAdapter):
         ],
         model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
     ):
-        super().__init__()
-        self.model_description = model_description
+        super().__init__(model_description=model_description)
         tf_version = v0_5.Version(tf.__version__)
         model_tf_version = weights.tensorflow_version
         if model_tf_version is None:
@@ -66,18 +64,37 @@ class TensorflowModelAdapterBase(ModelAdapter):
         weight_file = ensure_unzipped(
             weights.source, Path("bioimageio_unzipped_tf_weights")
         )
-        self._network = self._get_network(weight_file)
-        self._internal_output_axes = [
-            tuple(a.id for a in get_axes_infos(out))
-            for out in model_description.outputs
-        ]
+
+    def unload(self) -> None:
+        logger.warning(
+            "Device management is not implemented for keras yet, cannot unload model"
+        )
+
+
+class TensorflowModelAdapter(ModelAdapter):
+    weight_format = "tensorflow_saved_model_bundle"
+
+    def __init__(
+        self,
+        *,
+        model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
+        devices: Optional[Sequence[str]] = None,
+    ):
+        super().__init__(model_description=model_description)
+        if devices is not None:
+            logger.warning(
+                f"Device management is not implemented for tensorflow yet, ignoring the devices {devices}"
+            )
+
+        weight_file = ensure_unzipped(
+            weights.source, Path("bioimageio_unzipped_tf_weights")
+        )
+        self._network = str(weight_file)
 
     def _get_network(  # pyright: ignore[reportUnknownParameterType]
         self, weight_file: FileSource
     ):
-        weight_file = ensure_unzipped(
-            weight_file, Path("bioimageio_unzipped_tf_weights")
-        )
+
         assert tf is not None
         if self.use_keras_api:
             try:
@@ -97,22 +114,14 @@ class TensorflowModelAdapterBase(ModelAdapter):
                     raise e
         else:
             # NOTE in tf1 the model needs to be loaded inside of the session, so we cannot preload the model
-            return str(weight_file)
+            return
 
     # TODO currently we relaod the model every time. it would be better to keep the graph and session
     # alive in between of forward passes (but then the sessions need to be properly opened / closed)
-    def _forward_tf(  # pyright: ignore[reportUnknownParameterType]
-        self, *input_tensors: Optional[Tensor]
+    def _forward_impl(  # pyright: ignore[reportUnknownParameterType]
+        self, input_arrays: Sequence[Optional[NDArray[Any]]]
     ):
         assert tf is not None
-        input_keys = [
-            ipt.name if isinstance(ipt, v0_4.InputTensorDescr) else ipt.id
-            for ipt in self.model_description.inputs
-        ]
-        output_keys = [
-            out.name if isinstance(out, v0_4.OutputTensorDescr) else out.id
-            for out in self.model_description.outputs
-        ]
         # TODO read from spec
         tag = (  # pyright: ignore[reportUnknownVariableType]
             tf.saved_model.tag_constants.SERVING  # pyright: ignore[reportAttributeAccessIssue]
@@ -136,18 +145,19 @@ class TensorflowModelAdapterBase(ModelAdapter):
 
                 # get the tensors into the graph
                 in_names = [  # pyright: ignore[reportUnknownVariableType]
-                    signature[signature_key].inputs[key].name for key in input_keys
+                    signature[signature_key].inputs[key].name for key in self._input_ids
                 ]
                 out_names = [  # pyright: ignore[reportUnknownVariableType]
-                    signature[signature_key].outputs[key].name for key in output_keys
+                    signature[signature_key].outputs[key].name
+                    for key in self._output_ids
                 ]
-                in_tensors = [
+                in_tf_tensors = [
                     graph.get_tensor_by_name(
                         name  # pyright: ignore[reportUnknownArgumentType]
                     )
                     for name in in_names  # pyright: ignore[reportUnknownVariableType]
                 ]
-                out_tensors = [
+                out_tf_tensors = [
                     graph.get_tensor_by_name(
                         name  # pyright: ignore[reportUnknownArgumentType]
                     )
@@ -159,15 +169,10 @@ class TensorflowModelAdapterBase(ModelAdapter):
                     dict(
                         zip(
                             out_names,  # pyright: ignore[reportUnknownArgumentType]
-                            out_tensors,
+                            out_tf_tensors,
                         )
                     ),
-                    dict(
-                        zip(
-                            in_tensors,
-                            [None if t is None else t.data for t in input_tensors],
-                        )
-                    ),
+                    dict(zip(in_tf_tensors, input_arrays)),
                 )
                 # from dict to list of tensors
                 res = [  # pyright: ignore[reportUnknownVariableType]
@@ -177,14 +182,29 @@ class TensorflowModelAdapterBase(ModelAdapter):
 
         return res  # pyright: ignore[reportUnknownVariableType]
 
-    def _forward_keras(  # pyright: ignore[reportUnknownParameterType]
-        self, *input_tensors: Optional[Tensor]
+
+class KerasModelAdapter(ModelAdapter):
+    def __init__(
+        self,
+        *,
+        model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
+        devices: Optional[Sequence[str]] = None,
     ):
-        assert self.use_keras_api
-        assert not isinstance(self._network, str)
+        if model_description.weights.tensorflow_saved_model_bundle is None:
+            raise ValueError("No `tensorflow_saved_model_bundle` weights found")
+
+        super().__init__(model_description=model_description)
+        if devices is not None:
+            logger.warning(
+                f"Device management is not implemented for tensorflow yet, ignoring the devices {devices}"
+            )
+
+    def _forward_impl(  # pyright: ignore[reportUnknownParameterType]
+        self, input_arrays: Sequence[Optional[NDArray[Any]]]
+    ):
         assert tf is not None
         tf_tensor = [
-            None if ipt is None else tf.convert_to_tensor(ipt) for ipt in input_tensors
+            None if ipt is None else tf.convert_to_tensor(ipt) for ipt in input_arrays
         ]
 
         result = self._network(*tf_tensor)  # pyright: ignore[reportUnknownVariableType]
@@ -201,67 +221,42 @@ class TensorflowModelAdapterBase(ModelAdapter):
             for r in result  # pyright: ignore[reportUnknownVariableType]
         ]
 
-    def forward(self, *input_tensors: Optional[Tensor]) -> List[Optional[Tensor]]:
-        if self.use_keras_api:
-            result = self._forward_keras(  # pyright: ignore[reportUnknownVariableType]
-                *input_tensors
-            )
-        else:
-            result = self._forward_tf(  # pyright: ignore[reportUnknownVariableType]
-                *input_tensors
-            )
 
-        return [
-            (
-                None
-                if r is None
-                else Tensor(r, dims=axes)  # pyright: ignore[reportUnknownArgumentType]
-            )
-            for r, axes in zip(  # pyright: ignore[reportUnknownVariableType]
-                result,  # pyright: ignore[reportUnknownArgumentType]
-                self._internal_output_axes,
-            )
-        ]
+def create_tf_model_adapter(
+    model_description: AnyModelDescr, devices: Optional[Sequence[str]]
+):
+    tf_version = v0_5.Version(tf.__version__)
+    weights = model_description.weights.tensorflow_saved_model_bundle
+    if weights is None:
+        raise ValueError("No `tensorflow_saved_model_bundle` weights found")
 
-    def unload(self) -> None:
+    model_tf_version = weights.tensorflow_version
+    if model_tf_version is None:
         logger.warning(
-            "Device management is not implemented for keras yet, cannot unload model"
+            "The model does not specify the tensorflow version."
+            + f"Cannot check if it is compatible with intalled tensorflow {tf_version}."
         )
-
-
-class TensorflowModelAdapter(TensorflowModelAdapterBase):
-    weight_format = "tensorflow_saved_model_bundle"
-
-    def __init__(
-        self,
-        *,
-        model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
-        devices: Optional[Sequence[str]] = None,
+    elif model_tf_version > tf_version:
+        logger.warning(
+            f"The model specifies a newer tensorflow version than installed: {model_tf_version} > {tf_version}."
+        )
+    elif (model_tf_version.major, model_tf_version.minor) != (
+        tf_version.major,
+        tf_version.minor,
     ):
-        if model_description.weights.tensorflow_saved_model_bundle is None:
-            raise ValueError("missing tensorflow_saved_model_bundle weights")
-
-        super().__init__(
-            devices=devices,
-            weights=model_description.weights.tensorflow_saved_model_bundle,
-            model_description=model_description,
+        logger.warning(
+            "The tensorflow version specified by the model does not match the installed: "
+            + f"{model_tf_version} != {tf_version}."
         )
 
-
-class KerasModelAdapter(TensorflowModelAdapterBase):
-    weight_format = "keras_hdf5"
-
-    def __init__(
-        self,
-        *,
-        model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
-        devices: Optional[Sequence[str]] = None,
-    ):
-        if model_description.weights.keras_hdf5 is None:
-            raise ValueError("missing keras_hdf5 weights")
-
-        super().__init__(
-            model_description=model_description,
-            devices=devices,
-            weights=model_description.weights.keras_hdf5,
+    if tf_version.major <= 1:
+        return TensorflowModelAdapter(
+            model_description=model_description, devices=devices
         )
+    else:
+        return KerasModelAdapter(model_description=model_description, devices=devices)
+
+    # TODO: check how to load tf weights without unzipping
+    weight_file = ensure_unzipped(
+        weights.source, Path("bioimageio_unzipped_tf_weights")
+    )

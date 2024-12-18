@@ -19,11 +19,8 @@ class ONNXModelAdapter(ModelAdapter):
         model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
         devices: Optional[Sequence[str]] = None,
     ):
-        super().__init__()
-        self._internal_output_axes = [
-            tuple(a.id for a in get_axes_infos(out))
-            for out in model_description.outputs
-        ]
+        super().__init__(model_description=model_description)
+
         if model_description.weights.onnx is None:
             raise ValueError("No ONNX weights specified for {model_description.name}")
 

@@ -3,19 +3,20 @@ import warnings
 from contextlib import nullcontext
 from io import TextIOWrapper
 from pathlib import Path
-from typing import Any, List, Literal, Optional, Sequence, Tuple, Union
+from typing import Any, List, Literal, Optional, Sequence, Union
 
 import torch
 from loguru import logger
+from numpy.typing import NDArray
 from torch import nn
 from typing_extensions import assert_never
 
+from bioimageio.spec._internal.type_guards import is_list, is_ndarray, is_tuple
 from bioimageio.spec.common import ZipPath
-from bioimageio.spec.model import v0_4, v0_5
+from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 from bioimageio.spec.utils import download
 
-from ..digest_spec import get_axes_infos, import_callable
-from ..tensor import Tensor
+from ..digest_spec import import_callable
 from ._model_adapter import ModelAdapter
 
 
@@ -23,17 +24,15 @@ class PytorchModelAdapter(ModelAdapter):
     def __init__(
         self,
         *,
-        outputs: Union[
-            Sequence[v0_4.OutputTensorDescr], Sequence[v0_5.OutputTensorDescr]
-        ],
-        weights: Union[
-            v0_4.PytorchStateDictWeightsDescr, v0_5.PytorchStateDictWeightsDescr
-        ],
+        model_description: AnyModelDescr,
         devices: Optional[Sequence[Union[str, torch.device]]] = None,
         mode: Literal["eval", "train"] = "eval",
     ):
-        super().__init__()
-        self.output_dims = [tuple(a.id for a in get_axes_infos(out)) for out in outputs]
+        super().__init__(model_description=model_description)
+        weights = model_description.weights.pytorch_state_dict
+        if weights is None:
+            raise ValueError("No `pytorch_state_dict` weights found")
+
         devices = get_devices(devices)
         self._model = load_torch_model(weights, load_state=True, devices=devices)
         if mode == "eval":
@@ -46,7 +45,14 @@ class PytorchModelAdapter(ModelAdapter):
         self._mode: Literal["eval", "train"] = mode
         self._primary_device = devices[0]
 
-    def forward(self, *input_tensors: Optional[Tensor]) -> List[Optional[Tensor]]:
+    def _forward_impl(
+        self, input_arrays: Sequence[NDArray[Any] | None]
+    ) -> List[Optional[NDArray[Any]]]:
+        tensors = [
+            None if a is None else torch.from_numpy(a).to(self._primary_device)
+            for a in input_arrays
+        ]
+
         if self._mode == "eval":
             ctxt = torch.no_grad
         elif self._mode == "train":
@@ -55,35 +61,26 @@ class PytorchModelAdapter(ModelAdapter):
             assert_never(self._mode)
 
         with ctxt():
-            tensors = [
-                None if ipt is None else torch.from_numpy(ipt.data.data)
-                for ipt in input_tensors
-            ]
-            tensors = [
-                (None if t is None else t.to(self._primary_device)) for t in tensors
-            ]
-            result: Union[Tuple[Any, ...], List[Any], Any]
-            result = self._model(*tensors)
-            if not isinstance(result, (tuple, list)):
-                result = [result]
+            model_out = self._model(*tensors)
 
-            result = [
-                (
-                    None
-                    if r is None
-                    else r.detach().cpu().numpy() if isinstance(r, torch.Tensor) else r
-                )
-                for r in result  # pyright: ignore[reportUnknownVariableType]
-            ]
-            if len(result) > len(self.output_dims):
-                raise ValueError(
-                    f"Expected at most {len(self.output_dims)} outputs, but got {len(result)}"
-                )
+        if is_tuple(model_out) or is_list(model_out):
+            model_out_seq = model_out
+        else:
+            model_out_seq = model_out = [model_out]
 
-        return [
-            None if r is None else Tensor(r, dims=out)
-            for r, out in zip(result, self.output_dims)
-        ]
+        result: List[Optional[NDArray[Any]]] = []
+        for i, r in enumerate(model_out_seq):
+            if r is None:
+                result.append(None)
+            elif isinstance(r, torch.Tensor):
+                r_np: NDArray[Any] = r.detach().cpu().numpy()
+                result.append(r_np)
+            elif is_ndarray(r):
+                result.append(r)
+            else:
+                raise TypeError(f"Model output[{i}] has unexpected type {type(r)}.")
+
+        return result
 
     def unload(self) -> None:
         del self._model

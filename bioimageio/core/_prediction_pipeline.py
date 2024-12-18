@@ -121,19 +121,9 @@ class PredictionPipeline:
             self.apply_preprocessing(sample_block)
 
         output_meta = sample_block.get_transformed_meta(self._block_transform)
-        output = output_meta.with_data(
-            {
-                tid: out
-                for tid, out in zip(
-                    self._output_ids,
-                    self._adapter.forward(
-                        *(sample_block.members.get(t) for t in self._input_ids)
-                    ),
-                )
-                if out is not None
-            },
-            stat=sample_block.stat,
-        )
+        local_output = self._adapter.forward(sample_block)
+
+        output = output_meta.with_data(local_output.members, stat=local_output.stat)
         if not skip_postprocessing:
             self.apply_postprocessing(output)
 
@@ -157,9 +147,7 @@ class PredictionPipeline:
                 out_id: out
                 for out_id, out in zip(
                     self._output_ids,
-                    self._adapter.forward(
-                        *(sample.members.get(in_id) for in_id in self._input_ids)
-                    ),
+                    self._adapter.forward(sample),
                 )
                 if out is not None
             },

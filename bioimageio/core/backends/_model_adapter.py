@@ -1,16 +1,36 @@
 import warnings
 from abc import ABC, abstractmethod
-from typing import List, Optional, Sequence, Tuple, Union, final
+from typing import (
+    Any,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+    assert_never,
+    final,
+)
 
-from bioimageio.spec.model import v0_4, v0_5
+from numpy.typing import NDArray
+
+from bioimageio.core.digest_spec import get_axes_infos, get_member_ids
+from bioimageio.core.sample import Sample
+from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 
 from ..tensor import Tensor
 
-WeightsFormat = Union[v0_4.WeightsFormat, v0_5.WeightsFormat]
+SupportedWeightsFormat = Literal[
+    "keras_hdf5",
+    "onnx",
+    "pytorch_state_dict",
+    "tensorflow_saved_model_bundle",
+    "torchscript",
+]
 
 # Known weight formats in order of priority
 # First match wins
-DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER: Tuple[WeightsFormat, ...] = (
+DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER: Tuple[SupportedWeightsFormat, ...] = (
     "pytorch_state_dict",
     "tensorflow_saved_model_bundle",
     "torchscript",
@@ -39,6 +59,22 @@ class ModelAdapter(ABC):
     ```
     """
 
+    def __init__(self, model_description: AnyModelDescr):
+        super().__init__()
+        self._model_descr = model_description
+        self._input_ids = get_member_ids(model_description.inputs)
+        self._output_ids = get_member_ids(model_description.outputs)
+        self._input_axes = [
+            tuple(a.id for a in get_axes_infos(t)) for t in model_description.inputs
+        ]
+        self._output_axes = [
+            tuple(a.id for a in get_axes_infos(t)) for t in model_description.outputs
+        ]
+        if isinstance(model_description, v0_4.ModelDescr):
+            self._input_is_optional = [False] * len(model_description.inputs)
+        else:
+            self._input_is_optional = [ipt.optional for ipt in model_description.inputs]
+
     @final
     @classmethod
     def create(
@@ -46,7 +82,7 @@ class ModelAdapter(ABC):
         model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
         *,
         devices: Optional[Sequence[str]] = None,
-        weight_format_priority_order: Optional[Sequence[WeightsFormat]] = None,
+        weight_format_priority_order: Optional[Sequence[SupportedWeightsFormat]] = None,
     ):
         """
         Creates model adapter based on the passed spec
@@ -59,42 +95,44 @@ class ModelAdapter(ABC):
             )
 
         weights = model_description.weights
-        errors: List[Tuple[WeightsFormat, Exception]] = []
+        errors: List[Tuple[SupportedWeightsFormat, Exception]] = []
         weight_format_priority_order = (
             DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER
             if weight_format_priority_order is None
             else weight_format_priority_order
         )
         # limit weight formats to the ones present
-        weight_format_priority_order = [
+        weight_format_priority_order_present: Sequence[SupportedWeightsFormat] = [
             w for w in weight_format_priority_order if getattr(weights, w) is not None
         ]
+        if not weight_format_priority_order_present:
+            raise ValueError(
+                f"None of the specified weight formats ({weight_format_priority_order}) is present ({weight_format_priority_order_present})"
+            )
 
-        for wf in weight_format_priority_order:
-            if wf == "pytorch_state_dict" and weights.pytorch_state_dict is not None:
+        for wf in weight_format_priority_order_present:
+            if wf == "pytorch_state_dict":
+                assert weights.pytorch_state_dict is not None
                 try:
                     from .pytorch_backend import PytorchModelAdapter
 
                     return PytorchModelAdapter(
-                        outputs=model_description.outputs,
-                        weights=weights.pytorch_state_dict,
-                        devices=devices,
-                    )
-                except Exception as e:
-                    errors.append((wf, e))
-            elif (
-                wf == "tensorflow_saved_model_bundle"
-                and weights.tensorflow_saved_model_bundle is not None
-            ):
-                try:
-                    from .tensorflow_backend import TensorflowModelAdapter
-
-                    return TensorflowModelAdapter(
                         model_description=model_description, devices=devices
                     )
                 except Exception as e:
                     errors.append((wf, e))
-            elif wf == "onnx" and weights.onnx is not None:
+            elif wf == "tensorflow_saved_model_bundle":
+                assert weights.tensorflow_saved_model_bundle is not None
+                try:
+                    from .tensorflow_backend import create_tf_model_adapter
+
+                    return create_tf_model_adapter(
+                        model_description=model_description, devices=devices
+                    )
+                except Exception as e:
+                    errors.append((wf, e))
+            elif wf == "onnx":
+                assert weights.onnx is not None
                 try:
                     from .onnx_backend import ONNXModelAdapter
 
@@ -103,7 +141,8 @@ class ModelAdapter(ABC):
                     )
                 except Exception as e:
                     errors.append((wf, e))
-            elif wf == "torchscript" and weights.torchscript is not None:
+            elif wf == "torchscript":
+                assert weights.torchscript is not None
                 try:
                     from .torchscript_backend import TorchscriptModelAdapter
 
@@ -112,7 +151,8 @@ class ModelAdapter(ABC):
                     )
                 except Exception as e:
                     errors.append((wf, e))
-            elif wf == "keras_hdf5" and weights.keras_hdf5 is not None:
+            elif wf == "keras_hdf5":
+                assert weights.keras_hdf5 is not None
                 # keras can either be installed as a separate package or used as part of tensorflow
                 # we try to first import the keras model adapter using the separate package and,
                 # if it is not available, try to load the one using tf
@@ -127,6 +167,8 @@ class ModelAdapter(ABC):
                     )
                 except Exception as e:
                     errors.append((wf, e))
+            else:
+                assert_never(wf)
 
         assert errors
         if len(weight_format_priority_order) == 1:
@@ -150,12 +192,48 @@ class ModelAdapter(ABC):
     def load(self, *, devices: Optional[Sequence[str]] = None) -> None:
         warnings.warn("Deprecated. ModelAdapter is loaded on initialization")
 
-    @abstractmethod
-    def forward(self, *input_tensors: Optional[Tensor]) -> List[Optional[Tensor]]:
+    def forward(self, input_sample: Sample) -> Sample:
         """
         Run forward pass of model to get model predictions
+
+        Note: sample id and stample stat attributes are passed through
         """
-        # TODO: handle tensor.transpose in here and make _forward_impl the abstract impl
+        unexpected = [mid for mid in input_sample.members if mid not in self._input_ids]
+        if unexpected:
+            warnings.warn(f"Got unexpected input tensor IDs: {unexpected}")
+
+        input_arrays = [
+            (
+                None
+                if (a := input_sample.members.get(in_id)) is None
+                else a.transpose(in_order).data.data
+            )
+            for in_id, in_order in zip(self._input_ids, self._input_axes)
+        ]
+        output_arrays = self._forward_impl(input_arrays)
+        assert len(output_arrays) <= len(self._output_ids)
+        output_tensors = [
+            None if a is None else Tensor(a, dims=d)
+            for a, d in zip(output_arrays, self._output_axes)
+        ]
+        return Sample(
+            members={
+                tid: out
+                for tid, out in zip(
+                    self._output_ids,
+                    output_tensors,
+                )
+                if out is not None
+            },
+            stat=input_sample.stat,
+            id=input_sample.id,
+        )
+
+    @abstractmethod
+    def _forward_impl(
+        self, input_arrays: Sequence[Optional[NDArray[Any]]]
+    ) -> List[Optional[NDArray[Any]]]:
+        """framework specific forward implementation"""
 
     @abstractmethod
     def unload(self):
@@ -163,6 +241,9 @@ class ModelAdapter(ABC):
         Unload model from any devices, freeing their memory.
         The moder adapter should be considered unusable afterwards.
         """
+
+    def _get_input_args_numpy(self, input_sample: Sample):
+        """helper to extract tensor args as transposed numpy arrays"""
 
 
 create_model_adapter = ModelAdapter.create
