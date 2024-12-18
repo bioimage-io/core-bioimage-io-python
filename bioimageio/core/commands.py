@@ -30,6 +30,7 @@ def test(
     runtime_env: Union[
         Literal["currently-active", "as-described"], Path
     ] = "currently-active",
+    determinism: Literal["seed_only", "full"] = "seed_only",
 ) -> int:
     """Test a bioimageio resource.
 
@@ -45,6 +46,7 @@ def test(
         devices=[devices] if isinstance(devices, str) else devices,
         decimal=decimal,
         runtime_env=runtime_env,
+        determinism=determinism,
     )
     summary.display()
     if summary_path is not None:

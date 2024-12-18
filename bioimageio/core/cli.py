@@ -149,6 +149,9 @@ class TestCmd(CmdBase, WithSource):
     summary_path: Optional[Path] = Field(None, alias="summary-path")
     """Path to save validation summary as JSON file."""
 
+    determinism: Literal["seed_only", "full"] = "seed_only"
+    """Modes to improve reproducibility of test outputs."""
+
     def run(self):
         sys.exit(
             test(
@@ -158,6 +161,7 @@ class TestCmd(CmdBase, WithSource):
                 decimal=self.decimal,
                 summary_path=self.summary_path,
                 runtime_env=self.runtime_env,
+                determinism=self.determinism,
             )
         )
 
