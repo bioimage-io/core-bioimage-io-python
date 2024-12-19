@@ -142,18 +142,7 @@ class PredictionPipeline:
         if not skip_preprocessing:
             self.apply_preprocessing(sample)
 
-        output = Sample(
-            members={
-                out_id: out
-                for out_id, out in zip(
-                    self._output_ids,
-                    self._adapter.forward(sample),
-                )
-                if out is not None
-            },
-            stat=sample.stat,
-            id=sample.id,
-        )
+        output = self._adapter.forward(sample)
         if not skip_postprocessing:
             self.apply_postprocessing(output)
 
