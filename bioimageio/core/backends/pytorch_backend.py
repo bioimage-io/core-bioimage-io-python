@@ -139,11 +139,12 @@ def load_torch_state_dict(
         state = torch.load(f, map_location=devices[0])
 
     incompatible = model.load_state_dict(state)
-    if incompatible.missing_keys:
+    if incompatible is not None and incompatible.missing_keys:
         logger.warning("Missing state dict keys: {}", incompatible.missing_keys)
 
-    if incompatible.unexpected_keys:
+    if incompatible is not None and incompatible.unexpected_keys:
         logger.warning("Unexpected state dict keys: {}", incompatible.unexpected_keys)
+
     return model
 
 

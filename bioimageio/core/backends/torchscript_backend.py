@@ -3,14 +3,13 @@ import warnings
 from typing import Any, List, Optional, Sequence, Union
 
 import torch
+from numpy.typing import NDArray
 
-from bioimageio.spec._internal.type_guards import is_list, is_ndarray, is_tuple
+from bioimageio.spec._internal.type_guards import is_list, is_tuple
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.utils import download
 
-from ..digest_spec import get_axes_infos
 from ..model_adapters import ModelAdapter
-from ..tensor import Tensor
 
 
 class TorchscriptModelAdapter(ModelAdapter):
@@ -20,7 +19,7 @@ class TorchscriptModelAdapter(ModelAdapter):
         model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
         devices: Optional[Sequence[str]] = None,
     ):
-        super().__init__()
+        super().__init__(model_description=model_description)
         if model_description.weights.torchscript is None:
             raise ValueError(
                 f"No torchscript weights found for model {model_description.name}"
@@ -41,32 +40,29 @@ class TorchscriptModelAdapter(ModelAdapter):
         self._model.to(self.devices[0])
         self._model = self._model.eval()
 
-    def forward(self, *batch: Optional[Tensor]) -> List[Optional[Tensor]]:
+    def _forward_impl(
+        self, input_arrays: Sequence[Optional[NDArray[Any]]]
+    ) -> List[Optional[NDArray[Any]]]:
+
         with torch.no_grad():
             torch_tensor = [
-                None if b is None else torch.from_numpy(b.data.data).to(self.devices[0])
-                for b in batch
+                None if a is None else torch.from_numpy(a).to(self.devices[0])
+                for a in input_arrays
             ]
-            _result: Any = self._model.forward(*torch_tensor)
-            if is_list(_result) or is_tuple(_result):
-                result: Sequence[Any] = _result
+            output: Any = self._model.forward(*torch_tensor)
+            if is_list(output) or is_tuple(output):
+                output_seq: Sequence[Any] = output
             else:
-                result = [_result]
+                output_seq = [output]
 
-            result = [
+            return [
                 (
                     None
                     if r is None
                     else r.cpu().numpy() if isinstance(r, torch.Tensor) else r
                 )
-                for r in result
+                for r in output_seq
             ]
-
-        assert len(result) == len(self._internal_output_axes)
-        return [
-            None if r is None else Tensor(r, dims=axes) if is_ndarray(r) else r
-            for r, axes in zip(result, self._internal_output_axes)
-        ]
 
     def unload(self) -> None:
         self._devices = None
