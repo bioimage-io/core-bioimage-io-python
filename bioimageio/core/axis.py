@@ -42,6 +42,12 @@ class Axis:
     id: AxisId
     type: Literal["batch", "channel", "index", "space", "time"]
 
+    def __post_init__(self):
+        if self.type == "batch":
+            self.id = AxisId("batch")
+        elif self.type == "channel":
+            self.id = AxisId("channel")
+
     @classmethod
     def create(cls, axis: AxisLike) -> Axis:
         if isinstance(axis, cls):
