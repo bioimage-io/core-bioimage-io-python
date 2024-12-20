@@ -377,8 +377,9 @@ The model specification and its validation tools can be found at <https://github
 
 ### 0.7.1 (to be released)
 
-- New test function `bioimageio.core.test_description_in_conda_env` that uses conda
-  in subprocesses to test a resource in a dedicated conda environment.
+- New feature: `bioimageio.core.test_description` accepts **runtime_env** and **run_command** to test a resource
+  using the conda environment described by that resource (or another specified conda env)
+- raise validation errors if `ValidationContext.raise_errors is True`
 
 ### 0.7.0
 

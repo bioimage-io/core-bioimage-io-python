@@ -37,6 +37,7 @@ from bioimageio.spec import (
 from bioimageio.spec._internal.common_nodes import ResourceDescrBase
 from bioimageio.spec._internal.io import is_yaml_value
 from bioimageio.spec._internal.io_utils import read_yaml, write_yaml
+from bioimageio.spec._internal.validation_context import validation_context_var
 from bioimageio.spec.common import BioimageioYamlContent, PermissiveFileSource, Sha256
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import WeightsFormat
@@ -461,6 +462,9 @@ def _test_model_inference(
                     error = f"Output and expected output disagree:\n {e}"
                     break
     except Exception as e:
+        if validation_context_var.get().raise_errors:
+            raise e
+
         error = str(e)
         tb = traceback.format_tb(e.__traceback__)
 
@@ -630,6 +634,9 @@ def _test_model_inference_parametrized(
                     )
                 )
     except Exception as e:
+        if validation_context_var.get().raise_errors:
+            raise e
+
         error = str(e)
         tb = traceback.format_tb(e.__traceback__)
         model.validation_summary.add_detail(
