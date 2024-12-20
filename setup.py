@@ -62,7 +62,7 @@ _ = setup(
             "pre-commit",
             "pdoc",
             "psutil",  # parallel pytest with 'pytest -n auto'
-            "pyright==1.1.390",
+            "pyright==1.1.391",
             "pytest-cov",
             "pytest-xdist",  # parallel pytest
             "pytest",
