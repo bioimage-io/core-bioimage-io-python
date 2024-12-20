@@ -35,7 +35,7 @@ from bioimageio.spec.model.v0_5 import (
 )
 from bioimageio.spec.utils import load_array
 
-from .axis import AxisId, AxisInfo, AxisLike, PerAxis
+from .axis import Axis, AxisId, AxisInfo, AxisLike, PerAxis
 from .block_meta import split_multiple_shapes_into_blocks
 from .common import Halo, MemberId, PerMember, SampleId, TotalNumberOfBlocks
 from .io import load_tensor
@@ -104,14 +104,15 @@ def get_axes_infos(
     ],
 ) -> List[AxisInfo]:
     """get a unified, simplified axis representation from spec axes"""
-    return [
-        (
-            AxisInfo.create("i")
-            if isinstance(a, str) and a not in ("b", "i", "t", "c", "z", "y", "x")
-            else AxisInfo.create(a)
-        )
-        for a in io_descr.axes
-    ]
+    ret: List[AxisInfo] = []
+    for a in io_descr.axes:
+        if isinstance(a, v0_5.ANY_AXIS_TYPES):
+            ret.append(AxisInfo.create(Axis(id=a.id, type=a.type)))
+        else:
+            assert a in ("b", "i", "t", "c", "z", "y", "x")
+            ret.append(AxisInfo.create(a))
+
+    return ret
 
 
 def get_member_id(
