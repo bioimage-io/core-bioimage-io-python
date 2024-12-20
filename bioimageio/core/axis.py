@@ -8,19 +8,26 @@ from typing_extensions import assert_never
 from bioimageio.spec.model import v0_5
 
 
-def _get_axis_type(a: Literal["b", "t", "i", "c", "x", "y", "z"]):
-    if a == "b":
+def _guess_axis_type(a: str):
+    if a in ("b", "batch"):
         return "batch"
-    elif a == "t":
+    elif a in ("t", "time"):
         return "time"
-    elif a == "i":
+    elif a in ("i", "index"):
         return "index"
-    elif a == "c":
+    elif a in ("c", "channel"):
         return "channel"
     elif a in ("x", "y", "z"):
         return "space"
     else:
-        return "index"  # return most unspecific axis
+        raise ValueError(
+            f"Failed to infer axis type for axis id '{a}'."
+            + " Consider using one of: '"
+            + "', '".join(
+                ["b", "batch", "t", "time", "i", "index", "c", "channel", "x", "y", "z"]
+            )
+            + "'. Or creating an `Axis` object instead."
+        )
 
 
 S = TypeVar("S", bound=str)
@@ -54,10 +61,10 @@ class Axis:
             return axis
         elif isinstance(axis, Axis):
             return Axis(id=axis.id, type=axis.type)
-        elif isinstance(axis, str):
-            return Axis(id=AxisId(axis), type=_get_axis_type(axis))
         elif isinstance(axis, v0_5.AxisBase):
             return Axis(id=AxisId(axis.id), type=axis.type)
+        elif isinstance(axis, str):
+            return Axis(id=AxisId(axis), type=_guess_axis_type(axis))
         else:
             assert_never(axis)
 
