@@ -1,4 +1,5 @@
 from typing import (
+    Callable,
     Iterable,
     List,
     Mapping,
@@ -45,11 +46,44 @@ class PreAndPostprocessing(NamedTuple):
     post: List[Processing]
 
 
+class _ProcessingCallables(NamedTuple):
+    pre: Callable[[Sample], None]
+    post: Callable[[Sample], None]
+
+
 class _SetupProcessing(NamedTuple):
     pre: List[Processing]
     post: List[Processing]
     pre_measures: Set[Measure]
     post_measures: Set[Measure]
+
+
+class _ApplyProcs:
+    def __init__(self, procs: Sequence[Processing]):
+        super().__init__()
+        self._procs = procs
+
+    def __call__(self, sample: Sample) -> None:
+        for op in self._procs:
+            op(sample)
+
+
+def get_pre_and_postprocessing(
+    model: AnyModelDescr,
+    *,
+    dataset_for_initial_statistics: Iterable[Sample],
+    keep_updating_initial_dataset_stats: bool = False,
+    fixed_dataset_stats: Optional[Mapping[DatasetMeasure, MeasureValue]] = None,
+) -> _ProcessingCallables:
+    """Creates callables to apply pre- and postprocessing in-place to a sample"""
+
+    setup = setup_pre_and_postprocessing(
+        model=model,
+        dataset_for_initial_statistics=dataset_for_initial_statistics,
+        keep_updating_initial_dataset_stats=keep_updating_initial_dataset_stats,
+        fixed_dataset_stats=fixed_dataset_stats,
+    )
+    return _ProcessingCallables(_ApplyProcs(setup.pre), _ApplyProcs(setup.post))
 
 
 def setup_pre_and_postprocessing(

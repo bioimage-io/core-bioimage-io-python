@@ -2,7 +2,7 @@ from typing import Literal
 
 import pytest
 
-from bioimageio.spec import InvalidDescr
+from bioimageio.spec import InvalidDescr, ValidationContext
 
 
 @pytest.mark.parametrize("mode", ["seed_only", "full"])
@@ -38,14 +38,9 @@ def test_error_for_wrong_shape2(stardist_wrong_shape2: str):
 def test_test_model(any_model: str):
     from bioimageio.core._resource_tests import test_model
 
-    summary = test_model(any_model)
-    assert summary.status == "passed", summary.format()
+    with ValidationContext(raise_errors=True):
+        summary = test_model(any_model)
 
-
-def test_test_resource(any_model: str):
-    from bioimageio.core._resource_tests import test_description
-
-    summary = test_description(any_model)
     assert summary.status == "passed", summary.format()
 
 

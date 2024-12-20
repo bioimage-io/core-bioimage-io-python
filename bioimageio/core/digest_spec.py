@@ -35,7 +35,7 @@ from bioimageio.spec.model.v0_5 import (
 )
 from bioimageio.spec.utils import load_array
 
-from .axis import AxisId, AxisInfo, AxisLike, PerAxis
+from .axis import Axis, AxisId, AxisInfo, AxisLike, PerAxis
 from .block_meta import split_multiple_shapes_into_blocks
 from .common import Halo, MemberId, PerMember, SampleId, TotalNumberOfBlocks
 from .io import load_tensor
@@ -50,7 +50,12 @@ from .tensor import Tensor
 
 
 def import_callable(
-    node: Union[CallableFromDepencency, ArchitectureFromLibraryDescr],
+    node: Union[
+        ArchitectureFromFileDescr,
+        ArchitectureFromLibraryDescr,
+        CallableFromDepencency,
+        CallableFromFile,
+    ],
     /,
     **kwargs: Unpack[HashKwargs],
 ) -> Callable[..., Any]:
@@ -65,7 +70,6 @@ def import_callable(
         c = _import_from_file_impl(node.source_file, str(node.callable_name), **kwargs)
     elif isinstance(node, ArchitectureFromFileDescr):
         c = _import_from_file_impl(node.source, str(node.callable), sha256=node.sha256)
-
     else:
         assert_never(node)
 
@@ -100,14 +104,15 @@ def get_axes_infos(
     ],
 ) -> List[AxisInfo]:
     """get a unified, simplified axis representation from spec axes"""
-    return [
-        (
-            AxisInfo.create("i")
-            if isinstance(a, str) and a not in ("b", "i", "t", "c", "z", "y", "x")
-            else AxisInfo.create(a)
-        )
-        for a in io_descr.axes
-    ]
+    ret: List[AxisInfo] = []
+    for a in io_descr.axes:
+        if isinstance(a, v0_5.ANY_AXIS_TYPES):
+            ret.append(AxisInfo.create(Axis(id=a.id, type=a.type)))
+        else:
+            assert a in ("b", "i", "t", "c", "z", "y", "x")
+            ret.append(AxisInfo.create(a))
+
+    return ret
 
 
 def get_member_id(
@@ -335,7 +340,7 @@ def create_sample_for_model(
     sample_id: SampleId = None,
     inputs: Optional[
         PerMember[Union[Tensor, xr.DataArray, NDArray[Any], Path]]
-    ] = None,  # TODO: make non-optional
+    ] = None,  # TODO: make non-optional  # TODO: accept tuple of tensor sources
     **kwargs: NDArray[Any],  # TODO: deprecate in favor of `inputs`
 ) -> Sample:
     """Create a sample from a single set of input(s) for a specific bioimage.io model

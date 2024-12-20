@@ -14,7 +14,7 @@ try:
     import torch
 
     torch_version = tuple(map(int, torch.__version__.split(".")[:2]))
-    logger.warning(f"detected torch version {torch_version}.x")
+    logger.warning(f"detected torch version {torch.__version__}")
 except ImportError:
     torch = None
     torch_version = None
@@ -29,7 +29,7 @@ skip_onnx = onnxruntime is None
 try:
     import tensorflow  # type: ignore
 
-    tf_major_version = int(tensorflow.__version__.split(".")[0])  # type: ignore
+    tf_major_version = int(tensorflow.__version__.split(".")[0])
 except ImportError:
     tensorflow = None
     tf_major_version = None

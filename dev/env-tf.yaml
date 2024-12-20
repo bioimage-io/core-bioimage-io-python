@@ -3,8 +3,9 @@ name: core-tf # changed
 channels:
   - conda-forge
   - nodefaults
+  # - pytroch # removed
 dependencies:
-  - bioimageio.spec>=0.5.3.5
+  - bioimageio.spec>=0.5.3.6
   - black
   # - crick  # currently requires python<=3.9
   - filelock
@@ -14,7 +15,9 @@ dependencies:
   - jupyter-black
   - keras>=2.15 # changed
   - loguru
+  - matplotlib
   - numpy
+  - onnx
   - onnxruntime
   - packaging>=17.0
   - pdoc
@@ -28,7 +31,7 @@ dependencies:
   - pytest-cov
   - pytest-xdist
   # - python=3.9  # removed
-  # - pytorch>=2.1 # removed
+  # - pytorch>=2.1,<3 # removed
   - requests
   - rich
   # - ruff  # removed
@@ -39,4 +42,4 @@ dependencies:
   - typing-extensions
   - xarray
   - pip:
-      - -e ..
+      - -e --no-deps ..
