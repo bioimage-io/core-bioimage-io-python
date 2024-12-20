@@ -2,6 +2,7 @@ import warnings
 from typing import Any, List, Optional, Sequence, Union
 
 import onnxruntime as rt
+from numpy.typing import NDArray
 
 from bioimageio.spec._internal.type_guards import is_list, is_tuple
 from bioimageio.spec.model import v0_4, v0_5
@@ -35,9 +36,9 @@ class ONNXModelAdapter(ModelAdapter):
                 f"Device management is not implemented for onnx yet, ignoring the devices {devices}"
             )
 
-    def forward(self, *input_tensors: Optional[Tensor]) -> List[Optional[Tensor]]:
-        assert len(input_tensors) == len(self._input_names)
-        input_arrays = [None if ipt is None else ipt.data.data for ipt in input_tensors]
+    def _forward_impl(
+        self, input_arrays: Sequence[Optional[NDArray[Any]]]
+    ) -> List[Optional[NDArray[Any]]]:
         result: Any = self._session.run(
             None, dict(zip(self._input_names, input_arrays))
         )
@@ -46,10 +47,7 @@ class ONNXModelAdapter(ModelAdapter):
         else:
             result_seq = [result]
 
-        return [
-            None if r is None else Tensor(r, dims=axes)
-            for r, axes in zip(result_seq, self._internal_output_axes)
-        ]
+        return result_seq  # pyright: ignore[reportReturnType]
 
     def unload(self) -> None:
         warnings.warn(
