@@ -42,4 +42,4 @@ dependencies:
   - typing-extensions
   - xarray
   - pip:
-      - -e --no-deps ..
+      - -e ..

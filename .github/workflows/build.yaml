@@ -42,6 +42,8 @@ jobs:
         create-args: >-
           python=${{ matrix.python-version }}
         post-cleanup: 'all'
+      env:
+        PIP_NO_DEPS: true
     - name: Install py3.8 environment
       if: matrix.python-version == '3.8'
       uses: mamba-org/setup-micromamba@v1
@@ -50,6 +52,8 @@ jobs:
         cache-environment: true
         environment-file: dev/env-py38.yaml
         post-cleanup: 'all'
+      env:
+        PIP_NO_DEPS: true
     - name: additional setup
       run: pip install --no-deps -e .
     - name: Get Date
@@ -90,6 +94,8 @@ jobs:
         create-args: >-
           python=${{ matrix.python-version }}
         post-cleanup: 'all'
+      env:
+        PIP_NO_DEPS: true
     - name: Install py3.8 environment
       if: matrix.python-version == '3.8'
       uses: mamba-org/setup-micromamba@v1
@@ -98,6 +104,8 @@ jobs:
         cache-environment: true
         environment-file: dev/env-py38.yaml
         post-cleanup: 'all'
+      env:
+        PIP_NO_DEPS: true
     - name: additional setup spec
       run: |
         conda remove --yes --force bioimageio.spec || true  # allow failure for cached env
@@ -154,6 +162,8 @@ jobs:
         create-args: >-
           python=${{ matrix.python-version }}
         post-cleanup: 'all'
+      env:
+        PIP_NO_DEPS: true
     - name: additional setup spec
       run: |
         conda remove --yes --force bioimageio.spec || true  # allow failure for cached env
@@ -191,6 +201,8 @@ jobs:
         create-args: >-
           python=${{ matrix.python-version }}
         post-cleanup: 'all'
+      env:
+        PIP_NO_DEPS: true
     - name: additional setup
       run: pip install --no-deps -e .
     - name: Get Date
