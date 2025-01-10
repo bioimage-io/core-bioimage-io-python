@@ -16,10 +16,11 @@ import numpy as np
 import xarray as xr
 from typing_extensions import Self, assert_never
 
+from bioimageio.core.digest_spec import get_axes_infos
 from bioimageio.spec.model import v0_4, v0_5
 
 from ._op_base import BlockedOperator, Operator
-from .axis import AxisId, PerAxis
+from .axis import AxisId, AxisInfo, PerAxis
 from .block import Block
 from .common import DTypeStr, MemberId
 from .sample import Sample, SampleBlock, SampleBlockWithOrigin
@@ -299,9 +300,15 @@ class ScaleLinear(_SimpleOperator):
         member_id: MemberId,
     ) -> Self:
         kwargs = descr.kwargs
-        if isinstance(kwargs, v0_5.ScaleLinearAlongAxisKwargs):
+        if isinstance(kwargs, v0_5.ScaleLinearKwargs):
+            axis = None
+        elif isinstance(kwargs, v0_5.ScaleLinearAlongAxisKwargs):
             axis = kwargs.axis
-        elif isinstance(kwargs, (v0_4.ScaleLinearKwargs, v0_5.ScaleLinearKwargs)):
+        elif isinstance(kwargs, v0_4.ScaleLinearKwargs):
+            if kwargs.axes is not None:
+                raise NotImplementedError(
+                    "model.v0_4.ScaleLinearKwargs with axes not implemented, please consider updating the model to v0_5."
+                )
             axis = None
         else:
             assert_never(kwargs)
