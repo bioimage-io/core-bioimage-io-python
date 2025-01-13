@@ -232,7 +232,7 @@ class ModelAdapter(ABC):
     @abstractmethod
     def _forward_impl(
         self, input_arrays: Sequence[Optional[NDArray[Any]]]
-    ) -> List[Optional[NDArray[Any]]]:
+    ) -> Union[List[Optional[NDArray[Any]]], Tuple[Optional[NDArray[Any]]]]:
         """framework specific forward implementation"""
 
     @abstractmethod

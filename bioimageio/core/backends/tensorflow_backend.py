@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, List, Literal, Optional, Sequence, Union
+from typing import Any, Optional, Sequence, Union
 
 import numpy as np
 import tensorflow as tf
@@ -7,68 +7,9 @@ from loguru import logger
 from numpy.typing import NDArray
 
 from bioimageio.core.io import ensure_unzipped
-from bioimageio.spec.common import FileSource
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 
 from ._model_adapter import ModelAdapter
-
-
-class TensorflowModelAdapterBase(ModelAdapter):
-    weight_format: Literal["keras_hdf5", "tensorflow_saved_model_bundle"]
-
-    def __init__(
-        self,
-        *,
-        devices: Optional[Sequence[str]] = None,
-        weights: Union[
-            v0_4.KerasHdf5WeightsDescr,
-            v0_4.TensorflowSavedModelBundleWeightsDescr,
-            v0_5.KerasHdf5WeightsDescr,
-            v0_5.TensorflowSavedModelBundleWeightsDescr,
-        ],
-        model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
-    ):
-        super().__init__(model_description=model_description)
-        tf_version = v0_5.Version(tf.__version__)
-        model_tf_version = weights.tensorflow_version
-        if model_tf_version is None:
-            logger.warning(
-                "The model does not specify the tensorflow version."
-                + f"Cannot check if it is compatible with intalled tensorflow {tf_version}."
-            )
-        elif model_tf_version > tf_version:
-            logger.warning(
-                f"The model specifies a newer tensorflow version than installed: {model_tf_version} > {tf_version}."
-            )
-        elif (model_tf_version.major, model_tf_version.minor) != (
-            tf_version.major,
-            tf_version.minor,
-        ):
-            logger.warning(
-                "The tensorflow version specified by the model does not match the installed: "
-                + f"{model_tf_version} != {tf_version}."
-            )
-
-        self.use_keras_api = (
-            tf_version.major > 1
-            or self.weight_format == KerasModelAdapter.weight_format
-        )
-
-        # TODO tf device management
-        if devices is not None:
-            logger.warning(
-                f"Device management is not implemented for tensorflow yet, ignoring the devices {devices}"
-            )
-
-        # TODO: check how to load tf weights without unzipping
-        weight_file = ensure_unzipped(
-            weights.source, Path("bioimageio_unzipped_tf_weights")
-        )
-
-    def unload(self) -> None:
-        logger.warning(
-            "Device management is not implemented for keras yet, cannot unload model"
-        )
 
 
 class TensorflowModelAdapter(ModelAdapter):
@@ -81,47 +22,28 @@ class TensorflowModelAdapter(ModelAdapter):
         devices: Optional[Sequence[str]] = None,
     ):
         super().__init__(model_description=model_description)
+
+        weight_file = model_description.weights.tensorflow_saved_model_bundle
+        if model_description.weights.tensorflow_saved_model_bundle is None:
+            raise ValueError("No `tensorflow_saved_model_bundle` weights found")
+
         if devices is not None:
             logger.warning(
                 f"Device management is not implemented for tensorflow yet, ignoring the devices {devices}"
             )
 
+        # TODO: check how to load tf weights without unzipping
         weight_file = ensure_unzipped(
-            weights.source, Path("bioimageio_unzipped_tf_weights")
+            model_description.weights.tensorflow_saved_model_bundle.source,
+            Path("bioimageio_unzipped_tf_weights"),
         )
         self._network = str(weight_file)
-
-    def _get_network(  # pyright: ignore[reportUnknownParameterType]
-        self, weight_file: FileSource
-    ):
-
-        assert tf is not None
-        if self.use_keras_api:
-            try:
-                return tf.keras.layers.TFSMLayer(  # pyright: ignore[reportAttributeAccessIssue,reportUnknownVariableType]
-                    weight_file,
-                    call_endpoint="serve",
-                )
-            except Exception as e:
-                try:
-                    return tf.keras.layers.TFSMLayer(  # pyright: ignore[reportAttributeAccessIssue,reportUnknownVariableType]
-                        weight_file, call_endpoint="serving_default"
-                    )
-                except Exception as ee:
-                    logger.opt(exception=ee).info(
-                        "keras.layers.TFSMLayer error for alternative call_endpoint='serving_default'"
-                    )
-                    raise e
-        else:
-            # NOTE in tf1 the model needs to be loaded inside of the session, so we cannot preload the model
-            return
 
     # TODO currently we relaod the model every time. it would be better to keep the graph and session
     # alive in between of forward passes (but then the sessions need to be properly opened / closed)
     def _forward_impl(  # pyright: ignore[reportUnknownParameterType]
         self, input_arrays: Sequence[Optional[NDArray[Any]]]
     ):
-        assert tf is not None
         # TODO read from spec
         tag = (  # pyright: ignore[reportUnknownVariableType]
             tf.saved_model.tag_constants.SERVING  # pyright: ignore[reportAttributeAccessIssue]
@@ -182,6 +104,11 @@ class TensorflowModelAdapter(ModelAdapter):
 
         return res  # pyright: ignore[reportUnknownVariableType]
 
+    def unload(self) -> None:
+        logger.warning(
+            "Device management is not implemented for tensorflow 1, cannot unload model"
+        )
+
 
 class KerasModelAdapter(ModelAdapter):
     def __init__(
@@ -198,6 +125,28 @@ class KerasModelAdapter(ModelAdapter):
             logger.warning(
                 f"Device management is not implemented for tensorflow yet, ignoring the devices {devices}"
             )
+
+        # TODO: check how to load tf weights without unzipping
+        weight_file = ensure_unzipped(
+            model_description.weights.tensorflow_saved_model_bundle.source,
+            Path("bioimageio_unzipped_tf_weights"),
+        )
+
+        try:
+            self._network = tf.keras.layers.TFSMLayer(  # pyright: ignore[reportAttributeAccessIssue]
+                weight_file,
+                call_endpoint="serve",
+            )
+        except Exception as e:
+            try:
+                self._network = tf.keras.layers.TFSMLayer(  # pyright: ignore[reportAttributeAccessIssue]
+                    weight_file, call_endpoint="serving_default"
+                )
+            except Exception as ee:
+                logger.opt(exception=ee).info(
+                    "keras.layers.TFSMLayer error for alternative call_endpoint='serving_default'"
+                )
+                raise e
 
     def _forward_impl(  # pyright: ignore[reportUnknownParameterType]
         self, input_arrays: Sequence[Optional[NDArray[Any]]]
@@ -220,6 +169,12 @@ class KerasModelAdapter(ModelAdapter):
             (None if r is None else r if isinstance(r, np.ndarray) else r.numpy())
             for r in result  # pyright: ignore[reportUnknownVariableType]
         ]
+
+    def unload(self) -> None:
+        logger.warning(
+            "Device management is not implemented for tensorflow>=2 models"
+            + f" using `{self.__class__.__name__}`, cannot unload model"
+        )
 
 
 def create_tf_model_adapter(
@@ -255,8 +210,3 @@ def create_tf_model_adapter(
         )
     else:
         return KerasModelAdapter(model_description=model_description, devices=devices)
-
-    # TODO: check how to load tf weights without unzipping
-    weight_file = ensure_unzipped(
-        weights.source, Path("bioimageio_unzipped_tf_weights")
-    )

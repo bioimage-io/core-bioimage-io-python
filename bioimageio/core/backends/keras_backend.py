@@ -1,16 +1,16 @@
 import os
-from typing import Any, List, Optional, Sequence, Union
+from typing import Any, Optional, Sequence, Union
 
 from loguru import logger
 from numpy.typing import NDArray
 
 from bioimageio.spec._internal.io_utils import download
+from bioimageio.spec._internal.type_guards import is_list, is_tuple
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import Version
 
 from .._settings import settings
 from ..digest_spec import get_axes_infos
-from ..tensor import Tensor
 from ._model_adapter import ModelAdapter
 
 os.environ["KERAS_BACKEND"] = settings.keras_backend
@@ -35,7 +35,7 @@ class KerasModelAdapter(ModelAdapter):
         model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
         devices: Optional[Sequence[str]] = None,
     ) -> None:
-        super().__init__()
+        super().__init__(model_description=model_description)
         if model_description.weights.keras_hdf5 is None:
             raise ValueError("model has not keras_hdf5 weights specified")
         model_tf_version = model_description.weights.keras_hdf5.tensorflow_version
@@ -73,30 +73,14 @@ class KerasModelAdapter(ModelAdapter):
             for out in model_description.outputs
         ]
 
-    def forward(self, *input_tensors: Optional[Tensor]) -> List[Optional[Tensor]]:
-        _result: Union[Sequence[NDArray[Any]], NDArray[Any]]
-        _result = self._network.predict(  # type: ignore
-            *[None if t is None else t.data.data for t in input_tensors]
-        )
-        if isinstance(_result, (tuple, list)):
-            result = _result  # pyright: ignore[reportUnknownVariableType]
+    def _forward_impl(  # pyright: ignore[reportUnknownParameterType]
+        self, input_arrays: Sequence[Optional[NDArray[Any]]]
+    ):
+        network_output = self._network.predict(*input_arrays)  # type: ignore
+        if is_list(network_output) or is_tuple(network_output):
+            return network_output
         else:
-            result = [_result]  # type: ignore
-
-        assert len(result) == len(  # pyright: ignore[reportUnknownArgumentType]
-            self._output_axes
-        )
-        ret: List[Optional[Tensor]] = []
-        ret.extend(
-            [
-                Tensor(r, dims=axes)  # pyright: ignore[reportArgumentType]
-                for r, axes, in zip(  # pyright: ignore[reportUnknownVariableType]
-                    result,  # pyright: ignore[reportUnknownArgumentType]
-                    self._output_axes,
-                )
-            ]
-        )
-        return ret
+            return [network_output]  # pyright: ignore[reportUnknownVariableType]
 
     def unload(self) -> None:
         logger.warning(
