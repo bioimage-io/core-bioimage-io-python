@@ -23,8 +23,7 @@ from loguru import logger
 from numpy.typing import NDArray
 from typing_extensions import Unpack, assert_never
 
-from bioimageio.spec._internal.io import resolve_and_extract
-from bioimageio.spec._internal.io_utils import HashKwargs
+from bioimageio.spec._internal.io import HashKwargs, resolve_and_extract
 from bioimageio.spec.common import FileSource
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 from bioimageio.spec.model.v0_4 import CallableFromDepencency, CallableFromFile
@@ -106,7 +105,7 @@ def get_axes_infos(
     """get a unified, simplified axis representation from spec axes"""
     ret: List[AxisInfo] = []
     for a in io_descr.axes:
-        if isinstance(a, v0_5.ANY_AXIS_TYPES):
+        if isinstance(a, v0_5.AxisBase):
             ret.append(AxisInfo.create(Axis(id=a.id, type=a.type)))
         else:
             assert a in ("b", "i", "t", "c", "z", "y", "x")
