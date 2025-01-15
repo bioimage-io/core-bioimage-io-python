@@ -1,7 +1,8 @@
-from typing import Tuple, Union
+from typing import Tuple
 
 import numpy as np
 import pytest
+from git import Optional
 from xarray.testing import assert_allclose  # pyright: ignore[reportUnknownVariableType]
 
 from bioimageio.core.axis import AxisId
@@ -31,14 +32,15 @@ def create_random_dataset(tid: MemberId, axes: Tuple[AxisId, ...]):
     "axes",
     [
         None,
-        ("x", "y"),
-        ("channel", "y"),
+        (AxisId("x"), AxisId("y")),
+        (AxisId("channel"), AxisId("y")),
+        (AxisId("batch"), AxisId("channel"), AxisId("x"), AxisId("y")),
     ],
 )
-def test_mean_var_std_calculator(axes: Union[None, str, Tuple[str, ...]]):
+def test_mean_var_std_calculator(axes: Optional[Tuple[AxisId, ...]]):
     tid = MemberId("tensor")
-    axes = tuple(map(AxisId, ("batch", "channel", "x", "y")))
-    data, ds = create_random_dataset(tid, axes)
+    d_axes = tuple(map(AxisId, ("batch", "channel", "x", "y")))
+    data, ds = create_random_dataset(tid, d_axes)
     expected_mean = data.mean(axes)
     expected_var = data.var(axes)
     expected_std = data.std(axes)
