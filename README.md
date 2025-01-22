@@ -325,7 +325,7 @@ You can list all the available commands via:
 bioimageio
 ```
 
-For examples see [Getting started](#get-started).
+For examples see [Get started](#get-started).
 
 
 ### CLI inputs from file
