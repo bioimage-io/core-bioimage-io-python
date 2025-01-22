@@ -288,41 +288,6 @@ The package is also available via pip
 pip install "bioimageio.core[onnx,pytorch]"
 ```
 
-### Set up Development Environment
-
-To set up a development conda environment run the following commands:
-
-```console
-conda env create -f dev/env.yaml
-conda activate core
-pip install -e . --no-deps
-```
-
-There are different environment files available that only install tensorflow or pytorch as dependencies, see [dev folder](https://github.com/bioimage-io/core-bioimage-io-python/tree/main/dev).
-
-## 💻 Use the Command Line Interface
-
-`bioimageio.core` installs a command line interface (CLI) for testing models and other functionality.
-You can list all the available commands via:
-
-```console
-bioimageio
-```
-
-### CLI inputs from file
-
-For convenience the command line options (not arguments) may be given in a `bioimageio-cli.json`
-or `bioimageio-cli.yaml` file, e.g.:
-
-```yaml
-# bioimageio-cli.yaml
-inputs: inputs/*_{tensor_id}.h5
-outputs: outputs_{model_id}/{sample_id}_{tensor_id}.h5
-overwrite: true
-blockwise: true
-stats: inputs/dataset_statistics.json
-```
-
 ## 🐍 Use in Python
 
 `bioimageio.core` is a python package that implements prediction with bioimageio models
@@ -350,6 +315,45 @@ In addition bioimageio.core provides functionality to convert model weight forma
  <dd><a href="https://github.com/bioimage-io/core-bioimage-io-python/blob/main/example/model_usage.ipynb">model_usage.ipynb</a><a target="_blank" href="https://colab.research.google.com/github/bioimage-io/core-bioimage-io-python/blob/main/example/model_usage.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
 </dl>
+
+## 💻 Use the Command Line Interface
+
+`bioimageio.core` installs a command line interface (CLI) for testing models and other functionality.
+You can list all the available commands via:
+
+```console
+bioimageio
+```
+
+For examples see [Getting started](#get-started).
+
+
+### CLI inputs from file
+
+For convenience the command line options (not arguments) may be given in a `bioimageio-cli.json`
+or `bioimageio-cli.yaml` file, e.g.:
+
+```yaml
+# bioimageio-cli.yaml
+inputs: inputs/*_{tensor_id}.h5
+outputs: outputs_{model_id}/{sample_id}_{tensor_id}.h5
+overwrite: true
+blockwise: true
+stats: inputs/dataset_statistics.json
+```
+
+
+## Set up Development Environment
+
+To set up a development conda environment run the following commands:
+
+```console
+conda env create -f dev/env.yaml
+conda activate core
+pip install -e . --no-deps
+```
+
+There are different environment files available that only install tensorflow or pytorch as dependencies, see [dev folder](https://github.com/bioimage-io/core-bioimage-io-python/tree/main/dev).
 
 
 ## Logging level
