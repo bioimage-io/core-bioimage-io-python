@@ -262,49 +262,22 @@ bioimage.core has to offer:
 
 ## Installation
 
-### Via Mamba/Conda
+### Via Conda
 
 The `bioimageio.core` package can be installed from conda-forge via
 
 ```console
-mamba install -c conda-forge bioimageio.core
+conda install -c conda-forge bioimageio.core
 ```
 
 If you do not install any additional deep learning libraries, you will only be able to use general convenience
-functionality, but not any functionality for model prediction.
-To install additional deep learning libraries use:
+functionality, but not any functionality depending on model prediction.
+To install additional deep learning libraries add `pytorch`, `onnxruntime`, `keras` or `tensorflow`.
 
-- Pytorch/Torchscript:
-
-  CPU installation (if you don't have an nvidia graphics card):
-
-  ```console
-  mamba install -c pytorch -c conda-forge bioimageio.core pytorch torchvision cpuonly
-  ```
-
-  GPU installation (for cuda 11.6, please choose the appropriate cuda version for your system):
-
-  ```console
-  mamba install -c pytorch -c nvidia -c conda-forge bioimageio.core pytorch torchvision pytorch-cuda=11.8
-  ```
-
-  Note that the pytorch installation instructions may change in the future. For the latest instructions please refer to [pytorch.org](https://pytorch.org/).
-
-- Tensorflow
-
-  Currently only CPU version supported
-
-  ```console
-  mamba install -c conda-forge bioimageio.core tensorflow
-  ```
-
-- ONNXRuntime
-
-  Currently only cpu version supported
-
-  ```console
-  mamba install -c conda-forge bioimageio.core onnxruntime
-  ```
+Deeplearning frameworks to consider installing alongside `bioimageio.core`:
+- [Pytorch/Torchscript](https://pytorch.org/get-started/locally/)
+- [TensorFlow](https://www.tensorflow.org/install)
+- [ONNXRuntime](https://onnxruntime.ai/docs/install/#python-installs)
 
 ### Via pip
 
@@ -320,12 +293,12 @@ pip install "bioimageio.core[onnx,pytorch]"
 To set up a development conda environment run the following commands:
 
 ```console
-mamba env create -f dev/env.yaml
-mamba activate core
+conda env create -f dev/env.yaml
+conda activate core
 pip install -e . --no-deps
 ```
 
-There are different environment files available that only install tensorflow or pytorch as dependencies.
+There are different environment files available that only install tensorflow or pytorch as dependencies, see [dev folder](https://github.com/bioimage-io/core-bioimage-io-python/tree/main/dev).
 
 ## 💻 Use the Command Line Interface
 
