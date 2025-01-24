@@ -8,6 +8,7 @@ from numpy.testing import assert_allclose
 from bioimageio.core.backends.pytorch_backend import load_torch_model
 from bioimageio.core.digest_spec import get_member_id, get_test_inputs
 from bioimageio.core.proc_setup import get_pre_and_postprocessing
+from bioimageio.spec._internal.types import AbsoluteTolerance, RelativeTolerance
 from bioimageio.spec.model import v0_4, v0_5
 
 
@@ -16,10 +17,11 @@ def convert(
     *,
     output_path: Path,
     use_tracing: bool = True,
-    relative_tolerance: float = 1e-07,
-    absolute_tolerance: float = 0,
     verbose: bool = False,
     opset_version: int = 15,
+    check_reproducibility: bool = True,
+    relative_tolerance: RelativeTolerance = 1e-07,
+    absolute_tolerance: AbsoluteTolerance = 0,
 ) -> v0_5.OnnxWeightsDescr:
     """
     Convert model weights from the PyTorch state_dict format to the ONNX format.
@@ -72,7 +74,6 @@ def convert(
         outputs_original: List[np.ndarray[Any, Any]] = [
             out.numpy() for out in outputs_original_torch
         ]
-
         if use_tracing:
             _ = torch.onnx.export(
                 model,
@@ -84,35 +85,40 @@ def convert(
         else:
             raise NotImplementedError
 
-    try:
-        import onnxruntime as rt  # pyright: ignore [reportMissingTypeStubs]
-    except ImportError:
-        raise ImportError(
-            "The onnx weights were exported, but onnx rt is not available and weights cannot be checked."
-        )
+    if check_reproducibility:
+        try:
+            import onnxruntime as rt  # pyright: ignore [reportMissingTypeStubs]
+        except ImportError as e:
+            raise ImportError(
+                "The onnx weights were exported, but onnx rt is not available"
+                + " and weights cannot be checked."
+            ) from e
 
-    # check the onnx model
-    sess = rt.InferenceSession(str(output_path))
-    onnx_input_node_args = cast(
-        List[Any], sess.get_inputs()
-    )  # FIXME: remove cast, try using rt.NodeArg instead of Any
-    inputs_onnx = {
-        input_name.name: inp
-        for input_name, inp in zip(onnx_input_node_args, inputs_numpy)
-    }
-    outputs_onnx = cast(
-        Sequence[np.ndarray[Any, Any]], sess.run(None, inputs_onnx)
-    )  # FIXME: remove cast
+        # check the onnx model
+        sess = rt.InferenceSession(str(output_path))
+        onnx_input_node_args = cast(
+            List[Any], sess.get_inputs()
+        )  # FIXME: remove cast, try using rt.NodeArg instead of Any
+        inputs_onnx = {
+            input_name.name: inp
+            for input_name, inp in zip(onnx_input_node_args, inputs_numpy)
+        }
+        outputs_onnx = cast(
+            Sequence[np.ndarray[Any, Any]], sess.run(None, inputs_onnx)
+        )  # FIXME: remove cast
 
-    try:
-        for out_original, out_onnx in zip(outputs_original, outputs_onnx):
-            assert_allclose(
-                out_original, out_onnx, rtol=relative_tolerance, atol=absolute_tolerance
-            )
-    except AssertionError as e:
-        raise AssertionError(
-            "Inference results of using original and converted weights do not match"
-        ) from e
+        try:
+            for out_original, out_onnx in zip(outputs_original, outputs_onnx):
+                assert_allclose(
+                    out_original,
+                    out_onnx,
+                    rtol=relative_tolerance,
+                    atol=absolute_tolerance,
+                )
+        except AssertionError as e:
+            raise AssertionError(
+                "Inference results of original and converted weights do not match."
+            ) from e
 
     return v0_5.OnnxWeightsDescr(
         source=output_path, parent="pytorch_state_dict", opset_version=opset_version
