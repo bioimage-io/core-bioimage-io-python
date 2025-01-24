@@ -32,6 +32,7 @@ _ = setup(
     install_requires=[
         "bioimageio.spec ==0.5.3.6",
         "h5py",
+        "imagecodecs",
         "imageio>=2.10",
         "loguru",
         "numpy",

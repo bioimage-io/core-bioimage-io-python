@@ -10,6 +10,7 @@ dependencies:
   - crick # uncommented
   - filelock
   - h5py
+  - imagecodecs
   - imageio>=2.5
   - jupyter
   - jupyter-black
