@@ -37,6 +37,7 @@ from bioimageio.spec import (
 from bioimageio.spec._internal.common_nodes import ResourceDescrBase
 from bioimageio.spec._internal.io import is_yaml_value
 from bioimageio.spec._internal.io_utils import read_yaml, write_yaml
+from bioimageio.spec._internal.types import AbsoluteTolerance, RelativeTolerance
 from bioimageio.spec._internal.validation_context import validation_context_var
 from bioimageio.spec.common import BioimageioYamlContent, PermissiveFileSource, Sha256
 from bioimageio.spec.model import v0_4, v0_5
@@ -120,8 +121,8 @@ def test_model(
     source: Union[v0_4.ModelDescr, v0_5.ModelDescr, PermissiveFileSource],
     weight_format: Optional[WeightsFormat] = None,
     devices: Optional[List[str]] = None,
-    absolute_tolerance: float = 1.5e-4,
-    relative_tolerance: float = 1e-4,
+    absolute_tolerance: AbsoluteTolerance = 1.5e-4,
+    relative_tolerance: RelativeTolerance = 1e-4,
     decimal: Optional[int] = None,
     *,
     determinism: Literal["seed_only", "full"] = "seed_only",
@@ -152,8 +153,8 @@ def test_description(
     format_version: Union[Literal["discover", "latest"], str] = "discover",
     weight_format: Optional[WeightsFormat] = None,
     devices: Optional[Sequence[str]] = None,
-    absolute_tolerance: float = 1.5e-4,
-    relative_tolerance: float = 1e-4,
+    absolute_tolerance: AbsoluteTolerance = 1.5e-4,
+    relative_tolerance: RelativeTolerance = 1e-4,
     decimal: Optional[int] = None,
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Optional[str] = None,
@@ -236,8 +237,8 @@ def _test_in_env(
     weight_format: Optional[WeightsFormat],
     conda_env: Optional[BioimageioCondaEnv],
     devices: Optional[Sequence[str]],
-    absolute_tolerance: float,
-    relative_tolerance: float,
+    absolute_tolerance: AbsoluteTolerance,
+    relative_tolerance: RelativeTolerance,
     determinism: Literal["seed_only", "full"],
     run_command: Callable[[Sequence[str]], None],
 ) -> ValidationSummary:
@@ -354,8 +355,8 @@ def load_description_and_test(
     format_version: Union[Literal["discover", "latest"], str] = "discover",
     weight_format: Optional[WeightsFormat] = None,
     devices: Optional[Sequence[str]] = None,
-    absolute_tolerance: float = 1.5e-4,
-    relative_tolerance: float = 1e-4,
+    absolute_tolerance: AbsoluteTolerance = 1.5e-4,
+    relative_tolerance: RelativeTolerance = 1e-4,
     decimal: Optional[int] = None,
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Optional[str] = None,
