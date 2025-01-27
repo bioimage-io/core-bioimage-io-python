@@ -81,11 +81,11 @@ def _split_dataset_path(path: Path) -> Tuple[Path, Optional[PurePosixPath]]:
 
     Examples:
         >>> _split_dataset_path(Path("my_file.h5/dataset"))
-        (PosixPath('my_file.h5'), PurePosixPath('dataset'))
+        (...Path('my_file.h5'), PurePosixPath('dataset'))
 
         If no suffix is detected the path is returned with
         >>> _split_dataset_path(Path("my_plain_file"))
-        (PosixPath('my_plain_file'), None)
+        (...Path('my_plain_file'), None)
 
     """
     if path.suffix:
