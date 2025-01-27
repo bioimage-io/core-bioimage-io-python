@@ -5,7 +5,6 @@ import warnings
 from itertools import chain
 from typing import Dict, List
 
-from loguru import logger
 from pytest import FixtureRequest, fixture
 
 from bioimageio.spec import __version__ as bioimageio_spec_version
@@ -14,7 +13,7 @@ try:
     import torch
 
     torch_version = tuple(map(int, torch.__version__.split(".")[:2]))
-    logger.warning(f"detected torch version {torch.__version__}")
+    warnings.warn(f"detected torch version {torch.__version__}")
 except ImportError:
     torch = None
     torch_version = None
@@ -45,9 +44,7 @@ warnings.warn(f"testing with bioimageio.spec {bioimageio_spec_version}")
 
 # TODO: use models from new collection on S3
 MODEL_SOURCES: Dict[str, str] = {
-    "hpa_densenet": (
-        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/hpa-densenet/rdf.yaml"
-    ),
+    "hpa_densenet": "polite-pig/1",
     "stardist": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models"
         "/stardist_example_model/v0_4.bioimageio.yaml"
