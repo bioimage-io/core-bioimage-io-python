@@ -183,7 +183,7 @@ class MeanVarStdCalculator:
         else:
             assert self._m2 is not None
             var = self._m2 / self._n
-            sqrt = np.sqrt(var)
+            sqrt = var**0.5
             if isinstance(sqrt, (int, float)):
                 # var and mean are scalar tensors, let's keep it consistent
                 sqrt = Tensor.from_xarray(xr.DataArray(sqrt))
