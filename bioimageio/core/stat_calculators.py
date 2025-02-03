@@ -26,6 +26,8 @@ from loguru import logger
 from numpy.typing import NDArray
 from typing_extensions import assert_never
 
+from bioimageio.spec.model.v0_5 import BATCH_AXIS_ID
+
 from .axis import AxisId, PerAxis
 from .common import MemberId
 from .sample import Sample
@@ -120,7 +122,7 @@ class MeanVarStdCalculator:
 
     def __init__(self, member_id: MemberId, axes: Optional[Sequence[AxisId]]):
         super().__init__()
-        self._axes = None if axes is None else tuple(axes)
+        self._axes = None if axes is None else tuple(map(AxisId, axes))
         self._member_id = member_id
         self._n: int = 0
         self._mean: Optional[Tensor] = None
@@ -152,6 +154,9 @@ class MeanVarStdCalculator:
         }
 
     def update(self, sample: Sample):
+        if self._axes is not None and BATCH_AXIS_ID not in self._axes:
+            return
+
         tensor = sample.members[self._member_id].astype("float64", copy=False)
         mean_b = tensor.mean(dim=self._axes)
         assert mean_b.dtype == "float64"
@@ -178,7 +183,11 @@ class MeanVarStdCalculator:
     def finalize(
         self,
     ) -> Dict[Union[DatasetMean, DatasetVar, DatasetStd], MeasureValue]:
-        if self._mean is None:
+        if (
+            self._axes is not None
+            and BATCH_AXIS_ID not in self._axes
+            or self._mean is None
+        ):
             return {}
         else:
             assert self._m2 is not None
