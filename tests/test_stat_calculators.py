@@ -13,6 +13,9 @@ from bioimageio.core.stat_measures import (
     DatasetMean,
     DatasetStd,
     DatasetVar,
+    SampleMean,
+    SampleStd,
+    SampleVar,
 )
 from bioimageio.core.tensor import Tensor
 
@@ -31,13 +34,47 @@ def create_random_dataset(tid: MemberId, axes: Tuple[AxisId, ...]):
 @pytest.mark.parametrize(
     "axes",
     [
-        None,
         (AxisId("x"), AxisId("y")),
         (AxisId("channel"), AxisId("y")),
+    ],
+)
+def test_sample_mean_var_std_calculator(axes: Optional[Tuple[AxisId, ...]]):
+    tid = MemberId("tensor")
+    d_axes = tuple(map(AxisId, ("batch", "channel", "x", "y")))
+    data, ds = create_random_dataset(tid, d_axes)
+    expected_mean = data[0].mean(axes)
+    expected_var = data[0].var(axes)
+    expected_std = data[0].std(axes)
+
+    calc = MeanVarStdCalculator(tid, axes=axes)
+
+    actual = calc.compute(ds[0])
+    actual_mean = actual[SampleMean(member_id=tid, axes=axes)]
+    actual_var = actual[SampleVar(member_id=tid, axes=axes)]
+    actual_std = actual[SampleStd(member_id=tid, axes=axes)]
+
+    assert_allclose(
+        actual_mean if isinstance(actual_mean, (int, float)) else actual_mean.data,
+        expected_mean.data,
+    )
+    assert_allclose(
+        actual_var if isinstance(actual_var, (int, float)) else actual_var.data,
+        expected_var.data,
+    )
+    assert_allclose(
+        actual_std if isinstance(actual_std, (int, float)) else actual_std.data,
+        expected_std.data,
+    )
+
+
+@pytest.mark.parametrize(
+    "axes",
+    [
+        None,
         (AxisId("batch"), AxisId("channel"), AxisId("x"), AxisId("y")),
     ],
 )
-def test_mean_var_std_calculator(axes: Optional[Tuple[AxisId, ...]]):
+def test_dataset_mean_var_std_calculator(axes: Optional[Tuple[AxisId, ...]]):
     tid = MemberId("tensor")
     d_axes = tuple(map(AxisId, ("batch", "channel", "x", "y")))
     data, ds = create_random_dataset(tid, d_axes)
