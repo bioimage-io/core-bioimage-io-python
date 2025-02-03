@@ -87,7 +87,10 @@ class SliceInfo(NamedTuple):
 
 
 SampleId = Hashable
+"""ID of a sample, see `bioimageio.core.sample.Sample`"""
 MemberId = v0_5.TensorId
+"""ID of a `Sample` member, see `bioimageio.core.sample.Sample`"""
+
 T = TypeVar("T")
 PerMember = Mapping[MemberId, T]
 

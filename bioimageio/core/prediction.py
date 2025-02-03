@@ -50,18 +50,18 @@ def predict(
     """Run prediction for a single set of input(s) with a bioimage.io model
 
     Args:
-        model: model to predict with.
+        model: Model to predict with.
             May be given as RDF source, model description or prediction pipeline.
         inputs: the input sample or the named input(s) for this model as a dictionary
         sample_id: the sample id.
-        blocksize_parameter: (optional) tile the input into blocks parametrized by
+        blocksize_parameter: (optional) Tile the input into blocks parametrized by
             blocksize according to any parametrized axis sizes defined in the model RDF.
             Note: For a predetermined, fixed block shape use `input_block_shape`
-        input_block_shape: (optional) tile the input sample tensors into blocks.
-            Note: For a parameterized block shape, not dealing with the exact block shape,
-            use `blocksize_parameter`.
-        skip_preprocessing: flag to skip the model's preprocessing
-        skip_postprocessing: flag to skip the model's postprocessing
+        input_block_shape: (optional) Tile the input sample tensors into blocks.
+            Note: Use `blocksize_parameter` for a parameterized block shape to
+                run prediction independent of the exact block shape.
+        skip_preprocessing: Flag to skip the model's preprocessing.
+        skip_postprocessing: Flag to skip the model's postprocessing.
         save_output_path: A path with `{member_id}` `{sample_id}` in it
             to save the output to.
     """
