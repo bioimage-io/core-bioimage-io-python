@@ -3,11 +3,12 @@ from pathlib import Path
 import pytest
 from numpy.testing import assert_array_almost_equal
 
+from bioimageio.core.common import SupportedWeightsFormat
 from bioimageio.spec.model.v0_4 import ModelDescr as ModelDescr04
-from bioimageio.spec.model.v0_5 import ModelDescr, WeightsFormat
+from bioimageio.spec.model.v0_5 import ModelDescr
 
 
-def _test_device_management(model_package: Path, weight_format: WeightsFormat):
+def _test_device_management(model_package: Path, weight_format: SupportedWeightsFormat):
     import torch
 
     from bioimageio.core import load_description

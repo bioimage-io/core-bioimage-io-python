@@ -8,9 +8,7 @@ from bioimageio.spec._internal.type_guards import is_list, is_tuple
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.utils import download
 
-from ..digest_spec import get_axes_infos
 from ..model_adapters import ModelAdapter
-from ..tensor import Tensor
 
 
 class ONNXModelAdapter(ModelAdapter):

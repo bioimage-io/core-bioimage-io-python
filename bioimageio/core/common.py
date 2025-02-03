@@ -15,6 +15,15 @@ from typing_extensions import Self, assert_never
 
 from bioimageio.spec.model import v0_5
 
+SupportedWeightsFormat = Literal[
+    "keras_hdf5",
+    "onnx",
+    "pytorch_state_dict",
+    "tensorflow_saved_model_bundle",
+    "torchscript",
+]
+
+
 DTypeStr = Literal[
     "bool",
     "float32",

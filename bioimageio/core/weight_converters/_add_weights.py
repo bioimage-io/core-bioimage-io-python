@@ -1,11 +1,10 @@
-from typing import Optional, Sequence
+from typing import Optional
 
 from loguru import logger
 from pydantic import DirectoryPath
 
 from bioimageio.core._resource_tests import test_model
 from bioimageio.spec import load_model_description, save_bioimageio_package_as_folder
-from bioimageio.spec._internal.types import AbsoluteTolerance, RelativeTolerance
 from bioimageio.spec.model.v0_5 import ModelDescr, WeightsFormat
 
 
@@ -15,7 +14,6 @@ def increase_available_weight_formats(
     output_path: DirectoryPath,
     source_format: Optional[WeightsFormat] = None,
     target_format: Optional[WeightsFormat] = None,
-    devices: Sequence[str] = ("cpu",),
 ) -> ModelDescr:
     """Convert model weights to other formats and add them to the model description
 

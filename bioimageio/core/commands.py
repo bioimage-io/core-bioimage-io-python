@@ -6,18 +6,18 @@ from typing import Optional, Sequence, Union
 
 from typing_extensions import Literal
 
+from bioimageio.core.common import SupportedWeightsFormat
 from bioimageio.spec import (
     InvalidDescr,
     ResourceDescr,
     save_bioimageio_package,
     save_bioimageio_package_as_folder,
 )
-from bioimageio.spec.model.v0_5 import WeightsFormat
 
 from ._resource_tests import test_description
 
-WeightFormatArgAll = Literal[WeightsFormat, "all"]
-WeightFormatArgAny = Literal[WeightsFormat, "any"]
+WeightFormatArgAll = Literal[SupportedWeightsFormat, "all"]
+WeightFormatArgAny = Literal[SupportedWeightsFormat, "any"]
 
 
 def test(

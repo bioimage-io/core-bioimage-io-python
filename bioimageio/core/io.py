@@ -8,7 +8,7 @@ from typing import Any, Mapping, Optional, Sequence, Tuple, Union
 
 import h5py
 import numpy as np
-from imageio.v3 import imread, imwrite
+from imageio.v3 import imread, imwrite  # type: ignore
 from loguru import logger
 from numpy.typing import NDArray
 from pydantic import BaseModel, ConfigDict, TypeAdapter

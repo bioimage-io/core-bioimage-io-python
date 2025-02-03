@@ -51,6 +51,7 @@ from bioimageio.spec.summary import (
 
 from ._prediction_pipeline import create_prediction_pipeline
 from .axis import AxisId, BatchSize
+from .common import SupportedWeightsFormat
 from .digest_spec import get_test_inputs, get_test_outputs
 from .sample import Sample
 from .utils import VERSION
@@ -119,7 +120,7 @@ def enable_determinism(mode: Literal["seed_only", "full"]):
 
 def test_model(
     source: Union[v0_4.ModelDescr, v0_5.ModelDescr, PermissiveFileSource],
-    weight_format: Optional[WeightsFormat] = None,
+    weight_format: Optional[SupportedWeightsFormat] = None,
     devices: Optional[List[str]] = None,
     absolute_tolerance: AbsoluteTolerance = 1.5e-4,
     relative_tolerance: RelativeTolerance = 1e-4,
@@ -151,7 +152,7 @@ def test_description(
     source: Union[ResourceDescr, PermissiveFileSource, BioimageioYamlContent],
     *,
     format_version: Union[Literal["discover", "latest"], str] = "discover",
-    weight_format: Optional[WeightsFormat] = None,
+    weight_format: Optional[SupportedWeightsFormat] = None,
     devices: Optional[Sequence[str]] = None,
     absolute_tolerance: AbsoluteTolerance = 1.5e-4,
     relative_tolerance: RelativeTolerance = 1e-4,
@@ -234,7 +235,7 @@ def _test_in_env(
     source: PermissiveFileSource,
     *,
     working_dir: Path,
-    weight_format: Optional[WeightsFormat],
+    weight_format: Optional[SupportedWeightsFormat],
     conda_env: Optional[BioimageioCondaEnv],
     devices: Optional[Sequence[str]],
     absolute_tolerance: AbsoluteTolerance,
@@ -353,7 +354,7 @@ def load_description_and_test(
     source: Union[ResourceDescr, PermissiveFileSource, BioimageioYamlContent],
     *,
     format_version: Union[Literal["discover", "latest"], str] = "discover",
-    weight_format: Optional[WeightsFormat] = None,
+    weight_format: Optional[SupportedWeightsFormat] = None,
     devices: Optional[Sequence[str]] = None,
     absolute_tolerance: AbsoluteTolerance = 1.5e-4,
     relative_tolerance: RelativeTolerance = 1e-4,
@@ -389,7 +390,7 @@ def load_description_and_test(
 
     if isinstance(rd, (v0_4.ModelDescr, v0_5.ModelDescr)):
         if weight_format is None:
-            weight_formats: List[WeightsFormat] = [
+            weight_formats: List[SupportedWeightsFormat] = [
                 w for w, we in rd.weights if we is not None
             ]  # pyright: ignore[reportAssignmentType]
         else:
@@ -424,7 +425,7 @@ def load_description_and_test(
 
 def _test_model_inference(
     model: Union[v0_4.ModelDescr, v0_5.ModelDescr],
-    weight_format: WeightsFormat,
+    weight_format: SupportedWeightsFormat,
     devices: Optional[Sequence[str]],
     atol: float,
     rtol: float,
@@ -493,7 +494,7 @@ def _test_model_inference(
 
 def _test_model_inference_parametrized(
     model: v0_5.ModelDescr,
-    weight_format: WeightsFormat,
+    weight_format: SupportedWeightsFormat,
     devices: Optional[Sequence[str]],
 ) -> None:
     if not any(

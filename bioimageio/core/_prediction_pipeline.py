@@ -15,11 +15,10 @@ from typing import (
 from tqdm import tqdm
 
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
-from bioimageio.spec.model.v0_5 import WeightsFormat
 
 from ._op_base import BlockedOperator
 from .axis import AxisId, PerAxis
-from .common import Halo, MemberId, PerMember, SampleId
+from .common import Halo, MemberId, PerMember, SampleId, SupportedWeightsFormat
 from .digest_spec import (
     get_block_transform,
     get_input_halo,
@@ -296,8 +295,8 @@ def create_prediction_pipeline(
     bioimageio_model: AnyModelDescr,
     *,
     devices: Optional[Sequence[str]] = None,
-    weight_format: Optional[WeightsFormat] = None,
-    weights_format: Optional[WeightsFormat] = None,
+    weight_format: Optional[SupportedWeightsFormat] = None,
+    weights_format: Optional[SupportedWeightsFormat] = None,
     dataset_for_initial_statistics: Iterable[Union[Sample, Sequence[Tensor]]] = tuple(),
     keep_updating_initial_dataset_statistics: bool = False,
     fixed_dataset_statistics: Mapping[DatasetMeasure, MeasureValue] = MappingProxyType(

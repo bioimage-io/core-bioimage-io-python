@@ -101,16 +101,16 @@ class WithSource(ArgMixin):
         """
         if isinstance(self.descr, InvalidDescr):
             return str(getattr(self.descr, "id", getattr(self.descr, "name")))
-        else:
-            return str(
-                (
-                    (bio_config := self.descr.config.get("bioimageio", {}))
-                    and isinstance(bio_config, dict)
-                    and bio_config.get("nickname")
-                )
-                or self.descr.id
-                or self.descr.name
-            )
+
+        nickname = None
+        if (
+            isinstance(self.descr.config, v0_5.Config)
+            and (bio_config := self.descr.config.bioimageio)
+            and bio_config.model_extra is not None
+        ):
+            nickname = bio_config.model_extra.get("nickname")
+
+        return str(nickname or self.descr.id or self.descr.name)
 
 
 class ValidateFormatCmd(CmdBase, WithSource):

@@ -7,14 +7,14 @@ from zipfile import ZipFile
 import tensorflow
 
 from bioimageio.core.io import ensure_unzipped
-from bioimageio.spec._internal.io_utils import download
+from bioimageio.spec._internal.io import download
 from bioimageio.spec._internal.version_type import Version
 from bioimageio.spec.common import ZipPath
 from bioimageio.spec.model import v0_4, v0_5
 
 try:
     # try to build the tf model with the keras import from tensorflow
-    from tensorflow import keras
+    from tensorflow import keras  # type: ignore
 except Exception:
     # if the above fails try to export with the standalone keras
     import keras

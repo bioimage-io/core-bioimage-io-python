@@ -4,7 +4,7 @@ from typing import Any, Optional, Sequence, Union
 from loguru import logger
 from numpy.typing import NDArray
 
-from bioimageio.spec._internal.io_utils import download
+from bioimageio.spec._internal.io import download
 from bioimageio.spec._internal.type_guards import is_list, is_tuple
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import Version

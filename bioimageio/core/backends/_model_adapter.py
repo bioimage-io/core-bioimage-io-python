@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from typing import (
     Any,
     List,
-    Literal,
     Optional,
     Sequence,
     Tuple,
@@ -14,19 +13,12 @@ from typing import (
 
 from numpy.typing import NDArray
 
-from bioimageio.core.digest_spec import get_axes_infos, get_member_ids
-from bioimageio.core.sample import Sample
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 
+from ..common import SupportedWeightsFormat
+from ..digest_spec import get_axes_infos, get_member_ids
+from ..sample import Sample, SampleBlock, SampleBlockWithOrigin
 from ..tensor import Tensor
-
-SupportedWeightsFormat = Literal[
-    "keras_hdf5",
-    "onnx",
-    "pytorch_state_dict",
-    "tensorflow_saved_model_bundle",
-    "torchscript",
-]
 
 # Known weight formats in order of priority
 # First match wins
@@ -192,7 +184,9 @@ class ModelAdapter(ABC):
     def load(self, *, devices: Optional[Sequence[str]] = None) -> None:
         warnings.warn("Deprecated. ModelAdapter is loaded on initialization")
 
-    def forward(self, input_sample: Sample) -> Sample:
+    def forward(
+        self, input_sample: Union[Sample, SampleBlock, SampleBlockWithOrigin]
+    ) -> Sample:
         """
         Run forward pass of model to get model predictions
 
@@ -226,7 +220,11 @@ class ModelAdapter(ABC):
                 if out is not None
             },
             stat=input_sample.stat,
-            id=input_sample.id,
+            id=(
+                input_sample.id
+                if isinstance(input_sample, Sample)
+                else input_sample.sample_id
+            ),
         )
 
     @abstractmethod

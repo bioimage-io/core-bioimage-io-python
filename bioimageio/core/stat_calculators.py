@@ -47,7 +47,7 @@ from .stat_measures import (
 from .tensor import Tensor
 
 try:
-    import crick
+    import crick  # pyright: ignore[reportMissingImports]
 
 except Exception:
     crick = None

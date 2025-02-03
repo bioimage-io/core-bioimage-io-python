@@ -16,11 +16,10 @@ import numpy as np
 import xarray as xr
 from typing_extensions import Self, assert_never
 
-from bioimageio.core.digest_spec import get_axes_infos
 from bioimageio.spec.model import v0_4, v0_5
 
 from ._op_base import BlockedOperator, Operator
-from .axis import AxisId, AxisInfo, PerAxis
+from .axis import AxisId, PerAxis
 from .block import Block
 from .common import DTypeStr, MemberId
 from .sample import Sample, SampleBlock, SampleBlockWithOrigin
