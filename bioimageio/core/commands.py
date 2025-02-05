@@ -25,7 +25,6 @@ def test(
     *,
     weight_format: WeightFormatArgAll = "all",
     devices: Optional[Union[str, Sequence[str]]] = None,
-    decimal: int = 4,
     summary_path: Optional[Path] = None,
     runtime_env: Union[
         Literal["currently-active", "as-described"], Path
@@ -44,7 +43,6 @@ def test(
         descr,
         weight_format=None if weight_format == "all" else weight_format,
         devices=[devices] if isinstance(devices, str) else devices,
-        decimal=decimal,
         runtime_env=runtime_env,
         determinism=determinism,
     )

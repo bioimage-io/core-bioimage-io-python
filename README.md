@@ -379,7 +379,7 @@ The model specification and its validation tools can be found at <https://github
 
 - New feature: `bioimageio.core.test_description` accepts **runtime_env** and **run_command** to test a resource
   using the conda environment described by that resource (or another specified conda env)
-- raise validation errors if `ValidationContext.raise_errors is True`
+- breaking: removed `decimals` argument from bioimageio CLI and `bioimageio.core.commands.test()`
 
 ### 0.7.0
 
