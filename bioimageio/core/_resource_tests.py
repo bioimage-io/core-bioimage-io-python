@@ -20,9 +20,8 @@ from typing import (
     Union,
 )
 
-import numpy as np
 from loguru import logger
-from typing_extensions import assert_never, get_args
+from typing_extensions import NotRequired, TypedDict, Unpack, assert_never, get_args
 
 from bioimageio.spec import (
     BioimageioCondaEnv,
@@ -37,7 +36,11 @@ from bioimageio.spec import (
 from bioimageio.spec._internal.common_nodes import ResourceDescrBase
 from bioimageio.spec._internal.io import is_yaml_value
 from bioimageio.spec._internal.io_utils import read_yaml, write_yaml
-from bioimageio.spec._internal.types import AbsoluteTolerance, RelativeTolerance
+from bioimageio.spec._internal.types import (
+    AbsoluteTolerance,
+    MismatchedElementsPerMillion,
+    RelativeTolerance,
+)
 from bioimageio.spec._internal.validation_context import validation_context_var
 from bioimageio.spec.common import BioimageioYamlContent, PermissiveFileSource, Sha256
 from bioimageio.spec.model import v0_4, v0_5
@@ -51,10 +54,16 @@ from bioimageio.spec.summary import (
 
 from ._prediction_pipeline import create_prediction_pipeline
 from .axis import AxisId, BatchSize
-from .common import SupportedWeightsFormat
+from .common import MemberId, SupportedWeightsFormat
 from .digest_spec import get_test_inputs, get_test_outputs
 from .sample import Sample
 from .utils import VERSION
+
+
+class DeprecatedKwargs(TypedDict):
+    absolute_tolerance: NotRequired[AbsoluteTolerance]
+    relative_tolerance: NotRequired[RelativeTolerance]
+    decimal: NotRequired[Optional[int]]
 
 
 def enable_determinism(mode: Literal["seed_only", "full"]):
@@ -122,24 +131,20 @@ def test_model(
     source: Union[v0_4.ModelDescr, v0_5.ModelDescr, PermissiveFileSource],
     weight_format: Optional[SupportedWeightsFormat] = None,
     devices: Optional[List[str]] = None,
-    absolute_tolerance: AbsoluteTolerance = 1.5e-4,
-    relative_tolerance: RelativeTolerance = 1e-4,
-    decimal: Optional[int] = None,
     *,
     determinism: Literal["seed_only", "full"] = "seed_only",
     sha256: Optional[Sha256] = None,
+    **deprecated: Unpack[DeprecatedKwargs],
 ) -> ValidationSummary:
     """Test model inference"""
     return test_description(
         source,
         weight_format=weight_format,
         devices=devices,
-        absolute_tolerance=absolute_tolerance,
-        relative_tolerance=relative_tolerance,
-        decimal=decimal,
         determinism=determinism,
         expected_type="model",
         sha256=sha256,
+        **deprecated,
     )
 
 
@@ -154,9 +159,6 @@ def test_description(
     format_version: Union[Literal["discover", "latest"], str] = "discover",
     weight_format: Optional[SupportedWeightsFormat] = None,
     devices: Optional[Sequence[str]] = None,
-    absolute_tolerance: AbsoluteTolerance = 1.5e-4,
-    relative_tolerance: RelativeTolerance = 1e-4,
-    decimal: Optional[int] = None,
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Optional[str] = None,
     sha256: Optional[Sha256] = None,
@@ -164,6 +166,7 @@ def test_description(
         Literal["currently-active", "as-described"], Path, BioimageioCondaEnv
     ] = ("currently-active"),
     run_command: Callable[[Sequence[str]], None] = default_run_command,
+    **deprecated: Unpack[DeprecatedKwargs],
 ) -> ValidationSummary:
     """Test a bioimage.io resource dynamically, e.g. prediction of test tensors for models.
 
@@ -173,8 +176,6 @@ def test_description(
             Default: All weight formats present in **source**.
         devices: Devices to test with, e.g. 'cpu', 'cuda'.
             Default (may be weight format dependent): ['cuda'] if available, ['cpu'] otherwise.
-        absolute_tolerance: Maximum absolute tolerance of reproduced output tensors.
-        relative_tolerance: Maximum relative tolerance of reproduced output tensors.
         determinism: Modes to improve reproducibility of test outputs.
         runtime_env: (Experimental feature!) The Python environment to run the tests in
             - `"currently-active"`: Use active Python interpreter.
@@ -191,12 +192,10 @@ def test_description(
             format_version=format_version,
             weight_format=weight_format,
             devices=devices,
-            absolute_tolerance=absolute_tolerance,
-            relative_tolerance=relative_tolerance,
-            decimal=decimal,
             determinism=determinism,
             expected_type=expected_type,
             sha256=sha256,
+            **deprecated,
         )
         return rd.validation_summary
 
@@ -224,10 +223,9 @@ def test_description(
             weight_format=weight_format,
             conda_env=conda_env,
             devices=devices,
-            absolute_tolerance=absolute_tolerance,
-            relative_tolerance=relative_tolerance,
             determinism=determinism,
             run_command=run_command,
+            **deprecated,
         )
 
 
@@ -238,10 +236,9 @@ def _test_in_env(
     weight_format: Optional[SupportedWeightsFormat],
     conda_env: Optional[BioimageioCondaEnv],
     devices: Optional[Sequence[str]],
-    absolute_tolerance: AbsoluteTolerance,
-    relative_tolerance: RelativeTolerance,
     determinism: Literal["seed_only", "full"],
     run_command: Callable[[Sequence[str]], None],
+    **deprecated: Unpack[DeprecatedKwargs],
 ) -> ValidationSummary:
     descr = load_description(source)
 
@@ -263,11 +260,10 @@ def _test_in_env(
             working_dir=working_dir / all_present_wfs[0],
             weight_format=all_present_wfs[0],
             devices=devices,
-            absolute_tolerance=absolute_tolerance,
-            relative_tolerance=relative_tolerance,
             determinism=determinism,
             conda_env=conda_env,
             run_command=run_command,
+            **deprecated,
         )
         for wf in all_present_wfs[1:]:
             additional_summary = _test_in_env(
@@ -275,11 +271,10 @@ def _test_in_env(
                 working_dir=working_dir / wf,
                 weight_format=wf,
                 devices=devices,
-                absolute_tolerance=absolute_tolerance,
-                relative_tolerance=relative_tolerance,
                 determinism=determinism,
                 conda_env=conda_env,
                 run_command=run_command,
+                **deprecated,
             )
             for d in additional_summary.details:
                 # TODO: filter reduntant details; group details
@@ -356,12 +351,10 @@ def load_description_and_test(
     format_version: Union[Literal["discover", "latest"], str] = "discover",
     weight_format: Optional[SupportedWeightsFormat] = None,
     devices: Optional[Sequence[str]] = None,
-    absolute_tolerance: AbsoluteTolerance = 1.5e-4,
-    relative_tolerance: RelativeTolerance = 1e-4,
-    decimal: Optional[int] = None,
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Optional[str] = None,
     sha256: Optional[Sha256] = None,
+    **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[ResourceDescr, InvalidDescr]:
     """Test RDF dynamically, e.g. model inference of test inputs"""
     if (
@@ -396,24 +389,9 @@ def load_description_and_test(
         else:
             weight_formats = [weight_format]
 
-        if decimal is None:
-            atol = absolute_tolerance
-            rtol = relative_tolerance
-        else:
-            warnings.warn(
-                "The argument `decimal` has been deprecated in favour of"
-                + " `relative_tolerance` and `absolute_tolerance`, with different"
-                + " validation logic, using `numpy.testing.assert_allclose, see"
-                + " 'https://numpy.org/doc/stable/reference/generated/"
-                + " numpy.testing.assert_allclose.html'. Passing a value for `decimal`"
-                + " will cause validation to revert to the old behaviour."
-            )
-            atol = 1.5 * 10 ** (-decimal)
-            rtol = 0
-
         enable_determinism(determinism)
         for w in weight_formats:
-            _test_model_inference(rd, w, devices, atol, rtol)
+            _test_model_inference(rd, w, devices, **deprecated)
             if not isinstance(rd, v0_4.ModelDescr):
                 _test_model_inference_parametrized(rd, w, devices)
 
@@ -423,12 +401,49 @@ def load_description_and_test(
     return rd
 
 
+def _get_tolerance(
+    model: Union[v0_4.ModelDescr, v0_5.ModelDescr],
+    wf: SupportedWeightsFormat,
+    m: MemberId,
+    **deprecated: Unpack[DeprecatedKwargs],
+) -> Tuple[RelativeTolerance, AbsoluteTolerance, MismatchedElementsPerMillion]:
+    if isinstance(model, v0_5.ModelDescr):
+        applicable = v0_5.ReproducibilityTolerance()
+        for a in model.config.bioimageio.reproducibility_tolerance:
+            if (not a.weights_formats or wf in a.weights_formats) and (
+                not a.output_ids or m in a.output_ids
+            ):
+                applicable = a
+                break
+
+        rtol = applicable.relative_tolerance
+        atol = applicable.absolute_tolerance
+        mismatched_tol = applicable.mismatched_elements_per_million
+    elif (decimal := deprecated.get("decimal")) is not None:
+        warnings.warn(
+            "The argument `decimal` has been deprecated in favour of"
+            + " `relative_tolerance` and `absolute_tolerance`, with different"
+            + " validation logic, using `numpy.testing.assert_allclose, see"
+            + " 'https://numpy.org/doc/stable/reference/generated/"
+            + " numpy.testing.assert_allclose.html'. Passing a value for `decimal`"
+            + " will cause validation to revert to the old behaviour."
+        )
+        atol = 1.5 * 10 ** (-decimal)
+        rtol = 0
+        mismatched_tol = 0
+    else:
+        atol = deprecated.get("absolute_tolerance", 0)
+        rtol = deprecated.get("relative_tolerance", 1e-3)
+        mismatched_tol = 0
+
+    return rtol, atol, mismatched_tol
+
+
 def _test_model_inference(
     model: Union[v0_4.ModelDescr, v0_5.ModelDescr],
     weight_format: SupportedWeightsFormat,
     devices: Optional[Sequence[str]],
-    atol: float,
-    rtol: float,
+    **deprecated: Unpack[DeprecatedKwargs],
 ) -> None:
     test_name = f"Reproduce test outputs from test inputs ({weight_format})"
     logger.debug("starting '{}'", test_name)
@@ -448,20 +463,37 @@ def _test_model_inference(
             error = f"Expected {len(expected.members)} outputs, but got {len(results.members)}"
 
         else:
-            for m, exp in expected.members.items():
-                res = results.members.get(m)
-                if res is None:
+            for m, expected in expected.members.items():
+                actual = results.members.get(m)
+                if actual is None:
                     error = "Output tensors for test case may not be None"
                     break
-                try:
-                    np.testing.assert_allclose(
-                        res.data,
-                        exp.data,
-                        rtol=rtol,
-                        atol=atol,
+
+                rtol, atol, mismatched_tol = _get_tolerance(
+                    model, wf=weight_format, m=m, **deprecated
+                )
+                mismatched = (abs_diff := abs(actual - expected)) > atol + rtol * abs(
+                    expected
+                )
+                mismatched_elements = mismatched.sum().item()
+                if mismatched_elements > mismatched_tol:
+                    r_max_idx = (r_diff := abs_diff / abs(expected)).argmax()
+                    r_max = r_diff[r_max_idx].item()
+                    r_actual = actual[r_max_idx].item()
+                    r_expected = expected[r_max_idx].item()
+                    a_max_idx = abs_diff.argmax()
+                    a_max = abs_diff[a_max_idx].item()
+                    a_actual = actual[a_max_idx].item()
+                    a_expected = expected[a_max_idx].item()
+                    error = (
+                        f"Output '{m}' disagrees with {mismatched_elements} of"
+                        + f" {expected.size} expected values."
+                        + f"\n Max relative difference: {r_max}"
+                        + f" (= |{r_actual} - {r_expected}|/|{r_expected}|)"
+                        + f" at {r_max_idx}"
+                        + f"\n Max absolute difference: {a_max}"
+                        + f" (= |{a_actual} - {a_expected}|) at {a_max_idx}"
                     )
-                except AssertionError as e:
-                    error = f"Output and expected output disagree:\n {e}"
                     break
     except Exception as e:
         if validation_context_var.get().raise_errors:

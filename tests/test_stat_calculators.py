@@ -42,9 +42,9 @@ def test_sample_mean_var_std_calculator(axes: Optional[Tuple[AxisId, ...]]):
     tid = MemberId("tensor")
     d_axes = tuple(map(AxisId, ("batch", "channel", "x", "y")))
     data, ds = create_random_dataset(tid, d_axes)
-    expected_mean = data[0].mean(axes)
-    expected_var = data[0].var(axes)
-    expected_std = data[0].std(axes)
+    expected_mean = data[0:1].mean(axes)
+    expected_var = data[0:1].var(axes)
+    expected_std = data[0:1].std(axes)
 
     calc = MeanVarStdCalculator(tid, axes=axes)
 
