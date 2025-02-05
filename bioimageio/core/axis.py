@@ -34,6 +34,7 @@ S = TypeVar("S", bound=str)
 
 
 AxisId = v0_5.AxisId
+"""An axis identifier, e.g. 'batch', 'channel', 'z', 'y', 'x'"""
 
 T = TypeVar("T")
 PerAxis = Mapping[AxisId, T]

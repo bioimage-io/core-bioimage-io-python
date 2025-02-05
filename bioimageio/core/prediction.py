@@ -22,7 +22,7 @@ from bioimageio.spec.model import v0_4, v0_5
 
 from ._prediction_pipeline import PredictionPipeline, create_prediction_pipeline
 from .axis import AxisId
-from .common import MemberId, PerMember
+from .common import BlocksizeParameter, MemberId, PerMember
 from .digest_spec import create_sample_for_model
 from .io import save_sample
 from .sample import Sample
@@ -36,12 +36,7 @@ def predict(
     ],
     inputs: Union[Sample, PerMember[Union[Tensor, xr.DataArray, NDArray[Any], Path]]],
     sample_id: Hashable = "sample",
-    blocksize_parameter: Optional[
-        Union[
-            v0_5.ParameterizedSize_N,
-            Mapping[Tuple[MemberId, AxisId], v0_5.ParameterizedSize_N],
-        ]
-    ] = None,
+    blocksize_parameter: Optional[BlocksizeParameter] = None,
     input_block_shape: Optional[Mapping[MemberId, Mapping[AxisId, int]]] = None,
     skip_preprocessing: bool = False,
     skip_postprocessing: bool = False,
@@ -55,10 +50,12 @@ def predict(
         inputs: the input sample or the named input(s) for this model as a dictionary
         sample_id: the sample id.
         blocksize_parameter: (optional) Tile the input into blocks parametrized by
-            blocksize according to any parametrized axis sizes defined in the model RDF.
-            Note: For a predetermined, fixed block shape use `input_block_shape`
+            **blocksize_parameter** according to any parametrized axis sizes defined
+            by the **model**.
+            See `bioimageio.spec.model.v0_5.ParameterizedSize` for details.
+            Note: For a predetermined, fixed block shape use **input_block_shape**.
         input_block_shape: (optional) Tile the input sample tensors into blocks.
-            Note: Use `blocksize_parameter` for a parameterized block shape to
+            Note: Use **blocksize_parameter** for a parameterized block shape to
                 run prediction independent of the exact block shape.
         skip_preprocessing: Flag to skip the model's preprocessing.
         skip_postprocessing: Flag to skip the model's postprocessing.

@@ -94,7 +94,7 @@ def setup_pre_and_postprocessing(
 ) -> PreAndPostprocessing:
     """
     Get pre- and postprocessing operators for a `model` description.
-    userd in `bioimageio.core.create_prediction_pipeline"""
+    Used in `bioimageio.core.create_prediction_pipeline"""
     prep, post, prep_meas, post_meas = _prepare_setup_pre_and_postprocessing(model)
 
     missing_dataset_stats = {
