@@ -131,9 +131,6 @@ class TestCmd(CmdBase, WithSource):
     devices: Optional[Union[str, Sequence[str]]] = None
     """Device(s) to use for testing"""
 
-    decimal: int = 4
-    """Precision for numerical comparisons"""
-
     runtime_env: Union[Literal["currently-active", "as-described"], Path] = Field(
         "currently-active", alias="runtime-env"
     )
@@ -158,7 +155,6 @@ class TestCmd(CmdBase, WithSource):
                 self.descr,
                 weight_format=self.weight_format,
                 devices=self.devices,
-                decimal=self.decimal,
                 summary_path=self.summary_path,
                 runtime_env=self.runtime_env,
                 determinism=self.determinism,
