@@ -221,27 +221,33 @@ jobs:
         BIOIMAGEIO_CACHE_PATH: bioimageio_cache
 
   conda-build:
-    runs-on: ubuntu-latest
     needs: test-spec-conda
+    runs-on: ubuntu-latest
     steps:
-    - name: checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    - name: Install Conda environment with Micromamba
-      uses: mamba-org/setup-micromamba@v1
-      with:
-        cache-downloads: true
-        cache-environment: true
-        environment-name: build-env
-        condarc: |
-          channels:
-          - conda-forge
-        create-args: |
-          boa
-    - name: linux conda build
-      run: |
-        conda mambabuild -c conda-forge conda-recipe
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          auto-activate-base: true
+          activate-environment: ""
+          channel-priority: strict
+          miniforge-version: latest
+          conda-solver: libmamba
+      - name: install common conda dependencies
+        run: conda install -n base -c conda-forge conda-build -y
+      - uses: actions/cache@v4
+        with:
+          path: |
+            pkgs/noarch
+            pkgs/channeldata.json
+          key: ${{ github.sha }}-packages
+      - name: linux conda build test
+        shell: bash -l {0}
+        run: |
+          mkdir -p ./pkgs/noarch
+          conda-build -c conda-forge conda-recipe --no-test --output-folder ./pkgs
 
   docs:
     needs: [test-spec-main]
