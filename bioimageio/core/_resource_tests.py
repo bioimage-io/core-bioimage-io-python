@@ -66,6 +66,7 @@ class DeprecatedKwargs(TypedDict):
     decimal: NotRequired[Optional[int]]
 
 
+# TODO: avoid unnecessary imports in enable_determinism
 def enable_determinism(mode: Literal["seed_only", "full"]):
     """Seed and configure ML frameworks for maximum reproducibility.
     May degrade performance. Only recommended for testing reproducibility!
@@ -476,7 +477,7 @@ def _test_model_inference(
                     expected
                 )
                 mismatched_elements = mismatched.sum().item()
-                if mismatched_elements > mismatched_tol:
+                if mismatched_elements / expected.size > mismatched_tol / 1e6:
                     r_max_idx = (r_diff := abs_diff / abs(expected)).argmax()
                     r_max = r_diff[r_max_idx].item()
                     r_actual = actual[r_max_idx].item()
@@ -488,11 +489,11 @@ def _test_model_inference(
                     error = (
                         f"Output '{m}' disagrees with {mismatched_elements} of"
                         + f" {expected.size} expected values."
-                        + f"\n Max relative difference: {r_max}"
-                        + f" (= |{r_actual} - {r_expected}|/|{r_expected}|)"
+                        + f"\n Max relative difference: {r_max:.2e}"
+                        + rf" (= \|{r_actual:.2e} - {r_expected:.2e}\|/\|{r_expected:.2e}\|)"
                         + f" at {r_max_idx}"
-                        + f"\n Max absolute difference: {a_max}"
-                        + f" (= |{a_actual} - {a_expected}|) at {a_max_idx}"
+                        + f"\n Max absolute difference: {a_max:.2e}"
+                        + rf" (= \|{a_actual:.2e} - {a_expected:.2e}\|) at {a_max_idx}"
                     )
                     break
     except Exception as e:
