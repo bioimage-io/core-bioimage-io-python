@@ -7,7 +7,11 @@ from typing import Dict, List
 from loguru import logger
 from pytest import FixtureRequest, fixture
 
+from bioimageio.core import enable_determinism
 from bioimageio.spec import __version__ as bioimageio_spec_version
+
+enable_determinism()
+
 
 try:
     import torch
