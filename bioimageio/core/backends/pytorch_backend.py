@@ -113,7 +113,7 @@ def load_torch_model(
     network = arch(**model_kwargs)
     if not isinstance(network, nn.Module):
         raise ValueError(
-            f"calling {weight_spec.architecture.callable} did not return a torch.nn.Module"
+            f"calling {weight_spec.architecture.callable_name if isinstance(weight_spec.architecture, (v0_4.CallableFromFile, v0_4.CallableFromDepencency)) else weight_spec.architecture.callable} did not return a torch.nn.Module"
         )
 
     if load_state or devices:
@@ -153,7 +153,7 @@ def get_devices(
 ) -> List[torch.device]:
     if not devices:
         torch_devices = [
-            (torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu"))
+            torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
         ]
     else:
         torch_devices = [torch.device(d) for d in devices]
