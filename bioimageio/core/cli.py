@@ -231,11 +231,14 @@ def _get_stat(
 class UpdateFormatCmd(CmdBase, WithSource):
     """Update the metadata format"""
 
-    path: Optional[Path] = Field(None, alias="output-path")
-    """save updated RDF to this path"""
+    output: Optional[Path] = None
+    """Save updated bioimageio.yaml to this file.
+
+    (Always renders updated bioimageio.yaml to terminal.)
+    """
 
     def run(self):
-        updated = update_format(self.descr, output_path=self.path)
+        updated = update_format(self.descr, output_path=self.output)
         updated_stream = StringIO()
         write_yaml(updated, updated_stream)
         updated_md = f"```yaml\n{updated_stream.getvalue()}\n```"
