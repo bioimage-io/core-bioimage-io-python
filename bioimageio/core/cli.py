@@ -11,6 +11,7 @@ import sys
 from argparse import RawTextHelpFormatter
 from difflib import SequenceMatcher
 from functools import cached_property
+from io import StringIO
 from pathlib import Path
 from pprint import pformat, pprint
 from typing import (
@@ -28,6 +29,7 @@ from typing import (
     Union,
 )
 
+import rich.markdown
 from loguru import logger
 from pydantic import BaseModel, Field, model_validator
 from pydantic_settings import (
@@ -44,8 +46,12 @@ from ruyaml import YAML
 from tqdm import tqdm
 from typing_extensions import assert_never
 
+from bioimageio.core.weight_converters._add_weights import (
+    increase_available_weight_formats,
+)
 from bioimageio.spec import AnyModelDescr, InvalidDescr, load_description
 from bioimageio.spec._internal.io_basics import ZipPath
+from bioimageio.spec._internal.io_utils import write_yaml
 from bioimageio.spec._internal.types import NotEmpty
 from bioimageio.spec.dataset import DatasetDescr
 from bioimageio.spec.model import ModelDescr, v0_4, v0_5
@@ -57,6 +63,7 @@ from .commands import (
     WeightFormatArgAny,
     package,
     test,
+    update_format,
     validate_format,
 )
 from .common import MemberId, SampleId
@@ -219,6 +226,23 @@ def _get_stat(
     save_dataset_stat(stat, stats_path)
 
     return stat
+
+
+class UpdateFormatCmd(CmdBase, WithSource):
+    """Update the metadata format"""
+
+    path: Optional[Path] = Field(None, alias="output-path")
+    """save updated RDF to this path"""
+
+    def run(self):
+        updated = update_format(self.descr, output_path=self.path)
+        updated_stream = StringIO()
+        write_yaml(updated, updated_stream)
+        updated_md = f"```yaml\n{updated_stream.getvalue()}\n```"
+
+        rich_markdown = rich.markdown.Markdown(updated_md)
+        console = rich.console.Console()
+        console.print(rich_markdown)
 
 
 class PredictCmd(CmdBase, WithSource):
@@ -563,6 +587,20 @@ class PredictCmd(CmdBase, WithSource):
             save_sample(sp_out, sample_out)
 
 
+class IncreaseWeightFormatsCmd(CmdBase, WithSource):
+    path: CliPositionalArg[Path]
+    """The path to write the updated model description to."""
+
+    def run(self):
+        model_descr = ensure_description_is_model(self.descr)
+        if isinstance(model_descr, v0_4.ModelDescr):
+            raise TypeError(
+                f"model format {model_descr.format_version} not supported."
+                + " Please update the model first."
+            )
+        _ = increase_available_weight_formats(model_descr, output_path=self.path)
+
+
 JSON_FILE = "bioimageio-cli.json"
 YAML_FILE = "bioimageio-cli.yaml"
 
@@ -593,6 +631,15 @@ class Bioimageio(
 
     predict: CliSubCommand[PredictCmd]
     "Predict with a model resource"
+
+    update_format: CliSubCommand[UpdateFormatCmd] = Field(alias="update-format")
+    """Update the metadata format"""
+
+    increase_weight_formats: CliSubCommand[IncreaseWeightFormatsCmd] = Field(
+        alias="incease-weight-formats"
+    )
+    """Add additional weights to the model descriptions converted from available
+    formats to improve deployability."""
 
     @classmethod
     def settings_customise_sources(
@@ -631,7 +678,14 @@ class Bioimageio(
             "executing CLI command:\n{}",
             pformat({k: v for k, v in self.model_dump().items() if v is not None}),
         )
-        cmd = self.validate_format or self.test or self.package or self.predict
+        cmd = (
+            self.validate_format
+            or self.test
+            or self.package
+            or self.predict
+            or self.update_format
+            or self.increase_weight_formats
+        )
         assert cmd is not None
         cmd.run()
 

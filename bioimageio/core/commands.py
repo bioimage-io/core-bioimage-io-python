@@ -13,6 +13,7 @@ from bioimageio.spec import (
     save_bioimageio_package,
     save_bioimageio_package_as_folder,
 )
+from bioimageio.spec import update_format as update_format
 
 from ._resource_tests import test_description
 
@@ -100,3 +101,7 @@ def package(
             weights_priority_order=weights_priority_order,
         )
     return 0
+
+
+# def update_format(descr: ResourceDescr, path: Path):
+#     update_format_func()

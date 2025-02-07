@@ -67,7 +67,7 @@ MODEL_SOURCES: Dict[str, str] = {
     ),
     "unet2d_expand_output_shape": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
-        "unet2d_nuclei_broad/expand_output_shape_v0_4.bioimageio.yaml"
+        "unet2d_nuclei_broad/expand_output_shape.bioimageio.yaml"
     ),
     "unet2d_fixed_shape": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
@@ -84,6 +84,10 @@ MODEL_SOURCES: Dict[str, str] = {
     "unet2d_multi_tensor": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
         "unet2d_multi_tensor/v0_4.bioimageio.yaml"
+    ),
+    "unet2d_nuclei_broad_model_old": (
+        "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
+        "unet2d_nuclei_broad/v0_4_9.bioimageio.yaml"
     ),
     "unet2d_nuclei_broad_model": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models/"
@@ -238,6 +242,14 @@ def unet2d_keras(request: FixtureRequest):
 # written as model group to automatically skip on missing torch
 @fixture(scope="session", params=[] if skip_torch else ["unet2d_nuclei_broad_model"])
 def unet2d_nuclei_broad_model(request: FixtureRequest):
+    return MODEL_SOURCES[request.param]
+
+
+# written as model group to automatically skip on missing torch
+@fixture(
+    scope="session", params=[] if skip_torch else ["unet2d_nuclei_broad_model_old"]
+)
+def unet2d_nuclei_broad_model_old(request: FixtureRequest):
     return MODEL_SOURCES[request.param]
 
 
