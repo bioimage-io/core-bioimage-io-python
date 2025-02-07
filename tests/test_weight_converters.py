@@ -21,7 +21,7 @@ def test_pytorch_to_torchscript(any_torch_model, tmp_path):
     assert ret_val.source == out_path
     model_descr.weights.torchscript = ret_val
     summary = test_model(model_descr, weight_format="torchscript")
-    assert summary.status == "passed", summary.format()
+    assert summary.status == "passed", summary.display()
 
 
 def test_pytorch_to_onnx(convert_to_onnx, tmp_path):
@@ -42,7 +42,7 @@ def test_pytorch_to_onnx(convert_to_onnx, tmp_path):
 
     model_descr.weights.onnx = ret_val
     summary = test_model(model_descr, weight_format="onnx")
-    assert summary.status == "passed", summary.format()
+    assert summary.status == "passed", summary.display()
 
 
 def test_keras_to_tensorflow(any_keras_model: Path, tmp_path: Path):
@@ -57,7 +57,7 @@ def test_keras_to_tensorflow(any_keras_model: Path, tmp_path: Path):
 
     model_descr.weights.keras = ret_val
     summary = test_model(model_descr, weight_format="keras_hdf5")
-    assert summary.status == "passed", summary.format()
+    assert summary.status == "passed", summary.display()
 
 
 @pytest.mark.skip()
@@ -78,7 +78,7 @@ def test_keras_to_tensorflow_zipped(any_keras_model: Path, tmp_path: Path):
 
     model_descr.weights.keras = ret_val
     summary = test_model(model_descr, weight_format="keras_hdf5")
-    assert summary.status == "passed", summary.format()
+    assert summary.status == "passed", summary.display()
 
 
 # TODO: add tensorflow_to_keras converter
@@ -94,7 +94,7 @@ def test_keras_to_tensorflow_zipped(any_keras_model: Path, tmp_path: Path):
 
 #     model_descr.weights.keras = ret_val
 #     summary = test_model(model_descr, weight_format="keras_hdf5")
-#     assert summary.status == "passed", summary.format()
+#     assert summary.status == "passed", summary.display()
 
 
 # @pytest.mark.skip()
@@ -115,4 +115,4 @@ def test_keras_to_tensorflow_zipped(any_keras_model: Path, tmp_path: Path):
 
 #     model_descr.weights.keras = ret_val
 #     summary = test_model(model_descr, weight_format="keras_hdf5")
-#     assert summary.status == "passed", summary.format()
+#     assert summary.status == "passed", summary.display()

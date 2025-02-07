@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import subprocess
-import warnings
 from itertools import chain
 from typing import Dict, List
 
+from loguru import logger
 from pytest import FixtureRequest, fixture
 
 from bioimageio.spec import __version__ as bioimageio_spec_version
@@ -13,7 +13,7 @@ try:
     import torch
 
     torch_version = tuple(map(int, torch.__version__.split(".")[:2]))
-    warnings.warn(f"detected torch version {torch.__version__}")
+    logger.warning("detected torch version {}", torch.__version__)
 except ImportError:
     torch = None
     torch_version = None
@@ -40,7 +40,7 @@ except ImportError:
 
 skip_tensorflow = tensorflow is None
 
-warnings.warn(f"testing with bioimageio.spec {bioimageio_spec_version}")
+logger.warning("testing with bioimageio.spec {}", bioimageio_spec_version)
 
 # TODO: use models from new collection on S3
 MODEL_SOURCES: Dict[str, str] = {

@@ -41,7 +41,7 @@ def test_test_model(any_model: str):
     with ValidationContext(raise_errors=True):
         summary = test_model(any_model)
 
-    assert summary.status == "passed", summary.format()
+    assert summary.status == "passed", summary.display()
 
 
 def test_loading_description_multiple_times(unet2d_nuclei_broad_model: str):
