@@ -37,6 +37,7 @@ def run_subprocess(
         ["test", "unet2d_nuclei_broad_model"],
         ["predict", "--example", "unet2d_nuclei_broad_model"],
         ["update-format", "unet2d_path_old_version"],
+        ["increase-weight-formats", "unet2d_nuclei_broad_model"],
     ],
 )
 def test_cli(

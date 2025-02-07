@@ -14,7 +14,7 @@ def increase_available_weight_formats(
     output_path: DirectoryPath,
     source_format: Optional[WeightsFormat] = None,
     target_format: Optional[WeightsFormat] = None,
-) -> ModelDescr:
+) -> Optional[ModelDescr]:
     """Convert model weights to other formats and add them to the model description
 
     Args:
@@ -24,6 +24,10 @@ def increase_available_weight_formats(
         target_format: convert to a specific weights format.
                        Default: attempt to convert to any missing format.
         devices: Devices that may be used during conversion.
+
+    Returns:
+        - An updated model description if any converted weights were added.
+        - `None` if no conversion was possible.
     """
     if not isinstance(model_descr, ModelDescr):
         raise TypeError(type(model_descr))
@@ -47,6 +51,8 @@ def increase_available_weight_formats(
         missing = set(model_descr.weights.missing_formats)
     else:
         missing = {target_format}
+
+    originally_missing = set(missing)
 
     if "pytorch_state_dict" in available and "onnx" in missing:
         from .pytorch_to_onnx import convert
@@ -86,5 +92,10 @@ def increase_available_weight_formats(
             + " if you would like bioimageio.core to support a particular conversion."
         )
 
-    test_model(model_descr).display()
-    return model_descr
+    if originally_missing == missing:
+        logger.warning("failed to add any converted weights")
+        return None
+    else:
+        logger.info(f"added weights formats {originally_missing - missing}")
+        test_model(model_descr).display()
+        return model_descr
