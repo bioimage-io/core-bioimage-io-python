@@ -51,11 +51,16 @@ def _convert_axis_ids(
     if mode == "per_sample":
         ret = []
     elif mode == "per_dataset":
-        ret = [AxisId("b")]
+        ret = [v0_5.BATCH_AXIS_ID]
     else:
         assert_never(mode)
 
-    ret.extend([AxisId(a) for a in axes])
+    ret.extend(
+        [
+            AxisId(v0_5._AXIS_ID_MAP.get(a, a))  # pyright: ignore[reportPrivateUsage]
+            for a in axes
+        ]
+    )
     return tuple(ret)
 
 
