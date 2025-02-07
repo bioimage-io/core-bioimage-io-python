@@ -44,7 +44,7 @@ warnings.warn(f"testing with bioimageio.spec {bioimageio_spec_version}")
 
 # TODO: use models from new collection on S3
 MODEL_SOURCES: Dict[str, str] = {
-    "hpa_densenet": "polite-pig/1",
+    "hpa_densenet": "polite-pig/1.1",
     "stardist": (
         "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/models"
         "/stardist_example_model/v0_4.bioimageio.yaml"
