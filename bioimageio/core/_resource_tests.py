@@ -68,15 +68,25 @@ class DeprecatedKwargs(TypedDict):
 
 
 def enable_determinism(
-    mode: Literal["seed_only", "full"], weight_formats: Sequence[SupportedWeightsFormat]
+    mode: Literal["seed_only", "full"] = "full",
+    weight_formats: Optional[Sequence[SupportedWeightsFormat]] = None,
 ):
     """Seed and configure ML frameworks for maximum reproducibility.
     May degrade performance. Only recommended for testing reproducibility!
 
     Seed any random generators and (if **mode**=="full") request ML frameworks to use
     deterministic algorithms.
+
+    Args:
+        mode: determinism mode
+            - 'seed_only' -- only set seeds, or
+            - 'full' determinsm features (might degrade performance or throw exceptions)
+        weight_formats: Limit deep learning importing deep learning frameworks
+            based on weight_formats.
+            E.g. this allows to avoid importing tensorflow when testing with pytorch.
+
     Notes:
-        - **mode** == "full"  might degrade performance and throw exceptions.
+        - **mode** == "full"  might degrade performance or throw exceptions.
         - Subsequent inference calls might still differ. Call before each function
           (sequence) that is expected to be reproducible.
         - Degraded performance: Use for testing reproducibility only!
@@ -95,7 +105,11 @@ def enable_determinism(
     except Exception as e:
         logger.debug(str(e))
 
-    if "pytorch_state_dict" in weight_formats or "torchscript" in weight_formats:
+    if (
+        weight_formats is None
+        or "pytorch_state_dict" in weight_formats
+        or "torchscript" in weight_formats
+    ):
         try:
             try:
                 import torch
@@ -108,7 +122,8 @@ def enable_determinism(
             logger.debug(str(e))
 
     if (
-        "tensorflow_saved_model_bundle" in weight_formats
+        weight_formats is None
+        or "tensorflow_saved_model_bundle" in weight_formats
         or "keras_hdf5" in weight_formats
     ):
         try:
@@ -125,7 +140,7 @@ def enable_determinism(
         except Exception as e:
             logger.debug(str(e))
 
-    if "keras_hdf5" in weight_formats:
+    if weight_formats is None or "keras_hdf5" in weight_formats:
         try:
             try:
                 import keras
