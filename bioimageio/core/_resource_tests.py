@@ -1,4 +1,5 @@
 import hashlib
+import os
 import platform
 import subprocess
 import traceback
@@ -66,8 +67,9 @@ class DeprecatedKwargs(TypedDict):
     decimal: NotRequired[Optional[int]]
 
 
-# TODO: avoid unnecessary imports in enable_determinism
-def enable_determinism(mode: Literal["seed_only", "full"]):
+def enable_determinism(
+    mode: Literal["seed_only", "full"], weight_formats: Sequence[SupportedWeightsFormat]
+):
     """Seed and configure ML frameworks for maximum reproducibility.
     May degrade performance. Only recommended for testing reproducibility!
 
@@ -93,39 +95,46 @@ def enable_determinism(mode: Literal["seed_only", "full"]):
     except Exception as e:
         logger.debug(str(e))
 
-    try:
+    if "pytorch_state_dict" in weight_formats or "torchscript" in weight_formats:
         try:
-            import torch
-        except ImportError:
-            pass
-        else:
-            _ = torch.manual_seed(0)
-            torch.use_deterministic_algorithms(mode == "full")
-    except Exception as e:
-        logger.debug(str(e))
+            try:
+                import torch
+            except ImportError:
+                pass
+            else:
+                _ = torch.manual_seed(0)
+                torch.use_deterministic_algorithms(mode == "full")
+        except Exception as e:
+            logger.debug(str(e))
 
-    try:
+    if (
+        "tensorflow_saved_model_bundle" in weight_formats
+        or "keras_hdf5" in weight_formats
+    ):
         try:
-            import keras
-        except ImportError:
-            pass
-        else:
-            keras.utils.set_random_seed(0)
-    except Exception as e:
-        logger.debug(str(e))
+            os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
+            try:
+                import tensorflow as tf
+            except ImportError:
+                pass
+            else:
+                tf.random.set_seed(0)
+                if mode == "full":
+                    tf.config.experimental.enable_op_determinism()
+                # TODO: find possibility to switch it off again??
+        except Exception as e:
+            logger.debug(str(e))
 
-    try:
+    if "keras_hdf5" in weight_formats:
         try:
-            import tensorflow as tf
-        except ImportError:
-            pass
-        else:
-            tf.random.set_seed(0)
-            if mode == "full":
-                tf.config.experimental.enable_op_determinism()
-            # TODO: find possibility to switch it off again??
-    except Exception as e:
-        logger.debug(str(e))
+            try:
+                import keras
+            except ImportError:
+                pass
+            else:
+                keras.utils.set_random_seed(0)
+        except Exception as e:
+            logger.debug(str(e))
 
 
 def test_model(
@@ -390,7 +399,7 @@ def load_description_and_test(
         else:
             weight_formats = [weight_format]
 
-        enable_determinism(determinism)
+        enable_determinism(determinism, weight_formats=weight_formats)
         for w in weight_formats:
             _test_model_inference(rd, w, devices, **deprecated)
             if not isinstance(rd, v0_4.ModelDescr):
@@ -589,12 +598,14 @@ def _test_model_inference_parametrized(
 
             resized_test_inputs = Sample(
                 members={
-                    t.id: test_inputs.members[t.id].resize_to(
-                        {
-                            aid: s
-                            for (tid, aid), s in input_target_sizes.items()
-                            if tid == t.id
-                        },
+                    t.id: (
+                        test_inputs.members[t.id].resize_to(
+                            {
+                                aid: s
+                                for (tid, aid), s in input_target_sizes.items()
+                                if tid == t.id
+                            },
+                        )
                     )
                     for t in model.inputs
                 },
