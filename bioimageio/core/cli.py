@@ -591,7 +591,7 @@ class PredictCmd(CmdBase, WithSource):
 
 
 class IncreaseWeightFormatsCmd(CmdBase, WithSource):
-    path: CliPositionalArg[Path]
+    output: CliPositionalArg[Path]
     """The path to write the updated model description to."""
 
     def run(self):
@@ -601,7 +601,7 @@ class IncreaseWeightFormatsCmd(CmdBase, WithSource):
                 f"model format {model_descr.format_version} not supported."
                 + " Please update the model first."
             )
-        _ = increase_available_weight_formats(model_descr, output_path=self.path)
+        _ = increase_available_weight_formats(model_descr, output_path=self.output)
 
 
 JSON_FILE = "bioimageio-cli.json"
@@ -639,7 +639,7 @@ class Bioimageio(
     """Update the metadata format"""
 
     increase_weight_formats: CliSubCommand[IncreaseWeightFormatsCmd] = Field(
-        alias="incease-weight-formats"
+        alias="increase-weight-formats"
     )
     """Add additional weights to the model descriptions converted from available
     formats to improve deployability."""
