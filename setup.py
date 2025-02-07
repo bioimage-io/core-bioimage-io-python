@@ -49,25 +49,24 @@ _ = setup(
         "pytorch": (pytorch_deps := ["torch>=1.6,<3", "torchvision", "keras>=3.0,<4"]),
         "tensorflow": ["tensorflow", "keras>=2.15,<4"],
         "onnx": ["onnxruntime"],
-        "dev": pytorch_deps
-        + [
-            "black",
-            # "crick",  # currently requires python<=3.9
-            "filelock",
-            "jupyter",
-            "jupyter-black",
-            "matplotlib",
-            "onnx",
-            "onnxruntime",
-            "packaging>=17.0",
-            "pre-commit",
-            "pdoc",
-            "psutil",  # parallel pytest with 'pytest -n auto'
-            "pyright==1.1.393",
-            "pytest-cov",
-            "pytest-xdist",  # parallel pytest
-            "pytest",
-        ],
+        "dev": (
+            pytorch_deps
+            + [
+                "black",
+                # "crick",  # currently requires python<=3.9
+                "jupyter",
+                "jupyter-black",
+                "matplotlib",
+                "onnx",
+                "onnxruntime",
+                "packaging>=17.0",
+                "pre-commit",
+                "pdoc",
+                "pyright==1.1.393",
+                "pytest-cov",
+                "pytest",
+            ]
+        ),
     },
     project_urls={
         "Bug Reports": "https://github.com/bioimage-io/core-bioimage-io-python/issues",

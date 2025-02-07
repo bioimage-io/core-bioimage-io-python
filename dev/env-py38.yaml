@@ -8,7 +8,6 @@ dependencies:
   - bioimageio.spec>=0.5.3.6
   - black
   - crick # uncommented
-  - filelock
   - h5py
   - imagecodecs
   - imageio>=2.5
@@ -30,7 +29,6 @@ dependencies:
   - pyright
   - pytest
   - pytest-cov
-  - pytest-xdist
   - python=3.8 # changed
   - pytorch>=2.1,<3
   - requests
