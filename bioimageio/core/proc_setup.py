@@ -141,7 +141,7 @@ def get_requried_sample_measures(model: AnyModelDescr) -> RequiredSampleMeasures
         {m for m in s.post_measures if isinstance(m, SampleMeasureBase)},
     )
 
-def _prepare_v4_preprocs(tensor_descrs: Sequence[v0_4.InputTensorDescr]) -> Tuple[List[Processing], Set[Measure]]:
+def _prepare_v4_preprocs(tensor_descrs: Sequence[v0_4.InputTensorDescr]) -> List[Processing]:
     procs: List[Processing] = []
     for t_descr in tensor_descrs:
         member_id = TensorId(str(t_descr.name))
@@ -150,10 +150,9 @@ def _prepare_v4_preprocs(tensor_descrs: Sequence[v0_4.InputTensorDescr]) -> Tupl
         )
         for proc_d in t_descr.preprocessing:
             procs.append(preproc_v4_to_processing(t_descr, proc_d))
-    measures = {m for proc in procs for m in proc.required_measures}
-    return (procs, measures)
+    return procs
 
-def _prepare_v4_postprocs(tensor_descrs: Sequence[v0_4.OutputTensorDescr]) -> Tuple[List[Processing], Set[Measure]]:
+def _prepare_v4_postprocs(tensor_descrs: Sequence[v0_4.OutputTensorDescr]) -> List[Processing]:
     procs: List[Processing] = []
     for t_descr in tensor_descrs:
         member_id = TensorId(str(t_descr.name))
@@ -162,39 +161,36 @@ def _prepare_v4_postprocs(tensor_descrs: Sequence[v0_4.OutputTensorDescr]) -> Tu
         )
         for proc_d in t_descr.postprocessing:
             procs.append(postproc_v4_to_processing(t_descr, proc_d))
-    measures = {m for proc in procs for m in proc.required_measures}
-    return (procs, measures)
+    return procs
 
-def _prepare_v5_preprocs(tensor_descrs: Sequence[v0_5.InputTensorDescr]) -> Tuple[List[Processing], Set[Measure]]:
+def _prepare_v5_preprocs(tensor_descrs: Sequence[v0_5.InputTensorDescr]) -> List[Processing]:
     procs: List[Processing] = []
     for t_descr in tensor_descrs:
         for proc_d in t_descr.preprocessing:
             procs.append(preproc_v5_to_processing(t_descr, proc_d))
-    measures = {m for proc in procs for m in proc.required_measures}
-    return (procs, measures)
+    return procs
 
-def _prepare_v5_postprocs(tensor_descrs: Sequence[v0_5.OutputTensorDescr]) -> Tuple[List[Processing], Set[Measure]]:
+def _prepare_v5_postprocs(tensor_descrs: Sequence[v0_5.OutputTensorDescr]) -> List[Processing]:
     procs: List[Processing] = []
     for t_descr in tensor_descrs:
         for proc_d in t_descr.postprocessing:
             procs.append(postproc_v5_to_processing(t_descr, proc_d))
-    measures = {m for proc in procs for m in proc.required_measures}
-    return (procs, measures)
+    return procs
 
 
 def _prepare_setup_pre_and_postprocessing(model: AnyModelDescr) -> _SetupProcessing:
     if isinstance(model, v0_4.ModelDescr):
-        pre, pre_measures = _prepare_v4_preprocs(model.inputs)
-        post, post_measures = _prepare_v4_postprocs(model.outputs)
+        pre = _prepare_v4_preprocs(model.inputs)
+        post = _prepare_v4_postprocs(model.outputs)
     elif isinstance(model, v0_5.ModelDescr):
-        pre, pre_measures = _prepare_v5_preprocs(model.inputs)
-        post, post_measures = _prepare_v5_postprocs(model.outputs)
+        pre = _prepare_v5_preprocs(model.inputs)
+        post = _prepare_v5_postprocs(model.outputs)
     else:
         assert_never(model)
 
     return _SetupProcessing(
         pre=pre,
         post=post,
-        pre_measures=pre_measures,
-        post_measures=post_measures,
+        pre_measures={m for proc in pre for m in proc.required_measures},
+        post_measures={m for proc in post for m in proc.required_measures},
     )
