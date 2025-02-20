@@ -6,7 +6,6 @@ from typing import (
     Optional,
     Sequence,
     Set,
-    Tuple,
     Union,
 )
 
@@ -15,13 +14,11 @@ from typing_extensions import assert_never
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 from bioimageio.spec.model.v0_5 import TensorId
 
-from .digest_spec import get_member_ids
 from .proc_ops import (
     AddKnownDatasetStats,
     EnsureDtype,
     Processing,
     UpdateStats,
-    get_proc_class,
     postproc_v4_to_processing,
     postproc_v5_to_processing,
     preproc_v4_to_processing,
@@ -141,7 +138,10 @@ def get_requried_sample_measures(model: AnyModelDescr) -> RequiredSampleMeasures
         {m for m in s.post_measures if isinstance(m, SampleMeasureBase)},
     )
 
-def _prepare_v4_preprocs(tensor_descrs: Sequence[v0_4.InputTensorDescr]) -> List[Processing]:
+
+def _prepare_v4_preprocs(
+    tensor_descrs: Sequence[v0_4.InputTensorDescr],
+) -> List[Processing]:
     procs: List[Processing] = []
     for t_descr in tensor_descrs:
         member_id = TensorId(str(t_descr.name))
@@ -152,7 +152,10 @@ def _prepare_v4_preprocs(tensor_descrs: Sequence[v0_4.InputTensorDescr]) -> List
             procs.append(preproc_v4_to_processing(t_descr, proc_d))
     return procs
 
-def _prepare_v4_postprocs(tensor_descrs: Sequence[v0_4.OutputTensorDescr]) -> List[Processing]:
+
+def _prepare_v4_postprocs(
+    tensor_descrs: Sequence[v0_4.OutputTensorDescr],
+) -> List[Processing]:
     procs: List[Processing] = []
     for t_descr in tensor_descrs:
         member_id = TensorId(str(t_descr.name))
@@ -163,14 +166,20 @@ def _prepare_v4_postprocs(tensor_descrs: Sequence[v0_4.OutputTensorDescr]) -> Li
             procs.append(postproc_v4_to_processing(t_descr, proc_d))
     return procs
 
-def _prepare_v5_preprocs(tensor_descrs: Sequence[v0_5.InputTensorDescr]) -> List[Processing]:
+
+def _prepare_v5_preprocs(
+    tensor_descrs: Sequence[v0_5.InputTensorDescr],
+) -> List[Processing]:
     procs: List[Processing] = []
     for t_descr in tensor_descrs:
         for proc_d in t_descr.preprocessing:
             procs.append(preproc_v5_to_processing(t_descr, proc_d))
     return procs
 
-def _prepare_v5_postprocs(tensor_descrs: Sequence[v0_5.OutputTensorDescr]) -> List[Processing]:
+
+def _prepare_v5_postprocs(
+    tensor_descrs: Sequence[v0_5.OutputTensorDescr],
+) -> List[Processing]:
     procs: List[Processing] = []
     for t_descr in tensor_descrs:
         for proc_d in t_descr.postprocessing:
