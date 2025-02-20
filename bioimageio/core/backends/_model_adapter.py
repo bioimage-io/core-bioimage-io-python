@@ -7,11 +7,11 @@ from typing import (
     Sequence,
     Tuple,
     Union,
-    assert_never,
     final,
 )
 
 from numpy.typing import NDArray
+from typing_extensions import assert_never
 
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 

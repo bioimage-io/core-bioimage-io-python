@@ -377,9 +377,10 @@ The model specification and its validation tools can be found at <https://github
 
 ### 0.7.1 (to be released)
 
+- breaking: removed `decimals` argument from bioimageio CLI and `bioimageio.core.commands.test()`
 - New feature: `bioimageio.core.test_description` accepts **runtime_env** and **run_command** to test a resource
   using the conda environment described by that resource (or another specified conda env)
-- breaking: removed `decimals` argument from bioimageio CLI and `bioimageio.core.commands.test()`
+- new CLI command: `bioimageio add-weights` (and utility function: bioimageio.core.add_weights)
 
 ### 0.7.0
 

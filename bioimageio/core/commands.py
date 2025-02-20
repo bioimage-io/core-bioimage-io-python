@@ -81,7 +81,7 @@ def package(
     """
     if isinstance(descr, InvalidDescr):
         descr.validation_summary.display()
-        raise ValueError("resource description is invalid")
+        raise ValueError(f"Invalid {descr.type} description.")
 
     if weight_format == "all":
         weights_priority_order = None

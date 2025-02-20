@@ -7,9 +7,11 @@ from numpy.testing import assert_array_almost_equal
 from torch.jit import ScriptModule
 from typing_extensions import assert_never
 
-from bioimageio.core.backends.pytorch_backend import load_torch_model
 from bioimageio.spec._internal.version_type import Version
 from bioimageio.spec.model import v0_4, v0_5
+
+from .. import __version__
+from ..backends.pytorch_backend import load_torch_model
 
 
 def convert(
@@ -48,29 +50,33 @@ def convert(
     input_data = model_descr.get_input_test_arrays()
 
     with torch.no_grad():
-        input_data = [torch.from_numpy(inp.astype("float32")) for inp in input_data]
-        model = load_torch_model(state_dict_weights_descr)
-        scripted_module: Union[  # pyright: ignore[reportUnknownVariableType]
+        input_data = [torch.from_numpy(inp) for inp in input_data]
+        model = load_torch_model(state_dict_weights_descr, load_state=True)
+        scripted_model: Union[  # pyright: ignore[reportUnknownVariableType]
             ScriptModule, Tuple[Any, ...]
         ] = (
             torch.jit.trace(model, input_data)
             if use_tracing
             else torch.jit.script(model)
         )
-        assert not isinstance(scripted_module, tuple), scripted_module
-        _check_predictions(
+        assert not isinstance(scripted_model, tuple), scripted_model
+        _check_predictions(  # TODO: remove
             model=model,
-            scripted_model=scripted_module,
+            scripted_model=scripted_model,
             model_spec=model_descr,
             input_data=input_data,
         )
 
-    scripted_module.save(str(output_path))
+    scripted_model.save(output_path)
 
     return v0_5.TorchscriptWeightsDescr(
         source=output_path,
         pytorch_version=Version(torch.__version__),
         parent="pytorch_state_dict",
+        comment=(
+            f"Converted with bioimageio.core {__version__}"
+            + f" with use_tracing={use_tracing}."
+        ),
     )
 
 

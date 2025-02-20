@@ -94,7 +94,7 @@ def load_torch_model(
         v0_4.PytorchStateDictWeightsDescr, v0_5.PytorchStateDictWeightsDescr
     ],
     *,
-    load_state: bool = False,
+    load_state: bool = True,
     devices: Optional[Sequence[Union[str, torch.device]]] = None,
 ) -> nn.Module:
     arch = import_callable(

@@ -50,6 +50,7 @@ from .stat_calculators import compute_dataset_measures
 from .stat_measures import Stat
 from .tensor import Tensor
 from .utils import VERSION
+from .weight_converters import add_weights
 
 __version__ = VERSION
 
@@ -64,6 +65,7 @@ load_model = load_model_description
 
 __all__ = [
     "__version__",
+    "add_weights",
     "axis",
     "Axis",
     "AxisId",

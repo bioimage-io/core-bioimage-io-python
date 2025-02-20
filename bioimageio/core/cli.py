@@ -46,9 +46,6 @@ from ruyaml import YAML
 from tqdm import tqdm
 from typing_extensions import assert_never
 
-from bioimageio.core.weight_converters._add_weights import (
-    increase_available_weight_formats,
-)
 from bioimageio.spec import AnyModelDescr, InvalidDescr, load_description
 from bioimageio.spec._internal.io_basics import ZipPath
 from bioimageio.spec._internal.io_utils import write_yaml
@@ -66,7 +63,7 @@ from .commands import (
     update_format,
     validate_format,
 )
-from .common import MemberId, SampleId
+from .common import MemberId, SampleId, SupportedWeightsFormat
 from .digest_spec import get_member_ids, load_sample_for_model
 from .io import load_dataset_stat, save_dataset_stat, save_sample
 from .prediction import create_prediction_pipeline
@@ -80,6 +77,7 @@ from .proc_setup import (
 from .sample import Sample
 from .stat_measures import Stat
 from .utils import VERSION
+from .weight_converters._add_weights import add_weights
 
 yaml = YAML(typ="safe")
 
@@ -183,7 +181,7 @@ class PackageCmd(CmdBase, WithSource):
     def run(self):
         if isinstance(self.descr, InvalidDescr):
             self.descr.validation_summary.display()
-            raise ValueError("resource description is invalid")
+            raise ValueError(f"Invalid {self.descr.type} description.")
 
         sys.exit(
             package(
@@ -590,9 +588,18 @@ class PredictCmd(CmdBase, WithSource):
             save_sample(sp_out, sample_out)
 
 
-class IncreaseWeightFormatsCmd(CmdBase, WithSource):
+class ConvertWeightsCmd(CmdBase, WithSource):
     output: CliPositionalArg[Path]
-    """The path to write the updated model description to."""
+    """The path to write the updated model package to."""
+
+    source_format: Optional[SupportedWeightsFormat] = Field(None, alias="source-format")
+    """Exclusively use these weights to convert to other formats."""
+
+    target_format: Optional[SupportedWeightsFormat] = Field(None, alias="target-format")
+    """Exclusively add this weight format."""
+
+    verbose: bool = False
+    """Log more (error) output."""
 
     def run(self):
         model_descr = ensure_description_is_model(self.descr)
@@ -601,7 +608,23 @@ class IncreaseWeightFormatsCmd(CmdBase, WithSource):
                 f"model format {model_descr.format_version} not supported."
                 + " Please update the model first."
             )
-        _ = increase_available_weight_formats(model_descr, output_path=self.output)
+        updated_model_descr = add_weights(
+            model_descr,
+            output_path=self.output,
+            source_format=self.source_format,
+            target_format=self.target_format,
+            verbose=self.verbose,
+        )
+        if updated_model_descr is None:
+            return
+
+        updated_model_descr.validation_summary.display()
+
+        # save validation summary as attachments
+        updated_model_descr.validation_summary.save_markdown(
+            (summary_path := self.output / "test_summary.md")
+        )
+        logger.info("Saved rendered validation summary to {}", summary_path.absolute())
 
 
 JSON_FILE = "bioimageio-cli.json"
@@ -638,9 +661,7 @@ class Bioimageio(
     update_format: CliSubCommand[UpdateFormatCmd] = Field(alias="update-format")
     """Update the metadata format"""
 
-    increase_weight_formats: CliSubCommand[IncreaseWeightFormatsCmd] = Field(
-        alias="increase-weight-formats"
-    )
+    add_weights: CliSubCommand[ConvertWeightsCmd] = Field(alias="add-weights")
     """Add additional weights to the model descriptions converted from available
     formats to improve deployability."""
 
@@ -687,7 +708,7 @@ class Bioimageio(
             or self.package
             or self.predict
             or self.update_format
-            or self.increase_weight_formats
+            or self.add_weights
         )
         assert cmd is not None
         cmd.run()
