@@ -136,7 +136,7 @@ def load_torch_state_dict(
     model = model.to(devices[0])
     with path.open("rb") as f:
         assert not isinstance(f, TextIOWrapper)
-        state = torch.load(f, map_location=devices[0])
+        state = torch.load(f, map_location=devices[0], weights_only=True)
 
     incompatible = model.load_state_dict(state)
     if incompatible is not None and incompatible.missing_keys:
