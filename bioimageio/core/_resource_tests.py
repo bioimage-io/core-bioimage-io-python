@@ -28,6 +28,7 @@ from bioimageio.spec import (
     BioimageioCondaEnv,
     InvalidDescr,
     ResourceDescr,
+    ValidationContext,
     build_description,
     dump_description,
     get_conda_env,
@@ -382,22 +383,37 @@ def load_description_and_test(
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[ResourceDescr, InvalidDescr]:
     """Test RDF dynamically, e.g. model inference of test inputs"""
-    if (
-        isinstance(source, ResourceDescrBase)
-        and format_version != "discover"
-        and source.format_version != format_version
+    if isinstance(source, ResourceDescrBase) and (
+        (format_version != "discover" and source.format_version != format_version)
+        or (c := source.validation_summary.details[0].context) is None
+        or not c["perform_io_checks"]
     ):
-        warnings.warn(
-            f"deserializing source to ensure we validate and test using format {format_version}"
+        logger.debug(
+            "deserializing source to ensure we validate and test using format {} and perform io checks",
+            format_version,
         )
+        root = source.root
         source = dump_description(source)
+    else:
+        root = Path()
 
     if isinstance(source, ResourceDescrBase):
         rd = source
     elif isinstance(source, dict):
-        rd = build_description(source, format_version=format_version)
+        # check context for a given root; default to root of source
+        context = validation_context_var.get(ValidationContext(root=root)).replace(
+            perform_io_checks=True  # make sure we perform io checks though
+        )
+
+        rd = build_description(
+            source,
+            format_version=format_version,
+            context=context,
+        )
     else:
-        rd = load_description(source, format_version=format_version, sha256=sha256)
+        rd = load_description(
+            source, format_version=format_version, sha256=sha256, perform_io_checks=True
+        )
 
     rd.validation_summary.env.add(
         InstalledPackage(name="bioimageio.core", version=VERSION)
