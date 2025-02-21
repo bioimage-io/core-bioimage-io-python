@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections.abc
 import importlib.util
 from itertools import chain
 from pathlib import Path
@@ -46,6 +47,8 @@ from .sample import (
 )
 from .stat_measures import Stat
 from .tensor import Tensor
+
+TensorSource = Union[Tensor, xr.DataArray, NDArray[Any], Path]
 
 
 def import_callable(
@@ -312,7 +315,7 @@ def get_io_sample_block_metas(
 
 
 def get_tensor(
-    src: Union[Tensor, xr.DataArray, NDArray[Any], Path],
+    src: TensorSource,
     ipt: Union[v0_4.InputTensorDescr, v0_5.InputTensorDescr],
 ):
     """helper to cast/load various tensor sources"""
@@ -337,10 +340,7 @@ def create_sample_for_model(
     *,
     stat: Optional[Stat] = None,
     sample_id: SampleId = None,
-    inputs: Optional[
-        PerMember[Union[Tensor, xr.DataArray, NDArray[Any], Path]]
-    ] = None,  # TODO: make non-optional  # TODO: accept tuple of tensor sources
-    **kwargs: NDArray[Any],  # TODO: deprecate in favor of `inputs`
+    inputs: Union[PerMember[TensorSource], TensorSource],
 ) -> Sample:
     """Create a sample from a single set of input(s) for a specific bioimage.io model
 
@@ -349,9 +349,17 @@ def create_sample_for_model(
         stat: dictionary with sample and dataset statistics (may be updated in-place!)
         inputs: the input(s) constituting a single sample.
     """
-    inputs = {MemberId(k): v for k, v in {**kwargs, **(inputs or {})}.items()}
 
     model_inputs = {get_member_id(d): d for d in model.inputs}
+    if isinstance(inputs, collections.abc.Mapping):
+        inputs = {MemberId(k): v for k, v in inputs.items()}
+    elif len(model_inputs) == 1:
+        inputs = {list(model_inputs)[0]: inputs}
+    else:
+        raise TypeError(
+            f"Expected `inputs` to be a mapping with keys {tuple(model_inputs)}"
+        )
+
     if unknown := {k for k in inputs if k not in model_inputs}:
         raise ValueError(f"Got unexpected inputs: {unknown}")
 

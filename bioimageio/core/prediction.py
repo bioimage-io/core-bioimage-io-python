@@ -1,7 +1,6 @@
 import collections.abc
 from pathlib import Path
 from typing import (
-    Any,
     Hashable,
     Iterable,
     Iterator,
@@ -11,9 +10,7 @@ from typing import (
     Union,
 )
 
-import xarray as xr
 from loguru import logger
-from numpy.typing import NDArray
 from tqdm import tqdm
 
 from bioimageio.spec import load_description
@@ -23,10 +20,9 @@ from bioimageio.spec.model import v0_4, v0_5
 from ._prediction_pipeline import PredictionPipeline, create_prediction_pipeline
 from .axis import AxisId
 from .common import BlocksizeParameter, MemberId, PerMember
-from .digest_spec import create_sample_for_model
+from .digest_spec import TensorSource, create_sample_for_model
 from .io import save_sample
 from .sample import Sample
-from .tensor import Tensor
 
 
 def predict(
@@ -34,7 +30,7 @@ def predict(
     model: Union[
         PermissiveFileSource, v0_4.ModelDescr, v0_5.ModelDescr, PredictionPipeline
     ],
-    inputs: Union[Sample, PerMember[Union[Tensor, xr.DataArray, NDArray[Any], Path]]],
+    inputs: Union[Sample, PerMember[TensorSource], TensorSource],
     sample_id: Hashable = "sample",
     blocksize_parameter: Optional[BlocksizeParameter] = None,
     input_block_shape: Optional[Mapping[MemberId, Mapping[AxisId, int]]] = None,
@@ -124,7 +120,7 @@ def predict_many(
     model: Union[
         PermissiveFileSource, v0_4.ModelDescr, v0_5.ModelDescr, PredictionPipeline
     ],
-    inputs: Iterable[PerMember[Union[Tensor, xr.DataArray, NDArray[Any], Path]]],
+    inputs: Iterable[Union[TensorSource, PerMember[TensorSource]]],
     sample_id: str = "sample{i:03}",
     blocksize_parameter: Optional[
         Union[
