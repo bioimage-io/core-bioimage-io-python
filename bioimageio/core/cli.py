@@ -46,7 +46,13 @@ from ruyaml import YAML
 from tqdm import tqdm
 from typing_extensions import assert_never
 
-from bioimageio.spec import AnyModelDescr, InvalidDescr, load_description
+from bioimageio.spec import (
+    AnyModelDescr,
+    InvalidDescr,
+    ResourceDescr,
+    load_description,
+    settings,
+)
 from bioimageio.spec._internal.io_basics import ZipPath
 from bioimageio.spec._internal.io_utils import write_yaml
 from bioimageio.spec._internal.types import NotEmpty
@@ -61,7 +67,6 @@ from .commands import (
     package,
     test,
     update_format,
-    validate_format,
 )
 from .common import MemberId, SampleId, SupportedWeightsFormat
 from .digest_spec import get_member_ids, load_sample_for_model
@@ -88,6 +93,19 @@ class CmdBase(BaseModel, use_attribute_docstrings=True, cli_implicit_flags=True)
 
 class ArgMixin(BaseModel, use_attribute_docstrings=True, cli_implicit_flags=True):
     pass
+
+
+class WithSummaryLogging(ArgMixin):
+    summary: Union[Path, Sequence[Path]] = Field(
+        (), examples=[Path("summary.md"), Path("bioimageio_summaries/")]
+    )
+    """Save the validation summary as JSON, Markdown or HTML.
+    The format is chosen based on the suffix: `.json`, `.md`, `.html`.
+    If a folder is given (path w/o suffix) the summary is saved in all formats.
+    """
+
+    def log(self, descr: Union[ResourceDescr, InvalidDescr]):
+        _ = descr.validation_summary.log(self.summary)
 
 
 class WithSource(ArgMixin):
@@ -118,14 +136,26 @@ class WithSource(ArgMixin):
         return str(nickname or self.descr.id or self.descr.name)
 
 
-class ValidateFormatCmd(CmdBase, WithSource):
+class ValidateFormatCmd(CmdBase, WithSource, WithSummaryLogging):
     """Validate the meta data format of a bioimageio resource."""
 
+    perform_io_checks: bool = Field(
+        settings.perform_io_checks, alias="perform-io-checks"
+    )
+    """Wether or not to perform validations that requires downloading remote files.
+    Note: Default value is set by `BIOIMAGEIO_PERFORM_IO_CHECKS` environment variable.
+    """
+
+    @cached_property
+    def descr(self):
+        return load_description(self.source, perform_io_checks=self.perform_io_checks)
+
     def run(self):
-        sys.exit(validate_format(self.descr))
+        self.log(self.descr)
+        sys.exit(0 if self.descr.validation_summary.status == "passed" else 1)
 
 
-class TestCmd(CmdBase, WithSource):
+class TestCmd(CmdBase, WithSource, WithSummaryLogging):
     """Test a bioimageio resource (beyond meta data formatting)."""
 
     weight_format: WeightFormatArgAll = "all"
@@ -140,16 +170,12 @@ class TestCmd(CmdBase, WithSource):
         "currently-active", alias="runtime-env"
     )
     """The python environment to run the tests in
-
         - `"currently-active"`: use active Python interpreter
         - `"as-described"`: generate a conda environment YAML file based on the model
             weights description.
         - A path to a conda environment YAML.
           Note: The `bioimageio.core` dependency will be added automatically if not present.
     """
-
-    summary_path: Optional[Path] = Field(None, alias="summary-path")
-    """Path to save validation summary as JSON file."""
 
     determinism: Literal["seed_only", "full"] = "seed_only"
     """Modes to improve reproducibility of test outputs."""
@@ -160,7 +186,7 @@ class TestCmd(CmdBase, WithSource):
                 self.descr,
                 weight_format=self.weight_format,
                 devices=self.devices,
-                summary_path=self.summary_path,
+                summary=self.summary,
                 runtime_env=self.runtime_env,
                 determinism=self.determinism,
             )
@@ -180,8 +206,10 @@ class PackageCmd(CmdBase, WithSource):
 
     def run(self):
         if isinstance(self.descr, InvalidDescr):
-            self.descr.validation_summary.display()
-            raise ValueError(f"Invalid {self.descr.type} description.")
+            paths = self.descr.validation_summary.log()
+            raise ValueError(
+                f"Invalid {self.descr.type} description. Logged details to {paths}"
+            )
 
         sys.exit(
             package(
@@ -205,7 +233,7 @@ def _get_stat(
     req_dataset_meas, _ = get_required_dataset_measures(model_descr)
 
     if stats_path.exists():
-        logger.info(f"loading precomputed dataset measures from {stats_path}")
+        logger.info("loading precomputed dataset measures from {}", stats_path)
         stat = load_dataset_stat(stats_path)
         for m in req_dataset_meas:
             if m not in stat:
@@ -232,7 +260,7 @@ class UpdateFormatCmd(CmdBase, WithSource):
     output: Optional[Path] = None
     """Save updated bioimageio.yaml to this file.
 
-    (Always renders updated bioimageio.yaml to terminal.)
+    Updated bioimageio.yaml is rendered to the terminal if the output is None.
     """
 
     def run(self):
@@ -618,13 +646,7 @@ class ConvertWeightsCmd(CmdBase, WithSource):
         if updated_model_descr is None:
             return
 
-        updated_model_descr.validation_summary.display()
-
-        # save validation summary as attachments
-        updated_model_descr.validation_summary.save_markdown(
-            (summary_path := self.output / "test_summary.md")
-        )
-        logger.info("Saved rendered validation summary to {}", summary_path.absolute())
+        _ = updated_model_descr.validation_summary.log()
 
 
 JSON_FILE = "bioimageio-cli.json"

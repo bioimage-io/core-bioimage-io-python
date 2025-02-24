@@ -165,7 +165,7 @@ def add_weights(
         logger.warning("failed to add any converted weights")
         return None
     else:
-        logger.info(f"added weights formats {originally_missing - missing}")
+        logger.info("added weights formats {}", originally_missing - missing)
         # resave model with updated rdf.yaml
         _ = save_bioimageio_package_as_folder(model_descr, output_path=output_path)
         _ = test_model(model_descr)

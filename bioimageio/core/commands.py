@@ -26,7 +26,7 @@ def test(
     *,
     weight_format: WeightFormatArgAll = "all",
     devices: Optional[Union[str, Sequence[str]]] = None,
-    summary_path: Optional[Path] = None,
+    summary: Union[Path, Sequence[Path]] = (),
     runtime_env: Union[
         Literal["currently-active", "as-described"], Path
     ] = "currently-active",
@@ -40,34 +40,36 @@ def test(
         descr.validation_summary.display()
         return 1
 
-    summary = test_description(
+    test_summary = test_description(
         descr,
         weight_format=None if weight_format == "all" else weight_format,
         devices=[devices] if isinstance(devices, str) else devices,
         runtime_env=runtime_env,
         determinism=determinism,
     )
-    summary.display()
-    if summary_path is not None:
-        _ = summary_path.write_text(summary.model_dump_json(indent=4))
-
-    return 0 if summary.status == "passed" else 1
+    _ = test_summary.log(summary)
+    return 0 if test_summary.status == "passed" else 1
 
 
 def validate_format(
     descr: Union[ResourceDescr, InvalidDescr],
+    summary: Union[Path, Sequence[Path]] = (),
 ):
-    """validate the meta data format of a bioimageio resource
+    """DEPRECATED; Access the existing `validation_summary` attribute instead.
+    validate the meta data format of a bioimageio resource
 
     Args:
         descr: a bioimageio resource description
     """
-    descr.validation_summary.display()
+    _ = descr.validation_summary.log(summary)
     return 0 if descr.validation_summary.status == "passed" else 1
 
 
 def package(
-    descr: ResourceDescr, path: Path, *, weight_format: WeightFormatArgAll = "all"
+    descr: ResourceDescr,
+    path: Path,
+    *,
+    weight_format: WeightFormatArgAll = "all",
 ):
     """Save a resource's metadata with its associated files.
 
@@ -80,8 +82,12 @@ def package(
         weight-format: include only this single weight-format (if not 'all').
     """
     if isinstance(descr, InvalidDescr):
-        descr.validation_summary.display()
-        raise ValueError(f"Invalid {descr.type} description.")
+        logged = descr.validation_summary.log()
+        msg = f"Invalid {descr.type} description."
+        if logged:
+            msg += f" Details saved to {logged}."
+
+        raise ValueError(msg)
 
     if weight_format == "all":
         weights_priority_order = None
@@ -101,7 +107,3 @@ def package(
             weights_priority_order=weights_priority_order,
         )
     return 0
-
-
-# def update_format(descr: ResourceDescr, path: Path):
-#     update_format_func()
