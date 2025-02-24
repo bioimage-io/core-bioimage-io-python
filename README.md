@@ -262,49 +262,22 @@ bioimage.core has to offer:
 
 ## Installation
 
-### Via Mamba/Conda
+### Via Conda
 
 The `bioimageio.core` package can be installed from conda-forge via
 
 ```console
-mamba install -c conda-forge bioimageio.core
+conda install -c conda-forge bioimageio.core
 ```
 
 If you do not install any additional deep learning libraries, you will only be able to use general convenience
-functionality, but not any functionality for model prediction.
-To install additional deep learning libraries use:
+functionality, but not any functionality depending on model prediction.
+To install additional deep learning libraries add `pytorch`, `onnxruntime`, `keras` or `tensorflow`.
 
-- Pytorch/Torchscript:
-
-  CPU installation (if you don't have an nvidia graphics card):
-
-  ```console
-  mamba install -c pytorch -c conda-forge bioimageio.core pytorch torchvision cpuonly
-  ```
-
-  GPU installation (for cuda 11.6, please choose the appropriate cuda version for your system):
-
-  ```console
-  mamba install -c pytorch -c nvidia -c conda-forge bioimageio.core pytorch torchvision pytorch-cuda=11.8
-  ```
-
-  Note that the pytorch installation instructions may change in the future. For the latest instructions please refer to [pytorch.org](https://pytorch.org/).
-
-- Tensorflow
-
-  Currently only CPU version supported
-
-  ```console
-  mamba install -c conda-forge bioimageio.core tensorflow
-  ```
-
-- ONNXRuntime
-
-  Currently only cpu version supported
-
-  ```console
-  mamba install -c conda-forge bioimageio.core onnxruntime
-  ```
+Deeplearning frameworks to consider installing alongside `bioimageio.core`:
+- [Pytorch/Torchscript](https://pytorch.org/get-started/locally/)
+- [TensorFlow](https://www.tensorflow.org/install)
+- [ONNXRuntime](https://onnxruntime.ai/docs/install/#python-installs)
 
 ### Via pip
 
@@ -315,17 +288,33 @@ The package is also available via pip
 pip install "bioimageio.core[onnx,pytorch]"
 ```
 
-### Set up Development Environment
+## 🐍 Use in Python
 
-To set up a development conda environment run the following commands:
+`bioimageio.core` is a python package that implements prediction with bioimageio models
+including standardized pre- and postprocessing operations.
+These models are described by---and can be loaded with---the bioimageio.spec package.
 
-```console
-mamba env create -f dev/env.yaml
-mamba activate core
-pip install -e . --no-deps
-```
+In addition bioimageio.core provides functionality to convert model weight formats.
 
-There are different environment files available that only install tensorflow or pytorch as dependencies.
+### Documentation
+[Here you find the bioimageio.core documentation.](https://bioimage-io.github.io/core-bioimage-io-python/bioimageio/core.html)
+
+#### Presentations
+- [Create a model from scratch](https://bioimage-io.github.io/core-bioimage-io-python/presentations/create_ambitious_sloth.slides.html) ([source](https://github.com/bioimage-io/core-bioimage-io-python/tree/main/presentations))
+
+#### Examples
+<dl>    
+  <dt>Notebooks that save and load resource descriptions and validate their format (using <a href="https://bioimage-io.github.io/core-bioimage-io-python/bioimageio/spec.html">bioimageio.spec</a>, a dependency of bioimageio.core)</dt>
+  <dd><a href="https://github.com/bioimage-io/spec-bioimage-io/blob/main/example/load_model_and_create_your_own.ipynb">load_model_and_create_your_own.ipynb</a> <a target="_blank" href="https://colab.research.google.com/github/bioimage-io/spec-bioimage-io/blob/main/example/load_model_and_create_your_own.ipynb">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+</a></dd>
+<dd><a href="https://github.com/bioimage-io/spec-bioimage-io/blob/main/example/dataset_creation.ipynb">dataset_creation.ipynb</a> <a target="_blank" href="https://colab.research.google.com/github/bioimage-io/spec-bioimage-io/blob/main/example/dataset_creation.ipynb">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+</a></dd>
+<dt>Use the described resources in Python with <a href="https://bioimage-io.github.io/core-bioimage-io-python/bioimageio/core.html">bioimageio.core</a></dt>
+ <dd><a href="https://github.com/bioimage-io/core-bioimage-io-python/blob/main/example/model_usage.ipynb">model_usage.ipynb</a><a target="_blank" href="https://colab.research.google.com/github/bioimage-io/core-bioimage-io-python/blob/main/example/model_usage.ipynb">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+</dl>
 
 ## 💻 Use the Command Line Interface
 
@@ -335,6 +324,9 @@ You can list all the available commands via:
 ```console
 bioimageio
 ```
+
+For examples see [Get started](#get-started).
+
 
 ### CLI inputs from file
 
@@ -350,28 +342,25 @@ blockwise: true
 stats: inputs/dataset_statistics.json
 ```
 
-## 🐍 Use in Python
 
-`bioimageio.core` is a python package that implements prediction with bioimageio models
-including standardized pre- and postprocessing operations.
-These models are described by---and can be loaded with---the bioimageio.spec package.
+## Set up Development Environment
 
-In addition bioimageio.core provides functionality to convert model weight formats.
+To set up a development conda environment run the following commands:
 
-To get an overview of this functionality, check out these example notebooks:
+```console
+conda env create -f dev/env.yaml
+conda activate core
+pip install -e . --no-deps
+```
 
-- [model creation/loading with bioimageio.spec](https://github.com/bioimage-io/spec-bioimage-io/blob/main/example/load_model_and_create_your_own.ipynb)
+There are different environment files available that only install tensorflow or pytorch as dependencies, see [dev folder](https://github.com/bioimage-io/core-bioimage-io-python/tree/main/dev).
 
-and the [developer documentation](https://bioimage-io.github.io/core-bioimage-io-python/bioimageio/core.html).
 
 ## Logging level
 
 `bioimageio.spec` and `bioimageio.core` use [loguru](https://github.com/Delgan/loguru) for logging, hence the logging level
 may be controlled with the `LOGURU_LEVEL` environment variable.
 
-## Model Specification
-
-The model specification and its validation tools can be found at <https://github.com/bioimage-io/spec-bioimage-io>.
 
 ## Changelog
 
