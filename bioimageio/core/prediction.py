@@ -20,7 +20,7 @@ from bioimageio.spec.model import v0_4, v0_5
 from ._prediction_pipeline import PredictionPipeline, create_prediction_pipeline
 from .axis import AxisId
 from .common import BlocksizeParameter, MemberId, PerMember
-from .digest_spec import TensorSource, create_sample_for_model
+from .digest_spec import TensorSource, create_sample_for_model, get_member_id
 from .io import save_sample
 from .sample import Sample
 
@@ -45,6 +45,8 @@ def predict(
             May be given as RDF source, model description or prediction pipeline.
         inputs: the input sample or the named input(s) for this model as a dictionary
         sample_id: the sample id.
+            The **sample_id** is used to format **save_output_path**
+            and to distinguish sample specific log messages.
         blocksize_parameter: (optional) Tile the input into blocks parametrized by
             **blocksize_parameter** according to any parametrized axis sizes defined
             by the **model**.
@@ -55,17 +57,15 @@ def predict(
                 run prediction independent of the exact block shape.
         skip_preprocessing: Flag to skip the model's preprocessing.
         skip_postprocessing: Flag to skip the model's postprocessing.
-        save_output_path: A path with `{member_id}` `{sample_id}` in it
-            to save the output to.
+        save_output_path: A path with to save the output to. M
+            Must contain:
+            - `{output_id}` (or `{member_id}`) if the model has multiple output tensors
+            May contain:
+            - `{sample_id}` to avoid overwriting recurrent calls
     """
-    if save_output_path is not None:
-        if "{member_id}" not in str(save_output_path):
-            raise ValueError(
-                f"Missing `{{member_id}}` in save_output_path={save_output_path}"
-            )
-
     if isinstance(model, PredictionPipeline):
         pp = model
+        model = pp.model_description
     else:
         if not isinstance(model, (v0_4.ModelDescr, v0_5.ModelDescr)):
             loaded = load_description(model)
@@ -74,6 +74,18 @@ def predict(
             model = loaded
 
         pp = create_prediction_pipeline(model)
+
+    if save_output_path is not None:
+        if (
+            "{output_id}" not in str(save_output_path)
+            and "{member_id}" not in str(save_output_path)
+            and len(model.outputs) > 1
+        ):
+            raise ValueError(
+                f"Missing `{{output_id}}` in save_output_path={save_output_path} to "
+                + "distinguish model outputs "
+                + str([get_member_id(d) for d in model.outputs])
+            )
 
     if isinstance(inputs, Sample):
         sample = inputs
@@ -120,7 +132,7 @@ def predict_many(
     model: Union[
         PermissiveFileSource, v0_4.ModelDescr, v0_5.ModelDescr, PredictionPipeline
     ],
-    inputs: Iterable[Union[TensorSource, PerMember[TensorSource]]],
+    inputs: Union[Iterable[PerMember[TensorSource]], Iterable[TensorSource]],
     sample_id: str = "sample{i:03}",
     blocksize_parameter: Optional[
         Union[
@@ -135,31 +147,27 @@ def predict_many(
     """Run prediction for a multiple sets of inputs with a bioimage.io model
 
     Args:
-        model: model to predict with.
+        model: Model to predict with.
             May be given as RDF source, model description or prediction pipeline.
         inputs: An iterable of the named input(s) for this model as a dictionary.
-        sample_id: the sample id.
+        sample_id: The sample id.
             note: `{i}` will be formatted as the i-th sample.
-            If `{i}` (or `{i:`) is not present and `inputs` is an iterable `{i:03}` is appended.
-        blocksize_parameter: (optional) tile the input into blocks parametrized by
-            blocksize according to any parametrized axis sizes defined in the model RDF
-        skip_preprocessing: flag to skip the model's preprocessing
-        skip_postprocessing: flag to skip the model's postprocessing
-        save_output_path: A path with `{member_id}` `{sample_id}` in it
-            to save the output to.
+            If `{i}` (or `{i:`) is not present and `inputs` is not an iterable `{i:03}`
+            is appended.
+        blocksize_parameter: (optional) Tile the input into blocks parametrized by
+            blocksize according to any parametrized axis sizes defined in the model RDF.
+        skip_preprocessing: Flag to skip the model's preprocessing.
+        skip_postprocessing: Flag to skip the model's postprocessing.
+        save_output_path: A path to save the output to.
+            Must contain:
+            - `{sample_id}` to differentiate predicted samples
+            - `{output_id}` (or `{member_id}`) if the model has multiple outputs
     """
-    if save_output_path is not None:
-        if "{member_id}" not in str(save_output_path):
-            raise ValueError(
-                f"Missing `{{member_id}}` in save_output_path={save_output_path}"
-            )
-
-        if not isinstance(inputs, collections.abc.Mapping) and "{sample_id}" not in str(
-            save_output_path
-        ):
-            raise ValueError(
-                f"Missing `{{sample_id}}` in save_output_path={save_output_path}"
-            )
+    if save_output_path is not None and "{sample_id}" not in str(save_output_path):
+        raise ValueError(
+            f"Missing `{{sample_id}}` in save_output_path={save_output_path}"
+            + " to differentiate predicted samples."
+        )
 
     if isinstance(model, PredictionPipeline):
         pp = model
@@ -173,7 +181,6 @@ def predict_many(
         pp = create_prediction_pipeline(model)
 
     if not isinstance(inputs, collections.abc.Mapping):
-        sample_id = str(sample_id)
         if "{i}" not in sample_id and "{i:" not in sample_id:
             sample_id += "{i:03}"
 

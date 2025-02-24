@@ -215,23 +215,33 @@ def save_tensor(path: Union[Path, str], tensor: Tensor) -> None:
         imwrite(path, data)
 
 
-def save_sample(path: Union[Path, str, PerMember[Path]], sample: Sample) -> None:
-    """save a sample to path
+def save_sample(
+    path: Union[Path, str, PerMember[Union[Path, str]]], sample: Sample
+) -> None:
+    """Save a **sample** to a **path** pattern
+    or all sample members in the **path** mapping.
 
-    If `path` is a pathlib.Path or a string it must contain `{member_id}` and may contain `{sample_id}`,
-    which are resolved with the `sample` object.
+    If **path** is a pathlib.Path or a string and the **sample** has multiple members,
+    **path** it must contain `{member_id}` (or `{input_id}` or `{output_id}`).
+
+    (Each) **path** may contain `{sample_id}` to be formatted with the **sample** object.
     """
-
-    if not isinstance(path, collections.abc.Mapping) and "{member_id}" not in str(path):
-        raise ValueError(f"missing `{{member_id}}` in path {path}")
-
-    for m, t in sample.members.items():
-        if isinstance(path, collections.abc.Mapping):
-            p = path[m]
+    if not isinstance(path, collections.abc.Mapping):
+        if len(sample.members) < 2 or any(
+            m in str(path) for m in ("{member_id}", "{input_id}", "{output_id}")
+        ):
+            path = {m: path for m in sample.members}
         else:
-            p = Path(str(path).format(sample_id=sample.id, member_id=m))
+            raise ValueError(
+                f"path {path} must contain '{{member_id}}' for sample with multiple members {list(sample.members)}."
+            )
 
-        save_tensor(p, t)
+    for m, p in path.items():
+        t = sample.members[m]
+        p_formatted = Path(
+            str(p).format(sample_id=sample.id, member_id=m, input_id=m, output_id=m)
+        )
+        save_tensor(p_formatted, t)
 
 
 class _SerializedDatasetStatsEntry(
