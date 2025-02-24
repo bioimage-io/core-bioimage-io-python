@@ -35,7 +35,6 @@ _ = setup(
         "imagecodecs",
         "imageio>=2.10",
         "loguru",
-        "markdown",
         "numpy",
         "pydantic-settings>=2.5,<3",
         "pydantic>=2.7.0,<3",
