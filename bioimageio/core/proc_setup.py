@@ -143,11 +143,11 @@ def _prepare_v4_preprocs(
     procs: List[Processing] = []
     for t_descr in tensor_descrs:
         member_id = TensorId(str(t_descr.name))
-        procs.append(
-            EnsureDtype(input=member_id, output=member_id, dtype=t_descr.data_type)
-        )
+        ensure_dtype = EnsureDtype(input=member_id, output=member_id, dtype=t_descr.data_type)
+        procs.append(ensure_dtype)
         for proc_d in t_descr.preprocessing:
             procs.append(proc_descr_v4_to_op(t_descr, proc_d))
+        procs.append(ensure_dtype)
     return procs
 
 
@@ -157,11 +157,11 @@ def _prepare_v4_postprocs(
     procs: List[Processing] = []
     for t_descr in tensor_descrs:
         member_id = TensorId(str(t_descr.name))
-        procs.append(
-            EnsureDtype(input=member_id, output=member_id, dtype=t_descr.data_type)
-        )
+        ensure_dtype = EnsureDtype(input=member_id, output=member_id, dtype=t_descr.data_type)
+        procs.append(ensure_dtype)
         for proc_d in t_descr.postprocessing:
             procs.append(proc_descr_v4_to_op(t_descr, proc_d))
+        procs.append(ensure_dtype)
     return procs
 
 
