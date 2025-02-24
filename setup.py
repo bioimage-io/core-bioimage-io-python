@@ -62,7 +62,7 @@ _ = setup(
                 "packaging>=17.0",
                 "pre-commit",
                 "pdoc",
-                "pyright==1.1.393",
+                "pyright==1.1.394",
                 "pytest-cov",
                 "pytest",
             ]
