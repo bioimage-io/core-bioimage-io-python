@@ -19,10 +19,8 @@ from .proc_ops import (
     EnsureDtype,
     Processing,
     UpdateStats,
-    postproc_v4_to_processing,
-    postproc_v5_to_processing,
-    preproc_v4_to_processing,
-    preproc_v5_to_processing,
+    proc_descr_v4_to_op,
+    proc_descr_v5_to_op,
 )
 from .sample import Sample
 from .stat_calculators import StatsCalculator
@@ -149,7 +147,7 @@ def _prepare_v4_preprocs(
             EnsureDtype(input=member_id, output=member_id, dtype=t_descr.data_type)
         )
         for proc_d in t_descr.preprocessing:
-            procs.append(preproc_v4_to_processing(t_descr, proc_d))
+            procs.append(proc_descr_v4_to_op(t_descr, proc_d))
     return procs
 
 
@@ -163,7 +161,7 @@ def _prepare_v4_postprocs(
             EnsureDtype(input=member_id, output=member_id, dtype=t_descr.data_type)
         )
         for proc_d in t_descr.postprocessing:
-            procs.append(postproc_v4_to_processing(t_descr, proc_d))
+            procs.append(proc_descr_v4_to_op(t_descr, proc_d))
     return procs
 
 
@@ -173,7 +171,7 @@ def _prepare_v5_preprocs(
     procs: List[Processing] = []
     for t_descr in tensor_descrs:
         for proc_d in t_descr.preprocessing:
-            procs.append(preproc_v5_to_processing(t_descr, proc_d))
+            procs.append(proc_descr_v5_to_op(t_descr, proc_d))
     return procs
 
 
@@ -183,7 +181,7 @@ def _prepare_v5_postprocs(
     procs: List[Processing] = []
     for t_descr in tensor_descrs:
         for proc_d in t_descr.postprocessing:
-            procs.append(postproc_v5_to_processing(t_descr, proc_d))
+            procs.append(proc_descr_v5_to_op(t_descr, proc_d))
     return procs
 
 
