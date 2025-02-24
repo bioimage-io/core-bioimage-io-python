@@ -16,8 +16,8 @@ import numpy as np
 import xarray as xr
 from typing_extensions import Self, assert_never
 
+from bioimageio.core.digest_spec import get_member_id
 from bioimageio.spec.model import v0_4, v0_5
-from bioimageio.spec.model.v0_5 import TensorId
 from bioimageio.spec.model.v0_5 import (
     _convert_proc,  # pyright: ignore [reportPrivateUsage]
 )
@@ -672,144 +672,53 @@ Processing = Union[
 ]
 
 
-def get_proc_class(proc_spec: ProcDescr):
-    if isinstance(proc_spec, (v0_4.BinarizeDescr, v0_5.BinarizeDescr)):
-        return Binarize
-    elif isinstance(proc_spec, (v0_4.ClipDescr, v0_5.ClipDescr)):
-        return Clip
-    elif isinstance(proc_spec, v0_5.EnsureDtypeDescr):
-        return EnsureDtype
-    elif isinstance(proc_spec, v0_5.FixedZeroMeanUnitVarianceDescr):
-        return FixedZeroMeanUnitVariance
-    elif isinstance(proc_spec, (v0_4.ScaleLinearDescr, v0_5.ScaleLinearDescr)):
-        return ScaleLinear
+def get_proc(
+    proc_descr: ProcDescr,
+    tensor_descr: Union[
+        v0_4.InputTensorDescr,
+        v0_4.OutputTensorDescr,
+        v0_5.InputTensorDescr,
+        v0_5.OutputTensorDescr,
+    ],
+) -> Processing:
+    member_id = get_member_id(tensor_descr)
+
+    if isinstance(proc_descr, (v0_4.BinarizeDescr, v0_5.BinarizeDescr)):
+        return Binarize.from_proc_descr(proc_descr, member_id)
+    elif isinstance(proc_descr, (v0_4.ClipDescr, v0_5.ClipDescr)):
+        return Clip.from_proc_descr(proc_descr, member_id)
+    elif isinstance(proc_descr, v0_5.EnsureDtypeDescr):
+        return EnsureDtype.from_proc_descr(proc_descr, member_id)
+    elif isinstance(proc_descr, v0_5.FixedZeroMeanUnitVarianceDescr):
+        return FixedZeroMeanUnitVariance.from_proc_descr(proc_descr, member_id)
+    elif isinstance(proc_descr, (v0_4.ScaleLinearDescr, v0_5.ScaleLinearDescr)):
+        return ScaleLinear.from_proc_descr(proc_descr, member_id)
     elif isinstance(
-        proc_spec, (v0_4.ScaleMeanVarianceDescr, v0_5.ScaleMeanVarianceDescr)
+        proc_descr, (v0_4.ScaleMeanVarianceDescr, v0_5.ScaleMeanVarianceDescr)
     ):
-        return ScaleMeanVariance
-    elif isinstance(proc_spec, (v0_4.ScaleRangeDescr, v0_5.ScaleRangeDescr)):
-        return ScaleRange
-    elif isinstance(proc_spec, (v0_4.SigmoidDescr, v0_5.SigmoidDescr)):
-        return Sigmoid
+        return ScaleMeanVariance.from_proc_descr(proc_descr, member_id)
+    elif isinstance(proc_descr, (v0_4.ScaleRangeDescr, v0_5.ScaleRangeDescr)):
+        return ScaleRange.from_proc_descr(proc_descr, member_id)
+    elif isinstance(proc_descr, (v0_4.SigmoidDescr, v0_5.SigmoidDescr)):
+        return Sigmoid.from_proc_descr(proc_descr, member_id)
     elif (
-        isinstance(proc_spec, v0_4.ZeroMeanUnitVarianceDescr)
-        and proc_spec.kwargs.mode == "fixed"
+        isinstance(proc_descr, v0_4.ZeroMeanUnitVarianceDescr)
+        and proc_descr.kwargs.mode == "fixed"
     ):
-        return FixedZeroMeanUnitVariance
+        if not isinstance(
+            tensor_descr, (v0_4.InputTensorDescr, v0_4.OutputTensorDescr)
+        ):
+            raise TypeError(
+                "Expected v0_4 tensor description for v0_4 processing description"
+            )
+
+        v5_proc_descr = _convert_proc(proc_descr, tensor_descr.axes)
+        assert isinstance(v5_proc_descr, v0_5.FixedZeroMeanUnitVarianceDescr)
+        return FixedZeroMeanUnitVariance.from_proc_descr(v5_proc_descr, member_id)
     elif isinstance(
-        proc_spec,
+        proc_descr,
         (v0_4.ZeroMeanUnitVarianceDescr, v0_5.ZeroMeanUnitVarianceDescr),
     ):
-        return ZeroMeanUnitVariance
+        return ZeroMeanUnitVariance.from_proc_descr(proc_descr, member_id)
     else:
-        assert_never(proc_spec)
-
-
-def preproc_v4_to_processing(
-    inp: v0_4.InputTensorDescr,
-    proc_spec: v0_4.PreprocessingDescr,
-) -> Processing:
-    member_id = TensorId(str(inp.name))
-    if isinstance(proc_spec, v0_4.BinarizeDescr):
-        return Binarize.from_proc_descr(proc_spec, member_id)
-    elif isinstance(proc_spec, v0_4.ClipDescr):
-        return Clip.from_proc_descr(proc_spec, member_id)
-    elif isinstance(proc_spec, v0_4.ScaleLinearDescr):
-        return ScaleLinear.from_proc_descr(proc_spec, member_id)
-    elif isinstance(proc_spec, v0_4.ScaleRangeDescr):
-        return ScaleRange.from_proc_descr(proc_spec, member_id)
-    elif isinstance(proc_spec, v0_4.SigmoidDescr):
-        return Sigmoid.from_proc_descr(proc_spec, member_id)
-    elif isinstance(proc_spec, v0_4.ZeroMeanUnitVarianceDescr):
-        if proc_spec.kwargs.mode == "fixed":
-            axes = inp.axes
-            v5_proc_spec = _convert_proc(proc_spec, axes)
-            assert isinstance(
-                v5_proc_spec, v0_5.FixedZeroMeanUnitVarianceDescr
-            )  # FIXME
-            return FixedZeroMeanUnitVariance.from_proc_descr(v5_proc_spec, member_id)
-        else:
-            return ZeroMeanUnitVariance.from_proc_descr(proc_spec, member_id)
-    else:
-        assert_never(proc_spec)
-
-
-def postproc_v4_to_processing(
-    inp: v0_4.OutputTensorDescr,
-    proc_spec: v0_4.PostprocessingDescr,
-) -> Processing:
-    member_id = TensorId(str(inp.name))
-    if isinstance(proc_spec, v0_4.BinarizeDescr):
-        return Binarize.from_proc_descr(proc_spec, member_id)
-    if isinstance(proc_spec, v0_4.ScaleMeanVarianceDescr):
-        return ScaleMeanVariance.from_proc_descr(proc_spec, member_id)
-    elif isinstance(proc_spec, v0_4.ClipDescr):
-        return Clip.from_proc_descr(proc_spec, member_id)
-    elif isinstance(proc_spec, v0_4.ScaleLinearDescr):
-        return ScaleLinear.from_proc_descr(proc_spec, member_id)
-    elif isinstance(proc_spec, v0_4.ScaleRangeDescr):
-        return ScaleRange.from_proc_descr(proc_spec, member_id)
-    elif isinstance(proc_spec, v0_4.SigmoidDescr):
-        return Sigmoid.from_proc_descr(proc_spec, member_id)
-    elif isinstance(proc_spec, v0_4.ZeroMeanUnitVarianceDescr):
-        if proc_spec.kwargs.mode == "fixed":
-            axes = inp.axes
-            v5_proc_spec = _convert_proc(proc_spec, axes)
-            assert isinstance(
-                v5_proc_spec, v0_5.FixedZeroMeanUnitVarianceDescr
-            )  # FIXME
-            return FixedZeroMeanUnitVariance.from_proc_descr(v5_proc_spec, member_id)
-        else:
-            return ZeroMeanUnitVariance.from_proc_descr(proc_spec, member_id)
-    else:
-        assert_never(proc_spec)
-
-
-def preproc_v5_to_processing(
-    inp: v0_5.InputTensorDescr,
-    proc_spec: v0_5.PreprocessingDescr,
-) -> Processing:
-    if isinstance(proc_spec, v0_5.BinarizeDescr):
-        return Binarize.from_proc_descr(proc_spec, inp.id)
-    elif isinstance(proc_spec, v0_5.ClipDescr):
-        return Clip.from_proc_descr(proc_spec, inp.id)
-    elif isinstance(proc_spec, v0_5.ScaleLinearDescr):
-        return ScaleLinear.from_proc_descr(proc_spec, inp.id)
-    elif isinstance(proc_spec, v0_5.ScaleRangeDescr):
-        return ScaleRange.from_proc_descr(proc_spec, inp.id)
-    elif isinstance(proc_spec, v0_5.SigmoidDescr):
-        return Sigmoid.from_proc_descr(proc_spec, inp.id)
-    elif isinstance(proc_spec, v0_5.EnsureDtypeDescr):
-        return EnsureDtype.from_proc_descr(proc_spec, inp.id)
-    elif isinstance(proc_spec, v0_5.ZeroMeanUnitVarianceDescr):
-        return ZeroMeanUnitVariance.from_proc_descr(proc_spec, inp.id)
-    elif isinstance(proc_spec, v0_5.FixedZeroMeanUnitVarianceDescr):
-        return FixedZeroMeanUnitVariance.from_proc_descr(proc_spec, inp.id)
-    else:
-        assert_never(proc_spec)
-
-
-def postproc_v5_to_processing(
-    inp: v0_5.OutputTensorDescr,
-    proc_spec: v0_5.PostprocessingDescr,
-) -> Processing:
-    if isinstance(proc_spec, v0_5.BinarizeDescr):
-        return Binarize.from_proc_descr(proc_spec, inp.id)
-    if isinstance(proc_spec, v0_5.ScaleMeanVarianceDescr):
-        return ScaleMeanVariance.from_proc_descr(proc_spec, inp.id)
-    elif isinstance(proc_spec, v0_5.ClipDescr):
-        return Clip.from_proc_descr(proc_spec, inp.id)
-    elif isinstance(proc_spec, v0_5.ScaleLinearDescr):
-        return ScaleLinear.from_proc_descr(proc_spec, inp.id)
-    elif isinstance(proc_spec, v0_5.ScaleRangeDescr):
-        return ScaleRange.from_proc_descr(proc_spec, inp.id)
-    elif isinstance(proc_spec, v0_5.SigmoidDescr):
-        return Sigmoid.from_proc_descr(proc_spec, inp.id)
-    elif isinstance(proc_spec, v0_5.EnsureDtypeDescr):
-        return EnsureDtype.from_proc_descr(proc_spec, inp.id)
-    elif isinstance(proc_spec, v0_5.ZeroMeanUnitVarianceDescr):
-        return ZeroMeanUnitVariance.from_proc_descr(proc_spec, inp.id)
-    elif isinstance(proc_spec, v0_5.FixedZeroMeanUnitVarianceDescr):
-        return FixedZeroMeanUnitVariance.from_proc_descr(proc_spec, inp.id)
-    else:
-        assert_never(proc_spec)
+        assert_never(proc_descr)

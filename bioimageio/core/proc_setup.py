@@ -12,18 +12,15 @@ from typing import (
 
 from typing_extensions import assert_never
 
+from bioimageio.core.digest_spec import get_member_id
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
-from bioimageio.spec.model.v0_5 import TensorId
 
 from .proc_ops import (
     AddKnownDatasetStats,
     EnsureDtype,
     Processing,
     UpdateStats,
-    postproc_v4_to_processing,
-    postproc_v5_to_processing,
-    preproc_v4_to_processing,
-    preproc_v5_to_processing,
+    get_proc,
 )
 from .sample import Sample
 from .stat_calculators import StatsCalculator
@@ -173,61 +170,50 @@ def get_requried_sample_measures(model: AnyModelDescr) -> RequiredSampleMeasures
     )
 
 
-def _prepare_v4_preprocs(
-    tensor_descrs: Sequence[v0_4.InputTensorDescr],
+def _prepare_procs(
+    tensor_descrs: Union[
+        Sequence[v0_4.InputTensorDescr],
+        Sequence[v0_5.InputTensorDescr],
+        Sequence[v0_4.OutputTensorDescr],
+        Sequence[v0_5.OutputTensorDescr],
+    ],
 ) -> List[Processing]:
     procs: List[Processing] = []
     for t_descr in tensor_descrs:
-        member_id = TensorId(str(t_descr.name))
-        procs.append(
-            EnsureDtype(input=member_id, output=member_id, dtype=t_descr.data_type)
-        )
-        for proc_d in t_descr.preprocessing:
-            procs.append(preproc_v4_to_processing(t_descr, proc_d))
-    return procs
+        if isinstance(t_descr, (v0_4.InputTensorDescr, v0_4.OutputTensorDescr)):
+            member_id = get_member_id(t_descr)
+            procs.append(
+                EnsureDtype(input=member_id, output=member_id, dtype=t_descr.data_type)
+            )
 
+        if isinstance(t_descr, (v0_4.InputTensorDescr, v0_5.InputTensorDescr)):
+            for proc_d in t_descr.preprocessing:
+                procs.append(get_proc(proc_d, t_descr))
+        elif isinstance(t_descr, (v0_4.OutputTensorDescr, v0_5.OutputTensorDescr)):
+            for proc_d in t_descr.postprocessing:
+                procs.append(get_proc(proc_d, t_descr))
+        else:
+            assert_never(t_descr)
 
-def _prepare_v4_postprocs(
-    tensor_descrs: Sequence[v0_4.OutputTensorDescr],
-) -> List[Processing]:
-    procs: List[Processing] = []
-    for t_descr in tensor_descrs:
-        member_id = TensorId(str(t_descr.name))
-        procs.append(
-            EnsureDtype(input=member_id, output=member_id, dtype=t_descr.data_type)
-        )
-        for proc_d in t_descr.postprocessing:
-            procs.append(postproc_v4_to_processing(t_descr, proc_d))
-    return procs
+        if isinstance(
+            t_descr,
+            (v0_4.InputTensorDescr, (v0_4.InputTensorDescr, v0_4.OutputTensorDescr)),
+        ) and not isinstance(procs[-1], EnsureDtype):
+            member_id = get_member_id(t_descr)
+            procs.append(
+                EnsureDtype(input=member_id, output=member_id, dtype=t_descr.data_type)
+            )
 
-
-def _prepare_v5_preprocs(
-    tensor_descrs: Sequence[v0_5.InputTensorDescr],
-) -> List[Processing]:
-    procs: List[Processing] = []
-    for t_descr in tensor_descrs:
-        for proc_d in t_descr.preprocessing:
-            procs.append(preproc_v5_to_processing(t_descr, proc_d))
-    return procs
-
-
-def _prepare_v5_postprocs(
-    tensor_descrs: Sequence[v0_5.OutputTensorDescr],
-) -> List[Processing]:
-    procs: List[Processing] = []
-    for t_descr in tensor_descrs:
-        for proc_d in t_descr.postprocessing:
-            procs.append(postproc_v5_to_processing(t_descr, proc_d))
     return procs
 
 
 def _prepare_setup_pre_and_postprocessing(model: AnyModelDescr) -> _SetupProcessing:
     if isinstance(model, v0_4.ModelDescr):
-        pre = _prepare_v4_preprocs(model.inputs)
-        post = _prepare_v4_postprocs(model.outputs)
+        pre = _prepare_procs(model.inputs)
+        post = _prepare_procs(model.outputs)
     elif isinstance(model, v0_5.ModelDescr):
-        pre = _prepare_v5_preprocs(model.inputs)
-        post = _prepare_v5_postprocs(model.outputs)
+        pre = _prepare_procs(model.inputs)
+        post = _prepare_procs(model.outputs)
     else:
         assert_never(model)
 
