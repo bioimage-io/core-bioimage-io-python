@@ -19,6 +19,7 @@ from typing import (
     Set,
     Tuple,
     Union,
+    overload,
 )
 
 from loguru import logger
@@ -27,6 +28,7 @@ from typing_extensions import NotRequired, TypedDict, Unpack, assert_never, get_
 from bioimageio.spec import (
     BioimageioCondaEnv,
     InvalidDescr,
+    LatestResourceDescr,
     ResourceDescr,
     ValidationContext,
     build_description,
@@ -35,11 +37,13 @@ from bioimageio.spec import (
     load_description,
     save_bioimageio_package,
 )
+from bioimageio.spec._description_impl import DISCOVER
 from bioimageio.spec._internal.common_nodes import ResourceDescrBase
 from bioimageio.spec._internal.io import is_yaml_value
 from bioimageio.spec._internal.io_utils import read_yaml, write_yaml
 from bioimageio.spec._internal.types import (
     AbsoluteTolerance,
+    FormatVersionPlaceholder,
     MismatchedElementsPerMillion,
     RelativeTolerance,
 )
@@ -182,7 +186,7 @@ def default_run_command(args: Sequence[str]):
 def test_description(
     source: Union[ResourceDescr, PermissiveFileSource, BioimageioYamlContent],
     *,
-    format_version: Union[Literal["discover", "latest"], str] = "discover",
+    format_version: Union[FormatVersionPlaceholder, str] = "discover",
     weight_format: Optional[SupportedWeightsFormat] = None,
     devices: Optional[Sequence[str]] = None,
     determinism: Literal["seed_only", "full"] = "seed_only",
@@ -371,10 +375,38 @@ def _test_in_env(
     return ValidationSummary.model_validate_json(summary_path.read_bytes())
 
 
+@overload
 def load_description_and_test(
     source: Union[ResourceDescr, PermissiveFileSource, BioimageioYamlContent],
     *,
-    format_version: Union[Literal["discover", "latest"], str] = "discover",
+    format_version: Literal["latest"],
+    weight_format: Optional[SupportedWeightsFormat] = None,
+    devices: Optional[Sequence[str]] = None,
+    determinism: Literal["seed_only", "full"] = "seed_only",
+    expected_type: Optional[str] = None,
+    sha256: Optional[Sha256] = None,
+    **deprecated: Unpack[DeprecatedKwargs],
+) -> Union[LatestResourceDescr, InvalidDescr]: ...
+
+
+@overload
+def load_description_and_test(
+    source: Union[ResourceDescr, PermissiveFileSource, BioimageioYamlContent],
+    *,
+    format_version: Union[FormatVersionPlaceholder, str] = DISCOVER,
+    weight_format: Optional[SupportedWeightsFormat] = None,
+    devices: Optional[Sequence[str]] = None,
+    determinism: Literal["seed_only", "full"] = "seed_only",
+    expected_type: Optional[str] = None,
+    sha256: Optional[Sha256] = None,
+    **deprecated: Unpack[DeprecatedKwargs],
+) -> Union[ResourceDescr, InvalidDescr]: ...
+
+
+def load_description_and_test(
+    source: Union[ResourceDescr, PermissiveFileSource, BioimageioYamlContent],
+    *,
+    format_version: Union[FormatVersionPlaceholder, str] = DISCOVER,
     weight_format: Optional[SupportedWeightsFormat] = None,
     devices: Optional[Sequence[str]] = None,
     determinism: Literal["seed_only", "full"] = "seed_only",
@@ -383,17 +415,25 @@ def load_description_and_test(
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[ResourceDescr, InvalidDescr]:
     """Test RDF dynamically, e.g. model inference of test inputs"""
-    if isinstance(source, ResourceDescrBase) and (
-        (format_version != "discover" and source.format_version != format_version)
-        or (c := source.validation_summary.details[0].context) is None
-        or not c["perform_io_checks"]
-    ):
-        logger.debug(
-            "deserializing source to ensure we validate and test using format {} and perform io checks",
-            format_version,
-        )
+    if isinstance(source, ResourceDescrBase):
         root = source.root
-        source = dump_description(source)
+        if (
+            (
+                format_version
+                not in (
+                    DISCOVER,
+                    source.format_version,
+                    ".".join(source.format_version.split(".")[:2]),
+                )
+            )
+            or (c := source.validation_summary.details[0].context) is None
+            or not c["perform_io_checks"]
+        ):
+            logger.debug(
+                "deserializing source to ensure we validate and test using format {} and perform io checks",
+                format_version,
+            )
+            source = dump_description(source)
     else:
         root = Path()
 

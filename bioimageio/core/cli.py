@@ -51,10 +51,10 @@ from bioimageio.spec import (
     InvalidDescr,
     ResourceDescr,
     load_description,
+    save_bioimageio_yaml_only,
     settings,
 )
 from bioimageio.spec._internal.io_basics import ZipPath
-from bioimageio.spec._internal.io_utils import write_yaml
 from bioimageio.spec._internal.types import NotEmpty
 from bioimageio.spec.dataset import DatasetDescr
 from bioimageio.spec.model import ModelDescr, v0_4, v0_5
@@ -264,9 +264,9 @@ class UpdateFormatCmd(CmdBase, WithSource):
     """
 
     def run(self):
-        updated = update_format(self.descr, output_path=self.output)
+        updated = update_format(self.source, output=self.output)
         updated_stream = StringIO()
-        write_yaml(updated, updated_stream)
+        save_bioimageio_yaml_only(updated, updated_stream)
         updated_md = f"```yaml\n{updated_stream.getvalue()}\n```"
 
         rich_markdown = rich.markdown.Markdown(updated_md)
