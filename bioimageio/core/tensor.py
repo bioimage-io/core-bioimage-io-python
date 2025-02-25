@@ -197,6 +197,11 @@ class Tensor(MagicTensorOpsMixin):
         return self._data.ndim
 
     @property
+    def shape(self):
+        """Tuple of tensor axes lengths"""
+        return self._data.shape
+
+    @property
     def shape_tuple(self):
         """Tuple of tensor axes lengths"""
         return self._data.shape

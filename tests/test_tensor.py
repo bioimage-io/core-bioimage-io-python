@@ -60,3 +60,8 @@ def test_crop_and_pad():
 def test_some_magic_ops():
     tensor = Tensor.from_numpy(np.random.rand(256, 256), dims=None)
     assert tensor + 2 == 2 + tensor
+
+
+def test_shape_attributes():
+    tensor = Tensor.from_numpy(np.random.rand(1, 2, 25, 26), dims=None)
+    assert tensor.shape_tuple == tensor.shape
