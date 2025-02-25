@@ -198,10 +198,17 @@ def _prepare_procs(
         if isinstance(
             t_descr,
             (v0_4.InputTensorDescr, (v0_4.InputTensorDescr, v0_4.OutputTensorDescr)),
-        ) and not isinstance(procs[-1], EnsureDtype):
+        ):
+            if len(procs) == 1:
+                # remove initial ensure_dtype if there are no other proccessing steps
+                assert isinstance(procs[0], EnsureDtype)
+                procs = []
+
+            # ensure 0.4 models get float32 input
+            # which has been the implicit assumption for 0.4
             member_id = get_member_id(t_descr)
             procs.append(
-                EnsureDtype(input=member_id, output=member_id, dtype=t_descr.data_type)
+                EnsureDtype(input=member_id, output=member_id, dtype="float32")
             )
 
     return procs
