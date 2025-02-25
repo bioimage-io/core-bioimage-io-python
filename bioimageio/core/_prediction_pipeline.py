@@ -12,6 +12,7 @@ from typing import (
     Union,
 )
 
+from loguru import logger
 from tqdm import tqdm
 
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
@@ -188,9 +189,15 @@ class PredictionPipeline:
         )
         input_blocks = list(input_blocks)
         predicted_blocks: List[SampleBlock] = []
+        logger.info(
+            "split sample shape {} into {} blocks of {}.",
+            {k: dict(v) for k, v in sample.shape.items()},
+            n_blocks,
+            {k: dict(v) for k, v in input_block_shape.items()},
+        )
         for b in tqdm(
             input_blocks,
-            desc=f"predict sample {sample.id or ''} with {self.model_description.id or self.model_description.name}",
+            desc=f"predict {sample.id or ''} with {self.model_description.id or self.model_description.name}",
             unit="block",
             unit_divisor=1,
             total=n_blocks,
