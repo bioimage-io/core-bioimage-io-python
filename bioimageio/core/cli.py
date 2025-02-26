@@ -262,6 +262,9 @@ class UpdateFormatCmd(CmdBase, WithSource):
 
     Updated bioimageio.yaml is rendered to the terminal if the output is None.
     """
+    # TODO: exclude default values (without braking discriminated unions)
+    # exclude_defaults: bool = Field(True, alias="exclude-defaults")
+    # """Exclude fields that have the default value."""
 
     def run(self):
         updated = update_format(self.source, output=self.output)
