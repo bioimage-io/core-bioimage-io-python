@@ -1,4 +1,4 @@
-"""These functions implement the logic of the bioimageio command line interface
+"""These functions are used in the bioimageio command line interface
 defined in `bioimageio.core.cli`."""
 
 from pathlib import Path
@@ -13,7 +13,6 @@ from bioimageio.spec import (
     save_bioimageio_package,
     save_bioimageio_package_as_folder,
 )
-from bioimageio.spec import update_format as update_format
 
 from ._resource_tests import test_description
 

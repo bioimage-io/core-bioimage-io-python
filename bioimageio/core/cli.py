@@ -8,6 +8,7 @@ import json
 import shutil
 import subprocess
 import sys
+from abc import ABC
 from argparse import RawTextHelpFormatter
 from difflib import SequenceMatcher
 from functools import cached_property
@@ -42,7 +43,6 @@ from pydantic_settings import (
     SettingsConfigDict,
     YamlConfigSettingsSource,
 )
-from ruyaml import YAML
 from tqdm import tqdm
 from typing_extensions import assert_never
 
@@ -53,8 +53,11 @@ from bioimageio.spec import (
     load_description,
     save_bioimageio_yaml_only,
     settings,
+    update_format,
+    update_hashes,
 )
 from bioimageio.spec._internal.io_basics import ZipPath
+from bioimageio.spec._internal.io_utils import yaml
 from bioimageio.spec._internal.types import NotEmpty
 from bioimageio.spec.dataset import DatasetDescr
 from bioimageio.spec.model import ModelDescr, v0_4, v0_5
@@ -66,7 +69,6 @@ from .commands import (
     WeightFormatArgAny,
     package,
     test,
-    update_format,
 )
 from .common import MemberId, SampleId, SupportedWeightsFormat
 from .digest_spec import get_member_ids, load_sample_for_model
@@ -83,8 +85,6 @@ from .sample import Sample
 from .stat_measures import Stat
 from .utils import VERSION
 from .weight_converters._add_weights import add_weights
-
-yaml = YAML(typ="safe")
 
 
 class CmdBase(BaseModel, use_attribute_docstrings=True, cli_implicit_flags=True):
@@ -254,31 +254,68 @@ def _get_stat(
     return stat
 
 
-class UpdateFormatCmd(CmdBase, WithSource):
-    """Update the metadata format"""
+class UpdateCmdBase(CmdBase, WithSource, ABC):
+    output: Union[Literal["render", "stdout"], Path] = "render"
+    """Output updated bioimageio.yaml to the terminal or write to a file."""
 
-    output: Optional[Path] = None
-    """Save updated bioimageio.yaml to this file.
+    exclude_unset: bool = Field(True, alias="exclude-unset")
+    """Exclude fields that have not explicitly be set."""
 
-    Updated bioimageio.yaml is rendered to the terminal if the output is None.
-    """
-
-    exclude_defaults: bool = Field(True, alias="exclude-defaults")
+    exclude_defaults: bool = Field(False, alias="exclude-defaults")
     """Exclude fields that have the default value (even if set explicitly)."""
 
-    def run(self):
-        updated = update_format(
-            self.source, output=self.output, exclude_defaults=self.exclude_defaults
-        )
-        updated_stream = StringIO()
-        save_bioimageio_yaml_only(
-            updated, updated_stream, exclude_defaults=self.exclude_defaults
-        )
-        updated_md = f"```yaml\n{updated_stream.getvalue()}\n```"
+    @cached_property
+    def updated(self) -> Union[ResourceDescr, InvalidDescr]:
+        raise NotImplementedError
 
-        rich_markdown = rich.markdown.Markdown(updated_md)
-        console = rich.console.Console()
-        console.print(rich_markdown)
+    def run(self):
+        if self.output == "render":
+            out = StringIO()
+        elif self.output == "stdout":
+            out = sys.stdout
+        else:
+            out = self.output
+
+        save_bioimageio_yaml_only(
+            self.updated,
+            out,
+            exclude_unset=self.exclude_unset,
+            exclude_defaults=self.exclude_defaults,
+        )
+
+        if self.output == "render":
+            assert isinstance(out, StringIO)
+            updated_md = f"```yaml\n{out.getvalue()}\n```"
+
+            rich_markdown = rich.markdown.Markdown(updated_md)
+            console = rich.console.Console()
+            console.print(rich_markdown)
+
+
+class UpdateFormatCmd(UpdateCmdBase):
+    """Update the metadata format to the latest format version."""
+
+    perform_io_checks: bool = Field(
+        settings.perform_io_checks, alias="perform-io-checks"
+    )
+    """Wether or not to attempt validation that may require file download.
+    If `True` file hash values are added if not present."""
+
+    @cached_property
+    def updated(self):
+        return update_format(
+            self.source,
+            exclude_defaults=self.exclude_defaults,
+            perform_io_checks=self.perform_io_checks,
+        )
+
+
+class UpdateHashesCmd(UpdateCmdBase):
+    """Create a bioimageio.yaml description with updated file hashes."""
+
+    @cached_property
+    def updated(self):
+        return update_hashes(self.source)
 
 
 class PredictCmd(CmdBase, WithSource):
@@ -690,6 +727,9 @@ class Bioimageio(
     update_format: CliSubCommand[UpdateFormatCmd] = Field(alias="update-format")
     """Update the metadata format"""
 
+    update_hashes: CliSubCommand[UpdateHashesCmd] = Field(alias="update-hashes")
+    """Create a bioimageio.yaml description with updated file hashes."""
+
     add_weights: CliSubCommand[ConvertWeightsCmd] = Field(alias="add-weights")
     """Add additional weights to the model descriptions converted from available
     formats to improve deployability."""
@@ -732,12 +772,13 @@ class Bioimageio(
             pformat({k: v for k, v in self.model_dump().items() if v is not None}),
         )
         cmd = (
-            self.validate_format
-            or self.test
+            self.add_weights
             or self.package
             or self.predict
+            or self.test
             or self.update_format
-            or self.add_weights
+            or self.update_hashes
+            or self.validate_format
         )
         assert cmd is not None
         cmd.run()
