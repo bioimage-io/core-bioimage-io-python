@@ -65,7 +65,7 @@ MODEL_SOURCES: Dict[str, str] = {
         + "models/stardist_example_model/rdf_wrong_shape2_v0_4.yaml"
     ),
     "unet2d_diff_output_shape": (
-        EXAMPLE_DESCRIPTIONS + "models/unet2d_diff_output_shape/v0_4.bioimageio.yaml"
+        EXAMPLE_DESCRIPTIONS + "models/unet2d_diff_output_shape/bioimageio.yaml"
     ),
     "unet2d_expand_output_shape": (
         EXAMPLE_DESCRIPTIONS

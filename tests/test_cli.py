@@ -38,6 +38,8 @@ def run_subprocess(
         ["predict", "--example", "unet2d_nuclei_broad_model"],
         ["update-format", "unet2d_path_old_version"],
         ["increase-weight-formats", "unet2d_nuclei_broad_model"],
+        ["update-hashes", "unet2d_path_old_version"],
+        ["update-hashes", "unet2d_path_old_version", "--output=stdout"],
     ],
 )
 def test_cli(
