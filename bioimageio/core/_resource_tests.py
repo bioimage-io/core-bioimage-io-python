@@ -558,7 +558,7 @@ def _test_model_inference(
                 )
                 mismatched_elements = mismatched.sum().item()
                 if mismatched_elements / expected.size > mismatched_tol / 1e6:
-                    r_max_idx = (r_diff := abs_diff / abs(expected)).argmax()
+                    r_max_idx = (r_diff := abs_diff / (abs(expected) + 1e-6)).argmax()
                     r_max = r_diff[r_max_idx].item()
                     r_actual = actual[r_max_idx].item()
                     r_expected = expected[r_max_idx].item()
@@ -570,7 +570,7 @@ def _test_model_inference(
                         f"Output '{m}' disagrees with {mismatched_elements} of"
                         + f" {expected.size} expected values."
                         + f"\n Max relative difference: {r_max:.2e}"
-                        + rf" (= \|{r_actual:.2e} - {r_expected:.2e}\|/\|{r_expected:.2e}\|)"
+                        + rf" (= \|{r_actual:.2e} - {r_expected:.2e}\|/\|{r_expected:.2e} + 1e-6|)"
                         + f" at {r_max_idx}"
                         + f"\n Max absolute difference: {a_max:.2e}"
                         + rf" (= \|{a_actual:.2e} - {a_expected:.2e}\|) at {a_max_idx}"
