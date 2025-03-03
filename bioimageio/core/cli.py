@@ -662,7 +662,7 @@ class PredictCmd(CmdBase, WithSource):
             save_sample(sp_out, sample_out)
 
 
-class ConvertWeightsCmd(CmdBase, WithSource):
+class AddWeightsCmd(CmdBase, WithSource):
     output: CliPositionalArg[Path]
     """The path to write the updated model package to."""
 
@@ -732,7 +732,7 @@ class Bioimageio(
     update_hashes: CliSubCommand[UpdateHashesCmd] = Field(alias="update-hashes")
     """Create a bioimageio.yaml description with updated file hashes."""
 
-    add_weights: CliSubCommand[ConvertWeightsCmd] = Field(alias="add-weights")
+    add_weights: CliSubCommand[AddWeightsCmd] = Field(alias="add-weights")
     """Add additional weights to the model descriptions converted from available
     formats to improve deployability."""
 
