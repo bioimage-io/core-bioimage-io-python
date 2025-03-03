@@ -1,9 +1,8 @@
 from pathlib import Path
-from typing import Union
 
 import torch.jit
 
-from bioimageio.spec.model import v0_4, v0_5
+from bioimageio.spec.model.v0_5 import ModelDescr, OnnxWeightsDescr
 
 from .. import __version__
 from ..backends.pytorch_backend import load_torch_model
@@ -12,23 +11,23 @@ from ..proc_setup import get_pre_and_postprocessing
 
 
 def convert(
-    model_descr: Union[v0_4.ModelDescr, v0_5.ModelDescr],
-    *,
+    model_descr: ModelDescr,
     output_path: Path,
+    *,
     verbose: bool = False,
     opset_version: int = 20,
-) -> v0_5.OnnxWeightsDescr:
+) -> OnnxWeightsDescr:
     """
     Convert model weights from the Torchscript state_dict format to the ONNX format.
 
     Args:
-        model_descr (Union[v0_4.ModelDescr, v0_5.ModelDescr]):
+        model_descr:
             The model description object that contains the model and its weights.
-        output_path (Path):
+        output_path:
             The file path where the ONNX model will be saved.
-        verbose (bool, optional):
+        verbose:
             If True, will print out detailed information during the ONNX export process. Defaults to False.
-        opset_version (int, optional):
+        opset_version:
             The ONNX opset version to use for the export. Defaults to 15.
 
     Raises:
@@ -36,8 +35,7 @@ def convert(
             If the provided model does not have weights in the PyTorch state_dict format.
 
     Returns:
-        v0_5.OnnxWeightsDescr:
-            A descriptor object that contains information about the exported ONNX weights.
+        A descriptor object that contains information about the exported ONNX weights.
     """
 
     state_dict_weights_descr = model_descr.weights.pytorch_state_dict
@@ -69,9 +67,9 @@ def convert(
             opset_version=opset_version,
         )
 
-    return v0_5.OnnxWeightsDescr(
+    return OnnxWeightsDescr(
         source=output_path,
         parent="pytorch_state_dict",
         opset_version=opset_version,
-        comment=(f"Converted with bioimageio.core {__version__}."),
+        comment=f"Converted with bioimageio.core {__version__}.",
     )

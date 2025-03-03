@@ -6,11 +6,18 @@ from zipfile import ZipFile
 
 import tensorflow
 
-from bioimageio.core.io import ensure_unzipped
 from bioimageio.spec._internal.io import download
 from bioimageio.spec._internal.version_type import Version
 from bioimageio.spec.common import ZipPath
-from bioimageio.spec.model import v0_4, v0_5
+from bioimageio.spec.model.v0_5 import (
+    InputTensorDescr,
+    ModelDescr,
+    OutputTensorDescr,
+    TensorflowSavedModelBundleWeightsDescr,
+)
+
+from .. import __version__
+from ..io import ensure_unzipped
 
 try:
     # try to build the tf model with the keras import from tensorflow
@@ -21,8 +28,8 @@ except Exception:
 
 
 def convert(
-    model_descr: Union[v0_4.ModelDescr, v0_5.ModelDescr], *, output_path: Path
-) -> v0_5.TensorflowSavedModelBundleWeightsDescr:
+    model_descr: ModelDescr, output_path: Path
+) -> TensorflowSavedModelBundleWeightsDescr:
     """
     Convert model weights from the 'keras_hdf5' format to the 'tensorflow_saved_model_bundle' format.
 
@@ -34,14 +41,11 @@ def convert(
     https://github.com/deepimagej/pydeepimagej/blob/5aaf0e71f9b04df591d5ca596f0af633a7e024f5/pydeepimagej/yaml/create_config.py
 
     Args:
-        model_descr (Union[v0_4.ModelDescr, v0_5.ModelDescr]):
+        model_descr:
             The bioimage.io model description containing the model's metadata and weights.
-        output_path (Path):
+        output_path:
             The directory where the TensorFlow SavedModel bundle will be saved.
             This path must not already exist and, if necessary, will be zipped into a .zip file.
-        use_tracing (bool):
-            Placeholder argument; currently not used in this method but required to match the abstract method signature.
-
     Raises:
         ValueError:
             - If the specified `output_path` already exists.
@@ -52,8 +56,7 @@ def convert(
             If the model has multiple inputs or outputs and TensorFlow 1.x is being used.
 
     Returns:
-            v0_5.TensorflowSavedModelBundleWeightsDescr:
-            A descriptor object containing information about the converted TensorFlow SavedModel bundle.
+        A descriptor object containing information about the converted TensorFlow SavedModel bundle.
     """
     tf_major_ver = int(tensorflow.__version__.split(".")[0])
 
@@ -87,12 +90,12 @@ def convert(
 
         input_name = str(
             d.id
-            if isinstance((d := model_descr.inputs[0]), v0_5.InputTensorDescr)
+            if isinstance((d := model_descr.inputs[0]), InputTensorDescr)
             else d.name
         )
         output_name = str(
             d.id
-            if isinstance((d := model_descr.outputs[0]), v0_5.OutputTensorDescr)
+            if isinstance((d := model_descr.outputs[0]), OutputTensorDescr)
             else d.name
         )
         return _convert_tf1(
@@ -108,7 +111,7 @@ def convert(
 
 def _convert_tf2(
     keras_weight_path: Union[Path, ZipPath], output_path: Path, zip_weights: bool
-) -> v0_5.TensorflowSavedModelBundleWeightsDescr:
+) -> TensorflowSavedModelBundleWeightsDescr:
     model = keras.models.load_model(keras_weight_path)  # type: ignore
     keras.models.save_model(model, output_path)  # type: ignore
 
@@ -116,10 +119,11 @@ def _convert_tf2(
         output_path = _zip_model_bundle(output_path)
     print("TensorFlow model exported to", output_path)
 
-    return v0_5.TensorflowSavedModelBundleWeightsDescr(
+    return TensorflowSavedModelBundleWeightsDescr(
         source=output_path,
         parent="keras_hdf5",
         tensorflow_version=Version(tensorflow.__version__),
+        comment=f"Converted with bioimageio.core {__version__}.",
     )
 
 
@@ -131,7 +135,7 @@ def _convert_tf1(
     input_name: str,
     output_name: str,
     zip_weights: bool,
-) -> v0_5.TensorflowSavedModelBundleWeightsDescr:
+) -> TensorflowSavedModelBundleWeightsDescr:
 
     @no_type_check
     def build_tf_model():
@@ -144,7 +148,9 @@ def _convert_tf1(
         )
 
         signature_def_map = {
-            tensorflow.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: signature
+            tensorflow.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY: (
+                signature
+            )
         }
 
         builder.add_meta_graph_and_variables(
@@ -160,7 +166,7 @@ def _convert_tf1(
         output_path = _zip_model_bundle(output_path)
     print("TensorFlow model exported to", output_path)
 
-    return v0_5.TensorflowSavedModelBundleWeightsDescr(
+    return TensorflowSavedModelBundleWeightsDescr(
         source=output_path,
         parent="keras_hdf5",
         tensorflow_version=Version(tensorflow.__version__),

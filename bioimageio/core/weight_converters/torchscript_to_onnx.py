@@ -1,21 +1,21 @@
 from pathlib import Path
-from typing import Union
 
 import torch.jit
 
-from bioimageio.core.digest_spec import get_member_id, get_test_inputs
-from bioimageio.core.proc_setup import get_pre_and_postprocessing
-from bioimageio.spec.model import v0_4, v0_5
+from bioimageio.spec.model.v0_5 import ModelDescr, OnnxWeightsDescr
 from bioimageio.spec.utils import download
+
+from ..digest_spec import get_member_id, get_test_inputs
+from ..proc_setup import get_pre_and_postprocessing
 
 
 def convert(
-    model_descr: Union[v0_4.ModelDescr, v0_5.ModelDescr],
-    *,
+    model_descr: ModelDescr,
     output_path: Path,
+    *,
     verbose: bool = False,
     opset_version: int = 15,
-) -> v0_5.OnnxWeightsDescr:
+) -> OnnxWeightsDescr:
     """
     Convert model weights from the PyTorch state_dict format to the ONNX format.
 
@@ -71,6 +71,6 @@ def convert(
             opset_version=opset_version,
         )
 
-    return v0_5.OnnxWeightsDescr(
+    return OnnxWeightsDescr(
         source=output_path, parent="pytorch_state_dict", opset_version=opset_version
     )
