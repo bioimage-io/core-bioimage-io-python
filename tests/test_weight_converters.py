@@ -5,12 +5,12 @@ from pathlib import Path
 
 import pytest
 
-from bioimageio.core import test_model
 from bioimageio.spec import load_description
 from bioimageio.spec.model import v0_5
 
 
 def test_pytorch_to_torchscript(any_torch_model, tmp_path):
+    from bioimageio.core import test_model
     from bioimageio.core.weight_converters.pytorch_to_torchscript import convert
 
     model_descr = load_description(any_torch_model, perform_io_checks=False)
@@ -28,6 +28,7 @@ def test_pytorch_to_torchscript(any_torch_model, tmp_path):
 
 
 def test_pytorch_to_onnx(convert_to_onnx, tmp_path):
+    from bioimageio.core import test_model
     from bioimageio.core.weight_converters.pytorch_to_onnx import convert
 
     model_descr = load_description(convert_to_onnx, format_version="latest")
@@ -50,6 +51,7 @@ def test_pytorch_to_onnx(convert_to_onnx, tmp_path):
 
 @pytest.mark.skip()
 def test_keras_to_tensorflow(any_keras_model: Path, tmp_path: Path):
+    from bioimageio.core import test_model
     from bioimageio.core.weight_converters.keras_to_tensorflow import convert
 
     out_path = tmp_path / "weights.zip"
