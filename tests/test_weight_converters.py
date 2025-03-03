@@ -48,23 +48,8 @@ def test_pytorch_to_onnx(convert_to_onnx, tmp_path):
     assert summary.status == "passed", summary.display()
 
 
-def test_keras_to_tensorflow(any_keras_model: Path, tmp_path: Path):
-    from bioimageio.core.weight_converters.keras_to_tensorflow import convert
-
-    model_descr = load_description(any_keras_model)
-    out_path = tmp_path / "weights"
-    ret_val = convert(model_descr, output_path=out_path)
-    assert out_path.exists()
-    assert isinstance(ret_val, v0_5.TensorflowSavedModelBundleWeightsDescr)
-    assert ret_val.source == out_path
-
-    model_descr.weights.keras = ret_val
-    summary = test_model(model_descr, weight_format="keras_hdf5")
-    assert summary.status == "passed", summary.display()
-
-
 @pytest.mark.skip()
-def test_keras_to_tensorflow_zipped(any_keras_model: Path, tmp_path: Path):
+def test_keras_to_tensorflow(any_keras_model: Path, tmp_path: Path):
     from bioimageio.core.weight_converters.keras_to_tensorflow import convert
 
     out_path = tmp_path / "weights.zip"

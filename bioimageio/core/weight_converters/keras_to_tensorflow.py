@@ -44,8 +44,8 @@ def convert(
         model_descr:
             The bioimage.io model description containing the model's metadata and weights.
         output_path:
-            The directory where the TensorFlow SavedModel bundle will be saved.
-            This path must not already exist and, if necessary, will be zipped into a .zip file.
+            Path with .zip suffix (.zip is appended otherwise) to which a zip archive
+            with the TensorFlow SavedModel bundle will be saved.
     Raises:
         ValueError:
             - If the specified `output_path` already exists.
@@ -60,11 +60,8 @@ def convert(
     """
     tf_major_ver = int(tensorflow.__version__.split(".")[0])
 
-    if output_path.suffix == ".zip":
+    if output_path.suffix != ".zip":
         output_path = output_path.with_suffix("")
-        zip_weights = True
-    else:
-        zip_weights = False
 
     if output_path.exists():
         raise ValueError(f"The ouptut directory at {output_path} must not exist.")
@@ -103,20 +100,18 @@ def convert(
             output_path,
             input_name,
             output_name,
-            zip_weights,
         )
     else:
-        return _convert_tf2(weight_path, output_path, zip_weights)
+        return _convert_tf2(weight_path, output_path)
 
 
 def _convert_tf2(
-    keras_weight_path: Union[Path, ZipPath], output_path: Path, zip_weights: bool
+    keras_weight_path: Union[Path, ZipPath], output_path: Path
 ) -> TensorflowSavedModelBundleWeightsDescr:
     model = keras.models.load_model(keras_weight_path)  # type: ignore
-    keras.models.save_model(model, output_path)  # type: ignore
+    model.export(output_path)  # type: ignore
 
-    if zip_weights:
-        output_path = _zip_model_bundle(output_path)
+    output_path = _zip_model_bundle(output_path)
     print("TensorFlow model exported to", output_path)
 
     return TensorflowSavedModelBundleWeightsDescr(
@@ -134,13 +129,11 @@ def _convert_tf1(
     output_path: Path,
     input_name: str,
     output_name: str,
-    zip_weights: bool,
 ) -> TensorflowSavedModelBundleWeightsDescr:
 
     @no_type_check
     def build_tf_model():
         keras_model = keras.models.load_model(keras_weight_path)
-        assert tensorflow is not None
         builder = tensorflow.saved_model.builder.SavedModelBuilder(output_path)
         signature = tensorflow.saved_model.signature_def_utils.predict_signature_def(
             inputs={input_name: keras_model.input},
@@ -162,14 +155,14 @@ def _convert_tf1(
 
     build_tf_model()
 
-    if zip_weights:
-        output_path = _zip_model_bundle(output_path)
+    output_path = _zip_model_bundle(output_path)
     print("TensorFlow model exported to", output_path)
 
     return TensorflowSavedModelBundleWeightsDescr(
         source=output_path,
         parent="keras_hdf5",
         tensorflow_version=Version(tensorflow.__version__),
+        comment=f"Converted with bioimageio.core {__version__}.",
     )
 
 
