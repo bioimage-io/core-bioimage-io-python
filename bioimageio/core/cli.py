@@ -290,6 +290,8 @@ class UpdateCmdBase(CmdBase, WithSource, ABC):
             rich_markdown = rich.markdown.Markdown(updated_md)
             console = rich.console.Console()
             console.print(rich_markdown)
+        elif self.output != "stdout":
+            logger.info(f"written updated description to {self.output}")
 
 
 class UpdateFormatCmd(UpdateCmdBase):
