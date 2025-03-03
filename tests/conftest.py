@@ -81,7 +81,7 @@ MODEL_SOURCES: Dict[str, str] = {
         EXAMPLE_DESCRIPTIONS + "models/unet2d_keras_tf/v0_4.bioimageio.yaml"
     ),
     "unet2d_multi_tensor": (
-        EXAMPLE_DESCRIPTIONS + "models/unet2d_multi_tensor/v0_4.bioimageio.yaml"
+        EXAMPLE_DESCRIPTIONS + "models/unet2d_multi_tensor/bioimageio.yaml"
     ),
     "unet2d_nuclei_broad_model_old": (
         EXAMPLE_DESCRIPTIONS + "models/unet2d_nuclei_broad/v0_4_9.bioimageio.yaml"

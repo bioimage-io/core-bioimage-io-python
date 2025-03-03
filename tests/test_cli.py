@@ -1,4 +1,5 @@
 import subprocess
+from pathlib import Path
 from typing import Any, List, Sequence
 
 import pytest
@@ -36,14 +37,17 @@ def run_subprocess(
         ],
         ["test", "unet2d_nuclei_broad_model"],
         ["predict", "--example", "unet2d_nuclei_broad_model"],
-        ["update-format", "unet2d_path_old_version"],
-        ["increase-weight-formats", "unet2d_nuclei_broad_model"],
-        ["update-hashes", "unet2d_path_old_version"],
-        ["update-hashes", "unet2d_path_old_version", "--output=stdout"],
+        ["update-format", "unet2d_nuclei_broad_model_old"],
+        ["add-weights", "unet2d_nuclei_broad_model", "tmp_path"],
+        ["update-hashes", "unet2d_nuclei_broad_model_old"],
+        ["update-hashes", "unet2d_nuclei_broad_model_old", "--output=stdout"],
     ],
 )
 def test_cli(
-    args: List[str], unet2d_nuclei_broad_model: str, unet2d_nuclei_broad_model_old: str
+    args: List[str],
+    unet2d_nuclei_broad_model: str,
+    unet2d_nuclei_broad_model_old: str,
+    tmp_path: Path,
 ):
     resolved_args = [
         (
@@ -52,7 +56,9 @@ def test_cli(
             else (
                 unet2d_nuclei_broad_model_old
                 if arg == "unet2d_nuclei_broad_model_old"
-                else arg
+                else (
+                    arg.replace("tmp_path", str(tmp_path)) if "tmp_path" in arg else arg
+                )
             )
         )
         for arg in args

@@ -13,7 +13,10 @@ from bioimageio.spec.model import v0_5
 def test_pytorch_to_torchscript(any_torch_model, tmp_path):
     from bioimageio.core.weight_converters.pytorch_to_torchscript import convert
 
-    model_descr = load_description(any_torch_model)
+    model_descr = load_description(any_torch_model, perform_io_checks=False)
+    if model_descr.implemented_format_version_tuple[:2] == (0, 4):
+        pytest.skip("cannot convert to old 0.4 format")
+
     out_path = tmp_path / "weights.pt"
     ret_val = convert(model_descr, out_path)
     assert out_path.exists()
