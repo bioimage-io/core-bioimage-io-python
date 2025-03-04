@@ -517,7 +517,7 @@ def _get_tolerance(
         rtol = 0
         mismatched_tol = 0
     else:
-        atol = deprecated.get("absolute_tolerance", 0)
+        atol = deprecated.get("absolute_tolerance", 1e-5)
         rtol = deprecated.get("relative_tolerance", 1e-3)
         mismatched_tol = 0
 
