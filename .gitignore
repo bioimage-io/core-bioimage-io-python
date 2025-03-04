@@ -12,4 +12,5 @@ cache
 coverage.xml
 dist/
 docs/
+dogfood/
 typings/pooch/
