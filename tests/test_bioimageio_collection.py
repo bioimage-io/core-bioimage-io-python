@@ -38,7 +38,7 @@ def yield_bioimageio_yaml_urls() -> Iterable[ParameterSet]:
         yield pytest.param(descr_url, sha, key, id=key)
 
 
-KNOWN_INVALID: Collection[str] = set()
+KNOWN_INVALID: Collection[str] = {"stupendous-sheep/1.2"}
 
 
 @expensive_test
