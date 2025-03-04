@@ -65,6 +65,7 @@ _ = setup(
                 "pyright==1.1.396",
                 "pytest-cov",
                 "pytest",
+                "segment-anything",  # for model testing
             ]
         ),
     },
