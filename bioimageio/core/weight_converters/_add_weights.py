@@ -11,7 +11,7 @@ from bioimageio.spec import (
 )
 from bioimageio.spec.model.v0_5 import ModelDescr, WeightsFormat
 
-from .._resource_tests import test_model
+from .._resource_tests import load_description_and_test
 
 
 def add_weights(
@@ -168,5 +168,6 @@ def add_weights(
         logger.info("added weights formats {}", originally_missing - missing)
         # resave model with updated rdf.yaml
         _ = save_bioimageio_package_as_folder(model_descr, output_path=output_path)
-        _ = test_model(model_descr)
-        return model_descr
+        tested_model_descr = load_description_and_test(model_descr)
+        assert isinstance(tested_model_descr, ModelDescr)
+        return tested_model_descr
