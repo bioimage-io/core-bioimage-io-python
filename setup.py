@@ -66,6 +66,7 @@ _ = setup(
                 "pytest-cov",
                 "pytest",
                 "segment-anything",  # for model testing
+                "timm",  # for model testing
             ]
         ),
     },
