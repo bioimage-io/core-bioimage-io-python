@@ -494,6 +494,20 @@ def _get_tolerance(
 ) -> Tuple[RelativeTolerance, AbsoluteTolerance, MismatchedElementsPerMillion]:
     if isinstance(model, v0_5.ModelDescr):
         applicable = v0_5.ReproducibilityTolerance()
+
+        # check legacy test kwargs for weight format specific tolerance
+        if model.config.bioimageio.model_extra is not None:
+            for weights_format, test_kwargs in model.config.bioimageio.model_extra.get(
+                "test_kwargs", {}
+            ).items():
+                if wf == weights_format:
+                    applicable = v0_5.ReproducibilityTolerance(
+                        relative_tolerance=test_kwargs.get("relative_tolerance", 1e-3),
+                        absolute_tolerance=test_kwargs.get("absolute_tolerance", 1e-4),
+                    )
+                    break
+
+        # check for weights format and output tensor specific tolerance
         for a in model.config.bioimageio.reproducibility_tolerance:
             if (not a.weights_formats or wf in a.weights_formats) and (
                 not a.output_ids or m in a.output_ids
@@ -517,6 +531,7 @@ def _get_tolerance(
         rtol = 0
         mismatched_tol = 0
     else:
+        # use given (deprecated) test kwargs
         atol = deprecated.get("absolute_tolerance", 1e-5)
         rtol = deprecated.get("relative_tolerance", 1e-3)
         mismatched_tol = 0
