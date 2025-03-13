@@ -1,4 +1,4 @@
-# manipulated copy of env.yaml
+# manipulated copy of env.yaml wo dependencies 'for model testing'
 name: core38
 channels:
   - conda-forge

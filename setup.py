@@ -67,6 +67,7 @@ _ = setup(
                 "pytest",
                 "segment-anything",  # for model testing
                 "timm",  # for model testing
+                "cellpose",  # for model testing
             ]
         ),
     },

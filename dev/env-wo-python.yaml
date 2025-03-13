@@ -1,4 +1,4 @@
-# modified copy of env.yaml
+# modified copy of env.yaml wo dependencies 'for model testing'
 name: core
 channels:
   - conda-forge
