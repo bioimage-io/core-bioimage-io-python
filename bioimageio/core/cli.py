@@ -56,20 +56,16 @@ from bioimageio.spec import (
     update_format,
     update_hashes,
 )
+from bioimageio.spec._internal.io import is_yaml_value
 from bioimageio.spec._internal.io_basics import ZipPath
-from bioimageio.spec._internal.io_utils import yaml
+from bioimageio.spec._internal.io_utils import open_bioimageio_yaml
 from bioimageio.spec._internal.types import NotEmpty
 from bioimageio.spec.dataset import DatasetDescr
 from bioimageio.spec.model import ModelDescr, v0_4, v0_5
 from bioimageio.spec.notebook import NotebookDescr
-from bioimageio.spec.utils import download, ensure_description_is_model
+from bioimageio.spec.utils import download, ensure_description_is_model, write_yaml
 
-from .commands import (
-    WeightFormatArgAll,
-    WeightFormatArgAny,
-    package,
-    test,
-)
+from .commands import WeightFormatArgAll, WeightFormatArgAny, package, test
 from .common import MemberId, SampleId, SupportedWeightsFormat
 from .digest_spec import get_member_ids, load_sample_for_model
 from .io import load_dataset_stat, save_dataset_stat, save_sample
@@ -83,7 +79,7 @@ from .proc_setup import (
 )
 from .sample import Sample
 from .stat_measures import Stat
-from .utils import VERSION
+from .utils import VERSION, compare
 from .weight_converters._add_weights import add_weights
 
 
@@ -193,7 +189,7 @@ class TestCmd(CmdBase, WithSource, WithSummaryLogging):
         )
 
 
-class PackageCmd(CmdBase, WithSource):
+class PackageCmd(CmdBase, WithSource, WithSummaryLogging):
     """Save a resource's metadata with its associated files."""
 
     path: CliPositionalArg[Path]
@@ -206,10 +202,8 @@ class PackageCmd(CmdBase, WithSource):
 
     def run(self):
         if isinstance(self.descr, InvalidDescr):
-            paths = self.descr.validation_summary.log()
-            raise ValueError(
-                f"Invalid {self.descr.type} description. Logged details to {paths}"
-            )
+            self.log(self.descr)
+            raise ValueError(f"Invalid {self.descr.type} description.")
 
         sys.exit(
             package(
@@ -258,6 +252,12 @@ class UpdateCmdBase(CmdBase, WithSource, ABC):
     output: Union[Literal["render", "stdout"], Path] = "render"
     """Output updated bioimageio.yaml to the terminal or write to a file."""
 
+    diff: Union[bool, Path] = Field(True, alias="diff")
+    """Output a diff of original and updated bioimageio.yaml.
+    If a given path has an `.html` extension, a standalone HTML file is written,
+    otherwise the diff is saved in unified diff format (pure text).
+    """
+
     exclude_unset: bool = Field(True, alias="exclude-unset")
     """Exclude fields that have not explicitly be set."""
 
@@ -269,29 +269,50 @@ class UpdateCmdBase(CmdBase, WithSource, ABC):
         raise NotImplementedError
 
     def run(self):
-        if self.output == "render":
-            out = StringIO()
-        elif self.output == "stdout":
-            out = sys.stdout
-        else:
-            out = self.output
+        original_yaml = open_bioimageio_yaml(self.source).local_source.read_text(
+            encoding="utf-8"
+        )
+        assert isinstance(original_yaml, str)
+        stream = StringIO()
 
         save_bioimageio_yaml_only(
             self.updated,
-            out,
+            stream,
             exclude_unset=self.exclude_unset,
             exclude_defaults=self.exclude_defaults,
         )
+        updated_yaml = stream.getvalue()
 
-        if self.output == "render":
-            assert isinstance(out, StringIO)
-            updated_md = f"```yaml\n{out.getvalue()}\n```"
+        diff = compare(
+            original_yaml.split("\n"),
+            updated_yaml.split("\n"),
+            diff_format=(
+                "html"
+                if isinstance(self.diff, Path) and self.diff.suffix == ".html"
+                else "unified"
+            ),
+        )
 
-            rich_markdown = rich.markdown.Markdown(updated_md)
-            console = rich.console.Console()
-            console.print(rich_markdown)
-        elif self.output != "stdout":
+        if isinstance(self.diff, Path):
+            _ = self.diff.write_text(diff, encoding="utf-8")
+        elif self.diff:
+            diff_md = f"````````diff\n{diff}\n````````"
+            rich.console.Console().print(rich.markdown.Markdown(diff_md))
+
+        if isinstance(self.output, Path):
+            _ = self.output.write_text(updated_yaml, encoding="utf-8")
             logger.info(f"written updated description to {self.output}")
+        elif self.output == "render":
+            updated_md = f"```yaml\n{updated_yaml}\n```"
+            rich.console.Console().print(rich.markdown.Markdown(updated_md))
+        elif self.output == "stdout":
+            print(updated_yaml)
+        else:
+            assert_never(self.output)
+
+        if isinstance(self.updated, InvalidDescr):
+            logger.warning("Update resulted in invalid description")
+            _ = self.updated.validation_summary.display()
 
 
 class UpdateFormatCmd(UpdateCmdBase):
@@ -339,7 +360,7 @@ class PredictCmd(CmdBase, WithSource):
 
     Example inputs to process sample 'a' and 'b'
     for a model expecting a 'raw' and a 'mask' input tensor:
-    --inputs="[[\"a_raw.tif\",\"a_mask.tif\"],[\"b_raw.tif\",\"b_mask.tif\"]]"
+    --inputs="[[\\"a_raw.tif\\",\\"a_mask.tif\\"],[\\"b_raw.tif\\",\\"b_mask.tif\\"]]"
     (Note that JSON double quotes need to be escaped.)
 
     Alternatively a `bioimageio-cli.yaml` (or `bioimageio-cli.json`) file
@@ -435,13 +456,15 @@ class PredictCmd(CmdBase, WithSource):
         bioimageio_cli_path = example_path / YAML_FILE
         stats_file = "dataset_statistics.json"
         stats = (example_path / stats_file).as_posix()
-        yaml.dump(
-            dict(
-                inputs=inputs,
-                outputs=output_pattern,
-                stats=stats_file,
-                blockwise=self.blockwise,
-            ),
+        cli_example_args = dict(
+            inputs=inputs,
+            outputs=output_pattern,
+            stats=stats_file,
+            blockwise=self.blockwise,
+        )
+        assert is_yaml_value(cli_example_args)
+        write_yaml(
+            cli_example_args,
             bioimageio_cli_path,
         )
 
