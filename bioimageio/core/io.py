@@ -44,7 +44,7 @@ SUFFIXES_WITH_DATAPATH = (".h5", ".hdf", ".hdf5")
 
 
 def load_image(
-    source: PermissiveFileSource, is_volume: Optional[bool] = None
+    source: Union[ZipPath, PermissiveFileSource], is_volume: Optional[bool] = None
 ) -> NDArray[Any]:
     """load a single image as numpy array
 
@@ -55,7 +55,10 @@ def load_image(
     if is_volume is not None:
         warnings.warn("**is_volume** is deprecated and will be removed soon.")
 
-    parsed_source = interprete_file_source(source)
+    if isinstance(source, ZipPath):
+        parsed_source = source
+    else:
+        parsed_source = interprete_file_source(source)
 
     if isinstance(parsed_source, RelativeFilePath):
         src = parsed_source.absolute()
@@ -110,7 +113,7 @@ def load_image(
 
 
 def load_tensor(
-    path: Union[Path, str], axes: Optional[Sequence[AxisLike]] = None
+    path: Union[ZipPath, Path, str], axes: Optional[Sequence[AxisLike]] = None
 ) -> Tensor:
     # TODO: load axis meta data
     array = load_image(path)

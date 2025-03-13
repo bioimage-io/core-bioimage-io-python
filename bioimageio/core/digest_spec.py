@@ -25,7 +25,7 @@ from numpy.typing import NDArray
 from typing_extensions import Unpack, assert_never
 
 from bioimageio.spec._internal.io import HashKwargs, resolve_and_extract
-from bioimageio.spec.common import FileSource
+from bioimageio.spec.common import FileDescr, FileSource, ZipPath
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 from bioimageio.spec.model.v0_4 import CallableFromDepencency, CallableFromFile
 from bioimageio.spec.model.v0_5 import (
@@ -33,7 +33,7 @@ from bioimageio.spec.model.v0_5 import (
     ArchitectureFromLibraryDescr,
     ParameterizedSize_N,
 )
-from bioimageio.spec.utils import load_array
+from bioimageio.spec.utils import download, load_array
 
 from .axis import Axis, AxisId, AxisInfo, AxisLike, PerAxis
 from .block_meta import split_multiple_shapes_into_blocks
@@ -315,7 +315,7 @@ def get_io_sample_block_metas(
 
 
 def get_tensor(
-    src: TensorSource,
+    src: Union[ZipPath, TensorSource],
     ipt: Union[v0_4.InputTensorDescr, v0_5.InputTensorDescr],
 ):
     """helper to cast/load various tensor sources"""
@@ -329,7 +329,10 @@ def get_tensor(
     if isinstance(src, np.ndarray):
         return Tensor.from_numpy(src, dims=get_axes_infos(ipt))
 
-    if isinstance(src, Path):
+    if isinstance(src, FileDescr):
+        src = download(src).path
+
+    if isinstance(src, (ZipPath, Path, str)):
         return load_tensor(src, axes=get_axes_infos(ipt))
 
     assert_never(src)
