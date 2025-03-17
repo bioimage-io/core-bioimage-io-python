@@ -24,7 +24,7 @@ from loguru import logger
 from numpy.typing import NDArray
 from typing_extensions import Unpack, assert_never
 
-from bioimageio.spec._internal.io import HashKwargs, resolve_and_extract
+from bioimageio.spec._internal.io import HashKwargs, resolve
 from bioimageio.spec.common import FileDescr, FileSource, ZipPath
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 from bioimageio.spec.model.v0_4 import CallableFromDepencency, CallableFromFile
@@ -84,17 +84,10 @@ def import_callable(
 def _import_from_file_impl(
     source: FileSource, callable_name: str, **kwargs: Unpack[HashKwargs]
 ):
-    local_file = resolve_and_extract(source, **kwargs)
-    module_name = local_file.path.stem
-    importlib_spec = importlib.util.spec_from_file_location(
-        module_name, local_file.path
-    )
-    if importlib_spec is None:
-        raise ImportError(f"Failed to import {module_name} from {source}.")
-
-    dep = importlib.util.module_from_spec(importlib_spec)
-    importlib_spec.loader.exec_module(dep)  # type: ignore  # todo: possible to use "loader.load_module"?
-    return getattr(dep, callable_name)
+    code = resolve(source, **kwargs).path.read_text(encoding="utf-8")
+    module_globals: Dict[str, Any] = {}
+    exec(code, module_globals)
+    return module_globals[callable_name]
 
 
 def get_axes_infos(
