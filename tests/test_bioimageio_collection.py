@@ -43,6 +43,11 @@ KNOWN_INVALID: Collection[str] = {
     "wild-rhino/0.1.0",  # requires careamics
     "dazzling-spider/0.1.0",  # requires careamics
     "humorous-fox/0.1.0",  # requires careamics
+    "ambitious-sloth/1.2",  # requires inferno
+    "dynamic-t-rex/1",  # model.v0_4.ScaleLinearKwargs with axes
+    "famous-fish/0.1.0",  # list index out of range `fl[3]`
+    "happy-elephant/0.1.0",  # list index out of range `fl[3]`
+    "affectionate-cow/0.1.0",  # custom dependencies
 }
 
 

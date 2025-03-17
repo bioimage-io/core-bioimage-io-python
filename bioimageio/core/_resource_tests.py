@@ -428,7 +428,7 @@ def load_description_and_test(
                 )
             )
             or (c := source.validation_summary.details[0].context) is None
-            or not c["perform_io_checks"]
+            or not c.perform_io_checks
         ):
             logger.debug(
                 "deserializing source to ensure we validate and test using format {} and perform io checks",

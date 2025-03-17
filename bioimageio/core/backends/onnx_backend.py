@@ -23,9 +23,8 @@ class ONNXModelAdapter(ModelAdapter):
         if model_description.weights.onnx is None:
             raise ValueError("No ONNX weights specified for {model_description.name}")
 
-        self._session = rt.InferenceSession(
-            str(download(model_description.weights.onnx.source).path)
-        )
+        local_path = download(model_description.weights.onnx.source).path
+        self._session = rt.InferenceSession(local_path.read_bytes())
         onnx_inputs = self._session.get_inputs()  # type: ignore
         self._input_names: List[str] = [ipt.name for ipt in onnx_inputs]  # type: ignore
 

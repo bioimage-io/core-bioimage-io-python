@@ -36,7 +36,9 @@ class TorchscriptModelAdapter(ModelAdapter):
                 "Multiple devices for single torchscript model not yet implemented"
             )
 
-        self._model = torch.jit.load(weight_path)
+        with weight_path.open("rb") as f:
+            self._model = torch.jit.load(f)
+
         self._model.to(self.devices[0])
         self._model = self._model.eval()
 

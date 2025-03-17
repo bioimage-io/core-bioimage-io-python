@@ -1,8 +1,7 @@
-from typing import Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 import pytest
-from git import Optional
 from xarray.testing import assert_allclose  # pyright: ignore[reportUnknownVariableType]
 
 from bioimageio.core.axis import AxisId
