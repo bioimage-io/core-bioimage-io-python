@@ -269,9 +269,7 @@ class UpdateCmdBase(CmdBase, WithSource, ABC):
         raise NotImplementedError
 
     def run(self):
-        original_yaml = open_bioimageio_yaml(self.source).local_source.read_text(
-            encoding="utf-8"
-        )
+        original_yaml = open_bioimageio_yaml(self.source).unparsed_content
         assert isinstance(original_yaml, str)
         stream = StringIO()
 
