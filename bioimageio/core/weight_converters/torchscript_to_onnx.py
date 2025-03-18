@@ -5,8 +5,10 @@ import torch.jit
 from bioimageio.spec.model.v0_5 import ModelDescr, OnnxWeightsDescr
 from bioimageio.spec.utils import download
 
+from .. import __version__
 from ..digest_spec import get_member_id, get_test_inputs
 from ..proc_setup import get_pre_and_postprocessing
+from ._utils_onnx import get_dynamic_axes
 
 
 def convert(
@@ -67,10 +69,16 @@ def convert(
             model,  # type: ignore
             tuple(inputs_torch),
             str(output_path),
+            input_names=[str(d.id) for d in model_descr.inputs],
+            output_names=[str(d.id) for d in model_descr.outputs],
+            dynamic_axes=get_dynamic_axes(model_descr),
             verbose=verbose,
             opset_version=opset_version,
         )
 
     return OnnxWeightsDescr(
-        source=output_path, parent="pytorch_state_dict", opset_version=opset_version
+        source=output_path,
+        parent="torchscript",
+        opset_version=opset_version,
+        comment=f"Converted with bioimageio.core {__version__}.",
     )

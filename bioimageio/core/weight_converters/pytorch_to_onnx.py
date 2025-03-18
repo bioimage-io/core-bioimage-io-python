@@ -8,6 +8,7 @@ from .. import __version__
 from ..backends.pytorch_backend import load_torch_model
 from ..digest_spec import get_member_id, get_test_inputs
 from ..proc_setup import get_pre_and_postprocessing
+from ._utils_onnx import get_dynamic_axes
 
 
 def convert(
@@ -15,7 +16,7 @@ def convert(
     output_path: Path,
     *,
     verbose: bool = False,
-    opset_version: int = 20,
+    opset_version: int = 15,
 ) -> OnnxWeightsDescr:
     """
     Convert model weights from the Torchscript state_dict format to the ONNX format.
@@ -63,6 +64,9 @@ def convert(
             model,
             tuple(inputs_torch),
             str(output_path),
+            input_names=[str(d.id) for d in model_descr.inputs],
+            output_names=[str(d.id) for d in model_descr.outputs],
+            dynamic_axes=get_dynamic_axes(model_descr),
             verbose=verbose,
             opset_version=opset_version,
         )
