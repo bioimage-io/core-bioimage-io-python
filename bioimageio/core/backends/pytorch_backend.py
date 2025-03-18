@@ -46,7 +46,7 @@ class PytorchModelAdapter(ModelAdapter):
         self._primary_device = devices[0]
 
     def _forward_impl(
-        self, input_arrays: Sequence[NDArray[Any] | None]
+        self, input_arrays: Sequence[Optional[NDArray[Any]]]
     ) -> List[Optional[NDArray[Any]]]:
         tensors = [
             None if a is None else torch.from_numpy(a).to(self._primary_device)
