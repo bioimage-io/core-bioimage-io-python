@@ -2,6 +2,8 @@ import json
 import sys
 from pathlib import Path
 
+from ._compare import compare as compare
+
 if sys.version_info < (3, 9):
 
     def files(package_name: str):
