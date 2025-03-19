@@ -46,7 +46,9 @@ _ = setup(
     ],
     include_package_data=True,
     extras_require={
-        "pytorch": (pytorch_deps := ["torch>=1.6,<3", "torchvision", "keras>=3.0,<4"]),
+        "pytorch": (
+            pytorch_deps := ["torch>=1.6,<3", "torchvision>=0.21", "keras>=3.0,<4"]
+        ),
         "tensorflow": ["tensorflow", "keras>=2.15,<4"],
         "onnx": ["onnxruntime"],
         "dev": (
