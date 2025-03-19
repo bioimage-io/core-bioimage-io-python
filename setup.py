@@ -53,21 +53,22 @@ _ = setup(
             pytorch_deps
             + [
                 "black",
-                # "crick",  # currently requires python<=3.9
-                "jupyter",
+                "cellpose",  # for model testing
                 "jupyter-black",
+                "jupyter",
                 "matplotlib",
+                "monai",  # for model testing
                 "onnx",
                 "onnxruntime",
                 "packaging>=17.0",
-                "pre-commit",
                 "pdoc",
+                "pre-commit",
                 "pyright==1.1.396",
                 "pytest-cov",
                 "pytest",
                 "segment-anything",  # for model testing
                 "timm",  # for model testing
-                "cellpose",  # for model testing
+                # "crick",  # currently requires python<=3.9
             ]
         ),
     },
