@@ -41,7 +41,7 @@ _ = setup(
         "ruyaml",
         "tqdm",
         "typing-extensions",
-        "xarray",
+        "xarray<2025.3.0",
     ],
     include_package_data=True,
     extras_require={
