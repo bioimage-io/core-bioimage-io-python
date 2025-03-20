@@ -59,12 +59,7 @@ def _convert_axis_ids(
     else:
         assert_never(mode)
 
-    ret.extend(
-        [
-            AxisId(v0_5._AXIS_ID_MAP.get(a, a))  # pyright: ignore[reportPrivateUsage]
-            for a in axes
-        ]
-    )
+    ret.extend([AxisId(a) for a in axes])
     return tuple(ret)
 
 
@@ -620,7 +615,7 @@ class FixedZeroMeanUnitVariance(_SimpleOperator):
         if isinstance(descr.kwargs, v0_5.FixedZeroMeanUnitVarianceKwargs):
             dims = None
         elif isinstance(descr.kwargs, v0_5.FixedZeroMeanUnitVarianceAlongAxisKwargs):
-            dims = (descr.kwargs.axis,)
+            dims = (AxisId(descr.kwargs.axis),)
         else:
             assert_never(descr.kwargs)
 
