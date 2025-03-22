@@ -32,7 +32,7 @@ from typing import (
 
 import rich.markdown
 from loguru import logger
-from pydantic import BaseModel, Field, model_validator
+from pydantic import AliasChoices, BaseModel, Field, model_validator
 from pydantic_settings import (
     BaseSettings,
     CliPositionalArg,
@@ -81,6 +81,11 @@ from .sample import Sample
 from .stat_measures import Stat
 from .utils import VERSION, compare
 from .weight_converters._add_weights import add_weights
+
+WEIGHT_FORMAT_ALIASES = AliasChoices(
+    "weight-format",
+    "weights-format",
+)
 
 
 class CmdBase(BaseModel, use_attribute_docstrings=True, cli_implicit_flags=True):
@@ -154,7 +159,11 @@ class ValidateFormatCmd(CmdBase, WithSource, WithSummaryLogging):
 class TestCmd(CmdBase, WithSource, WithSummaryLogging):
     """Test a bioimageio resource (beyond meta data formatting)."""
 
-    weight_format: WeightFormatArgAll = "all"
+    weight_format: WeightFormatArgAll = Field(
+        "all",
+        alias="weight-format",
+        validation_alias=WEIGHT_FORMAT_ALIASES,
+    )
     """The weight format to limit testing to.
 
     (only relevant for model resources)"""
@@ -197,7 +206,11 @@ class PackageCmd(CmdBase, WithSource, WithSummaryLogging):
     If it does not have a `.zip` suffix
     this command will save the package as an unzipped folder instead."""
 
-    weight_format: WeightFormatArgAll = "all"
+    weight_format: WeightFormatArgAll = Field(
+        "all",
+        alias="weight-format",
+        validation_alias=WEIGHT_FORMAT_ALIASES,
+    )
     """The weight format to include in the package (for model descriptions only)."""
 
     def run(self):
@@ -406,7 +419,11 @@ class PredictCmd(CmdBase, WithSource):
     """preview which files would be processed
     and what outputs would be generated."""
 
-    weight_format: WeightFormatArgAny = "any"
+    weight_format: WeightFormatArgAny = Field(
+        "any",
+        alias="weight-format",
+        validation_alias=WEIGHT_FORMAT_ALIASES,
+    )
     """The weight format to use."""
 
     example: bool = False
