@@ -477,7 +477,10 @@ def load_description_and_test(
         enable_determinism(determinism, weight_formats=weight_formats)
         for w in weight_formats:
             _test_model_inference(rd, w, devices, **deprecated)
-            if not isinstance(rd, v0_4.ModelDescr):
+            if (
+                not isinstance(rd, v0_4.ModelDescr)
+                and rd.validation_summary.status == "passed"
+            ):
                 _test_model_inference_parametrized(rd, w, devices)
 
     # TODO: add execution of jupyter notebooks
