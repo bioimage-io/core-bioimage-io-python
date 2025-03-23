@@ -185,6 +185,11 @@ class TestCmd(CmdBase, WithSource, WithSummaryLogging):
     determinism: Literal["seed_only", "full"] = "seed_only"
     """Modes to improve reproducibility of test outputs."""
 
+    stop_early: bool = Field(
+        False, alias="stop-early", validation_alias=AliasChoices("stop-early", "x")
+    )
+    """Do not run further subtests after a failed one."""
+
     def run(self):
         sys.exit(
             test(

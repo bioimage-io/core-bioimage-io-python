@@ -164,6 +164,7 @@ def test_model(
     *,
     determinism: Literal["seed_only", "full"] = "seed_only",
     sha256: Optional[Sha256] = None,
+    stop_early: bool = False,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> ValidationSummary:
     """Test model inference"""
@@ -174,6 +175,7 @@ def test_model(
         determinism=determinism,
         expected_type="model",
         sha256=sha256,
+        stop_early=stop_early,
         **deprecated,
     )
 
@@ -192,13 +194,15 @@ def test_description(
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Optional[str] = None,
     sha256: Optional[Sha256] = None,
+    stop_early: bool = False,
     runtime_env: Union[
         Literal["currently-active", "as-described"], Path, BioimageioCondaEnv
     ] = ("currently-active"),
     run_command: Callable[[Sequence[str]], None] = default_run_command,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> ValidationSummary:
-    """Test a bioimage.io resource dynamically, e.g. prediction of test tensors for models.
+    """Test a bioimage.io resource dynamically,
+    for example run prediction of test tensors for models.
 
     Args:
         source: model description source.
@@ -207,6 +211,10 @@ def test_description(
         devices: Devices to test with, e.g. 'cpu', 'cuda'.
             Default (may be weight format dependent): ['cuda'] if available, ['cpu'] otherwise.
         determinism: Modes to improve reproducibility of test outputs.
+        expected_type: Assert an expected resource description `type`.
+        sha256: Expected SHA256 value of **source**.
+                (Ignored if **source** already is a loaded `ResourceDescr` object.)
+        stop_early: Do not run further subtests after a failed one.
         runtime_env: (Experimental feature!) The Python environment to run the tests in
             - `"currently-active"`: Use active Python interpreter.
             - `"as-described"`: Use `bioimageio.spec.get_conda_env` to generate a conda
@@ -225,6 +233,7 @@ def test_description(
             determinism=determinism,
             expected_type=expected_type,
             sha256=sha256,
+            stop_early=stop_early,
             **deprecated,
         )
         return rd.validation_summary
@@ -254,6 +263,9 @@ def test_description(
             conda_env=conda_env,
             devices=devices,
             determinism=determinism,
+            expected_type=expected_type,
+            sha256=sha256,
+            stop_early=stop_early,
             run_command=run_command,
             **deprecated,
         )
@@ -268,6 +280,9 @@ def _test_in_env(
     devices: Optional[Sequence[str]],
     determinism: Literal["seed_only", "full"],
     run_command: Callable[[Sequence[str]], None],
+    stop_early: bool,
+    expected_type: Optional[str],
+    sha256: Optional[Sha256],
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> ValidationSummary:
     descr = load_description(source)
@@ -293,6 +308,9 @@ def _test_in_env(
             determinism=determinism,
             conda_env=conda_env,
             run_command=run_command,
+            expected_type=expected_type,
+            sha256=sha256,
+            stop_early=stop_early,
             **deprecated,
         )
         for wf in all_present_wfs[1:]:
@@ -304,6 +322,9 @@ def _test_in_env(
                 determinism=determinism,
                 conda_env=conda_env,
                 run_command=run_command,
+                expected_type=expected_type,
+                sha256=sha256,
+                stop_early=stop_early,
                 **deprecated,
             )
             for d in additional_summary.details:
@@ -370,7 +391,10 @@ def _test_in_env(
             "test",
             str(source),
             f"--summary-path={summary_path}",
+            f"--determinism={determinism}",
         ]
+        + ([f"--expected-type={expected_type}"] if expected_type else [])
+        + (["--stop-early"] if stop_early else [])
     )
     return ValidationSummary.model_validate_json(summary_path.read_bytes())
 
@@ -385,6 +409,7 @@ def load_description_and_test(
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Optional[str] = None,
     sha256: Optional[Sha256] = None,
+    stop_early: bool = False,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[LatestResourceDescr, InvalidDescr]: ...
 
@@ -399,6 +424,7 @@ def load_description_and_test(
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Optional[str] = None,
     sha256: Optional[Sha256] = None,
+    stop_early: bool = False,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[ResourceDescr, InvalidDescr]: ...
 
@@ -412,9 +438,18 @@ def load_description_and_test(
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Optional[str] = None,
     sha256: Optional[Sha256] = None,
+    stop_early: bool = False,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[ResourceDescr, InvalidDescr]:
-    """Test RDF dynamically, e.g. model inference of test inputs"""
+    """Test a bioimage.io resource dynamically,
+    for example run prediction of test tensors for models.
+
+    See `test_description` for more details.
+
+    Returns:
+        A (possibly invalid) resource description object
+        with a populated `.validation_summary` attribute.
+    """
     if isinstance(source, ResourceDescrBase):
         root = source.root
         file_name = source.file_name
@@ -477,11 +512,15 @@ def load_description_and_test(
         enable_determinism(determinism, weight_formats=weight_formats)
         for w in weight_formats:
             _test_model_inference(rd, w, devices, **deprecated)
-            if (
-                not isinstance(rd, v0_4.ModelDescr)
-                and rd.validation_summary.status == "passed"
-            ):
-                _test_model_inference_parametrized(rd, w, devices)
+            if stop_early and rd.validation_summary.status != "passed":
+                break
+
+            if not isinstance(rd, v0_4.ModelDescr):
+                _test_model_inference_parametrized(
+                    rd, w, devices, stop_early=stop_early
+                )
+                if stop_early and rd.validation_summary.status != "passed":
+                    break
 
     # TODO: add execution of jupyter notebooks
     # TODO: add more tests
@@ -631,6 +670,8 @@ def _test_model_inference_parametrized(
     model: v0_5.ModelDescr,
     weight_format: SupportedWeightsFormat,
     devices: Optional[Sequence[str]],
+    *,
+    stop_early: bool,
 ) -> None:
     if not any(
         isinstance(a.size, v0_5.ParameterizedSize)
@@ -772,6 +813,8 @@ def _test_model_inference_parametrized(
                         ),
                     )
                 )
+                if stop_early and error is not None:
+                    break
     except Exception as e:
         if validation_context_var.get().raise_errors:
             raise e

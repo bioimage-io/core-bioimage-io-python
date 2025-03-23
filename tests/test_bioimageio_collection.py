@@ -63,7 +63,7 @@ def test_rdf(
 
     from bioimageio.core import load_description_and_test
 
-    descr = load_description_and_test(descr_url, sha256=sha)
+    descr = load_description_and_test(descr_url, sha256=sha, stop_early=True)
     assert not isinstance(descr, InvalidDescr)
     assert (
         descr.validation_summary.status == "passed"
