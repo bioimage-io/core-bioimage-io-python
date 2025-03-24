@@ -642,7 +642,7 @@ def _test_model_inference(
             raise e
 
         error = str(e)
-        tb = traceback.format_tb(e.__traceback__)
+        tb = traceback.format_exception(type(e), e, e.__traceback__, chain=True)
 
     model.validation_summary.add_detail(
         ValidationDetail(

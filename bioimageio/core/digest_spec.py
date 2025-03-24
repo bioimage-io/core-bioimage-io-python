@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import collections.abc
 import importlib.util
+import sys
 from itertools import chain
 from pathlib import Path
 from typing import (
@@ -24,7 +25,8 @@ from loguru import logger
 from numpy.typing import NDArray
 from typing_extensions import Unpack, assert_never
 
-from bioimageio.spec._internal.io import HashKwargs, resolve
+from bioimageio.spec import get_validation_context
+from bioimageio.spec._internal.io import HashKwargs
 from bioimageio.spec.common import FileDescr, FileSource, ZipPath
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 from bioimageio.spec.model.v0_4 import CallableFromDepencency, CallableFromFile
@@ -84,10 +86,51 @@ def import_callable(
 def _import_from_file_impl(
     source: FileSource, callable_name: str, **kwargs: Unpack[HashKwargs]
 ):
-    code = resolve(source, **kwargs).path.read_text(encoding="utf-8")
-    module_globals: Dict[str, Any] = {}
-    exec(code, module_globals)
-    return module_globals[callable_name]
+    with get_validation_context().replace(perform_io_checks=True):
+        src_descr = FileDescr(source=source, **kwargs)
+        assert src_descr.sha256 is not None
+
+    local_source = src_descr.download()
+    source_code = local_source.path.read_text(encoding="utf-8")
+
+    module_name = local_source.original_file_name.replace("-", "_")
+    if module_name.endswith(".py"):
+        module_name = module_name[:-3]
+
+    # make sure we have a unique module name to avoid conflicts and confusion
+    module_name = f"{module_name}_{src_descr.sha256}"
+
+    # make sure we have a valid module name
+    if not module_name.isidentifier():
+        module_name = f"custom_module_{src_descr.sha256}"
+        assert module_name.isidentifier(), module_name
+
+    module = sys.modules.get(module_name)
+    if module is None:
+        try:
+            module_spec = importlib.util.spec_from_loader(module_name, loader=None)
+            assert module_spec is not None
+            module = importlib.util.module_from_spec(module_spec)
+            exec(source_code, module.__dict__)
+            sys.modules[module_spec.name] = module  # cache this module
+        except Exception as e:
+            raise ImportError(
+                f"Failed to import {module_name[:-58]}... from {source}"
+            ) from e
+
+    try:
+        callable_attr = getattr(module, callable_name)
+    except AttributeError as e:
+        raise AttributeError(
+            f"Imported custom module `{module_name[:-58]}...` has no `{callable_name}` attribute"
+        ) from e
+    except Exception as e:
+        raise AttributeError(
+            f"Failed to access `{callable_name}` attribute from imported custom module `{module_name[:-58]}...`"
+        ) from e
+
+    else:
+        return callable_attr
 
 
 def get_axes_infos(

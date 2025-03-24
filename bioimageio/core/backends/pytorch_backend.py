@@ -110,7 +110,12 @@ def load_torch_model(
         if isinstance(weight_spec, v0_4.PytorchStateDictWeightsDescr)
         else weight_spec.architecture.kwargs
     )
-    network = arch(**model_kwargs)
+    try:
+        # calling custom user code
+        network = arch(**model_kwargs)
+    except Exception as e:
+        raise RuntimeError("Failed to initialize PyTorch model") from e
+
     if not isinstance(network, nn.Module):
         raise ValueError(
             f"calling {weight_spec.architecture.callable_name if isinstance(weight_spec.architecture, (v0_4.CallableFromFile, v0_4.CallableFromDepencency)) else weight_spec.architecture.callable} did not return a torch.nn.Module"
