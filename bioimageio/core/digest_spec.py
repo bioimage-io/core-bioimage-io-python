@@ -25,7 +25,6 @@ from loguru import logger
 from numpy.typing import NDArray
 from typing_extensions import Unpack, assert_never
 
-from bioimageio.spec import get_validation_context
 from bioimageio.spec._internal.io import HashKwargs
 from bioimageio.spec.common import FileDescr, FileSource, ZipPath
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
@@ -86,9 +85,10 @@ def import_callable(
 def _import_from_file_impl(
     source: FileSource, callable_name: str, **kwargs: Unpack[HashKwargs]
 ):
-    with get_validation_context().replace(perform_io_checks=True):
-        src_descr = FileDescr(source=source, **kwargs)
-        assert src_descr.sha256 is not None
+    src_descr = FileDescr(source=source, **kwargs)
+    # ensure sha is valid even if perform_io_checks=False
+    src_descr.validate_sha256()
+    assert src_descr.sha256 is not None
 
     local_source = src_descr.download()
     source_code = local_source.path.read_text(encoding="utf-8")
