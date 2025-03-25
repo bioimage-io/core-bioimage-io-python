@@ -97,16 +97,25 @@ class ArgMixin(BaseModel, use_attribute_docstrings=True, cli_implicit_flags=True
 
 
 class WithSummaryLogging(ArgMixin):
-    summary: Union[Path, Sequence[Path]] = Field(
-        (), examples=[Path("summary.md"), Path("bioimageio_summaries/")]
+    summary: Union[
+        Literal["display"], Path, Sequence[Union[Literal["display"], Path]]
+    ] = Field(
+        "display",
+        examples=[
+            "display",
+            Path("summary.md"),
+            Path("bioimageio_summaries/"),
+            ["display", Path("summary.md")],
+        ],
     )
-    """Save the validation summary as JSON, Markdown or HTML.
+    """Display the validation summary or save it as JSON, Markdown or HTML.
     The format is chosen based on the suffix: `.json`, `.md`, `.html`.
     If a folder is given (path w/o suffix) the summary is saved in all formats.
+    Choose/add `"display"` to render the validation summary to the terminal.
     """
 
     def log(self, descr: Union[ResourceDescr, InvalidDescr]):
-        _ = descr.validation_summary.save(self.summary)
+        _ = descr.validation_summary.log(self.summary)
 
 
 class WithSource(ArgMixin):
@@ -267,8 +276,13 @@ def _get_stat(
 
 
 class UpdateCmdBase(CmdBase, WithSource, ABC):
-    output: Union[Literal["render", "stdout"], Path] = "render"
-    """Output updated bioimageio.yaml to the terminal or write to a file."""
+    output: Union[Literal["display", "stdout"], Path] = "display"
+    """Output updated bioimageio.yaml to the terminal or write to a file.
+    Notes:
+    - `"display"`: Render to the terminal with syntax highlighting.
+    - `"stdout"`: Write to sys.stdout without syntax highligthing.
+      (More convenient for copying the updated bioimageio.yaml from the terminal.)
+    """
 
     diff: Union[bool, Path] = Field(True, alias="diff")
     """Output a diff of original and updated bioimageio.yaml.
@@ -318,7 +332,7 @@ class UpdateCmdBase(CmdBase, WithSource, ABC):
         if isinstance(self.output, Path):
             _ = self.output.write_text(updated_yaml, encoding="utf-8")
             logger.info(f"written updated description to {self.output}")
-        elif self.output == "render":
+        elif self.output == "display":
             updated_md = f"```yaml\n{updated_yaml}\n```"
             rich.console.Console().print(rich.markdown.Markdown(updated_md))
         elif self.output == "stdout":
@@ -705,7 +719,7 @@ class PredictCmd(CmdBase, WithSource):
             save_sample(sp_out, sample_out)
 
 
-class AddWeightsCmd(CmdBase, WithSource):
+class AddWeightsCmd(CmdBase, WithSource, WithSummaryLogging):
     output: CliPositionalArg[Path]
     """The path to write the updated model package to."""
 
@@ -735,7 +749,7 @@ class AddWeightsCmd(CmdBase, WithSource):
         if updated_model_descr is None:
             return
 
-        _ = updated_model_descr.validation_summary.save()
+        self.log(updated_model_descr)
 
 
 JSON_FILE = "bioimageio-cli.json"

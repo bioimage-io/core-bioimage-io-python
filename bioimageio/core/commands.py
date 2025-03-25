@@ -25,7 +25,9 @@ def test(
     *,
     weight_format: WeightFormatArgAll = "all",
     devices: Optional[Union[str, Sequence[str]]] = None,
-    summary: Union[Path, Sequence[Path]] = (),
+    summary: Union[
+        Literal["display"], Path, Sequence[Union[Literal["display"], Path]]
+    ] = "display",
     runtime_env: Union[
         Literal["currently-active", "as-described"], Path
     ] = "currently-active",
@@ -36,17 +38,17 @@ def test(
     Arguments as described in `bioimageio.core.cli.TestCmd`
     """
     if isinstance(descr, InvalidDescr):
-        descr.validation_summary.display()
-        return 1
+        test_summary = descr.validation_summary
+    else:
+        test_summary = test_description(
+            descr,
+            weight_format=None if weight_format == "all" else weight_format,
+            devices=[devices] if isinstance(devices, str) else devices,
+            runtime_env=runtime_env,
+            determinism=determinism,
+        )
 
-    test_summary = test_description(
-        descr,
-        weight_format=None if weight_format == "all" else weight_format,
-        devices=[devices] if isinstance(devices, str) else devices,
-        runtime_env=runtime_env,
-        determinism=determinism,
-    )
-    _ = test_summary.save(summary)
+    _ = test_summary.log(summary)
     return 0 if test_summary.status == "passed" else 1
 
 
