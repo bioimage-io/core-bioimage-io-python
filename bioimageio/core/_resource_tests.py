@@ -2,7 +2,6 @@ import hashlib
 import os
 import platform
 import subprocess
-import traceback
 import warnings
 from io import StringIO
 from itertools import product
@@ -47,7 +46,10 @@ from bioimageio.spec._internal.types import (
     MismatchedElementsPerMillion,
     RelativeTolerance,
 )
-from bioimageio.spec._internal.validation_context import validation_context_var
+from bioimageio.spec._internal.validation_context import (
+    get_validation_context,
+    validation_context_var,
+)
 from bioimageio.spec.common import BioimageioYamlContent, PermissiveFileSource, Sha256
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import WeightsFormat
@@ -589,8 +591,17 @@ def _test_model_inference(
 ) -> None:
     test_name = f"Reproduce test outputs from test inputs ({weight_format})"
     logger.debug("starting '{}'", test_name)
-    error: Optional[str] = None
-    tb: List[str] = []
+    errors: List[ErrorEntry] = []
+
+    def add_error_entry(msg: str, with_traceback: bool = False):
+        errors.append(
+            ErrorEntry(
+                loc=("weights", weight_format),
+                msg=msg,
+                type="bioimageio.core",
+                with_traceback=with_traceback,
+            )
+        )
 
     try:
         inputs = get_test_inputs(model)
@@ -602,13 +613,15 @@ def _test_model_inference(
             results = prediction_pipeline.predict_sample_without_blocking(inputs)
 
         if len(results.members) != len(expected.members):
-            error = f"Expected {len(expected.members)} outputs, but got {len(results.members)}"
+            add_error_entry(
+                f"Expected {len(expected.members)} outputs, but got {len(results.members)}"
+            )
 
         else:
             for m, expected in expected.members.items():
                 actual = results.members.get(m)
                 if actual is None:
-                    error = "Output tensors for test case may not be None"
+                    add_error_entry("Output tensors for test case may not be None")
                     break
 
                 rtol, atol, mismatched_tol = _get_tolerance(
@@ -627,7 +640,7 @@ def _test_model_inference(
                     a_max = abs_diff[a_max_idx].item()
                     a_actual = actual[a_max_idx].item()
                     a_expected = expected[a_max_idx].item()
-                    error = (
+                    add_error_entry(
                         f"Output '{m}' disagrees with {mismatched_elements} of"
                         + f" {expected.size} expected values."
                         + f"\n Max relative difference: {r_max:.2e}"
@@ -638,30 +651,18 @@ def _test_model_inference(
                     )
                     break
     except Exception as e:
-        if validation_context_var.get().raise_errors:
+        if get_validation_context().raise_errors:
             raise e
 
-        error = str(e)
-        tb = traceback.format_exception(type(e), e, e.__traceback__, chain=True)
+        add_error_entry(str(e), with_traceback=True)
 
     model.validation_summary.add_detail(
         ValidationDetail(
             name=test_name,
             loc=("weights", weight_format),
-            status="passed" if error is None else "failed",
+            status="failed" if errors else "passed",
             recommended_env=get_conda_env(entry=dict(model.weights)[weight_format]),
-            errors=(
-                []
-                if error is None
-                else [
-                    ErrorEntry(
-                        loc=("weights", weight_format),
-                        msg=error,
-                        type="bioimageio.core",
-                        traceback=tb,
-                    )
-                ]
-            ),
+            errors=errors,
         )
     )
 
@@ -816,11 +817,9 @@ def _test_model_inference_parametrized(
                 if stop_early and error is not None:
                     break
     except Exception as e:
-        if validation_context_var.get().raise_errors:
+        if get_validation_context().raise_errors:
             raise e
 
-        error = str(e)
-        tb = traceback.format_tb(e.__traceback__)
         model.validation_summary.add_detail(
             ValidationDetail(
                 name=f"Run {weight_format} inference for parametrized inputs",
@@ -829,9 +828,9 @@ def _test_model_inference_parametrized(
                 errors=[
                     ErrorEntry(
                         loc=("weights", weight_format),
-                        msg=error,
+                        msg=str(e),
                         type="bioimageio.core",
-                        traceback=tb,
+                        with_traceback=True,
                     )
                 ],
             )
@@ -854,7 +853,7 @@ def _test_expected_resource_type(
                     ErrorEntry(
                         loc=("type",),
                         type="type",
-                        msg=f"expected type {expected_type}, found {rd.type}",
+                        msg=f"Expected type {expected_type}, found {rd.type}",
                     )
                 ]
             ),

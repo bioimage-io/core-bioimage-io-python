@@ -97,7 +97,7 @@ def load_torch_model(
     load_state: bool = True,
     devices: Optional[Sequence[Union[str, torch.device]]] = None,
 ) -> nn.Module:
-    arch = import_callable(
+    custom_callable = import_callable(
         weight_spec.architecture,
         sha256=(
             weight_spec.architecture_sha256
@@ -110,27 +110,29 @@ def load_torch_model(
         if isinstance(weight_spec, v0_4.PytorchStateDictWeightsDescr)
         else weight_spec.architecture.kwargs
     )
-    try:
-        # calling custom user code
-        network = arch(**model_kwargs)
-    except Exception as e:
-        raise RuntimeError("Failed to initialize PyTorch model") from e
+    torch_model = custom_callable(**model_kwargs)
 
-    if not isinstance(network, nn.Module):
-        raise ValueError(
-            f"calling {weight_spec.architecture.callable_name if isinstance(weight_spec.architecture, (v0_4.CallableFromFile, v0_4.CallableFromDepencency)) else weight_spec.architecture.callable} did not return a torch.nn.Module"
-        )
+    if not isinstance(torch_model, nn.Module):
+        if isinstance(
+            weight_spec.architecture,
+            (v0_4.CallableFromFile, v0_4.CallableFromDepencency),
+        ):
+            callable_name = weight_spec.architecture.callable_name
+        else:
+            callable_name = weight_spec.architecture.callable
+
+        raise ValueError(f"Calling {callable_name} did not return a torch.nn.Module.")
 
     if load_state or devices:
         use_devices = get_devices(devices)
-        network = network.to(use_devices[0])
+        torch_model = torch_model.to(use_devices[0])
         if load_state:
-            network = load_torch_state_dict(
-                network,
+            torch_model = load_torch_state_dict(
+                torch_model,
                 path=download(weight_spec).path,
                 devices=use_devices,
             )
-    return network
+    return torch_model
 
 
 def load_torch_state_dict(

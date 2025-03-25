@@ -111,22 +111,23 @@ def _import_from_file_impl(
             module_spec = importlib.util.spec_from_loader(module_name, loader=None)
             assert module_spec is not None
             module = importlib.util.module_from_spec(module_spec)
-            exec(source_code, module.__dict__)
+            source_compiled = compile(
+                source_code, str(local_source.path), "exec"
+            )  # compile source to attach file name
+            exec(source_compiled, module.__dict__)
             sys.modules[module_spec.name] = module  # cache this module
         except Exception as e:
-            raise ImportError(
-                f"Failed to import {module_name[:-58]}... from {source}"
-            ) from e
+            raise ImportError(f"Failed to import {source} .") from e
 
     try:
         callable_attr = getattr(module, callable_name)
     except AttributeError as e:
         raise AttributeError(
-            f"Imported custom module `{module_name[:-58]}...` has no `{callable_name}` attribute"
+            f"Imported custom module from {source} has no `{callable_name}` attribute."
         ) from e
     except Exception as e:
         raise AttributeError(
-            f"Failed to access `{callable_name}` attribute from imported custom module `{module_name[:-58]}...`"
+            f"Failed to access `{callable_name}` attribute from custom module imported from {source} ."
         ) from e
 
     else:

@@ -1,3 +1,4 @@
+import sys
 import warnings
 from abc import ABC, abstractmethod
 from typing import (
@@ -87,7 +88,7 @@ class ModelAdapter(ABC):
             )
 
         weights = model_description.weights
-        errors: List[Tuple[SupportedWeightsFormat, Exception]] = []
+        errors: List[Exception] = []
         weight_format_priority_order = (
             DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER
             if weight_format_priority_order is None
@@ -112,7 +113,7 @@ class ModelAdapter(ABC):
                         model_description=model_description, devices=devices
                     )
                 except Exception as e:
-                    errors.append((wf, e))
+                    errors.append(e)
             elif wf == "tensorflow_saved_model_bundle":
                 assert weights.tensorflow_saved_model_bundle is not None
                 try:
@@ -122,7 +123,7 @@ class ModelAdapter(ABC):
                         model_description=model_description, devices=devices
                     )
                 except Exception as e:
-                    errors.append((wf, e))
+                    errors.append(e)
             elif wf == "onnx":
                 assert weights.onnx is not None
                 try:
@@ -132,7 +133,7 @@ class ModelAdapter(ABC):
                         model_description=model_description, devices=devices
                     )
                 except Exception as e:
-                    errors.append((wf, e))
+                    errors.append(e)
             elif wf == "torchscript":
                 assert weights.torchscript is not None
                 try:
@@ -142,7 +143,7 @@ class ModelAdapter(ABC):
                         model_description=model_description, devices=devices
                     )
                 except Exception as e:
-                    errors.append((wf, e))
+                    errors.append(e)
             elif wf == "keras_hdf5":
                 assert weights.keras_hdf5 is not None
                 # keras can either be installed as a separate package or used as part of tensorflow
@@ -158,27 +159,24 @@ class ModelAdapter(ABC):
                         model_description=model_description, devices=devices
                     )
                 except Exception as e:
-                    errors.append((wf, e))
+                    errors.append(e)
             else:
                 assert_never(wf)
 
         assert errors
         if len(weight_format_priority_order) == 1:
             assert len(errors) == 1
-            wf, e = errors[0]
-            raise ValueError(
-                f"The '{wf}' model adapter could not be created"
-                + f" in this environment:\n{e.__class__.__name__}({e}).\n\n"
-            ) from e
+            raise errors[0]
 
         else:
-            error_list = "\n - ".join(
-                f"{wf}: {e.__class__.__name__}({e})" for wf, e in errors
-            )
-            raise ValueError(
+            msg = (
                 "None of the weight format specific model adapters could be created"
-                + f" in this environment. Errors are:\n\n{error_list}.\n\n"
+                + " in this environment."
             )
+            if sys.version_info[:2] >= (3, 11):
+                raise ExceptionGroup(msg, errors)
+            else:
+                raise ValueError(msg) from Exception(errors)
 
     @final
     def load(self, *, devices: Optional[Sequence[str]] = None) -> None:
