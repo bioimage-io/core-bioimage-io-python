@@ -46,7 +46,7 @@ def test(
         runtime_env=runtime_env,
         determinism=determinism,
     )
-    _ = test_summary.log(summary)
+    _ = test_summary.save(summary)
     return 0 if test_summary.status == "passed" else 1
 
 
@@ -60,7 +60,7 @@ def validate_format(
     Args:
         descr: a bioimageio resource description
     """
-    _ = descr.validation_summary.log(summary)
+    _ = descr.validation_summary.save(summary)
     return 0 if descr.validation_summary.status == "passed" else 1
 
 
@@ -82,7 +82,7 @@ def package(
         weight-format: include only this single weight-format (if not 'all').
     """
     if isinstance(descr, InvalidDescr):
-        logged = descr.validation_summary.log()
+        logged = descr.validation_summary.save()
         msg = f"Invalid {descr.type} description."
         if logged:
             msg += f" Details saved to {logged}."

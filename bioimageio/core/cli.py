@@ -106,7 +106,7 @@ class WithSummaryLogging(ArgMixin):
     """
 
     def log(self, descr: Union[ResourceDescr, InvalidDescr]):
-        _ = descr.validation_summary.log(self.summary)
+        _ = descr.validation_summary.save(self.summary)
 
 
 class WithSource(ArgMixin):
@@ -735,7 +735,7 @@ class AddWeightsCmd(CmdBase, WithSource):
         if updated_model_descr is None:
             return
 
-        _ = updated_model_descr.validation_summary.log()
+        _ = updated_model_descr.validation_summary.save()
 
 
 JSON_FILE = "bioimageio-cli.json"
