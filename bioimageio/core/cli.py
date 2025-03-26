@@ -85,6 +85,8 @@ from .weight_converters._add_weights import add_weights
 WEIGHT_FORMAT_ALIASES = AliasChoices(
     "weight-format",
     "weights-format",
+    "weight_format",
+    "weights_format",
 )
 
 
