@@ -355,6 +355,13 @@ class UpdateCmdBase(CmdBase, WithSource, ABC):
 class UpdateFormatCmd(UpdateCmdBase):
     """Update the metadata format to the latest format version."""
 
+    exclude_defaults: bool = Field(True, alias="exclude-defaults")
+    """Exclude fields that have the default value (even if set explicitly).
+
+    Note:
+        The update process sets most unset fields explicitly with their default value.
+    """
+
     perform_io_checks: bool = Field(
         settings.perform_io_checks, alias="perform-io-checks"
     )
