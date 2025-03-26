@@ -63,7 +63,7 @@ def validate_format(
         descr: a bioimageio resource description
     """
     _ = descr.validation_summary.save(summary)
-    return 0 if descr.validation_summary.status == "passed" else 1
+    return 0 if descr.validation_summary.status in ("valid-format", "passed") else 1
 
 
 # TODO: absorb into `save_bioimageio_package`

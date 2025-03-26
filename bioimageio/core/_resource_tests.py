@@ -514,18 +514,21 @@ def load_description_and_test(
         enable_determinism(determinism, weight_formats=weight_formats)
         for w in weight_formats:
             _test_model_inference(rd, w, devices, **deprecated)
-            if stop_early and rd.validation_summary.status != "passed":
+            if stop_early and rd.validation_summary.status == "failed":
                 break
 
             if not isinstance(rd, v0_4.ModelDescr):
                 _test_model_inference_parametrized(
                     rd, w, devices, stop_early=stop_early
                 )
-                if stop_early and rd.validation_summary.status != "passed":
+                if stop_early and rd.validation_summary.status == "failed":
                     break
 
     # TODO: add execution of jupyter notebooks
     # TODO: add more tests
+
+    if rd.validation_summary.status == "valid-format":
+        rd.validation_summary.status = "passed"
 
     return rd
 

@@ -162,7 +162,11 @@ class ValidateFormatCmd(CmdBase, WithSource, WithSummaryLogging):
 
     def run(self):
         self.log(self.descr)
-        sys.exit(0 if self.descr.validation_summary.status == "passed" else 1)
+        sys.exit(
+            0
+            if self.descr.validation_summary.status in ("valid-format", "passed")
+            else 1
+        )
 
 
 class TestCmd(CmdBase, WithSource, WithSummaryLogging):
