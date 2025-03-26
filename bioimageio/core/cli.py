@@ -332,14 +332,15 @@ class UpdateCmdBase(CmdBase, WithSource, ABC):
         if isinstance(self.diff, Path):
             _ = self.diff.write_text(diff, encoding="utf-8")
         elif self.diff:
-            diff_md = f"````````diff\n{diff}\n````````"
-            rich.console.Console().print(rich.markdown.Markdown(diff_md))
+            console = rich.console.Console()
+            diff_md = f"## Diff\n\n````````diff\n{diff}\n````````"
+            console.print(rich.markdown.Markdown(diff_md))
 
         if isinstance(self.output, Path):
             _ = self.output.write_text(updated_yaml, encoding="utf-8")
             logger.info(f"written updated description to {self.output}")
         elif self.output == "display":
-            updated_md = f"```yaml\n{updated_yaml}\n```"
+            updated_md = f"## Updated bioimageio.yaml\n\n```yaml\n{updated_yaml}\n```"
             rich.console.Console().print(rich.markdown.Markdown(updated_md))
         elif self.output == "stdout":
             print(updated_yaml)
