@@ -121,8 +121,8 @@ class WithSummaryLogging(ArgMixin):
 
 
 class WithSource(ArgMixin):
-    source: CliPositionalArg[str]
-    """Url/path to a bioimageio.yaml/rdf.yaml file
+    source: CliPositionalArg[str] = "."
+    """Url/path to a (folder with a) bioimageio.yaml/rdf.yaml file
     or a bioimage.io resource identifier, e.g. 'affable-shark'"""
 
     @cached_property
