@@ -30,7 +30,7 @@ _ = setup(
     ],
     packages=find_namespace_packages(exclude=["tests"]),
     install_requires=[
-        "bioimageio.spec ==0.5.4.0",
+        "bioimageio.spec ==0.5.4.1",
         "h5py",
         "imagecodecs",
         "imageio>=2.10",
