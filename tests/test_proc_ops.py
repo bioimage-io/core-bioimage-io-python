@@ -268,7 +268,7 @@ def test_scale_mean_variance_per_channel(tid: MemberId, axes_str: Optional[str])
     axes = None if axes_str is None else tuple(map(AxisId, axes_str))
 
     shape = (3, 32, 46)
-    ipt_axes = ("c", "y", "x")
+    ipt_axes = ("channel", "y", "x")
     np_data = np.random.rand(*shape)
     ipt_data = xr.DataArray(np_data, dims=ipt_axes)
 

@@ -8,6 +8,7 @@ preview = true
 exclude = [
     "**/__pycache__",
     "**/node_modules",
+    "dogfood",
     "presentations",
     "scripts/pdoc/original.py",
     "scripts/pdoc/patched.py",
@@ -39,7 +40,7 @@ typeCheckingMode = "strict"
 useLibraryCodeForTypes = true
 
 [tool.pytest.ini_options]
-addopts = "--cov=bioimageio --cov-report=xml --cov-append --capture=no --doctest-modules --failed-first"
+addopts = "--cov=bioimageio --cov-report=xml --cov-append --capture=no --doctest-modules --failed-first --ignore=dogfood"
 
 [tool.ruff]
 line-length = 88

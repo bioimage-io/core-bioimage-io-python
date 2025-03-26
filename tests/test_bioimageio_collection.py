@@ -4,7 +4,7 @@ import pytest
 import requests
 from pydantic import HttpUrl
 
-from bioimageio.spec import InvalidDescr
+from bioimageio.spec import InvalidDescr, ValidationContext
 from bioimageio.spec.common import Sha256
 from tests.utils import ParameterSet, expensive_test
 
@@ -39,15 +39,28 @@ def yield_bioimageio_yaml_urls() -> Iterable[ParameterSet]:
 
 
 KNOWN_INVALID: Collection[str] = {
+    "affable-shark/1.1",  # onnx weights expect fixed input shape
+    "affectionate-cow/0.1.0",  # custom dependencies
+    "ambitious-sloth/1.2",  # requires inferno
+    "dazzling-spider/0.1.0",  # requires careamics
+    "dynamic-t-rex/1",  # model.v0_4.ScaleLinearKwargs with axes
+    "efficient-chipmunk/1",  # needs plantseg
+    "famous-fish/0.1.0",  # list index out of range `fl[3]`
+    "greedy-whale/1",  # batch size is actually limited to 1
+    "happy-elephant/0.1.0",  # list index out of range `fl[3]`
+    "humorous-crab/1",  # batch size is actually limited to 1
+    "humorous-fox/0.1.0",  # requires careamics
+    "humorous-owl/1",  # error deserializing GlorotUniform
+    "noisy-ox/1",  # batch size is actually limited to 1
     "stupendous-sheep/1.2",
     "wild-rhino/0.1.0",  # requires careamics
-    "dazzling-spider/0.1.0",  # requires careamics
-    "humorous-fox/0.1.0",  # requires careamics
-    "ambitious-sloth/1.2",  # requires inferno
-    "dynamic-t-rex/1",  # model.v0_4.ScaleLinearKwargs with axes
-    "famous-fish/0.1.0",  # list index out of range `fl[3]`
-    "happy-elephant/0.1.0",  # list index out of range `fl[3]`
-    "affectionate-cow/0.1.0",  # custom dependencies
+    "idealistic-turtle/0.1.0",  # requires biapy
+    "intelligent-lion/0.1.0",  # requires biapy
+    "merry-water-buffalo/0.1.0",  # requires biapy
+    "venomous-swan/0.1.0",  # requires biapy
+    "heroic-otter/0.1.0",  # requires biapy
+    "stupendous-sheep/1.1",  # requires relativ import of attachment
+    "commited-turkey/1.2",  # error deserializng VarianceScaling
 }
 
 
@@ -63,8 +76,10 @@ def test_rdf(
 
     from bioimageio.core import load_description_and_test
 
-    descr = load_description_and_test(descr_url, sha256=sha, stop_early=True)
+    with ValidationContext():
+        descr = load_description_and_test(descr_url, sha256=sha, stop_early=True)
+
     assert not isinstance(descr, InvalidDescr)
     assert (
         descr.validation_summary.status == "passed"
-    ), descr.validation_summary.format()
+    ), descr.validation_summary.display()
