@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import collections.abc
+import hashlib
 import importlib.util
 import sys
 from itertools import chain
@@ -36,6 +37,7 @@ from bioimageio.spec.model.v0_5 import (
 )
 from bioimageio.spec.utils import download, load_array
 
+from ._settings import settings
 from .axis import Axis, AxisId, AxisInfo, AxisLike, PerAxis
 from .block_meta import split_multiple_shapes_into_blocks
 from .common import Halo, MemberId, PerMember, SampleId, TotalNumberOfBlocks
@@ -91,33 +93,50 @@ def _import_from_file_impl(
     assert src_descr.sha256 is not None
 
     local_source = src_descr.download()
-    source_code = local_source.path.read_text(encoding="utf-8")
 
-    module_name = local_source.original_file_name.replace("-", "_")
-    if module_name.endswith(".py"):
-        module_name = module_name[:-3]
+    source_bytes = local_source.path.read_bytes()
+    assert isinstance(source_bytes, bytes)
+    source_sha = hashlib.sha256(source_bytes).hexdigest()
 
-    # make sure we have a unique module name to avoid conflicts and confusion
-    module_name = f"{module_name}_{src_descr.sha256}"
+    # make sure we have unique module name
+    module_name = f"{local_source.path.stem}_{source_sha}"
 
     # make sure we have a valid module name
     if not module_name.isidentifier():
-        module_name = f"custom_module_{src_descr.sha256}"
+        module_name = f"custom_module_{source_sha}"
         assert module_name.isidentifier(), module_name
 
     module = sys.modules.get(module_name)
     if module is None:
         try:
-            module_spec = importlib.util.spec_from_loader(module_name, loader=None)
-            assert module_spec is not None
-            module = importlib.util.module_from_spec(module_spec)
-            source_compiled = compile(
-                source_code, str(local_source.path), "exec"
-            )  # compile source to attach file name
-            exec(source_compiled, module.__dict__)
-            sys.modules[module_spec.name] = module  # cache this module
+            if isinstance(local_source.path, Path):
+                module_path = local_source.path
+            elif isinstance(local_source.path, ZipPath):
+                # save extract source to cache
+                # loading from a file from disk ensure we get readable tracebacks
+                # if any errors occur
+                module_path = (
+                    settings.cache_path / f"{source_sha}-{local_source.path.name}"
+                )
+                _ = module_path.write_bytes(source_bytes)
+            else:
+                assert_never(local_source.path)
+
+            importlib_spec = importlib.util.spec_from_file_location(
+                module_name, module_path
+            )
+
+            if importlib_spec is None:
+                raise ImportError(f"Failed to import {source}.")
+
+            module = importlib.util.module_from_spec(importlib_spec)
+            assert importlib_spec.loader is not None
+            importlib_spec.loader.exec_module(module)
+
         except Exception as e:
             raise ImportError(f"Failed to import {source} .") from e
+        else:
+            sys.modules[module_name] = module  # cache this module
 
     try:
         callable_attr = getattr(module, callable_name)
