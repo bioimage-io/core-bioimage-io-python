@@ -21,15 +21,17 @@ def tid():
 def test_scale_linear(tid: MemberId):
     from bioimageio.core.proc_ops import ScaleLinear
 
-    offset = xr.DataArray([1, 2, 42], dims=("c"))
-    gain = xr.DataArray([1, 2, 3], dims=("c"))
-    data = xr.DataArray(np.arange(6).reshape((1, 2, 3)), dims=("x", "y", "c"))
+    offset = xr.DataArray([1, 2, 42], dims=("channel",))
+    gain = xr.DataArray([1, 2, 3], dims=("channel",))
+    data = xr.DataArray(np.arange(6).reshape((1, 2, 3)), dims=("x", "y", "channel"))
     sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
 
     op = ScaleLinear(input=tid, output=tid, offset=offset, gain=gain)
     op(sample)
 
-    expected = xr.DataArray(np.array([[[1, 4, 48], [4, 10, 57]]]), dims=("x", "y", "c"))
+    expected = xr.DataArray(
+        np.array([[[1, 4, 48], [4, 10, 57]]]), dims=("x", "y", "channel")
+    )
     xr.testing.assert_allclose(expected, sample.members[tid].data, rtol=1e-5, atol=1e-7)
 
 
@@ -84,10 +86,10 @@ def test_zero_mean_unit_variance_fixed(tid: MemberId):
     op = FixedZeroMeanUnitVariance(
         tid,
         tid,
-        mean=xr.DataArray([3, 4, 5], dims=("c")),
-        std=xr.DataArray([2.44948974, 2.44948974, 2.44948974], dims=("c")),
+        mean=xr.DataArray([3, 4, 5], dims=("channel",)),
+        std=xr.DataArray([2.44948974, 2.44948974, 2.44948974], dims=("channel",)),
     )
-    data = xr.DataArray(np.arange(9).reshape((1, 3, 3)), dims=("b", "c", "x"))
+    data = xr.DataArray(np.arange(9).reshape((1, 3, 3)), dims=("b", "channel", "x"))
     expected = xr.DataArray(
         np.array(
             [
@@ -124,7 +126,7 @@ def test_zero_mean_unit_variance_fixed2(tid: MemberId):
 def test_zero_mean_unit_across_axes(tid: MemberId):
     from bioimageio.core.proc_ops import ZeroMeanUnitVariance
 
-    data = xr.DataArray(np.arange(18).reshape((2, 3, 3)), dims=("c", "x", "y"))
+    data = xr.DataArray(np.arange(18).reshape((2, 3, 3)), dims=("channel", "x", "y"))
 
     op = ZeroMeanUnitVariance(
         tid,
@@ -136,7 +138,8 @@ def test_zero_mean_unit_across_axes(tid: MemberId):
     sample.stat = compute_measures(op.required_measures, [sample])
 
     expected = xr.concat(
-        [(data[i : i + 1] - data[i].mean()) / data[i].std() for i in range(2)], dim="c"
+        [(data[i : i + 1] - data[i].mean()) / data[i].std() for i in range(2)],
+        dim="channel",
     )
     op(sample)
     xr.testing.assert_allclose(expected, sample.members[tid].data, rtol=1e-5, atol=1e-7)
@@ -146,7 +149,7 @@ def test_binarize(tid: MemberId):
     from bioimageio.core.proc_ops import Binarize
 
     op = Binarize(tid, tid, threshold=14)
-    data = xr.DataArray(np.arange(30).reshape((2, 3, 5)), dims=("x", "y", "c"))
+    data = xr.DataArray(np.arange(30).reshape((2, 3, 5)), dims=("x", "y", "channel"))
     sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
     expected = xr.zeros_like(data)
     expected[{"x": slice(1, None)}] = 1
@@ -158,7 +161,7 @@ def test_binarize2(tid: MemberId):
     from bioimageio.core.proc_ops import Binarize
 
     shape = (3, 32, 32)
-    axes = ("c", "y", "x")
+    axes = ("channel", "y", "x")
     np_data = np.random.rand(*shape)
     data = xr.DataArray(np_data, dims=axes)
 
@@ -188,7 +191,7 @@ def test_clip(tid: MemberId):
 def test_combination_of_op_steps_with_dims_specified(tid: MemberId):
     from bioimageio.core.proc_ops import ZeroMeanUnitVariance
 
-    data = xr.DataArray(np.arange(18).reshape((2, 3, 3)), dims=("c", "x", "y"))
+    data = xr.DataArray(np.arange(18).reshape((2, 3, 3)), dims=("channel", "x", "y"))
     sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
     op = ZeroMeanUnitVariance(
         tid,
@@ -239,7 +242,7 @@ def test_scale_mean_variance(tid: MemberId, axes: Optional[Tuple[AxisId, ...]]):
     from bioimageio.core.proc_ops import ScaleMeanVariance
 
     shape = (3, 32, 46)
-    ipt_axes = ("c", "y", "x")
+    ipt_axes = ("channel", "y", "x")
     np_data = np.random.rand(*shape)
     ipt_data = xr.DataArray(np_data, dims=ipt_axes)
     ref_data = xr.DataArray((np_data * 2) + 3, dims=ipt_axes)

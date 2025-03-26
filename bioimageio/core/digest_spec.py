@@ -127,14 +127,14 @@ def _import_from_file_impl(
             )
 
             if importlib_spec is None:
-                raise ImportError(f"Failed to import {source}.")
+                raise ImportError(f"Failed to import {source}")
 
             module = importlib.util.module_from_spec(importlib_spec)
             assert importlib_spec.loader is not None
             importlib_spec.loader.exec_module(module)
 
         except Exception as e:
-            raise ImportError(f"Failed to import {source} .") from e
+            raise ImportError(f"Failed to import {source}") from e
         else:
             sys.modules[module_name] = module  # cache this module
 

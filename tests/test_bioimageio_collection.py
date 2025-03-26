@@ -4,7 +4,7 @@ import pytest
 import requests
 from pydantic import HttpUrl
 
-from bioimageio.spec import InvalidDescr, ValidationContext
+from bioimageio.spec import InvalidDescr
 from bioimageio.spec.common import Sha256
 from tests.utils import ParameterSet, expensive_test
 
@@ -42,25 +42,34 @@ KNOWN_INVALID: Collection[str] = {
     "affable-shark/1.1",  # onnx weights expect fixed input shape
     "affectionate-cow/0.1.0",  # custom dependencies
     "ambitious-sloth/1.2",  # requires inferno
+    "committed-turkey/1.2",  # error deserializing VarianceScaling
+    "creative-panda/1",  # error deserializing Conv2D
     "dazzling-spider/0.1.0",  # requires careamics
-    "dynamic-t-rex/1",  # model.v0_4.ScaleLinearKwargs with axes
+    "discreete-rooster/1",  # error deserializing VarianceScaling
+    "dynamic-t-rex/1",  # needs update to 0.5 for scale_linear with axes processing
+    "easy-going-sauropod/1",  # CPU implementation of Conv3D currently only supports the NHWC tensor format.
     "efficient-chipmunk/1",  # needs plantseg
     "famous-fish/0.1.0",  # list index out of range `fl[3]`
     "greedy-whale/1",  # batch size is actually limited to 1
     "happy-elephant/0.1.0",  # list index out of range `fl[3]`
+    "happy-honeybee/0.1.0",  # requires biapy
+    "heroic-otter/0.1.0",  # requires biapy
     "humorous-crab/1",  # batch size is actually limited to 1
     "humorous-fox/0.1.0",  # requires careamics
     "humorous-owl/1",  # error deserializing GlorotUniform
-    "noisy-ox/1",  # batch size is actually limited to 1
-    "stupendous-sheep/1.2",
-    "wild-rhino/0.1.0",  # requires careamics
     "idealistic-turtle/0.1.0",  # requires biapy
+    "impartial-shark/1",  # error deserializing VarianceScaling
     "intelligent-lion/0.1.0",  # requires biapy
+    "joyful-deer/1",  # needs update to 0.5 for scale_linear with axes processing
     "merry-water-buffalo/0.1.0",  # requires biapy
-    "venomous-swan/0.1.0",  # requires biapy
-    "heroic-otter/0.1.0",  # requires biapy
+    "naked-microbe/1",  # unknown layer Convolution2D
+    "noisy-ox/1",  # batch size is actually limited to 1
+    "non-judgemental-eagle/1",  # error deserializing GlorotUniform
+    "straightforward-crocodile/1",  # needs update to 0.5 for scale_linear with axes processing
     "stupendous-sheep/1.1",  # requires relativ import of attachment
-    "commited-turkey/1.2",  # error deserializng VarianceScaling
+    "stupendous-sheep/1.2",
+    "venomous-swan/0.1.0",  # requires biapy
+    "wild-rhino/0.1.0",  # requires careamics
 }
 
 
@@ -76,8 +85,7 @@ def test_rdf(
 
     from bioimageio.core import load_description_and_test
 
-    with ValidationContext():
-        descr = load_description_and_test(descr_url, sha256=sha, stop_early=True)
+    descr = load_description_and_test(descr_url, sha256=sha, stop_early=True)
 
     assert not isinstance(descr, InvalidDescr)
     assert (
