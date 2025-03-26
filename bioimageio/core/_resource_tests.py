@@ -46,10 +46,7 @@ from bioimageio.spec._internal.types import (
     MismatchedElementsPerMillion,
     RelativeTolerance,
 )
-from bioimageio.spec._internal.validation_context import (
-    get_validation_context,
-    validation_context_var,
-)
+from bioimageio.spec._internal.validation_context import get_validation_context
 from bioimageio.spec.common import BioimageioYamlContent, PermissiveFileSource, Sha256
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import WeightsFormat
@@ -480,7 +477,7 @@ def load_description_and_test(
         rd = source
     elif isinstance(source, dict):
         # check context for a given root; default to root of source
-        context = validation_context_var.get(
+        context = get_validation_context(
             ValidationContext(root=root, file_name=file_name)
         ).replace(
             perform_io_checks=True  # make sure we perform io checks though
