@@ -45,6 +45,7 @@ KNOWN_INVALID: Collection[str] = {
     "committed-turkey/1.2",  # error deserializing VarianceScaling
     "creative-panda/1",  # error deserializing Conv2D
     "dazzling-spider/0.1.0",  # requires careamics
+    "discreet-rooster/1",  # error deserializing VarianceScaling
     "discreete-rooster/1",  # error deserializing VarianceScaling
     "dynamic-t-rex/1",  # needs update to 0.5 for scale_linear with axes processing
     "easy-going-sauropod/1",  # CPU implementation of Conv3D currently only supports the NHWC tensor format.

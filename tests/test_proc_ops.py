@@ -100,7 +100,7 @@ def test_zero_mean_unit_variance_fixed(tid: MemberId):
                 ]
             ]
         ),
-        dims=("b", "c", "x"),
+        dims=("b", "channel", "x"),
     )
     sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
     op(sample)
@@ -222,7 +222,7 @@ def test_combination_of_op_steps_with_dims_specified(tid: MemberId):
                 ],
             ]
         ),
-        dims=("c", "x", "y"),
+        dims=("channel", "x", "y"),
     )
 
     op(sample)
@@ -337,7 +337,7 @@ def test_scale_range_axes(tid: MemberId):
     op = ScaleRange(tid, tid, lower_quantile, upper_quantile, eps=eps)
 
     np_data = np.arange(18).reshape((2, 3, 3)).astype("float32")
-    data = Tensor.from_xarray(xr.DataArray(np_data, dims=("c", "x", "y")))
+    data = Tensor.from_xarray(xr.DataArray(np_data, dims=("channel", "x", "y")))
     sample = Sample(members={tid: data}, stat={}, id=None)
 
     p_low_direct = lower_quantile.compute(sample)
@@ -355,7 +355,7 @@ def test_scale_range_axes(tid: MemberId):
     np.testing.assert_allclose(p_up_expected.squeeze(), sample.stat[upper_quantile])
 
     exp_data = (np_data - p_low_expected) / (p_up_expected - p_low_expected + eps)
-    expected = xr.DataArray(exp_data, dims=("c", "x", "y"))
+    expected = xr.DataArray(exp_data, dims=("channel", "x", "y"))
 
     op(sample)
     # NOTE xarray.testing.assert_allclose compares irrelavant properties here and fails although the result is correct
@@ -366,7 +366,7 @@ def test_sigmoid(tid: MemberId):
     from bioimageio.core.proc_ops import Sigmoid
 
     shape = (3, 32, 32)
-    axes = ("c", "y", "x")
+    axes = ("channel", "y", "x")
     np_data = np.random.rand(*shape)
     data = xr.DataArray(np_data, dims=axes)
     sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
