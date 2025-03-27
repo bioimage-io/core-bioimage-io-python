@@ -1,3 +1,4 @@
+import os
 from typing import Any, Collection, Dict, Iterable, Mapping, Tuple
 
 import pytest
@@ -72,6 +73,24 @@ KNOWN_INVALID: Collection[str] = {
     "venomous-swan/0.1.0",  # requires biapy
     "wild-rhino/0.1.0",  # requires careamics
 }
+
+
+@pytest.mark.parametrize("descr_url,sha,key", list(yield_bioimageio_yaml_urls()))
+def test_rdf_format_to_populate_cache(
+    descr_url: HttpUrl,
+    sha: Sha256,
+    key: str,
+):
+    """this test is redundant if `test_rdf` runs, but is used in the CI to populate the cache"""
+    if os.environ.get("BIOIMAGEIO_POPULATE_CACHE") != "1":
+        pytest.skip("only runs in CI to populate cache")
+
+    if key in KNOWN_INVALID:
+        pytest.skip("known failure")
+
+    from bioimageio.core import load_description
+
+    _ = load_description(descr_url, sha256=sha, perform_io_checks=True)
 
 
 @expensive_test

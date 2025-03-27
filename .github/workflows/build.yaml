@@ -22,7 +22,36 @@ jobs:
           jupyter: true
           version: "24.3"
 
+  populate-cache:
+    runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{steps.cache-key.outputs.cache-key}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "date=$(date +'%Y-%b')"
+          echo "date=$(date +'%Y-%b')" >> $GITHUB_OUTPUT
+      - id: cache-key
+        run: echo "cache-key=test-${{steps.get-date.outputs.date}}" >> $GITHUB_OUTPUT
+      - uses: actions/cache@v4
+        with:
+          path: bioimageio_cache
+          key: steps.get-cache-key.outputs.cache-key
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e .[dev]
+      - run: pytest --disable-pytest-warnings tests/test_bioimageio_collection.py::test_rdf_format_to_populate_cache
+        env:
+          BIOIMAGEIO_POPULATE_CACHE: '1'
   test:
+    needs: populate-cache
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -44,7 +73,6 @@ jobs:
             spec: main
             run-expensive-tests: true
             report-coverage: true
-            save-cache: true
           - python-version: '3.12'
             conda-env: dev
             spec: conda
@@ -81,8 +109,6 @@ jobs:
     - name: Get Date
       id: get-date
       run: |
-        echo "date=$(date +'%Y-%b')"
-        echo "date=$(date +'%Y-%b')" >> $GITHUB_OUTPUT
         echo "today=$(date -u '+%Y%m%d')"
         echo "today=$(date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
     - name: Cache env
@@ -96,24 +122,19 @@ jobs:
           -${{env.CACHE_NUMBER}}
       env:
         CACHE_NUMBER: 0
-      id: cache
+      id: cache-env
     - name: Update env
       run: conda env update --name=${{steps.setup.outputs.env-name}} --file=${{steps.setup.outputs.env-file}} python=${{matrix.python-version}}
-      if: steps.cache.outputs.cache-hit != 'true'
+      if: steps.cache-env.outputs.cache-hit != 'true'
     - run: |
         pyright --version
         pyright
       if: matrix.run-expensive-tests
-    - uses: actions/cache@v4
-      if: matrix.save-cache
-      with:
-        path: bioimageio_cache
-        key: "test-${{matrix.spec}}-${{steps.get-date.outputs.date}}"
     - uses: actions/cache/restore@v4
-      if: ${{!matrix.save-cache}}
+      id: bioimageio-cache
       with:
         path: bioimageio_cache
-        key: "test-${{matrix.spec}}-${{steps.get-date.outputs.date}}"
+        key: ${{needs.populate-cache.outputs.cache-key}}
         fail-on-cache-miss: true
     - name: pytest
       run: pytest --disable-pytest-warnings
