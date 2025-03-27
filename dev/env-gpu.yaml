@@ -1,3 +1,4 @@
+# version of enf-full for running on GPU
 name: core-gpu
 channels:
   - conda-forge

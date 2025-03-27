@@ -34,13 +34,10 @@ jobs:
             conda-env: py38
             spec: main
           - python-version: '3.9'
-            conda-env: wo-python
+            conda-env: dev
             spec: conda
-          - python-version: '3.9'
-            conda-env: tf
-            spec: main
           - python-version: '3.10'
-            conda-env: wo-python
+            conda-env: dev
             spec: conda
           - python-version: '3.11'
             conda-env: full
@@ -48,13 +45,10 @@ jobs:
             run-expensive-tests: true
             report-coverage: true
           - python-version: '3.12'
-            conda-env: wo-python
-            spec: conda
-          - python-version: '3.12'
-            conda-env: tf
+            conda-env: dev
             spec: conda
           - python-version: '3.13'
-            conda-env: wo-python
+            conda-env: dev
             spec: main
     steps:
     - uses: actions/checkout@v4
