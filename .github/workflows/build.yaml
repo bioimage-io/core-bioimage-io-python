@@ -129,9 +129,9 @@ jobs:
       with:
         path: ${{env.CONDA}}/envs/${{steps.setup.outputs.env-name}}
         key: >-
-          conda-${{runner.os}}-${{runner.arch}}-
-          -${{steps.get-date.outputs.today}}-
-          -${{hashFiles(matrix.conda-env)}}-
+          conda-${{runner.os}}-${{runner.arch}}
+          -${{steps.get-date.outputs.today}}
+          -${{hashFiles(steps.setup.outputs.env-file)}}
           -${{env.CACHE_NUMBER}}
       env:
         CACHE_NUMBER: 0
