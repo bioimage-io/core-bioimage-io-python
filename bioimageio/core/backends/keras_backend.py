@@ -27,6 +27,8 @@ try:
 except Exception:
     import keras
 
+    tf_version = None
+
 
 class KerasModelAdapter(ModelAdapter):
     def __init__(

@@ -1,3 +1,4 @@
+# pyright: reportUnknownVariableType=false
 import warnings
 from typing import Any, List, Optional, Sequence, Union
 
@@ -25,8 +26,8 @@ class ONNXModelAdapter(ModelAdapter):
 
         local_path = download(model_description.weights.onnx.source).path
         self._session = rt.InferenceSession(local_path.read_bytes())
-        onnx_inputs = self._session.get_inputs()  # type: ignore
-        self._input_names: List[str] = [ipt.name for ipt in onnx_inputs]  # type: ignore
+        onnx_inputs = self._session.get_inputs()
+        self._input_names: List[str] = [ipt.name for ipt in onnx_inputs]
 
         if devices is not None:
             warnings.warn(
@@ -40,11 +41,11 @@ class ONNXModelAdapter(ModelAdapter):
             None, dict(zip(self._input_names, input_arrays))
         )
         if is_list(result) or is_tuple(result):
-            result_seq = result
+            result_seq = list(result)
         else:
             result_seq = [result]
 
-        return result_seq  # pyright: ignore[reportReturnType]
+        return result_seq
 
     def unload(self) -> None:
         warnings.warn(

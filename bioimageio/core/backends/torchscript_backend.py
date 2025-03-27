@@ -1,3 +1,4 @@
+# pyright: reportUnknownVariableType=false
 import gc
 import warnings
 from typing import Any, List, Optional, Sequence, Union

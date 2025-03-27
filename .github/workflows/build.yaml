@@ -34,7 +34,6 @@ jobs:
           echo "date=$(date +'%Y-%b')" >> $GITHUB_OUTPUT
       - id: cache-key
         run: echo "cache-key=test-${{steps.get-date.outputs.date}}" >> $GITHUB_OUTPUT
-      - uses: actions/cache@v4
       - uses: actions/cache/restore@v4
         id: look-up
         with:
