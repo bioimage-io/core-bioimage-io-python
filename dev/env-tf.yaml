@@ -5,7 +5,7 @@ channels:
   - nodefaults
   # - pytroch # removed
 dependencies:
-  - bioimageio.spec>=0.5.4.0
+  - bioimageio.spec==0.5.4.1
   - black
   # - crick  # currently requires python<=3.9
   - h5py
