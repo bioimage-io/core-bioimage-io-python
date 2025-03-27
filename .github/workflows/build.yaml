@@ -44,6 +44,7 @@ jobs:
             spec: main
             run-expensive-tests: true
             report-coverage: true
+            save-cache: true
           - python-version: '3.12'
             conda-env: dev
             spec: conda
@@ -87,12 +88,12 @@ jobs:
     - name: Cache env
       uses: actions/cache@v4
       with:
-        path: ${{ env.CONDA }}/envs/${{steps.setup.outputs.env-name}}
+        path: ${{env.CONDA}}/envs/${{steps.setup.outputs.env-name}}
         key: >-
-          conda-${{ runner.os }}-${{ runner.arch }}-
-          -${{steps.get-date.outputs.today }}-
-          -${{ hashFiles(matrix.conda-env) }}-
-          -${{env.CACHE_NUMBER }}
+          conda-${{runner.os}}-${{runner.arch}}-
+          -${{steps.get-date.outputs.today}}-
+          -${{hashFiles(matrix.conda-env)}}-
+          -${{env.CACHE_NUMBER}}
       env:
         CACHE_NUMBER: 0
       id: cache
@@ -104,9 +105,16 @@ jobs:
         pyright
       if: matrix.run-expensive-tests
     - uses: actions/cache@v4
+      if: matrix.save-cache
       with:
         path: bioimageio_cache
-        key: "test-${{matrix.spec}}-${{ steps.get-date.outputs.date }}"
+        key: "test-${{matrix.spec}}-${{steps.get-date.outputs.date}}"
+    - uses: actions/cache/restore@v4
+      if: ${{!matrix.save-cache}}
+      with:
+        path: bioimageio_cache
+        key: "test-${{matrix.spec}}-${{steps.get-date.outputs.date}}"
+        fail-on-cache-miss: true
     - name: pytest
       run: pytest --disable-pytest-warnings
       env:
@@ -116,7 +124,7 @@ jobs:
       uses: orgoro/coverage@v3.2
       with:
         coverageFile: coverage.xml
-        token: ${{ secrets.GITHUB_TOKEN }}
+        token: ${{secrets.GITHUB_TOKEN}}
     - if: matrix.report-coverage && github.ref == 'refs/heads/main'
       run: |
         pip install genbadge[coverage]
