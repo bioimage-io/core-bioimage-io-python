@@ -124,7 +124,7 @@ jobs:
         echo "today=$(date -u '+%Y%m%d')"
         echo "today=$(date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
     - name: Cache env
-      uses: actions/cache@v4
+      uses: actions/cache/restore@v4
       with:
         path: ${{env.CONDA}}/envs/${{steps.setup.outputs.env-name}}
         key: >-
@@ -138,6 +138,18 @@ jobs:
     - name: Update env
       run: conda env update --name=${{steps.setup.outputs.env-name}} --file=${{steps.setup.outputs.env-file}} python=${{matrix.python-version}}
       if: steps.cache-env.outputs.cache-hit != 'true'
+    - name: Update cached env
+      if: steps.cache-env.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: ${{env.CONDA}}/envs/${{steps.setup.outputs.env-name}}
+        key: >-
+          conda-${{runner.os}}-${{runner.arch}}
+          -${{steps.get-date.outputs.today}}
+          -${{hashFiles(steps.setup.outputs.env-file)}}
+          -${{env.CACHE_NUMBER}}
+      env:
+        CACHE_NUMBER: 0
     - run: |
         pyright --version
         pyright -p pyproject.toml --pythonversion ${{ matrix.python-version }}
