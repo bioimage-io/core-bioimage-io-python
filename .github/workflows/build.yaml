@@ -27,11 +27,6 @@ jobs:
     outputs:
       cache-key: ${{steps.cache-key.outputs.cache-key}}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-          cache: 'pip'
       - name: Get Date
         id: get-date
         run: |
@@ -40,14 +35,30 @@ jobs:
       - id: cache-key
         run: echo "cache-key=test-${{steps.get-date.outputs.date}}" >> $GITHUB_OUTPUT
       - uses: actions/cache@v4
+        id: look-up
         with:
           path: bioimageio_cache
-          key: steps.get-cache-key.outputs.cache-key
+          key: ${{steps.cache-key.outputs.cache-key}}
+          lookup-only: true
+      - uses: actions/checkout@v4
+        if: steps.look-up.outputs.cache-hit != 'true'
+      - uses: actions/cache@v4
+        if: steps.look-up.outputs.cache-hit != 'true'
+        with:
+          path: bioimageio_cache
+          key: ${{steps.cache-key.outputs.cache-key}}
+      - uses: actions/setup-python@v5
+        if: steps.look-up.outputs.cache-hit != 'true'
+        with:
+          python-version: '3.12'
+          cache: 'pip'
       - name: Install dependencies
+        if: steps.look-up.outputs.cache-hit != 'true'
         run: |
           pip install --upgrade pip
           pip install -e .[dev]
       - run: pytest --disable-pytest-warnings tests/test_bioimageio_collection.py::test_rdf_format_to_populate_cache
+        if: steps.look-up.outputs.cache-hit != 'true'
         env:
           BIOIMAGEIO_POPULATE_CACHE: '1'
           BIOIMAGEIO_CACHE_PATH: bioimageio_cache
