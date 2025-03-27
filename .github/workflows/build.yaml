@@ -22,35 +22,49 @@ jobs:
           jupyter: true
           version: "24.3"
 
-  test-spec-conda:
+  test:
     runs-on: ubuntu-latest
     strategy:
       matrix:
         include:
           - python-version: '3.8'
             conda-env: py38
+            spec: conda
+          - python-version: '3.8'
+            conda-env: py38
+            spec: main
           - python-version: '3.9'
             conda-env: wo-python
+            spec: conda
           - python-version: '3.9'
             conda-env: tf
+            spec: main
           - python-version: '3.10'
             conda-env: wo-python
+            spec: conda
           - python-version: '3.11'
             conda-env: full
+            spec: main
             run-expensive-tests: true
+            report-coverage: true
           - python-version: '3.12'
             conda-env: wo-python
+            spec: conda
+          - python-version: '3.12'
+            conda-env: tf
+            spec: conda
           - python-version: '3.13'
             conda-env: wo-python
+            spec: main
     steps:
+    - uses: actions/checkout@v4
     - id: setup
       run: |
-        echo "env-name=conda-${{ matrix.conda-env }}-${{ matrix.python-version }}"
-        echo "env-name=conda-${{ matrix.conda-env }}-${{ matrix.python-version }}" >> $GITHUB_OUTPUT
+        echo "env-name=${{ matrix.spec }}-${{ matrix.conda-env }}-${{ matrix.python-version }}"
+        echo "env-name=${{ matrix.spec }}-${{ matrix.conda-env }}-${{ matrix.python-version }}" >> $GITHUB_OUTPUT
         echo "env-file=dev/env-${{ matrix.conda-env }}.yaml"
         echo "env-file=dev/env-${{ matrix.conda-env }}.yaml" >> $GITHUB_OUTPUT
         [ ! -f dev/env-${{ matrix.conda-env }}.yaml ] && exit 1
-    - uses: actions/checkout@v4
     - uses: conda-incubator/setup-miniconda@v3
       with:
         auto-update-conda: true
@@ -78,102 +92,39 @@ jobs:
         CACHE_NUMBER: 0
       id: cache
     - name: Update env
-      run: conda env update --name=${{steps.setup.outputs.env-name}} --file=${{steps.setup.output.env-file}} python=${{matrix.python-version}}
+      run: conda env update --name=${{steps.setup.outputs.env-name}} --file=${{steps.setup.outputs.env-file}} python=${{matrix.python-version}}
       if: steps.cache.outputs.cache-hit != 'true'
+    - run: |
+        pyright --version
+        pyright
     - uses: actions/cache@v4
       with:
         path: bioimageio_cache
-        key: "test-spec-conda-${{ steps.get-date.outputs.date }}"
-    - name: pytest-spec-conda
+        key: "test-${{matrix.spec}}-${{ steps.get-date.outputs.date }}"
+    - name: pytest
       run: pytest --disable-pytest-warnings
       env:
         BIOIMAGEIO_CACHE_PATH: bioimageio_cache
         RUN_EXPENSIVE_TESTS: ${{ matrix.run-expensive-tests && 'true' || 'false' }}
-
-
-  test-spec-main:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - python-version: '3.8'
-            conda-env: py3.8
-          - python-version: '3.9'
-            conda-env: tf
-          - python-version: '3.11'
-            conda-env: full
-            report-coverage: true
-            run-expensive-tests: true
-          - python-version: '3.12'
-            conda-env: tf
-
-    steps:
-      - id: setup
-        run: |
-          echo "env-name=main-${{ matrix.conda-env }}-${{ matrix.python-version }}"
-          echo "env-name=main-${{ matrix.conda-env }}-${{ matrix.python-version }}" >> $GITHUB_OUTPUT
-      - uses: actions/checkout@v4
-      - uses: conda-incubator/setup-miniconda@v3
-        with:
-          auto-update-conda: true
-          auto-activate-base: true
-          activate-environment: ${{steps.setup.outputs.env-name}}
-          channel-priority: strict
-          miniforge-version: latest
-      - name: Get Date
-        id: get-date
-        run: |
-          echo "date=$(date +'%Y-week%U')"
-          echo "date=$(date +'%Y-week%U')" >> $GITHUB_OUTPUT
-          echo "today=$(date -u '+%Y%m%d')"
-          echo "today=$(date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
-      - name: Cache env
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.CONDA }}/envs/${{steps.setup.outputs.env-name}}
-          key: >-
-            conda-${{ runner.os }}-${{ runner.arch }}
-            -${{steps.get-date.outputs.today }}
-            -${{ hashFiles(matrix.conda-env) }}
-            -${{env.CACHE_NUMBER }}
-        env:
-          CACHE_NUMBER: 0
-        id: cache
-      - name: Update env
-        run: |
-          conda env update --name=${{steps.setup.outputs.env-name}} --file=dev/env-${{matrix.conda-env}}.yaml python=${{matrix.python-version}}
-          conda remove --yes --force bioimageio.spec
-        if: steps.cache.outputs.cache-hit != 'true'
-      - name: Install spec from main branch
-        run: pip install --no-deps git+https://github.com/bioimage-io/spec-bioimage-io
-      - uses: actions/cache@v4
-        with:
-          path: bioimageio_cache
-          key: "test-spec-main-${{ steps.get-date.outputs.date }}"
-      - name: pytest-spec-main
-        run: pytest --disable-pytest-warnings
-        env:
-          BIOIMAGEIO_CACHE_PATH: bioimageio_cache
-          RUN_EXPENSIVE_TESTS: ${{ matrix.run-expensive-tests && 'true' || 'false' }}
-      - if: matrix.report-coverage && github.event_name == 'pull_request'
-        uses: orgoro/coverage@v3.2
-        with:
-          coverageFile: coverage.xml
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - if: matrix.report-coverage && github.ref == 'refs/heads/main'
-        run: |
-          pip install genbadge[coverage]
-          genbadge coverage --input-file coverage.xml --output-file ./dist/coverage/coverage-badge.svg
-          coverage html -d dist/coverage
-      - if: matrix.report-coverage && github.ref == 'refs/heads/main'
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage
-          retention-days: 1
-          path: dist
+    - if: matrix.report-coverage && github.event_name == 'pull_request'
+      uses: orgoro/coverage@v3.2
+      with:
+        coverageFile: coverage.xml
+        token: ${{ secrets.GITHUB_TOKEN }}
+    - if: matrix.report-coverage && github.ref == 'refs/heads/main'
+      run: |
+        pip install genbadge[coverage]
+        genbadge coverage --input-file coverage.xml --output-file ./dist/coverage/coverage-badge.svg
+        coverage html -d dist/coverage
+    - if: matrix.report-coverage && github.ref == 'refs/heads/main'
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage
+        retention-days: 1
+        path: dist
 
   conda-build:
-    needs: test-spec-conda
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -202,7 +153,7 @@ jobs:
           conda-build -c conda-forge conda-recipe --no-test --output-folder ./pkgs
 
   docs:
-    needs: [test-spec-main]
+    needs: test
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
