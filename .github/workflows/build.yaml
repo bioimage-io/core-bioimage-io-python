@@ -50,6 +50,7 @@ jobs:
       - run: pytest --disable-pytest-warnings tests/test_bioimageio_collection.py::test_rdf_format_to_populate_cache
         env:
           BIOIMAGEIO_POPULATE_CACHE: '1'
+          BIOIMAGEIO_CACHE_PATH: bioimageio_cache
   test:
     needs: populate-cache
     runs-on: ubuntu-latest
