@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import collections.abc
+import collections
 import warnings
 from itertools import product
 from typing import (

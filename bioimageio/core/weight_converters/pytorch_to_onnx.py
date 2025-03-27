@@ -1,6 +1,6 @@
 from pathlib import Path
 
-import torch.jit
+import torch
 
 from bioimageio.spec.model.v0_5 import ModelDescr, OnnxWeightsDescr
 

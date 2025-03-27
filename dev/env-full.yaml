@@ -1,4 +1,4 @@
-name: full
+name: core-full
 channels:
   - conda-forge
   - nodefaults
