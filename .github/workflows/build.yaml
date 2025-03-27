@@ -58,7 +58,8 @@ jobs:
         echo "env-name=${{ matrix.spec }}-${{ matrix.conda-env }}-${{ matrix.python-version }}" >> $GITHUB_OUTPUT
         echo "env-file=dev/env-${{ matrix.conda-env }}.yaml"
         echo "env-file=dev/env-${{ matrix.conda-env }}.yaml" >> $GITHUB_OUTPUT
-    - shell: python
+    - name: check on env-file
+      shell: python
       run: |
         from pathlib import Path
         from pprint import pprint

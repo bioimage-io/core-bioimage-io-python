@@ -13,7 +13,7 @@ dependencies:
   - imageio>=2.5
   - jupyter
   - jupyter-black
-  -  # keras>=3.0,<4 # removed
+  # - keras>=3.0,<4 # removed
   - loguru
   - matplotlib
   - numpy
