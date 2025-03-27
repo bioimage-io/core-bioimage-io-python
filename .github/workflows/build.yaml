@@ -58,7 +58,17 @@ jobs:
         echo "env-name=${{ matrix.spec }}-${{ matrix.conda-env }}-${{ matrix.python-version }}" >> $GITHUB_OUTPUT
         echo "env-file=dev/env-${{ matrix.conda-env }}.yaml"
         echo "env-file=dev/env-${{ matrix.conda-env }}.yaml" >> $GITHUB_OUTPUT
-        [ ! -f dev/env-${{ matrix.conda-env }}.yaml ] && exit 1
+    - shell: python
+      run: |
+        from pathlib import Path
+        from pprint import pprint
+        if not (env_path:=Path("${{steps.setup.outputs.env-file}}")).exists():
+          if env_path.parent.exists():
+            pprint(env_path.parent.glob("*"))
+          else:
+            pprint(Path().glob("*"))
+          raise FileNotFoundError(f"{env_path} does not exist")
+
     - uses: conda-incubator/setup-miniconda@v3
       with:
         auto-update-conda: true
