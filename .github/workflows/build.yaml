@@ -140,7 +140,7 @@ jobs:
       if: steps.cache-env.outputs.cache-hit != 'true'
     - run: |
         pyright --version
-        pyright
+        pyright -p pyproject.toml --pythonversion ${{ matrix.python-version }}
       if: matrix.run-expensive-tests
     - uses: actions/cache/restore@v4
       id: bioimageio-cache
