@@ -41,6 +41,7 @@ useLibraryCodeForTypes = true
 
 [tool.pytest.ini_options]
 addopts = "--cov=bioimageio --cov-report=xml --cov-append --capture=no --doctest-modules --failed-first --ignore=dogfood"
+testpaths = ["bioimageio/core", "tests"]
 
 [tool.ruff]
 line-length = 88
