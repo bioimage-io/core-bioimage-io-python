@@ -85,12 +85,15 @@ jobs:
             spec: main
             run-expensive-tests: true
             report-coverage: true
+            save-cache: true
           - python-version: '3.12'
             conda-env: dev
             spec: conda
           - python-version: '3.13'
             conda-env: dev
             spec: main
+            save-cache: true
+
     steps:
     - uses: actions/checkout@v4
     - id: setup
@@ -160,13 +163,18 @@ jobs:
       id: bioimageio-cache
       with:
         path: bioimageio_cache
-        key: ${{needs.populate-cache.outputs.cache-key}}
-        fail-on-cache-miss: true
+        key: ${{needs.populate-cache.outputs.cache-key}}${{matrix.run-expensive-tests && '' || '-light'}}
     - name: pytest
       run: pytest --disable-pytest-warnings
       env:
         BIOIMAGEIO_CACHE_PATH: bioimageio_cache
         RUN_EXPENSIVE_TESTS: ${{ matrix.run-expensive-tests && 'true' || 'false' }}
+    - name: Save updated bioimageio cache
+      if: matrix.save-cache
+      uses: actions/cache/save@v4
+      with:
+        path: bioimageio_cache
+        key: ${{needs.populate-cache.outputs.cache-key}}${{matrix.run-expensive-tests && '' || '-light'}}
     - if: matrix.report-coverage && github.event_name == 'pull_request'
       uses: orgoro/coverage@v3.2
       with:
