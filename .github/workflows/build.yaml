@@ -154,7 +154,8 @@ jobs:
       env:
         CACHE_NUMBER: 0
     - run: conda list
-    - run: |
+    - name: Pyright
+      run: |
         pyright --version
         pyright -p pyproject.toml --pythonversion ${{ matrix.python-version }}
       if: matrix.run-expensive-tests
