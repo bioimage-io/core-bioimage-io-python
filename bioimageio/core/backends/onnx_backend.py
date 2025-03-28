@@ -2,7 +2,7 @@
 import warnings
 from typing import Any, List, Optional, Sequence, Union
 
-import onnxruntime as rt
+import onnxruntime as rt  # pyright: ignore[reportMissingTypeStubs]
 from numpy.typing import NDArray
 
 from bioimageio.spec._internal.type_guards import is_list, is_tuple

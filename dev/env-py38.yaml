@@ -39,6 +39,6 @@ dependencies:
   - torchvision
   - tqdm
   - typing-extensions
-  - xarray>=2024.01,<2025.3.0
+  - xarray>=2023.01,<2025.3.0
   - pip:
       - -e ..

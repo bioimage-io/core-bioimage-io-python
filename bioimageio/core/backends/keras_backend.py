@@ -18,14 +18,14 @@ os.environ["KERAS_BACKEND"] = settings.keras_backend
 # by default, we use the keras integrated with tensorflow
 # TODO: check if we should prefer keras
 try:
-    import tensorflow as tf
-    from tensorflow import (
+    import tensorflow as tf  # pyright: ignore[reportMissingTypeStubs]
+    from tensorflow import (  # pyright: ignore[reportMissingTypeStubs]
         keras,  # pyright: ignore[reportUnknownVariableType,reportAttributeAccessIssue]
     )
 
     tf_version = Version(tf.__version__)
 except Exception:
-    import keras
+    import keras  # pyright: ignore[reportMissingTypeStubs]
 
     tf_version = None
 

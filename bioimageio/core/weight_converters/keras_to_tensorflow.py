@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import Union, no_type_check
 from zipfile import ZipFile
 
-import tensorflow
+import tensorflow  # pyright: ignore[reportMissingTypeStubs]
 
 from bioimageio.spec._internal.io import download
 from bioimageio.spec._internal.version_type import Version
@@ -24,7 +24,7 @@ try:
     from tensorflow import keras  # type: ignore
 except Exception:
     # if the above fails try to export with the standalone keras
-    import keras
+    import keras  # pyright: ignore[reportMissingTypeStubs]
 
 
 def convert(

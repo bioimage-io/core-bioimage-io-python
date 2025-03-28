@@ -133,7 +133,7 @@ def enable_determinism(
         try:
             os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
             try:
-                import tensorflow as tf
+                import tensorflow as tf  # pyright: ignore[reportMissingTypeStubs]
             except ImportError:
                 pass
             else:
@@ -147,7 +147,7 @@ def enable_determinism(
     if weight_formats is None or "keras_hdf5" in weight_formats:
         try:
             try:
-                import keras
+                import keras  # pyright: ignore[reportMissingTypeStubs]
             except ImportError:
                 pass
             else:

@@ -2,7 +2,7 @@ import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import pooch
+import pooch  # pyright: ignore[reportMissingTypeStubs]
 
 from bioimageio.core import load_description, save_bioimageio_yaml_only
 

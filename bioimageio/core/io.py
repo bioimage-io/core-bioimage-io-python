@@ -14,7 +14,7 @@ from typing import (
     Union,
 )
 
-import h5py
+import h5py  # pyright: ignore[reportMissingTypeStubs]
 import numpy as np
 from imageio.v3 import imread, imwrite  # type: ignore
 from loguru import logger

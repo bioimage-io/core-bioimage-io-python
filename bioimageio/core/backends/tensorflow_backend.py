@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Any, Optional, Sequence, Union
 
 import numpy as np
-import tensorflow as tf
+import tensorflow as tf  # pyright: ignore[reportMissingTypeStubs]
 from loguru import logger
 from numpy.typing import NDArray
 
