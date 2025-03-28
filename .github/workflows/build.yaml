@@ -135,10 +135,10 @@ jobs:
       env:
         CACHE_NUMBER: 0
       id: cache-env
-    - name: Update env
+    - name: Restore cached env
       run: conda env update --name=${{steps.setup.outputs.env-name}} --file=${{steps.setup.outputs.env-file}} python=${{matrix.python-version}}
       if: steps.cache-env.outputs.cache-hit != 'true'
-    - name: Update cached env
+    - name: Cache env
       if: steps.cache-env.outputs.cache-hit != 'true'
       uses: actions/cache/save@v4
       with:
