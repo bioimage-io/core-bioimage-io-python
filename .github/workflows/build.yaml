@@ -123,7 +123,7 @@ jobs:
       run: |
         echo "today=$(date -u '+%Y%m%d')"
         echo "today=$(date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
-    - name: Cache env
+    - name: Restore cached env
       uses: actions/cache/restore@v4
       with:
         path: ${{env.CONDA}}/envs/${{steps.setup.outputs.env-name}}
@@ -135,7 +135,7 @@ jobs:
       env:
         CACHE_NUMBER: 0
       id: cache-env
-    - name: Restore cached env
+    - name: Install env
       run: conda env update --name=${{steps.setup.outputs.env-name}} --file=${{steps.setup.outputs.env-file}} python=${{matrix.python-version}}
       if: steps.cache-env.outputs.cache-hit != 'true'
     - name: Cache env
@@ -154,7 +154,8 @@ jobs:
         pyright --version
         pyright -p pyproject.toml --pythonversion ${{ matrix.python-version }}
       if: matrix.run-expensive-tests
-    - uses: actions/cache/restore@v4
+    - name: Restore bioimageio cache
+      uses: actions/cache/restore@v4
       id: bioimageio-cache
       with:
         path: bioimageio_cache
