@@ -141,6 +141,14 @@ jobs:
     - name: Install env
       run: conda env update --name=${{steps.setup.outputs.env-name}} --file=${{steps.setup.outputs.env-file}} python=${{matrix.python-version}}
       if: steps.cache-env.outputs.cache-hit != 'true'
+    - name: Install uncached pip dependencies
+      run: |
+        pip install --upgrade pip
+        pip install --no-deps -e .
+    - name: Install uncached pip dependencies for 'full' environment
+      if: matrix.conda-env == 'full'
+      run: |
+        pip install git+https://github.com/ChaoningZhang/MobileSAM.git
     - name: Cache env
       if: steps.cache-env.outputs.cache-hit != 'true'
       uses: actions/cache/save@v4
