@@ -89,7 +89,7 @@ def test_zero_mean_unit_variance_fixed(tid: MemberId):
         mean=xr.DataArray([3, 4, 5], dims=("channel",)),
         std=xr.DataArray([2.44948974, 2.44948974, 2.44948974], dims=("channel",)),
     )
-    data = xr.DataArray(np.arange(9).reshape((1, 3, 3)), dims=("b", "channel", "x"))
+    data = xr.DataArray(np.arange(9).reshape((1, 3, 3)), dims=("batch", "channel", "x"))
     expected = xr.DataArray(
         np.array(
             [
@@ -100,7 +100,7 @@ def test_zero_mean_unit_variance_fixed(tid: MemberId):
                 ]
             ]
         ),
-        dims=("b", "channel", "x"),
+        dims=("batch", "channel", "x"),
     )
     sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
     op(sample)
