@@ -107,7 +107,7 @@ def test_rdf(
 
     descr = load_description_and_test(descr_url, sha256=sha, stop_early=True)
 
-    assert not isinstance(descr, InvalidDescr)
+    assert not isinstance(descr, InvalidDescr), descr.validation_summary.display()
     assert (
         descr.validation_summary.status == "passed"
     ), descr.validation_summary.display()
