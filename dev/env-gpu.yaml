@@ -38,7 +38,7 @@ dependencies:
   - timm # for model testing
   - tqdm
   - typing-extensions
-  - xarray
+  - xarray>=2024.01,<2025.3.0
   - pip:
       # - tf2onnx # TODO: add tf2onnx
       - --extra-index-url https://download.pytorch.org/whl/cu126

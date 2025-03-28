@@ -43,7 +43,7 @@ dependencies:
   - torchvision>=0.21
   - tqdm
   - typing-extensions
-  - xarray
+  - xarray>=2024.01,<2025.3.0
   - pip:
       - git+https://github.com/ChaoningZhang/MobileSAM.git # for model testing
       - -e ..
