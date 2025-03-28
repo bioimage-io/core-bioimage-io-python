@@ -8,7 +8,7 @@ from packaging.version import Version
 
 def test_bioimageio_spec_version(conda_cmd: Optional[str]):
     if conda_cmd is None:
-        pytest.skip("requires mamba")
+        pytest.skip("requires conda")
 
     from importlib.metadata import metadata
 

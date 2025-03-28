@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import collections.abc
+import hashlib
 import importlib.util
+import sys
 from itertools import chain
 from pathlib import Path
 from typing import (
@@ -23,9 +26,8 @@ from loguru import logger
 from numpy.typing import NDArray
 from typing_extensions import Unpack, assert_never
 
-from bioimageio.spec._internal.io import resolve_and_extract
-from bioimageio.spec._internal.io_utils import HashKwargs
-from bioimageio.spec.common import FileSource
+from bioimageio.spec._internal.io import HashKwargs
+from bioimageio.spec.common import FileDescr, FileSource, ZipPath
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 from bioimageio.spec.model.v0_4 import CallableFromDepencency, CallableFromFile
 from bioimageio.spec.model.v0_5 import (
@@ -33,9 +35,10 @@ from bioimageio.spec.model.v0_5 import (
     ArchitectureFromLibraryDescr,
     ParameterizedSize_N,
 )
-from bioimageio.spec.utils import load_array
+from bioimageio.spec.utils import download, load_array
 
-from .axis import AxisId, AxisInfo, AxisLike, PerAxis
+from ._settings import settings
+from .axis import Axis, AxisId, AxisInfo, AxisLike, PerAxis
 from .block_meta import split_multiple_shapes_into_blocks
 from .common import Halo, MemberId, PerMember, SampleId, TotalNumberOfBlocks
 from .io import load_tensor
@@ -48,9 +51,16 @@ from .sample import (
 from .stat_measures import Stat
 from .tensor import Tensor
 
+TensorSource = Union[Tensor, xr.DataArray, NDArray[Any], Path]
+
 
 def import_callable(
-    node: Union[CallableFromDepencency, ArchitectureFromLibraryDescr],
+    node: Union[
+        ArchitectureFromFileDescr,
+        ArchitectureFromLibraryDescr,
+        CallableFromDepencency,
+        CallableFromFile,
+    ],
     /,
     **kwargs: Unpack[HashKwargs],
 ) -> Callable[..., Any]:
@@ -65,7 +75,6 @@ def import_callable(
         c = _import_from_file_impl(node.source_file, str(node.callable_name), **kwargs)
     elif isinstance(node, ArchitectureFromFileDescr):
         c = _import_from_file_impl(node.source, str(node.callable), sha256=node.sha256)
-
     else:
         assert_never(node)
 
@@ -78,17 +87,70 @@ def import_callable(
 def _import_from_file_impl(
     source: FileSource, callable_name: str, **kwargs: Unpack[HashKwargs]
 ):
-    local_file = resolve_and_extract(source, **kwargs)
-    module_name = local_file.path.stem
-    importlib_spec = importlib.util.spec_from_file_location(
-        module_name, local_file.path
-    )
-    if importlib_spec is None:
-        raise ImportError(f"Failed to import {module_name} from {source}.")
+    src_descr = FileDescr(source=source, **kwargs)
+    # ensure sha is valid even if perform_io_checks=False
+    src_descr.validate_sha256()
+    assert src_descr.sha256 is not None
 
-    dep = importlib.util.module_from_spec(importlib_spec)
-    importlib_spec.loader.exec_module(dep)  # type: ignore  # todo: possible to use "loader.load_module"?
-    return getattr(dep, callable_name)
+    local_source = src_descr.download()
+
+    source_bytes = local_source.path.read_bytes()
+    assert isinstance(source_bytes, bytes)
+    source_sha = hashlib.sha256(source_bytes).hexdigest()
+
+    # make sure we have unique module name
+    module_name = f"{local_source.path.stem}_{source_sha}"
+
+    # make sure we have a valid module name
+    if not module_name.isidentifier():
+        module_name = f"custom_module_{source_sha}"
+        assert module_name.isidentifier(), module_name
+
+    module = sys.modules.get(module_name)
+    if module is None:
+        try:
+            if isinstance(local_source.path, Path):
+                module_path = local_source.path
+            elif isinstance(local_source.path, ZipPath):
+                # save extract source to cache
+                # loading from a file from disk ensure we get readable tracebacks
+                # if any errors occur
+                module_path = (
+                    settings.cache_path / f"{source_sha}-{local_source.path.name}"
+                )
+                _ = module_path.write_bytes(source_bytes)
+            else:
+                assert_never(local_source.path)
+
+            importlib_spec = importlib.util.spec_from_file_location(
+                module_name, module_path
+            )
+
+            if importlib_spec is None:
+                raise ImportError(f"Failed to import {source}")
+
+            module = importlib.util.module_from_spec(importlib_spec)
+            assert importlib_spec.loader is not None
+            importlib_spec.loader.exec_module(module)
+
+        except Exception as e:
+            raise ImportError(f"Failed to import {source}") from e
+        else:
+            sys.modules[module_name] = module  # cache this module
+
+    try:
+        callable_attr = getattr(module, callable_name)
+    except AttributeError as e:
+        raise AttributeError(
+            f"Imported custom module from {source} has no `{callable_name}` attribute."
+        ) from e
+    except Exception as e:
+        raise AttributeError(
+            f"Failed to access `{callable_name}` attribute from custom module imported from {source} ."
+        ) from e
+
+    else:
+        return callable_attr
 
 
 def get_axes_infos(
@@ -100,14 +162,15 @@ def get_axes_infos(
     ],
 ) -> List[AxisInfo]:
     """get a unified, simplified axis representation from spec axes"""
-    return [
-        (
-            AxisInfo.create("i")
-            if isinstance(a, str) and a not in ("b", "i", "t", "c", "z", "y", "x")
-            else AxisInfo.create(a)
-        )
-        for a in io_descr.axes
-    ]
+    ret: List[AxisInfo] = []
+    for a in io_descr.axes:
+        if isinstance(a, v0_5.AxisBase):
+            ret.append(AxisInfo.create(Axis(id=a.id, type=a.type)))
+        else:
+            assert a in ("b", "i", "t", "c", "z", "y", "x")
+            ret.append(AxisInfo.create(a))
+
+    return ret
 
 
 def get_member_id(
@@ -308,7 +371,7 @@ def get_io_sample_block_metas(
 
 
 def get_tensor(
-    src: Union[Tensor, xr.DataArray, NDArray[Any], Path],
+    src: Union[ZipPath, TensorSource],
     ipt: Union[v0_4.InputTensorDescr, v0_5.InputTensorDescr],
 ):
     """helper to cast/load various tensor sources"""
@@ -322,7 +385,10 @@ def get_tensor(
     if isinstance(src, np.ndarray):
         return Tensor.from_numpy(src, dims=get_axes_infos(ipt))
 
-    if isinstance(src, Path):
+    if isinstance(src, FileDescr):
+        src = download(src).path
+
+    if isinstance(src, (ZipPath, Path, str)):
         return load_tensor(src, axes=get_axes_infos(ipt))
 
     assert_never(src)
@@ -333,10 +399,7 @@ def create_sample_for_model(
     *,
     stat: Optional[Stat] = None,
     sample_id: SampleId = None,
-    inputs: Optional[
-        PerMember[Union[Tensor, xr.DataArray, NDArray[Any], Path]]
-    ] = None,  # TODO: make non-optional
-    **kwargs: NDArray[Any],  # TODO: deprecate in favor of `inputs`
+    inputs: Union[PerMember[TensorSource], TensorSource],
 ) -> Sample:
     """Create a sample from a single set of input(s) for a specific bioimage.io model
 
@@ -345,9 +408,17 @@ def create_sample_for_model(
         stat: dictionary with sample and dataset statistics (may be updated in-place!)
         inputs: the input(s) constituting a single sample.
     """
-    inputs = {MemberId(k): v for k, v in {**kwargs, **(inputs or {})}.items()}
 
     model_inputs = {get_member_id(d): d for d in model.inputs}
+    if isinstance(inputs, collections.abc.Mapping):
+        inputs = {MemberId(k): v for k, v in inputs.items()}
+    elif len(model_inputs) == 1:
+        inputs = {list(model_inputs)[0]: inputs}
+    else:
+        raise TypeError(
+            f"Expected `inputs` to be a mapping with keys {tuple(model_inputs)}"
+        )
+
     if unknown := {k for k in inputs if k not in model_inputs}:
         raise ValueError(f"Got unexpected inputs: {unknown}")
 

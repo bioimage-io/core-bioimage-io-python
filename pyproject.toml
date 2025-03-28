@@ -1,6 +1,6 @@
 [tool.black]
 line-length = 88
-extend_exclude = "/presentations/"
+extend-exclude = "/presentations/"
 target-version = ["py38", "py39", "py310", "py311", "py312"]
 preview = true
 
@@ -8,6 +8,7 @@ preview = true
 exclude = [
     "**/__pycache__",
     "**/node_modules",
+    "dogfood",
     "presentations",
     "scripts/pdoc/original.py",
     "scripts/pdoc/patched.py",
@@ -39,7 +40,8 @@ typeCheckingMode = "strict"
 useLibraryCodeForTypes = true
 
 [tool.pytest.ini_options]
-addopts = "--cov=bioimageio --cov-report=xml -n auto --capture=no --doctest-modules --failed-first"
+addopts = "--cov bioimageio --cov-report xml --cov-append --capture no --doctest-modules --failed-first --ignore dogfood --ignore bioimageio/core/backends --ignore bioimageio/core/weight_converters"
+testpaths = ["bioimageio/core", "tests"]
 
 [tool.ruff]
 line-length = 88
