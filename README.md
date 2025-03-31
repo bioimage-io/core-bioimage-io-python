@@ -364,13 +364,15 @@ may be controlled with the `LOGURU_LEVEL` environment variable.
 
 ## Changelog
 
-### 0.7.1 (to be released)
+### 0.8.0
 
 - breaking: removed `decimals` argument from bioimageio CLI and `bioimageio.core.commands.test()`
 - New feature: `bioimageio.core.test_description` accepts **runtime_env** and **run_command** to test a resource
   using the conda environment described by that resource (or another specified conda env)
 - new CLI command: `bioimageio add-weights` (and utility function: bioimageio.core.add_weights)
 - removed `bioimageio.core.proc_ops.get_proc_class` in favor of `bioimageio.core.proc_ops.get_proc`
+- new CLI command: `bioimageio update-format`
+- new CLI command: `bioimageio update-hashes`
 
 ### 0.7.0
 
