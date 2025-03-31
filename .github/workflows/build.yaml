@@ -26,6 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       cache-key: ${{steps.cache-key.outputs.cache-key}}
+      cache-key-light: ${{steps.cache-key.outputs.cache-key}}-light
     steps:
       - name: Get Date
         id: get-date
@@ -163,27 +164,27 @@ jobs:
         CACHE_NUMBER: 0
     - run: conda list
     - name: Pyright
+      if: matrix.run-expensive-tests
       run: |
         pyright --version
         pyright -p pyproject.toml --pythonversion ${{ matrix.python-version }}
-      if: matrix.run-expensive-tests
-    - name: Restore bioimageio cache
+    - name: Restore bioimageio cache ${{matrix.run-expensive-tests && needs.populate-cache.outputs.cache-key || needs.populate-cache.outputs.cache-key-light}}
       uses: actions/cache/restore@v4
-      id: bioimageio-cache
       with:
         path: bioimageio_cache
-        key: ${{needs.populate-cache.outputs.cache-key}}${{matrix.run-expensive-tests && '' || '-light'}}
+        key: ${{matrix.run-expensive-tests && needs.populate-cache.outputs.cache-key || needs.populate-cache.outputs.cache-key-light}}
     - name: pytest
       run: pytest --disable-pytest-warnings
       env:
         BIOIMAGEIO_CACHE_PATH: bioimageio_cache
         RUN_EXPENSIVE_TESTS: ${{ matrix.run-expensive-tests && 'true' || 'false' }}
-    - name: Save updated bioimageio cache
+    - name: Save bioimageio cache ${{matrix.run-expensive-tests && needs.populate-cache.outputs.cache-key || needs.populate-cache.outputs.cache-key-light}}
       if: matrix.save-cache
       uses: actions/cache/save@v4
       with:
         path: bioimageio_cache
-        key: ${{needs.populate-cache.outputs.cache-key}}${{matrix.run-expensive-tests && '' || '-light'}}
+        key: ${{matrix.run-expensive-tests && needs.populate-cache.outputs.cache-key || needs.populate-cache.outputs.cache-key-light}}
+
     - if: matrix.report-coverage && github.event_name == 'pull_request'
       uses: orgoro/coverage@v3.2
       with:
