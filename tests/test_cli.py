@@ -1,4 +1,5 @@
 import subprocess
+from pathlib import Path
 from typing import Any, List, Sequence
 
 import pytest
@@ -36,11 +37,30 @@ def run_subprocess(
         ],
         ["test", "unet2d_nuclei_broad_model"],
         ["predict", "--example", "unet2d_nuclei_broad_model"],
+        ["update-format", "unet2d_nuclei_broad_model_old"],
+        ["add-weights", "unet2d_nuclei_broad_model", "tmp_path"],
+        ["update-hashes", "unet2d_nuclei_broad_model_old"],
+        ["update-hashes", "unet2d_nuclei_broad_model_old", "--output=stdout"],
     ],
 )
-def test_cli(args: List[str], unet2d_nuclei_broad_model: str):
+def test_cli(
+    args: List[str],
+    unet2d_nuclei_broad_model: str,
+    unet2d_nuclei_broad_model_old: str,
+    tmp_path: Path,
+):
     resolved_args = [
-        str(unet2d_nuclei_broad_model) if arg == "unet2d_nuclei_broad_model" else arg
+        (
+            unet2d_nuclei_broad_model
+            if arg == "unet2d_nuclei_broad_model"
+            else (
+                unet2d_nuclei_broad_model_old
+                if arg == "unet2d_nuclei_broad_model_old"
+                else (
+                    arg.replace("tmp_path", str(tmp_path)) if "tmp_path" in arg else arg
+                )
+            )
+        )
         for arg in args
     ]
     ret = run_subprocess(["bioimageio", *resolved_args])

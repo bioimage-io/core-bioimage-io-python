@@ -6,9 +6,12 @@ __pycache__/
 *.egg-info/
 *.pyc
 **/tmp
+bioimageio_unzipped_tf_weights/
 build/
 cache
 coverage.xml
 dist/
 docs/
+dogfood/
 typings/pooch/
+bioimageio_cache/

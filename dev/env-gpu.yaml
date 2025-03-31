@@ -1,0 +1,52 @@
+# version of enf-full for running on GPU
+name: core-gpu
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - bioimageio.spec==0.5.4.1
+  - black
+  - cellpose # for model testing
+  # - crick  # currently requires python<=3.9
+  - h5py
+  - imagecodecs
+  - imageio>=2.5
+  - jupyter
+  - jupyter-black
+  - keras>=3.0,<4
+  - loguru
+  - matplotlib
+  - monai # for model testing
+  - numpy
+  - onnx
+  - packaging>=17.0
+  - pdoc
+  - pip
+  - pre-commit
+  - psutil
+  - pydantic<2.9
+  - pydantic-settings
+  - pyright
+  - pytest
+  - pytest-cov
+  - python=3.11
+  - requests
+  - rich
+  - ruff
+  - ruyaml
+  - segment-anything # for model testing
+  - timm # for model testing
+  - tqdm
+  - typing-extensions
+  - xarray>=2024.01,<2025.3.0
+  - pip:
+      # - tf2onnx # TODO: add tf2onnx
+      - --extra-index-url https://download.pytorch.org/whl/cu126
+      - careamics # TODO: add careamics for model testing (currently pins pydantic to <2.9)
+      - git+https://github.com/ChaoningZhang/MobileSAM.git # for model testing
+      - onnxruntime-gpu
+      - tensorflow
+      - torch
+      - torchaudio
+      - torchvision>=0.21
+      - -e ..

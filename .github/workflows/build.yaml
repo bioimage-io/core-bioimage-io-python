@@ -8,7 +8,7 @@ on:
 
 defaults:
   run:
-    shell: micromamba-shell {0}
+    shell: bash -el {0}
 
 jobs:
   black:
@@ -22,215 +22,218 @@ jobs:
           jupyter: true
           version: "24.3"
 
-  test-spec-conda:
+  populate-cache:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ['3.8', '3.9', '3.10', '3.11', '3.12']
+    outputs:
+      cache-key: ${{steps.cache-key.outputs.cache-key}}
     steps:
-    - uses: actions/checkout@v4
-    - name: Install Conda environment with Micromamba
-      if: matrix.python-version != '3.8'
-      uses: mamba-org/setup-micromamba@v1
-      with:
-        cache-downloads: true
-        cache-environment: true
-        environment-file: dev/env-wo-python.yaml
-        create-args: >-
-          python=${{ matrix.python-version }}
-        post-cleanup: 'all'
-    - name: Install py3.8 environment
-      if: matrix.python-version == '3.8'
-      uses: mamba-org/setup-micromamba@v1
-      with:
-        cache-downloads: true
-        cache-environment: true
-        environment-file: dev/env-py38.yaml
-        post-cleanup: 'all'
-    - name: additional setup
-      run: pip install --no-deps -e .
-    - name: Get Date
-      id: get-date
-      run: |
-        echo "date=$(date +'%Y-%b')"
-        echo "date=$(date +'%Y-%b')" >> $GITHUB_OUTPUT
-      shell: bash
-    - uses: actions/cache@v4
-      with:
-        path: bioimageio_cache
-        key: "test-spec-conda-${{ steps.get-date.outputs.date }}"
-    - name: pytest-spec-conda
-      run: pytest --disable-pytest-warnings
-      env:
-        BIOIMAGEIO_CACHE_PATH: bioimageio_cache
-
-  test-spec-main:
+      - name: Get Date
+        id: get-date
+        run: |
+          echo "date=$(date +'%Y-%b')"
+          echo "date=$(date +'%Y-%b')" >> $GITHUB_OUTPUT
+      - id: cache-key
+        run: echo "cache-key=test-${{steps.get-date.outputs.date}}" >> $GITHUB_OUTPUT
+      - uses: actions/cache/restore@v4
+        id: look-up
+        with:
+          path: bioimageio_cache
+          key: ${{steps.cache-key.outputs.cache-key}}
+          lookup-only: true
+      - uses: actions/checkout@v4
+        if: steps.look-up.outputs.cache-hit != 'true'
+      - uses: actions/cache@v4
+        if: steps.look-up.outputs.cache-hit != 'true'
+        with:
+          path: bioimageio_cache
+          key: ${{steps.cache-key.outputs.cache-key}}
+      - uses: actions/setup-python@v5
+        if: steps.look-up.outputs.cache-hit != 'true'
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      - name: Install dependencies
+        if: steps.look-up.outputs.cache-hit != 'true'
+        run: |
+          pip install --upgrade pip
+          pip install -e .[dev]
+      - run: pytest --disable-pytest-warnings tests/test_bioimageio_collection.py::test_rdf_format_to_populate_cache
+        if: steps.look-up.outputs.cache-hit != 'true'
+        env:
+          BIOIMAGEIO_POPULATE_CACHE: '1'
+          BIOIMAGEIO_CACHE_PATH: bioimageio_cache
+  test:
+    needs: populate-cache
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ['3.8', '3.12']
         include:
+          - python-version: '3.8'
+            conda-env: py38
+            spec: conda
+          - python-version: '3.8'
+            conda-env: py38
+            spec: main
+          - python-version: '3.9'
+            conda-env: dev
+            spec: conda
+          - python-version: '3.10'
+            conda-env: dev
+            spec: conda
+          - python-version: '3.11'
+            conda-env: full
+            spec: main
+            run-expensive-tests: true
+            report-coverage: true
+            save-cache: true
           - python-version: '3.12'
-            is-dev-version: true
+            conda-env: dev
+            spec: conda
+          - python-version: '3.13'
+            conda-env: dev
+            spec: main
+            save-cache: true
+
     steps:
     - uses: actions/checkout@v4
-    - name: Install Conda environment with Micromamba
-      if: matrix.python-version != '3.8'
-      uses: mamba-org/setup-micromamba@v1
-      with:
-        cache-downloads: true
-        cache-environment: true
-        environment-file: dev/env-wo-python.yaml
-        create-args: >-
-          python=${{ matrix.python-version }}
-        post-cleanup: 'all'
-    - name: Install py3.8 environment
-      if: matrix.python-version == '3.8'
-      uses: mamba-org/setup-micromamba@v1
-      with:
-        cache-downloads: true
-        cache-environment: true
-        environment-file: dev/env-py38.yaml
-        post-cleanup: 'all'
-    - name: additional setup spec
+    - id: setup
       run: |
-        conda remove --yes --force bioimageio.spec || true  # allow failure for cached env
-        pip install --no-deps git+https://github.com/bioimage-io/spec-bioimage-io
-    - name: additional setup core
-      run: pip install --no-deps -e .
+        echo "env-name=${{ matrix.spec }}-${{ matrix.conda-env }}-${{ matrix.python-version }}"
+        echo "env-name=${{ matrix.spec }}-${{ matrix.conda-env }}-${{ matrix.python-version }}" >> $GITHUB_OUTPUT
+        echo "env-file=dev/env-${{ matrix.conda-env }}.yaml"
+        echo "env-file=dev/env-${{ matrix.conda-env }}.yaml" >> $GITHUB_OUTPUT
+    - name: check on env-file
+      shell: python
+      run: |
+        from pathlib import Path
+        from pprint import pprint
+        if not (env_path:=Path("${{steps.setup.outputs.env-file}}")).exists():
+          if env_path.parent.exists():
+            pprint(env_path.parent.glob("*"))
+          else:
+            pprint(Path().glob("*"))
+          raise FileNotFoundError(f"{env_path} does not exist")
+
+    - uses: conda-incubator/setup-miniconda@v3
+      with:
+        auto-update-conda: true
+        auto-activate-base: true
+        activate-environment: ${{steps.setup.outputs.env-name}}
+        channel-priority: strict
+        miniforge-version: latest
     - name: Get Date
       id: get-date
       run: |
-        echo "date=$(date +'%Y-%b')"
-        echo "date=$(date +'%Y-%b')" >> $GITHUB_OUTPUT
-      shell: bash
-    - uses: actions/cache@v4
+        echo "today=$(date -u '+%Y%m%d')"
+        echo "today=$(date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
+    - name: Restore cached env
+      uses: actions/cache/restore@v4
+      with:
+        path: ${{env.CONDA}}/envs/${{steps.setup.outputs.env-name}}
+        key: >-
+          conda-${{runner.os}}-${{runner.arch}}
+          -${{steps.get-date.outputs.today}}
+          -${{hashFiles(steps.setup.outputs.env-file)}}
+          -${{env.CACHE_NUMBER}}
+      env:
+        CACHE_NUMBER: 0
+      id: cache-env
+    - name: Install env
+      run: conda env update --name=${{steps.setup.outputs.env-name}} --file=${{steps.setup.outputs.env-file}} python=${{matrix.python-version}}
+      if: steps.cache-env.outputs.cache-hit != 'true'
+    - name: Install uncached pip dependencies
+      run: |
+        pip install --upgrade pip
+        pip install --no-deps -e .
+    - name: Install uncached pip dependencies for 'full' environment
+      if: matrix.conda-env == 'full'
+      run: |
+        pip install git+https://github.com/ChaoningZhang/MobileSAM.git
+    - name: Cache env
+      if: steps.cache-env.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: ${{env.CONDA}}/envs/${{steps.setup.outputs.env-name}}
+        key: >-
+          conda-${{runner.os}}-${{runner.arch}}
+          -${{steps.get-date.outputs.today}}
+          -${{hashFiles(steps.setup.outputs.env-file)}}
+          -${{env.CACHE_NUMBER}}
+      env:
+        CACHE_NUMBER: 0
+    - run: conda list
+    - name: Pyright
+      run: |
+        pyright --version
+        pyright -p pyproject.toml --pythonversion ${{ matrix.python-version }}
+      if: matrix.run-expensive-tests
+    - name: Restore bioimageio cache
+      uses: actions/cache/restore@v4
+      id: bioimageio-cache
       with:
         path: bioimageio_cache
-        key: "test-spec-main-${{ steps.get-date.outputs.date }}"
-    - name: pytest-spec-main
+        key: ${{needs.populate-cache.outputs.cache-key}}${{matrix.run-expensive-tests && '' || '-light'}}
+    - name: pytest
       run: pytest --disable-pytest-warnings
       env:
         BIOIMAGEIO_CACHE_PATH: bioimageio_cache
-    - if: matrix.is-dev-version && github.event_name == 'pull_request'
+        RUN_EXPENSIVE_TESTS: ${{ matrix.run-expensive-tests && 'true' || 'false' }}
+    - name: Save updated bioimageio cache
+      if: matrix.save-cache
+      uses: actions/cache/save@v4
+      with:
+        path: bioimageio_cache
+        key: ${{needs.populate-cache.outputs.cache-key}}${{matrix.run-expensive-tests && '' || '-light'}}
+    - if: matrix.report-coverage && github.event_name == 'pull_request'
       uses: orgoro/coverage@v3.2
       with:
         coverageFile: coverage.xml
-        token: ${{ secrets.GITHUB_TOKEN }}
-    - if: matrix.is-dev-version && github.ref == 'refs/heads/main'
+        token: ${{secrets.GITHUB_TOKEN}}
+    - if: matrix.report-coverage && github.ref == 'refs/heads/main'
       run: |
         pip install genbadge[coverage]
         genbadge coverage --input-file coverage.xml --output-file ./dist/coverage/coverage-badge.svg
         coverage html -d dist/coverage
-    - if: matrix.is-dev-version && github.ref == 'refs/heads/main'
+    - if: matrix.report-coverage && github.ref == 'refs/heads/main'
       uses: actions/upload-artifact@v4
       with:
         name: coverage
         retention-days: 1
         path: dist
 
-
-  test-spec-main-tf:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ['3.9', '3.12']
-    steps:
-    - uses: actions/checkout@v4
-    - uses: mamba-org/setup-micromamba@v1
-      with:
-        cache-downloads: true
-        cache-environment: true
-        environment-file: dev/env-tf.yaml
-        condarc: |
-          channel-priority: flexible
-        create-args: >-
-          python=${{ matrix.python-version }}
-        post-cleanup: 'all'
-    - name: additional setup spec
-      run: |
-        conda remove --yes --force bioimageio.spec || true  # allow failure for cached env
-        pip install --no-deps git+https://github.com/bioimage-io/spec-bioimage-io
-    - name: additional setup core
-      run: pip install --no-deps -e .
-    - name: Get Date
-      id: get-date
-      run: |
-        echo "date=$(date +'%Y-%b')"
-        echo "date=$(date +'%Y-%b')" >> $GITHUB_OUTPUT
-      shell: bash
-    - uses: actions/cache@v4
-      with:
-        path: bioimageio_cache
-        key: "test-spec-main-tf-${{ steps.get-date.outputs.date }}"
-    - run: pytest --disable-pytest-warnings
-      env:
-        BIOIMAGEIO_CACHE_PATH: bioimageio_cache
-
-  test-spec-conda-tf:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ['3.9', '3.12']
-    steps:
-    - uses: actions/checkout@v4
-    - uses: mamba-org/setup-micromamba@v1
-      with:
-        cache-downloads: true
-        cache-environment: true
-        environment-file: dev/env-tf.yaml
-        condarc: |
-          channel-priority: flexible
-        create-args: >-
-          python=${{ matrix.python-version }}
-        post-cleanup: 'all'
-    - name: additional setup
-      run: pip install --no-deps -e .
-    - name: Get Date
-      id: get-date
-      run: |
-        echo "date=$(date +'%Y-%b')"
-        echo "date=$(date +'%Y-%b')" >> $GITHUB_OUTPUT
-      shell: bash
-    - uses: actions/cache@v4
-      with:
-        path: bioimageio_cache
-        key: "test-spec-conda-tf-${{ steps.get-date.outputs.date }}"
-    - name: pytest-spec-tf
-      run: pytest --disable-pytest-warnings
-      env:
-        BIOIMAGEIO_CACHE_PATH: bioimageio_cache
-
   conda-build:
+    needs: test
     runs-on: ubuntu-latest
-    needs: test-spec-conda
     steps:
-    - name: checkout
-      uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-    - name: Install Conda environment with Micromamba
-      uses: mamba-org/setup-micromamba@v1
-      with:
-        cache-downloads: true
-        cache-environment: true
-        environment-name: build-env
-        condarc: |
-          channels:
-          - conda-forge
-        create-args: |
-          boa
-    - name: linux conda build
-      run: |
-        conda mambabuild -c conda-forge conda-recipe
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          auto-activate-base: true
+          activate-environment: ""
+          channel-priority: strict
+          miniforge-version: latest
+          conda-solver: libmamba
+      - name: install common conda dependencies
+        run: conda install -n base -c conda-forge conda-build -y
+      - uses: actions/cache@v4
+        with:
+          path: |
+            pkgs/noarch
+            pkgs/channeldata.json
+          key: ${{ github.sha }}-packages
+      - name: linux conda build test
+        shell: bash -l {0}
+        run: |
+          mkdir -p ./pkgs/noarch
+          conda-build -c conda-forge conda-recipe --no-test --output-folder ./pkgs
 
   docs:
-    needs: [test-spec-main]
+    needs: test
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        shell: bash -l {0}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
