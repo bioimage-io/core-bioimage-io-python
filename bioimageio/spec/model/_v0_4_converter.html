@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="generator" content="pdoc 15.0.0"/>
+    <meta name="generator" content="pdoc 15.0.1"/>
     <title>bioimageio.spec.model._v0_4_converter API documentation</title>
             <link rel="icon" href="https://bioimage.io/static/img/bioimage-io-icon-small.svg"/>
 
@@ -57,18 +57,18 @@ bioimageio<wbr>.<a href="./../../spec.html">spec</a><wbr>.<a href="./../model.ht
 
                         <label class="view-source-button" for="mod-_v0_4_converter-view-source"><span>View Source</span></label>
 
-                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="kn">import</span> <span class="nn">collections.abc</span>
+                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="kn">import</span><span class="w"> </span><span class="nn">collections.abc</span>
 </span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a>
-</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a><span class="kn">from</span> <span class="nn">.._internal.io</span> <span class="kn">import</span> <span class="n">BioimageioYamlContent</span>
-</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="kn">from</span> <span class="nn">..generic._v0_2_converter</span> <span class="kn">import</span> <span class="p">(</span>
+</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">.._internal.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">BioimageioYamlContent</span>
+</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">..generic._v0_2_converter</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
 </span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a>    <span class="n">remove_doi_prefix</span><span class="p">,</span>
 </span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a>    <span class="n">remove_gh_prefix</span><span class="p">,</span>
 </span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a>    <span class="n">remove_slashes_from_names</span><span class="p">,</span>
 </span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="p">)</span>
-</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="kn">from</span> <span class="nn">._v0_3_converter</span> <span class="kn">import</span> <span class="n">convert_model_from_v0_3_to_0_4_0</span>
+</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">._v0_3_converter</span><span class="w"> </span><span class="kn">import</span> <span class="n">convert_model_from_v0_3_to_0_4_0</span>
 </span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a>
 </span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a>
-</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="k">def</span> <span class="nf">convert_from_older_format</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">BioimageioYamlContent</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="k">def</span><span class="w"> </span><span class="nf">convert_from_older_format</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">BioimageioYamlContent</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 </span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a>    <span class="n">fv</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;format_version&quot;</span><span class="p">)</span>
 </span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fv</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
 </span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a>        <span class="k">return</span>
@@ -116,7 +116,7 @@ bioimageio<wbr>.<a href="./../../spec.html">spec</a><wbr>.<a href="./../model.ht
 </span><span id="L-57"><a href="#L-57"><span class="linenos">57</span></a>        <span class="k">del</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;config&quot;</span><span class="p">]</span>
 </span><span id="L-58"><a href="#L-58"><span class="linenos">58</span></a>
 </span><span id="L-59"><a href="#L-59"><span class="linenos">59</span></a>
-</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a><span class="k">def</span> <span class="nf">_convert_model_from_v0_4_0_to_0_4_1</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">BioimageioYamlContent</span><span class="p">):</span>
+</span><span id="L-60"><a href="#L-60"><span class="linenos">60</span></a><span class="k">def</span><span class="w"> </span><span class="nf">_convert_model_from_v0_4_0_to_0_4_1</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">BioimageioYamlContent</span><span class="p">):</span>
 </span><span id="L-61"><a href="#L-61"><span class="linenos">61</span></a>    <span class="c1"># move dependencies from root to pytorch_state_dict weights entry</span>
 </span><span id="L-62"><a href="#L-62"><span class="linenos">62</span></a>    <span class="n">deps</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;dependencies&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 </span><span id="L-63"><a href="#L-63"><span class="linenos">63</span></a>    <span class="n">weights</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;weights&quot;</span><span class="p">,</span> <span class="p">{})</span>
@@ -128,7 +128,7 @@ bioimageio<wbr>.<a href="./../../spec.html">spec</a><wbr>.<a href="./../model.ht
 </span><span id="L-69"><a href="#L-69"><span class="linenos">69</span></a>    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;format_version&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;0.4.1&quot;</span>
 </span><span id="L-70"><a href="#L-70"><span class="linenos">70</span></a>
 </span><span id="L-71"><a href="#L-71"><span class="linenos">71</span></a>
-</span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a><span class="k">def</span> <span class="nf">_convert_model_from_v0_4_4_to_0_4_5</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">BioimageioYamlContent</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="L-72"><a href="#L-72"><span class="linenos">72</span></a><span class="k">def</span><span class="w"> </span><span class="nf">_convert_model_from_v0_4_4_to_0_4_5</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">BioimageioYamlContent</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 </span><span id="L-73"><a href="#L-73"><span class="linenos">73</span></a>    <span class="n">parent</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;parent&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 </span><span id="L-74"><a href="#L-74"><span class="linenos">74</span></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">)</span> <span class="ow">and</span> <span class="s2">&quot;uri&quot;</span> <span class="ow">in</span> <span class="n">parent</span><span class="p">:</span>
 </span><span id="L-75"><a href="#L-75"><span class="linenos">75</span></a>        <span class="n">data</span><span class="p">[</span><span class="s2">&quot;parent&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">parent</span><span class="p">[</span><span class="s2">&quot;uri&quot;</span><span class="p">]</span>
@@ -149,7 +149,7 @@ bioimageio<wbr>.<a href="./../../spec.html">spec</a><wbr>.<a href="./../model.ht
 
     </div>
     <a class="headerlink" href="#convert_from_older_format"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="convert_from_older_format-13"><a href="#convert_from_older_format-13"><span class="linenos">13</span></a><span class="k">def</span> <span class="nf">convert_from_older_format</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">BioimageioYamlContent</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="convert_from_older_format-13"><a href="#convert_from_older_format-13"><span class="linenos">13</span></a><span class="k">def</span><span class="w"> </span><span class="nf">convert_from_older_format</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">BioimageioYamlContent</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 </span><span id="convert_from_older_format-14"><a href="#convert_from_older_format-14"><span class="linenos">14</span></a>    <span class="n">fv</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;format_version&quot;</span><span class="p">)</span>
 </span><span id="convert_from_older_format-15"><a href="#convert_from_older_format-15"><span class="linenos">15</span></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fv</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
 </span><span id="convert_from_older_format-16"><a href="#convert_from_older_format-16"><span class="linenos">16</span></a>        <span class="k">return</span>

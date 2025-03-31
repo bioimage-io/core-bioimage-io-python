@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="generator" content="pdoc 15.0.0"/>
+    <meta name="generator" content="pdoc 15.0.1"/>
     <title>bioimageio.spec.dataset.v0_2 API documentation</title>
             <link rel="icon" href="https://bioimage.io/static/img/bioimage-io-icon-small.svg"/>
 
@@ -42,16 +42,13 @@
                     <a class="class" href="#DatasetDescr">DatasetDescr</a>
                             <ul class="memberlist">
                         <li>
-                                <a class="variable" href="#DatasetDescr.type">type</a>
+                                <a class="variable" href="#DatasetDescr.implemented_type">implemented_type</a>
                         </li>
                         <li>
                                 <a class="variable" href="#DatasetDescr.id">id</a>
                         </li>
                         <li>
                                 <a class="variable" href="#DatasetDescr.source">source</a>
-                        </li>
-                        <li>
-                                <a class="variable" href="#DatasetDescr.implemented_format_version">implemented_format_version</a>
                         </li>
                         <li>
                                 <a class="variable" href="#DatasetDescr.implemented_format_version_tuple">implemented_format_version_tuple</a>
@@ -96,53 +93,57 @@ bioimageio<wbr>.<a href="./../../spec.html">spec</a><wbr>.<a href="./../dataset.
 
                         <label class="view-source-button" for="mod-v0_2-view-source"><span>View Source</span></label>
 
-                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span>
+                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">TYPE_CHECKING</span><span class="p">,</span> <span class="n">ClassVar</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span>
 </span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a>
-</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a><span class="kn">from</span> <span class="nn">.._internal.common_nodes</span> <span class="kn">import</span> <span class="n">Node</span>
-</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="kn">from</span> <span class="nn">.._internal.io_basics</span> <span class="kn">import</span> <span class="n">AbsoluteFilePath</span> <span class="k">as</span> <span class="n">AbsoluteFilePath</span>
-</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="kn">from</span> <span class="nn">.._internal.url</span> <span class="kn">import</span> <span class="n">HttpUrl</span> <span class="k">as</span> <span class="n">HttpUrl</span>
-</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a><span class="kn">from</span> <span class="nn">..generic.v0_2</span> <span class="kn">import</span> <span class="n">VALID_COVER_IMAGE_EXTENSIONS</span> <span class="k">as</span> <span class="n">VALID_COVER_IMAGE_EXTENSIONS</span>
-</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="kn">from</span> <span class="nn">..generic.v0_2</span> <span class="kn">import</span> <span class="n">AttachmentsDescr</span> <span class="k">as</span> <span class="n">AttachmentsDescr</span>
-</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="kn">from</span> <span class="nn">..generic.v0_2</span> <span class="kn">import</span> <span class="n">Author</span> <span class="k">as</span> <span class="n">Author</span>
-</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="kn">from</span> <span class="nn">..generic.v0_2</span> <span class="kn">import</span> <span class="n">BadgeDescr</span> <span class="k">as</span> <span class="n">BadgeDescr</span>
-</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="kn">from</span> <span class="nn">..generic.v0_2</span> <span class="kn">import</span> <span class="n">CiteEntry</span> <span class="k">as</span> <span class="n">CiteEntry</span>
-</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="kn">from</span> <span class="nn">..generic.v0_2</span> <span class="kn">import</span> <span class="n">Doi</span> <span class="k">as</span> <span class="n">Doi</span>
-</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="kn">from</span> <span class="nn">..generic.v0_2</span> <span class="kn">import</span> <span class="n">GenericDescrBase</span><span class="p">,</span> <span class="n">ResourceId</span>
-</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="kn">from</span> <span class="nn">..generic.v0_2</span> <span class="kn">import</span> <span class="n">LinkedResource</span> <span class="k">as</span> <span class="n">LinkedResource</span>
-</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="kn">from</span> <span class="nn">..generic.v0_2</span> <span class="kn">import</span> <span class="n">Maintainer</span> <span class="k">as</span> <span class="n">Maintainer</span>
-</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="kn">from</span> <span class="nn">..generic.v0_2</span> <span class="kn">import</span> <span class="n">OrcidId</span> <span class="k">as</span> <span class="n">OrcidId</span>
-</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="kn">from</span> <span class="nn">..generic.v0_2</span> <span class="kn">import</span> <span class="n">RelativeFilePath</span> <span class="k">as</span> <span class="n">RelativeFilePath</span>
-</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="kn">from</span> <span class="nn">..generic.v0_2</span> <span class="kn">import</span> <span class="n">Uploader</span> <span class="k">as</span> <span class="n">Uploader</span>
-</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a><span class="kn">from</span> <span class="nn">..generic.v0_2</span> <span class="kn">import</span> <span class="n">Version</span> <span class="k">as</span> <span class="n">Version</span>
+</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">.._internal.common_nodes</span><span class="w"> </span><span class="kn">import</span> <span class="n">Node</span>
+</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">.._internal.io_basics</span><span class="w"> </span><span class="kn">import</span> <span class="n">AbsoluteFilePath</span> <span class="k">as</span> <span class="n">AbsoluteFilePath</span>
+</span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">.._internal.url</span><span class="w"> </span><span class="kn">import</span> <span class="n">HttpUrl</span> <span class="k">as</span> <span class="n">HttpUrl</span>
+</span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">..generic.v0_2</span><span class="w"> </span><span class="kn">import</span> <span class="n">VALID_COVER_IMAGE_EXTENSIONS</span> <span class="k">as</span> <span class="n">VALID_COVER_IMAGE_EXTENSIONS</span>
+</span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">..generic.v0_2</span><span class="w"> </span><span class="kn">import</span> <span class="n">AttachmentsDescr</span> <span class="k">as</span> <span class="n">AttachmentsDescr</span>
+</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">..generic.v0_2</span><span class="w"> </span><span class="kn">import</span> <span class="n">Author</span> <span class="k">as</span> <span class="n">Author</span>
+</span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">..generic.v0_2</span><span class="w"> </span><span class="kn">import</span> <span class="n">BadgeDescr</span> <span class="k">as</span> <span class="n">BadgeDescr</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">..generic.v0_2</span><span class="w"> </span><span class="kn">import</span> <span class="n">CiteEntry</span> <span class="k">as</span> <span class="n">CiteEntry</span>
+</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">..generic.v0_2</span><span class="w"> </span><span class="kn">import</span> <span class="n">Doi</span> <span class="k">as</span> <span class="n">Doi</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">..generic.v0_2</span><span class="w"> </span><span class="kn">import</span> <span class="n">GenericDescrBase</span><span class="p">,</span> <span class="n">ResourceId</span>
+</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">..generic.v0_2</span><span class="w"> </span><span class="kn">import</span> <span class="n">LinkedResource</span> <span class="k">as</span> <span class="n">LinkedResource</span>
+</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">..generic.v0_2</span><span class="w"> </span><span class="kn">import</span> <span class="n">Maintainer</span> <span class="k">as</span> <span class="n">Maintainer</span>
+</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">..generic.v0_2</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrcidId</span> <span class="k">as</span> <span class="n">OrcidId</span>
+</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">..generic.v0_2</span><span class="w"> </span><span class="kn">import</span> <span class="n">RelativeFilePath</span> <span class="k">as</span> <span class="n">RelativeFilePath</span>
+</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">..generic.v0_2</span><span class="w"> </span><span class="kn">import</span> <span class="n">Uploader</span> <span class="k">as</span> <span class="n">Uploader</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">..generic.v0_2</span><span class="w"> </span><span class="kn">import</span> <span class="n">Version</span> <span class="k">as</span> <span class="n">Version</span>
 </span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>
 </span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>
-</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a><span class="k">class</span> <span class="nc">DatasetId</span><span class="p">(</span><span class="n">ResourceId</span><span class="p">):</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a><span class="k">class</span><span class="w"> </span><span class="nc">DatasetId</span><span class="p">(</span><span class="n">ResourceId</span><span class="p">):</span>
 </span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a>    <span class="k">pass</span>
 </span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a>
 </span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a>
-</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a><span class="k">class</span> <span class="nc">DatasetDescr</span><span class="p">(</span><span class="n">GenericDescrBase</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;bioimage.io dataset specification&quot;</span><span class="p">):</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a><span class="k">class</span><span class="w"> </span><span class="nc">DatasetDescr</span><span class="p">(</span><span class="n">GenericDescrBase</span><span class="p">):</span>
 </span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A bioimage.io dataset resource description file (dataset RDF) describes a dataset relevant to bioimage</span>
 </span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a><span class="sd">    processing.</span>
 </span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a>
-</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>    <span class="nb">type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;dataset&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;dataset&quot;</span>
-</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>
-</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>    <span class="nb">id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DatasetId</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;bioimage.io-wide unique resource identifier</span>
-</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a><span class="sd">    assigned by bioimage.io; version **un**specific.&quot;&quot;&quot;</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>    <span class="n">implemented_type</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;dataset&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="s2">&quot;dataset&quot;</span>
+</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>    <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>        <span class="nb">type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;dataset&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;dataset&quot;</span>
+</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a>    <span class="k">else</span><span class="p">:</span>
+</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>        <span class="nb">type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;dataset&quot;</span><span class="p">]</span>
 </span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a>
-</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a>    <span class="n">source</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">HttpUrl</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;&quot;URL to the source of the dataset.&quot;&quot;&quot;</span>
-</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a>
+</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a>    <span class="nb">id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DatasetId</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;bioimage.io-wide unique resource identifier</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a><span class="sd">    assigned by bioimage.io; version **un**specific.&quot;&quot;&quot;</span>
 </span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a>
-</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a><span class="k">class</span> <span class="nc">LinkedDataset</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
-</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Reference to a bioimage.io dataset.&quot;&quot;&quot;</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>    <span class="n">source</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">HttpUrl</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;&quot;URL to the source of the dataset.&quot;&quot;&quot;</span>
 </span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a>
-</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a>    <span class="nb">id</span><span class="p">:</span> <span class="n">DatasetId</span>
-</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A valid dataset `id` from the bioimage.io collection.&quot;&quot;&quot;</span>
-</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a>
-</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a>    <span class="n">version_number</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;version number (n-th published version, not the semantic version) of linked dataset&quot;&quot;&quot;</span>
+</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a>
+</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a><span class="k">class</span><span class="w"> </span><span class="nc">LinkedDataset</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+</span><span id="L-45"><a href="#L-45"><span class="linenos">45</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Reference to a bioimage.io dataset.&quot;&quot;&quot;</span>
+</span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a>
+</span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a>    <span class="nb">id</span><span class="p">:</span> <span class="n">DatasetId</span>
+</span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A valid dataset `id` from the bioimage.io collection.&quot;&quot;&quot;</span>
+</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a>
+</span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a>    <span class="n">version_number</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;version number (n-th published version, not the semantic version) of linked dataset&quot;&quot;&quot;</span>
 </span></pre></div>
 
 
@@ -158,7 +159,7 @@ bioimageio<wbr>.<a href="./../../spec.html">spec</a><wbr>.<a href="./../dataset.
 
     </div>
     <a class="headerlink" href="#DatasetId"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="DatasetId-22"><a href="#DatasetId-22"><span class="linenos">22</span></a><span class="k">class</span> <span class="nc">DatasetId</span><span class="p">(</span><span class="n">ResourceId</span><span class="p">):</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="DatasetId-22"><a href="#DatasetId-22"><span class="linenos">22</span></a><span class="k">class</span><span class="w"> </span><span class="nc">DatasetId</span><span class="p">(</span><span class="n">ResourceId</span><span class="p">):</span>
 </span><span id="DatasetId-23"><a href="#DatasetId-23"><span class="linenos">23</span></a>    <span class="k">pass</span>
 </span></pre></div>
 
@@ -197,19 +198,23 @@ errors defaults to 'strict'.</p>
 
     </div>
     <a class="headerlink" href="#DatasetDescr"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="DatasetDescr-26"><a href="#DatasetDescr-26"><span class="linenos">26</span></a><span class="k">class</span> <span class="nc">DatasetDescr</span><span class="p">(</span><span class="n">GenericDescrBase</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;bioimage.io dataset specification&quot;</span><span class="p">):</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="DatasetDescr-26"><a href="#DatasetDescr-26"><span class="linenos">26</span></a><span class="k">class</span><span class="w"> </span><span class="nc">DatasetDescr</span><span class="p">(</span><span class="n">GenericDescrBase</span><span class="p">):</span>
 </span><span id="DatasetDescr-27"><a href="#DatasetDescr-27"><span class="linenos">27</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A bioimage.io dataset resource description file (dataset RDF) describes a dataset relevant to bioimage</span>
 </span><span id="DatasetDescr-28"><a href="#DatasetDescr-28"><span class="linenos">28</span></a><span class="sd">    processing.</span>
 </span><span id="DatasetDescr-29"><a href="#DatasetDescr-29"><span class="linenos">29</span></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="DatasetDescr-30"><a href="#DatasetDescr-30"><span class="linenos">30</span></a>
-</span><span id="DatasetDescr-31"><a href="#DatasetDescr-31"><span class="linenos">31</span></a>    <span class="nb">type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;dataset&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;dataset&quot;</span>
-</span><span id="DatasetDescr-32"><a href="#DatasetDescr-32"><span class="linenos">32</span></a>
-</span><span id="DatasetDescr-33"><a href="#DatasetDescr-33"><span class="linenos">33</span></a>    <span class="nb">id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DatasetId</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="DatasetDescr-34"><a href="#DatasetDescr-34"><span class="linenos">34</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;bioimage.io-wide unique resource identifier</span>
-</span><span id="DatasetDescr-35"><a href="#DatasetDescr-35"><span class="linenos">35</span></a><span class="sd">    assigned by bioimage.io; version **un**specific.&quot;&quot;&quot;</span>
+</span><span id="DatasetDescr-31"><a href="#DatasetDescr-31"><span class="linenos">31</span></a>    <span class="n">implemented_type</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;dataset&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="s2">&quot;dataset&quot;</span>
+</span><span id="DatasetDescr-32"><a href="#DatasetDescr-32"><span class="linenos">32</span></a>    <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+</span><span id="DatasetDescr-33"><a href="#DatasetDescr-33"><span class="linenos">33</span></a>        <span class="nb">type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;dataset&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;dataset&quot;</span>
+</span><span id="DatasetDescr-34"><a href="#DatasetDescr-34"><span class="linenos">34</span></a>    <span class="k">else</span><span class="p">:</span>
+</span><span id="DatasetDescr-35"><a href="#DatasetDescr-35"><span class="linenos">35</span></a>        <span class="nb">type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;dataset&quot;</span><span class="p">]</span>
 </span><span id="DatasetDescr-36"><a href="#DatasetDescr-36"><span class="linenos">36</span></a>
-</span><span id="DatasetDescr-37"><a href="#DatasetDescr-37"><span class="linenos">37</span></a>    <span class="n">source</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">HttpUrl</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="DatasetDescr-38"><a href="#DatasetDescr-38"><span class="linenos">38</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;&quot;URL to the source of the dataset.&quot;&quot;&quot;</span>
+</span><span id="DatasetDescr-37"><a href="#DatasetDescr-37"><span class="linenos">37</span></a>    <span class="nb">id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DatasetId</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="DatasetDescr-38"><a href="#DatasetDescr-38"><span class="linenos">38</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;bioimage.io-wide unique resource identifier</span>
+</span><span id="DatasetDescr-39"><a href="#DatasetDescr-39"><span class="linenos">39</span></a><span class="sd">    assigned by bioimage.io; version **un**specific.&quot;&quot;&quot;</span>
+</span><span id="DatasetDescr-40"><a href="#DatasetDescr-40"><span class="linenos">40</span></a>
+</span><span id="DatasetDescr-41"><a href="#DatasetDescr-41"><span class="linenos">41</span></a>    <span class="n">source</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">HttpUrl</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="DatasetDescr-42"><a href="#DatasetDescr-42"><span class="linenos">42</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;&quot;URL to the source of the dataset.&quot;&quot;&quot;</span>
 </span></pre></div>
 
 
@@ -218,13 +223,14 @@ processing.</p>
 </div>
 
 
-                            <div id="DatasetDescr.type" class="classattr">
+                            <div id="DatasetDescr.implemented_type" class="classattr">
                                 <div class="attr variable">
-            <span class="name">type</span><span class="annotation">: Literal[&#39;dataset&#39;]</span>
+            <span class="name">implemented_type</span><span class="annotation">: ClassVar[Literal[&#39;dataset&#39;]]</span>        =
+<span class="default_value">&#39;dataset&#39;</span>
 
         
     </div>
-    <a class="headerlink" href="#DatasetDescr.type"></a>
+    <a class="headerlink" href="#DatasetDescr.implemented_type"></a>
     
     
 
@@ -256,18 +262,6 @@ assigned by bioimage.io; version <strong>un</strong>specific.</p>
 
 
                             </div>
-                            <div id="DatasetDescr.implemented_format_version" class="classattr">
-                                <div class="attr variable">
-            <span class="name">implemented_format_version</span><span class="annotation">: ClassVar[str]</span>        =
-<span class="default_value">&#39;0.2.4&#39;</span>
-
-        
-    </div>
-    <a class="headerlink" href="#DatasetDescr.implemented_format_version"></a>
-    
-    
-
-                            </div>
                             <div id="DatasetDescr.implemented_format_version_tuple" class="classattr">
                                 <div class="attr variable">
             <span class="name">implemented_format_version_tuple</span><span class="annotation">: ClassVar[Tuple[int, int, int]]</span>        =
@@ -291,7 +285,7 @@ assigned by bioimage.io; version <strong>un</strong>specific.</p>
 
     </div>
     <a class="headerlink" href="#DatasetDescr.model_post_init"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="DatasetDescr.model_post_init-124"><a href="#DatasetDescr.model_post_init-124"><span class="linenos">124</span></a>                    <span class="k">def</span> <span class="nf">wrapped_model_post_init</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="DatasetDescr.model_post_init-124"><a href="#DatasetDescr.model_post_init-124"><span class="linenos">124</span></a>                    <span class="k">def</span><span class="w"> </span><span class="nf">wrapped_model_post_init</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 </span><span id="DatasetDescr.model_post_init-125"><a href="#DatasetDescr.model_post_init-125"><span class="linenos">125</span></a><span class="w">                        </span><span class="sd">&quot;&quot;&quot;We need to both initialize private attributes and call the user-defined model_post_init</span>
 </span><span id="DatasetDescr.model_post_init-126"><a href="#DatasetDescr.model_post_init-126"><span class="linenos">126</span></a><span class="sd">                        method.</span>
 </span><span id="DatasetDescr.model_post_init-127"><a href="#DatasetDescr.model_post_init-127"><span class="linenos">127</span></a><span class="sd">                        &quot;&quot;&quot;</span>
@@ -310,7 +304,7 @@ method.</p>
                                 <h5>Inherited Members</h5>
                                 <dl>
                                     <div><dt><a href="../generic/v0_2.html#GenericDescrBase">bioimageio.spec.generic.v0_2.GenericDescrBase</a></dt>
-                                <dd id="DatasetDescr.format_version" class="variable"><a href="../generic/v0_2.html#GenericDescrBase.format_version">format_version</a></dd>
+                                <dd id="DatasetDescr.implemented_format_version" class="variable"><a href="../generic/v0_2.html#GenericDescrBase.implemented_format_version">implemented_format_version</a></dd>
                 <dd id="DatasetDescr.badges" class="variable"><a href="../generic/v0_2.html#GenericDescrBase.badges">badges</a></dd>
                 <dd id="DatasetDescr.documentation" class="variable"><a href="../generic/v0_2.html#GenericDescrBase.documentation">documentation</a></dd>
                 <dd id="DatasetDescr.license" class="variable"><a href="../generic/v0_2.html#GenericDescrBase.license">license</a></dd>
@@ -354,14 +348,14 @@ method.</p>
 
     </div>
     <a class="headerlink" href="#LinkedDataset"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="LinkedDataset-41"><a href="#LinkedDataset-41"><span class="linenos">41</span></a><span class="k">class</span> <span class="nc">LinkedDataset</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
-</span><span id="LinkedDataset-42"><a href="#LinkedDataset-42"><span class="linenos">42</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Reference to a bioimage.io dataset.&quot;&quot;&quot;</span>
-</span><span id="LinkedDataset-43"><a href="#LinkedDataset-43"><span class="linenos">43</span></a>
-</span><span id="LinkedDataset-44"><a href="#LinkedDataset-44"><span class="linenos">44</span></a>    <span class="nb">id</span><span class="p">:</span> <span class="n">DatasetId</span>
-</span><span id="LinkedDataset-45"><a href="#LinkedDataset-45"><span class="linenos">45</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A valid dataset `id` from the bioimage.io collection.&quot;&quot;&quot;</span>
-</span><span id="LinkedDataset-46"><a href="#LinkedDataset-46"><span class="linenos">46</span></a>
-</span><span id="LinkedDataset-47"><a href="#LinkedDataset-47"><span class="linenos">47</span></a>    <span class="n">version_number</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="LinkedDataset-48"><a href="#LinkedDataset-48"><span class="linenos">48</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;version number (n-th published version, not the semantic version) of linked dataset&quot;&quot;&quot;</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="LinkedDataset-45"><a href="#LinkedDataset-45"><span class="linenos">45</span></a><span class="k">class</span><span class="w"> </span><span class="nc">LinkedDataset</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+</span><span id="LinkedDataset-46"><a href="#LinkedDataset-46"><span class="linenos">46</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Reference to a bioimage.io dataset.&quot;&quot;&quot;</span>
+</span><span id="LinkedDataset-47"><a href="#LinkedDataset-47"><span class="linenos">47</span></a>
+</span><span id="LinkedDataset-48"><a href="#LinkedDataset-48"><span class="linenos">48</span></a>    <span class="nb">id</span><span class="p">:</span> <span class="n">DatasetId</span>
+</span><span id="LinkedDataset-49"><a href="#LinkedDataset-49"><span class="linenos">49</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A valid dataset `id` from the bioimage.io collection.&quot;&quot;&quot;</span>
+</span><span id="LinkedDataset-50"><a href="#LinkedDataset-50"><span class="linenos">50</span></a>
+</span><span id="LinkedDataset-51"><a href="#LinkedDataset-51"><span class="linenos">51</span></a>    <span class="n">version_number</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="LinkedDataset-52"><a href="#LinkedDataset-52"><span class="linenos">52</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;version number (n-th published version, not the semantic version) of linked dataset&quot;&quot;&quot;</span>
 </span></pre></div>
 
 

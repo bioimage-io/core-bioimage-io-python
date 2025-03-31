@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="generator" content="pdoc 15.0.0"/>
+    <meta name="generator" content="pdoc 15.0.1"/>
     <title>bioimageio.spec.dataset API documentation</title>
             <link rel="icon" href="https://bioimage.io/static/img/bioimage-io-icon-small.svg"/>
 
@@ -41,7 +41,7 @@
                     <a class="class" href="#DatasetDescr">DatasetDescr</a>
                             <ul class="memberlist">
                         <li>
-                                <a class="variable" href="#DatasetDescr.type">type</a>
+                                <a class="variable" href="#DatasetDescr.implemented_type">implemented_type</a>
                         </li>
                         <li>
                                 <a class="variable" href="#DatasetDescr.id">id</a>
@@ -51,9 +51,6 @@
                         </li>
                         <li>
                                 <a class="variable" href="#DatasetDescr.source">source</a>
-                        </li>
-                        <li>
-                                <a class="variable" href="#DatasetDescr.implemented_format_version">implemented_format_version</a>
                         </li>
                         <li>
                                 <a class="variable" href="#DatasetDescr.implemented_format_version_tuple">implemented_format_version_tuple</a>
@@ -109,22 +106,27 @@ bioimageio<wbr>.<a href="./../spec.html">spec</a><wbr>.dataset    </h1>
 </span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a><span class="sd">- dataset v0_3: `bioimageio.spec.dataset.v0_3.DatasetDescr`</span>
 </span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a><span class="sd">&quot;&quot;&quot;</span>
 </span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a>
-</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Union</span>
 </span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a>
-</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Discriminator</span>
-</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Discriminator</span><span class="p">,</span> <span class="n">Field</span>
+</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing_extensions</span><span class="w"> </span><span class="kn">import</span> <span class="n">Annotated</span>
 </span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a>
-</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="kn">from</span> <span class="nn">.</span> <span class="kn">import</span> <span class="n">v0_2</span><span class="p">,</span> <span class="n">v0_3</span>
+</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">v0_2</span><span class="p">,</span> <span class="n">v0_3</span>
 </span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a>
 </span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="n">DatasetDescr</span> <span class="o">=</span> <span class="n">v0_3</span><span class="o">.</span><span class="n">DatasetDescr</span>
 </span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="n">DatasetDescr_v0_2</span> <span class="o">=</span> <span class="n">v0_2</span><span class="o">.</span><span class="n">DatasetDescr</span>
 </span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="n">DatasetDescr_v0_3</span> <span class="o">=</span> <span class="n">v0_3</span><span class="o">.</span><span class="n">DatasetDescr</span>
 </span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a>
 </span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a><span class="n">AnyDatasetDescr</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span>
-</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>    <span class="n">Union</span><span class="p">[</span><span class="n">DatasetDescr_v0_2</span><span class="p">,</span> <span class="n">DatasetDescr_v0_3</span><span class="p">],</span> <span class="n">Discriminator</span><span class="p">(</span><span class="s2">&quot;format_version&quot;</span><span class="p">)</span>
-</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a><span class="p">]</span>
-</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a><span class="sd">&quot;&quot;&quot;Union of any released dataset desription&quot;&quot;&quot;</span>
-</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a><span class="c1"># autogen: stop</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>    <span class="n">Union</span><span class="p">[</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>        <span class="n">Annotated</span><span class="p">[</span><span class="n">DatasetDescr_v0_2</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;dataset 0.2&quot;</span><span class="p">)],</span>
+</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a>        <span class="n">Annotated</span><span class="p">[</span><span class="n">DatasetDescr_v0_3</span><span class="p">,</span> <span class="n">Field</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;dataset 0.3&quot;</span><span class="p">)],</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a>    <span class="p">],</span>
+</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a>    <span class="n">Discriminator</span><span class="p">(</span><span class="s2">&quot;format_version&quot;</span><span class="p">),</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a>    <span class="n">Field</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">&quot;dataset&quot;</span><span class="p">),</span>
+</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a><span class="p">]</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a><span class="sd">&quot;&quot;&quot;Union of any released dataset desription&quot;&quot;&quot;</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a><span class="c1"># autogen: stop</span>
 </span></pre></div>
 
 
@@ -140,74 +142,78 @@ bioimageio<wbr>.<a href="./../spec.html">spec</a><wbr>.dataset    </h1>
 
     </div>
     <a class="headerlink" href="#DatasetDescr"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="DatasetDescr-39"><a href="#DatasetDescr-39"><span class="linenos"> 39</span></a><span class="k">class</span> <span class="nc">DatasetDescr</span><span class="p">(</span><span class="n">GenericDescrBase</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s2">&quot;bioimage.io dataset specification&quot;</span><span class="p">):</span>
-</span><span id="DatasetDescr-40"><a href="#DatasetDescr-40"><span class="linenos"> 40</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A bioimage.io dataset resource description file (dataset RDF) describes a dataset relevant to bioimage</span>
-</span><span id="DatasetDescr-41"><a href="#DatasetDescr-41"><span class="linenos"> 41</span></a><span class="sd">    processing.</span>
-</span><span id="DatasetDescr-42"><a href="#DatasetDescr-42"><span class="linenos"> 42</span></a><span class="sd">    &quot;&quot;&quot;</span>
-</span><span id="DatasetDescr-43"><a href="#DatasetDescr-43"><span class="linenos"> 43</span></a>
-</span><span id="DatasetDescr-44"><a href="#DatasetDescr-44"><span class="linenos"> 44</span></a>    <span class="nb">type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;dataset&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;dataset&quot;</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="DatasetDescr-41"><a href="#DatasetDescr-41"><span class="linenos"> 41</span></a><span class="k">class</span><span class="w"> </span><span class="nc">DatasetDescr</span><span class="p">(</span><span class="n">GenericDescrBase</span><span class="p">):</span>
+</span><span id="DatasetDescr-42"><a href="#DatasetDescr-42"><span class="linenos"> 42</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A bioimage.io dataset resource description file (dataset RDF) describes a dataset relevant to bioimage</span>
+</span><span id="DatasetDescr-43"><a href="#DatasetDescr-43"><span class="linenos"> 43</span></a><span class="sd">    processing.</span>
+</span><span id="DatasetDescr-44"><a href="#DatasetDescr-44"><span class="linenos"> 44</span></a><span class="sd">    &quot;&quot;&quot;</span>
 </span><span id="DatasetDescr-45"><a href="#DatasetDescr-45"><span class="linenos"> 45</span></a>
-</span><span id="DatasetDescr-46"><a href="#DatasetDescr-46"><span class="linenos"> 46</span></a>    <span class="nb">id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DatasetId</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="DatasetDescr-47"><a href="#DatasetDescr-47"><span class="linenos"> 47</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;bioimage.io-wide unique resource identifier</span>
-</span><span id="DatasetDescr-48"><a href="#DatasetDescr-48"><span class="linenos"> 48</span></a><span class="sd">    assigned by bioimage.io; version **un**specific.&quot;&quot;&quot;</span>
-</span><span id="DatasetDescr-49"><a href="#DatasetDescr-49"><span class="linenos"> 49</span></a>
-</span><span id="DatasetDescr-50"><a href="#DatasetDescr-50"><span class="linenos"> 50</span></a>    <span class="n">parent</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DatasetId</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="DatasetDescr-51"><a href="#DatasetDescr-51"><span class="linenos"> 51</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The description from which this one is derived&quot;&quot;&quot;</span>
-</span><span id="DatasetDescr-52"><a href="#DatasetDescr-52"><span class="linenos"> 52</span></a>
-</span><span id="DatasetDescr-53"><a href="#DatasetDescr-53"><span class="linenos"> 53</span></a>    <span class="n">source</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">HttpUrl</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="DatasetDescr-54"><a href="#DatasetDescr-54"><span class="linenos"> 54</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;&quot;URL to the source of the dataset.&quot;&quot;&quot;</span>
+</span><span id="DatasetDescr-46"><a href="#DatasetDescr-46"><span class="linenos"> 46</span></a>    <span class="n">implemented_type</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;dataset&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="s2">&quot;dataset&quot;</span>
+</span><span id="DatasetDescr-47"><a href="#DatasetDescr-47"><span class="linenos"> 47</span></a>    <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+</span><span id="DatasetDescr-48"><a href="#DatasetDescr-48"><span class="linenos"> 48</span></a>        <span class="nb">type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;dataset&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;dataset&quot;</span>
+</span><span id="DatasetDescr-49"><a href="#DatasetDescr-49"><span class="linenos"> 49</span></a>    <span class="k">else</span><span class="p">:</span>
+</span><span id="DatasetDescr-50"><a href="#DatasetDescr-50"><span class="linenos"> 50</span></a>        <span class="nb">type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;dataset&quot;</span><span class="p">]</span>
+</span><span id="DatasetDescr-51"><a href="#DatasetDescr-51"><span class="linenos"> 51</span></a>
+</span><span id="DatasetDescr-52"><a href="#DatasetDescr-52"><span class="linenos"> 52</span></a>    <span class="nb">id</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DatasetId</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="DatasetDescr-53"><a href="#DatasetDescr-53"><span class="linenos"> 53</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;bioimage.io-wide unique resource identifier</span>
+</span><span id="DatasetDescr-54"><a href="#DatasetDescr-54"><span class="linenos"> 54</span></a><span class="sd">    assigned by bioimage.io; version **un**specific.&quot;&quot;&quot;</span>
 </span><span id="DatasetDescr-55"><a href="#DatasetDescr-55"><span class="linenos"> 55</span></a>
-</span><span id="DatasetDescr-56"><a href="#DatasetDescr-56"><span class="linenos"> 56</span></a>    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;before&quot;</span><span class="p">)</span>
-</span><span id="DatasetDescr-57"><a href="#DatasetDescr-57"><span class="linenos"> 57</span></a>    <span class="nd">@classmethod</span>
-</span><span id="DatasetDescr-58"><a href="#DatasetDescr-58"><span class="linenos"> 58</span></a>    <span class="k">def</span> <span class="nf">_convert</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-</span><span id="DatasetDescr-59"><a href="#DatasetDescr-59"><span class="linenos"> 59</span></a>        <span class="k">if</span> <span class="p">(</span>
-</span><span id="DatasetDescr-60"><a href="#DatasetDescr-60"><span class="linenos"> 60</span></a>            <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;dataset&quot;</span>
-</span><span id="DatasetDescr-61"><a href="#DatasetDescr-61"><span class="linenos"> 61</span></a>            <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fv</span> <span class="o">:=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;format_version&quot;</span><span class="p">),</span> <span class="nb">str</span><span class="p">)</span>
-</span><span id="DatasetDescr-62"><a href="#DatasetDescr-62"><span class="linenos"> 62</span></a>            <span class="ow">and</span> <span class="n">fv</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;0.2.&quot;</span><span class="p">)</span>
-</span><span id="DatasetDescr-63"><a href="#DatasetDescr-63"><span class="linenos"> 63</span></a>        <span class="p">):</span>
-</span><span id="DatasetDescr-64"><a href="#DatasetDescr-64"><span class="linenos"> 64</span></a>            <span class="n">old</span> <span class="o">=</span> <span class="n">DatasetDescr02</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-</span><span id="DatasetDescr-65"><a href="#DatasetDescr-65"><span class="linenos"> 65</span></a>            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">old</span><span class="p">,</span> <span class="n">InvalidDescr</span><span class="p">):</span>
-</span><span id="DatasetDescr-66"><a href="#DatasetDescr-66"><span class="linenos"> 66</span></a>                <span class="k">return</span> <span class="n">data</span>
-</span><span id="DatasetDescr-67"><a href="#DatasetDescr-67"><span class="linenos"> 67</span></a>
-</span><span id="DatasetDescr-68"><a href="#DatasetDescr-68"><span class="linenos"> 68</span></a>            <span class="k">return</span> <span class="n">cast</span><span class="p">(</span>
-</span><span id="DatasetDescr-69"><a href="#DatasetDescr-69"><span class="linenos"> 69</span></a>                <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
-</span><span id="DatasetDescr-70"><a href="#DatasetDescr-70"><span class="linenos"> 70</span></a>                <span class="p">(</span><span class="bp">cls</span> <span class="k">if</span> <span class="n">TYPE_CHECKING</span> <span class="k">else</span> <span class="nb">dict</span><span class="p">)(</span>
-</span><span id="DatasetDescr-71"><a href="#DatasetDescr-71"><span class="linenos"> 71</span></a>                    <span class="n">attachments</span><span class="o">=</span><span class="p">(</span>
-</span><span id="DatasetDescr-72"><a href="#DatasetDescr-72"><span class="linenos"> 72</span></a>                        <span class="p">[]</span>
-</span><span id="DatasetDescr-73"><a href="#DatasetDescr-73"><span class="linenos"> 73</span></a>                        <span class="k">if</span> <span class="n">old</span><span class="o">.</span><span class="n">attachments</span> <span class="ow">is</span> <span class="kc">None</span>
-</span><span id="DatasetDescr-74"><a href="#DatasetDescr-74"><span class="linenos"> 74</span></a>                        <span class="k">else</span> <span class="p">[</span><span class="n">FileDescr</span><span class="p">(</span><span class="n">source</span><span class="o">=</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">old</span><span class="o">.</span><span class="n">attachments</span><span class="o">.</span><span class="n">files</span><span class="p">]</span>
-</span><span id="DatasetDescr-75"><a href="#DatasetDescr-75"><span class="linenos"> 75</span></a>                    <span class="p">),</span>
-</span><span id="DatasetDescr-76"><a href="#DatasetDescr-76"><span class="linenos"> 76</span></a>                    <span class="n">authors</span><span class="o">=</span><span class="p">[</span>
-</span><span id="DatasetDescr-77"><a href="#DatasetDescr-77"><span class="linenos"> 77</span></a>                        <span class="n">_author_conv</span><span class="o">.</span><span class="n">convert_as_dict</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">old</span><span class="o">.</span><span class="n">authors</span>
-</span><span id="DatasetDescr-78"><a href="#DatasetDescr-78"><span class="linenos"> 78</span></a>                    <span class="p">],</span>  <span class="c1"># pyright: ignore[reportArgumentType]</span>
-</span><span id="DatasetDescr-79"><a href="#DatasetDescr-79"><span class="linenos"> 79</span></a>                    <span class="n">badges</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">badges</span><span class="p">,</span>
-</span><span id="DatasetDescr-80"><a href="#DatasetDescr-80"><span class="linenos"> 80</span></a>                    <span class="n">cite</span><span class="o">=</span><span class="p">[</span>
-</span><span id="DatasetDescr-81"><a href="#DatasetDescr-81"><span class="linenos"> 81</span></a>                        <span class="p">{</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;doi&quot;</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">doi</span><span class="p">,</span> <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">url</span><span class="p">}</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">old</span><span class="o">.</span><span class="n">cite</span>
-</span><span id="DatasetDescr-82"><a href="#DatasetDescr-82"><span class="linenos"> 82</span></a>                    <span class="p">],</span>  <span class="c1"># pyright: ignore[reportArgumentType]</span>
-</span><span id="DatasetDescr-83"><a href="#DatasetDescr-83"><span class="linenos"> 83</span></a>                    <span class="n">config</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">config</span><span class="p">,</span>
-</span><span id="DatasetDescr-84"><a href="#DatasetDescr-84"><span class="linenos"> 84</span></a>                    <span class="n">covers</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">covers</span><span class="p">,</span>
-</span><span id="DatasetDescr-85"><a href="#DatasetDescr-85"><span class="linenos"> 85</span></a>                    <span class="n">description</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
-</span><span id="DatasetDescr-86"><a href="#DatasetDescr-86"><span class="linenos"> 86</span></a>                    <span class="n">documentation</span><span class="o">=</span><span class="n">cast</span><span class="p">(</span><span class="n">DocumentationSource</span><span class="p">,</span> <span class="n">old</span><span class="o">.</span><span class="n">documentation</span><span class="p">),</span>
-</span><span id="DatasetDescr-87"><a href="#DatasetDescr-87"><span class="linenos"> 87</span></a>                    <span class="n">format_version</span><span class="o">=</span><span class="s2">&quot;0.3.0&quot;</span><span class="p">,</span>
-</span><span id="DatasetDescr-88"><a href="#DatasetDescr-88"><span class="linenos"> 88</span></a>                    <span class="n">git_repo</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">git_repo</span><span class="p">,</span>  <span class="c1"># pyright: ignore[reportArgumentType]</span>
-</span><span id="DatasetDescr-89"><a href="#DatasetDescr-89"><span class="linenos"> 89</span></a>                    <span class="n">icon</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">icon</span><span class="p">,</span>
-</span><span id="DatasetDescr-90"><a href="#DatasetDescr-90"><span class="linenos"> 90</span></a>                    <span class="nb">id</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">old</span><span class="o">.</span><span class="n">id</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">DatasetId</span><span class="p">(</span><span class="n">old</span><span class="o">.</span><span class="n">id</span><span class="p">),</span>
-</span><span id="DatasetDescr-91"><a href="#DatasetDescr-91"><span class="linenos"> 91</span></a>                    <span class="n">license</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">license</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
-</span><span id="DatasetDescr-92"><a href="#DatasetDescr-92"><span class="linenos"> 92</span></a>                    <span class="n">links</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">links</span><span class="p">,</span>
-</span><span id="DatasetDescr-93"><a href="#DatasetDescr-93"><span class="linenos"> 93</span></a>                    <span class="n">maintainers</span><span class="o">=</span><span class="p">[</span>
-</span><span id="DatasetDescr-94"><a href="#DatasetDescr-94"><span class="linenos"> 94</span></a>                        <span class="n">_maintainer_conv</span><span class="o">.</span><span class="n">convert_as_dict</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">old</span><span class="o">.</span><span class="n">maintainers</span>
-</span><span id="DatasetDescr-95"><a href="#DatasetDescr-95"><span class="linenos"> 95</span></a>                    <span class="p">],</span>  <span class="c1"># pyright: ignore[reportArgumentType]</span>
-</span><span id="DatasetDescr-96"><a href="#DatasetDescr-96"><span class="linenos"> 96</span></a>                    <span class="n">name</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-</span><span id="DatasetDescr-97"><a href="#DatasetDescr-97"><span class="linenos"> 97</span></a>                    <span class="n">source</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">source</span><span class="p">,</span>
-</span><span id="DatasetDescr-98"><a href="#DatasetDescr-98"><span class="linenos"> 98</span></a>                    <span class="n">tags</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">tags</span><span class="p">,</span>
-</span><span id="DatasetDescr-99"><a href="#DatasetDescr-99"><span class="linenos"> 99</span></a>                    <span class="nb">type</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">type</span><span class="p">,</span>
-</span><span id="DatasetDescr-100"><a href="#DatasetDescr-100"><span class="linenos">100</span></a>                    <span class="n">uploader</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">uploader</span><span class="p">,</span>
-</span><span id="DatasetDescr-101"><a href="#DatasetDescr-101"><span class="linenos">101</span></a>                    <span class="n">version</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">version</span><span class="p">,</span>
-</span><span id="DatasetDescr-102"><a href="#DatasetDescr-102"><span class="linenos">102</span></a>                    <span class="o">**</span><span class="p">(</span><span class="n">old</span><span class="o">.</span><span class="n">model_extra</span> <span class="ow">or</span> <span class="p">{}),</span>
-</span><span id="DatasetDescr-103"><a href="#DatasetDescr-103"><span class="linenos">103</span></a>                <span class="p">),</span>
-</span><span id="DatasetDescr-104"><a href="#DatasetDescr-104"><span class="linenos">104</span></a>            <span class="p">)</span>
-</span><span id="DatasetDescr-105"><a href="#DatasetDescr-105"><span class="linenos">105</span></a>
-</span><span id="DatasetDescr-106"><a href="#DatasetDescr-106"><span class="linenos">106</span></a>        <span class="k">return</span> <span class="n">data</span>
+</span><span id="DatasetDescr-56"><a href="#DatasetDescr-56"><span class="linenos"> 56</span></a>    <span class="n">parent</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">DatasetId</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="DatasetDescr-57"><a href="#DatasetDescr-57"><span class="linenos"> 57</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The description from which this one is derived&quot;&quot;&quot;</span>
+</span><span id="DatasetDescr-58"><a href="#DatasetDescr-58"><span class="linenos"> 58</span></a>
+</span><span id="DatasetDescr-59"><a href="#DatasetDescr-59"><span class="linenos"> 59</span></a>    <span class="n">source</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">HttpUrl</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="DatasetDescr-60"><a href="#DatasetDescr-60"><span class="linenos"> 60</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;&quot;URL to the source of the dataset.&quot;&quot;&quot;</span>
+</span><span id="DatasetDescr-61"><a href="#DatasetDescr-61"><span class="linenos"> 61</span></a>
+</span><span id="DatasetDescr-62"><a href="#DatasetDescr-62"><span class="linenos"> 62</span></a>    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;before&quot;</span><span class="p">)</span>
+</span><span id="DatasetDescr-63"><a href="#DatasetDescr-63"><span class="linenos"> 63</span></a>    <span class="nd">@classmethod</span>
+</span><span id="DatasetDescr-64"><a href="#DatasetDescr-64"><span class="linenos"> 64</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_convert</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+</span><span id="DatasetDescr-65"><a href="#DatasetDescr-65"><span class="linenos"> 65</span></a>        <span class="k">if</span> <span class="p">(</span>
+</span><span id="DatasetDescr-66"><a href="#DatasetDescr-66"><span class="linenos"> 66</span></a>            <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;dataset&quot;</span>
+</span><span id="DatasetDescr-67"><a href="#DatasetDescr-67"><span class="linenos"> 67</span></a>            <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fv</span> <span class="o">:=</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;format_version&quot;</span><span class="p">),</span> <span class="nb">str</span><span class="p">)</span>
+</span><span id="DatasetDescr-68"><a href="#DatasetDescr-68"><span class="linenos"> 68</span></a>            <span class="ow">and</span> <span class="n">fv</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;0.2.&quot;</span><span class="p">)</span>
+</span><span id="DatasetDescr-69"><a href="#DatasetDescr-69"><span class="linenos"> 69</span></a>        <span class="p">):</span>
+</span><span id="DatasetDescr-70"><a href="#DatasetDescr-70"><span class="linenos"> 70</span></a>            <span class="n">old</span> <span class="o">=</span> <span class="n">DatasetDescr02</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span><span id="DatasetDescr-71"><a href="#DatasetDescr-71"><span class="linenos"> 71</span></a>            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">old</span><span class="p">,</span> <span class="n">InvalidDescr</span><span class="p">):</span>
+</span><span id="DatasetDescr-72"><a href="#DatasetDescr-72"><span class="linenos"> 72</span></a>                <span class="k">return</span> <span class="n">data</span>
+</span><span id="DatasetDescr-73"><a href="#DatasetDescr-73"><span class="linenos"> 73</span></a>
+</span><span id="DatasetDescr-74"><a href="#DatasetDescr-74"><span class="linenos"> 74</span></a>            <span class="k">return</span> <span class="n">cast</span><span class="p">(</span>
+</span><span id="DatasetDescr-75"><a href="#DatasetDescr-75"><span class="linenos"> 75</span></a>                <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span>
+</span><span id="DatasetDescr-76"><a href="#DatasetDescr-76"><span class="linenos"> 76</span></a>                <span class="p">(</span><span class="bp">cls</span> <span class="k">if</span> <span class="n">TYPE_CHECKING</span> <span class="k">else</span> <span class="nb">dict</span><span class="p">)(</span>
+</span><span id="DatasetDescr-77"><a href="#DatasetDescr-77"><span class="linenos"> 77</span></a>                    <span class="n">attachments</span><span class="o">=</span><span class="p">(</span>
+</span><span id="DatasetDescr-78"><a href="#DatasetDescr-78"><span class="linenos"> 78</span></a>                        <span class="p">[]</span>
+</span><span id="DatasetDescr-79"><a href="#DatasetDescr-79"><span class="linenos"> 79</span></a>                        <span class="k">if</span> <span class="n">old</span><span class="o">.</span><span class="n">attachments</span> <span class="ow">is</span> <span class="kc">None</span>
+</span><span id="DatasetDescr-80"><a href="#DatasetDescr-80"><span class="linenos"> 80</span></a>                        <span class="k">else</span> <span class="p">[</span><span class="n">FileDescr</span><span class="p">(</span><span class="n">source</span><span class="o">=</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">old</span><span class="o">.</span><span class="n">attachments</span><span class="o">.</span><span class="n">files</span><span class="p">]</span>
+</span><span id="DatasetDescr-81"><a href="#DatasetDescr-81"><span class="linenos"> 81</span></a>                    <span class="p">),</span>
+</span><span id="DatasetDescr-82"><a href="#DatasetDescr-82"><span class="linenos"> 82</span></a>                    <span class="n">authors</span><span class="o">=</span><span class="p">[</span>
+</span><span id="DatasetDescr-83"><a href="#DatasetDescr-83"><span class="linenos"> 83</span></a>                        <span class="n">_author_conv</span><span class="o">.</span><span class="n">convert_as_dict</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">old</span><span class="o">.</span><span class="n">authors</span>
+</span><span id="DatasetDescr-84"><a href="#DatasetDescr-84"><span class="linenos"> 84</span></a>                    <span class="p">],</span>  <span class="c1"># pyright: ignore[reportArgumentType]</span>
+</span><span id="DatasetDescr-85"><a href="#DatasetDescr-85"><span class="linenos"> 85</span></a>                    <span class="n">badges</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">badges</span><span class="p">,</span>
+</span><span id="DatasetDescr-86"><a href="#DatasetDescr-86"><span class="linenos"> 86</span></a>                    <span class="n">cite</span><span class="o">=</span><span class="p">[</span>
+</span><span id="DatasetDescr-87"><a href="#DatasetDescr-87"><span class="linenos"> 87</span></a>                        <span class="p">{</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">text</span><span class="p">,</span> <span class="s2">&quot;doi&quot;</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">doi</span><span class="p">,</span> <span class="s2">&quot;url&quot;</span><span class="p">:</span> <span class="n">c</span><span class="o">.</span><span class="n">url</span><span class="p">}</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">old</span><span class="o">.</span><span class="n">cite</span>
+</span><span id="DatasetDescr-88"><a href="#DatasetDescr-88"><span class="linenos"> 88</span></a>                    <span class="p">],</span>  <span class="c1"># pyright: ignore[reportArgumentType]</span>
+</span><span id="DatasetDescr-89"><a href="#DatasetDescr-89"><span class="linenos"> 89</span></a>                    <span class="n">config</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">config</span><span class="p">,</span>  <span class="c1"># pyright: ignore[reportArgumentType]</span>
+</span><span id="DatasetDescr-90"><a href="#DatasetDescr-90"><span class="linenos"> 90</span></a>                    <span class="n">covers</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">covers</span><span class="p">,</span>
+</span><span id="DatasetDescr-91"><a href="#DatasetDescr-91"><span class="linenos"> 91</span></a>                    <span class="n">description</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">description</span><span class="p">,</span>
+</span><span id="DatasetDescr-92"><a href="#DatasetDescr-92"><span class="linenos"> 92</span></a>                    <span class="n">documentation</span><span class="o">=</span><span class="n">cast</span><span class="p">(</span><span class="n">DocumentationSource</span><span class="p">,</span> <span class="n">old</span><span class="o">.</span><span class="n">documentation</span><span class="p">),</span>
+</span><span id="DatasetDescr-93"><a href="#DatasetDescr-93"><span class="linenos"> 93</span></a>                    <span class="n">format_version</span><span class="o">=</span><span class="s2">&quot;0.3.0&quot;</span><span class="p">,</span>
+</span><span id="DatasetDescr-94"><a href="#DatasetDescr-94"><span class="linenos"> 94</span></a>                    <span class="n">git_repo</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">git_repo</span><span class="p">,</span>  <span class="c1"># pyright: ignore[reportArgumentType]</span>
+</span><span id="DatasetDescr-95"><a href="#DatasetDescr-95"><span class="linenos"> 95</span></a>                    <span class="n">icon</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">icon</span><span class="p">,</span>
+</span><span id="DatasetDescr-96"><a href="#DatasetDescr-96"><span class="linenos"> 96</span></a>                    <span class="nb">id</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">old</span><span class="o">.</span><span class="n">id</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">DatasetId</span><span class="p">(</span><span class="n">old</span><span class="o">.</span><span class="n">id</span><span class="p">),</span>
+</span><span id="DatasetDescr-97"><a href="#DatasetDescr-97"><span class="linenos"> 97</span></a>                    <span class="n">license</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">license</span><span class="p">,</span>  <span class="c1"># type: ignore</span>
+</span><span id="DatasetDescr-98"><a href="#DatasetDescr-98"><span class="linenos"> 98</span></a>                    <span class="n">links</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">links</span><span class="p">,</span>
+</span><span id="DatasetDescr-99"><a href="#DatasetDescr-99"><span class="linenos"> 99</span></a>                    <span class="n">maintainers</span><span class="o">=</span><span class="p">[</span>
+</span><span id="DatasetDescr-100"><a href="#DatasetDescr-100"><span class="linenos">100</span></a>                        <span class="n">_maintainer_conv</span><span class="o">.</span><span class="n">convert_as_dict</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">old</span><span class="o">.</span><span class="n">maintainers</span>
+</span><span id="DatasetDescr-101"><a href="#DatasetDescr-101"><span class="linenos">101</span></a>                    <span class="p">],</span>  <span class="c1"># pyright: ignore[reportArgumentType]</span>
+</span><span id="DatasetDescr-102"><a href="#DatasetDescr-102"><span class="linenos">102</span></a>                    <span class="n">name</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
+</span><span id="DatasetDescr-103"><a href="#DatasetDescr-103"><span class="linenos">103</span></a>                    <span class="n">source</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">source</span><span class="p">,</span>
+</span><span id="DatasetDescr-104"><a href="#DatasetDescr-104"><span class="linenos">104</span></a>                    <span class="n">tags</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">tags</span><span class="p">,</span>
+</span><span id="DatasetDescr-105"><a href="#DatasetDescr-105"><span class="linenos">105</span></a>                    <span class="nb">type</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">type</span><span class="p">,</span>
+</span><span id="DatasetDescr-106"><a href="#DatasetDescr-106"><span class="linenos">106</span></a>                    <span class="n">uploader</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">uploader</span><span class="p">,</span>
+</span><span id="DatasetDescr-107"><a href="#DatasetDescr-107"><span class="linenos">107</span></a>                    <span class="n">version</span><span class="o">=</span><span class="n">old</span><span class="o">.</span><span class="n">version</span><span class="p">,</span>
+</span><span id="DatasetDescr-108"><a href="#DatasetDescr-108"><span class="linenos">108</span></a>                    <span class="o">**</span><span class="p">(</span><span class="n">old</span><span class="o">.</span><span class="n">model_extra</span> <span class="ow">or</span> <span class="p">{}),</span>
+</span><span id="DatasetDescr-109"><a href="#DatasetDescr-109"><span class="linenos">109</span></a>                <span class="p">),</span>
+</span><span id="DatasetDescr-110"><a href="#DatasetDescr-110"><span class="linenos">110</span></a>            <span class="p">)</span>
+</span><span id="DatasetDescr-111"><a href="#DatasetDescr-111"><span class="linenos">111</span></a>
+</span><span id="DatasetDescr-112"><a href="#DatasetDescr-112"><span class="linenos">112</span></a>        <span class="k">return</span> <span class="n">data</span>
 </span></pre></div>
 
 
@@ -216,13 +222,14 @@ processing.</p>
 </div>
 
 
-                            <div id="DatasetDescr.type" class="classattr">
+                            <div id="DatasetDescr.implemented_type" class="classattr">
                                 <div class="attr variable">
-            <span class="name">type</span><span class="annotation">: Literal[&#39;dataset&#39;]</span>
+            <span class="name">implemented_type</span><span class="annotation">: ClassVar[Literal[&#39;dataset&#39;]]</span>        =
+<span class="default_value">&#39;dataset&#39;</span>
 
         
     </div>
-    <a class="headerlink" href="#DatasetDescr.type"></a>
+    <a class="headerlink" href="#DatasetDescr.implemented_type"></a>
     
     
 
@@ -267,18 +274,6 @@ assigned by bioimage.io; version <strong>un</strong>specific.</p>
 
 
                             </div>
-                            <div id="DatasetDescr.implemented_format_version" class="classattr">
-                                <div class="attr variable">
-            <span class="name">implemented_format_version</span><span class="annotation">: ClassVar[str]</span>        =
-<span class="default_value">&#39;0.3.0&#39;</span>
-
-        
-    </div>
-    <a class="headerlink" href="#DatasetDescr.implemented_format_version"></a>
-    
-    
-
-                            </div>
                             <div id="DatasetDescr.implemented_format_version_tuple" class="classattr">
                                 <div class="attr variable">
             <span class="name">implemented_format_version_tuple</span><span class="annotation">: ClassVar[Tuple[int, int, int]]</span>        =
@@ -302,7 +297,7 @@ assigned by bioimage.io; version <strong>un</strong>specific.</p>
 
     </div>
     <a class="headerlink" href="#DatasetDescr.model_post_init"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="DatasetDescr.model_post_init-124"><a href="#DatasetDescr.model_post_init-124"><span class="linenos">124</span></a>                    <span class="k">def</span> <span class="nf">wrapped_model_post_init</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="DatasetDescr.model_post_init-124"><a href="#DatasetDescr.model_post_init-124"><span class="linenos">124</span></a>                    <span class="k">def</span><span class="w"> </span><span class="nf">wrapped_model_post_init</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 </span><span id="DatasetDescr.model_post_init-125"><a href="#DatasetDescr.model_post_init-125"><span class="linenos">125</span></a><span class="w">                        </span><span class="sd">&quot;&quot;&quot;We need to both initialize private attributes and call the user-defined model_post_init</span>
 </span><span id="DatasetDescr.model_post_init-126"><a href="#DatasetDescr.model_post_init-126"><span class="linenos">126</span></a><span class="sd">                        method.</span>
 </span><span id="DatasetDescr.model_post_init-127"><a href="#DatasetDescr.model_post_init-127"><span class="linenos">127</span></a><span class="sd">                        &quot;&quot;&quot;</span>
@@ -321,9 +316,11 @@ method.</p>
                                 <h5>Inherited Members</h5>
                                 <dl>
                                     <div><dt><a href="generic/v0_3.html#GenericDescrBase">bioimageio.spec.generic.v0_3.GenericDescrBase</a></dt>
-                                <dd id="DatasetDescr.format_version" class="variable"><a href="generic/v0_3.html#GenericDescrBase.format_version">format_version</a></dd>
+                                <dd id="DatasetDescr.implemented_format_version" class="variable"><a href="generic/v0_3.html#GenericDescrBase.implemented_format_version">implemented_format_version</a></dd>
+                <dd id="DatasetDescr.convert_from_old_format_wo_validation" class="function"><a href="generic/v0_3.html#GenericDescrBase.convert_from_old_format_wo_validation">convert_from_old_format_wo_validation</a></dd>
                 <dd id="DatasetDescr.documentation" class="variable"><a href="generic/v0_3.html#GenericDescrBase.documentation">documentation</a></dd>
                 <dd id="DatasetDescr.badges" class="variable"><a href="generic/v0_3.html#GenericDescrBase.badges">badges</a></dd>
+                <dd id="DatasetDescr.config" class="variable"><a href="generic/v0_3.html#GenericDescrBase.config">config</a></dd>
 
             </div>
             <div><dt><a href="generic/v0_3.html#GenericModelDescrBase">bioimageio.spec.generic.v0_3.GenericModelDescrBase</a></dt>
@@ -335,7 +332,6 @@ method.</p>
                 <dd id="DatasetDescr.attachments" class="variable"><a href="generic/v0_3.html#GenericModelDescrBase.attachments">attachments</a></dd>
                 <dd id="DatasetDescr.cite" class="variable"><a href="generic/v0_3.html#GenericModelDescrBase.cite">cite</a></dd>
                 <dd id="DatasetDescr.license" class="variable"><a href="generic/v0_3.html#GenericModelDescrBase.license">license</a></dd>
-                <dd id="DatasetDescr.config" class="variable"><a href="generic/v0_3.html#GenericModelDescrBase.config">config</a></dd>
                 <dd id="DatasetDescr.git_repo" class="variable"><a href="generic/v0_3.html#GenericModelDescrBase.git_repo">git_repo</a></dd>
                 <dd id="DatasetDescr.icon" class="variable"><a href="generic/v0_3.html#GenericModelDescrBase.icon">icon</a></dd>
                 <dd id="DatasetDescr.links" class="variable"><a href="generic/v0_3.html#GenericModelDescrBase.links">links</a></dd>
@@ -378,7 +374,7 @@ method.</p>
                     <div class="attr variable">
             <span class="name">AnyDatasetDescr</span>        =
 <input id="AnyDatasetDescr-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
-            <label class="view-value-button pdoc-button" for="AnyDatasetDescr-view-value"></label><span class="default_value">typing.Annotated[typing.Union[<a href="dataset/v0_2.html#DatasetDescr">bioimageio.spec.dataset.v0_2.DatasetDescr</a>, <a href="#DatasetDescr">DatasetDescr</a>], Discriminator(discriminator=&#39;format_version&#39;, custom_error_type=None, custom_error_message=None, custom_error_context=None)]</span>
+            <label class="view-value-button pdoc-button" for="AnyDatasetDescr-view-value"></label><span class="default_value">typing.Annotated[typing.Union[typing.Annotated[<a href="dataset/v0_2.html#DatasetDescr">bioimageio.spec.dataset.v0_2.DatasetDescr</a>, FieldInfo(annotation=NoneType, required=True, title=&#39;dataset 0.2&#39;)], typing.Annotated[<a href="#DatasetDescr">DatasetDescr</a>, FieldInfo(annotation=NoneType, required=True, title=&#39;dataset 0.3&#39;)]], Discriminator(discriminator=&#39;format_version&#39;, custom_error_type=None, custom_error_message=None, custom_error_context=None), FieldInfo(annotation=NoneType, required=True, title=&#39;dataset&#39;)]</span>
 
         
     </div>

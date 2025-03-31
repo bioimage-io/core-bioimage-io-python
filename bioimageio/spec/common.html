@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="generator" content="pdoc 15.0.0"/>
+    <meta name="generator" content="pdoc 15.0.1"/>
     <title>bioimageio.spec.common API documentation</title>
             <link rel="icon" href="https://bioimage.io/static/img/bioimage-io-icon-small.svg"/>
 
@@ -66,6 +66,9 @@
                     <a class="variable" href="#FileName">FileName</a>
             </li>
             <li>
+                    <a class="variable" href="#FilePath">FilePath</a>
+            </li>
+            <li>
                     <a class="variable" href="#FileSource">FileSource</a>
             </li>
             <li>
@@ -84,13 +87,7 @@
                     <a class="class" href="#InvalidDescr">InvalidDescr</a>
                             <ul class="memberlist">
                         <li>
-                                <a class="variable" href="#InvalidDescr.type">type</a>
-                        </li>
-                        <li>
-                                <a class="variable" href="#InvalidDescr.format_version">format_version</a>
-                        </li>
-                        <li>
-                                <a class="variable" href="#InvalidDescr.fields_to_set_explicitly">fields_to_set_explicitly</a>
+                                <a class="variable" href="#InvalidDescr.implemented_type">implemented_type</a>
                         </li>
                         <li>
                                 <a class="variable" href="#InvalidDescr.implemented_format_version">implemented_format_version</a>
@@ -140,6 +137,9 @@
                         <li>
                                 <a class="variable" href="#RootHttpUrl.parent">parent</a>
                         </li>
+                        <li>
+                                <a class="variable" href="#RootHttpUrl.parents">parents</a>
+                        </li>
                 </ul>
 
             </li>
@@ -176,6 +176,9 @@
             <li>
                     <a class="variable" href="#YamlValue">YamlValue</a>
             </li>
+            <li>
+                    <a class="variable" href="#ZipPath">ZipPath</a>
+            </li>
     </ul>
 
 
@@ -198,37 +201,50 @@ bioimageio<wbr>.<a href="./../spec.html">spec</a><wbr>.common    </h1>
 
                         <label class="view-source-button" for="mod-common-view-source"><span>View Source</span></label>
 
-                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span>
+                        <div class="pdoc-code codehilite"><pre><span></span><span id="L-1"><a href="#L-1"><span class="linenos"> 1</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">pydantic</span><span class="w"> </span><span class="kn">import</span> <span class="n">ValidationError</span>
 </span><span id="L-2"><a href="#L-2"><span class="linenos"> 2</span></a>
-</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a><span class="kn">from</span> <span class="nn">._internal.common_nodes</span> <span class="kn">import</span> <span class="n">InvalidDescr</span>
-</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="kn">from</span> <span class="nn">._internal.io</span> <span class="kn">import</span> <span class="p">(</span>
+</span><span id="L-3"><a href="#L-3"><span class="linenos"> 3</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">._internal.common_nodes</span><span class="w"> </span><span class="kn">import</span> <span class="n">InvalidDescr</span>
+</span><span id="L-4"><a href="#L-4"><span class="linenos"> 4</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">._internal.io</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
 </span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a>    <span class="n">BioimageioYamlContent</span><span class="p">,</span>
 </span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a>    <span class="n">BioimageioYamlSource</span><span class="p">,</span>
 </span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a>    <span class="n">FileDescr</span><span class="p">,</span>
 </span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a>    <span class="n">YamlValue</span><span class="p">,</span>
 </span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="p">)</span>
-</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="kn">from</span> <span class="nn">._internal.io_basics</span> <span class="kn">import</span> <span class="n">AbsoluteDirectory</span><span class="p">,</span> <span class="n">AbsoluteFilePath</span><span class="p">,</span> <span class="n">FileName</span><span class="p">,</span> <span class="n">Sha256</span>
-</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="kn">from</span> <span class="nn">._internal.root_url</span> <span class="kn">import</span> <span class="n">RootHttpUrl</span>
-</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a><span class="kn">from</span> <span class="nn">._internal.types</span> <span class="kn">import</span> <span class="n">FileSource</span><span class="p">,</span> <span class="n">PermissiveFileSource</span><span class="p">,</span> <span class="n">RelativeFilePath</span>
-</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a><span class="kn">from</span> <span class="nn">._internal.url</span> <span class="kn">import</span> <span class="n">HttpUrl</span>
-</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a>
-</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
-</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a>    <span class="s2">&quot;AbsoluteDirectory&quot;</span><span class="p">,</span>
-</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a>    <span class="s2">&quot;AbsoluteFilePath&quot;</span><span class="p">,</span>
-</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a>    <span class="s2">&quot;BioimageioYamlContent&quot;</span><span class="p">,</span>
-</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>    <span class="s2">&quot;BioimageioYamlSource&quot;</span><span class="p">,</span>
-</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>    <span class="s2">&quot;FileDescr&quot;</span><span class="p">,</span>
-</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>    <span class="s2">&quot;FileName&quot;</span><span class="p">,</span>
-</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a>    <span class="s2">&quot;FileSource&quot;</span><span class="p">,</span>
-</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a>    <span class="s2">&quot;HttpUrl&quot;</span><span class="p">,</span>
-</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a>    <span class="s2">&quot;InvalidDescr&quot;</span><span class="p">,</span>
-</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a>    <span class="s2">&quot;PermissiveFileSource&quot;</span><span class="p">,</span>
-</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a>    <span class="s2">&quot;RelativeFilePath&quot;</span><span class="p">,</span>
-</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a>    <span class="s2">&quot;RootHttpUrl&quot;</span><span class="p">,</span>
-</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>    <span class="s2">&quot;Sha256&quot;</span><span class="p">,</span>
-</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a>    <span class="s2">&quot;ValidationError&quot;</span><span class="p">,</span>
-</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>    <span class="s2">&quot;YamlValue&quot;</span><span class="p">,</span>
-</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a><span class="p">]</span>
+</span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">._internal.io_basics</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+</span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a>    <span class="n">AbsoluteDirectory</span><span class="p">,</span>
+</span><span id="L-12"><a href="#L-12"><span class="linenos">12</span></a>    <span class="n">AbsoluteFilePath</span><span class="p">,</span>
+</span><span id="L-13"><a href="#L-13"><span class="linenos">13</span></a>    <span class="n">FileName</span><span class="p">,</span>
+</span><span id="L-14"><a href="#L-14"><span class="linenos">14</span></a>    <span class="n">Sha256</span><span class="p">,</span>
+</span><span id="L-15"><a href="#L-15"><span class="linenos">15</span></a>    <span class="n">ZipPath</span><span class="p">,</span>
+</span><span id="L-16"><a href="#L-16"><span class="linenos">16</span></a><span class="p">)</span>
+</span><span id="L-17"><a href="#L-17"><span class="linenos">17</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">._internal.root_url</span><span class="w"> </span><span class="kn">import</span> <span class="n">RootHttpUrl</span>
+</span><span id="L-18"><a href="#L-18"><span class="linenos">18</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">._internal.types</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+</span><span id="L-19"><a href="#L-19"><span class="linenos">19</span></a>    <span class="n">FilePath</span><span class="p">,</span>
+</span><span id="L-20"><a href="#L-20"><span class="linenos">20</span></a>    <span class="n">FileSource</span><span class="p">,</span>
+</span><span id="L-21"><a href="#L-21"><span class="linenos">21</span></a>    <span class="n">PermissiveFileSource</span><span class="p">,</span>
+</span><span id="L-22"><a href="#L-22"><span class="linenos">22</span></a>    <span class="n">RelativeFilePath</span><span class="p">,</span>
+</span><span id="L-23"><a href="#L-23"><span class="linenos">23</span></a><span class="p">)</span>
+</span><span id="L-24"><a href="#L-24"><span class="linenos">24</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">._internal.url</span><span class="w"> </span><span class="kn">import</span> <span class="n">HttpUrl</span>
+</span><span id="L-25"><a href="#L-25"><span class="linenos">25</span></a>
+</span><span id="L-26"><a href="#L-26"><span class="linenos">26</span></a><span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+</span><span id="L-27"><a href="#L-27"><span class="linenos">27</span></a>    <span class="s2">&quot;AbsoluteDirectory&quot;</span><span class="p">,</span>
+</span><span id="L-28"><a href="#L-28"><span class="linenos">28</span></a>    <span class="s2">&quot;AbsoluteFilePath&quot;</span><span class="p">,</span>
+</span><span id="L-29"><a href="#L-29"><span class="linenos">29</span></a>    <span class="s2">&quot;BioimageioYamlContent&quot;</span><span class="p">,</span>
+</span><span id="L-30"><a href="#L-30"><span class="linenos">30</span></a>    <span class="s2">&quot;BioimageioYamlSource&quot;</span><span class="p">,</span>
+</span><span id="L-31"><a href="#L-31"><span class="linenos">31</span></a>    <span class="s2">&quot;FileDescr&quot;</span><span class="p">,</span>
+</span><span id="L-32"><a href="#L-32"><span class="linenos">32</span></a>    <span class="s2">&quot;FileName&quot;</span><span class="p">,</span>
+</span><span id="L-33"><a href="#L-33"><span class="linenos">33</span></a>    <span class="s2">&quot;FilePath&quot;</span><span class="p">,</span>
+</span><span id="L-34"><a href="#L-34"><span class="linenos">34</span></a>    <span class="s2">&quot;FileSource&quot;</span><span class="p">,</span>
+</span><span id="L-35"><a href="#L-35"><span class="linenos">35</span></a>    <span class="s2">&quot;HttpUrl&quot;</span><span class="p">,</span>
+</span><span id="L-36"><a href="#L-36"><span class="linenos">36</span></a>    <span class="s2">&quot;InvalidDescr&quot;</span><span class="p">,</span>
+</span><span id="L-37"><a href="#L-37"><span class="linenos">37</span></a>    <span class="s2">&quot;PermissiveFileSource&quot;</span><span class="p">,</span>
+</span><span id="L-38"><a href="#L-38"><span class="linenos">38</span></a>    <span class="s2">&quot;RelativeFilePath&quot;</span><span class="p">,</span>
+</span><span id="L-39"><a href="#L-39"><span class="linenos">39</span></a>    <span class="s2">&quot;RootHttpUrl&quot;</span><span class="p">,</span>
+</span><span id="L-40"><a href="#L-40"><span class="linenos">40</span></a>    <span class="s2">&quot;Sha256&quot;</span><span class="p">,</span>
+</span><span id="L-41"><a href="#L-41"><span class="linenos">41</span></a>    <span class="s2">&quot;ValidationError&quot;</span><span class="p">,</span>
+</span><span id="L-42"><a href="#L-42"><span class="linenos">42</span></a>    <span class="s2">&quot;YamlValue&quot;</span><span class="p">,</span>
+</span><span id="L-43"><a href="#L-43"><span class="linenos">43</span></a>    <span class="s2">&quot;ZipPath&quot;</span><span class="p">,</span>
+</span><span id="L-44"><a href="#L-44"><span class="linenos">44</span></a><span class="p">]</span>
 </span></pre></div>
 
 
@@ -236,7 +252,8 @@ bioimageio<wbr>.<a href="./../spec.html">spec</a><wbr>.common    </h1>
                 <section id="AbsoluteDirectory">
                     <div class="attr variable">
             <span class="name">AbsoluteDirectory</span>        =
-<span class="default_value">typing.Annotated[pathlib.Path, PathType(path_type=&#39;dir&#39;), Predicate(is_absolute)]</span>
+<input id="AbsoluteDirectory-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+            <label class="view-value-button pdoc-button" for="AbsoluteDirectory-view-value"></label><span class="default_value">typing.Annotated[pathlib.Path, PathType(path_type=&#39;dir&#39;), Predicate(is_absolute), FieldInfo(annotation=NoneType, required=True, title=&#39;AbsoluteDirectory&#39;)]</span>
 
         
     </div>
@@ -248,7 +265,8 @@ bioimageio<wbr>.<a href="./../spec.html">spec</a><wbr>.common    </h1>
                 <section id="AbsoluteFilePath">
                     <div class="attr variable">
             <span class="name">AbsoluteFilePath</span>        =
-<span class="default_value">typing.Annotated[pathlib.Path, PathType(path_type=&#39;file&#39;), Predicate(is_absolute)]</span>
+<input id="AbsoluteFilePath-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+            <label class="view-value-button pdoc-button" for="AbsoluteFilePath-view-value"></label><span class="default_value">typing.Annotated[pathlib.Path, PathType(path_type=&#39;file&#39;), Predicate(is_absolute), FieldInfo(annotation=NoneType, required=True, title=&#39;AbsoluteFilePath&#39;)]</span>
 
         
     </div>
@@ -273,7 +291,7 @@ bioimageio<wbr>.<a href="./../spec.html">spec</a><wbr>.common    </h1>
                     <div class="attr variable">
             <span class="name">BioimageioYamlSource</span>        =
 <input id="BioimageioYamlSource-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
-            <label class="view-value-button pdoc-button" for="BioimageioYamlSource-view-value"></label><span class="default_value">typing.Union[typing.Annotated[typing.Union[<a href="#HttpUrl">HttpUrl</a>, <a href="#RelativeFilePath">RelativeFilePath</a>, typing.Annotated[pathlib.Path, PathType(path_type=&#39;file&#39;)]], FieldInfo(annotation=NoneType, required=True, metadata=[_PydanticGeneralMetadata(union_mode=&#39;left_to_right&#39;)])], str, typing.Annotated[pydantic_core._pydantic_core.Url, UrlConstraints(max_length=2083, allowed_schemes=[&#39;http&#39;, &#39;https&#39;], host_required=None, default_host=None, default_port=None, default_path=None)], typing.Dict[str, YamlValue]]</span>
+            <label class="view-value-button pdoc-button" for="BioimageioYamlSource-view-value"></label><span class="default_value">typing.Union[typing.Annotated[typing.Union[<a href="#HttpUrl">HttpUrl</a>, <a href="#RelativeFilePath">RelativeFilePath</a>, typing.Annotated[pathlib.Path, PathType(path_type=&#39;file&#39;), FieldInfo(annotation=NoneType, required=True, title=&#39;FilePath&#39;)]], FieldInfo(annotation=NoneType, required=True, metadata=[_PydanticGeneralMetadata(union_mode=&#39;left_to_right&#39;)])], str, typing.Annotated[pydantic_core._pydantic_core.Url, UrlConstraints(max_length=2083, allowed_schemes=[&#39;http&#39;, &#39;https&#39;], host_required=None, default_host=None, default_port=None, default_path=None)], zipfile.ZipFile, typing.Dict[str, YamlValue]]</span>
 
         
     </div>
@@ -293,49 +311,53 @@ bioimageio<wbr>.<a href="./../spec.html">spec</a><wbr>.common    </h1>
 
     </div>
     <a class="headerlink" href="#FileDescr"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="FileDescr-768"><a href="#FileDescr-768"><span class="linenos">768</span></a><span class="k">class</span> <span class="nc">FileDescr</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
-</span><span id="FileDescr-769"><a href="#FileDescr-769"><span class="linenos">769</span></a>    <span class="n">source</span><span class="p">:</span> <span class="n">ImportantFileSource</span>
-</span><span id="FileDescr-770"><a href="#FileDescr-770"><span class="linenos">770</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;∈📦 file source&quot;&quot;&quot;</span>
-</span><span id="FileDescr-771"><a href="#FileDescr-771"><span class="linenos">771</span></a>
-</span><span id="FileDescr-772"><a href="#FileDescr-772"><span class="linenos">772</span></a>    <span class="n">sha256</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sha256</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="FileDescr-773"><a href="#FileDescr-773"><span class="linenos">773</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;SHA256 checksum of the source file&quot;&quot;&quot;</span>
-</span><span id="FileDescr-774"><a href="#FileDescr-774"><span class="linenos">774</span></a>
-</span><span id="FileDescr-775"><a href="#FileDescr-775"><span class="linenos">775</span></a>    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;after&quot;</span><span class="p">)</span>
-</span><span id="FileDescr-776"><a href="#FileDescr-776"><span class="linenos">776</span></a>    <span class="k">def</span> <span class="nf">validate_sha256</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
-</span><span id="FileDescr-777"><a href="#FileDescr-777"><span class="linenos">777</span></a>        <span class="n">context</span> <span class="o">=</span> <span class="n">validation_context_var</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-</span><span id="FileDescr-778"><a href="#FileDescr-778"><span class="linenos">778</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">context</span><span class="o">.</span><span class="n">perform_io_checks</span><span class="p">:</span>
-</span><span id="FileDescr-779"><a href="#FileDescr-779"><span class="linenos">779</span></a>            <span class="k">return</span> <span class="bp">self</span>
-</span><span id="FileDescr-780"><a href="#FileDescr-780"><span class="linenos">780</span></a>        <span class="k">elif</span> <span class="p">(</span><span class="n">src_str</span> <span class="o">:=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">))</span> <span class="ow">in</span> <span class="n">context</span><span class="o">.</span><span class="n">known_files</span><span class="p">:</span>
-</span><span id="FileDescr-781"><a href="#FileDescr-781"><span class="linenos">781</span></a>            <span class="n">actual_sha</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">known_files</span><span class="p">[</span><span class="n">src_str</span><span class="p">]</span>
-</span><span id="FileDescr-782"><a href="#FileDescr-782"><span class="linenos">782</span></a>        <span class="k">else</span><span class="p">:</span>
-</span><span id="FileDescr-783"><a href="#FileDescr-783"><span class="linenos">783</span></a>            <span class="n">local_source</span> <span class="o">=</span> <span class="n">download</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">sha256</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sha256</span><span class="p">)</span><span class="o">.</span><span class="n">path</span>
-</span><span id="FileDescr-784"><a href="#FileDescr-784"><span class="linenos">784</span></a>            <span class="n">actual_sha</span> <span class="o">=</span> <span class="n">get_sha256</span><span class="p">(</span><span class="n">local_source</span><span class="p">)</span>
-</span><span id="FileDescr-785"><a href="#FileDescr-785"><span class="linenos">785</span></a>            <span class="n">context</span><span class="o">.</span><span class="n">known_files</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">)]</span> <span class="o">=</span> <span class="n">actual_sha</span>
-</span><span id="FileDescr-786"><a href="#FileDescr-786"><span class="linenos">786</span></a>
-</span><span id="FileDescr-787"><a href="#FileDescr-787"><span class="linenos">787</span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sha256</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="FileDescr-788"><a href="#FileDescr-788"><span class="linenos">788</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">sha256</span> <span class="o">=</span> <span class="n">actual_sha</span>
-</span><span id="FileDescr-789"><a href="#FileDescr-789"><span class="linenos">789</span></a>        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">sha256</span> <span class="o">!=</span> <span class="n">actual_sha</span><span class="p">:</span>
-</span><span id="FileDescr-790"><a href="#FileDescr-790"><span class="linenos">790</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span id="FileDescr-791"><a href="#FileDescr-791"><span class="linenos">791</span></a>                <span class="sa">f</span><span class="s2">&quot;Sha256 mismatch for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="si">}</span><span class="s2">. Expected </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sha256</span><span class="si">}</span><span class="s2">, got &quot;</span>
-</span><span id="FileDescr-792"><a href="#FileDescr-792"><span class="linenos">792</span></a>                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">actual_sha</span><span class="si">}</span><span class="s2">. Update expected `sha256` or point to the matching &quot;</span>
-</span><span id="FileDescr-793"><a href="#FileDescr-793"><span class="linenos">793</span></a>                <span class="o">+</span> <span class="s2">&quot;file.&quot;</span>
-</span><span id="FileDescr-794"><a href="#FileDescr-794"><span class="linenos">794</span></a>            <span class="p">)</span>
-</span><span id="FileDescr-795"><a href="#FileDescr-795"><span class="linenos">795</span></a>
-</span><span id="FileDescr-796"><a href="#FileDescr-796"><span class="linenos">796</span></a>        <span class="k">return</span> <span class="bp">self</span>
-</span><span id="FileDescr-797"><a href="#FileDescr-797"><span class="linenos">797</span></a>
-</span><span id="FileDescr-798"><a href="#FileDescr-798"><span class="linenos">798</span></a>    <span class="k">def</span> <span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="FileDescr-799"><a href="#FileDescr-799"><span class="linenos">799</span></a>
-</span><span id="FileDescr-800"><a href="#FileDescr-800"><span class="linenos">800</span></a>        <span class="k">return</span> <span class="n">download</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">sha256</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sha256</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="FileDescr-787"><a href="#FileDescr-787"><span class="linenos">787</span></a><span class="k">class</span><span class="w"> </span><span class="nc">FileDescr</span><span class="p">(</span><span class="n">Node</span><span class="p">):</span>
+</span><span id="FileDescr-788"><a href="#FileDescr-788"><span class="linenos">788</span></a>    <span class="n">source</span><span class="p">:</span> <span class="n">ImportantFileSource</span>
+</span><span id="FileDescr-789"><a href="#FileDescr-789"><span class="linenos">789</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;∈📦 file source&quot;&quot;&quot;</span>
+</span><span id="FileDescr-790"><a href="#FileDescr-790"><span class="linenos">790</span></a>
+</span><span id="FileDescr-791"><a href="#FileDescr-791"><span class="linenos">791</span></a>    <span class="n">sha256</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sha256</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="FileDescr-792"><a href="#FileDescr-792"><span class="linenos">792</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;SHA256 checksum of the source file&quot;&quot;&quot;</span>
+</span><span id="FileDescr-793"><a href="#FileDescr-793"><span class="linenos">793</span></a>
+</span><span id="FileDescr-794"><a href="#FileDescr-794"><span class="linenos">794</span></a>    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;after&quot;</span><span class="p">)</span>
+</span><span id="FileDescr-795"><a href="#FileDescr-795"><span class="linenos">795</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_sha256</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+</span><span id="FileDescr-796"><a href="#FileDescr-796"><span class="linenos">796</span></a>        <span class="k">if</span> <span class="n">get_validation_context</span><span class="p">()</span><span class="o">.</span><span class="n">perform_io_checks</span><span class="p">:</span>
+</span><span id="FileDescr-797"><a href="#FileDescr-797"><span class="linenos">797</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">validate_sha256</span><span class="p">()</span>
+</span><span id="FileDescr-798"><a href="#FileDescr-798"><span class="linenos">798</span></a>
+</span><span id="FileDescr-799"><a href="#FileDescr-799"><span class="linenos">799</span></a>        <span class="k">return</span> <span class="bp">self</span>
+</span><span id="FileDescr-800"><a href="#FileDescr-800"><span class="linenos">800</span></a>
+</span><span id="FileDescr-801"><a href="#FileDescr-801"><span class="linenos">801</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">validate_sha256</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="FileDescr-802"><a href="#FileDescr-802"><span class="linenos">802</span></a>        <span class="n">context</span> <span class="o">=</span> <span class="n">get_validation_context</span><span class="p">()</span>
+</span><span id="FileDescr-803"><a href="#FileDescr-803"><span class="linenos">803</span></a>        <span class="k">if</span> <span class="p">(</span><span class="n">src_str</span> <span class="o">:=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">))</span> <span class="ow">in</span> <span class="n">context</span><span class="o">.</span><span class="n">known_files</span><span class="p">:</span>
+</span><span id="FileDescr-804"><a href="#FileDescr-804"><span class="linenos">804</span></a>            <span class="n">actual_sha</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">known_files</span><span class="p">[</span><span class="n">src_str</span><span class="p">]</span>
+</span><span id="FileDescr-805"><a href="#FileDescr-805"><span class="linenos">805</span></a>        <span class="k">else</span><span class="p">:</span>
+</span><span id="FileDescr-806"><a href="#FileDescr-806"><span class="linenos">806</span></a>            <span class="n">local_source</span> <span class="o">=</span> <span class="n">download</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">sha256</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sha256</span><span class="p">)</span><span class="o">.</span><span class="n">path</span>
+</span><span id="FileDescr-807"><a href="#FileDescr-807"><span class="linenos">807</span></a>            <span class="n">actual_sha</span> <span class="o">=</span> <span class="n">get_sha256</span><span class="p">(</span><span class="n">local_source</span><span class="p">)</span>
+</span><span id="FileDescr-808"><a href="#FileDescr-808"><span class="linenos">808</span></a>            <span class="n">context</span><span class="o">.</span><span class="n">known_files</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">)]</span> <span class="o">=</span> <span class="n">actual_sha</span>
+</span><span id="FileDescr-809"><a href="#FileDescr-809"><span class="linenos">809</span></a>
+</span><span id="FileDescr-810"><a href="#FileDescr-810"><span class="linenos">810</span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sha256</span> <span class="o">==</span> <span class="n">actual_sha</span><span class="p">:</span>
+</span><span id="FileDescr-811"><a href="#FileDescr-811"><span class="linenos">811</span></a>            <span class="k">pass</span>
+</span><span id="FileDescr-812"><a href="#FileDescr-812"><span class="linenos">812</span></a>        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">sha256</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">context</span><span class="o">.</span><span class="n">update_hashes</span><span class="p">:</span>
+</span><span id="FileDescr-813"><a href="#FileDescr-813"><span class="linenos">813</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">sha256</span> <span class="o">=</span> <span class="n">actual_sha</span>
+</span><span id="FileDescr-814"><a href="#FileDescr-814"><span class="linenos">814</span></a>        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">sha256</span> <span class="o">!=</span> <span class="n">actual_sha</span><span class="p">:</span>
+</span><span id="FileDescr-815"><a href="#FileDescr-815"><span class="linenos">815</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span id="FileDescr-816"><a href="#FileDescr-816"><span class="linenos">816</span></a>                <span class="sa">f</span><span class="s2">&quot;Sha256 mismatch for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="si">}</span><span class="s2">. Expected </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sha256</span><span class="si">}</span><span class="s2">, got &quot;</span>
+</span><span id="FileDescr-817"><a href="#FileDescr-817"><span class="linenos">817</span></a>                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">actual_sha</span><span class="si">}</span><span class="s2">. Update expected `sha256` or point to the matching &quot;</span>
+</span><span id="FileDescr-818"><a href="#FileDescr-818"><span class="linenos">818</span></a>                <span class="o">+</span> <span class="s2">&quot;file.&quot;</span>
+</span><span id="FileDescr-819"><a href="#FileDescr-819"><span class="linenos">819</span></a>            <span class="p">)</span>
+</span><span id="FileDescr-820"><a href="#FileDescr-820"><span class="linenos">820</span></a>
+</span><span id="FileDescr-821"><a href="#FileDescr-821"><span class="linenos">821</span></a>        <span class="k">return</span>
+</span><span id="FileDescr-822"><a href="#FileDescr-822"><span class="linenos">822</span></a>
+</span><span id="FileDescr-823"><a href="#FileDescr-823"><span class="linenos">823</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="FileDescr-824"><a href="#FileDescr-824"><span class="linenos">824</span></a>
+</span><span id="FileDescr-825"><a href="#FileDescr-825"><span class="linenos">825</span></a>        <span class="k">return</span> <span class="n">download</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">sha256</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sha256</span><span class="p">)</span>
 </span></pre></div>
 
 
-            <div class="docstring"><p>Subpart of a resource description</p>
-</div>
-
+    
 
                             <div id="FileDescr.source" class="classattr">
                                 <div class="attr variable">
-            <span class="name">source</span><span class="annotation">: Annotated[Union[<a href="#HttpUrl">HttpUrl</a>, <a href="#RelativeFilePath">RelativeFilePath</a>, Annotated[pathlib.Path, PathType(path_type=&#39;file&#39;)]], FieldInfo(annotation=NoneType, required=True, metadata=[_PydanticGeneralMetadata(union_mode=&#39;left_to_right&#39;)]), AfterValidator(func=&lt;function wo_special_file_name at 0x7f9a7f3b8ea0&gt;), PlainSerializer(func=&lt;function _package at 0x7f9a7f3b9620&gt;, return_type=PydanticUndefined, when_used=&#39;unless-none&#39;)]</span>
+            <span class="name">source</span><span class="annotation">: Annotated[Union[<a href="#HttpUrl">HttpUrl</a>, <a href="#RelativeFilePath">RelativeFilePath</a>, Annotated[pathlib.Path, PathType(path_type=&#39;file&#39;), FieldInfo(annotation=NoneType, required=True, title=&#39;FilePath&#39;)]], FieldInfo(annotation=NoneType, required=True, metadata=[_PydanticGeneralMetadata(union_mode=&#39;left_to_right&#39;)]), AfterValidator(func=&lt;function wo_special_file_name at 0x7f13bad32ca0&gt;), PlainSerializer(func=&lt;function _package at 0x7f13bad31e40&gt;, return_type=PydanticUndefined, when_used=&#39;unless-none&#39;)]</span>
 
         
     </div>
@@ -362,37 +384,35 @@ bioimageio<wbr>.<a href="./../spec.html">spec</a><wbr>.common    </h1>
                             <div id="FileDescr.validate_sha256" class="classattr">
                                         <input id="FileDescr.validate_sha256-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
 <div class="attr function">
-                    <div class="decorator decorator-model_validator">@model_validator(mode=&#39;after&#39;)</div>
-
+            
         <span class="def">def</span>
-        <span class="name">validate_sha256</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span></span><span class="return-annotation">) -> <span class="n">Self</span>:</span></span>
+        <span class="name">validate_sha256</span><span class="signature pdoc-code condensed">(<span class="param"><span class="bp">self</span></span><span class="return-annotation">):</span></span>
 
                 <label class="view-source-button" for="FileDescr.validate_sha256-view-source"><span>View Source</span></label>
 
     </div>
     <a class="headerlink" href="#FileDescr.validate_sha256"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="FileDescr.validate_sha256-775"><a href="#FileDescr.validate_sha256-775"><span class="linenos">775</span></a>    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;after&quot;</span><span class="p">)</span>
-</span><span id="FileDescr.validate_sha256-776"><a href="#FileDescr.validate_sha256-776"><span class="linenos">776</span></a>    <span class="k">def</span> <span class="nf">validate_sha256</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
-</span><span id="FileDescr.validate_sha256-777"><a href="#FileDescr.validate_sha256-777"><span class="linenos">777</span></a>        <span class="n">context</span> <span class="o">=</span> <span class="n">validation_context_var</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-</span><span id="FileDescr.validate_sha256-778"><a href="#FileDescr.validate_sha256-778"><span class="linenos">778</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">context</span><span class="o">.</span><span class="n">perform_io_checks</span><span class="p">:</span>
-</span><span id="FileDescr.validate_sha256-779"><a href="#FileDescr.validate_sha256-779"><span class="linenos">779</span></a>            <span class="k">return</span> <span class="bp">self</span>
-</span><span id="FileDescr.validate_sha256-780"><a href="#FileDescr.validate_sha256-780"><span class="linenos">780</span></a>        <span class="k">elif</span> <span class="p">(</span><span class="n">src_str</span> <span class="o">:=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">))</span> <span class="ow">in</span> <span class="n">context</span><span class="o">.</span><span class="n">known_files</span><span class="p">:</span>
-</span><span id="FileDescr.validate_sha256-781"><a href="#FileDescr.validate_sha256-781"><span class="linenos">781</span></a>            <span class="n">actual_sha</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">known_files</span><span class="p">[</span><span class="n">src_str</span><span class="p">]</span>
-</span><span id="FileDescr.validate_sha256-782"><a href="#FileDescr.validate_sha256-782"><span class="linenos">782</span></a>        <span class="k">else</span><span class="p">:</span>
-</span><span id="FileDescr.validate_sha256-783"><a href="#FileDescr.validate_sha256-783"><span class="linenos">783</span></a>            <span class="n">local_source</span> <span class="o">=</span> <span class="n">download</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">sha256</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sha256</span><span class="p">)</span><span class="o">.</span><span class="n">path</span>
-</span><span id="FileDescr.validate_sha256-784"><a href="#FileDescr.validate_sha256-784"><span class="linenos">784</span></a>            <span class="n">actual_sha</span> <span class="o">=</span> <span class="n">get_sha256</span><span class="p">(</span><span class="n">local_source</span><span class="p">)</span>
-</span><span id="FileDescr.validate_sha256-785"><a href="#FileDescr.validate_sha256-785"><span class="linenos">785</span></a>            <span class="n">context</span><span class="o">.</span><span class="n">known_files</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">)]</span> <span class="o">=</span> <span class="n">actual_sha</span>
-</span><span id="FileDescr.validate_sha256-786"><a href="#FileDescr.validate_sha256-786"><span class="linenos">786</span></a>
-</span><span id="FileDescr.validate_sha256-787"><a href="#FileDescr.validate_sha256-787"><span class="linenos">787</span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sha256</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="FileDescr.validate_sha256-788"><a href="#FileDescr.validate_sha256-788"><span class="linenos">788</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">sha256</span> <span class="o">=</span> <span class="n">actual_sha</span>
-</span><span id="FileDescr.validate_sha256-789"><a href="#FileDescr.validate_sha256-789"><span class="linenos">789</span></a>        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">sha256</span> <span class="o">!=</span> <span class="n">actual_sha</span><span class="p">:</span>
-</span><span id="FileDescr.validate_sha256-790"><a href="#FileDescr.validate_sha256-790"><span class="linenos">790</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-</span><span id="FileDescr.validate_sha256-791"><a href="#FileDescr.validate_sha256-791"><span class="linenos">791</span></a>                <span class="sa">f</span><span class="s2">&quot;Sha256 mismatch for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="si">}</span><span class="s2">. Expected </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sha256</span><span class="si">}</span><span class="s2">, got &quot;</span>
-</span><span id="FileDescr.validate_sha256-792"><a href="#FileDescr.validate_sha256-792"><span class="linenos">792</span></a>                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">actual_sha</span><span class="si">}</span><span class="s2">. Update expected `sha256` or point to the matching &quot;</span>
-</span><span id="FileDescr.validate_sha256-793"><a href="#FileDescr.validate_sha256-793"><span class="linenos">793</span></a>                <span class="o">+</span> <span class="s2">&quot;file.&quot;</span>
-</span><span id="FileDescr.validate_sha256-794"><a href="#FileDescr.validate_sha256-794"><span class="linenos">794</span></a>            <span class="p">)</span>
-</span><span id="FileDescr.validate_sha256-795"><a href="#FileDescr.validate_sha256-795"><span class="linenos">795</span></a>
-</span><span id="FileDescr.validate_sha256-796"><a href="#FileDescr.validate_sha256-796"><span class="linenos">796</span></a>        <span class="k">return</span> <span class="bp">self</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="FileDescr.validate_sha256-801"><a href="#FileDescr.validate_sha256-801"><span class="linenos">801</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">validate_sha256</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="FileDescr.validate_sha256-802"><a href="#FileDescr.validate_sha256-802"><span class="linenos">802</span></a>        <span class="n">context</span> <span class="o">=</span> <span class="n">get_validation_context</span><span class="p">()</span>
+</span><span id="FileDescr.validate_sha256-803"><a href="#FileDescr.validate_sha256-803"><span class="linenos">803</span></a>        <span class="k">if</span> <span class="p">(</span><span class="n">src_str</span> <span class="o">:=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">))</span> <span class="ow">in</span> <span class="n">context</span><span class="o">.</span><span class="n">known_files</span><span class="p">:</span>
+</span><span id="FileDescr.validate_sha256-804"><a href="#FileDescr.validate_sha256-804"><span class="linenos">804</span></a>            <span class="n">actual_sha</span> <span class="o">=</span> <span class="n">context</span><span class="o">.</span><span class="n">known_files</span><span class="p">[</span><span class="n">src_str</span><span class="p">]</span>
+</span><span id="FileDescr.validate_sha256-805"><a href="#FileDescr.validate_sha256-805"><span class="linenos">805</span></a>        <span class="k">else</span><span class="p">:</span>
+</span><span id="FileDescr.validate_sha256-806"><a href="#FileDescr.validate_sha256-806"><span class="linenos">806</span></a>            <span class="n">local_source</span> <span class="o">=</span> <span class="n">download</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">sha256</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sha256</span><span class="p">)</span><span class="o">.</span><span class="n">path</span>
+</span><span id="FileDescr.validate_sha256-807"><a href="#FileDescr.validate_sha256-807"><span class="linenos">807</span></a>            <span class="n">actual_sha</span> <span class="o">=</span> <span class="n">get_sha256</span><span class="p">(</span><span class="n">local_source</span><span class="p">)</span>
+</span><span id="FileDescr.validate_sha256-808"><a href="#FileDescr.validate_sha256-808"><span class="linenos">808</span></a>            <span class="n">context</span><span class="o">.</span><span class="n">known_files</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">)]</span> <span class="o">=</span> <span class="n">actual_sha</span>
+</span><span id="FileDescr.validate_sha256-809"><a href="#FileDescr.validate_sha256-809"><span class="linenos">809</span></a>
+</span><span id="FileDescr.validate_sha256-810"><a href="#FileDescr.validate_sha256-810"><span class="linenos">810</span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sha256</span> <span class="o">==</span> <span class="n">actual_sha</span><span class="p">:</span>
+</span><span id="FileDescr.validate_sha256-811"><a href="#FileDescr.validate_sha256-811"><span class="linenos">811</span></a>            <span class="k">pass</span>
+</span><span id="FileDescr.validate_sha256-812"><a href="#FileDescr.validate_sha256-812"><span class="linenos">812</span></a>        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">sha256</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">context</span><span class="o">.</span><span class="n">update_hashes</span><span class="p">:</span>
+</span><span id="FileDescr.validate_sha256-813"><a href="#FileDescr.validate_sha256-813"><span class="linenos">813</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">sha256</span> <span class="o">=</span> <span class="n">actual_sha</span>
+</span><span id="FileDescr.validate_sha256-814"><a href="#FileDescr.validate_sha256-814"><span class="linenos">814</span></a>        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">sha256</span> <span class="o">!=</span> <span class="n">actual_sha</span><span class="p">:</span>
+</span><span id="FileDescr.validate_sha256-815"><a href="#FileDescr.validate_sha256-815"><span class="linenos">815</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+</span><span id="FileDescr.validate_sha256-816"><a href="#FileDescr.validate_sha256-816"><span class="linenos">816</span></a>                <span class="sa">f</span><span class="s2">&quot;Sha256 mismatch for </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="si">}</span><span class="s2">. Expected </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sha256</span><span class="si">}</span><span class="s2">, got &quot;</span>
+</span><span id="FileDescr.validate_sha256-817"><a href="#FileDescr.validate_sha256-817"><span class="linenos">817</span></a>                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">actual_sha</span><span class="si">}</span><span class="s2">. Update expected `sha256` or point to the matching &quot;</span>
+</span><span id="FileDescr.validate_sha256-818"><a href="#FileDescr.validate_sha256-818"><span class="linenos">818</span></a>                <span class="o">+</span> <span class="s2">&quot;file.&quot;</span>
+</span><span id="FileDescr.validate_sha256-819"><a href="#FileDescr.validate_sha256-819"><span class="linenos">819</span></a>            <span class="p">)</span>
+</span><span id="FileDescr.validate_sha256-820"><a href="#FileDescr.validate_sha256-820"><span class="linenos">820</span></a>
+</span><span id="FileDescr.validate_sha256-821"><a href="#FileDescr.validate_sha256-821"><span class="linenos">821</span></a>        <span class="k">return</span>
 </span></pre></div>
 
 
@@ -410,9 +430,9 @@ bioimageio<wbr>.<a href="./../spec.html">spec</a><wbr>.common    </h1>
 
     </div>
     <a class="headerlink" href="#FileDescr.download"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="FileDescr.download-798"><a href="#FileDescr.download-798"><span class="linenos">798</span></a>    <span class="k">def</span> <span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="FileDescr.download-799"><a href="#FileDescr.download-799"><span class="linenos">799</span></a>
-</span><span id="FileDescr.download-800"><a href="#FileDescr.download-800"><span class="linenos">800</span></a>        <span class="k">return</span> <span class="n">download</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">sha256</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sha256</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="FileDescr.download-823"><a href="#FileDescr.download-823"><span class="linenos">823</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="FileDescr.download-824"><a href="#FileDescr.download-824"><span class="linenos">824</span></a>
+</span><span id="FileDescr.download-825"><a href="#FileDescr.download-825"><span class="linenos">825</span></a>        <span class="k">return</span> <span class="n">download</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">sha256</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sha256</span><span class="p">)</span>
 </span></pre></div>
 
 
@@ -432,11 +452,24 @@ bioimageio<wbr>.<a href="./../spec.html">spec</a><wbr>.common    </h1>
     
 
                 </section>
+                <section id="FilePath">
+                    <div class="attr variable">
+            <span class="name">FilePath</span>        =
+<input id="FilePath-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+            <label class="view-value-button pdoc-button" for="FilePath-view-value"></label><span class="default_value">typing.Annotated[pathlib.Path, PathType(path_type=&#39;file&#39;), FieldInfo(annotation=NoneType, required=True, title=&#39;FilePath&#39;)]</span>
+
+        
+    </div>
+    <a class="headerlink" href="#FilePath"></a>
+    
+    
+
+                </section>
                 <section id="FileSource">
                     <div class="attr variable">
             <span class="name">FileSource</span>        =
 <input id="FileSource-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
-            <label class="view-value-button pdoc-button" for="FileSource-view-value"></label><span class="default_value">typing.Annotated[typing.Union[<a href="#HttpUrl">HttpUrl</a>, <a href="#RelativeFilePath">RelativeFilePath</a>, typing.Annotated[pathlib.Path, PathType(path_type=&#39;file&#39;)]], FieldInfo(annotation=NoneType, required=True, metadata=[_PydanticGeneralMetadata(union_mode=&#39;left_to_right&#39;)])]</span>
+            <label class="view-value-button pdoc-button" for="FileSource-view-value"></label><span class="default_value">typing.Annotated[typing.Union[<a href="#HttpUrl">HttpUrl</a>, <a href="#RelativeFilePath">RelativeFilePath</a>, typing.Annotated[pathlib.Path, PathType(path_type=&#39;file&#39;), FieldInfo(annotation=NoneType, required=True, title=&#39;FilePath&#39;)]], FieldInfo(annotation=NoneType, required=True, metadata=[_PydanticGeneralMetadata(union_mode=&#39;left_to_right&#39;)])]</span>
 
         
     </div>
@@ -456,36 +489,40 @@ bioimageio<wbr>.<a href="./../spec.html">spec</a><wbr>.common    </h1>
 
     </div>
     <a class="headerlink" href="#HttpUrl"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="HttpUrl-118"><a href="#HttpUrl-118"><span class="linenos">118</span></a><span class="k">class</span> <span class="nc">HttpUrl</span><span class="p">(</span><span class="n">RootHttpUrl</span><span class="p">):</span>
-</span><span id="HttpUrl-119"><a href="#HttpUrl-119"><span class="linenos">119</span></a>    <span class="n">root_model</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">RootModel</span><span class="p">[</span><span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="n">RootModel</span><span class="p">[</span><span class="n">pydantic</span><span class="o">.</span><span class="n">HttpUrl</span><span class="p">]</span>
-</span><span id="HttpUrl-120"><a href="#HttpUrl-120"><span class="linenos">120</span></a>    <span class="n">_exists</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="HttpUrl-121"><a href="#HttpUrl-121"><span class="linenos">121</span></a>
-</span><span id="HttpUrl-122"><a href="#HttpUrl-122"><span class="linenos">122</span></a>    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;after&quot;</span><span class="p">)</span>
-</span><span id="HttpUrl-123"><a href="#HttpUrl-123"><span class="linenos">123</span></a>    <span class="k">def</span> <span class="nf">_validate_url</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="HttpUrl-124"><a href="#HttpUrl-124"><span class="linenos">124</span></a>        <span class="n">url</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validated</span>
-</span><span id="HttpUrl-125"><a href="#HttpUrl-125"><span class="linenos">125</span></a>        <span class="n">context</span> <span class="o">=</span> <span class="n">validation_context_var</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
-</span><span id="HttpUrl-126"><a href="#HttpUrl-126"><span class="linenos">126</span></a>        <span class="k">if</span> <span class="n">context</span><span class="o">.</span><span class="n">perform_io_checks</span> <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="n">url</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">context</span><span class="o">.</span><span class="n">known_files</span><span class="p">:</span>
-</span><span id="HttpUrl-127"><a href="#HttpUrl-127"><span class="linenos">127</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_validated</span> <span class="o">=</span> <span class="n">_validate_url</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
-</span><span id="HttpUrl-128"><a href="#HttpUrl-128"><span class="linenos">128</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span id="HttpUrl-129"><a href="#HttpUrl-129"><span class="linenos">129</span></a>
-</span><span id="HttpUrl-130"><a href="#HttpUrl-130"><span class="linenos">130</span></a>        <span class="k">return</span> <span class="bp">self</span>
-</span><span id="HttpUrl-131"><a href="#HttpUrl-131"><span class="linenos">131</span></a>
-</span><span id="HttpUrl-132"><a href="#HttpUrl-132"><span class="linenos">132</span></a>    <span class="k">def</span> <span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="HttpUrl-133"><a href="#HttpUrl-133"><span class="linenos">133</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;True if URL is available&quot;&quot;&quot;</span>
-</span><span id="HttpUrl-134"><a href="#HttpUrl-134"><span class="linenos">134</span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="HttpUrl-135"><a href="#HttpUrl-135"><span class="linenos">135</span></a>            <span class="k">try</span><span class="p">:</span>
-</span><span id="HttpUrl-136"><a href="#HttpUrl-136"><span class="linenos">136</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_validated</span> <span class="o">=</span> <span class="n">_validate_url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_validated</span><span class="p">)</span>
-</span><span id="HttpUrl-137"><a href="#HttpUrl-137"><span class="linenos">137</span></a>            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-</span><span id="HttpUrl-138"><a href="#HttpUrl-138"><span class="linenos">138</span></a>                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-</span><span id="HttpUrl-139"><a href="#HttpUrl-139"><span class="linenos">139</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span> <span class="o">=</span> <span class="kc">False</span>
-</span><span id="HttpUrl-140"><a href="#HttpUrl-140"><span class="linenos">140</span></a>            <span class="k">else</span><span class="p">:</span>
-</span><span id="HttpUrl-141"><a href="#HttpUrl-141"><span class="linenos">141</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span id="HttpUrl-142"><a href="#HttpUrl-142"><span class="linenos">142</span></a>
-</span><span id="HttpUrl-143"><a href="#HttpUrl-143"><span class="linenos">143</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="HttpUrl-123"><a href="#HttpUrl-123"><span class="linenos">123</span></a><span class="k">class</span><span class="w"> </span><span class="nc">HttpUrl</span><span class="p">(</span><span class="n">RootHttpUrl</span><span class="p">):</span>
+</span><span id="HttpUrl-124"><a href="#HttpUrl-124"><span class="linenos">124</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A URL with the HTTP or HTTPS scheme.&quot;&quot;&quot;</span>
+</span><span id="HttpUrl-125"><a href="#HttpUrl-125"><span class="linenos">125</span></a>
+</span><span id="HttpUrl-126"><a href="#HttpUrl-126"><span class="linenos">126</span></a>    <span class="n">root_model</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">RootModel</span><span class="p">[</span><span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="n">RootModel</span><span class="p">[</span><span class="n">pydantic</span><span class="o">.</span><span class="n">HttpUrl</span><span class="p">]</span>
+</span><span id="HttpUrl-127"><a href="#HttpUrl-127"><span class="linenos">127</span></a>    <span class="n">_exists</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="HttpUrl-128"><a href="#HttpUrl-128"><span class="linenos">128</span></a>
+</span><span id="HttpUrl-129"><a href="#HttpUrl-129"><span class="linenos">129</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_after_validator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="HttpUrl-130"><a href="#HttpUrl-130"><span class="linenos">130</span></a>        <span class="bp">self</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_after_validator</span><span class="p">()</span>
+</span><span id="HttpUrl-131"><a href="#HttpUrl-131"><span class="linenos">131</span></a>        <span class="n">context</span> <span class="o">=</span> <span class="n">get_validation_context</span><span class="p">()</span>
+</span><span id="HttpUrl-132"><a href="#HttpUrl-132"><span class="linenos">132</span></a>        <span class="k">if</span> <span class="p">(</span>
+</span><span id="HttpUrl-133"><a href="#HttpUrl-133"><span class="linenos">133</span></a>            <span class="n">context</span><span class="o">.</span><span class="n">perform_io_checks</span>
+</span><span id="HttpUrl-134"><a href="#HttpUrl-134"><span class="linenos">134</span></a>            <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_validated</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">context</span><span class="o">.</span><span class="n">known_files</span>
+</span><span id="HttpUrl-135"><a href="#HttpUrl-135"><span class="linenos">135</span></a>        <span class="p">):</span>
+</span><span id="HttpUrl-136"><a href="#HttpUrl-136"><span class="linenos">136</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_validated</span> <span class="o">=</span> <span class="n">_validate_url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_validated</span><span class="p">)</span>
+</span><span id="HttpUrl-137"><a href="#HttpUrl-137"><span class="linenos">137</span></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span id="HttpUrl-138"><a href="#HttpUrl-138"><span class="linenos">138</span></a>
+</span><span id="HttpUrl-139"><a href="#HttpUrl-139"><span class="linenos">139</span></a>        <span class="k">return</span> <span class="bp">self</span>
+</span><span id="HttpUrl-140"><a href="#HttpUrl-140"><span class="linenos">140</span></a>
+</span><span id="HttpUrl-141"><a href="#HttpUrl-141"><span class="linenos">141</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="HttpUrl-142"><a href="#HttpUrl-142"><span class="linenos">142</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;True if URL is available&quot;&quot;&quot;</span>
+</span><span id="HttpUrl-143"><a href="#HttpUrl-143"><span class="linenos">143</span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="HttpUrl-144"><a href="#HttpUrl-144"><span class="linenos">144</span></a>            <span class="k">try</span><span class="p">:</span>
+</span><span id="HttpUrl-145"><a href="#HttpUrl-145"><span class="linenos">145</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_validated</span> <span class="o">=</span> <span class="n">_validate_url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_validated</span><span class="p">)</span>
+</span><span id="HttpUrl-146"><a href="#HttpUrl-146"><span class="linenos">146</span></a>            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span><span id="HttpUrl-147"><a href="#HttpUrl-147"><span class="linenos">147</span></a>                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+</span><span id="HttpUrl-148"><a href="#HttpUrl-148"><span class="linenos">148</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span id="HttpUrl-149"><a href="#HttpUrl-149"><span class="linenos">149</span></a>            <span class="k">else</span><span class="p">:</span>
+</span><span id="HttpUrl-150"><a href="#HttpUrl-150"><span class="linenos">150</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span id="HttpUrl-151"><a href="#HttpUrl-151"><span class="linenos">151</span></a>
+</span><span id="HttpUrl-152"><a href="#HttpUrl-152"><span class="linenos">152</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span>
 </span></pre></div>
 
 
-            <div class="docstring"><p>A 'URL folder', possibly an invalid http URL</p>
+            <div class="docstring"><p>A URL with the HTTP or HTTPS scheme.</p>
 </div>
 
 
@@ -515,18 +552,18 @@ bioimageio<wbr>.<a href="./../spec.html">spec</a><wbr>.common    </h1>
 
     </div>
     <a class="headerlink" href="#HttpUrl.exists"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="HttpUrl.exists-132"><a href="#HttpUrl.exists-132"><span class="linenos">132</span></a>    <span class="k">def</span> <span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="HttpUrl.exists-133"><a href="#HttpUrl.exists-133"><span class="linenos">133</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;True if URL is available&quot;&quot;&quot;</span>
-</span><span id="HttpUrl.exists-134"><a href="#HttpUrl.exists-134"><span class="linenos">134</span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="HttpUrl.exists-135"><a href="#HttpUrl.exists-135"><span class="linenos">135</span></a>            <span class="k">try</span><span class="p">:</span>
-</span><span id="HttpUrl.exists-136"><a href="#HttpUrl.exists-136"><span class="linenos">136</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_validated</span> <span class="o">=</span> <span class="n">_validate_url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_validated</span><span class="p">)</span>
-</span><span id="HttpUrl.exists-137"><a href="#HttpUrl.exists-137"><span class="linenos">137</span></a>            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-</span><span id="HttpUrl.exists-138"><a href="#HttpUrl.exists-138"><span class="linenos">138</span></a>                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-</span><span id="HttpUrl.exists-139"><a href="#HttpUrl.exists-139"><span class="linenos">139</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span> <span class="o">=</span> <span class="kc">False</span>
-</span><span id="HttpUrl.exists-140"><a href="#HttpUrl.exists-140"><span class="linenos">140</span></a>            <span class="k">else</span><span class="p">:</span>
-</span><span id="HttpUrl.exists-141"><a href="#HttpUrl.exists-141"><span class="linenos">141</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span id="HttpUrl.exists-142"><a href="#HttpUrl.exists-142"><span class="linenos">142</span></a>
-</span><span id="HttpUrl.exists-143"><a href="#HttpUrl.exists-143"><span class="linenos">143</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="HttpUrl.exists-141"><a href="#HttpUrl.exists-141"><span class="linenos">141</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="HttpUrl.exists-142"><a href="#HttpUrl.exists-142"><span class="linenos">142</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;True if URL is available&quot;&quot;&quot;</span>
+</span><span id="HttpUrl.exists-143"><a href="#HttpUrl.exists-143"><span class="linenos">143</span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="HttpUrl.exists-144"><a href="#HttpUrl.exists-144"><span class="linenos">144</span></a>            <span class="k">try</span><span class="p">:</span>
+</span><span id="HttpUrl.exists-145"><a href="#HttpUrl.exists-145"><span class="linenos">145</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_validated</span> <span class="o">=</span> <span class="n">_validate_url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_validated</span><span class="p">)</span>
+</span><span id="HttpUrl.exists-146"><a href="#HttpUrl.exists-146"><span class="linenos">146</span></a>            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span><span id="HttpUrl.exists-147"><a href="#HttpUrl.exists-147"><span class="linenos">147</span></a>                <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+</span><span id="HttpUrl.exists-148"><a href="#HttpUrl.exists-148"><span class="linenos">148</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span id="HttpUrl.exists-149"><a href="#HttpUrl.exists-149"><span class="linenos">149</span></a>            <span class="k">else</span><span class="p">:</span>
+</span><span id="HttpUrl.exists-150"><a href="#HttpUrl.exists-150"><span class="linenos">150</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span id="HttpUrl.exists-151"><a href="#HttpUrl.exists-151"><span class="linenos">151</span></a>
+</span><span id="HttpUrl.exists-152"><a href="#HttpUrl.exists-152"><span class="linenos">152</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span>
 </span></pre></div>
 
 
@@ -547,16 +584,24 @@ bioimageio<wbr>.<a href="./../spec.html">spec</a><wbr>.common    </h1>
 
     </div>
     <a class="headerlink" href="#InvalidDescr"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="InvalidDescr-514"><a href="#InvalidDescr-514"><span class="linenos">514</span></a><span class="k">class</span> <span class="nc">InvalidDescr</span><span class="p">(</span>
-</span><span id="InvalidDescr-515"><a href="#InvalidDescr-515"><span class="linenos">515</span></a>    <span class="n">ResourceDescrBase</span><span class="p">,</span>
-</span><span id="InvalidDescr-516"><a href="#InvalidDescr-516"><span class="linenos">516</span></a>    <span class="n">extra</span><span class="o">=</span><span class="s2">&quot;allow&quot;</span><span class="p">,</span>
-</span><span id="InvalidDescr-517"><a href="#InvalidDescr-517"><span class="linenos">517</span></a>    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;An invalid resource description&quot;</span><span class="p">,</span>
-</span><span id="InvalidDescr-518"><a href="#InvalidDescr-518"><span class="linenos">518</span></a><span class="p">):</span>
-</span><span id="InvalidDescr-519"><a href="#InvalidDescr-519"><span class="linenos">519</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A representation of an invalid resource description&quot;&quot;&quot;</span>
-</span><span id="InvalidDescr-520"><a href="#InvalidDescr-520"><span class="linenos">520</span></a>
-</span><span id="InvalidDescr-521"><a href="#InvalidDescr-521"><span class="linenos">521</span></a>    <span class="nb">type</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="s2">&quot;unknown&quot;</span>
-</span><span id="InvalidDescr-522"><a href="#InvalidDescr-522"><span class="linenos">522</span></a>    <span class="n">format_version</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="s2">&quot;unknown&quot;</span>
-</span><span id="InvalidDescr-523"><a href="#InvalidDescr-523"><span class="linenos">523</span></a>    <span class="n">fields_to_set_explicitly</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">FrozenSet</span><span class="p">[</span><span class="n">LiteralString</span><span class="p">]]</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">()</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="InvalidDescr-356"><a href="#InvalidDescr-356"><span class="linenos">356</span></a><span class="k">class</span><span class="w"> </span><span class="nc">InvalidDescr</span><span class="p">(</span>
+</span><span id="InvalidDescr-357"><a href="#InvalidDescr-357"><span class="linenos">357</span></a>    <span class="n">ResourceDescrBase</span><span class="p">,</span>
+</span><span id="InvalidDescr-358"><a href="#InvalidDescr-358"><span class="linenos">358</span></a>    <span class="n">extra</span><span class="o">=</span><span class="s2">&quot;allow&quot;</span><span class="p">,</span>
+</span><span id="InvalidDescr-359"><a href="#InvalidDescr-359"><span class="linenos">359</span></a>    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;An invalid resource description&quot;</span><span class="p">,</span>
+</span><span id="InvalidDescr-360"><a href="#InvalidDescr-360"><span class="linenos">360</span></a><span class="p">):</span>
+</span><span id="InvalidDescr-361"><a href="#InvalidDescr-361"><span class="linenos">361</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A representation of an invalid resource description&quot;&quot;&quot;</span>
+</span><span id="InvalidDescr-362"><a href="#InvalidDescr-362"><span class="linenos">362</span></a>
+</span><span id="InvalidDescr-363"><a href="#InvalidDescr-363"><span class="linenos">363</span></a>    <span class="n">implemented_type</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;unknown&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="s2">&quot;unknown&quot;</span>
+</span><span id="InvalidDescr-364"><a href="#InvalidDescr-364"><span class="linenos">364</span></a>    <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>  <span class="c1"># see NodeWithExplicitlySetFields</span>
+</span><span id="InvalidDescr-365"><a href="#InvalidDescr-365"><span class="linenos">365</span></a>        <span class="nb">type</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="s2">&quot;unknown&quot;</span>
+</span><span id="InvalidDescr-366"><a href="#InvalidDescr-366"><span class="linenos">366</span></a>    <span class="k">else</span><span class="p">:</span>
+</span><span id="InvalidDescr-367"><a href="#InvalidDescr-367"><span class="linenos">367</span></a>        <span class="nb">type</span><span class="p">:</span> <span class="n">Any</span>
+</span><span id="InvalidDescr-368"><a href="#InvalidDescr-368"><span class="linenos">368</span></a>
+</span><span id="InvalidDescr-369"><a href="#InvalidDescr-369"><span class="linenos">369</span></a>    <span class="n">implemented_format_version</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;unknown&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="s2">&quot;unknown&quot;</span>
+</span><span id="InvalidDescr-370"><a href="#InvalidDescr-370"><span class="linenos">370</span></a>    <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>  <span class="c1"># see NodeWithExplicitlySetFields</span>
+</span><span id="InvalidDescr-371"><a href="#InvalidDescr-371"><span class="linenos">371</span></a>        <span class="n">format_version</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="s2">&quot;unknown&quot;</span>
+</span><span id="InvalidDescr-372"><a href="#InvalidDescr-372"><span class="linenos">372</span></a>    <span class="k">else</span><span class="p">:</span>
+</span><span id="InvalidDescr-373"><a href="#InvalidDescr-373"><span class="linenos">373</span></a>        <span class="n">format_version</span><span class="p">:</span> <span class="n">Any</span>
 </span></pre></div>
 
 
@@ -564,46 +609,21 @@ bioimageio<wbr>.<a href="./../spec.html">spec</a><wbr>.common    </h1>
 </div>
 
 
-                            <div id="InvalidDescr.type" class="classattr">
+                            <div id="InvalidDescr.implemented_type" class="classattr">
                                 <div class="attr variable">
-            <span class="name">type</span><span class="annotation">: Any</span>
+            <span class="name">implemented_type</span><span class="annotation">: ClassVar[Literal[&#39;unknown&#39;]]</span>        =
+<span class="default_value">&#39;unknown&#39;</span>
 
         
     </div>
-    <a class="headerlink" href="#InvalidDescr.type"></a>
+    <a class="headerlink" href="#InvalidDescr.implemented_type"></a>
     
     
-
-                            </div>
-                            <div id="InvalidDescr.format_version" class="classattr">
-                                <div class="attr variable">
-            <span class="name">format_version</span><span class="annotation">: Any</span>
-
-        
-    </div>
-    <a class="headerlink" href="#InvalidDescr.format_version"></a>
-    
-    
-
-                            </div>
-                            <div id="InvalidDescr.fields_to_set_explicitly" class="classattr">
-                                <div class="attr variable">
-            <span class="name">fields_to_set_explicitly</span><span class="annotation">: ClassVar[FrozenSet[LiteralString]]</span>        =
-<span class="default_value">frozenset()</span>
-
-        
-    </div>
-    <a class="headerlink" href="#InvalidDescr.fields_to_set_explicitly"></a>
-    
-            <div class="docstring"><p>set set these fields explicitly with their default value if they are not set,
-such that they are always included even when dumping with 'exlude_unset'</p>
-</div>
-
 
                             </div>
                             <div id="InvalidDescr.implemented_format_version" class="classattr">
                                 <div class="attr variable">
-            <span class="name">implemented_format_version</span><span class="annotation">: ClassVar[str]</span>        =
+            <span class="name">implemented_format_version</span><span class="annotation">: ClassVar[Literal[&#39;unknown&#39;]]</span>        =
 <span class="default_value">&#39;unknown&#39;</span>
 
         
@@ -636,7 +656,7 @@ such that they are always included even when dumping with 'exlude_unset'</p>
 
     </div>
     <a class="headerlink" href="#InvalidDescr.model_post_init"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="InvalidDescr.model_post_init-124"><a href="#InvalidDescr.model_post_init-124"><span class="linenos">124</span></a>                    <span class="k">def</span> <span class="nf">wrapped_model_post_init</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="InvalidDescr.model_post_init-124"><a href="#InvalidDescr.model_post_init-124"><span class="linenos">124</span></a>                    <span class="k">def</span><span class="w"> </span><span class="nf">wrapped_model_post_init</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 </span><span id="InvalidDescr.model_post_init-125"><a href="#InvalidDescr.model_post_init-125"><span class="linenos">125</span></a><span class="w">                        </span><span class="sd">&quot;&quot;&quot;We need to both initialize private attributes and call the user-defined model_post_init</span>
 </span><span id="InvalidDescr.model_post_init-126"><a href="#InvalidDescr.model_post_init-126"><span class="linenos">126</span></a><span class="sd">                        method.</span>
 </span><span id="InvalidDescr.model_post_init-127"><a href="#InvalidDescr.model_post_init-127"><span class="linenos">127</span></a><span class="sd">                        &quot;&quot;&quot;</span>
@@ -656,7 +676,7 @@ method.</p>
                     <div class="attr variable">
             <span class="name">PermissiveFileSource</span>        =
 <input id="PermissiveFileSource-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
-            <label class="view-value-button pdoc-button" for="PermissiveFileSource-view-value"></label><span class="default_value">typing.Union[typing.Annotated[typing.Union[<a href="#HttpUrl">HttpUrl</a>, <a href="#RelativeFilePath">RelativeFilePath</a>, typing.Annotated[pathlib.Path, PathType(path_type=&#39;file&#39;)]], FieldInfo(annotation=NoneType, required=True, metadata=[_PydanticGeneralMetadata(union_mode=&#39;left_to_right&#39;)])], str, typing.Annotated[pydantic_core._pydantic_core.Url, UrlConstraints(max_length=2083, allowed_schemes=[&#39;http&#39;, &#39;https&#39;], host_required=None, default_host=None, default_port=None, default_path=None)]]</span>
+            <label class="view-value-button pdoc-button" for="PermissiveFileSource-view-value"></label><span class="default_value">typing.Union[typing.Annotated[typing.Union[<a href="#HttpUrl">HttpUrl</a>, <a href="#RelativeFilePath">RelativeFilePath</a>, typing.Annotated[pathlib.Path, PathType(path_type=&#39;file&#39;), FieldInfo(annotation=NoneType, required=True, title=&#39;FilePath&#39;)]], FieldInfo(annotation=NoneType, required=True, metadata=[_PydanticGeneralMetadata(union_mode=&#39;left_to_right&#39;)])], str, typing.Annotated[pydantic_core._pydantic_core.Url, UrlConstraints(max_length=2083, allowed_schemes=[&#39;http&#39;, &#39;https&#39;], host_required=None, default_host=None, default_port=None, default_path=None)]]</span>
 
         
     </div>
@@ -676,31 +696,31 @@ method.</p>
 
     </div>
     <a class="headerlink" href="#RelativeFilePath"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="RelativeFilePath-186"><a href="#RelativeFilePath-186"><span class="linenos">186</span></a><span class="k">class</span> <span class="nc">RelativeFilePath</span><span class="p">(</span>
-</span><span id="RelativeFilePath-187"><a href="#RelativeFilePath-187"><span class="linenos">187</span></a>    <span class="n">RelativePathBase</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">AbsoluteFilePath</span><span class="p">,</span> <span class="n">HttpUrl</span><span class="p">,</span> <span class="n">ZipPath</span><span class="p">]],</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span>
-</span><span id="RelativeFilePath-188"><a href="#RelativeFilePath-188"><span class="linenos">188</span></a><span class="p">):</span>
-</span><span id="RelativeFilePath-189"><a href="#RelativeFilePath-189"><span class="linenos">189</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A path relative to the `rdf.yaml` file (also if the RDF source is a URL).&quot;&quot;&quot;</span>
-</span><span id="RelativeFilePath-190"><a href="#RelativeFilePath-190"><span class="linenos">190</span></a>
-</span><span id="RelativeFilePath-191"><a href="#RelativeFilePath-191"><span class="linenos">191</span></a>    <span class="k">def</span> <span class="nf">model_post_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">__context</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="RelativeFilePath-192"><a href="#RelativeFilePath-192"><span class="linenos">192</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;add validation @private&quot;&quot;&quot;</span>
-</span><span id="RelativeFilePath-193"><a href="#RelativeFilePath-193"><span class="linenos">193</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">parts</span><span class="p">:</span>  <span class="c1"># an empty path can only be a directory</span>
-</span><span id="RelativeFilePath-194"><a href="#RelativeFilePath-194"><span class="linenos">194</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="si">}</span><span class="s2"> is not a valid file path.&quot;</span><span class="p">)</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="RelativeFilePath-184"><a href="#RelativeFilePath-184"><span class="linenos">184</span></a><span class="k">class</span><span class="w"> </span><span class="nc">RelativeFilePath</span><span class="p">(</span>
+</span><span id="RelativeFilePath-185"><a href="#RelativeFilePath-185"><span class="linenos">185</span></a>    <span class="n">RelativePathBase</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">AbsoluteFilePath</span><span class="p">,</span> <span class="n">HttpUrl</span><span class="p">,</span> <span class="n">ZipPath</span><span class="p">]],</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span>
+</span><span id="RelativeFilePath-186"><a href="#RelativeFilePath-186"><span class="linenos">186</span></a><span class="p">):</span>
+</span><span id="RelativeFilePath-187"><a href="#RelativeFilePath-187"><span class="linenos">187</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A path relative to the `rdf.yaml` file (also if the RDF source is a URL).&quot;&quot;&quot;</span>
+</span><span id="RelativeFilePath-188"><a href="#RelativeFilePath-188"><span class="linenos">188</span></a>
+</span><span id="RelativeFilePath-189"><a href="#RelativeFilePath-189"><span class="linenos">189</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">model_post_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">__context</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="RelativeFilePath-190"><a href="#RelativeFilePath-190"><span class="linenos">190</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;add validation @private&quot;&quot;&quot;</span>
+</span><span id="RelativeFilePath-191"><a href="#RelativeFilePath-191"><span class="linenos">191</span></a>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="o">.</span><span class="n">parts</span><span class="p">:</span>  <span class="c1"># an empty path can only be a directory</span>
+</span><span id="RelativeFilePath-192"><a href="#RelativeFilePath-192"><span class="linenos">192</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="si">}</span><span class="s2"> is not a valid file path.&quot;</span><span class="p">)</span>
+</span><span id="RelativeFilePath-193"><a href="#RelativeFilePath-193"><span class="linenos">193</span></a>
+</span><span id="RelativeFilePath-194"><a href="#RelativeFilePath-194"><span class="linenos">194</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">model_post_init</span><span class="p">(</span><span class="n">__context</span><span class="p">)</span>
 </span><span id="RelativeFilePath-195"><a href="#RelativeFilePath-195"><span class="linenos">195</span></a>
-</span><span id="RelativeFilePath-196"><a href="#RelativeFilePath-196"><span class="linenos">196</span></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">model_post_init</span><span class="p">(</span><span class="n">__context</span><span class="p">)</span>
-</span><span id="RelativeFilePath-197"><a href="#RelativeFilePath-197"><span class="linenos">197</span></a>
-</span><span id="RelativeFilePath-198"><a href="#RelativeFilePath-198"><span class="linenos">198</span></a>    <span class="k">def</span> <span class="nf">get_absolute</span><span class="p">(</span>
-</span><span id="RelativeFilePath-199"><a href="#RelativeFilePath-199"><span class="linenos">199</span></a>        <span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="s2">&quot;RootHttpUrl | Path | AnyUrl | ZipFile&quot;</span>
-</span><span id="RelativeFilePath-200"><a href="#RelativeFilePath-200"><span class="linenos">200</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;AbsoluteFilePath | HttpUrl | ZipPath&quot;</span><span class="p">:</span>
-</span><span id="RelativeFilePath-201"><a href="#RelativeFilePath-201"><span class="linenos">201</span></a>        <span class="n">absolute</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_absolute_impl</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
-</span><span id="RelativeFilePath-202"><a href="#RelativeFilePath-202"><span class="linenos">202</span></a>        <span class="k">if</span> <span class="p">(</span>
-</span><span id="RelativeFilePath-203"><a href="#RelativeFilePath-203"><span class="linenos">203</span></a>            <span class="nb">isinstance</span><span class="p">(</span><span class="n">absolute</span><span class="p">,</span> <span class="n">Path</span><span class="p">)</span>
-</span><span id="RelativeFilePath-204"><a href="#RelativeFilePath-204"><span class="linenos">204</span></a>            <span class="ow">and</span> <span class="p">(</span><span class="n">context</span> <span class="o">:=</span> <span class="n">validation_context_var</span><span class="o">.</span><span class="n">get</span><span class="p">())</span><span class="o">.</span><span class="n">perform_io_checks</span>
-</span><span id="RelativeFilePath-205"><a href="#RelativeFilePath-205"><span class="linenos">205</span></a>            <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">context</span><span class="o">.</span><span class="n">known_files</span>
-</span><span id="RelativeFilePath-206"><a href="#RelativeFilePath-206"><span class="linenos">206</span></a>            <span class="ow">and</span> <span class="ow">not</span> <span class="n">absolute</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span>
-</span><span id="RelativeFilePath-207"><a href="#RelativeFilePath-207"><span class="linenos">207</span></a>        <span class="p">):</span>
-</span><span id="RelativeFilePath-208"><a href="#RelativeFilePath-208"><span class="linenos">208</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">absolute</span><span class="si">}</span><span class="s2"> does not point to an existing file&quot;</span><span class="p">)</span>
-</span><span id="RelativeFilePath-209"><a href="#RelativeFilePath-209"><span class="linenos">209</span></a>
-</span><span id="RelativeFilePath-210"><a href="#RelativeFilePath-210"><span class="linenos">210</span></a>        <span class="k">return</span> <span class="n">absolute</span>
+</span><span id="RelativeFilePath-196"><a href="#RelativeFilePath-196"><span class="linenos">196</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_absolute</span><span class="p">(</span>
+</span><span id="RelativeFilePath-197"><a href="#RelativeFilePath-197"><span class="linenos">197</span></a>        <span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="s2">&quot;RootHttpUrl | Path | AnyUrl | ZipFile&quot;</span>
+</span><span id="RelativeFilePath-198"><a href="#RelativeFilePath-198"><span class="linenos">198</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;AbsoluteFilePath | HttpUrl | ZipPath&quot;</span><span class="p">:</span>
+</span><span id="RelativeFilePath-199"><a href="#RelativeFilePath-199"><span class="linenos">199</span></a>        <span class="n">absolute</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_absolute_impl</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+</span><span id="RelativeFilePath-200"><a href="#RelativeFilePath-200"><span class="linenos">200</span></a>        <span class="k">if</span> <span class="p">(</span>
+</span><span id="RelativeFilePath-201"><a href="#RelativeFilePath-201"><span class="linenos">201</span></a>            <span class="nb">isinstance</span><span class="p">(</span><span class="n">absolute</span><span class="p">,</span> <span class="n">Path</span><span class="p">)</span>
+</span><span id="RelativeFilePath-202"><a href="#RelativeFilePath-202"><span class="linenos">202</span></a>            <span class="ow">and</span> <span class="p">(</span><span class="n">context</span> <span class="o">:=</span> <span class="n">get_validation_context</span><span class="p">())</span><span class="o">.</span><span class="n">perform_io_checks</span>
+</span><span id="RelativeFilePath-203"><a href="#RelativeFilePath-203"><span class="linenos">203</span></a>            <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">context</span><span class="o">.</span><span class="n">known_files</span>
+</span><span id="RelativeFilePath-204"><a href="#RelativeFilePath-204"><span class="linenos">204</span></a>            <span class="ow">and</span> <span class="ow">not</span> <span class="n">absolute</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span>
+</span><span id="RelativeFilePath-205"><a href="#RelativeFilePath-205"><span class="linenos">205</span></a>        <span class="p">):</span>
+</span><span id="RelativeFilePath-206"><a href="#RelativeFilePath-206"><span class="linenos">206</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">absolute</span><span class="si">}</span><span class="s2"> does not point to an existing file&quot;</span><span class="p">)</span>
+</span><span id="RelativeFilePath-207"><a href="#RelativeFilePath-207"><span class="linenos">207</span></a>
+</span><span id="RelativeFilePath-208"><a href="#RelativeFilePath-208"><span class="linenos">208</span></a>        <span class="k">return</span> <span class="n">absolute</span>
 </span></pre></div>
 
 
@@ -719,7 +739,7 @@ method.</p>
 
     </div>
     <a class="headerlink" href="#RelativeFilePath.model_post_init"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="RelativeFilePath.model_post_init-124"><a href="#RelativeFilePath.model_post_init-124"><span class="linenos">124</span></a>                    <span class="k">def</span> <span class="nf">wrapped_model_post_init</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="RelativeFilePath.model_post_init-124"><a href="#RelativeFilePath.model_post_init-124"><span class="linenos">124</span></a>                    <span class="k">def</span><span class="w"> </span><span class="nf">wrapped_model_post_init</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">/</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 </span><span id="RelativeFilePath.model_post_init-125"><a href="#RelativeFilePath.model_post_init-125"><span class="linenos">125</span></a><span class="w">                        </span><span class="sd">&quot;&quot;&quot;We need to both initialize private attributes and call the user-defined model_post_init</span>
 </span><span id="RelativeFilePath.model_post_init-126"><a href="#RelativeFilePath.model_post_init-126"><span class="linenos">126</span></a><span class="sd">                        method.</span>
 </span><span id="RelativeFilePath.model_post_init-127"><a href="#RelativeFilePath.model_post_init-127"><span class="linenos">127</span></a><span class="sd">                        &quot;&quot;&quot;</span>
@@ -739,25 +759,25 @@ method.</p>
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">get_absolute</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">root</span><span class="p">:</span> <span class="n"><a href="#RootHttpUrl">RootHttpUrl</a></span> <span class="o">|</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span> <span class="o">|</span> <span class="n">pydantic_core</span><span class="o">.</span><span class="n">_pydantic_core</span><span class="o">.</span><span class="n">Url</span> <span class="o">|</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span></span><span class="return-annotation">) -> <span class="n">Union</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span> <span class="n">PathType</span><span class="p">(</span><span class="n">path_type</span><span class="o">=</span><span class="s1">&#39;file&#39;</span><span class="p">),</span> <span class="n">Predicate</span><span class="p">(</span><span class="n">is_absolute</span><span class="p">)],</span> <span class="n"><a href="#HttpUrl">HttpUrl</a></span><span class="p">,</span> <span class="n">zipp</span><span class="o">.</span><span class="n">Path</span><span class="p">]</span>:</span></span>
+        <span class="name">get_absolute</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="n">root</span><span class="p">:</span> <span class="n"><a href="#RootHttpUrl">RootHttpUrl</a></span> <span class="o">|</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span> <span class="o">|</span> <span class="n">pydantic_core</span><span class="o">.</span><span class="n">_pydantic_core</span><span class="o">.</span><span class="n">Url</span> <span class="o">|</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span></span><span class="return-annotation">) -> <span class="n">Union</span><span class="p">[</span><span class="n">Annotated</span><span class="p">[</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">,</span> <span class="n">PathType</span><span class="p">(</span><span class="n">path_type</span><span class="o">=</span><span class="s1">&#39;file&#39;</span><span class="p">),</span> <span class="n">Predicate</span><span class="p">(</span><span class="n">is_absolute</span><span class="p">),</span> <span class="n">FieldInfo</span><span class="p">(</span><span class="n">annotation</span><span class="o">=</span><span class="n">NoneType</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="s1">&#39;AbsoluteFilePath&#39;</span><span class="p">)],</span> <span class="n"><a href="#HttpUrl">HttpUrl</a></span><span class="p">,</span> <span class="n">zipp</span><span class="o">.</span><span class="n">Path</span><span class="p">]</span>:</span></span>
 
                 <label class="view-source-button" for="RelativeFilePath.get_absolute-view-source"><span>View Source</span></label>
 
     </div>
     <a class="headerlink" href="#RelativeFilePath.get_absolute"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="RelativeFilePath.get_absolute-198"><a href="#RelativeFilePath.get_absolute-198"><span class="linenos">198</span></a>    <span class="k">def</span> <span class="nf">get_absolute</span><span class="p">(</span>
-</span><span id="RelativeFilePath.get_absolute-199"><a href="#RelativeFilePath.get_absolute-199"><span class="linenos">199</span></a>        <span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="s2">&quot;RootHttpUrl | Path | AnyUrl | ZipFile&quot;</span>
-</span><span id="RelativeFilePath.get_absolute-200"><a href="#RelativeFilePath.get_absolute-200"><span class="linenos">200</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;AbsoluteFilePath | HttpUrl | ZipPath&quot;</span><span class="p">:</span>
-</span><span id="RelativeFilePath.get_absolute-201"><a href="#RelativeFilePath.get_absolute-201"><span class="linenos">201</span></a>        <span class="n">absolute</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_absolute_impl</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
-</span><span id="RelativeFilePath.get_absolute-202"><a href="#RelativeFilePath.get_absolute-202"><span class="linenos">202</span></a>        <span class="k">if</span> <span class="p">(</span>
-</span><span id="RelativeFilePath.get_absolute-203"><a href="#RelativeFilePath.get_absolute-203"><span class="linenos">203</span></a>            <span class="nb">isinstance</span><span class="p">(</span><span class="n">absolute</span><span class="p">,</span> <span class="n">Path</span><span class="p">)</span>
-</span><span id="RelativeFilePath.get_absolute-204"><a href="#RelativeFilePath.get_absolute-204"><span class="linenos">204</span></a>            <span class="ow">and</span> <span class="p">(</span><span class="n">context</span> <span class="o">:=</span> <span class="n">validation_context_var</span><span class="o">.</span><span class="n">get</span><span class="p">())</span><span class="o">.</span><span class="n">perform_io_checks</span>
-</span><span id="RelativeFilePath.get_absolute-205"><a href="#RelativeFilePath.get_absolute-205"><span class="linenos">205</span></a>            <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">context</span><span class="o">.</span><span class="n">known_files</span>
-</span><span id="RelativeFilePath.get_absolute-206"><a href="#RelativeFilePath.get_absolute-206"><span class="linenos">206</span></a>            <span class="ow">and</span> <span class="ow">not</span> <span class="n">absolute</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span>
-</span><span id="RelativeFilePath.get_absolute-207"><a href="#RelativeFilePath.get_absolute-207"><span class="linenos">207</span></a>        <span class="p">):</span>
-</span><span id="RelativeFilePath.get_absolute-208"><a href="#RelativeFilePath.get_absolute-208"><span class="linenos">208</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">absolute</span><span class="si">}</span><span class="s2"> does not point to an existing file&quot;</span><span class="p">)</span>
-</span><span id="RelativeFilePath.get_absolute-209"><a href="#RelativeFilePath.get_absolute-209"><span class="linenos">209</span></a>
-</span><span id="RelativeFilePath.get_absolute-210"><a href="#RelativeFilePath.get_absolute-210"><span class="linenos">210</span></a>        <span class="k">return</span> <span class="n">absolute</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="RelativeFilePath.get_absolute-196"><a href="#RelativeFilePath.get_absolute-196"><span class="linenos">196</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_absolute</span><span class="p">(</span>
+</span><span id="RelativeFilePath.get_absolute-197"><a href="#RelativeFilePath.get_absolute-197"><span class="linenos">197</span></a>        <span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">:</span> <span class="s2">&quot;RootHttpUrl | Path | AnyUrl | ZipFile&quot;</span>
+</span><span id="RelativeFilePath.get_absolute-198"><a href="#RelativeFilePath.get_absolute-198"><span class="linenos">198</span></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;AbsoluteFilePath | HttpUrl | ZipPath&quot;</span><span class="p">:</span>
+</span><span id="RelativeFilePath.get_absolute-199"><a href="#RelativeFilePath.get_absolute-199"><span class="linenos">199</span></a>        <span class="n">absolute</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_absolute_impl</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
+</span><span id="RelativeFilePath.get_absolute-200"><a href="#RelativeFilePath.get_absolute-200"><span class="linenos">200</span></a>        <span class="k">if</span> <span class="p">(</span>
+</span><span id="RelativeFilePath.get_absolute-201"><a href="#RelativeFilePath.get_absolute-201"><span class="linenos">201</span></a>            <span class="nb">isinstance</span><span class="p">(</span><span class="n">absolute</span><span class="p">,</span> <span class="n">Path</span><span class="p">)</span>
+</span><span id="RelativeFilePath.get_absolute-202"><a href="#RelativeFilePath.get_absolute-202"><span class="linenos">202</span></a>            <span class="ow">and</span> <span class="p">(</span><span class="n">context</span> <span class="o">:=</span> <span class="n">get_validation_context</span><span class="p">())</span><span class="o">.</span><span class="n">perform_io_checks</span>
+</span><span id="RelativeFilePath.get_absolute-203"><a href="#RelativeFilePath.get_absolute-203"><span class="linenos">203</span></a>            <span class="ow">and</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">context</span><span class="o">.</span><span class="n">known_files</span>
+</span><span id="RelativeFilePath.get_absolute-204"><a href="#RelativeFilePath.get_absolute-204"><span class="linenos">204</span></a>            <span class="ow">and</span> <span class="ow">not</span> <span class="n">absolute</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span>
+</span><span id="RelativeFilePath.get_absolute-205"><a href="#RelativeFilePath.get_absolute-205"><span class="linenos">205</span></a>        <span class="p">):</span>
+</span><span id="RelativeFilePath.get_absolute-206"><a href="#RelativeFilePath.get_absolute-206"><span class="linenos">206</span></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">absolute</span><span class="si">}</span><span class="s2"> does not point to an existing file&quot;</span><span class="p">)</span>
+</span><span id="RelativeFilePath.get_absolute-207"><a href="#RelativeFilePath.get_absolute-207"><span class="linenos">207</span></a>
+</span><span id="RelativeFilePath.get_absolute-208"><a href="#RelativeFilePath.get_absolute-208"><span class="linenos">208</span></a>        <span class="k">return</span> <span class="n">absolute</span>
 </span></pre></div>
 
 
@@ -776,30 +796,30 @@ method.</p>
 
     </div>
     <a class="headerlink" href="#RootHttpUrl"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="RootHttpUrl-13"><a href="#RootHttpUrl-13"><span class="linenos">13</span></a><span class="k">class</span> <span class="nc">RootHttpUrl</span><span class="p">(</span><span class="n">ValidatedString</span><span class="p">):</span>
-</span><span id="RootHttpUrl-14"><a href="#RootHttpUrl-14"><span class="linenos">14</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A &#39;URL folder&#39;, possibly an invalid http URL&quot;&quot;&quot;</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="RootHttpUrl-13"><a href="#RootHttpUrl-13"><span class="linenos">13</span></a><span class="k">class</span><span class="w"> </span><span class="nc">RootHttpUrl</span><span class="p">(</span><span class="n">ValidatedString</span><span class="p">):</span>
+</span><span id="RootHttpUrl-14"><a href="#RootHttpUrl-14"><span class="linenos">14</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A &#39;URL folder&#39;, possibly an invalid HTTP URL&quot;&quot;&quot;</span>
 </span><span id="RootHttpUrl-15"><a href="#RootHttpUrl-15"><span class="linenos">15</span></a>
 </span><span id="RootHttpUrl-16"><a href="#RootHttpUrl-16"><span class="linenos">16</span></a>    <span class="n">root_model</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">RootModel</span><span class="p">[</span><span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="n">RootModel</span><span class="p">[</span><span class="n">pydantic</span><span class="o">.</span><span class="n">HttpUrl</span><span class="p">]</span>
 </span><span id="RootHttpUrl-17"><a href="#RootHttpUrl-17"><span class="linenos">17</span></a>    <span class="n">_validated</span><span class="p">:</span> <span class="n">pydantic</span><span class="o">.</span><span class="n">HttpUrl</span>
 </span><span id="RootHttpUrl-18"><a href="#RootHttpUrl-18"><span class="linenos">18</span></a>
-</span><span id="RootHttpUrl-19"><a href="#RootHttpUrl-19"><span class="linenos">19</span></a>    <span class="k">def</span> <span class="nf">absolute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="RootHttpUrl-19"><a href="#RootHttpUrl-19"><span class="linenos">19</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">absolute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 </span><span id="RootHttpUrl-20"><a href="#RootHttpUrl-20"><span class="linenos">20</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;analog to `absolute` method of pathlib.&quot;&quot;&quot;</span>
 </span><span id="RootHttpUrl-21"><a href="#RootHttpUrl-21"><span class="linenos">21</span></a>        <span class="k">return</span> <span class="bp">self</span>
 </span><span id="RootHttpUrl-22"><a href="#RootHttpUrl-22"><span class="linenos">22</span></a>
 </span><span id="RootHttpUrl-23"><a href="#RootHttpUrl-23"><span class="linenos">23</span></a>    <span class="nd">@property</span>
-</span><span id="RootHttpUrl-24"><a href="#RootHttpUrl-24"><span class="linenos">24</span></a>    <span class="k">def</span> <span class="nf">scheme</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="RootHttpUrl-24"><a href="#RootHttpUrl-24"><span class="linenos">24</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">scheme</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 </span><span id="RootHttpUrl-25"><a href="#RootHttpUrl-25"><span class="linenos">25</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validated</span><span class="o">.</span><span class="n">scheme</span>
 </span><span id="RootHttpUrl-26"><a href="#RootHttpUrl-26"><span class="linenos">26</span></a>
 </span><span id="RootHttpUrl-27"><a href="#RootHttpUrl-27"><span class="linenos">27</span></a>    <span class="nd">@property</span>
-</span><span id="RootHttpUrl-28"><a href="#RootHttpUrl-28"><span class="linenos">28</span></a>    <span class="k">def</span> <span class="nf">host</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span id="RootHttpUrl-28"><a href="#RootHttpUrl-28"><span class="linenos">28</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">host</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 </span><span id="RootHttpUrl-29"><a href="#RootHttpUrl-29"><span class="linenos">29</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validated</span><span class="o">.</span><span class="n">host</span>
 </span><span id="RootHttpUrl-30"><a href="#RootHttpUrl-30"><span class="linenos">30</span></a>
 </span><span id="RootHttpUrl-31"><a href="#RootHttpUrl-31"><span class="linenos">31</span></a>    <span class="nd">@property</span>
-</span><span id="RootHttpUrl-32"><a href="#RootHttpUrl-32"><span class="linenos">32</span></a>    <span class="k">def</span> <span class="nf">path</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span id="RootHttpUrl-32"><a href="#RootHttpUrl-32"><span class="linenos">32</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">path</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 </span><span id="RootHttpUrl-33"><a href="#RootHttpUrl-33"><span class="linenos">33</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validated</span><span class="o">.</span><span class="n">path</span>
 </span><span id="RootHttpUrl-34"><a href="#RootHttpUrl-34"><span class="linenos">34</span></a>
 </span><span id="RootHttpUrl-35"><a href="#RootHttpUrl-35"><span class="linenos">35</span></a>    <span class="nd">@property</span>
-</span><span id="RootHttpUrl-36"><a href="#RootHttpUrl-36"><span class="linenos">36</span></a>    <span class="k">def</span> <span class="nf">parent</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RootHttpUrl</span><span class="p">:</span>
+</span><span id="RootHttpUrl-36"><a href="#RootHttpUrl-36"><span class="linenos">36</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">parent</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RootHttpUrl</span><span class="p">:</span>
 </span><span id="RootHttpUrl-37"><a href="#RootHttpUrl-37"><span class="linenos">37</span></a>        <span class="n">parsed</span> <span class="o">=</span> <span class="n">urlsplit</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
 </span><span id="RootHttpUrl-38"><a href="#RootHttpUrl-38"><span class="linenos">38</span></a>        <span class="n">path</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">parsed</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">))</span>
 </span><span id="RootHttpUrl-39"><a href="#RootHttpUrl-39"><span class="linenos">39</span></a>        <span class="k">if</span> <span class="p">(</span>
@@ -822,10 +842,18 @@ method.</p>
 </span><span id="RootHttpUrl-56"><a href="#RootHttpUrl-56"><span class="linenos">56</span></a>                <span class="p">)</span>
 </span><span id="RootHttpUrl-57"><a href="#RootHttpUrl-57"><span class="linenos">57</span></a>            <span class="p">)</span>
 </span><span id="RootHttpUrl-58"><a href="#RootHttpUrl-58"><span class="linenos">58</span></a>        <span class="p">)</span>
+</span><span id="RootHttpUrl-59"><a href="#RootHttpUrl-59"><span class="linenos">59</span></a>
+</span><span id="RootHttpUrl-60"><a href="#RootHttpUrl-60"><span class="linenos">60</span></a>    <span class="nd">@property</span>
+</span><span id="RootHttpUrl-61"><a href="#RootHttpUrl-61"><span class="linenos">61</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">parents</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">RootHttpUrl</span><span class="p">]:</span>
+</span><span id="RootHttpUrl-62"><a href="#RootHttpUrl-62"><span class="linenos">62</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;iterate over all URL parents (max 100)&quot;&quot;&quot;</span>
+</span><span id="RootHttpUrl-63"><a href="#RootHttpUrl-63"><span class="linenos">63</span></a>        <span class="n">current</span> <span class="o">=</span> <span class="bp">self</span>
+</span><span id="RootHttpUrl-64"><a href="#RootHttpUrl-64"><span class="linenos">64</span></a>        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+</span><span id="RootHttpUrl-65"><a href="#RootHttpUrl-65"><span class="linenos">65</span></a>            <span class="n">current</span> <span class="o">=</span> <span class="n">current</span><span class="o">.</span><span class="n">parent</span>
+</span><span id="RootHttpUrl-66"><a href="#RootHttpUrl-66"><span class="linenos">66</span></a>            <span class="k">yield</span> <span class="n">current</span>
 </span></pre></div>
 
 
-            <div class="docstring"><p>A 'URL folder', possibly an invalid http URL</p>
+            <div class="docstring"><p>A 'URL folder', possibly an invalid HTTP URL</p>
 </div>
 
 
@@ -855,7 +883,7 @@ method.</p>
 
     </div>
     <a class="headerlink" href="#RootHttpUrl.absolute"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="RootHttpUrl.absolute-19"><a href="#RootHttpUrl.absolute-19"><span class="linenos">19</span></a>    <span class="k">def</span> <span class="nf">absolute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="RootHttpUrl.absolute-19"><a href="#RootHttpUrl.absolute-19"><span class="linenos">19</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">absolute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 </span><span id="RootHttpUrl.absolute-20"><a href="#RootHttpUrl.absolute-20"><span class="linenos">20</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;analog to `absolute` method of pathlib.&quot;&quot;&quot;</span>
 </span><span id="RootHttpUrl.absolute-21"><a href="#RootHttpUrl.absolute-21"><span class="linenos">21</span></a>        <span class="k">return</span> <span class="bp">self</span>
 </span></pre></div>
@@ -876,7 +904,7 @@ method.</p>
     </div>
     <a class="headerlink" href="#RootHttpUrl.scheme"></a>
             <div class="pdoc-code codehilite"><pre><span></span><span id="RootHttpUrl.scheme-23"><a href="#RootHttpUrl.scheme-23"><span class="linenos">23</span></a>    <span class="nd">@property</span>
-</span><span id="RootHttpUrl.scheme-24"><a href="#RootHttpUrl.scheme-24"><span class="linenos">24</span></a>    <span class="k">def</span> <span class="nf">scheme</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+</span><span id="RootHttpUrl.scheme-24"><a href="#RootHttpUrl.scheme-24"><span class="linenos">24</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">scheme</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 </span><span id="RootHttpUrl.scheme-25"><a href="#RootHttpUrl.scheme-25"><span class="linenos">25</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validated</span><span class="o">.</span><span class="n">scheme</span>
 </span></pre></div>
 
@@ -894,7 +922,7 @@ method.</p>
     </div>
     <a class="headerlink" href="#RootHttpUrl.host"></a>
             <div class="pdoc-code codehilite"><pre><span></span><span id="RootHttpUrl.host-27"><a href="#RootHttpUrl.host-27"><span class="linenos">27</span></a>    <span class="nd">@property</span>
-</span><span id="RootHttpUrl.host-28"><a href="#RootHttpUrl.host-28"><span class="linenos">28</span></a>    <span class="k">def</span> <span class="nf">host</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span id="RootHttpUrl.host-28"><a href="#RootHttpUrl.host-28"><span class="linenos">28</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">host</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 </span><span id="RootHttpUrl.host-29"><a href="#RootHttpUrl.host-29"><span class="linenos">29</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validated</span><span class="o">.</span><span class="n">host</span>
 </span></pre></div>
 
@@ -912,7 +940,7 @@ method.</p>
     </div>
     <a class="headerlink" href="#RootHttpUrl.path"></a>
             <div class="pdoc-code codehilite"><pre><span></span><span id="RootHttpUrl.path-31"><a href="#RootHttpUrl.path-31"><span class="linenos">31</span></a>    <span class="nd">@property</span>
-</span><span id="RootHttpUrl.path-32"><a href="#RootHttpUrl.path-32"><span class="linenos">32</span></a>    <span class="k">def</span> <span class="nf">path</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+</span><span id="RootHttpUrl.path-32"><a href="#RootHttpUrl.path-32"><span class="linenos">32</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">path</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
 </span><span id="RootHttpUrl.path-33"><a href="#RootHttpUrl.path-33"><span class="linenos">33</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validated</span><span class="o">.</span><span class="n">path</span>
 </span></pre></div>
 
@@ -930,7 +958,7 @@ method.</p>
     </div>
     <a class="headerlink" href="#RootHttpUrl.parent"></a>
             <div class="pdoc-code codehilite"><pre><span></span><span id="RootHttpUrl.parent-35"><a href="#RootHttpUrl.parent-35"><span class="linenos">35</span></a>    <span class="nd">@property</span>
-</span><span id="RootHttpUrl.parent-36"><a href="#RootHttpUrl.parent-36"><span class="linenos">36</span></a>    <span class="k">def</span> <span class="nf">parent</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RootHttpUrl</span><span class="p">:</span>
+</span><span id="RootHttpUrl.parent-36"><a href="#RootHttpUrl.parent-36"><span class="linenos">36</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">parent</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RootHttpUrl</span><span class="p">:</span>
 </span><span id="RootHttpUrl.parent-37"><a href="#RootHttpUrl.parent-37"><span class="linenos">37</span></a>        <span class="n">parsed</span> <span class="o">=</span> <span class="n">urlsplit</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="p">))</span>
 </span><span id="RootHttpUrl.parent-38"><a href="#RootHttpUrl.parent-38"><span class="linenos">38</span></a>        <span class="n">path</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">parsed</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;/&quot;</span><span class="p">))</span>
 </span><span id="RootHttpUrl.parent-39"><a href="#RootHttpUrl.parent-39"><span class="linenos">39</span></a>        <span class="k">if</span> <span class="p">(</span>
@@ -959,6 +987,30 @@ method.</p>
     
 
                             </div>
+                            <div id="RootHttpUrl.parents" class="classattr">
+                                        <input id="RootHttpUrl.parents-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
+<div class="attr variable">
+            <span class="name">parents</span><span class="annotation">: Iterable[<a href="#RootHttpUrl">RootHttpUrl</a>]</span>
+
+                <label class="view-source-button" for="RootHttpUrl.parents-view-source"><span>View Source</span></label>
+
+    </div>
+    <a class="headerlink" href="#RootHttpUrl.parents"></a>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="RootHttpUrl.parents-60"><a href="#RootHttpUrl.parents-60"><span class="linenos">60</span></a>    <span class="nd">@property</span>
+</span><span id="RootHttpUrl.parents-61"><a href="#RootHttpUrl.parents-61"><span class="linenos">61</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">parents</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">RootHttpUrl</span><span class="p">]:</span>
+</span><span id="RootHttpUrl.parents-62"><a href="#RootHttpUrl.parents-62"><span class="linenos">62</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;iterate over all URL parents (max 100)&quot;&quot;&quot;</span>
+</span><span id="RootHttpUrl.parents-63"><a href="#RootHttpUrl.parents-63"><span class="linenos">63</span></a>        <span class="n">current</span> <span class="o">=</span> <span class="bp">self</span>
+</span><span id="RootHttpUrl.parents-64"><a href="#RootHttpUrl.parents-64"><span class="linenos">64</span></a>        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">100</span><span class="p">):</span>
+</span><span id="RootHttpUrl.parents-65"><a href="#RootHttpUrl.parents-65"><span class="linenos">65</span></a>            <span class="n">current</span> <span class="o">=</span> <span class="n">current</span><span class="o">.</span><span class="n">parent</span>
+</span><span id="RootHttpUrl.parents-66"><a href="#RootHttpUrl.parents-66"><span class="linenos">66</span></a>            <span class="k">yield</span> <span class="n">current</span>
+</span></pre></div>
+
+
+            <div class="docstring"><p>iterate over all URL parents (max 100)</p>
+</div>
+
+
+                            </div>
                 </section>
                 <section id="Sha256">
                             <input id="Sha256-view-source" class="view-source-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
@@ -971,21 +1023,21 @@ method.</p>
 
     </div>
     <a class="headerlink" href="#Sha256"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="Sha256-23"><a href="#Sha256-23"><span class="linenos">23</span></a><span class="k">class</span> <span class="nc">Sha256</span><span class="p">(</span><span class="n">ValidatedString</span><span class="p">):</span>
-</span><span id="Sha256-24"><a href="#Sha256-24"><span class="linenos">24</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;SHA-256 hash value&quot;&quot;&quot;</span>
-</span><span id="Sha256-25"><a href="#Sha256-25"><span class="linenos">25</span></a>
-</span><span id="Sha256-26"><a href="#Sha256-26"><span class="linenos">26</span></a>    <span class="n">root_model</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">RootModel</span><span class="p">[</span><span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="n">RootModel</span><span class="p">[</span>
-</span><span id="Sha256-27"><a href="#Sha256-27"><span class="linenos">27</span></a>        <span class="n">Annotated</span><span class="p">[</span>
-</span><span id="Sha256-28"><a href="#Sha256-28"><span class="linenos">28</span></a>            <span class="nb">str</span><span class="p">,</span>
-</span><span id="Sha256-29"><a href="#Sha256-29"><span class="linenos">29</span></a>            <span class="n">StringConstraints</span><span class="p">(</span>
-</span><span id="Sha256-30"><a href="#Sha256-30"><span class="linenos">30</span></a>                <span class="n">strip_whitespace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">to_lower</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">min_length</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">64</span>
-</span><span id="Sha256-31"><a href="#Sha256-31"><span class="linenos">31</span></a>            <span class="p">),</span>
-</span><span id="Sha256-32"><a href="#Sha256-32"><span class="linenos">32</span></a>        <span class="p">]</span>
-</span><span id="Sha256-33"><a href="#Sha256-33"><span class="linenos">33</span></a>    <span class="p">]</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="Sha256-33"><a href="#Sha256-33"><span class="linenos">33</span></a><span class="k">class</span><span class="w"> </span><span class="nc">Sha256</span><span class="p">(</span><span class="n">ValidatedString</span><span class="p">):</span>
+</span><span id="Sha256-34"><a href="#Sha256-34"><span class="linenos">34</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A SHA-256 hash value&quot;&quot;&quot;</span>
+</span><span id="Sha256-35"><a href="#Sha256-35"><span class="linenos">35</span></a>
+</span><span id="Sha256-36"><a href="#Sha256-36"><span class="linenos">36</span></a>    <span class="n">root_model</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">RootModel</span><span class="p">[</span><span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="n">RootModel</span><span class="p">[</span>
+</span><span id="Sha256-37"><a href="#Sha256-37"><span class="linenos">37</span></a>        <span class="n">Annotated</span><span class="p">[</span>
+</span><span id="Sha256-38"><a href="#Sha256-38"><span class="linenos">38</span></a>            <span class="nb">str</span><span class="p">,</span>
+</span><span id="Sha256-39"><a href="#Sha256-39"><span class="linenos">39</span></a>            <span class="n">StringConstraints</span><span class="p">(</span>
+</span><span id="Sha256-40"><a href="#Sha256-40"><span class="linenos">40</span></a>                <span class="n">strip_whitespace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">to_lower</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">min_length</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">64</span>
+</span><span id="Sha256-41"><a href="#Sha256-41"><span class="linenos">41</span></a>            <span class="p">),</span>
+</span><span id="Sha256-42"><a href="#Sha256-42"><span class="linenos">42</span></a>        <span class="p">]</span>
+</span><span id="Sha256-43"><a href="#Sha256-43"><span class="linenos">43</span></a>    <span class="p">]</span>
 </span></pre></div>
 
 
-            <div class="docstring"><p>SHA-256 hash value</p>
+            <div class="docstring"><p>A SHA-256 hash value</p>
 </div>
 
 
@@ -1084,13 +1136,24 @@ method.</p>
                 </section>
                 <section id="YamlValue">
                     <div class="attr variable">
-            <span class="def">type</span> <span class="name">YamlValue</span>        =
-<input id="YamlValue-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
-            <label class="view-value-button pdoc-button" for="YamlValue-view-value"></label><span class="default_value">Union[bool, datetime.date, datetime.datetime, int, float, str, NoneType, List[ForwardRef(&#39;YamlValue&#39;)], Dict[Union[bool, datetime.date, datetime.datetime, int, float, str, NoneType, Tuple[Union[bool, datetime.date, datetime.datetime, int, float, str, NoneType], ...]], ForwardRef(&#39;YamlValue&#39;)]]</span>
+            <span class="name">YamlValue</span>        =
+<span class="default_value">YamlValue</span>
 
         
     </div>
     <a class="headerlink" href="#YamlValue"></a>
+    
+    
+
+                </section>
+                <section id="ZipPath">
+                    <div class="attr variable">
+            <span class="name">ZipPath</span>        =
+<span class="default_value">&lt;class &#39;zipp.Path&#39;&gt;</span>
+
+        
+    </div>
+    <a class="headerlink" href="#ZipPath"></a>
     
     
 
