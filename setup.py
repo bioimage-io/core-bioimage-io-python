@@ -51,8 +51,10 @@ _ = setup(
         ),
         "tensorflow": ["tensorflow", "keras>=2.15,<4"],
         "onnx": ["onnxruntime"],
+        "tests": (test_deps := ["pytest"]),  # minimal test requirements
         "dev": (
-            pytorch_deps
+            test_deps
+            + pytorch_deps
             + [
                 "black",
                 "cellpose",  # for model testing
@@ -67,7 +69,6 @@ _ = setup(
                 "pre-commit",
                 "pyright==1.1.396",
                 "pytest-cov",
-                "pytest",
                 "segment-anything",  # for model testing
                 "timm",  # for model testing
                 # "crick",  # currently requires python<=3.9
