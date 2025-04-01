@@ -51,6 +51,7 @@ KNOWN_INVALID: Collection[str] = {
     "dynamic-t-rex/1",  # needs update to 0.5 for scale_linear with axes processing
     "easy-going-sauropod/1",  # CPU implementation of Conv3D currently only supports the NHWC tensor format.
     "efficient-chipmunk/1",  # needs plantseg
+    "emotional-cricket/1.1",  # sporadic 403 responses from  https://elifesciences.org
     "famous-fish/0.1.0",  # list index out of range `fl[3]`
     "greedy-whale/1",  # batch size is actually limited to 1
     "happy-elephant/0.1.0",  # list index out of range `fl[3]`
