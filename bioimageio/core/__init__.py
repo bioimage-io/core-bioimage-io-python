@@ -3,6 +3,7 @@
 """
 
 from bioimageio.spec import (
+    ValidationSummary,
     build_description,
     dump_description,
     load_dataset_description,
@@ -112,4 +113,5 @@ __all__ = [
     "test_model",
     "test_resource",
     "validate_format",
+    "ValidationSummary",
 ]

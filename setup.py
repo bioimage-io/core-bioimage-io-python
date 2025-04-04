@@ -30,7 +30,7 @@ _ = setup(
     ],
     packages=find_namespace_packages(exclude=["tests"]),
     install_requires=[
-        "bioimageio.spec ==0.5.4.1",
+        "bioimageio.spec ==0.5.4.2",
         "h5py",
         "imagecodecs",
         "imageio>=2.10",
@@ -67,7 +67,7 @@ _ = setup(
                 "packaging>=17.0",
                 "pdoc",
                 "pre-commit",
-                "pyright==1.1.396",
+                "pyright==1.1.398",
                 "segment-anything",  # for model testing
                 "timm",  # for model testing
                 # "crick",  # currently requires python<=3.9

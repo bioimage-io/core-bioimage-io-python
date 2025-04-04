@@ -40,7 +40,6 @@ def yield_bioimageio_yaml_urls() -> Iterable[ParameterSet]:
 
 
 KNOWN_INVALID: Collection[str] = {
-    "affable-shark/1.1",  # onnx weights expect fixed input shape
     "affectionate-cow/0.1.0",  # custom dependencies
     "ambitious-sloth/1.2",  # requires inferno
     "committed-turkey/1.2",  # error deserializing VarianceScaling
