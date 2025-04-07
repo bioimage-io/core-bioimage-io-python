@@ -4,7 +4,7 @@ channels:
   - nodefaults
   - pytorch
 dependencies:
-  - bioimageio.spec==0.5.4.2
+  - bioimageio.spec==0.5.4.3
   - black
   # - careamics # TODO: add careamics for model testing (currently pins pydantic to <2.9)
   - cellpose # for model testing
