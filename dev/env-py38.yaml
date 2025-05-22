@@ -26,7 +26,6 @@ dependencies:
   - psutil
   - pydantic
   - pydantic-settings
-  - pyright==1.1.396
   - pytest
   - pytest-cov
   - python=3.8 # changed
