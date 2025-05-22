@@ -364,6 +364,10 @@ may be controlled with the `LOGURU_LEVEL` environment variable.
 
 ## Changelog
 
+### 0.9.0 (coming soon)
+
+- update to [bioimageio.spec 0.5.4.2](https://github.com/bioimage-io/spec-bioimage-io/blob/main/changelog.md#bioimageiospec-0542)
+
 ### 0.8.0
 
 - breaking: removed `decimals` argument from bioimageio CLI and `bioimageio.core.commands.test()`
