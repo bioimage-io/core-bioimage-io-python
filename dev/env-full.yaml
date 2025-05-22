@@ -4,7 +4,7 @@ channels:
   - nodefaults
   - pytorch
 dependencies:
-  - bioimageio.spec==0.5.4.1
+  - bioimageio.spec==0.5.4.2
   - black
   # - careamics # TODO: add careamics for model testing (currently pins pydantic to <2.9)
   - cellpose # for model testing
@@ -28,7 +28,7 @@ dependencies:
   - psutil
   - pydantic
   - pydantic-settings
-  - pyright
+  - pyright==1.1.396
   - pytest
   - pytest-cov
   - python=3.11 # 3.12 not supported by cellpose->fastremap
