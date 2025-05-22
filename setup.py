@@ -38,7 +38,6 @@ _ = setup(
         "numpy",
         "pydantic-settings>=2.5,<3",
         "pydantic>=2.7.0,<3",
-        "requests",
         "ruyaml",
         "tqdm",
         "typing-extensions",
@@ -58,6 +57,7 @@ _ = setup(
             + [
                 "black",
                 "cellpose",  # for model testing
+                "httpx",
                 "jupyter-black",
                 "jupyter",
                 "matplotlib",

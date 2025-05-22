@@ -9,6 +9,7 @@ dependencies:
   - black
   # - crick  # currently requires python<=3.9
   - h5py
+  - httpx
   - imagecodecs
   - imageio>=2.5
   - jupyter
@@ -16,6 +17,7 @@ dependencies:
   - keras>=3.0,<4
   - loguru
   - matplotlib
+  - napari
   - numpy
   - onnx
   - onnxruntime
@@ -31,7 +33,7 @@ dependencies:
   - pytest-cov
   # - python=3.11  # removed
   - pytorch>=2.1,<3
-  - requests
+  - respx
   - rich
   - ruff
   - ruyaml
