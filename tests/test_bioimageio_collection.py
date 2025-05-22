@@ -1,8 +1,8 @@
 import os
 from typing import Any, Collection, Dict, Iterable, Mapping, Tuple
 
+import httpx
 import pytest
-import requests
 from pydantic import HttpUrl
 
 from bioimageio.spec import InvalidDescr
@@ -13,7 +13,7 @@ BASE_URL = "https://uk1s3.embassy.ebi.ac.uk/public-datasets/bioimage.io/"
 
 
 def _get_latest_rdf_sources():
-    entries: Any = requests.get(BASE_URL + "all_versions.json").json()["entries"]
+    entries: Any = httpx.get(BASE_URL + "all_versions.json").json()["entries"]
     ret: Dict[str, Tuple[HttpUrl, Sha256]] = {}
     for entry in entries:
         version = entry["versions"][0]
@@ -40,7 +40,6 @@ def yield_bioimageio_yaml_urls() -> Iterable[ParameterSet]:
 
 
 KNOWN_INVALID: Collection[str] = {
-    "affable-shark/1.1",  # onnx weights expect fixed input shape
     "affectionate-cow/0.1.0",  # custom dependencies
     "ambitious-sloth/1.2",  # requires inferno
     "committed-turkey/1.2",  # error deserializing VarianceScaling

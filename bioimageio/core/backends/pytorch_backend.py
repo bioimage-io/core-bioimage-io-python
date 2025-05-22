@@ -11,12 +11,13 @@ from numpy.typing import NDArray
 from torch import nn
 from typing_extensions import assert_never
 
-from bioimageio.spec._internal.type_guards import is_list, is_ndarray, is_tuple
+from bioimageio.spec._internal.version_type import Version
 from bioimageio.spec.common import ZipPath
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 from bioimageio.spec.utils import download
 
 from ..digest_spec import import_callable
+from ..utils._type_guards import is_list, is_ndarray, is_tuple
 from ._model_adapter import ModelAdapter
 
 
@@ -143,7 +144,10 @@ def load_torch_state_dict(
     model = model.to(devices[0])
     with path.open("rb") as f:
         assert not isinstance(f, TextIOWrapper)
-        state = torch.load(f, map_location=devices[0], weights_only=True)
+        if Version(str(torch.__version__)) < Version("1.13"):
+            state = torch.load(f, map_location=devices[0])
+        else:
+            state = torch.load(f, map_location=devices[0], weights_only=True)
 
     incompatible = model.load_state_dict(state)
     if (

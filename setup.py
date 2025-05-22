@@ -30,7 +30,7 @@ _ = setup(
     ],
     packages=find_namespace_packages(exclude=["tests"]),
     install_requires=[
-        "bioimageio.spec ==0.5.4.1",
+        "bioimageio.spec ==0.5.4.3",
         "h5py",
         "imagecodecs",
         "imageio>=2.10",
@@ -38,7 +38,6 @@ _ = setup(
         "numpy",
         "pydantic-settings>=2.5,<3",
         "pydantic>=2.7.0,<3",
-        "requests",
         "ruyaml",
         "tqdm",
         "typing-extensions",
@@ -58,6 +57,7 @@ _ = setup(
             + [
                 "black",
                 "cellpose",  # for model testing
+                "httpx",
                 "jupyter-black",
                 "jupyter",
                 "matplotlib",
@@ -67,7 +67,7 @@ _ = setup(
                 "packaging>=17.0",
                 "pdoc",
                 "pre-commit",
-                "pyright==1.1.396",
+                "pyright==1.1.401",
                 "segment-anything",  # for model testing
                 "timm",  # for model testing
                 # "crick",  # currently requires python<=3.9
