@@ -26,7 +26,7 @@ dependencies:
   - psutil
   - pydantic<2.9
   - pydantic-settings
-  - pyright
+  - pyright==1.1.396
   - pytest
   - pytest-cov
   - python=3.11
