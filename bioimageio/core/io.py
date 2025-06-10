@@ -23,6 +23,7 @@ from typing_extensions import assert_never
 from bioimageio.spec._internal.io import get_reader, interprete_file_source
 from bioimageio.spec._internal.type_guards import is_ndarray
 from bioimageio.spec.common import (
+    BytesReader,
     FileSource,
     HttpUrl,
     PermissiveFileSource,
@@ -279,10 +280,16 @@ def load_dataset_stat(path: Path):
     return {e.measure: e.value for e in seq}
 
 
-def ensure_unzipped(source: Union[PermissiveFileSource, ZipPath], folder: Path):
-    """unzip a (downloaded) **source** to a file in **folder** if source is a zip archive.
-    Always returns the path to the unzipped source (maybe source itself)"""
-    weights_reader = get_reader(source)
+def ensure_unzipped(
+    source: Union[PermissiveFileSource, ZipPath, BytesReader], folder: Path
+):
+    """unzip a (downloaded) **source** to a file in **folder** if source is a zip archive
+    otherwise copy **source** to a file in **folder**."""
+    if isinstance(source, BytesReader):
+        weights_reader = source
+    else:
+        weights_reader = get_reader(source)
+
     out_path = folder / (
         weights_reader.original_file_name or f"file{weights_reader.suffix}"
     )

@@ -104,13 +104,10 @@ def _import_from_file_impl(
         assert module_name.isidentifier(), module_name
 
     source_bytes = reader.read()
-    # with NamedTemporaryFile(
 
     module = sys.modules.get(module_name)
     if module is None:
         try:
-            #     local_source.write(source_bytes)
-            #     local_source.flush()
             if reader.original_file_name.endswith(".zip") or is_zipfile(reader):
                 module_path = TemporaryDirectory(
                     prefix=module_name,
