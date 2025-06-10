@@ -1,7 +1,7 @@
 import gc
 import warnings
 from contextlib import nullcontext
-from io import TextIOWrapper
+from io import BytesIO, TextIOWrapper
 from pathlib import Path
 from typing import Any, List, Literal, Optional, Sequence, Union
 
@@ -12,7 +12,7 @@ from torch import nn
 from typing_extensions import assert_never
 
 from bioimageio.spec._internal.version_type import Version
-from bioimageio.spec.common import ZipPath
+from bioimageio.spec.common import BytesReader, ZipPath
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 from bioimageio.spec.utils import download
 
@@ -74,7 +74,9 @@ class PytorchModelAdapter(ModelAdapter):
             if r is None:
                 result.append(None)
             elif isinstance(r, torch.Tensor):
-                r_np: NDArray[Any] = r.detach().cpu().numpy()
+                r_np: NDArray[Any] = (  # pyright: ignore[reportUnknownVariableType]
+                    r.detach().cpu().numpy()
+                )
                 result.append(r_np)
             elif is_ndarray(r):
                 result.append(r)
@@ -130,7 +132,7 @@ def load_torch_model(
         if load_state:
             torch_model = load_torch_state_dict(
                 torch_model,
-                path=download(weight_spec).path,
+                path=download(weight_spec),
                 devices=use_devices,
             )
     return torch_model
@@ -138,11 +140,16 @@ def load_torch_model(
 
 def load_torch_state_dict(
     model: nn.Module,
-    path: Union[Path, ZipPath],
+    path: Union[Path, ZipPath, BytesReader],
     devices: Sequence[torch.device],
 ) -> nn.Module:
     model = model.to(devices[0])
-    with path.open("rb") as f:
+    if isinstance(path, (Path, ZipPath)):
+        ctxt = path.open("rb")
+    else:
+        ctxt = nullcontext(BytesIO(path.read()))
+
+    with ctxt as f:
         assert not isinstance(f, TextIOWrapper)
         if Version(str(torch.__version__)) < Version("1.13"):
             state = torch.load(f, map_location=devices[0])

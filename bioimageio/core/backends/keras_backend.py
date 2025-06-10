@@ -1,4 +1,6 @@
 import os
+import shutil
+from tempfile import NamedTemporaryFile
 from typing import Any, Optional, Sequence, Union
 
 from loguru import logger
@@ -6,7 +8,6 @@ from numpy.typing import NDArray
 
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import Version
-from bioimageio.spec.utils import download
 
 from .._settings import settings
 from ..digest_spec import get_axes_infos
@@ -68,9 +69,12 @@ class KerasModelAdapter(ModelAdapter):
                 devices,
             )
 
-        weight_path = download(model_description.weights.keras_hdf5.source).path
+        weight_reader = model_description.weights.keras_hdf5.get_reader()
+        # TODO: do we need to load keras model from disk?
+        with NamedTemporaryFile(mode="wb") as temp_file:
+            shutil.copyfileobj(weight_reader, temp_file)
+            self._network = keras.models.load_model(temp_file.name)
 
-        self._network = keras.models.load_model(weight_path)
         self._output_axes = [
             tuple(a.id for a in get_axes_infos(out))
             for out in model_description.outputs
