@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import collections.abc
-import hashlib
 import importlib.util
 import sys
 from itertools import chain
 from pathlib import Path
+from tempfile import NamedTemporaryFile, TemporaryDirectory
 from typing import (
     Any,
     Callable,
@@ -19,6 +19,7 @@ from typing import (
     Tuple,
     Union,
 )
+from zipfile import ZipFile, is_zipfile
 
 import numpy as np
 import xarray as xr
@@ -35,9 +36,8 @@ from bioimageio.spec.model.v0_5 import (
     ArchitectureFromLibraryDescr,
     ParameterizedSize_N,
 )
-from bioimageio.spec.utils import download, load_array
+from bioimageio.spec.utils import load_array
 
-from ._settings import settings
 from .axis import Axis, AxisId, AxisInfo, AxisLike, PerAxis
 from .block_meta import split_multiple_shapes_into_blocks
 from .common import Halo, MemberId, PerMember, SampleId, TotalNumberOfBlocks
@@ -89,41 +89,46 @@ def _import_from_file_impl(
 ):
     src_descr = FileDescr(source=source, **kwargs)
     # ensure sha is valid even if perform_io_checks=False
-    src_descr.validate_sha256()
+    # or the source has changed since last sha computation
+    src_descr.validate_sha256(force_recompute=True)
     assert src_descr.sha256 is not None
+    source_sha = src_descr.sha256
 
-    local_source = src_descr.download()
-
-    source_bytes = local_source.path.read_bytes()
-    assert isinstance(source_bytes, bytes)
-    source_sha = hashlib.sha256(source_bytes).hexdigest()
-
+    reader = src_descr.get_reader()
     # make sure we have unique module name
-    module_name = f"{local_source.path.stem}_{source_sha}"
+    module_name = f"{reader.original_file_name.split('.')[0]}_{source_sha}"
 
-    # make sure we have a valid module name
+    # make sure we have a unique and valid module name
     if not module_name.isidentifier():
         module_name = f"custom_module_{source_sha}"
         assert module_name.isidentifier(), module_name
 
+    source_bytes = reader.read()
+    # with NamedTemporaryFile(
+
     module = sys.modules.get(module_name)
     if module is None:
         try:
-            if isinstance(local_source.path, Path):
-                module_path = local_source.path
-            elif isinstance(local_source.path, ZipPath):
-                # save extract source to cache
-                # loading from a file from disk ensure we get readable tracebacks
-                # if any errors occur
-                module_path = (
-                    settings.cache_path / f"{source_sha}-{local_source.path.name}"
+            #     local_source.write(source_bytes)
+            #     local_source.flush()
+            if reader.original_file_name.endswith(".zip") or is_zipfile(reader):
+                module_path = TemporaryDirectory(
+                    prefix=module_name,
+                    delete=False,
+                    ignore_cleanup_errors=True,
                 )
-                _ = module_path.write_bytes(source_bytes)
+                ZipFile(reader).extractall(path=module_path.name)
             else:
-                assert_never(local_source.path)
+                module_path = NamedTemporaryFile(
+                    mode="wb",
+                    suffix=reader.suffix,
+                    prefix=f"{module_name}_",
+                    delete=False,
+                )
+                _ = module_path.write(source_bytes)
 
             importlib_spec = importlib.util.spec_from_file_location(
-                module_name, module_path
+                module_name, module_path.name
             )
 
             if importlib_spec is None:
@@ -378,20 +383,12 @@ def get_tensor(
 
     if isinstance(src, Tensor):
         return src
-
-    if isinstance(src, xr.DataArray):
+    elif isinstance(src, xr.DataArray):
         return Tensor.from_xarray(src)
-
-    if isinstance(src, np.ndarray):
+    elif isinstance(src, np.ndarray):
         return Tensor.from_numpy(src, dims=get_axes_infos(ipt))
-
-    if isinstance(src, FileDescr):
-        src = download(src).path
-
-    if isinstance(src, (ZipPath, Path, str)):
+    else:
         return load_tensor(src, axes=get_axes_infos(ipt))
-
-    assert_never(src)
 
 
 def create_sample_for_model(
