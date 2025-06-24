@@ -5,7 +5,7 @@ import importlib.util
 import sys
 from itertools import chain
 from pathlib import Path
-from tempfile import NamedTemporaryFile, TemporaryDirectory
+from tempfile import TemporaryDirectory
 from typing import (
     Any,
     Callable,
@@ -108,37 +108,32 @@ def _import_from_file_impl(
     module = sys.modules.get(module_name)
     if module is None:
         try:
+            tmp_dir = TemporaryDirectory(ignore_cleanup_errors=True)
+            module_path = Path(tmp_dir.name) / module_name
             if reader.original_file_name.endswith(".zip") or is_zipfile(reader):
-                module_path = TemporaryDirectory(
-                    prefix=module_name,
-                    delete=False,
-                    ignore_cleanup_errors=True,
-                )
-                ZipFile(reader).extractall(path=module_path.name)
+                module_path.mkdir()
+                ZipFile(reader).extractall(path=module_path)
             else:
-                module_path = NamedTemporaryFile(
-                    mode="wb",
-                    suffix=reader.suffix,
-                    prefix=f"{module_name}_",
-                    delete=False,
-                )
-                _ = module_path.write(source_bytes)
+                module_path = module_path.with_suffix(".py")
+                _ = module_path.write_bytes(source_bytes)
 
             importlib_spec = importlib.util.spec_from_file_location(
-                module_name, module_path.name
+                module_name, str(module_path)
             )
 
             if importlib_spec is None:
                 raise ImportError(f"Failed to import {source}")
 
             module = importlib.util.module_from_spec(importlib_spec)
+
+            sys.modules[module_name] = module  # cache this module
+
             assert importlib_spec.loader is not None
             importlib_spec.loader.exec_module(module)
 
         except Exception as e:
+            del sys.modules[module_name]
             raise ImportError(f"Failed to import {source}") from e
-        else:
-            sys.modules[module_name] = module  # cache this module
 
     try:
         callable_attr = getattr(module, callable_name)
