@@ -50,7 +50,9 @@ _ = setup(
         ),
         "tensorflow": ["tensorflow", "keras>=2.15,<4"],
         "onnx": ["onnxruntime"],
-        "tests": (test_deps := ["pytest", "pytest-cov"]),  # minimal test requirements
+        "tests": (  # minimal test requirements
+            test_deps := ["pytest", "pytest-cov", "python-dotenv"]
+        ),
         "dev": (
             test_deps
             + pytorch_deps
