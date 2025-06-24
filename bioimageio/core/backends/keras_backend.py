@@ -1,8 +1,13 @@
 import os
 import shutil
-from tempfile import NamedTemporaryFile
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any, Optional, Sequence, Union
 
+import h5py  # pyright: ignore[reportMissingTypeStubs]
+from keras.src.legacy.saving import (  # pyright: ignore[reportMissingTypeStubs]
+    legacy_h5_format,
+)
 from loguru import logger
 from numpy.typing import NDArray
 
@@ -70,10 +75,16 @@ class KerasModelAdapter(ModelAdapter):
             )
 
         weight_reader = model_description.weights.keras_hdf5.get_reader()
-        # TODO: do we need to load keras model from disk?
-        with NamedTemporaryFile(mode="wb") as temp_file:
-            shutil.copyfileobj(weight_reader, temp_file)
-            self._network = keras.models.load_model(temp_file.name)
+        if weight_reader.suffix in (".h5", "hdf5"):
+            h5_file = h5py.File(weight_reader, mode="r")
+            self._network = legacy_h5_format.load_model_from_hdf5(h5_file)
+        else:
+            with TemporaryDirectory() as temp_dir:
+                temp_path = Path(temp_dir) / weight_reader.original_file_name
+                with temp_path.open("wb") as f:
+                    shutil.copyfileobj(weight_reader, f)
+
+                self._network = keras.models.load_model(temp_path)
 
         self._output_axes = [
             tuple(a.id for a in get_axes_infos(out))
