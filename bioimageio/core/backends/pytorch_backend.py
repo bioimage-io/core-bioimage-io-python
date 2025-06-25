@@ -158,16 +158,23 @@ def load_torch_state_dict(
 
     incompatible = model.load_state_dict(state)
     if (
-        incompatible is not None  # pyright: ignore[reportUnnecessaryComparison]
-        and incompatible.missing_keys
+        isinstance(incompatible, tuple)
+        and hasattr(incompatible, "missing_keys")
+        and hasattr(incompatible, "unexpected_keys")
     ):
-        logger.warning("Missing state dict keys: {}", incompatible.missing_keys)
+        if incompatible.missing_keys:
+            logger.warning("Missing state dict keys: {}", incompatible.missing_keys)
 
-    if (
-        incompatible is not None  # pyright: ignore[reportUnnecessaryComparison]
-        and incompatible.unexpected_keys
-    ):
-        logger.warning("Unexpected state dict keys: {}", incompatible.unexpected_keys)
+        if hasattr(incompatible, "unexpected_keys") and incompatible.unexpected_keys:
+            logger.warning(
+                "Unexpected state dict keys: {}", incompatible.unexpected_keys
+            )
+    else:
+        logger.warning(
+            "`model.load_state_dict()` unexpectedly returned: {} "
+            + "(expected named tuple with `missing_keys` and `unexpected_keys` attributes)",
+            (s[:20] + "..." if len(s := str(incompatible)) > 20 else s),
+        )
 
     return model
 
