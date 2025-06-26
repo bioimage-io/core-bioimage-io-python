@@ -58,7 +58,7 @@ from bioimageio.spec import (
 )
 from bioimageio.spec._internal.io import is_yaml_value
 from bioimageio.spec._internal.io_utils import open_bioimageio_yaml
-from bioimageio.spec._internal.types import NotEmpty
+from bioimageio.spec._internal.types import FormatVersionPlaceholder, NotEmpty
 from bioimageio.spec.dataset import DatasetDescr
 from bioimageio.spec.model import ModelDescr, v0_4, v0_5
 from bioimageio.spec.notebook import NotebookDescr
@@ -204,6 +204,15 @@ class TestCmd(CmdBase, WithSource, WithSummaryLogging):
     )
     """Do not run further subtests after a failed one."""
 
+    format_version: Union[FormatVersionPlaceholder, str] = Field(
+        "discover", alias="format-version"
+    )
+    """The format version to use for testing.
+        - 'latest': Use the latest implemented format version for the given resource type (may trigger auto updating)
+        - 'discover': Use the format version as described in the resource description
+        - '0.4', '0.5', ...: Use the specified format version (may trigger auto updating)
+    """
+
     def run(self):
         sys.exit(
             test(
@@ -213,6 +222,7 @@ class TestCmd(CmdBase, WithSource, WithSummaryLogging):
                 summary=self.summary,
                 runtime_env=self.runtime_env,
                 determinism=self.determinism,
+                format_version=self.format_version,
             )
         )
 
