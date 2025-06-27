@@ -13,6 +13,7 @@ from bioimageio.spec import (
     save_bioimageio_package,
     save_bioimageio_package_as_folder,
 )
+from bioimageio.spec._internal.types import FormatVersionPlaceholder
 
 from ._resource_tests import test_description
 
@@ -32,6 +33,7 @@ def test(
         Literal["currently-active", "as-described"], Path
     ] = "currently-active",
     determinism: Literal["seed_only", "full"] = "seed_only",
+    format_version: Union[FormatVersionPlaceholder, str] = "discover",
 ) -> int:
     """Test a bioimageio resource.
 
@@ -42,6 +44,7 @@ def test(
     else:
         test_summary = test_description(
             descr,
+            format_version=format_version,
             weight_format=None if weight_format == "all" else weight_format,
             devices=[devices] if isinstance(devices, str) else devices,
             runtime_env=runtime_env,

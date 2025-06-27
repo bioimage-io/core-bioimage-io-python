@@ -66,7 +66,15 @@ class Tensor(MagicTensorOpsMixin):
         return np.asarray(self._data, dtype=dtype)
 
     def __getitem__(
-        self, key: Union[SliceInfo, slice, int, PerAxis[Union[SliceInfo, slice, int]]]
+        self,
+        key: Union[
+            SliceInfo,
+            slice,
+            int,
+            PerAxis[Union[SliceInfo, slice, int]],
+            Tensor,
+            xr.DataArray,
+        ],
     ) -> Self:
         if isinstance(key, SliceInfo):
             key = slice(*key)
@@ -75,11 +83,27 @@ class Tensor(MagicTensorOpsMixin):
                 a: s if isinstance(s, int) else s if isinstance(s, slice) else slice(*s)
                 for a, s in key.items()
             }
+        elif isinstance(key, Tensor):
+            key = key._data
+
         return self.__class__.from_xarray(self._data[key])
 
-    def __setitem__(self, key: PerAxis[Union[SliceInfo, slice]], value: Tensor) -> None:
-        key = {a: s if isinstance(s, slice) else slice(*s) for a, s in key.items()}
-        self._data[key] = value._data
+    def __setitem__(
+        self,
+        key: Union[PerAxis[Union[SliceInfo, slice]], Tensor, xr.DataArray],
+        value: Union[Tensor, xr.DataArray, float, int],
+    ) -> None:
+        if isinstance(key, Tensor):
+            key = key._data
+        elif isinstance(key, xr.DataArray):
+            pass
+        else:
+            key = {a: s if isinstance(s, slice) else slice(*s) for a, s in key.items()}
+
+        if isinstance(value, Tensor):
+            value = value._data
+
+        self._data[key] = value
 
     def __len__(self) -> int:
         return len(self.data)

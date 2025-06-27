@@ -1,7 +1,6 @@
 import collections.abc
 import warnings
 import zipfile
-from io import TextIOWrapper
 from pathlib import Path, PurePosixPath
 from shutil import copyfileobj
 from typing import (
@@ -15,15 +14,17 @@ from typing import (
 )
 
 import h5py  # pyright: ignore[reportMissingTypeStubs]
-import numpy as np
 from imageio.v3 import imread, imwrite  # type: ignore
 from loguru import logger
 from numpy.typing import NDArray
 from pydantic import BaseModel, ConfigDict, TypeAdapter
 from typing_extensions import assert_never
 
-from bioimageio.spec._internal.io import interprete_file_source
+from bioimageio.spec._internal.io import get_reader, interprete_file_source
+from bioimageio.spec._internal.type_guards import is_ndarray
 from bioimageio.spec.common import (
+    BytesReader,
+    FileSource,
     HttpUrl,
     PermissiveFileSource,
     RelativeFilePath,
@@ -65,51 +66,51 @@ def load_image(
     else:
         src = parsed_source
 
-    # FIXME: why is pyright complaining about giving the union to _split_dataset_path?
     if isinstance(src, Path):
-        file_source, subpath = _split_dataset_path(src)
+        file_source, suffix, subpath = _split_dataset_path(src)
     elif isinstance(src, HttpUrl):
-        file_source, subpath = _split_dataset_path(src)
+        file_source, suffix, subpath = _split_dataset_path(src)
     elif isinstance(src, ZipPath):
-        file_source, subpath = _split_dataset_path(src)
+        file_source, suffix, subpath = _split_dataset_path(src)
     else:
         assert_never(src)
 
-    path = download(file_source).path
-
-    if path.suffix == ".npy":
+    if suffix == ".npy":
         if subpath is not None:
-            raise ValueError(f"Unexpected subpath {subpath} for .npy path {path}")
-        return load_array(path)
-    elif path.suffix in SUFFIXES_WITH_DATAPATH:
+            logger.warning(
+                "Unexpected subpath {} for .npy source {}", subpath, file_source
+            )
+
+        image = load_array(file_source)
+    elif suffix in SUFFIXES_WITH_DATAPATH:
         if subpath is None:
             dataset_path = DEFAULT_H5_DATASET_PATH
         else:
             dataset_path = str(subpath)
 
-        with h5py.File(path, "r") as f:
+        reader = download(file_source)
+
+        with h5py.File(reader, "r") as f:
             h5_dataset = f.get(  # pyright: ignore[reportUnknownVariableType]
                 dataset_path
             )
             if not isinstance(h5_dataset, h5py.Dataset):
                 raise ValueError(
-                    f"{path} is not of type {h5py.Dataset}, but has type "
+                    f"{file_source} did not load as {h5py.Dataset}, but has type "
                     + str(
                         type(h5_dataset)  # pyright: ignore[reportUnknownArgumentType]
                     )
                 )
             image: NDArray[Any]
             image = h5_dataset[:]  # pyright: ignore[reportUnknownVariableType]
-            assert isinstance(image, np.ndarray), type(
-                image  # pyright: ignore[reportUnknownArgumentType]
-            )
-            return image  # pyright: ignore[reportUnknownVariableType]
-    elif isinstance(path, ZipPath):
-        return imread(
-            path.read_bytes(), extension=path.suffix
-        )  # pyright: ignore[reportUnknownVariableType]
     else:
-        return imread(path)  # pyright: ignore[reportUnknownVariableType]
+        reader = download(file_source)
+        image = imread(  # pyright: ignore[reportUnknownVariableType]
+            reader.read(), extension=suffix
+        )
+
+    assert is_ndarray(image)
+    return image
 
 
 def load_tensor(
@@ -123,19 +124,21 @@ def load_tensor(
 
 _SourceT = TypeVar("_SourceT", Path, HttpUrl, ZipPath)
 
+Suffix = str
+
 
 def _split_dataset_path(
     source: _SourceT,
-) -> Tuple[_SourceT, Optional[PurePosixPath]]:
+) -> Tuple[_SourceT, Suffix, Optional[PurePosixPath]]:
     """Split off subpath (e.g. internal  h5 dataset path)
     from a file path following a file extension.
 
     Examples:
         >>> _split_dataset_path(Path("my_file.h5/dataset"))
-        (...Path('my_file.h5'), PurePosixPath('dataset'))
+        (...Path('my_file.h5'), '.h5', PurePosixPath('dataset'))
 
         >>> _split_dataset_path(Path("my_plain_file"))
-        (...Path('my_plain_file'), None)
+        (...Path('my_plain_file'), '', None)
 
     """
     if isinstance(source, RelativeFilePath):
@@ -148,42 +151,47 @@ def _split_dataset_path(
     def separate_pure_path(path: PurePosixPath):
         for p in path.parents:
             if p.suffix in SUFFIXES_WITH_DATAPATH:
-                return p, PurePosixPath(path.relative_to(p))
+                return p, p.suffix, PurePosixPath(path.relative_to(p))
 
-        return path, None
+        return path, path.suffix, None
 
     if isinstance(src, HttpUrl):
-        file_path, data_path = separate_pure_path(PurePosixPath(src.path or ""))
+        file_path, suffix, data_path = separate_pure_path(PurePosixPath(src.path or ""))
 
         if data_path is None:
-            return src, None
+            return src, suffix, None
 
         return (
             HttpUrl(str(file_path).replace(f"/{data_path}", "")),
+            suffix,
             data_path,
         )
 
     if isinstance(src, ZipPath):
-        file_path, data_path = separate_pure_path(PurePosixPath(str(src)))
+        file_path, suffix, data_path = separate_pure_path(PurePosixPath(str(src)))
 
         if data_path is None:
-            return src, None
+            return src, suffix, None
 
         return (
             ZipPath(str(file_path).replace(f"/{data_path}", "")),
+            suffix,
             data_path,
         )
 
-    file_path, data_path = separate_pure_path(PurePosixPath(src))
-    return Path(file_path), data_path
+    file_path, suffix, data_path = separate_pure_path(PurePosixPath(src))
+    return Path(file_path), suffix, data_path
 
 
 def save_tensor(path: Union[Path, str], tensor: Tensor) -> None:
     # TODO: save axis meta data
 
-    data: NDArray[Any] = tensor.data.to_numpy()
-    file_path, subpath = _split_dataset_path(Path(path))
-    if not file_path.suffix:
+    data: NDArray[Any] = (  # pyright: ignore[reportUnknownVariableType]
+        tensor.data.to_numpy()
+    )
+    assert is_ndarray(data)
+    file_path, suffix, subpath = _split_dataset_path(Path(path))
+    if not suffix:
         raise ValueError(f"No suffix (needed to decide file format) found in {path}")
 
     file_path.parent.mkdir(exist_ok=True, parents=True)
@@ -191,7 +199,7 @@ def save_tensor(path: Union[Path, str], tensor: Tensor) -> None:
         if subpath is not None:
             raise ValueError(f"Unexpected subpath {subpath} found in .npy path {path}")
         save_array(file_path, data)
-    elif file_path.suffix in (".h5", ".hdf", ".hdf5"):
+    elif suffix in (".h5", ".hdf", ".hdf5"):
         if subpath is None:
             dataset_path = DEFAULT_H5_DATASET_PATH
         else:
@@ -272,25 +280,48 @@ def load_dataset_stat(path: Path):
     return {e.measure: e.value for e in seq}
 
 
-def ensure_unzipped(source: Union[PermissiveFileSource, ZipPath], folder: Path):
-    """unzip a (downloaded) **source** to a file in **folder** if source is a zip archive.
-    Always returns the path to the unzipped source (maybe source itself)"""
-    local_weights_file = download(source).path
-    if isinstance(local_weights_file, ZipPath):
-        # source is inside a zip archive
-        out_path = folder / local_weights_file.filename
-        with local_weights_file.open("rb") as src, out_path.open("wb") as dst:
-            assert not isinstance(src, TextIOWrapper)
-            copyfileobj(src, dst)
+def ensure_unzipped(
+    source: Union[PermissiveFileSource, ZipPath, BytesReader], folder: Path
+):
+    """unzip a (downloaded) **source** to a file in **folder** if source is a zip archive
+    otherwise copy **source** to a file in **folder**."""
+    if isinstance(source, BytesReader):
+        weights_reader = source
+    else:
+        weights_reader = get_reader(source)
 
-        local_weights_file = out_path
+    out_path = folder / (
+        weights_reader.original_file_name or f"file{weights_reader.suffix}"
+    )
 
-    if zipfile.is_zipfile(local_weights_file):
+    if zipfile.is_zipfile(weights_reader):
+        out_path = out_path.with_name(out_path.name + ".unzipped")
+        out_path.parent.mkdir(exist_ok=True, parents=True)
         # source itself is a zipfile
-        out_path = folder / local_weights_file.with_suffix(".unzipped").name
-        with zipfile.ZipFile(local_weights_file, "r") as f:
+        with zipfile.ZipFile(weights_reader, "r") as f:
             f.extractall(out_path)
 
-        return out_path
     else:
-        return local_weights_file
+        out_path.parent.mkdir(exist_ok=True, parents=True)
+        with out_path.open("wb") as f:
+            copyfileobj(weights_reader, f)
+
+    return out_path
+
+
+def get_suffix(source: Union[ZipPath, FileSource]) -> str:
+    if isinstance(source, Path):
+        return source.suffix
+    elif isinstance(source, ZipPath):
+        return source.suffix
+    if isinstance(source, RelativeFilePath):
+        return source.path.suffix
+    elif isinstance(source, ZipPath):
+        return source.suffix
+    elif isinstance(source, HttpUrl):
+        if source.path is None:
+            return ""
+        else:
+            return PurePosixPath(source.path).suffix
+    else:
+        assert_never(source)

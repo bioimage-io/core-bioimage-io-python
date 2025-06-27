@@ -1,12 +1,12 @@
 import os
 import shutil
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Union, no_type_check
 from zipfile import ZipFile
 
 import tensorflow  # pyright: ignore[reportMissingTypeStubs]
 
-from bioimageio.spec._internal.io import download
 from bioimageio.spec._internal.version_type import Version
 from bioimageio.spec.common import ZipPath
 from bioimageio.spec.model.v0_5 import (
@@ -70,7 +70,7 @@ def convert(
         raise ValueError("Missing Keras Hdf5 weights to convert from.")
 
     weight_spec = model_descr.weights.keras_hdf5
-    weight_path = download(weight_spec.source).path
+    weight_reader = weight_spec.get_reader()
 
     if weight_spec.tensorflow_version:
         model_tf_major_ver = int(weight_spec.tensorflow_version.major)
@@ -79,30 +79,34 @@ def convert(
                 f"Tensorflow major versions of model {model_tf_major_ver} is not {tf_major_ver}"
             )
 
-    if tf_major_ver == 1:
-        if len(model_descr.inputs) != 1 or len(model_descr.outputs) != 1:
-            raise NotImplementedError(
-                "Weight conversion for models with multiple inputs or outputs is not yet implemented."
-            )
+    with TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+        local_weights = ensure_unzipped(
+            weight_reader, Path(temp_dir) / "bioimageio_unzipped_tf_weights"
+        )
+        if tf_major_ver == 1:
+            if len(model_descr.inputs) != 1 or len(model_descr.outputs) != 1:
+                raise NotImplementedError(
+                    "Weight conversion for models with multiple inputs or outputs is not yet implemented."
+                )
 
-        input_name = str(
-            d.id
-            if isinstance((d := model_descr.inputs[0]), InputTensorDescr)
-            else d.name
-        )
-        output_name = str(
-            d.id
-            if isinstance((d := model_descr.outputs[0]), OutputTensorDescr)
-            else d.name
-        )
-        return _convert_tf1(
-            ensure_unzipped(weight_path, Path("bioimageio_unzipped_tf_weights")),
-            output_path,
-            input_name,
-            output_name,
-        )
-    else:
-        return _convert_tf2(weight_path, output_path)
+            input_name = str(
+                d.id
+                if isinstance((d := model_descr.inputs[0]), InputTensorDescr)
+                else d.name
+            )
+            output_name = str(
+                d.id
+                if isinstance((d := model_descr.outputs[0]), OutputTensorDescr)
+                else d.name
+            )
+            return _convert_tf1(
+                ensure_unzipped(local_weights, Path("bioimageio_unzipped_tf_weights")),
+                output_path,
+                input_name,
+                output_name,
+            )
+        else:
+            return _convert_tf2(local_weights, output_path)
 
 
 def _convert_tf2(

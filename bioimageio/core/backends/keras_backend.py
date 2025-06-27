@@ -1,19 +1,26 @@
 import os
+import shutil
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Any, Optional, Sequence, Union
 
+import h5py  # pyright: ignore[reportMissingTypeStubs]
+from keras.src.legacy.saving import (  # pyright: ignore[reportMissingTypeStubs]
+    legacy_h5_format,
+)
 from loguru import logger
 from numpy.typing import NDArray
 
-from bioimageio.spec._internal.io import download
-from bioimageio.spec._internal.type_guards import is_list, is_tuple
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import Version
 
 from .._settings import settings
 from ..digest_spec import get_axes_infos
+from ..utils._type_guards import is_list, is_tuple
 from ._model_adapter import ModelAdapter
 
 os.environ["KERAS_BACKEND"] = settings.keras_backend
+
 
 # by default, we use the keras integrated with tensorflow
 # TODO: check if we should prefer keras
@@ -67,9 +74,18 @@ class KerasModelAdapter(ModelAdapter):
                 devices,
             )
 
-        weight_path = download(model_description.weights.keras_hdf5.source).path
+        weight_reader = model_description.weights.keras_hdf5.get_reader()
+        if weight_reader.suffix in (".h5", "hdf5"):
+            h5_file = h5py.File(weight_reader, mode="r")
+            self._network = legacy_h5_format.load_model_from_hdf5(h5_file)
+        else:
+            with TemporaryDirectory() as temp_dir:
+                temp_path = Path(temp_dir) / weight_reader.original_file_name
+                with temp_path.open("wb") as f:
+                    shutil.copyfileobj(weight_reader, f)
 
-        self._network = keras.models.load_model(weight_path)
+                self._network = keras.models.load_model(temp_path)
+
         self._output_axes = [
             tuple(a.id for a in get_axes_infos(out))
             for out in model_description.outputs

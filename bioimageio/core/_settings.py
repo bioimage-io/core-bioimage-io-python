@@ -1,12 +1,9 @@
 from typing import Literal
 
-from dotenv import load_dotenv
 from pydantic import Field
 from typing_extensions import Annotated
 
 from bioimageio.spec._internal._settings import Settings as SpecSettings
-
-_ = load_dotenv()
 
 
 class Settings(SpecSettings):

@@ -69,12 +69,6 @@ jobs:
     strategy:
       matrix:
         include:
-          - python-version: '3.8'
-            conda-env: py38
-            spec: conda
-          - python-version: '3.8'
-            conda-env: py38
-            spec: main
           - python-version: '3.9'
             conda-env: dev
             spec: conda
@@ -174,7 +168,7 @@ jobs:
         path: bioimageio_cache
         key: ${{matrix.run-expensive-tests && needs.populate-cache.outputs.cache-key || needs.populate-cache.outputs.cache-key-light}}
     - name: pytest
-      run: pytest --disable-pytest-warnings
+      run: pytest --cov bioimageio --cov-report xml --cov-append --capture no --disable-pytest-warnings
       env:
         BIOIMAGEIO_CACHE_PATH: bioimageio_cache
         RUN_EXPENSIVE_TESTS: ${{ matrix.run-expensive-tests && 'true' || 'false' }}

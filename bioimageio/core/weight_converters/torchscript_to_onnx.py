@@ -3,7 +3,6 @@ from pathlib import Path
 import torch.jit
 
 from bioimageio.spec.model.v0_5 import ModelDescr, OnnxWeightsDescr
-from bioimageio.spec.utils import download
 
 from .. import __version__
 from ..digest_spec import get_member_id, get_test_inputs
@@ -55,8 +54,8 @@ def convert(
     ]
     inputs_torch = [torch.from_numpy(ipt) for ipt in inputs_numpy]
 
-    weight_path = download(torchscript_descr).path
-    model = torch.jit.load(weight_path)  # type: ignore
+    weight_reader = torchscript_descr.get_reader()
+    model = torch.jit.load(weight_reader)  # type: ignore
     model.to("cpu")
     model = model.eval()  # type: ignore
 
