@@ -1,12 +1,13 @@
 import os
 from itertools import chain
+from pathlib import Path
 from typing import Any, Dict, Iterable, Mapping, Tuple
 
 import httpx
 import pytest
 from pydantic import HttpUrl
 
-from bioimageio.spec import InvalidDescr
+from bioimageio.spec import InvalidDescr, settings
 from bioimageio.spec.common import Sha256
 from tests.utils import ParameterSet, expensive_test
 
@@ -157,6 +158,18 @@ KNOWN_INVALID: Mapping[str, str] = {
 }
 
 
+def get_directory_size(path: Path):
+    total_size = 0
+    for dirpath, _, filenames in os.walk(path):
+        for f in filenames:
+            fp = os.path.join(dirpath, f)
+            # skip if it is symbolic link
+            if not os.path.islink(fp):
+                total_size += os.path.getsize(fp)
+
+    return total_size
+
+
 @pytest.mark.parametrize("descr_url,sha,key", list(yield_bioimageio_yaml_urls()))
 def test_rdf_format_to_populate_cache(
     descr_url: HttpUrl,
@@ -169,6 +182,9 @@ def test_rdf_format_to_populate_cache(
 
     if key in KNOWN_INVALID:
         pytest.skip(KNOWN_INVALID[key])
+
+    if (cache_size := get_directory_size(settings.cache_path)) > 8e9:
+        pytest.skip(f"reached 8GB cache size limit ({cache_size / 1e9:.2f} GB)")
 
     from bioimageio.core import load_description
 
