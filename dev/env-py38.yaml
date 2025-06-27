@@ -1,3 +1,4 @@
+# DEPRECATED
 # manipulated copy of env-full.yaml wo dependencies 'for model testing' for python 3.8
 name: core-py38
 channels:
