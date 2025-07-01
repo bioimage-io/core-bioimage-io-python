@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Coverage for bioimageio/core/proc_ops.py: 81%</title>
+    <title>Coverage for bioimageio/core/proc_ops.py: 80%</title>
     <link rel="icon" sizes="32x32" href="favicon_32_cb_58284776.png">
-    <link rel="stylesheet" href="style_cb_8e611ae1.css" type="text/css">
+    <link rel="stylesheet" href="style_cb_81f8c14c.css" type="text/css">
     <script src="coverage_html_cb_6fb7b396.js" defer></script>
 </head>
 <body class="pyfile">
@@ -12,7 +12,7 @@
     <div class="content">
         <h1>
             <span class="text">Coverage for </span><b>bioimageio/core/proc_ops.py</b>:
-            <span class="pc_cov">81%</span>
+            <span class="pc_cov">80%</span>
         </h1>
         <aside id="help_panel_wrapper">
             <input id="help_panel_state" type="checkbox">
@@ -55,8 +55,8 @@
         </aside>
         <h2>
             <span class="text">332 statements &nbsp;</span>
-            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">269<span class="text"> run</span></button>
-            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">63<span class="text"> missing</span></button>
+            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">266<span class="text"> run</span></button>
+            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">66<span class="text"> missing</span></button>
             <button type="button" class="exc show_exc button_toggle_exc" value="exc" data-shortcut="x" title="Toggle lines excluded">7<span class="text"> excluded</span></button>
         </h2>
         <p class="text">
@@ -64,8 +64,8 @@
             <a id="indexLink" class="nav" href="index.html">&Hat; index</a> &nbsp; &nbsp;
             <a id="nextFileLink" class="nav" href="z_26936cb883974160_proc_setup_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
-            <a class="nav" href="https://coverage.readthedocs.io/en/7.8.0">coverage.py v7.8.0</a>,
-            created at 2025-04-01 09:51 +0000
+            <a class="nav" href="https://coverage.readthedocs.io/en/7.9.1">coverage.py v7.9.1</a>,
+            created at 2025-07-01 11:27 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -767,7 +767,7 @@
     <p class="run"><span class="n"><a id="t685" href="#t685">685</a></span><span class="t">    <span class="key">elif</span> <span class="nam">isinstance</span><span class="op">(</span><span class="nam">proc_descr</span><span class="op">,</span> <span class="nam">v0_5</span><span class="op">.</span><span class="nam">EnsureDtypeDescr</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t686" href="#t686">686</a></span><span class="t">        <span class="key">return</span> <span class="nam">EnsureDtype</span><span class="op">.</span><span class="nam">from_proc_descr</span><span class="op">(</span><span class="nam">proc_descr</span><span class="op">,</span> <span class="nam">member_id</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t687" href="#t687">687</a></span><span class="t">    <span class="key">elif</span> <span class="nam">isinstance</span><span class="op">(</span><span class="nam">proc_descr</span><span class="op">,</span> <span class="nam">v0_5</span><span class="op">.</span><span class="nam">FixedZeroMeanUnitVarianceDescr</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t688" href="#t688">688</a></span><span class="t">        <span class="key">return</span> <span class="nam">FixedZeroMeanUnitVariance</span><span class="op">.</span><span class="nam">from_proc_descr</span><span class="op">(</span><span class="nam">proc_descr</span><span class="op">,</span> <span class="nam">member_id</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t688" href="#t688">688</a></span><span class="t">        <span class="key">return</span> <span class="nam">FixedZeroMeanUnitVariance</span><span class="op">.</span><span class="nam">from_proc_descr</span><span class="op">(</span><span class="nam">proc_descr</span><span class="op">,</span> <span class="nam">member_id</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t689" href="#t689">689</a></span><span class="t">    <span class="key">elif</span> <span class="nam">isinstance</span><span class="op">(</span><span class="nam">proc_descr</span><span class="op">,</span> <span class="op">(</span><span class="nam">v0_4</span><span class="op">.</span><span class="nam">ScaleLinearDescr</span><span class="op">,</span> <span class="nam">v0_5</span><span class="op">.</span><span class="nam">ScaleLinearDescr</span><span class="op">)</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t690" href="#t690">690</a></span><span class="t">        <span class="key">return</span> <span class="nam">ScaleLinear</span><span class="op">.</span><span class="nam">from_proc_descr</span><span class="op">(</span><span class="nam">proc_descr</span><span class="op">,</span> <span class="nam">member_id</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t691" href="#t691">691</a></span><span class="t">    <span class="key">elif</span> <span class="nam">isinstance</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
@@ -782,16 +782,16 @@
     <p class="pln"><span class="n"><a id="t700" href="#t700">700</a></span><span class="t">        <span class="nam">isinstance</span><span class="op">(</span><span class="nam">proc_descr</span><span class="op">,</span> <span class="nam">v0_4</span><span class="op">.</span><span class="nam">ZeroMeanUnitVarianceDescr</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t701" href="#t701">701</a></span><span class="t">        <span class="key">and</span> <span class="nam">proc_descr</span><span class="op">.</span><span class="nam">kwargs</span><span class="op">.</span><span class="nam">mode</span> <span class="op">==</span> <span class="str">"fixed"</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t702" href="#t702">702</a></span><span class="t">    <span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t703" href="#t703">703</a></span><span class="t">        <span class="key">if</span> <span class="key">not</span> <span class="nam">isinstance</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis show_mis"><span class="n"><a id="t703" href="#t703">703</a></span><span class="t">        <span class="key">if</span> <span class="key">not</span> <span class="nam">isinstance</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t704" href="#t704">704</a></span><span class="t">            <span class="nam">tensor_descr</span><span class="op">,</span> <span class="op">(</span><span class="nam">v0_4</span><span class="op">.</span><span class="nam">InputTensorDescr</span><span class="op">,</span> <span class="nam">v0_4</span><span class="op">.</span><span class="nam">OutputTensorDescr</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t705" href="#t705">705</a></span><span class="t">        <span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t706" href="#t706">706</a></span><span class="t">            <span class="key">raise</span> <span class="nam">TypeError</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t707" href="#t707">707</a></span><span class="t">                <span class="str">"Expected v0_4 tensor description for v0_4 processing description"</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t708" href="#t708">708</a></span><span class="t">            <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t709" href="#t709">709</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t710" href="#t710">710</a></span><span class="t">        <span class="nam">v5_proc_descr</span> <span class="op">=</span> <span class="nam">_convert_proc</span><span class="op">(</span><span class="nam">proc_descr</span><span class="op">,</span> <span class="nam">tensor_descr</span><span class="op">.</span><span class="nam">axes</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t711" href="#t711">711</a></span><span class="t">        <span class="key">assert</span> <span class="nam">isinstance</span><span class="op">(</span><span class="nam">v5_proc_descr</span><span class="op">,</span> <span class="nam">v0_5</span><span class="op">.</span><span class="nam">FixedZeroMeanUnitVarianceDescr</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t712" href="#t712">712</a></span><span class="t">        <span class="key">return</span> <span class="nam">FixedZeroMeanUnitVariance</span><span class="op">.</span><span class="nam">from_proc_descr</span><span class="op">(</span><span class="nam">v5_proc_descr</span><span class="op">,</span> <span class="nam">member_id</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis show_mis"><span class="n"><a id="t710" href="#t710">710</a></span><span class="t">        <span class="nam">v5_proc_descr</span> <span class="op">=</span> <span class="nam">_convert_proc</span><span class="op">(</span><span class="nam">proc_descr</span><span class="op">,</span> <span class="nam">tensor_descr</span><span class="op">.</span><span class="nam">axes</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis show_mis"><span class="n"><a id="t711" href="#t711">711</a></span><span class="t">        <span class="key">assert</span> <span class="nam">isinstance</span><span class="op">(</span><span class="nam">v5_proc_descr</span><span class="op">,</span> <span class="nam">v0_5</span><span class="op">.</span><span class="nam">FixedZeroMeanUnitVarianceDescr</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis show_mis"><span class="n"><a id="t712" href="#t712">712</a></span><span class="t">        <span class="key">return</span> <span class="nam">FixedZeroMeanUnitVariance</span><span class="op">.</span><span class="nam">from_proc_descr</span><span class="op">(</span><span class="nam">v5_proc_descr</span><span class="op">,</span> <span class="nam">member_id</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t713" href="#t713">713</a></span><span class="t">    <span class="key">elif</span> <span class="nam">isinstance</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t714" href="#t714">714</a></span><span class="t">        <span class="nam">proc_descr</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t715" href="#t715">715</a></span><span class="t">        <span class="op">(</span><span class="nam">v0_4</span><span class="op">.</span><span class="nam">ZeroMeanUnitVarianceDescr</span><span class="op">,</span> <span class="nam">v0_5</span><span class="op">.</span><span class="nam">ZeroMeanUnitVarianceDescr</span><span class="op">)</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
@@ -807,8 +807,8 @@
             <a class="nav" href="index.html">&Hat; index</a> &nbsp; &nbsp;
             <a class="nav" href="z_26936cb883974160_proc_setup_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
-            <a class="nav" href="https://coverage.readthedocs.io/en/7.8.0">coverage.py v7.8.0</a>,
-            created at 2025-04-01 09:51 +0000
+            <a class="nav" href="https://coverage.readthedocs.io/en/7.9.1">coverage.py v7.9.1</a>,
+            created at 2025-07-01 11:27 +0000
         </p>
     </div>
 </footer>
