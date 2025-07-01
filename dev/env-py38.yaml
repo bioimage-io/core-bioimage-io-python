@@ -33,7 +33,7 @@ dependencies:
   - python=3.8 # changed
   - pytorch>=2.1,<3
   - httpx
-  - respx-mock
+  - respx
   - rich
   - ruff
   - ruyaml

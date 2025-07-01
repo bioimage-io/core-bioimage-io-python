@@ -31,7 +31,7 @@ dependencies:
   - pytest-cov
   - python=3.11
   - httpx
-  - respx-mock
+  - respx
   - rich
   - ruff
   - ruyaml
