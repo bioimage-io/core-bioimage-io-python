@@ -372,16 +372,38 @@ def _test_in_env(
         raise RuntimeError("Conda not available") from e
 
     working_dir.mkdir(parents=True, exist_ok=True)
+    summary_path = working_dir / "summary.json"
     try:
         run_command(["conda", "activate", env_name])
     except Exception:
         path = working_dir / "env.yaml"
-        _ = path.write_bytes(encoded_env)
-        logger.debug("written conda env to {}", path)
-        run_command(["conda", "env", "create", f"--file={path}", f"--name={env_name}"])
-        run_command(["conda", "activate", env_name])
+        try:
+            _ = path.write_bytes(encoded_env)
+            logger.debug("written conda env to {}", path)
+            run_command(
+                ["conda", "env", "create", f"--file={path}", f"--name={env_name}"]
+            )
+            run_command(["conda", "activate", env_name])
+        except Exception as e:
+            summary = descr.validation_summary
+            summary.add_detail(
+                ValidationDetail(
+                    name="Conda environment creation",
+                    status="failed",
+                    loc=("weights", weight_format),
+                    recommended_env=conda_env,
+                    errors=[
+                        ErrorEntry(
+                            loc=("weights", weight_format),
+                            msg=str(e),
+                            type="conda",
+                            with_traceback=True,
+                        )
+                    ],
+                )
+            )
+            return summary
 
-    summary_path = working_dir / "summary.json"
     run_command(
         [
             "conda",
