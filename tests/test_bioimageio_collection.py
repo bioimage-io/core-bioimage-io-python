@@ -115,6 +115,9 @@ KNOWN_INVALID: Mapping[str, str] = {
     "light-swimsuit/1.13": "missing license",
     "limited-edition-crown/1.14.1": "missing license",
     "lively-t-shirt/1.13": "missing license",
+    "lucky-fox/1": (
+        "torchscript runtime errro: Given groups=1, weight of size [90, 1, 3, 3], expected input[1, 2, 64, 64] to have 1 channels, but got 2 channels instead"
+    ),
     "luscious-tomato/1": "missing license",
     "mellow-broccoli/1": "missing license",
     "mellow-takeout/1": "missing cite",
