@@ -5,11 +5,10 @@ from typing import Any, List, Optional, Sequence, Union
 import onnxruntime as rt  # pyright: ignore[reportMissingTypeStubs]
 from numpy.typing import NDArray
 
-from bioimageio.spec._internal.type_guards import is_list, is_tuple
 from bioimageio.spec.model import v0_4, v0_5
-from bioimageio.spec.utils import download
 
 from ..model_adapters import ModelAdapter
+from ..utils._type_guards import is_list, is_tuple
 
 
 class ONNXModelAdapter(ModelAdapter):
@@ -24,8 +23,8 @@ class ONNXModelAdapter(ModelAdapter):
         if model_description.weights.onnx is None:
             raise ValueError("No ONNX weights specified for {model_description.name}")
 
-        local_path = download(model_description.weights.onnx.source).path
-        self._session = rt.InferenceSession(local_path.read_bytes())
+        reader = model_description.weights.onnx.get_reader()
+        self._session = rt.InferenceSession(reader.read())
         onnx_inputs = self._session.get_inputs()
         self._input_names: List[str] = [ipt.name for ipt in onnx_inputs]
 

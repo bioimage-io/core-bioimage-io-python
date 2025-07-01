@@ -4,9 +4,8 @@ channels:
   - nodefaults
   - pytorch
 dependencies:
-  - bioimageio.spec==0.5.4.1
+  - bioimageio.spec==0.5.4.3
   - black
-  # - careamics # TODO: add careamics for model testing (currently pins pydantic to <2.9)
   - cellpose # for model testing
   # - crick  # currently requires python<=3.9
   - h5py
@@ -18,6 +17,7 @@ dependencies:
   - loguru
   - matplotlib
   - monai # for model testing
+  - napari
   - numpy
   - onnx
   - onnxruntime
@@ -33,7 +33,8 @@ dependencies:
   - pytest-cov
   - python=3.11 # 3.12 not supported by cellpose->fastremap
   - pytorch>=2.1,<3
-  - requests
+  - httpx
+  - respx
   - rich
   - ruff
   - ruyaml
@@ -45,5 +46,6 @@ dependencies:
   - typing-extensions
   - xarray>=2024.01,<2025.3.0
   - pip:
+      # - careamics # for model testing (TODO: install without exact bioimageio.core pin)
       - git+https://github.com/ChaoningZhang/MobileSAM.git # for model testing
       - -e ..

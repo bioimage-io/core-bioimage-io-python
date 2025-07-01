@@ -21,7 +21,6 @@ _ = setup(
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
         "Programming Language :: Python :: 3.11",
@@ -30,7 +29,7 @@ _ = setup(
     ],
     packages=find_namespace_packages(exclude=["tests"]),
     install_requires=[
-        "bioimageio.spec ==0.5.4.1",
+        "bioimageio.spec ==0.5.4.3",
         "h5py",
         "imagecodecs",
         "imageio>=2.10",
@@ -38,7 +37,6 @@ _ = setup(
         "numpy",
         "pydantic-settings>=2.5,<3",
         "pydantic>=2.7.0,<3",
-        "requests",
         "ruyaml",
         "tqdm",
         "typing-extensions",
@@ -51,13 +49,16 @@ _ = setup(
         ),
         "tensorflow": ["tensorflow", "keras>=2.15,<4"],
         "onnx": ["onnxruntime"],
-        "tests": (test_deps := ["pytest", "pytest-cov"]),  # minimal test requirements
+        "tests": (  # minimal test requirements
+            test_deps := ["pytest", "pytest-cov", "python-dotenv"]
+        ),
         "dev": (
             test_deps
             + pytorch_deps
             + [
                 "black",
                 "cellpose",  # for model testing
+                "httpx",
                 "jupyter-black",
                 "jupyter",
                 "matplotlib",
@@ -67,7 +68,7 @@ _ = setup(
                 "packaging>=17.0",
                 "pdoc",
                 "pre-commit",
-                "pyright==1.1.396",
+                "pyright==1.1.402",
                 "segment-anything",  # for model testing
                 "timm",  # for model testing
                 # "crick",  # currently requires python<=3.9

@@ -57,13 +57,12 @@ from bioimageio.spec import (
     update_hashes,
 )
 from bioimageio.spec._internal.io import is_yaml_value
-from bioimageio.spec._internal.io_basics import ZipPath
 from bioimageio.spec._internal.io_utils import open_bioimageio_yaml
-from bioimageio.spec._internal.types import NotEmpty
+from bioimageio.spec._internal.types import FormatVersionPlaceholder, NotEmpty
 from bioimageio.spec.dataset import DatasetDescr
 from bioimageio.spec.model import ModelDescr, v0_4, v0_5
 from bioimageio.spec.notebook import NotebookDescr
-from bioimageio.spec.utils import download, ensure_description_is_model, write_yaml
+from bioimageio.spec.utils import ensure_description_is_model, get_reader, write_yaml
 
 from .commands import WeightFormatArgAll, WeightFormatArgAny, package, test
 from .common import MemberId, SampleId, SupportedWeightsFormat
@@ -205,6 +204,15 @@ class TestCmd(CmdBase, WithSource, WithSummaryLogging):
     )
     """Do not run further subtests after a failed one."""
 
+    format_version: Union[FormatVersionPlaceholder, str] = Field(
+        "discover", alias="format-version"
+    )
+    """The format version to use for testing.
+        - 'latest': Use the latest implemented format version for the given resource type (may trigger auto updating)
+        - 'discover': Use the format version as described in the resource description
+        - '0.4', '0.5', ...: Use the specified format version (may trigger auto updating)
+    """
+
     def run(self):
         sys.exit(
             test(
@@ -214,6 +222,7 @@ class TestCmd(CmdBase, WithSource, WithSummaryLogging):
                 summary=self.summary,
                 runtime_env=self.runtime_env,
                 determinism=self.determinism,
+                format_version=self.format_version,
             )
         )
 
@@ -487,18 +496,14 @@ class PredictCmd(CmdBase, WithSource):
         example_path.mkdir(exist_ok=True)
 
         for t, src in zip(input_ids, example_inputs):
-            local = download(src).path
-            dst = Path(f"{example_path}/{t}/001{''.join(local.suffixes)}")
+            reader = get_reader(src)
+            dst = Path(f"{example_path}/{t}/001{reader.suffix}")
             dst.parent.mkdir(parents=True, exist_ok=True)
             inputs001.append(dst.as_posix())
-            if isinstance(local, Path):
-                shutil.copy(local, dst)
-            elif isinstance(local, ZipPath):
-                _ = local.root.extract(local.at, path=dst)
-            else:
-                assert_never(local)
+            with dst.open("wb") as f:
+                shutil.copyfileobj(reader, f)
 
-        inputs = [tuple(inputs001)]
+        inputs = [inputs001]
         output_pattern = f"{example_path}/outputs/{{output_id}}/{{sample_id}}.tif"
 
         bioimageio_cli_path = example_path / YAML_FILE
@@ -510,7 +515,7 @@ class PredictCmd(CmdBase, WithSource):
             stats=stats_file,
             blockwise=self.blockwise,
         )
-        assert is_yaml_value(cli_example_args)
+        assert is_yaml_value(cli_example_args), cli_example_args
         write_yaml(
             cli_example_args,
             bioimageio_cli_path,

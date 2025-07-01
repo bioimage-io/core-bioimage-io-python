@@ -21,6 +21,7 @@ from typing import (
     overload,
 )
 
+import xarray as xr
 from loguru import logger
 from typing_extensions import NotRequired, TypedDict, Unpack, assert_never, get_args
 
@@ -55,6 +56,7 @@ from bioimageio.spec.summary import (
     InstalledPackage,
     ValidationDetail,
     ValidationSummary,
+    WarningEntry,
 )
 
 from ._prediction_pipeline import create_prediction_pipeline
@@ -510,7 +512,7 @@ def load_description_and_test(
 
         enable_determinism(determinism, weight_formats=weight_formats)
         for w in weight_formats:
-            _test_model_inference(rd, w, devices, **deprecated)
+            _test_model_inference(rd, w, devices, stop_early=stop_early, **deprecated)
             if stop_early and rd.validation_summary.status == "failed":
                 break
 
@@ -587,19 +589,30 @@ def _test_model_inference(
     model: Union[v0_4.ModelDescr, v0_5.ModelDescr],
     weight_format: SupportedWeightsFormat,
     devices: Optional[Sequence[str]],
+    stop_early: bool,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> None:
     test_name = f"Reproduce test outputs from test inputs ({weight_format})"
     logger.debug("starting '{}'", test_name)
-    errors: List[ErrorEntry] = []
+    error_entries: List[ErrorEntry] = []
+    warning_entries: List[WarningEntry] = []
 
     def add_error_entry(msg: str, with_traceback: bool = False):
-        errors.append(
+        error_entries.append(
             ErrorEntry(
                 loc=("weights", weight_format),
                 msg=msg,
                 type="bioimageio.core",
                 with_traceback=with_traceback,
+            )
+        )
+
+    def add_warning_entry(msg: str):
+        warning_entries.append(
+            WarningEntry(
+                loc=("weights", weight_format),
+                msg=msg,
+                type="bioimageio.core",
             )
         )
 
@@ -622,34 +635,58 @@ def _test_model_inference(
                 actual = results.members.get(m)
                 if actual is None:
                     add_error_entry("Output tensors for test case may not be None")
-                    break
+                    if stop_early:
+                        break
+                    else:
+                        continue
 
                 rtol, atol, mismatched_tol = _get_tolerance(
                     model, wf=weight_format, m=m, **deprecated
                 )
-                mismatched = (abs_diff := abs(actual - expected)) > atol + rtol * abs(
-                    expected
-                )
+                rtol_value = rtol * abs(expected)
+                abs_diff = abs(actual - expected)
+                mismatched = abs_diff > atol + rtol_value
                 mismatched_elements = mismatched.sum().item()
-                if mismatched_elements / expected.size > mismatched_tol / 1e6:
-                    r_max_idx = (r_diff := (abs_diff / (abs(expected) + 1e-6))).argmax()
-                    r_max = r_diff[r_max_idx].item()
-                    r_actual = actual[r_max_idx].item()
-                    r_expected = expected[r_max_idx].item()
-                    a_max_idx = abs_diff.argmax()
-                    a_max = abs_diff[a_max_idx].item()
-                    a_actual = actual[a_max_idx].item()
-                    a_expected = expected[a_max_idx].item()
-                    add_error_entry(
-                        f"Output '{m}' disagrees with {mismatched_elements} of"
-                        + f" {expected.size} expected values."
-                        + f"\n Max relative difference: {r_max:.2e}"
-                        + rf" (= \|{r_actual:.2e} - {r_expected:.2e}\|/\|{r_expected:.2e} + 1e-6\|)"
-                        + f" at {r_max_idx}"
-                        + f"\n Max absolute difference: {a_max:.2e}"
-                        + rf" (= \|{a_actual:.7e} - {a_expected:.7e}\|) at {a_max_idx}"
-                    )
-                    break
+                if not mismatched_elements:
+                    continue
+
+                mismatched_ppm = mismatched_elements / expected.size * 1e6
+                abs_diff[~mismatched] = 0  # ignore non-mismatched elements
+
+                r_max_idx = (r_diff := (abs_diff / (abs(expected) + 1e-6))).argmax()
+                r_max = r_diff[r_max_idx].item()
+                r_actual = actual[r_max_idx].item()
+                r_expected = expected[r_max_idx].item()
+
+                # Calculate the max absolute difference with the relative tolerance subtracted
+                abs_diff_wo_rtol: xr.DataArray = xr.ufuncs.maximum(
+                    (abs_diff - rtol_value).data, 0
+                )
+                a_max_idx = {
+                    AxisId(k): int(v) for k, v in abs_diff_wo_rtol.argmax().items()
+                }
+
+                a_max = abs_diff[a_max_idx].item()
+                a_actual = actual[a_max_idx].item()
+                a_expected = expected[a_max_idx].item()
+
+                msg = (
+                    f"Output '{m}' disagrees with {mismatched_elements} of"
+                    + f" {expected.size} expected values"
+                    + f" ({mismatched_ppm:.1f} ppm)."
+                    + f"\n Max relative difference: {r_max:.2e}"
+                    + rf" (= \|{r_actual:.2e} - {r_expected:.2e}\|/\|{r_expected:.2e} + 1e-6\|)"
+                    + f" at {r_max_idx}"
+                    + f"\n Max absolute difference not accounted for by relative tolerance: {a_max:.2e}"
+                    + rf" (= \|{a_actual:.7e} - {a_expected:.7e}\|) at {a_max_idx}"
+                )
+                if mismatched_ppm > mismatched_tol:
+                    add_error_entry(msg)
+                    if stop_early:
+                        break
+                else:
+                    add_warning_entry(msg)
+
     except Exception as e:
         if get_validation_context().raise_errors:
             raise e
@@ -660,9 +697,10 @@ def _test_model_inference(
         ValidationDetail(
             name=test_name,
             loc=("weights", weight_format),
-            status="failed" if errors else "passed",
+            status="failed" if error_entries else "passed",
             recommended_env=get_conda_env(entry=dict(model.weights)[weight_format]),
-            errors=errors,
+            errors=error_entries,
+            warnings=warning_entries,
         )
     )
 
