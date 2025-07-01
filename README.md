@@ -364,7 +364,7 @@ may be controlled with the `LOGURU_LEVEL` environment variable.
 
 ## Changelog
 
-### 0.9.0 (coming soon)
+### 0.9.0
 
 - update to [bioimageio.spec 0.5.4.3](https://github.com/bioimage-io/spec-bioimage-io/blob/main/changelog.md#bioimageiospec-0543)
 
