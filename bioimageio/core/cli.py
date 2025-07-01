@@ -503,7 +503,7 @@ class PredictCmd(CmdBase, WithSource):
             with dst.open("wb") as f:
                 shutil.copyfileobj(reader, f)
 
-        inputs = [tuple(inputs001)]
+        inputs = [inputs001]
         output_pattern = f"{example_path}/outputs/{{output_id}}/{{sample_id}}.tif"
 
         bioimageio_cli_path = example_path / YAML_FILE
