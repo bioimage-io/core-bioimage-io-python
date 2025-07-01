@@ -515,7 +515,7 @@ class PredictCmd(CmdBase, WithSource):
             stats=stats_file,
             blockwise=self.blockwise,
         )
-        assert is_yaml_value(cli_example_args)
+        assert is_yaml_value(cli_example_args), cli_example_args
         write_yaml(
             cli_example_args,
             bioimageio_cli_path,

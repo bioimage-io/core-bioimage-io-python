@@ -6,7 +6,6 @@ channels:
 dependencies:
   - bioimageio.spec==0.5.4.3
   - black
-  - careamics
   - cellpose # for model testing
   # - crick  # currently requires python<=3.9
   - h5py
@@ -19,7 +18,6 @@ dependencies:
   - matplotlib
   - monai # for model testing
   - napari
-
   - numpy
   - onnx
   - onnxruntime
@@ -48,5 +46,6 @@ dependencies:
   - typing-extensions
   - xarray>=2024.01,<2025.3.0
   - pip:
+      # - careamics # for model testing (TODO: install without exact bioimageio.core pin)
       - git+https://github.com/ChaoningZhang/MobileSAM.git # for model testing
       - -e ..
