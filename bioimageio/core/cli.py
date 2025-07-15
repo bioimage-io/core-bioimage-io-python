@@ -46,6 +46,7 @@ from pydantic_settings import (
 from tqdm import tqdm
 from typing_extensions import assert_never
 
+import bioimageio.spec
 from bioimageio.spec import (
     AnyModelDescr,
     InvalidDescr,
@@ -867,7 +868,7 @@ Bioimageio.__doc__ += f"""
 
 library versions:
   bioimageio.core {VERSION}
-  bioimageio.spec {VERSION}
+  bioimageio.spec {bioimageio.spec.__version__}
 
 spec format versions:
         model RDF {ModelDescr.implemented_format_version}
