@@ -404,21 +404,25 @@ def _test_in_env(
             )
             return summary
 
-    run_command(
-        [
-            "conda",
-            "run",
-            "-n",
-            env_name,
-            "bioimageio",
-            "test",
-            str(source),
-            f"--summary-path={summary_path}",
-            f"--determinism={determinism}",
-        ]
-        + ([f"--expected-type={expected_type}"] if expected_type else [])
-        + (["--stop-early"] if stop_early else [])
-    )
+    for summary_path_arg_name in ("summary", "summary-path"):
+        run_command(
+            [
+                "conda",
+                "run",
+                "-n",
+                env_name,
+                "bioimageio",
+                "test",
+                str(source),
+                f"--{summary_path_arg_name}={summary_path}",
+                f"--determinism={determinism}",
+            ]
+            + ([f"--expected-type={expected_type}"] if expected_type else [])
+            + (["--stop-early"] if stop_early else [])
+        )
+        if summary_path.exists():
+            break
+
     return ValidationSummary.model_validate_json(summary_path.read_bytes())
 
 
