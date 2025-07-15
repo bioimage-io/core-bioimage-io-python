@@ -414,7 +414,7 @@ def _test_in_env(
                 "bioimageio",
                 "test",
                 str(source),
-                f"--{summary_path_arg_name}={summary_path}",
+                f"--{summary_path_arg_name}={summary_path.as_posix()}",
                 f"--determinism={determinism}",
             ]
             + ([f"--expected-type={expected_type}"] if expected_type else [])
