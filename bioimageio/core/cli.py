@@ -99,10 +99,8 @@ class ArgMixin(BaseModel, use_attribute_docstrings=True, cli_implicit_flags=True
 
 
 class WithSummaryLogging(ArgMixin):
-    summary: Union[
-        Literal["display"], Path, Sequence[Union[Literal["display"], Path]]
-    ] = Field(
-        "display",
+    summary: Sequence[Union[Literal["display"], Path]] = Field(
+        ("display",),
         examples=[
             "display",
             Path("summary.md"),
