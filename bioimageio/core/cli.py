@@ -46,6 +46,7 @@ from pydantic_settings import (
 from tqdm import tqdm
 from typing_extensions import assert_never
 
+import bioimageio.spec
 from bioimageio.spec import (
     AnyModelDescr,
     InvalidDescr,
@@ -98,10 +99,8 @@ class ArgMixin(BaseModel, use_attribute_docstrings=True, cli_implicit_flags=True
 
 
 class WithSummaryLogging(ArgMixin):
-    summary: Union[
-        Literal["display"], Path, Sequence[Union[Literal["display"], Path]]
-    ] = Field(
-        "display",
+    summary: Sequence[Union[Literal["display"], Path]] = Field(
+        ("display",),
         examples=[
             "display",
             Path("summary.md"),
@@ -867,7 +866,7 @@ Bioimageio.__doc__ += f"""
 
 library versions:
   bioimageio.core {VERSION}
-  bioimageio.spec {VERSION}
+  bioimageio.spec {bioimageio.spec.__version__}
 
 spec format versions:
         model RDF {ModelDescr.implemented_format_version}
