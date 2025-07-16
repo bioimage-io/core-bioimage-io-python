@@ -404,24 +404,49 @@ def _test_in_env(
             )
             return summary
 
+    cmd = []
     for summary_path_arg_name in ("summary", "summary-path"):
         run_command(
-            [
-                "conda",
-                "run",
-                "-n",
-                env_name,
-                "bioimageio",
-                "test",
-                str(source),
-                f"--{summary_path_arg_name}={summary_path.as_posix()}",
-                f"--determinism={determinism}",
-            ]
-            + ([f"--expected-type={expected_type}"] if expected_type else [])
-            + (["--stop-early"] if stop_early else [])
+            cmd := (
+                [
+                    "conda",
+                    "run",
+                    "-n",
+                    env_name,
+                    "bioimageio",
+                    "test",
+                    str(source),
+                    f"--{summary_path_arg_name}={summary_path.as_posix()}",
+                    f"--determinism={determinism}",
+                ]
+                + ([f"--expected-type={expected_type}"] if expected_type else [])
+                + (["--stop-early"] if stop_early else [])
+            )
         )
         if summary_path.exists():
             break
+    else:
+        return ValidationSummary(
+            name="calling bioimageio test command",
+            source_name=str(source),
+            status="failed",
+            type="unknown",
+            format_version="unknown",
+            details=[
+                ValidationDetail(
+                    name="run 'bioimageio test'",
+                    errors=[
+                        ErrorEntry(
+                            loc=(),
+                            type="bioimageio cli",
+                            msg=f"test command '{' '.join(cmd)}' did not produce a summary file at {summary_path}",
+                        )
+                    ],
+                    status="failed",
+                )
+            ],
+            env=set(),
+        )
 
     return ValidationSummary.model_validate_json(summary_path.read_bytes())
 
