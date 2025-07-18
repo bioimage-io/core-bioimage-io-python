@@ -68,7 +68,7 @@ _ = setup(
                 "packaging>=17.0",
                 "pdoc",
                 "pre-commit",
-                "pyright==1.1.402",
+                "pyright==1.1.403",
                 "segment-anything",  # for model testing
                 "timm",  # for model testing
                 # "crick",  # currently requires python<=3.9

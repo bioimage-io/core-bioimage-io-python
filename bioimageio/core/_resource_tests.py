@@ -222,8 +222,9 @@ def test_description(
                 environment YAML file based on the model weights description.
             - A `BioimageioCondaEnv` or a path to a conda environment YAML file.
                 Note: The `bioimageio.core` dependency will be added automatically if not present.
-        run_command: (Experimental feature!) Function to execute (conda) terminal commands in a subprocess
-            (ignored if **runtime_env** is `"currently-active"`).
+        run_command: (Experimental feature!) Function to execute (conda) terminal commands in a subprocess.
+            The function should raise an exception if the command fails.
+            **run_command** is ignored if **runtime_env** is `"currently-active"`.
     """
     if runtime_env == "currently-active":
         rd = load_description_and_test(
@@ -371,8 +372,6 @@ def _test_in_env(
     except Exception as e:
         raise RuntimeError("Conda not available") from e
 
-    working_dir.mkdir(parents=True, exist_ok=True)
-    summary_path = working_dir / "summary.json"
     try:
         run_command(["conda", "activate", env_name])
     except Exception:
@@ -404,28 +403,39 @@ def _test_in_env(
             )
             return summary
 
+    working_dir.mkdir(parents=True, exist_ok=True)
+    summary_path = working_dir / "summary.json"
+    assert not summary_path.exists(), "Summary file already exists"
     cmd = []
+    cmd_error = None
     for summary_path_arg_name in ("summary", "summary-path"):
-        run_command(
-            cmd := (
-                [
-                    "conda",
-                    "run",
-                    "-n",
-                    env_name,
-                    "bioimageio",
-                    "test",
-                    str(source),
-                    f"--{summary_path_arg_name}={summary_path.as_posix()}",
-                    f"--determinism={determinism}",
-                ]
-                + ([f"--expected-type={expected_type}"] if expected_type else [])
-                + (["--stop-early"] if stop_early else [])
+        try:
+            run_command(
+                cmd := (
+                    [
+                        "conda",
+                        "run",
+                        "-n",
+                        env_name,
+                        "bioimageio",
+                        "test",
+                        str(source),
+                        f"--{summary_path_arg_name}={summary_path.as_posix()}",
+                        f"--determinism={determinism}",
+                    ]
+                    + ([f"--expected-type={expected_type}"] if expected_type else [])
+                    + (["--stop-early"] if stop_early else [])
+                )
             )
-        )
+        except Exception as e:
+            cmd_error = f"Failed to run command '{' '.join(cmd)}': {e}."
+
         if summary_path.exists():
             break
     else:
+        if cmd_error is not None:
+            logger.warning(cmd_error)
+
         return ValidationSummary(
             name="calling bioimageio test command",
             source_name=str(source),
@@ -448,7 +458,7 @@ def _test_in_env(
             env=set(),
         )
 
-    return ValidationSummary.model_validate_json(summary_path.read_bytes())
+    return ValidationSummary.load_json(summary_path)
 
 
 @overload
