@@ -371,7 +371,7 @@ may be controlled with the `LOGURU_LEVEL` environment variable.
     - improved handling of summary argument to not create a path with brackets when given a list of paths.
     - improved backward compatibility when runnig tests for models specifying an older bioimageio.core version in their environment.
     This is relevant when using `runtime_env="as-described"`.
-    It works by simply trying option `--summary` (new option name) and `--summary-path` (outdated option name).
+    It works by simply trying option `--summary` (new option name) and `--summary-path` (outdated option name)
 
 ### 0.9.0
 
