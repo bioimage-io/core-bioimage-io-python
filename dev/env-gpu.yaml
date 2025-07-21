@@ -4,7 +4,7 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - bioimageio.spec==0.5.4.3
+  - bioimageio.spec==0.5.4.4
   - black
   - cellpose # for model testing
   # - crick  # currently requires python<=3.9
