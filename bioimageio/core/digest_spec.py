@@ -204,36 +204,54 @@ def get_member_ids(
     return [get_member_id(descr) for descr in tensor_descriptions]
 
 
-def get_test_inputs(model: AnyModelDescr) -> Sample:
-    """returns a model's test input sample"""
-    member_ids = get_member_ids(model.inputs)
-    if isinstance(model, v0_4.ModelDescr):
-        arrays = [load_array(tt) for tt in model.test_inputs]
-    else:
-        arrays = [load_array(d.test_tensor) for d in model.inputs]
-
-    axes = [get_axes_infos(t) for t in model.inputs]
-    return Sample(
-        members={
-            m: Tensor.from_numpy(arr, dims=ax)
-            for m, arr, ax in zip(member_ids, arrays, axes)
-        },
-        stat={},
-        id="test-sample",
+def get_test_input_sample(model: AnyModelDescr) -> Sample:
+    return _get_test_sample(
+        model.inputs,
+        model.test_inputs if isinstance(model, v0_4.ModelDescr) else model.inputs,
     )
 
 
-def get_test_outputs(model: AnyModelDescr) -> Sample:
+get_test_inputs = get_test_input_sample
+"""DEPRECATED: use `get_test_input_sample` instead"""
+
+
+def get_test_output_sample(model: AnyModelDescr) -> Sample:
     """returns a model's test output sample"""
-    member_ids = get_member_ids(model.outputs)
+    return _get_test_sample(
+        model.outputs,
+        model.test_outputs if isinstance(model, v0_4.ModelDescr) else model.outputs,
+    )
 
-    if isinstance(model, v0_4.ModelDescr):
-        arrays = [load_array(tt) for tt in model.test_outputs]
-    else:
-        arrays = [load_array(d.test_tensor) for d in model.outputs]
 
-    axes = [get_axes_infos(t) for t in model.outputs]
+get_test_outputs = get_test_output_sample
+"""DEPRECATED: use `get_test_input_sample` instead"""
 
+
+def _get_test_sample(
+    tensor_descrs: Sequence[
+        Union[
+            v0_4.InputTensorDescr,
+            v0_4.OutputTensorDescr,
+            v0_5.InputTensorDescr,
+            v0_5.OutputTensorDescr,
+        ]
+    ],
+    test_sources: Sequence[Union[FileSource, v0_5.TensorDescr]],
+) -> Sample:
+    """returns a model's input/output test sample"""
+    member_ids = get_member_ids(tensor_descrs)
+    arrays: List[NDArray[Any]] = []
+    for src in test_sources:
+        if isinstance(src, (v0_5.InputTensorDescr, v0_5.OutputTensorDescr)):
+            if src.test_tensor is None:
+                raise ValueError(
+                    f"Model input '{src.id}' has no test tensor defined, cannot create test sample."
+                )
+            arrays.append(load_array(src.test_tensor))
+        else:
+            arrays.append(load_array(src))
+
+    axes = [get_axes_infos(t) for t in tensor_descrs]
     return Sample(
         members={
             m: Tensor.from_numpy(arr, dims=ax)

@@ -12,7 +12,10 @@ def _test_prediction_pipeline(
     model_package: Path, weights_format: SupportedWeightsFormat
 ):
     from bioimageio.core._prediction_pipeline import create_prediction_pipeline
-    from bioimageio.core.digest_spec import get_test_inputs, get_test_outputs
+    from bioimageio.core.digest_spec import (
+        get_test_input_sample,
+        get_test_output_sample,
+    )
 
     bio_model = load_description(model_package)
     assert isinstance(
@@ -22,10 +25,10 @@ def _test_prediction_pipeline(
         bioimageio_model=bio_model, weight_format=weights_format
     )
 
-    inputs = get_test_inputs(bio_model)
+    inputs = get_test_input_sample(bio_model)
     outputs = pp.predict_sample_without_blocking(inputs)
 
-    expected_outputs = get_test_outputs(bio_model)
+    expected_outputs = get_test_output_sample(bio_model)
     assert len(outputs.shape) == len(expected_outputs.shape)
     for m in expected_outputs.members:
         out = outputs.members[m].data

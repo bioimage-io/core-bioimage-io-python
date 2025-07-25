@@ -6,7 +6,7 @@ from bioimageio.spec.model.v0_5 import ModelDescr, OnnxWeightsDescr
 
 from .. import __version__
 from ..backends.pytorch_backend import load_torch_model
-from ..digest_spec import get_member_id, get_test_inputs
+from ..digest_spec import get_member_id, get_test_input_sample
 from ..proc_setup import get_pre_and_postprocessing
 from ._utils_onnx import get_dynamic_axes
 
@@ -45,7 +45,7 @@ def convert(
             "The provided model does not have weights in the pytorch state dict format"
         )
 
-    sample = get_test_inputs(model_descr)
+    sample = get_test_input_sample(model_descr)
     procs = get_pre_and_postprocessing(
         model_descr, dataset_for_initial_statistics=[sample]
     )

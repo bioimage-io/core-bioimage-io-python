@@ -15,7 +15,7 @@ from bioimageio.core import (
     load_model,
     predict,
 )
-from bioimageio.core.digest_spec import get_test_inputs, get_test_outputs
+from bioimageio.core.digest_spec import get_test_input_sample, get_test_output_sample
 from bioimageio.spec import AnyModelDescr
 
 
@@ -34,8 +34,8 @@ class Prep(NamedTuple):
 @pytest.fixture(scope="module")
 def prep(any_model: str):
     model = load_model(any_model, perform_io_checks=False)
-    input_sample = get_test_inputs(model)
-    output_sample = get_test_outputs(model)
+    input_sample = get_test_input_sample(model)
+    output_sample = get_test_output_sample(model)
     return Prep(model, create_prediction_pipeline(model), input_sample, output_sample)
 
 

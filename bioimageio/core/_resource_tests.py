@@ -62,7 +62,7 @@ from bioimageio.spec.summary import (
 from ._prediction_pipeline import create_prediction_pipeline
 from .axis import AxisId, BatchSize
 from .common import MemberId, SupportedWeightsFormat
-from .digest_spec import get_test_inputs, get_test_outputs
+from .digest_spec import get_test_input_sample, get_test_output_sample
 from .sample import Sample
 from .utils import VERSION
 
@@ -165,7 +165,7 @@ def test_model(
     *,
     determinism: Literal["seed_only", "full"] = "seed_only",
     sha256: Optional[Sha256] = None,
-    stop_early: bool = False,
+    stop_early: bool = True,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> ValidationSummary:
     """Test model inference"""
@@ -195,7 +195,7 @@ def test_description(
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Optional[str] = None,
     sha256: Optional[Sha256] = None,
-    stop_early: bool = False,
+    stop_early: bool = True,
     runtime_env: Union[
         Literal["currently-active", "as-described"], Path, BioimageioCondaEnv
     ] = ("currently-active"),
@@ -471,7 +471,7 @@ def load_description_and_test(
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Optional[str] = None,
     sha256: Optional[Sha256] = None,
-    stop_early: bool = False,
+    stop_early: bool = True,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[LatestResourceDescr, InvalidDescr]: ...
 
@@ -486,7 +486,7 @@ def load_description_and_test(
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Optional[str] = None,
     sha256: Optional[Sha256] = None,
-    stop_early: bool = False,
+    stop_early: bool = True,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[ResourceDescr, InvalidDescr]: ...
 
@@ -500,7 +500,7 @@ def load_description_and_test(
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Optional[str] = None,
     sha256: Optional[Sha256] = None,
-    stop_early: bool = False,
+    stop_early: bool = True,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[ResourceDescr, InvalidDescr]:
     """Test a bioimage.io resource dynamically,
@@ -678,13 +678,13 @@ def _test_model_inference(
         )
 
     try:
-        inputs = get_test_inputs(model)
-        expected = get_test_outputs(model)
+        test_input = get_test_input_sample(model)
+        expected = get_test_output_sample(model)
 
         with create_prediction_pipeline(
             bioimageio_model=model, devices=devices, weight_format=weight_format
         ) as prediction_pipeline:
-            results = prediction_pipeline.predict_sample_without_blocking(inputs)
+            results = prediction_pipeline.predict_sample_without_blocking(test_input)
 
         if len(results.members) != len(expected.members):
             add_error_entry(
@@ -833,7 +833,7 @@ def _test_model_inference_parametrized(
             resized_test_inputs = Sample(
                 members={
                     t.id: (
-                        test_inputs.members[t.id].resize_to(
+                        test_input.members[t.id].resize_to(
                             {
                                 aid: s
                                 for (tid, aid), s in input_target_sizes.items()
@@ -843,8 +843,8 @@ def _test_model_inference_parametrized(
                     )
                     for t in model.inputs
                 },
-                stat=test_inputs.stat,
-                id=test_inputs.id,
+                stat=test_input.stat,
+                id=test_input.id,
             )
             expected_output_shapes = {
                 t.id: {
@@ -857,7 +857,7 @@ def _test_model_inference_parametrized(
             yield n, batch_size, resized_test_inputs, expected_output_shapes
 
     try:
-        test_inputs = get_test_inputs(model)
+        test_input = get_test_input_sample(model)
 
         with create_prediction_pipeline(
             bioimageio_model=model, devices=devices, weight_format=weight_format
