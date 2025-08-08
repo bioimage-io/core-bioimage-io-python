@@ -103,7 +103,7 @@ class _SimpleOperator(BlockedOperator, ABC):
             assert_never(sample)
 
     @abstractmethod
-    def _apply(self, input: Tensor, stat: Stat) -> Tensor: ...
+    def _apply(self, x: Tensor, stat: Stat) -> Tensor: ...
 
 
 @dataclass
@@ -200,8 +200,8 @@ class Binarize(_SimpleOperator):
     threshold: Union[float, Sequence[float]]
     axis: Optional[AxisId] = None
 
-    def _apply(self, input: Tensor, stat: Stat) -> Tensor:
-        return input > self.threshold
+    def _apply(self, x: Tensor, stat: Stat) -> Tensor:
+        return x > self.threshold
 
     def get_output_shape(
         self, input_shape: Mapping[AxisId, int]
@@ -240,8 +240,8 @@ class Clip(_SimpleOperator):
             self.min is None or self.max is None or self.min < self.max
         ), f"expected min < max, but {self.min} !< {self.max}"
 
-    def _apply(self, input: Tensor, stat: Stat) -> Tensor:
-        return input.clip(self.min, self.max)
+    def _apply(self, x: Tensor, stat: Stat) -> Tensor:
+        return x.clip(self.min, self.max)
 
     def get_output_shape(
         self, input_shape: Mapping[AxisId, int]
@@ -276,8 +276,8 @@ class EnsureDtype(_SimpleOperator):
     ) -> Mapping[AxisId, int]:
         return input_shape
 
-    def _apply(self, input: Tensor, stat: Stat) -> Tensor:
-        return input.astype(self.dtype)
+    def _apply(self, x: Tensor, stat: Stat) -> Tensor:
+        return x.astype(self.dtype)
 
 
 @dataclass
@@ -288,8 +288,8 @@ class ScaleLinear(_SimpleOperator):
     offset: Union[float, xr.DataArray] = 0.0
     """additive term"""
 
-    def _apply(self, input: Tensor, stat: Stat) -> Tensor:
-        return input * self.gain + self.offset
+    def _apply(self, x: Tensor, stat: Stat) -> Tensor:
+        return x * self.gain + self.offset
 
     def get_output_shape(
         self, input_shape: Mapping[AxisId, int]
@@ -365,12 +365,12 @@ class ScaleMeanVariance(_SimpleOperator):
         self.ref_mean = Mean(member_id=ref_tensor, axes=axes)
         self.ref_std = Std(member_id=ref_tensor, axes=axes)
 
-    def _apply(self, input: Tensor, stat: Stat) -> Tensor:
+    def _apply(self, x: Tensor, stat: Stat) -> Tensor:
         mean = stat[self.mean]
         std = stat[self.std] + self.eps
         ref_mean = stat[self.ref_mean]
         ref_std = stat[self.ref_std] + self.eps
-        return (input - mean) / std * ref_std + ref_mean
+        return (x - mean) / std * ref_std + ref_mean
 
     def get_output_shape(
         self, input_shape: Mapping[AxisId, int]
@@ -484,10 +484,10 @@ class ScaleRange(_SimpleOperator):
             ),
         )
 
-    def _apply(self, input: Tensor, stat: Stat) -> Tensor:
+    def _apply(self, x: Tensor, stat: Stat) -> Tensor:
         lower = stat[self.lower]
         upper = stat[self.upper]
-        return (input - lower) / (upper - lower + self.eps)
+        return (x - lower) / (upper - lower + self.eps)
 
     def get_descr(self):
         assert self.lower.axes == self.upper.axes
@@ -508,8 +508,8 @@ class ScaleRange(_SimpleOperator):
 class Sigmoid(_SimpleOperator):
     """1 / (1 + e^(-input))."""
 
-    def _apply(self, input: Tensor, stat: Stat) -> Tensor:
-        return Tensor(1.0 / (1.0 + np.exp(-input)), dims=input.dims)
+    def _apply(self, x: Tensor, stat: Stat) -> Tensor:
+        return Tensor(1.0 / (1.0 + np.exp(-x)), dims=x.dims)
 
     @property
     def required_measures(self) -> Collection[Measure]:
@@ -574,10 +574,10 @@ class ZeroMeanUnitVariance(_SimpleOperator):
             std=Std(axes=axes, member_id=member_id),
         )
 
-    def _apply(self, input: Tensor, stat: Stat) -> Tensor:
+    def _apply(self, x: Tensor, stat: Stat) -> Tensor:
         mean = stat[self.mean]
         std = stat[self.std]
-        return (input - mean) / (std + self.eps)
+        return (x - mean) / (std + self.eps)
 
     def get_descr(self):
         return v0_5.ZeroMeanUnitVarianceDescr(
@@ -641,8 +641,8 @@ class FixedZeroMeanUnitVariance(_SimpleOperator):
 
         return v0_5.FixedZeroMeanUnitVarianceDescr(kwargs=kwargs)
 
-    def _apply(self, input: Tensor, stat: Stat) -> Tensor:
-        return (input - self.mean) / (self.std + self.eps)
+    def _apply(self, x: Tensor, stat: Stat) -> Tensor:
+        return (x - self.mean) / (self.std + self.eps)
 
 
 ProcDescr = Union[
