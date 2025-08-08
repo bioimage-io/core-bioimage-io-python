@@ -375,3 +375,22 @@ def test_sigmoid(tid: MemberId):
 
     exp = xr.DataArray(1.0 / (1 + np.exp(-np_data)), dims=axes)
     xr.testing.assert_allclose(exp, sample.members[tid].data, rtol=1e-5, atol=1e-7)
+
+
+def test_softmax(tid: MemberId):
+    from bioimageio.core.proc_ops import Softmax
+
+    shape = (3, 32, 32)
+    axes = ("channel", "y", "x")
+    np_data = np.random.rand(*shape)
+    data = xr.DataArray(np_data, dims=axes)
+    sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
+    softmax = Softmax(tid, tid, axis=AxisId("channel"))
+    softmax(sample)
+
+    exp = xr.DataArray(
+        np.exp(np_data - np.max(np_data, axis=0, keepdims=True))
+        / np.sum(np.exp(np_data - np.max(np_data, axis=0, keepdims=True)), axis=0),
+        dims=axes,
+    )
+    xr.testing.assert_allclose(exp, sample.members[tid].data, rtol=1e-5, atol=1e-7)

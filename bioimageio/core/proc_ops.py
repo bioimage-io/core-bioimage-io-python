@@ -532,6 +532,36 @@ class Sigmoid(_SimpleOperator):
 
 
 @dataclass
+class Softmax(_SimpleOperator):
+    """Softmax activation function."""
+
+    axis: AxisId = AxisId("channel")
+
+    def _apply(self, x: Tensor, stat: Stat) -> Tensor:
+        x_max = x.data.max(dim=self.axis, keepdims=False)
+        exp_x_shifted: xr.DataArray = xr.ufuncs.exp(x.data - x_max)
+        result = exp_x_shifted / exp_x_shifted.sum(dim=self.axis)
+        return Tensor.from_xarray(result)
+
+    @property
+    def required_measures(self) -> Collection[Measure]:
+        return {}
+
+    def get_output_shape(
+        self, input_shape: Mapping[AxisId, int]
+    ) -> Mapping[AxisId, int]:
+        return input_shape
+
+    @classmethod
+    def from_proc_descr(cls, descr: v0_5.SoftmaxDescr, member_id: MemberId) -> Self:
+        assert isinstance(descr, v0_5.SoftmaxDescr)
+        return cls(input=member_id, output=member_id, axis=descr.kwargs.axis)
+
+    def get_descr(self):
+        return v0_5.SoftmaxDescr(kwargs=v0_5.SoftmaxKwargs(axis=self.axis))
+
+
+@dataclass
 class ZeroMeanUnitVariance(_SimpleOperator):
     """normalize to zero mean, unit variance."""
 
@@ -662,6 +692,7 @@ Processing = Union[
     ScaleMeanVariance,
     ScaleRange,
     Sigmoid,
+    Softmax,
     UpdateStats,
     ZeroMeanUnitVariance,
 ]
@@ -715,5 +746,7 @@ def get_proc(
         (v0_4.ZeroMeanUnitVarianceDescr, v0_5.ZeroMeanUnitVarianceDescr),
     ):
         return ZeroMeanUnitVariance.from_proc_descr(proc_descr, member_id)
+    elif isinstance(proc_descr, v0_5.SoftmaxDescr):
+        return Softmax.from_proc_descr(proc_descr, member_id)
     else:
         assert_never(proc_descr)
