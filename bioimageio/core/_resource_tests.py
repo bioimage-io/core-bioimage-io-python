@@ -23,7 +23,6 @@ from typing import (
 )
 
 import numpy as np
-import xarray as xr
 from loguru import logger
 from numpy.typing import NDArray
 from typing_extensions import NotRequired, TypedDict, Unpack, assert_never, get_args
