@@ -83,7 +83,7 @@ def add_weights(
             )
         except Exception as e:
             if verbose:
-                traceback.print_exception(e)
+                traceback.print_exception(type(e), e, e.__traceback__)
 
             logger.error(e)
         else:
@@ -106,7 +106,7 @@ def add_weights(
             )
         except Exception as e:
             if verbose:
-                traceback.print_exception(e)
+                traceback.print_exception(type(e), e, e.__traceback__)
 
             logger.error(e)
         else:
@@ -125,7 +125,7 @@ def add_weights(
             )
         except Exception as e:
             if verbose:
-                traceback.print_exception(e)
+                traceback.print_exception(type(e), e, e.__traceback__)
 
             logger.error(e)
         else:
@@ -146,7 +146,7 @@ def add_weights(
             )
         except Exception as e:
             if verbose:
-                traceback.print_exception(e)
+                traceback.print_exception(type(e), e, e.__traceback__)
 
             logger.error(e)
         else:

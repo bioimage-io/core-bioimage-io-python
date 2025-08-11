@@ -2,6 +2,7 @@ import hashlib
 import os
 import platform
 import subprocess
+import sys
 import warnings
 from io import StringIO
 from itertools import product
@@ -251,7 +252,10 @@ def test_description(
     else:
         assert_never(runtime_env)
 
-    with TemporaryDirectory(ignore_cleanup_errors=True) as _d:
+    td_kwargs: Dict[str, Any] = (
+        dict(ignore_cleanup_errors=True) if sys.version_info >= (3, 10) else {}
+    )
+    with TemporaryDirectory(**td_kwargs) as _d:
         working_dir = Path(_d)
         if isinstance(source, (dict, ResourceDescrBase)):
             file_source = save_bioimageio_package(

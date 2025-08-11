@@ -108,7 +108,10 @@ def _import_from_file_impl(
     module = sys.modules.get(module_name)
     if module is None:
         try:
-            tmp_dir = TemporaryDirectory(ignore_cleanup_errors=True)
+            td_kwargs: Dict[str, Any] = (
+                dict(ignore_cleanup_errors=True) if sys.version_info >= (3, 10) else {}
+            )
+            tmp_dir = TemporaryDirectory(**td_kwargs)
             module_path = Path(tmp_dir.name) / module_name
             if reader.original_file_name.endswith(".zip") or is_zipfile(reader):
                 module_path.mkdir()

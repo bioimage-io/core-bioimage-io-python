@@ -1,4 +1,3 @@
-import sys
 import warnings
 from abc import ABC, abstractmethod
 from typing import (
@@ -11,6 +10,7 @@ from typing import (
     final,
 )
 
+from exceptiongroup import ExceptionGroup
 from numpy.typing import NDArray
 from typing_extensions import assert_never
 
@@ -173,10 +173,7 @@ class ModelAdapter(ABC):
                 "None of the weight format specific model adapters could be created"
                 + " in this environment."
             )
-            if sys.version_info[:2] >= (3, 11):
-                raise ExceptionGroup(msg, errors)
-            else:
-                raise ValueError(msg) from Exception(errors)
+            raise ExceptionGroup(msg, errors)
 
     @final
     def load(self, *, devices: Optional[Sequence[str]] = None) -> None:

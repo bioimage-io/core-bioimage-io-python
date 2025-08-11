@@ -1,8 +1,9 @@
 import os
 import shutil
+import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Union, no_type_check
+from typing import Any, Union, no_type_check
 from zipfile import ZipFile
 
 import tensorflow  # pyright: ignore[reportMissingTypeStubs]
@@ -79,7 +80,10 @@ def convert(
                 f"Tensorflow major versions of model {model_tf_major_ver} is not {tf_major_ver}"
             )
 
-    with TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+    td_kwargs: dict[str, Any] = (
+        dict(ignore_cleanup_errors=True) if sys.version_info >= (3, 10) else {}
+    )
+    with TemporaryDirectory(**td_kwargs) as temp_dir:
         local_weights = ensure_unzipped(
             weight_reader, Path(temp_dir) / "bioimageio_unzipped_tf_weights"
         )
