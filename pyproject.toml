@@ -16,7 +16,7 @@ exclude = [
 ]
 include = ["bioimageio", "scripts", "tests"]
 pythonPlatform = "All"
-pythonVersion = "3.12"
+pythonVersion = "3.9"
 reportDuplicateImport = "error"
 reportImplicitStringConcatenation = "error"
 reportIncompatibleMethodOverride = true
