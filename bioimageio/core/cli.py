@@ -485,7 +485,11 @@ class PredictCmd(CmdBase, WithSource):
         example_inputs = (
             model_descr.sample_inputs
             if isinstance(model_descr, v0_4.ModelDescr)
-            else [ipt.sample_tensor or ipt.test_tensor for ipt in model_descr.inputs]
+            else [
+                t
+                for ipt in model_descr.inputs
+                if (t := ipt.sample_tensor or ipt.test_tensor)
+            ]
         )
         if not example_inputs:
             raise ValueError(f"{self.descr_id} does not specify any example inputs.")
