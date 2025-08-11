@@ -1,7 +1,7 @@
 [tool.black]
 line-length = 88
 extend-exclude = "/presentations/"
-target-version = ["py38", "py39", "py310", "py311", "py312"]
+target-version = ["py39", "py310", "py311", "py312", "py313"]
 preview = true
 
 [tool.pyright]
@@ -45,7 +45,7 @@ testpaths = ["bioimageio/core", "tests"]
 
 [tool.ruff]
 line-length = 88
-target-version = "py312"
+target-version = "py39"
 include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
 exclude = [
     "presentations",
