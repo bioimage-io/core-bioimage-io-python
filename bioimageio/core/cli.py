@@ -99,10 +99,9 @@ class ArgMixin(BaseModel, use_attribute_docstrings=True, cli_implicit_flags=True
 
 
 class WithSummaryLogging(ArgMixin):
-    summary: Sequence[Union[Literal["display"], Path]] = Field(
-        ("display",),
+    summary: List[Union[Literal["display"], Path]] = Field(
+        default_factory=lambda: ["display"],
         examples=[
-            "display",
             Path("summary.md"),
             Path("bioimageio_summaries/"),
             ["display", Path("summary.md")],
@@ -181,7 +180,7 @@ class TestCmd(CmdBase, WithSource, WithSummaryLogging):
 
     (only relevant for model resources)"""
 
-    devices: Optional[Union[str, Sequence[str]]] = None
+    devices: Optional[List[str]] = None
     """Device(s) to use for testing"""
 
     runtime_env: Union[Literal["currently-active", "as-described"], Path] = Field(
@@ -396,8 +395,8 @@ class UpdateHashesCmd(UpdateCmdBase):
 class PredictCmd(CmdBase, WithSource):
     """Run inference on your data with a bioimage.io model."""
 
-    inputs: NotEmpty[Sequence[Union[str, NotEmpty[Tuple[str, ...]]]]] = (
-        "{input_id}/001.tif",
+    inputs: NotEmpty[List[Union[str, NotEmpty[List[str]]]]] = Field(
+        default_factory=lambda: ["{input_id}/001.tif"]
     )
     """Model input sample paths (for each input tensor)
 
@@ -593,7 +592,7 @@ class PredictCmd(CmdBase, WithSource):
             for ipt in model_descr.inputs
         )
 
-        def expand_inputs(i: int, ipt: Union[str, Tuple[str, ...]]) -> Tuple[str, ...]:
+        def expand_inputs(i: int, ipt: Union[str, Sequence[str]]) -> Tuple[str, ...]:
             if isinstance(ipt, str):
                 ipts = tuple(
                     ipt.format(model_id=self.descr_id, input_id=t) for t in input_ids
