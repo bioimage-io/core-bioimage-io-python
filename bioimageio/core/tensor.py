@@ -249,7 +249,7 @@ class Tensor(MagicTensorOpsMixin):
         return self.sizes
 
     def argmax(self) -> Mapping[AxisId, int]:
-        ret = self._data.argmax(...)
+        ret = self._data.argmax(...)  # pyright: ignore[reportUnknownArgumentType]
         assert isinstance(ret, dict)
         return {cast(AxisId, k): cast(int, v.item()) for k, v in ret.items()}
 
