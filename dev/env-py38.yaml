@@ -6,7 +6,7 @@ channels:
   - nodefaults
   - pytorch
 dependencies:
-  - bioimageio.spec==0.5.4.4
+  - bioimageio.spec==0.5.5.0
   - black
   - crick # uncommented
   - h5py
