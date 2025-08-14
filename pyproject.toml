@@ -53,5 +53,8 @@ exclude = [
     "scripts/pdoc/patched.py",
 ]
 
+[tool.ruff.lint]
+select = ["NPY201"]
+
 [tool.coverage.report]
 exclude_also = ["if TYPE_CHECKING:", "assert_never\\("]
