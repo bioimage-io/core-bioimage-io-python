@@ -1,3 +1,2 @@
-include bioimageio/core/VERSION
 include README.md
 include LICENSE

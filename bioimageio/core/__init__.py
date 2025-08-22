@@ -2,6 +2,8 @@
 .. include:: ../../README.md
 """
 
+__version__ = "0.9.0"
+
 from bioimageio.spec import (
     ValidationSummary,
     build_description,
@@ -50,11 +52,7 @@ from .sample import Sample
 from .stat_calculators import compute_dataset_measures
 from .stat_measures import Stat
 from .tensor import Tensor
-from .utils import VERSION
 from .weight_converters import add_weights
-
-__version__ = VERSION
-
 
 # aliases
 test_resource = test_description

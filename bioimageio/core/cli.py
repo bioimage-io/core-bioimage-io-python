@@ -47,6 +47,7 @@ from tqdm import tqdm
 from typing_extensions import assert_never
 
 import bioimageio.spec
+from bioimageio.core import __version__
 from bioimageio.spec import (
     AnyModelDescr,
     InvalidDescr,
@@ -79,7 +80,7 @@ from .proc_setup import (
 )
 from .sample import Sample
 from .stat_measures import Stat
-from .utils import VERSION, compare
+from .utils import compare
 from .weight_converters._add_weights import add_weights
 
 WEIGHT_FORMAT_ALIASES = AliasChoices(
@@ -564,7 +565,7 @@ class PredictCmd(CmdBase, WithSource):
         print(
             "🎉 Sucessfully ran example prediction!\n"
             + "To predict the example input using the CLI example config file"
-            + f" {example_path/YAML_FILE}, execute `bioimageio predict` from {example_path}:\n"
+            + f" {example_path / YAML_FILE}, execute `bioimageio predict` from {example_path}:\n"
             + f"$ cd {str(example_path)}\n"
             + f'$ bioimageio predict "{source_escaped}"\n\n'
             + "Alternatively run the following command"
@@ -868,7 +869,7 @@ assert isinstance(Bioimageio.__doc__, str)
 Bioimageio.__doc__ += f"""
 
 library versions:
-  bioimageio.core {VERSION}
+  bioimageio.core {__version__}
   bioimageio.spec {bioimageio.spec.__version__}
 
 spec format versions:

@@ -1,3 +1,82 @@
+[project]
+name = "bioimageio.core"
+description = "Parser and validator library for bioimage.io specifications"
+authors = [{ name = "Fynn Beuttenmüller", email = "thefynnbe@gmail.com" }]
+requires-python = ">=3.9"
+dynamic = ["version"]
+dependencies = [
+    "bioimageio.spec ==0.5.5.0",
+    "h5py",
+    "imagecodecs",
+    "imageio>=2.10",
+    "loguru",
+    "numpy",
+    "pydantic-settings>=2.5,<3",
+    "pydantic>=2.7.0,<3",
+    "ruyaml",
+    "tqdm",
+    "typing-extensions",
+    "xarray>=2023.01,<2025.3.0",
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+[project.scripts]
+bioimageio = "bioimageio.core.__main__:main"
+
+[project.urls]
+"Bug Reports" = "https://github.com/bioimage-io/core-bioimage-io-python/issues"
+Changelog = "https://github.com/bioimage-io/core-bioimage-io-python?tab=readme-ov-file#changelog"
+Documentation = "https://bioimage-io.github.io/core-bioimage-io-python/bioimageio/core.html"
+Source = "https://github.com/bioimage-io/core-bioimage-io-python"
+
+[project.optional-dependencies]
+onnx = ["onnxruntime"]
+pytorch = ["torch>=1.6,<3", "torchvision>=0.21", "keras>=3.0,<4"]
+tensorflow = ["tensorflow", "keras>=2.15,<4"]
+dev = [
+    "black",
+    "cellpose",          # for model testing
+    "crick",
+    "httpx",
+    "jupyter-black",
+    "jupyter",
+    "keras>=3.0,<4",
+    "matplotlib",
+    "monai",             # for model testing
+    "onnx",
+    "onnxruntime",
+    "packaging>=17.0",
+    "pdoc",
+    "pre-commit",
+    "pyright==1.1.403",
+    "pytest-cov",
+    "pytest",
+    "python-dotenv",
+    "segment-anything",  # for model testing
+    "timm",              # for model testing
+    "torch>=1.6,<3",
+    "torchvision>=0.21",
+]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["bioimageio"]
+
+[tool.setuptools.dynamic]
+version = { attr = "bioimageio.core.__version__" }
+
+
 [tool.black]
 line-length = 88
 extend-exclude = "/presentations/"

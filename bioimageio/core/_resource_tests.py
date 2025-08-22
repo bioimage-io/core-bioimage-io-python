@@ -28,6 +28,7 @@ from loguru import logger
 from numpy.typing import NDArray
 from typing_extensions import NotRequired, TypedDict, Unpack, assert_never, get_args
 
+from bioimageio.core import __version__
 from bioimageio.spec import (
     BioimageioCondaEnv,
     InvalidDescr,
@@ -67,7 +68,6 @@ from .axis import AxisId, BatchSize
 from .common import MemberId, SupportedWeightsFormat
 from .digest_spec import get_test_input_sample, get_test_output_sample
 from .sample import Sample
-from .utils import VERSION
 
 
 class DeprecatedKwargs(TypedDict):
@@ -563,7 +563,7 @@ def load_description_and_test(
         )
 
     rd.validation_summary.env.add(
-        InstalledPackage(name="bioimageio.core", version=VERSION)
+        InstalledPackage(name="bioimageio.core", version=__version__)
     )
 
     if expected_type is not None:
