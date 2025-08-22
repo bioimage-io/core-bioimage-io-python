@@ -7,7 +7,7 @@ channels:
 dependencies:
   - bioimageio.spec==0.5.5.0
   - black
-  # - crick  # currently requires python<=3.9
+  - crick
   - h5py
   - httpx
   - imagecodecs

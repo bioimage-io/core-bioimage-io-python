@@ -7,7 +7,7 @@ dependencies:
   - bioimageio.spec==0.5.5.0
   - black
   - cellpose # for model testing
-  # - crick  # currently requires python<=3.9
+  - crick
   - h5py
   - imagecodecs
   - imageio>=2.5
