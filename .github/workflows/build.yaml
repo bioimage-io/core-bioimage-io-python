@@ -26,7 +26,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       cache-key: ${{steps.cache-key.outputs.cache-key}}
-      cache-key-light: ${{steps.cache-key.outputs.cache-key}}-light
     steps:
       - name: Get Date
         id: get-date
@@ -70,24 +69,23 @@ jobs:
       matrix:
         include:
           - python-version: '3.9'
-            conda-env: dev
+            conda-env: full
             spec: conda
+            run-expensive-tests: true
+            report-coverage: true
+            save-cache: true
           - python-version: '3.10'
             conda-env: dev
             spec: conda
           - python-version: '3.11'
-            conda-env: full
+            conda-env: dev
             spec: main
-            run-expensive-tests: true
-            report-coverage: true
-            save-cache: true
           - python-version: '3.12'
             conda-env: dev
             spec: conda
           - python-version: '3.13'
             conda-env: dev
             spec: main
-            save-cache: true
 
     steps:
     - uses: actions/checkout@v4
@@ -134,7 +132,7 @@ jobs:
         CACHE_NUMBER: 0
       id: cache-env
     - name: Install env
-      run: conda env update --name=${{steps.setup.outputs.env-name}} --file=${{steps.setup.outputs.env-file}} python=${{matrix.python-version}}
+      run: conda env update --name=${{steps.setup.outputs.env-name}} --file=${{steps.setup.outputs.env-file}} python=${{matrix.python-version}} numpy=${{matrix.numpy-version}}
       if: steps.cache-env.outputs.cache-hit != 'true'
     - name: Install uncached pip dependencies
       run: |
@@ -162,22 +160,22 @@ jobs:
       run: |
         pyright --version
         pyright -p pyproject.toml --pythonversion ${{ matrix.python-version }}
-    - name: Restore bioimageio cache ${{matrix.run-expensive-tests && needs.populate-cache.outputs.cache-key || needs.populate-cache.outputs.cache-key-light}}
+    - name: Restore bioimageio cache ${{matrix.run-expensive-tests && needs.populate-cache.outputs.cache-key}}
       uses: actions/cache/restore@v4
       with:
         path: bioimageio_cache
-        key: ${{matrix.run-expensive-tests && needs.populate-cache.outputs.cache-key || needs.populate-cache.outputs.cache-key-light}}
+        key: ${{matrix.run-expensive-tests && needs.populate-cache.outputs.cache-key}}
     - name: pytest
       run: pytest --cov bioimageio --cov-report xml --cov-append --capture no --disable-pytest-warnings
       env:
         BIOIMAGEIO_CACHE_PATH: bioimageio_cache
         RUN_EXPENSIVE_TESTS: ${{ matrix.run-expensive-tests && 'true' || 'false' }}
-    - name: Save bioimageio cache ${{matrix.run-expensive-tests && needs.populate-cache.outputs.cache-key || needs.populate-cache.outputs.cache-key-light}}
+    - name: Save bioimageio cache ${{matrix.run-expensive-tests && needs.populate-cache.outputs.cache-key}}
       if: matrix.save-cache
       uses: actions/cache/save@v4
       with:
         path: bioimageio_cache
-        key: ${{matrix.run-expensive-tests && needs.populate-cache.outputs.cache-key || needs.populate-cache.outputs.cache-key-light}}
+        key: ${{matrix.run-expensive-tests && needs.populate-cache.outputs.cache-key}}
 
     - if: matrix.report-coverage && github.event_name == 'pull_request'
       uses: orgoro/coverage@v3.2
@@ -288,7 +286,7 @@ jobs:
         with:
           create-tag: false
           version-command: |
-            bash -o pipefail -c "cat bioimageio/core/VERSION | jq -r '.version'"
+            python -c "from pathlib import Path;print(Path('bioimageio/core/__init__.py').read_text().split('__version__ = \"')[1].split('\"')[0])"
 
       - name: Push tag
         id: tag-version
