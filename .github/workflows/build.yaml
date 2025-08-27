@@ -92,7 +92,7 @@ jobs:
             spec: conda
             numpy-version: 1
           - python-version: '3.13'
-            conda-env: dev
+            conda-env: '313'
             spec: main
             numpy-version: 2
 
