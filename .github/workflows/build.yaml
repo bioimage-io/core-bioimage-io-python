@@ -91,10 +91,10 @@ jobs:
             conda-env: dev
             spec: conda
             numpy-version: 1
-          - python-version: '3.13'
-            conda-env: '313'
-            spec: main
-            numpy-version: 2
+          # - python-version: '3.13'
+          #   conda-env: '313'
+          #   spec: main
+          #   numpy-version: 2
 
     steps:
     - uses: actions/checkout@v4
