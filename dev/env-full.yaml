@@ -44,7 +44,7 @@ dependencies:
   - torchvision>=0.21
   - tqdm
   - typing-extensions
-  - xarray>=2024.01,<2025.3.0
+  - xarray>=2025.1,<2025.3.0 # stricter version pin for correct typing
   - pip:
       # - careamics # for model testing (TODO: install without exact bioimageio.core pin)
       - git+https://github.com/ChaoningZhang/MobileSAM.git # for model testing
