@@ -60,6 +60,7 @@ dev = [
     "pytest-cov",
     "pytest",
     "python-dotenv",
+    "scipy",
     "segment-anything",  # for model testing
     "timm",              # for model testing
     "torch>=1.6,<3",

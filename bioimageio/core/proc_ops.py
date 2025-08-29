@@ -539,7 +539,8 @@ class Softmax(_SimpleOperator):
 
     def _apply(self, x: Tensor, stat: Stat) -> Tensor:
         x_max = x.data.max(dim=self.axis, keepdims=False)
-        exp_x_shifted: xr.DataArray = xr.ufuncs.exp(x.data - x_max)
+        x_shifted = x.data - x_max
+        exp_x_shifted = xr.DataArray(x_shifted.data.exp(), dims=x.dims)
         result = exp_x_shifted / exp_x_shifted.sum(dim=self.axis)
         return Tensor.from_xarray(result)
 

@@ -394,3 +394,23 @@ def test_softmax(tid: MemberId):
         dims=axes,
     )
     xr.testing.assert_allclose(exp, sample.members[tid].data, rtol=1e-5, atol=1e-7)
+
+
+def test_softmax_w_scipy(tid: MemberId):
+    import scipy  # pyright: ignore[reportMissingTypeStubs]
+
+    from bioimageio.core.proc_ops import Softmax
+
+    shape = (3, 32, 32)
+    axes = ("channel", "y", "x")
+    np_data = np.random.rand(*shape)
+    data = xr.DataArray(np_data, dims=axes)
+    sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
+    softmax = Softmax(tid, tid, axis=AxisId("channel"))
+    softmax(sample)
+
+    exp = xr.DataArray(
+        scipy.special.softmax(np_data, axis=0),
+        dims=axes,
+    )
+    xr.testing.assert_allclose(exp, sample.members[tid].data, rtol=1e-5, atol=1e-7)
