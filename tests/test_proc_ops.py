@@ -2,6 +2,7 @@ from typing import Iterable, Optional, Tuple, Type, TypeVar
 
 import numpy as np
 import pytest
+import scipy  # pyright: ignore[reportMissingTypeStubs]
 import xarray as xr
 from typing_extensions import TypeGuard
 
@@ -396,9 +397,7 @@ def test_softmax(tid: MemberId):
     xr.testing.assert_allclose(exp, sample.members[tid].data, rtol=1e-5, atol=1e-7)
 
 
-def test_softmax_w_scipy(tid: MemberId):
-    import scipy  # pyright: ignore[reportMissingTypeStubs]
-
+def test_softmax_with_scipy(tid: MemberId):
     from bioimageio.core.proc_ops import Softmax
 
     shape = (3, 32, 32)

@@ -14,6 +14,7 @@ dependencies = [
     "pydantic-settings>=2.5,<3",
     "pydantic>=2.7.0,<3",
     "ruyaml",
+    "scipy",
     "tqdm",
     "typing-extensions",
     "xarray>=2023.01,<2025.3.0",
@@ -60,7 +61,6 @@ dev = [
     "pytest-cov",
     "pytest",
     "python-dotenv",
-    "scipy",
     "segment-anything",  # for model testing
     "timm",              # for model testing
     "torch>=1.6,<3",

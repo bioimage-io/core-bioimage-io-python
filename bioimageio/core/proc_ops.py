@@ -13,6 +13,7 @@ from typing import (
 )
 
 import numpy as np
+import scipy  # pyright: ignore[reportMissingTypeStubs]
 import xarray as xr
 from typing_extensions import Self, assert_never
 
@@ -538,11 +539,10 @@ class Softmax(_SimpleOperator):
     axis: AxisId = AxisId("channel")
 
     def _apply(self, x: Tensor, stat: Stat) -> Tensor:
-        x_max = x.data.max(dim=self.axis, keepdims=False)
-        x_shifted = x.data - x_max
-        exp_x_shifted = xr.DataArray(x_shifted.data.exp(), dims=x.dims)
-        result = exp_x_shifted / exp_x_shifted.sum(dim=self.axis)
-        return Tensor.from_xarray(result)
+        axis_idx = x.dims.index(self.axis)
+        result = scipy.special.softmax(x.data, axis=axis_idx)
+        result_xr = xr.DataArray(result, dims=x.dims)
+        return Tensor.from_xarray(result_xr)
 
     @property
     def required_measures(self) -> Collection[Measure]:
