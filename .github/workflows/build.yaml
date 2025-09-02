@@ -98,72 +98,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - id: setup
-      run: |
-        echo "env-name=${{ matrix.spec }}-${{ matrix.conda-env }}-${{ matrix.python-version }}"
-        echo "env-name=${{ matrix.spec }}-${{ matrix.conda-env }}-${{ matrix.python-version }}" >> $GITHUB_OUTPUT
-        echo "env-file=dev/env-${{ matrix.conda-env }}.yaml"
-        echo "env-file=dev/env-${{ matrix.conda-env }}.yaml" >> $GITHUB_OUTPUT
-    - name: check on env-file
-      shell: python
-      run: |
-        from pathlib import Path
-        from pprint import pprint
-        if not (env_path:=Path("${{steps.setup.outputs.env-file}}")).exists():
-          if env_path.parent.exists():
-            pprint(env_path.parent.glob("*"))
-          else:
-            pprint(Path().glob("*"))
-          raise FileNotFoundError(f"{env_path} does not exist")
-
-    - uses: conda-incubator/setup-miniconda@v3
+    - uses: actions/setup-python@v5
       with:
-        auto-update-conda: true
-        activate-environment: ${{steps.setup.outputs.env-name}}
-        channel-priority: strict
-        miniforge-version: latest
-        python-version: ${{ matrix.python-version }}
-    - name: Get Date
-      id: get-date
+        python-version: ${{matrix.python-version}}
+        cache: 'pip'
+    - name: Install dependencies
       run: |
-        echo "today=$(date -u '+%Y%m%d')"
-        echo "today=$(date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
-    - name: Restore cached env
-      uses: actions/cache/restore@v4
-      with:
-        path: ${{env.CONDA}}/envs
-        key: >-
-          conda-${{runner.os}}-${{runner.arch}}
-          -${{steps.get-date.outputs.today}}
-          -${{hashFiles(steps.setup.outputs.env-file)}}
-          -${{env.CACHE_NUMBER}}
-      env:
-        CACHE_NUMBER: 1
-      id: cache-env
-    - name: Install env
-      if: steps.cache-env.outputs.cache-hit != 'true'
-      run: |
-        conda env update --name=${{steps.setup.outputs.env-name}} --file=${{steps.setup.outputs.env-file}}
-    - name: Ensure Python/numpy version
-      if: steps.cache-env.outputs.cache-hit != 'true'
-      run: |
-        conda install python=${{matrix.python-version}} numpy=${{matrix.numpy-version}}
-    - name: Cache env
-      if: steps.cache-env.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v4
-      with:
-        path: ${{env.CONDA}}/envs
-        key: >-
-          conda-${{runner.os}}-${{runner.arch}}
-          -${{steps.get-date.outputs.today}}
-          -${{hashFiles(steps.setup.outputs.env-file)}}
-          -${{env.CACHE_NUMBER}}
-      env:
-        CACHE_NUMBER: 1
-    - name: Force reinstall of developed package
-      run: |
-        pip install --upgrade --no-deps --force-reinstall -e .
-    - run: conda list
+        pip install --upgrade pip
+        pip install -e .[dev] numpy=${{matrix.numpy-version}}
     - name: Pyright
       if: matrix.run-expensive-tests
       run: |
