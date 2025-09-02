@@ -119,7 +119,6 @@ jobs:
     - uses: conda-incubator/setup-miniconda@v3
       with:
         auto-update-conda: true
-        auto-activate-base: true
         activate-environment: ${{steps.setup.outputs.env-name}}
         channel-priority: strict
         miniforge-version: latest
@@ -132,43 +131,38 @@ jobs:
     - name: Restore cached env
       uses: actions/cache/restore@v4
       with:
-        path: ${{env.CONDA}}/envs/${{steps.setup.outputs.env-name}}
+        path: ${{env.CONDA}}/envs
         key: >-
           conda-${{runner.os}}-${{runner.arch}}
           -${{steps.get-date.outputs.today}}
           -${{hashFiles(steps.setup.outputs.env-file)}}
           -${{env.CACHE_NUMBER}}
       env:
-        CACHE_NUMBER: 0
+        CACHE_NUMBER: 1
       id: cache-env
     - name: Install env
       if: steps.cache-env.outputs.cache-hit != 'true'
       run: |
         conda env update --name=${{steps.setup.outputs.env-name}} --file=${{steps.setup.outputs.env-file}}
     - name: Ensure Python/numpy version
-      # if: steps.cache-env.outputs.cache-hit != 'true'  # TODO: skip this step on cache hits once the caches are all updated
+      if: steps.cache-env.outputs.cache-hit != 'true'
       run: |
         conda install python=${{matrix.python-version}} numpy=${{matrix.numpy-version}}
-    - name: Install uncached pip dependencies
-      run: |
-        pip install --upgrade pip
-        pip install --no-deps -e .
-    - name: Install uncached pip dependencies for 'full' environment
-      if: matrix.conda-env == 'full'
-      run: |
-        pip install git+https://github.com/ChaoningZhang/MobileSAM.git
     - name: Cache env
       if: steps.cache-env.outputs.cache-hit != 'true'
       uses: actions/cache/save@v4
       with:
-        path: ${{env.CONDA}}/envs/${{steps.setup.outputs.env-name}}
+        path: ${{env.CONDA}}/envs
         key: >-
           conda-${{runner.os}}-${{runner.arch}}
           -${{steps.get-date.outputs.today}}
           -${{hashFiles(steps.setup.outputs.env-file)}}
           -${{env.CACHE_NUMBER}}
       env:
-        CACHE_NUMBER: 0
+        CACHE_NUMBER: 1
+    - name: Force reinstall of developed package
+      run: |
+        pip install --upgrade --no-deps --force-reinstall -e .
     - run: conda list
     - name: Pyright
       if: matrix.run-expensive-tests
