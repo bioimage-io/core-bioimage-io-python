@@ -105,7 +105,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install -e .[dev] numpy=${{matrix.numpy-version}}
+        pip install -e .[dev] numpy==${{matrix.numpy-version}}
     - name: Pyright
       if: matrix.run-expensive-tests
       run: |
