@@ -29,7 +29,6 @@ dependencies:
   - pyright
   - pytest
   - pytest-cov
-  - python=3.9
   - httpx
   - respx
   - rich
