@@ -6,7 +6,6 @@ from typing import Optional, Sequence, Union
 
 from typing_extensions import Literal
 
-from bioimageio.core.common import SupportedWeightsFormat
 from bioimageio.spec import (
     InvalidDescr,
     ResourceDescr,
@@ -17,8 +16,27 @@ from bioimageio.spec._internal.types import FormatVersionPlaceholder
 
 from ._resource_tests import test_description
 
-WeightFormatArgAll = Literal[SupportedWeightsFormat, "all"]
-WeightFormatArgAny = Literal[SupportedWeightsFormat, "any"]
+# unfortunately this does not work with py3.9 and pydantic 2.11
+# from bioimageio.core.common import SupportedWeightsFormat
+# WeightFormatArgAll = Literal[SupportedWeightsFormat, "all"]
+# WeightFormatArgAny = Literal[SupportedWeightsFormat, "any"]
+# so we write out the literal explicitly
+WeightFormatArgAll = Literal[
+    "keras_hdf5",
+    "onnx",
+    "pytorch_state_dict",
+    "tensorflow_saved_model_bundle",
+    "torchscript",
+    "all",
+]
+WeightFormatArgAny = Literal[
+    "keras_hdf5",
+    "onnx",
+    "pytorch_state_dict",
+    "tensorflow_saved_model_bundle",
+    "torchscript",
+    "any",
+]
 
 
 def test(
