@@ -25,7 +25,7 @@ jobs:
   populate-cache:
     runs-on: ubuntu-latest
     outputs:
-      cache-key: ${{steps.cache-key.outputs.cache-key}}
+      cache-key: ${{steps.cache-key.outputs.cache-key}}-0
     steps:
       - name: Get Date
         id: get-date
