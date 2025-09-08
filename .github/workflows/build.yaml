@@ -11,17 +11,6 @@ defaults:
     shell: bash -el {0}
 
 jobs:
-  black:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: psf/black@stable
-        with:
-          options: "--check"
-          src: "."
-          jupyter: true
-          version: "24.3"
-
   populate-cache:
     runs-on: ubuntu-latest
     outputs:
