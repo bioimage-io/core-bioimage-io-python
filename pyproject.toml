@@ -62,6 +62,7 @@ dev = [
     "pytest",
     "python-dotenv",
     "segment-anything",  # for model testing
+    "tensorflow",
     "timm",              # for model testing
     "torch>=1.6,<3",
     "torchvision>=0.21",
