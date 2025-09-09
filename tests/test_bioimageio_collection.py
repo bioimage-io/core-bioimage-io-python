@@ -21,7 +21,7 @@ TEST_RDF_SOURCES: Mapping[str, Tuple[HttpUrl, Sha256]] = {
         HttpUrl(
             "https://hypha.aicell.io/bioimage-io/artifacts/ambitious-sloth/files/rdf.yaml?version=v0"
         ),
-        Sha256("e150222be2811d5643ca63612eabb11b4a84f2cd6a5888000c7a892b67fb9842"),
+        Sha256("caf162e847a0812fb7704e7848b1ee68f46383278d8b74493553fe96750d1e39"),
     ),
 }
 
