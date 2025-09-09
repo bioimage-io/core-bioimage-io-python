@@ -21,6 +21,7 @@ def add_weights(
     source_format: Optional[WeightsFormat] = None,
     target_format: Optional[WeightsFormat] = None,
     verbose: bool = False,
+    allow_tracing: bool = True,
 ) -> Optional[ModelDescr]:
     """Convert model weights to other formats and add them to the model description
 
@@ -90,7 +91,7 @@ def add_weights(
             available.add("torchscript")
             missing.discard("torchscript")
 
-    if "pytorch_state_dict" in available and "torchscript" in missing:
+    if allow_tracing and "pytorch_state_dict" in available and "torchscript" in missing:
         logger.info(
             "Attempting to convert 'pytorch_state_dict' weights to 'torchscript' by tracing."
         )
@@ -169,5 +170,9 @@ def add_weights(
         # resave model with updated rdf.yaml
         _ = save_bioimageio_package_as_folder(model_descr, output_path=output_path)
         tested_model_descr = load_description_and_test(model_descr)
-        assert isinstance(tested_model_descr, ModelDescr)
+        if not isinstance(tested_model_descr, ModelDescr):
+            raise RuntimeError(
+                f"The updated model description at {output_path} did not pass testing."
+            )
+
         return tested_model_descr

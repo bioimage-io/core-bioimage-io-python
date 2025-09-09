@@ -754,6 +754,10 @@ class AddWeightsCmd(CmdBase, WithSource, WithSummaryLogging):
     verbose: bool = False
     """Log more (error) output."""
 
+    tracing: bool = True
+    """Allow tracing when converting pytorch_state_dict to torchscript
+    (still uses scripting if possible)."""
+
     def run(self):
         model_descr = ensure_description_is_model(self.descr)
         if isinstance(model_descr, v0_4.ModelDescr):
@@ -767,6 +771,7 @@ class AddWeightsCmd(CmdBase, WithSource, WithSummaryLogging):
             source_format=self.source_format,
             target_format=self.target_format,
             verbose=self.verbose,
+            allow_tracing=self.tracing,
         )
         if updated_model_descr is None:
             return
