@@ -84,6 +84,10 @@ def import_callable(
     return c
 
 
+tmp_dirs_in_use: List[TemporaryDirectory[str]] = []
+"""keep global reference to temporary directories created during import to delay cleanup"""
+
+
 def _import_from_file_impl(
     source: FileSource, callable_name: str, **kwargs: Unpack[HashKwargs]
 ):
@@ -111,7 +115,14 @@ def _import_from_file_impl(
             td_kwargs: Dict[str, Any] = (
                 dict(ignore_cleanup_errors=True) if sys.version_info >= (3, 10) else {}
             )
+            if sys.version_info >= (3, 12):
+                td_kwargs["delete"] = False
+
             tmp_dir = TemporaryDirectory(**td_kwargs)
+            # keep global ref to tmp_dir to delay cleanup until program exit
+            # TODO: remove for py >= 3.12, when delete=False works
+            tmp_dirs_in_use.append(tmp_dir)
+
             module_path = Path(tmp_dir.name) / module_name
             if reader.original_file_name.endswith(".zip") or is_zipfile(reader):
                 module_path.mkdir()
