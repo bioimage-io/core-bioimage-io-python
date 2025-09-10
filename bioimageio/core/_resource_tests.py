@@ -30,9 +30,11 @@ from typing_extensions import NotRequired, TypedDict, Unpack, assert_never, get_
 
 from bioimageio.core import __version__
 from bioimageio.spec import (
+    AnyModelDescr,
     BioimageioCondaEnv,
     InvalidDescr,
     LatestResourceDescr,
+    ModelDescr,
     ResourceDescr,
     ValidationContext,
     build_description,
@@ -475,11 +477,41 @@ def load_description_and_test(
     weight_format: Optional[SupportedWeightsFormat] = None,
     devices: Optional[Sequence[str]] = None,
     determinism: Literal["seed_only", "full"] = "seed_only",
+    expected_type: Literal["model"],
+    sha256: Optional[Sha256] = None,
+    stop_early: bool = True,
+    **deprecated: Unpack[DeprecatedKwargs],
+) -> Union[ModelDescr, InvalidDescr]: ...
+
+
+@overload
+def load_description_and_test(
+    source: Union[ResourceDescr, PermissiveFileSource, BioimageioYamlContent],
+    *,
+    format_version: Literal["latest"],
+    weight_format: Optional[SupportedWeightsFormat] = None,
+    devices: Optional[Sequence[str]] = None,
+    determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Optional[str] = None,
     sha256: Optional[Sha256] = None,
     stop_early: bool = True,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[LatestResourceDescr, InvalidDescr]: ...
+
+
+@overload
+def load_description_and_test(
+    source: Union[ResourceDescr, PermissiveFileSource, BioimageioYamlContent],
+    *,
+    format_version: Union[FormatVersionPlaceholder, str] = DISCOVER,
+    weight_format: Optional[SupportedWeightsFormat] = None,
+    devices: Optional[Sequence[str]] = None,
+    determinism: Literal["seed_only", "full"] = "seed_only",
+    expected_type: Literal["model"],
+    sha256: Optional[Sha256] = None,
+    stop_early: bool = True,
+    **deprecated: Unpack[DeprecatedKwargs],
+) -> Union[AnyModelDescr, InvalidDescr]: ...
 
 
 @overload
