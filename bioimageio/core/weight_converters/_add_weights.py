@@ -1,5 +1,5 @@
 import traceback
-from typing import Optional
+from typing import Optional, Union
 
 from loguru import logger
 from pydantic import DirectoryPath
@@ -22,7 +22,7 @@ def add_weights(
     target_format: Optional[WeightsFormat] = None,
     verbose: bool = False,
     allow_tracing: bool = True,
-) -> Optional[ModelDescr]:
+) -> Union[ModelDescr, InvalidDescr]:
     """Convert model weights to other formats and add them to the model description
 
     Args:
@@ -35,8 +35,8 @@ def add_weights(
         verbose: log more (error) output
 
     Returns:
-        - An updated model description if any converted weights were added.
-        - `None` if no conversion was possible.
+        A (potentially invalid) model copy stored at `output_path` with added weights if any conversion was possible.
+
     """
     if not isinstance(model_descr, ModelDescr):
         if model_descr.type == "model" and not isinstance(model_descr, InvalidDescr):
@@ -52,10 +52,9 @@ def add_weights(
         model_descr, output_path=output_path
     )
     # reload from local folder to make sure we do not edit the given model
-    _model_descr = load_model_description(output_path, perform_io_checks=False)
-    assert isinstance(_model_descr, ModelDescr)
-    model_descr = _model_descr
-    del _model_descr
+    model_descr = load_model_description(
+        output_path, perform_io_checks=False, format_version="latest"
+    )
 
     if source_format is None:
         available = set(model_descr.weights.available_formats)
@@ -164,14 +163,16 @@ def add_weights(
 
     if originally_missing == missing:
         logger.warning("failed to add any converted weights")
-        return None
+        return model_descr
     else:
         logger.info("added weights formats {}", originally_missing - missing)
         # resave model with updated rdf.yaml
         _ = save_bioimageio_package_as_folder(model_descr, output_path=output_path)
-        tested_model_descr = load_description_and_test(model_descr)
+        tested_model_descr = load_description_and_test(
+            model_descr, format_version="latest", expected_type="model"
+        )
         if not isinstance(tested_model_descr, ModelDescr):
-            raise RuntimeError(
+            logger.error(
                 f"The updated model description at {output_path} did not pass testing."
             )
 

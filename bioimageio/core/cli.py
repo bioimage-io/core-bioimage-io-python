@@ -773,9 +773,6 @@ class AddWeightsCmd(CmdBase, WithSource, WithSummaryLogging):
             verbose=self.verbose,
             allow_tracing=self.tracing,
         )
-        if updated_model_descr is None:
-            return
-
         self.log(updated_model_descr)
 
 
