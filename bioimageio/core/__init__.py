@@ -1,8 +1,12 @@
 """
 .. include:: ../../README.md
 """
+# ruff: noqa: E402
 
 __version__ = "0.9.0"
+from loguru import logger
+
+logger.disable("bioimageio.core")
 
 from bioimageio.spec import (
     ValidationSummary,
