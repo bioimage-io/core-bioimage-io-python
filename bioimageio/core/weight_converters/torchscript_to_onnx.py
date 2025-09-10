@@ -76,7 +76,7 @@ def convert(
         )
 
     return OnnxWeightsDescr(
-        source=output_path,
+        source=output_path.absolute(),
         parent="torchscript",
         opset_version=opset_version,
         comment=f"Converted with bioimageio.core {__version__}.",

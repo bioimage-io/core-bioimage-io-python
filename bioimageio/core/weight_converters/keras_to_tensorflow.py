@@ -123,7 +123,7 @@ def _convert_tf2(
     print("TensorFlow model exported to", output_path)
 
     return TensorflowSavedModelBundleWeightsDescr(
-        source=output_path,
+        source=output_path.absolute(),
         parent="keras_hdf5",
         tensorflow_version=Version(tensorflow.__version__),
         comment=f"Converted with bioimageio.core {__version__}.",
@@ -138,7 +138,6 @@ def _convert_tf1(
     input_name: str,
     output_name: str,
 ) -> TensorflowSavedModelBundleWeightsDescr:
-
     @no_type_check
     def build_tf_model():
         keras_model = keras.models.load_model(keras_weight_path)
@@ -167,7 +166,7 @@ def _convert_tf1(
     print("TensorFlow model exported to", output_path)
 
     return TensorflowSavedModelBundleWeightsDescr(
-        source=output_path,
+        source=output_path.absolute(),
         parent="keras_hdf5",
         tensorflow_version=Version(tensorflow.__version__),
         comment=f"Converted with bioimageio.core {__version__}.",

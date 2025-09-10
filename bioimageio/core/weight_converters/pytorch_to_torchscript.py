@@ -60,7 +60,7 @@ def convert(
     scripted_model.save(output_path)
 
     return TorchscriptWeightsDescr(
-        source=output_path,
+        source=output_path.absolute(),
         pytorch_version=Version(torch.__version__),
         parent="pytorch_state_dict",
         comment=(
