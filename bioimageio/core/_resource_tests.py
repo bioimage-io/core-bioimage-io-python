@@ -898,7 +898,8 @@ def _test_model_inference_parametrized(
         (b, n) for b, n in product(sorted(batch_sizes), sorted(ns))
     }
     logger.info(
-        "Testing inference with {} different inputs (B, N): {}",
+        "Testing inference with '{}' for {} different inputs (B, N): {}",
+        weight_format,
         len(test_cases),
         test_cases,
     )
