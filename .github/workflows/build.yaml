@@ -36,7 +36,7 @@ jobs:
         with:
           path: bioimageio_cache
           key: ${{steps.cache-key.outputs.cache-key}}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         if: steps.look-up.outputs.cache-hit != 'true'
         with:
           python-version: '3.12'
@@ -87,7 +87,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       with:
         python-version: ${{matrix.python-version}}
         cache: 'pip'
@@ -173,7 +173,7 @@ jobs:
         with:
           name: coverage
           path: dist
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: 'pip'
@@ -203,7 +203,7 @@ jobs:
           fetch-depth: 2
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
       - name: Install dependencies
