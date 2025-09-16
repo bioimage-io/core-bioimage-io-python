@@ -191,10 +191,9 @@ jobs:
           branch: gh-pages
           folder: dist
 
-  publish-pypi:
-    name: Publish to PyPI
+  pip-build:
+    name: Build with pip and publish to PyPI
     needs: test
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repository
@@ -205,16 +204,16 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: '3.10'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip --version
           pip install --upgrade build
           pip install .
-          pip install pytest
-      - name: run tests
-        run: pytest --disable-pytest-warnings
+      - name: Build package
+        run: |
+          python -m build
 
       - name: Check if there is a parent commit
         id: check-parent-commit
@@ -223,7 +222,7 @@ jobs:
 
       - name: Detect new version
         id: check-version
-        if: steps.check-parent-commit.outputs.sha
+        if: github.ref == 'refs/heads/main' && steps.check-parent-commit.outputs.sha
         uses: salsify/action-detect-and-tag-new-version@v2.0.3
         with:
           create-tag: false
@@ -232,17 +231,14 @@ jobs:
 
       - name: Push tag
         id: tag-version
-        if: steps.check-version.outputs.previous-version != steps.check-version.outputs.current-version
+        if: github.ref == 'refs/heads/main' && steps.check-version.outputs.previous-version != steps.check-version.outputs.current-version
         uses: mathieudutour/github-tag-action@v5.5
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           custom_tag: ${{ steps.check-version.outputs.current-version }}
 
-      - name: Build package
-        run: |
-          python -m build
       - name: Publish package on PyPI
-        if: steps.tag-version.outputs.new_tag
+        if: github.ref == 'refs/heads/main' && steps.tag-version.outputs.new_tag
         uses: pypa/gh-action-pypi-publish@release/v1.12
         with:
           user: __token__
@@ -250,6 +246,7 @@ jobs:
           packages-dir: dist/
           verbose: true
       - name: Publish the release notes
+        if: github.ref == 'refs/heads/main'
         uses: release-drafter/release-drafter@v6.0.0
         with:
           publish: "${{ steps.tag-version.outputs.new_tag != '' }}"
