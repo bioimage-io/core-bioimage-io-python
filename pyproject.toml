@@ -1,6 +1,6 @@
 [project]
 name = "bioimageio.core"
-description = "Parser and validator library for bioimage.io specifications"
+description = "Python specific core utilities for bioimage.io resources (in particular DL models)."
 authors = [{ name = "Fynn Beuttenmüller", email = "thefynnbe@gmail.com" }]
 requires-python = ">=3.9"
 dynamic = ["version"]
@@ -77,7 +77,6 @@ include = ["bioimageio"]
 
 [tool.setuptools.dynamic]
 version = { attr = "bioimageio.core.__version__" }
-
 
 [tool.black]
 line-length = 88
