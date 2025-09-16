@@ -1,8 +1,13 @@
-{% set setup_py_data = load_setup_py_data() %}
+{% set pyproject = load_file_data('pyproject.toml') %}
+{% set version_match = load_file_regex(
+  load_file="bioimageio/core/__init__.py",
+  regex_pattern='__version__ = "(.+)"') %}
+{% set version = version_match[1] %}
+
 
 package:
-  name: bioimageio.core
-  version: {{ setup_py_data['version'] }}
+  name: {{ pyproject['project']['name'] }}
+  version: {{ version }}
 
 source:
   path: ..
@@ -14,12 +19,14 @@ build:
     {% for ep in setup_py_data['entry_points']['console_scripts'] %}
     - {{ ep }}
     {% endfor %}
-  script: "{{ PYTHON }} -m pip install --no-deps --ignore-installed ."
+  script: python -m pip install --no-deps --ignore-installed .
 
 requirements:
   host:
-    - python >=3.9,<3.13
-    - pip
+    - python {{ pyproject['project']['requires-python'] }}
+    {% for dep in pyproject['build-system']['requires'] %}
+    - {{ dep.lower() }}
+    {% endfor %}
   run:
     - python >=3.9,<3.13
     {% for dep in setup_py_data['install_requires'] %}
