@@ -5,7 +5,7 @@ authors = [{ name = "Fynn Beuttenmüller", email = "thefynnbe@gmail.com" }]
 requires-python = ">=3.9"
 dynamic = ["version"]
 dependencies = [
-    "bioimageio.spec ==0.5.5.0",
+    "bioimageio.spec ==0.5.5.2",
     "h5py",
     "imagecodecs",
     "imageio>=2.10",
