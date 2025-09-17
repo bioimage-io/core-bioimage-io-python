@@ -3,6 +3,7 @@ name = "bioimageio.core"
 description = "Python specific core utilities for bioimage.io resources (in particular DL models)."
 authors = [{ name = "Fynn Beuttenmüller", email = "thefynnbe@gmail.com" }]
 requires-python = ">=3.9"
+readme = "README.md"
 dynamic = ["version"]
 dependencies = [
     "bioimageio.spec ==0.5.5.2",
