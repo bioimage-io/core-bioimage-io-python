@@ -161,7 +161,7 @@ jobs:
         shell: bash -l {0}
         run: |
           mkdir -p ./pkgs/noarch
-          conda-build -c conda-forge conda-recipe --no-test --output-folder ./pkgs
+          conda-build -c conda-forge conda-recipe --output-folder ./pkgs
 
   docs:
     needs: test
