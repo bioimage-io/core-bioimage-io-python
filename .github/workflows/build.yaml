@@ -227,7 +227,7 @@ jobs:
         with:
           create-tag: false
           version-command: |
-            python -c "from pathlib import Path;print(Path('bioimageio/core/__init__.py').read_text().split('__version__ = \"')[1].split('\"')[0])"
+            python -c "from pathlib import Path;p = p_src if (p_src:=Path('src/bioimageio/core/__init__.py')).exists() else Path('bioimageio/core/__init__.py');print(p.read_text().split('__version__ = \"')[1].split('\"')[0])"
 
       - name: Push tag
         id: tag-version
