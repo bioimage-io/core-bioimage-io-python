@@ -2,12 +2,14 @@ import hashlib
 import os
 import platform
 import subprocess
+import sys
 import warnings
 from io import StringIO
 from itertools import product
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import (
+    Any,
     Callable,
     Dict,
     Hashable,
@@ -21,14 +23,20 @@ from typing import (
     overload,
 )
 
-import xarray as xr
+import numpy as np
 from loguru import logger
+from numpy.typing import NDArray
 from typing_extensions import NotRequired, TypedDict, Unpack, assert_never, get_args
 
+from bioimageio.core import __version__
 from bioimageio.spec import (
+    AnyDatasetDescr,
+    AnyModelDescr,
     BioimageioCondaEnv,
+    DatasetDescr,
     InvalidDescr,
     LatestResourceDescr,
+    ModelDescr,
     ResourceDescr,
     ValidationContext,
     build_description,
@@ -62,9 +70,8 @@ from bioimageio.spec.summary import (
 from ._prediction_pipeline import create_prediction_pipeline
 from .axis import AxisId, BatchSize
 from .common import MemberId, SupportedWeightsFormat
-from .digest_spec import get_test_inputs, get_test_outputs
+from .digest_spec import get_test_input_sample, get_test_output_sample
 from .sample import Sample
-from .utils import VERSION
 
 
 class DeprecatedKwargs(TypedDict):
@@ -165,7 +172,7 @@ def test_model(
     *,
     determinism: Literal["seed_only", "full"] = "seed_only",
     sha256: Optional[Sha256] = None,
-    stop_early: bool = False,
+    stop_early: bool = True,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> ValidationSummary:
     """Test model inference"""
@@ -195,7 +202,7 @@ def test_description(
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Optional[str] = None,
     sha256: Optional[Sha256] = None,
-    stop_early: bool = False,
+    stop_early: bool = True,
     runtime_env: Union[
         Literal["currently-active", "as-described"], Path, BioimageioCondaEnv
     ] = ("currently-active"),
@@ -249,7 +256,10 @@ def test_description(
     else:
         assert_never(runtime_env)
 
-    with TemporaryDirectory(ignore_cleanup_errors=True) as _d:
+    td_kwargs: Dict[str, Any] = (
+        dict(ignore_cleanup_errors=True) if sys.version_info >= (3, 10) else {}
+    )
+    with TemporaryDirectory(**td_kwargs) as _d:
         working_dir = Path(_d)
         if isinstance(source, (dict, ResourceDescrBase)):
             file_source = save_bioimageio_package(
@@ -469,9 +479,39 @@ def load_description_and_test(
     weight_format: Optional[SupportedWeightsFormat] = None,
     devices: Optional[Sequence[str]] = None,
     determinism: Literal["seed_only", "full"] = "seed_only",
+    expected_type: Literal["model"],
+    sha256: Optional[Sha256] = None,
+    stop_early: bool = True,
+    **deprecated: Unpack[DeprecatedKwargs],
+) -> Union[ModelDescr, InvalidDescr]: ...
+
+
+@overload
+def load_description_and_test(
+    source: Union[ResourceDescr, PermissiveFileSource, BioimageioYamlContent],
+    *,
+    format_version: Literal["latest"],
+    weight_format: Optional[SupportedWeightsFormat] = None,
+    devices: Optional[Sequence[str]] = None,
+    determinism: Literal["seed_only", "full"] = "seed_only",
+    expected_type: Literal["dataset"],
+    sha256: Optional[Sha256] = None,
+    stop_early: bool = True,
+    **deprecated: Unpack[DeprecatedKwargs],
+) -> Union[DatasetDescr, InvalidDescr]: ...
+
+
+@overload
+def load_description_and_test(
+    source: Union[ResourceDescr, PermissiveFileSource, BioimageioYamlContent],
+    *,
+    format_version: Literal["latest"],
+    weight_format: Optional[SupportedWeightsFormat] = None,
+    devices: Optional[Sequence[str]] = None,
+    determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Optional[str] = None,
     sha256: Optional[Sha256] = None,
-    stop_early: bool = False,
+    stop_early: bool = True,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[LatestResourceDescr, InvalidDescr]: ...
 
@@ -484,9 +524,39 @@ def load_description_and_test(
     weight_format: Optional[SupportedWeightsFormat] = None,
     devices: Optional[Sequence[str]] = None,
     determinism: Literal["seed_only", "full"] = "seed_only",
+    expected_type: Literal["model"],
+    sha256: Optional[Sha256] = None,
+    stop_early: bool = True,
+    **deprecated: Unpack[DeprecatedKwargs],
+) -> Union[AnyModelDescr, InvalidDescr]: ...
+
+
+@overload
+def load_description_and_test(
+    source: Union[ResourceDescr, PermissiveFileSource, BioimageioYamlContent],
+    *,
+    format_version: Union[FormatVersionPlaceholder, str] = DISCOVER,
+    weight_format: Optional[SupportedWeightsFormat] = None,
+    devices: Optional[Sequence[str]] = None,
+    determinism: Literal["seed_only", "full"] = "seed_only",
+    expected_type: Literal["dataset"],
+    sha256: Optional[Sha256] = None,
+    stop_early: bool = True,
+    **deprecated: Unpack[DeprecatedKwargs],
+) -> Union[AnyDatasetDescr, InvalidDescr]: ...
+
+
+@overload
+def load_description_and_test(
+    source: Union[ResourceDescr, PermissiveFileSource, BioimageioYamlContent],
+    *,
+    format_version: Union[FormatVersionPlaceholder, str] = DISCOVER,
+    weight_format: Optional[SupportedWeightsFormat] = None,
+    devices: Optional[Sequence[str]] = None,
+    determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Optional[str] = None,
     sha256: Optional[Sha256] = None,
-    stop_early: bool = False,
+    stop_early: bool = True,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[ResourceDescr, InvalidDescr]: ...
 
@@ -500,7 +570,7 @@ def load_description_and_test(
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Optional[str] = None,
     sha256: Optional[Sha256] = None,
-    stop_early: bool = False,
+    stop_early: bool = True,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[ResourceDescr, InvalidDescr]:
     """Test a bioimage.io resource dynamically,
@@ -557,7 +627,7 @@ def load_description_and_test(
         )
 
     rd.validation_summary.env.add(
-        InstalledPackage(name="bioimageio.core", version=VERSION)
+        InstalledPackage(name="bioimageio.core", version=__version__)
     )
 
     if expected_type is not None:
@@ -678,13 +748,13 @@ def _test_model_inference(
         )
 
     try:
-        inputs = get_test_inputs(model)
-        expected = get_test_outputs(model)
+        test_input = get_test_input_sample(model)
+        expected = get_test_output_sample(model)
 
         with create_prediction_pipeline(
             bioimageio_model=model, devices=devices, weight_format=weight_format
         ) as prediction_pipeline:
-            results = prediction_pipeline.predict_sample_without_blocking(inputs)
+            results = prediction_pipeline.predict_sample_without_blocking(test_input)
 
         if len(results.members) != len(expected.members):
             add_error_entry(
@@ -701,45 +771,71 @@ def _test_model_inference(
                     else:
                         continue
 
+                if actual.dims != (dims := expected.dims):
+                    add_error_entry(
+                        f"Output '{m}' has dims {actual.dims}, but expected {expected.dims}"
+                    )
+                    if stop_early:
+                        break
+                    else:
+                        continue
+
+                if actual.tagged_shape != expected.tagged_shape:
+                    add_error_entry(
+                        f"Output '{m}' has shape {actual.tagged_shape}, but expected {expected.tagged_shape}"
+                    )
+                    if stop_early:
+                        break
+                    else:
+                        continue
+
+                expected_np = expected.data.to_numpy().astype(np.float32)
+                del expected
+                actual_np: NDArray[Any] = actual.data.to_numpy().astype(np.float32)
+                del actual
+
                 rtol, atol, mismatched_tol = _get_tolerance(
                     model, wf=weight_format, m=m, **deprecated
                 )
-                rtol_value = rtol * abs(expected)
-                abs_diff = abs(actual - expected)
+                rtol_value = rtol * abs(expected_np)
+                abs_diff = abs(actual_np - expected_np)
                 mismatched = abs_diff > atol + rtol_value
                 mismatched_elements = mismatched.sum().item()
                 if not mismatched_elements:
                     continue
 
-                mismatched_ppm = mismatched_elements / expected.size * 1e6
+                mismatched_ppm = mismatched_elements / expected_np.size * 1e6
                 abs_diff[~mismatched] = 0  # ignore non-mismatched elements
 
-                r_max_idx = (r_diff := (abs_diff / (abs(expected) + 1e-6))).argmax()
+                r_max_idx_flat = (
+                    r_diff := (abs_diff / (abs(expected_np) + 1e-6))
+                ).argmax()
+                r_max_idx = np.unravel_index(r_max_idx_flat, r_diff.shape)
                 r_max = r_diff[r_max_idx].item()
-                r_actual = actual[r_max_idx].item()
-                r_expected = expected[r_max_idx].item()
+                r_actual = actual_np[r_max_idx].item()
+                r_expected = expected_np[r_max_idx].item()
 
                 # Calculate the max absolute difference with the relative tolerance subtracted
-                abs_diff_wo_rtol: xr.DataArray = xr.ufuncs.maximum(
-                    (abs_diff - rtol_value).data, 0
+                abs_diff_wo_rtol: NDArray[np.float32] = (abs_diff - rtol_value).max(
+                    initial=0
                 )
-                a_max_idx = {
-                    AxisId(k): int(v) for k, v in abs_diff_wo_rtol.argmax().items()
-                }
+                a_max_idx = np.unravel_index(
+                    abs_diff_wo_rtol.argmax(), abs_diff_wo_rtol.shape
+                )
 
                 a_max = abs_diff[a_max_idx].item()
-                a_actual = actual[a_max_idx].item()
-                a_expected = expected[a_max_idx].item()
+                a_actual = actual_np[a_max_idx].item()
+                a_expected = expected_np[a_max_idx].item()
 
                 msg = (
                     f"Output '{m}' disagrees with {mismatched_elements} of"
-                    + f" {expected.size} expected values"
+                    + f" {expected_np.size} expected values"
                     + f" ({mismatched_ppm:.1f} ppm)."
                     + f"\n Max relative difference: {r_max:.2e}"
                     + rf" (= \|{r_actual:.2e} - {r_expected:.2e}\|/\|{r_expected:.2e} + 1e-6\|)"
-                    + f" at {r_max_idx}"
+                    + f" at {dict(zip(dims, r_max_idx))}"
                     + f"\n Max absolute difference not accounted for by relative tolerance: {a_max:.2e}"
-                    + rf" (= \|{a_actual:.7e} - {a_expected:.7e}\|) at {a_max_idx}"
+                    + rf" (= \|{a_actual:.7e} - {a_expected:.7e}\|) at {dict(zip(dims, a_max_idx))}"
                 )
                 if mismatched_ppm > mismatched_tol:
                     add_error_entry(msg)
@@ -802,7 +898,8 @@ def _test_model_inference_parametrized(
         (b, n) for b, n in product(sorted(batch_sizes), sorted(ns))
     }
     logger.info(
-        "Testing inference with {} different inputs (B, N): {}",
+        "Testing inference with '{}' for {} different inputs (B, N): {}",
+        weight_format,
         len(test_cases),
         test_cases,
     )
@@ -833,7 +930,7 @@ def _test_model_inference_parametrized(
             resized_test_inputs = Sample(
                 members={
                     t.id: (
-                        test_inputs.members[t.id].resize_to(
+                        test_input.members[t.id].resize_to(
                             {
                                 aid: s
                                 for (tid, aid), s in input_target_sizes.items()
@@ -843,8 +940,8 @@ def _test_model_inference_parametrized(
                     )
                     for t in model.inputs
                 },
-                stat=test_inputs.stat,
-                id=test_inputs.id,
+                stat=test_input.stat,
+                id=test_input.id,
             )
             expected_output_shapes = {
                 t.id: {
@@ -857,7 +954,7 @@ def _test_model_inference_parametrized(
             yield n, batch_size, resized_test_inputs, expected_output_shapes
 
     try:
-        test_inputs = get_test_inputs(model)
+        test_input = get_test_input_sample(model)
 
         with create_prediction_pipeline(
             bioimageio_model=model, devices=devices, weight_format=weight_format

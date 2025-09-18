@@ -49,7 +49,7 @@ from .stat_measures import (
 from .tensor import Tensor
 
 try:
-    import crick  # pyright: ignore[reportMissingImports]
+    import crick  # pyright: ignore[reportMissingTypeStubs]
 
 except Exception:
     crick = None

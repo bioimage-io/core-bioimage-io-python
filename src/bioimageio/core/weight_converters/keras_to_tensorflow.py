@@ -1,8 +1,9 @@
 import os
 import shutil
+import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Union, no_type_check
+from typing import Any, Union, no_type_check
 from zipfile import ZipFile
 
 import tensorflow  # pyright: ignore[reportMissingTypeStubs]
@@ -79,7 +80,10 @@ def convert(
                 f"Tensorflow major versions of model {model_tf_major_ver} is not {tf_major_ver}"
             )
 
-    with TemporaryDirectory(ignore_cleanup_errors=True) as temp_dir:
+    td_kwargs: dict[str, Any] = (
+        dict(ignore_cleanup_errors=True) if sys.version_info >= (3, 10) else {}
+    )
+    with TemporaryDirectory(**td_kwargs) as temp_dir:
         local_weights = ensure_unzipped(
             weight_reader, Path(temp_dir) / "bioimageio_unzipped_tf_weights"
         )
@@ -119,7 +123,7 @@ def _convert_tf2(
     print("TensorFlow model exported to", output_path)
 
     return TensorflowSavedModelBundleWeightsDescr(
-        source=output_path,
+        source=output_path.absolute(),
         parent="keras_hdf5",
         tensorflow_version=Version(tensorflow.__version__),
         comment=f"Converted with bioimageio.core {__version__}.",
@@ -134,7 +138,6 @@ def _convert_tf1(
     input_name: str,
     output_name: str,
 ) -> TensorflowSavedModelBundleWeightsDescr:
-
     @no_type_check
     def build_tf_model():
         keras_model = keras.models.load_model(keras_weight_path)
@@ -163,7 +166,7 @@ def _convert_tf1(
     print("TensorFlow model exported to", output_path)
 
     return TensorflowSavedModelBundleWeightsDescr(
-        source=output_path,
+        source=output_path.absolute(),
         parent="keras_hdf5",
         tensorflow_version=Version(tensorflow.__version__),
         comment=f"Converted with bioimageio.core {__version__}.",

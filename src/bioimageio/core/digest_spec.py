@@ -84,6 +84,10 @@ def import_callable(
     return c
 
 
+tmp_dirs_in_use: List[TemporaryDirectory[str]] = []
+"""keep global reference to temporary directories created during import to delay cleanup"""
+
+
 def _import_from_file_impl(
     source: FileSource, callable_name: str, **kwargs: Unpack[HashKwargs]
 ):
@@ -108,7 +112,17 @@ def _import_from_file_impl(
     module = sys.modules.get(module_name)
     if module is None:
         try:
-            tmp_dir = TemporaryDirectory(ignore_cleanup_errors=True)
+            td_kwargs: Dict[str, Any] = (
+                dict(ignore_cleanup_errors=True) if sys.version_info >= (3, 10) else {}
+            )
+            if sys.version_info >= (3, 12):
+                td_kwargs["delete"] = False
+
+            tmp_dir = TemporaryDirectory(**td_kwargs)
+            # keep global ref to tmp_dir to delay cleanup until program exit
+            # TODO: remove for py >= 3.12, when delete=False works
+            tmp_dirs_in_use.append(tmp_dir)
+
             module_path = Path(tmp_dir.name) / module_name
             if reader.original_file_name.endswith(".zip") or is_zipfile(reader):
                 module_path.mkdir()
@@ -204,36 +218,54 @@ def get_member_ids(
     return [get_member_id(descr) for descr in tensor_descriptions]
 
 
-def get_test_inputs(model: AnyModelDescr) -> Sample:
-    """returns a model's test input sample"""
-    member_ids = get_member_ids(model.inputs)
-    if isinstance(model, v0_4.ModelDescr):
-        arrays = [load_array(tt) for tt in model.test_inputs]
-    else:
-        arrays = [load_array(d.test_tensor) for d in model.inputs]
-
-    axes = [get_axes_infos(t) for t in model.inputs]
-    return Sample(
-        members={
-            m: Tensor.from_numpy(arr, dims=ax)
-            for m, arr, ax in zip(member_ids, arrays, axes)
-        },
-        stat={},
-        id="test-sample",
+def get_test_input_sample(model: AnyModelDescr) -> Sample:
+    return _get_test_sample(
+        model.inputs,
+        model.test_inputs if isinstance(model, v0_4.ModelDescr) else model.inputs,
     )
 
 
-def get_test_outputs(model: AnyModelDescr) -> Sample:
+get_test_inputs = get_test_input_sample
+"""DEPRECATED: use `get_test_input_sample` instead"""
+
+
+def get_test_output_sample(model: AnyModelDescr) -> Sample:
     """returns a model's test output sample"""
-    member_ids = get_member_ids(model.outputs)
+    return _get_test_sample(
+        model.outputs,
+        model.test_outputs if isinstance(model, v0_4.ModelDescr) else model.outputs,
+    )
 
-    if isinstance(model, v0_4.ModelDescr):
-        arrays = [load_array(tt) for tt in model.test_outputs]
-    else:
-        arrays = [load_array(d.test_tensor) for d in model.outputs]
 
-    axes = [get_axes_infos(t) for t in model.outputs]
+get_test_outputs = get_test_output_sample
+"""DEPRECATED: use `get_test_input_sample` instead"""
 
+
+def _get_test_sample(
+    tensor_descrs: Sequence[
+        Union[
+            v0_4.InputTensorDescr,
+            v0_4.OutputTensorDescr,
+            v0_5.InputTensorDescr,
+            v0_5.OutputTensorDescr,
+        ]
+    ],
+    test_sources: Sequence[Union[FileSource, v0_5.TensorDescr]],
+) -> Sample:
+    """returns a model's input/output test sample"""
+    member_ids = get_member_ids(tensor_descrs)
+    arrays: List[NDArray[Any]] = []
+    for src in test_sources:
+        if isinstance(src, (v0_5.InputTensorDescr, v0_5.OutputTensorDescr)):
+            if src.test_tensor is None:
+                raise ValueError(
+                    f"Model input '{src.id}' has no test tensor defined, cannot create test sample."
+                )
+            arrays.append(load_array(src.test_tensor))
+        else:
+            arrays.append(load_array(src))
+
+    axes = [get_axes_infos(t) for t in tensor_descrs]
     return Sample(
         members={
             m: Tensor.from_numpy(arr, dims=ax)

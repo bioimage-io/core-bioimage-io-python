@@ -47,6 +47,7 @@ from tqdm import tqdm
 from typing_extensions import assert_never
 
 import bioimageio.spec
+from bioimageio.core import __version__
 from bioimageio.spec import (
     AnyModelDescr,
     InvalidDescr,
@@ -79,7 +80,7 @@ from .proc_setup import (
 )
 from .sample import Sample
 from .stat_measures import Stat
-from .utils import VERSION, compare
+from .utils import compare
 from .weight_converters._add_weights import add_weights
 
 WEIGHT_FORMAT_ALIASES = AliasChoices(
@@ -99,10 +100,9 @@ class ArgMixin(BaseModel, use_attribute_docstrings=True, cli_implicit_flags=True
 
 
 class WithSummaryLogging(ArgMixin):
-    summary: Sequence[Union[Literal["display"], Path]] = Field(
-        ("display",),
+    summary: List[Union[Literal["display"], Path]] = Field(
+        default_factory=lambda: ["display"],
         examples=[
-            "display",
             Path("summary.md"),
             Path("bioimageio_summaries/"),
             ["display", Path("summary.md")],
@@ -181,7 +181,7 @@ class TestCmd(CmdBase, WithSource, WithSummaryLogging):
 
     (only relevant for model resources)"""
 
-    devices: Optional[Union[str, Sequence[str]]] = None
+    devices: Optional[List[str]] = None
     """Device(s) to use for testing"""
 
     runtime_env: Union[Literal["currently-active", "as-described"], Path] = Field(
@@ -396,8 +396,8 @@ class UpdateHashesCmd(UpdateCmdBase):
 class PredictCmd(CmdBase, WithSource):
     """Run inference on your data with a bioimage.io model."""
 
-    inputs: NotEmpty[Sequence[Union[str, NotEmpty[Tuple[str, ...]]]]] = (
-        "{input_id}/001.tif",
+    inputs: NotEmpty[List[Union[str, NotEmpty[List[str]]]]] = Field(
+        default_factory=lambda: ["{input_id}/001.tif"]
     )
     """Model input sample paths (for each input tensor)
 
@@ -485,7 +485,11 @@ class PredictCmd(CmdBase, WithSource):
         example_inputs = (
             model_descr.sample_inputs
             if isinstance(model_descr, v0_4.ModelDescr)
-            else [ipt.sample_tensor or ipt.test_tensor for ipt in model_descr.inputs]
+            else [
+                t
+                for ipt in model_descr.inputs
+                if (t := ipt.sample_tensor or ipt.test_tensor)
+            ]
         )
         if not example_inputs:
             raise ValueError(f"{self.descr_id} does not specify any example inputs.")
@@ -561,7 +565,7 @@ class PredictCmd(CmdBase, WithSource):
         print(
             "🎉 Sucessfully ran example prediction!\n"
             + "To predict the example input using the CLI example config file"
-            + f" {example_path/YAML_FILE}, execute `bioimageio predict` from {example_path}:\n"
+            + f" {example_path / YAML_FILE}, execute `bioimageio predict` from {example_path}:\n"
             + f"$ cd {str(example_path)}\n"
             + f'$ bioimageio predict "{source_escaped}"\n\n'
             + "Alternatively run the following command"
@@ -589,7 +593,7 @@ class PredictCmd(CmdBase, WithSource):
             for ipt in model_descr.inputs
         )
 
-        def expand_inputs(i: int, ipt: Union[str, Tuple[str, ...]]) -> Tuple[str, ...]:
+        def expand_inputs(i: int, ipt: Union[str, Sequence[str]]) -> Tuple[str, ...]:
             if isinstance(ipt, str):
                 ipts = tuple(
                     ipt.format(model_id=self.descr_id, input_id=t) for t in input_ids
@@ -750,6 +754,10 @@ class AddWeightsCmd(CmdBase, WithSource, WithSummaryLogging):
     verbose: bool = False
     """Log more (error) output."""
 
+    tracing: bool = True
+    """Allow tracing when converting pytorch_state_dict to torchscript
+    (still uses scripting if possible)."""
+
     def run(self):
         model_descr = ensure_description_is_model(self.descr)
         if isinstance(model_descr, v0_4.ModelDescr):
@@ -763,10 +771,8 @@ class AddWeightsCmd(CmdBase, WithSource, WithSummaryLogging):
             source_format=self.source_format,
             target_format=self.target_format,
             verbose=self.verbose,
+            allow_tracing=self.tracing,
         )
-        if updated_model_descr is None:
-            return
-
         self.log(updated_model_descr)
 
 
@@ -865,7 +871,7 @@ assert isinstance(Bioimageio.__doc__, str)
 Bioimageio.__doc__ += f"""
 
 library versions:
-  bioimageio.core {VERSION}
+  bioimageio.core {__version__}
   bioimageio.spec {bioimageio.spec.__version__}
 
 spec format versions:

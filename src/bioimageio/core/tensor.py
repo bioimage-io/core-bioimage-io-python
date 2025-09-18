@@ -45,6 +45,7 @@ _ScalarOrArray = Union["ArrayLike", np.generic, "NDArray[Any]"]  # TODO: add "Da
 
 
 # TODO: complete docstrings
+# TODO: in the long run---with improved typing in xarray---we should probably replace `Tensor` with xr.DataArray
 class Tensor(MagicTensorOpsMixin):
     """A wrapper around an xr.DataArray for better integration with bioimageio.spec
     and improved type annotations."""

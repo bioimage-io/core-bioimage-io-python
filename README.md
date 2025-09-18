@@ -364,7 +364,7 @@ may be controlled with the `LOGURU_LEVEL` environment variable.
 
 ## Changelog
 
-### next release
+### 0.9.1
 
 - fixes:
   - CLI

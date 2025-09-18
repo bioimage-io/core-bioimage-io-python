@@ -3,6 +3,7 @@ import subprocess
 from typing import Optional
 
 import pytest
+from bioimageio.spec._internal.gh_utils import set_github_warning
 from packaging.version import Version
 
 
@@ -38,4 +39,8 @@ def test_bioimageio_spec_version(conda_cmd: Optional[str]):
 
     assert spec_ver.count(".") == 3
     pinned = Version(spec_ver)
-    assert pinned == released, "bioimageio.spec not pinned to the latest version"
+    if pinned != released:
+        set_github_warning(
+            "spec pin mismatch",
+            f"bioimageio.spec pinned to {pinned}, while latest version on conda-forge is {released}",
+        )

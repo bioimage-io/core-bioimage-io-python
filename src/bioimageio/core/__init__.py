@@ -1,6 +1,12 @@
 """
 .. include:: ../../README.md
 """
+# ruff: noqa: E402
+
+__version__ = "0.9.1"
+from loguru import logger
+
+logger.disable("bioimageio.core")
 
 from bioimageio.spec import (
     ValidationSummary,
@@ -50,11 +56,7 @@ from .sample import Sample
 from .stat_calculators import compute_dataset_measures
 from .stat_measures import Stat
 from .tensor import Tensor
-from .utils import VERSION
 from .weight_converters import add_weights
-
-__version__ = VERSION
-
 
 # aliases
 test_resource = test_description

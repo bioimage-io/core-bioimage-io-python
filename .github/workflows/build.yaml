@@ -11,22 +11,10 @@ defaults:
     shell: bash -el {0}
 
 jobs:
-  black:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: psf/black@stable
-        with:
-          options: "--check"
-          src: "."
-          jupyter: true
-          version: "24.3"
-
   populate-cache:
     runs-on: ubuntu-latest
     outputs:
-      cache-key: ${{steps.cache-key.outputs.cache-key}}
-      cache-key-light: ${{steps.cache-key.outputs.cache-key}}-light
+      cache-key: ${{steps.cache-key.outputs.cache-key}}-0
     steps:
       - name: Get Date
         id: get-date
@@ -48,7 +36,7 @@ jobs:
         with:
           path: bioimageio_cache
           key: ${{steps.cache-key.outputs.cache-key}}
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         if: steps.look-up.outputs.cache-hit != 'true'
         with:
           python-version: '3.12'
@@ -72,112 +60,62 @@ jobs:
           - python-version: '3.9'
             conda-env: dev
             spec: conda
-          - python-version: '3.10'
+            numpy-version: 1
+          - python-version: '3.9'
             conda-env: dev
-            spec: conda
-          - python-version: '3.11'
-            conda-env: full
             spec: main
+            numpy-version: 2
+          - python-version: '3.10'
+            conda-env: full
             run-expensive-tests: true
             report-coverage: true
             save-cache: true
+            spec: conda
+            numpy-version: 1
+          - python-version: '3.11'
+            conda-env: dev
+            spec: main
+            numpy-version: 2
           - python-version: '3.12'
             conda-env: dev
             spec: conda
-          - python-version: '3.13'
-            conda-env: dev
-            spec: main
-            save-cache: true
+            numpy-version: 1
+          # - python-version: '3.13'
+          #   conda-env: '313'
+          #   spec: main
+          #   numpy-version: 2
 
     steps:
     - uses: actions/checkout@v4
-    - id: setup
-      run: |
-        echo "env-name=${{ matrix.spec }}-${{ matrix.conda-env }}-${{ matrix.python-version }}"
-        echo "env-name=${{ matrix.spec }}-${{ matrix.conda-env }}-${{ matrix.python-version }}" >> $GITHUB_OUTPUT
-        echo "env-file=dev/env-${{ matrix.conda-env }}.yaml"
-        echo "env-file=dev/env-${{ matrix.conda-env }}.yaml" >> $GITHUB_OUTPUT
-    - name: check on env-file
-      shell: python
-      run: |
-        from pathlib import Path
-        from pprint import pprint
-        if not (env_path:=Path("${{steps.setup.outputs.env-file}}")).exists():
-          if env_path.parent.exists():
-            pprint(env_path.parent.glob("*"))
-          else:
-            pprint(Path().glob("*"))
-          raise FileNotFoundError(f"{env_path} does not exist")
-
-    - uses: conda-incubator/setup-miniconda@v3
+    - uses: actions/setup-python@v6
       with:
-        auto-update-conda: true
-        auto-activate-base: true
-        activate-environment: ${{steps.setup.outputs.env-name}}
-        channel-priority: strict
-        miniforge-version: latest
-    - name: Get Date
-      id: get-date
-      run: |
-        echo "today=$(date -u '+%Y%m%d')"
-        echo "today=$(date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
-    - name: Restore cached env
-      uses: actions/cache/restore@v4
-      with:
-        path: ${{env.CONDA}}/envs/${{steps.setup.outputs.env-name}}
-        key: >-
-          conda-${{runner.os}}-${{runner.arch}}
-          -${{steps.get-date.outputs.today}}
-          -${{hashFiles(steps.setup.outputs.env-file)}}
-          -${{env.CACHE_NUMBER}}
-      env:
-        CACHE_NUMBER: 0
-      id: cache-env
-    - name: Install env
-      run: conda env update --name=${{steps.setup.outputs.env-name}} --file=${{steps.setup.outputs.env-file}} python=${{matrix.python-version}}
-      if: steps.cache-env.outputs.cache-hit != 'true'
-    - name: Install uncached pip dependencies
+        python-version: ${{matrix.python-version}}
+        cache: 'pip'
+    - name: Install dependencies
       run: |
         pip install --upgrade pip
-        pip install --no-deps -e .
-    - name: Install uncached pip dependencies for 'full' environment
-      if: matrix.conda-env == 'full'
-      run: |
-        pip install git+https://github.com/ChaoningZhang/MobileSAM.git
-    - name: Cache env
-      if: steps.cache-env.outputs.cache-hit != 'true'
-      uses: actions/cache/save@v4
-      with:
-        path: ${{env.CONDA}}/envs/${{steps.setup.outputs.env-name}}
-        key: >-
-          conda-${{runner.os}}-${{runner.arch}}
-          -${{steps.get-date.outputs.today}}
-          -${{hashFiles(steps.setup.outputs.env-file)}}
-          -${{env.CACHE_NUMBER}}
-      env:
-        CACHE_NUMBER: 0
-    - run: conda list
+        pip install -e .[dev] numpy==${{matrix.numpy-version}}.*
     - name: Pyright
       if: matrix.run-expensive-tests
       run: |
         pyright --version
         pyright -p pyproject.toml --pythonversion ${{ matrix.python-version }}
-    - name: Restore bioimageio cache ${{matrix.run-expensive-tests && needs.populate-cache.outputs.cache-key || needs.populate-cache.outputs.cache-key-light}}
+    - name: Restore bioimageio cache ${{needs.populate-cache.outputs.cache-key}}
       uses: actions/cache/restore@v4
       with:
         path: bioimageio_cache
-        key: ${{matrix.run-expensive-tests && needs.populate-cache.outputs.cache-key || needs.populate-cache.outputs.cache-key-light}}
+        key: ${{needs.populate-cache.outputs.cache-key}}
     - name: pytest
       run: pytest --cov bioimageio --cov-report xml --cov-append --capture no --disable-pytest-warnings
       env:
         BIOIMAGEIO_CACHE_PATH: bioimageio_cache
         RUN_EXPENSIVE_TESTS: ${{ matrix.run-expensive-tests && 'true' || 'false' }}
-    - name: Save bioimageio cache ${{matrix.run-expensive-tests && needs.populate-cache.outputs.cache-key || needs.populate-cache.outputs.cache-key-light}}
+    - name: Save bioimageio cache ${{needs.populate-cache.outputs.cache-key}}
       if: matrix.save-cache
       uses: actions/cache/save@v4
       with:
         path: bioimageio_cache
-        key: ${{matrix.run-expensive-tests && needs.populate-cache.outputs.cache-key || needs.populate-cache.outputs.cache-key-light}}
+        key: ${{needs.populate-cache.outputs.cache-key}}
 
     - if: matrix.report-coverage && github.event_name == 'pull_request'
       uses: orgoro/coverage@v3.2
@@ -223,7 +161,7 @@ jobs:
         shell: bash -l {0}
         run: |
           mkdir -p ./pkgs/noarch
-          conda-build -c conda-forge conda-recipe --no-test --output-folder ./pkgs
+          conda-build -c conda-forge conda-recipe --output-folder ./pkgs
 
   docs:
     needs: test
@@ -235,7 +173,7 @@ jobs:
         with:
           name: coverage
           path: dist
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: 'pip'
@@ -253,10 +191,9 @@ jobs:
           branch: gh-pages
           folder: dist
 
-  publish-pypi:
-    name: Publish to PyPI
+  pip-build:
+    name: Build with pip and publish to PyPI
     needs: test
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repository
@@ -265,16 +202,18 @@ jobs:
           fetch-depth: 2
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
-      - name: Upgrade pip
+          python-version: '3.10'
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip --version
-          pip install wheel .[tests]
-      - name: run tests
-        run: pytest --disable-pytest-warnings
+          pip install --upgrade build
+          pip install .
+      - name: Build package
+        run: |
+          python -m build
 
       - name: Check if there is a parent commit
         id: check-parent-commit
@@ -283,27 +222,23 @@ jobs:
 
       - name: Detect new version
         id: check-version
-        if: steps.check-parent-commit.outputs.sha
+        if: github.ref == 'refs/heads/main' && steps.check-parent-commit.outputs.sha
         uses: salsify/action-detect-and-tag-new-version@v2.0.3
         with:
           create-tag: false
           version-command: |
-            bash -o pipefail -c "cat bioimageio/core/VERSION | jq -r '.version'"
+            python -c "from pathlib import Path;import json;print(p_src.read_text().split('__version__ = \"')[1].split('\"')[0] if (p_src:=Path('src/bioimageio/core/__init__.py')).exists() else json.loads(Path('bioimageio/core/VERSION').read_text())['version'])"
 
       - name: Push tag
         id: tag-version
-        if: steps.check-version.outputs.previous-version != steps.check-version.outputs.current-version
+        if: github.ref == 'refs/heads/main' && steps.check-version.outputs.previous-version != steps.check-version.outputs.current-version
         uses: mathieudutour/github-tag-action@v5.5
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           custom_tag: ${{ steps.check-version.outputs.current-version }}
 
-      - name: Build package
-        run: |
-          python setup.py sdist bdist_wheel
-
       - name: Publish package on PyPI
-        if: steps.tag-version.outputs.new_tag
+        if: github.ref == 'refs/heads/main' && steps.tag-version.outputs.new_tag
         uses: pypa/gh-action-pypi-publish@release/v1.12
         with:
           user: __token__
@@ -311,6 +246,7 @@ jobs:
           packages-dir: dist/
           verbose: true
       - name: Publish the release notes
+        if: github.ref == 'refs/heads/main'
         uses: release-drafter/release-drafter@v6.0.0
         with:
           publish: "${{ steps.tag-version.outputs.new_tag != '' }}"

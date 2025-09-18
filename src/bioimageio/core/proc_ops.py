@@ -13,6 +13,7 @@ from typing import (
 )
 
 import numpy as np
+import scipy  # pyright: ignore[reportMissingTypeStubs]
 import xarray as xr
 from typing_extensions import Self, assert_never
 
@@ -103,7 +104,7 @@ class _SimpleOperator(BlockedOperator, ABC):
             assert_never(sample)
 
     @abstractmethod
-    def _apply(self, input: Tensor, stat: Stat) -> Tensor: ...
+    def _apply(self, x: Tensor, stat: Stat) -> Tensor: ...
 
 
 @dataclass
@@ -200,8 +201,8 @@ class Binarize(_SimpleOperator):
     threshold: Union[float, Sequence[float]]
     axis: Optional[AxisId] = None
 
-    def _apply(self, input: Tensor, stat: Stat) -> Tensor:
-        return input > self.threshold
+    def _apply(self, x: Tensor, stat: Stat) -> Tensor:
+        return x > self.threshold
 
     def get_output_shape(
         self, input_shape: Mapping[AxisId, int]
@@ -240,8 +241,8 @@ class Clip(_SimpleOperator):
             self.min is None or self.max is None or self.min < self.max
         ), f"expected min < max, but {self.min} !< {self.max}"
 
-    def _apply(self, input: Tensor, stat: Stat) -> Tensor:
-        return input.clip(self.min, self.max)
+    def _apply(self, x: Tensor, stat: Stat) -> Tensor:
+        return x.clip(self.min, self.max)
 
     def get_output_shape(
         self, input_shape: Mapping[AxisId, int]
@@ -276,8 +277,8 @@ class EnsureDtype(_SimpleOperator):
     ) -> Mapping[AxisId, int]:
         return input_shape
 
-    def _apply(self, input: Tensor, stat: Stat) -> Tensor:
-        return input.astype(self.dtype)
+    def _apply(self, x: Tensor, stat: Stat) -> Tensor:
+        return x.astype(self.dtype)
 
 
 @dataclass
@@ -288,8 +289,8 @@ class ScaleLinear(_SimpleOperator):
     offset: Union[float, xr.DataArray] = 0.0
     """additive term"""
 
-    def _apply(self, input: Tensor, stat: Stat) -> Tensor:
-        return input * self.gain + self.offset
+    def _apply(self, x: Tensor, stat: Stat) -> Tensor:
+        return x * self.gain + self.offset
 
     def get_output_shape(
         self, input_shape: Mapping[AxisId, int]
@@ -365,12 +366,12 @@ class ScaleMeanVariance(_SimpleOperator):
         self.ref_mean = Mean(member_id=ref_tensor, axes=axes)
         self.ref_std = Std(member_id=ref_tensor, axes=axes)
 
-    def _apply(self, input: Tensor, stat: Stat) -> Tensor:
+    def _apply(self, x: Tensor, stat: Stat) -> Tensor:
         mean = stat[self.mean]
         std = stat[self.std] + self.eps
         ref_mean = stat[self.ref_mean]
         ref_std = stat[self.ref_std] + self.eps
-        return (input - mean) / std * ref_std + ref_mean
+        return (x - mean) / std * ref_std + ref_mean
 
     def get_output_shape(
         self, input_shape: Mapping[AxisId, int]
@@ -484,10 +485,10 @@ class ScaleRange(_SimpleOperator):
             ),
         )
 
-    def _apply(self, input: Tensor, stat: Stat) -> Tensor:
+    def _apply(self, x: Tensor, stat: Stat) -> Tensor:
         lower = stat[self.lower]
         upper = stat[self.upper]
-        return (input - lower) / (upper - lower + self.eps)
+        return (x - lower) / (upper - lower + self.eps)
 
     def get_descr(self):
         assert self.lower.axes == self.upper.axes
@@ -508,8 +509,8 @@ class ScaleRange(_SimpleOperator):
 class Sigmoid(_SimpleOperator):
     """1 / (1 + e^(-input))."""
 
-    def _apply(self, input: Tensor, stat: Stat) -> Tensor:
-        return Tensor(1.0 / (1.0 + np.exp(-input)), dims=input.dims)
+    def _apply(self, x: Tensor, stat: Stat) -> Tensor:
+        return Tensor(1.0 / (1.0 + np.exp(-x)), dims=x.dims)
 
     @property
     def required_measures(self) -> Collection[Measure]:
@@ -529,6 +530,36 @@ class Sigmoid(_SimpleOperator):
 
     def get_descr(self):
         return v0_5.SigmoidDescr()
+
+
+@dataclass
+class Softmax(_SimpleOperator):
+    """Softmax activation function."""
+
+    axis: AxisId = AxisId("channel")
+
+    def _apply(self, x: Tensor, stat: Stat) -> Tensor:
+        axis_idx = x.dims.index(self.axis)
+        result = scipy.special.softmax(x.data, axis=axis_idx)
+        result_xr = xr.DataArray(result, dims=x.dims)
+        return Tensor.from_xarray(result_xr)
+
+    @property
+    def required_measures(self) -> Collection[Measure]:
+        return {}
+
+    def get_output_shape(
+        self, input_shape: Mapping[AxisId, int]
+    ) -> Mapping[AxisId, int]:
+        return input_shape
+
+    @classmethod
+    def from_proc_descr(cls, descr: v0_5.SoftmaxDescr, member_id: MemberId) -> Self:
+        assert isinstance(descr, v0_5.SoftmaxDescr)
+        return cls(input=member_id, output=member_id, axis=descr.kwargs.axis)
+
+    def get_descr(self):
+        return v0_5.SoftmaxDescr(kwargs=v0_5.SoftmaxKwargs(axis=self.axis))
 
 
 @dataclass
@@ -574,10 +605,10 @@ class ZeroMeanUnitVariance(_SimpleOperator):
             std=Std(axes=axes, member_id=member_id),
         )
 
-    def _apply(self, input: Tensor, stat: Stat) -> Tensor:
+    def _apply(self, x: Tensor, stat: Stat) -> Tensor:
         mean = stat[self.mean]
         std = stat[self.std]
-        return (input - mean) / (std + self.eps)
+        return (x - mean) / (std + self.eps)
 
     def get_descr(self):
         return v0_5.ZeroMeanUnitVarianceDescr(
@@ -641,8 +672,8 @@ class FixedZeroMeanUnitVariance(_SimpleOperator):
 
         return v0_5.FixedZeroMeanUnitVarianceDescr(kwargs=kwargs)
 
-    def _apply(self, input: Tensor, stat: Stat) -> Tensor:
-        return (input - self.mean) / (self.std + self.eps)
+    def _apply(self, x: Tensor, stat: Stat) -> Tensor:
+        return (x - self.mean) / (self.std + self.eps)
 
 
 ProcDescr = Union[
@@ -662,6 +693,7 @@ Processing = Union[
     ScaleMeanVariance,
     ScaleRange,
     Sigmoid,
+    Softmax,
     UpdateStats,
     ZeroMeanUnitVariance,
 ]
@@ -715,5 +747,7 @@ def get_proc(
         (v0_4.ZeroMeanUnitVarianceDescr, v0_5.ZeroMeanUnitVarianceDescr),
     ):
         return ZeroMeanUnitVariance.from_proc_descr(proc_descr, member_id)
+    elif isinstance(proc_descr, v0_5.SoftmaxDescr):
+        return Softmax.from_proc_descr(proc_descr, member_id)
     else:
         assert_never(proc_descr)

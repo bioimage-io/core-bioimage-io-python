@@ -13,7 +13,10 @@ def _test_device_management(model_package: Path, weight_format: SupportedWeights
 
     from bioimageio.core import load_description
     from bioimageio.core._prediction_pipeline import create_prediction_pipeline
-    from bioimageio.core.digest_spec import get_test_inputs, get_test_outputs
+    from bioimageio.core.digest_spec import (
+        get_test_input_sample,
+        get_test_output_sample,
+    )
 
     if not hasattr(torch, "cuda") or torch.cuda.device_count() == 0:
         pytest.skip("Need at least one cuda device for this test")
@@ -24,11 +27,11 @@ def _test_device_management(model_package: Path, weight_format: SupportedWeights
         bioimageio_model=bio_model, weight_format=weight_format, devices=["cuda:0"]
     )
 
-    inputs = get_test_inputs(bio_model)
+    inputs = get_test_input_sample(bio_model)
     with pred_pipe as pp:
         outputs = pp.predict_sample_without_blocking(inputs)
 
-    expected_outputs = get_test_outputs(bio_model)
+    expected_outputs = get_test_output_sample(bio_model)
 
     assert len(outputs.shape) == len(expected_outputs.shape)
     for m in expected_outputs.members:
