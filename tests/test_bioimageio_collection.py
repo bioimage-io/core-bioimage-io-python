@@ -4,19 +4,19 @@ from pathlib import Path
 from typing import Iterable, Mapping, Tuple
 
 import pytest
-from pydantic import HttpUrl
-
 from bioimageio.spec import InvalidDescr, settings
 from bioimageio.spec.common import Sha256
+from pydantic import HttpUrl
+
 from tests.utils import ParameterSet, expensive_test
 
 TEST_RDF_SOURCES: Mapping[str, Tuple[HttpUrl, Sha256]] = {
-    "affable-shark": (
-        HttpUrl(
-            "https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml?version=v0"
-        ),
-        Sha256("b74944b4949591d3eaf231cf9ab259f91dec679863020178e6c3ddadd52a019c"),
-    ),
+    # "affable-shark": (  # TODO: enable when updated with fixed torchscript and onnx weights
+    #     HttpUrl(
+    #         "https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml?version=v0"
+    #     ),
+    #     Sha256("b74944b4949591d3eaf231cf9ab259f91dec679863020178e6c3ddadd52a019c"),
+    # ),
     "ambitious-sloth": (
         HttpUrl(
             "https://hypha.aicell.io/bioimage-io/artifacts/ambitious-sloth/files/rdf.yaml?version=v0"
@@ -72,9 +72,10 @@ def test_rdf(
     sha: Sha256,
     key: str,
 ):
-    from bioimageio.core import load_description, load_description_and_test
     from bioimageio.spec import get_conda_env
     from bioimageio.spec.model import ModelDescr
+
+    from bioimageio.core import load_description, load_description_and_test
 
     descr = load_description(
         descr_url, sha256=sha, format_version="latest", perform_io_checks=True
