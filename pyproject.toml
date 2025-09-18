@@ -6,7 +6,7 @@ requires-python = ">=3.9"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [
-    "bioimageio.spec ==0.5.5.3",
+    "bioimageio.spec ==0.5.5.4",
     "h5py",
     "imagecodecs",
     "imageio>=2.10",
