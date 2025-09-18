@@ -16,9 +16,7 @@ build:
   noarch: python
   number: 0
   entry_points:
-    {% for ep in setup_py_data['entry_points']['console_scripts'] %}
-    - {{ ep }}
-    {% endfor %}
+    bioimageio = {{ pyproject['project']['scripts']['bioimageio'] }}
   script: python -m pip install --no-deps --ignore-installed .
 
 requirements:
@@ -28,42 +26,43 @@ requirements:
     - {{ dep.lower() }}
     {% endfor %}
   run:
-    - python >=3.9,<3.13
-    {% for dep in setup_py_data['install_requires'] %}
+    - python {{ pyproject['project']['requires-python'] }}
+    {% for dep in pyproject['project']['dependencies'] %}
     - {{ dep.lower() }}
     {% endfor %}
   run_constrained:
     - cudatoolkit>=10.1
-    {% for dep in setup_py_data['extras_require']['pytorch'] %}
+    {% for dep in pyproject['project']['optional-dependencies']['pytorch']%}
       {% if dep.startswith('torch>=') %}  # pip: torch  -> conda: pytorch
     - py{{ dep.lower() }}
       {% else %}
     - {{ dep.lower() }}
       {% endif %}
     {% endfor %}
-    {% for dep in setup_py_data['extras_require']['onnx'] %}
+    {% for dep in pyproject['project']['optional-dependencies']['onnx'] %}
     - {{ dep.lower() }}
     {% endfor %}
-    {% for dep in setup_py_data['extras_require']['tensorflow'] %}
+    {% for dep in pyproject['project']['optional-dependencies']['tensorflow'] %}
     - {{ dep.lower() }}
     {% endfor %}
 
 
 test:
   imports:
-    - bioimageio.core
+    - {{ pyproject['project']['name'] }}
   source_files:
     - tests
   requires:
-    {% for dep in setup_py_data['extras_require']['dev'] %}
+    {% for dep in pyproject['project']['optional-dependencies']['dev'] %}
+    - {{ dep.replace('torch', 'pytorch').lower().replace('_', '-') }}
       {% if dep.startswith('torch>=') %}  # pip: torch  -> conda: pytorch
     - py{{ dep.lower() }}
       {% else %}
-    - {{ dep.lower() }}
+    - {{ dep.lower().replace('_', '-') }}
       {% endif %}
     {% endfor %}
   commands:
-    - pytest
+    - pytest --capture=no
 
 
 about:
