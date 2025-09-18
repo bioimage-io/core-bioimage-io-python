@@ -233,7 +233,7 @@
     </ul>
 
 
-            <footer>bioimageio.core 0.9.0</footer>
+            <footer>bioimageio.core 0.9.1</footer>
 
         <a class="attribution" title="pdoc: Python API documentation generator" href="https://pdoc.dev" target="_blank">
             built with <span class="visually-hidden">pdoc</span><img
@@ -937,7 +937,7 @@ Protocol classes can be generic, they are defined as::</p>
                                 <div class="attr variable">
             <span class="name">model_config</span><span class="annotation">: ClassVar[pydantic.config.ConfigDict]</span>        =
 <input id="FileDescr.model_config-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
-            <label class="view-value-button pdoc-button" for="FileDescr.model_config-view-value"></label><span class="default_value">{&#39;extra&#39;: &#39;forbid&#39;, &#39;frozen&#39;: False, &#39;populate_by_name&#39;: True, &#39;revalidate_instances&#39;: &#39;never&#39;, &#39;validate_assignment&#39;: True, &#39;validate_default&#39;: False, &#39;validate_return&#39;: True, &#39;use_attribute_docstrings&#39;: True, &#39;model_title_generator&#39;: &lt;function _node_title_generator&gt;, &#39;validate_by_alias&#39;: True, &#39;validate_by_name&#39;: True}</span>
+            <label class="view-value-button pdoc-button" for="FileDescr.model_config-view-value"></label><span class="default_value">{&#39;allow_inf_nan&#39;: False, &#39;extra&#39;: &#39;forbid&#39;, &#39;frozen&#39;: False, &#39;model_title_generator&#39;: &lt;function _node_title_generator&gt;, &#39;populate_by_name&#39;: True, &#39;revalidate_instances&#39;: &#39;always&#39;, &#39;use_attribute_docstrings&#39;: True, &#39;validate_assignment&#39;: True, &#39;validate_default&#39;: True, &#39;validate_return&#39;: True, &#39;validate_by_alias&#39;: True, &#39;validate_by_name&#39;: True}</span>
 
         
     </div>
@@ -998,36 +998,36 @@ Protocol classes can be generic, they are defined as::</p>
 
     </div>
     <a class="headerlink" href="#HttpUrl"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="HttpUrl-124"><a href="#HttpUrl-124"><span class="linenos">124</span></a><span class="k">class</span><span class="w"> </span><span class="nc">HttpUrl</span><span class="p">(</span><span class="n">RootHttpUrl</span><span class="p">):</span>
-</span><span id="HttpUrl-125"><a href="#HttpUrl-125"><span class="linenos">125</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A URL with the HTTP or HTTPS scheme.&quot;&quot;&quot;</span>
-</span><span id="HttpUrl-126"><a href="#HttpUrl-126"><span class="linenos">126</span></a>
-</span><span id="HttpUrl-127"><a href="#HttpUrl-127"><span class="linenos">127</span></a>    <span class="n">root_model</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">RootModel</span><span class="p">[</span><span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="n">RootModel</span><span class="p">[</span><span class="n">pydantic</span><span class="o">.</span><span class="n">HttpUrl</span><span class="p">]</span>
-</span><span id="HttpUrl-128"><a href="#HttpUrl-128"><span class="linenos">128</span></a>    <span class="n">_exists</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-</span><span id="HttpUrl-129"><a href="#HttpUrl-129"><span class="linenos">129</span></a>
-</span><span id="HttpUrl-130"><a href="#HttpUrl-130"><span class="linenos">130</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_after_validator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="HttpUrl-131"><a href="#HttpUrl-131"><span class="linenos">131</span></a>        <span class="bp">self</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_after_validator</span><span class="p">()</span>
-</span><span id="HttpUrl-132"><a href="#HttpUrl-132"><span class="linenos">132</span></a>        <span class="n">context</span> <span class="o">=</span> <span class="n">get_validation_context</span><span class="p">()</span>
-</span><span id="HttpUrl-133"><a href="#HttpUrl-133"><span class="linenos">133</span></a>        <span class="k">if</span> <span class="n">context</span><span class="o">.</span><span class="n">perform_io_checks</span><span class="p">:</span>
-</span><span id="HttpUrl-134"><a href="#HttpUrl-134"><span class="linenos">134</span></a>            <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
-</span><span id="HttpUrl-135"><a href="#HttpUrl-135"><span class="linenos">135</span></a>
-</span><span id="HttpUrl-136"><a href="#HttpUrl-136"><span class="linenos">136</span></a>        <span class="k">return</span> <span class="bp">self</span>
-</span><span id="HttpUrl-137"><a href="#HttpUrl-137"><span class="linenos">137</span></a>
-</span><span id="HttpUrl-138"><a href="#HttpUrl-138"><span class="linenos">138</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="HttpUrl-139"><a href="#HttpUrl-139"><span class="linenos">139</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;True if URL is available&quot;&quot;&quot;</span>
-</span><span id="HttpUrl-140"><a href="#HttpUrl-140"><span class="linenos">140</span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="HttpUrl-141"><a href="#HttpUrl-141"><span class="linenos">141</span></a>            <span class="n">ctxt</span> <span class="o">=</span> <span class="n">get_validation_context</span><span class="p">()</span>
-</span><span id="HttpUrl-142"><a href="#HttpUrl-142"><span class="linenos">142</span></a>            <span class="k">try</span><span class="p">:</span>
-</span><span id="HttpUrl-143"><a href="#HttpUrl-143"><span class="linenos">143</span></a>                <span class="k">with</span> <span class="n">ctxt</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">warning_level</span><span class="o">=</span><span class="n">warning_levels</span><span class="o">.</span><span class="n">WARNING</span><span class="p">):</span>
-</span><span id="HttpUrl-144"><a href="#HttpUrl-144"><span class="linenos">144</span></a>                    <span class="bp">self</span><span class="o">.</span><span class="n">_validated</span> <span class="o">=</span> <span class="n">_validate_url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_validated</span><span class="p">)</span>
-</span><span id="HttpUrl-145"><a href="#HttpUrl-145"><span class="linenos">145</span></a>            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-</span><span id="HttpUrl-146"><a href="#HttpUrl-146"><span class="linenos">146</span></a>                <span class="k">if</span> <span class="n">ctxt</span><span class="o">.</span><span class="n">log_warnings</span><span class="p">:</span>
-</span><span id="HttpUrl-147"><a href="#HttpUrl-147"><span class="linenos">147</span></a>                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-</span><span id="HttpUrl-148"><a href="#HttpUrl-148"><span class="linenos">148</span></a>
-</span><span id="HttpUrl-149"><a href="#HttpUrl-149"><span class="linenos">149</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span> <span class="o">=</span> <span class="kc">False</span>
-</span><span id="HttpUrl-150"><a href="#HttpUrl-150"><span class="linenos">150</span></a>            <span class="k">else</span><span class="p">:</span>
-</span><span id="HttpUrl-151"><a href="#HttpUrl-151"><span class="linenos">151</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span id="HttpUrl-152"><a href="#HttpUrl-152"><span class="linenos">152</span></a>
-</span><span id="HttpUrl-153"><a href="#HttpUrl-153"><span class="linenos">153</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="HttpUrl-138"><a href="#HttpUrl-138"><span class="linenos">138</span></a><span class="k">class</span><span class="w"> </span><span class="nc">HttpUrl</span><span class="p">(</span><span class="n">RootHttpUrl</span><span class="p">):</span>
+</span><span id="HttpUrl-139"><a href="#HttpUrl-139"><span class="linenos">139</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A URL with the HTTP or HTTPS scheme.&quot;&quot;&quot;</span>
+</span><span id="HttpUrl-140"><a href="#HttpUrl-140"><span class="linenos">140</span></a>
+</span><span id="HttpUrl-141"><a href="#HttpUrl-141"><span class="linenos">141</span></a>    <span class="n">root_model</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">RootModel</span><span class="p">[</span><span class="n">Any</span><span class="p">]]]</span> <span class="o">=</span> <span class="n">RootModel</span><span class="p">[</span><span class="n">pydantic</span><span class="o">.</span><span class="n">HttpUrl</span><span class="p">]</span>
+</span><span id="HttpUrl-142"><a href="#HttpUrl-142"><span class="linenos">142</span></a>    <span class="n">_exists</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+</span><span id="HttpUrl-143"><a href="#HttpUrl-143"><span class="linenos">143</span></a>
+</span><span id="HttpUrl-144"><a href="#HttpUrl-144"><span class="linenos">144</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_after_validator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="HttpUrl-145"><a href="#HttpUrl-145"><span class="linenos">145</span></a>        <span class="bp">self</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_after_validator</span><span class="p">()</span>
+</span><span id="HttpUrl-146"><a href="#HttpUrl-146"><span class="linenos">146</span></a>        <span class="n">context</span> <span class="o">=</span> <span class="n">get_validation_context</span><span class="p">()</span>
+</span><span id="HttpUrl-147"><a href="#HttpUrl-147"><span class="linenos">147</span></a>        <span class="k">if</span> <span class="n">context</span><span class="o">.</span><span class="n">perform_io_checks</span><span class="p">:</span>
+</span><span id="HttpUrl-148"><a href="#HttpUrl-148"><span class="linenos">148</span></a>            <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span>
+</span><span id="HttpUrl-149"><a href="#HttpUrl-149"><span class="linenos">149</span></a>
+</span><span id="HttpUrl-150"><a href="#HttpUrl-150"><span class="linenos">150</span></a>        <span class="k">return</span> <span class="bp">self</span>
+</span><span id="HttpUrl-151"><a href="#HttpUrl-151"><span class="linenos">151</span></a>
+</span><span id="HttpUrl-152"><a href="#HttpUrl-152"><span class="linenos">152</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="HttpUrl-153"><a href="#HttpUrl-153"><span class="linenos">153</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;True if URL is available&quot;&quot;&quot;</span>
+</span><span id="HttpUrl-154"><a href="#HttpUrl-154"><span class="linenos">154</span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="HttpUrl-155"><a href="#HttpUrl-155"><span class="linenos">155</span></a>            <span class="n">ctxt</span> <span class="o">=</span> <span class="n">get_validation_context</span><span class="p">()</span>
+</span><span id="HttpUrl-156"><a href="#HttpUrl-156"><span class="linenos">156</span></a>            <span class="k">try</span><span class="p">:</span>
+</span><span id="HttpUrl-157"><a href="#HttpUrl-157"><span class="linenos">157</span></a>                <span class="k">with</span> <span class="n">ctxt</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">warning_level</span><span class="o">=</span><span class="n">warning_levels</span><span class="o">.</span><span class="n">WARNING</span><span class="p">):</span>
+</span><span id="HttpUrl-158"><a href="#HttpUrl-158"><span class="linenos">158</span></a>                    <span class="bp">self</span><span class="o">.</span><span class="n">_validated</span> <span class="o">=</span> <span class="n">_validate_url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_validated</span><span class="p">)</span>
+</span><span id="HttpUrl-159"><a href="#HttpUrl-159"><span class="linenos">159</span></a>            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span><span id="HttpUrl-160"><a href="#HttpUrl-160"><span class="linenos">160</span></a>                <span class="k">if</span> <span class="n">ctxt</span><span class="o">.</span><span class="n">log_warnings</span><span class="p">:</span>
+</span><span id="HttpUrl-161"><a href="#HttpUrl-161"><span class="linenos">161</span></a>                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+</span><span id="HttpUrl-162"><a href="#HttpUrl-162"><span class="linenos">162</span></a>
+</span><span id="HttpUrl-163"><a href="#HttpUrl-163"><span class="linenos">163</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span id="HttpUrl-164"><a href="#HttpUrl-164"><span class="linenos">164</span></a>            <span class="k">else</span><span class="p">:</span>
+</span><span id="HttpUrl-165"><a href="#HttpUrl-165"><span class="linenos">165</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span id="HttpUrl-166"><a href="#HttpUrl-166"><span class="linenos">166</span></a>
+</span><span id="HttpUrl-167"><a href="#HttpUrl-167"><span class="linenos">167</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span>
 </span></pre></div>
 
 
@@ -1060,22 +1060,22 @@ Protocol classes can be generic, they are defined as::</p>
 
     </div>
     <a class="headerlink" href="#HttpUrl.exists"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="HttpUrl.exists-138"><a href="#HttpUrl.exists-138"><span class="linenos">138</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-</span><span id="HttpUrl.exists-139"><a href="#HttpUrl.exists-139"><span class="linenos">139</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;True if URL is available&quot;&quot;&quot;</span>
-</span><span id="HttpUrl.exists-140"><a href="#HttpUrl.exists-140"><span class="linenos">140</span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-</span><span id="HttpUrl.exists-141"><a href="#HttpUrl.exists-141"><span class="linenos">141</span></a>            <span class="n">ctxt</span> <span class="o">=</span> <span class="n">get_validation_context</span><span class="p">()</span>
-</span><span id="HttpUrl.exists-142"><a href="#HttpUrl.exists-142"><span class="linenos">142</span></a>            <span class="k">try</span><span class="p">:</span>
-</span><span id="HttpUrl.exists-143"><a href="#HttpUrl.exists-143"><span class="linenos">143</span></a>                <span class="k">with</span> <span class="n">ctxt</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">warning_level</span><span class="o">=</span><span class="n">warning_levels</span><span class="o">.</span><span class="n">WARNING</span><span class="p">):</span>
-</span><span id="HttpUrl.exists-144"><a href="#HttpUrl.exists-144"><span class="linenos">144</span></a>                    <span class="bp">self</span><span class="o">.</span><span class="n">_validated</span> <span class="o">=</span> <span class="n">_validate_url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_validated</span><span class="p">)</span>
-</span><span id="HttpUrl.exists-145"><a href="#HttpUrl.exists-145"><span class="linenos">145</span></a>            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-</span><span id="HttpUrl.exists-146"><a href="#HttpUrl.exists-146"><span class="linenos">146</span></a>                <span class="k">if</span> <span class="n">ctxt</span><span class="o">.</span><span class="n">log_warnings</span><span class="p">:</span>
-</span><span id="HttpUrl.exists-147"><a href="#HttpUrl.exists-147"><span class="linenos">147</span></a>                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-</span><span id="HttpUrl.exists-148"><a href="#HttpUrl.exists-148"><span class="linenos">148</span></a>
-</span><span id="HttpUrl.exists-149"><a href="#HttpUrl.exists-149"><span class="linenos">149</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span> <span class="o">=</span> <span class="kc">False</span>
-</span><span id="HttpUrl.exists-150"><a href="#HttpUrl.exists-150"><span class="linenos">150</span></a>            <span class="k">else</span><span class="p">:</span>
-</span><span id="HttpUrl.exists-151"><a href="#HttpUrl.exists-151"><span class="linenos">151</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span id="HttpUrl.exists-152"><a href="#HttpUrl.exists-152"><span class="linenos">152</span></a>
-</span><span id="HttpUrl.exists-153"><a href="#HttpUrl.exists-153"><span class="linenos">153</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="HttpUrl.exists-152"><a href="#HttpUrl.exists-152"><span class="linenos">152</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">exists</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+</span><span id="HttpUrl.exists-153"><a href="#HttpUrl.exists-153"><span class="linenos">153</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;True if URL is available&quot;&quot;&quot;</span>
+</span><span id="HttpUrl.exists-154"><a href="#HttpUrl.exists-154"><span class="linenos">154</span></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+</span><span id="HttpUrl.exists-155"><a href="#HttpUrl.exists-155"><span class="linenos">155</span></a>            <span class="n">ctxt</span> <span class="o">=</span> <span class="n">get_validation_context</span><span class="p">()</span>
+</span><span id="HttpUrl.exists-156"><a href="#HttpUrl.exists-156"><span class="linenos">156</span></a>            <span class="k">try</span><span class="p">:</span>
+</span><span id="HttpUrl.exists-157"><a href="#HttpUrl.exists-157"><span class="linenos">157</span></a>                <span class="k">with</span> <span class="n">ctxt</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="n">warning_level</span><span class="o">=</span><span class="n">warning_levels</span><span class="o">.</span><span class="n">WARNING</span><span class="p">):</span>
+</span><span id="HttpUrl.exists-158"><a href="#HttpUrl.exists-158"><span class="linenos">158</span></a>                    <span class="bp">self</span><span class="o">.</span><span class="n">_validated</span> <span class="o">=</span> <span class="n">_validate_url</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_validated</span><span class="p">)</span>
+</span><span id="HttpUrl.exists-159"><a href="#HttpUrl.exists-159"><span class="linenos">159</span></a>            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+</span><span id="HttpUrl.exists-160"><a href="#HttpUrl.exists-160"><span class="linenos">160</span></a>                <span class="k">if</span> <span class="n">ctxt</span><span class="o">.</span><span class="n">log_warnings</span><span class="p">:</span>
+</span><span id="HttpUrl.exists-161"><a href="#HttpUrl.exists-161"><span class="linenos">161</span></a>                    <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+</span><span id="HttpUrl.exists-162"><a href="#HttpUrl.exists-162"><span class="linenos">162</span></a>
+</span><span id="HttpUrl.exists-163"><a href="#HttpUrl.exists-163"><span class="linenos">163</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span> <span class="o">=</span> <span class="kc">False</span>
+</span><span id="HttpUrl.exists-164"><a href="#HttpUrl.exists-164"><span class="linenos">164</span></a>            <span class="k">else</span><span class="p">:</span>
+</span><span id="HttpUrl.exists-165"><a href="#HttpUrl.exists-165"><span class="linenos">165</span></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span> <span class="o">=</span> <span class="kc">True</span>
+</span><span id="HttpUrl.exists-166"><a href="#HttpUrl.exists-166"><span class="linenos">166</span></a>
+</span><span id="HttpUrl.exists-167"><a href="#HttpUrl.exists-167"><span class="linenos">167</span></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_exists</span>
 </span></pre></div>
 
 
@@ -1096,24 +1096,24 @@ Protocol classes can be generic, they are defined as::</p>
 
     </div>
     <a class="headerlink" href="#InvalidDescr"></a>
-            <div class="pdoc-code codehilite"><pre><span></span><span id="InvalidDescr-370"><a href="#InvalidDescr-370"><span class="linenos">370</span></a><span class="k">class</span><span class="w"> </span><span class="nc">InvalidDescr</span><span class="p">(</span>
-</span><span id="InvalidDescr-371"><a href="#InvalidDescr-371"><span class="linenos">371</span></a>    <span class="n">ResourceDescrBase</span><span class="p">,</span>
-</span><span id="InvalidDescr-372"><a href="#InvalidDescr-372"><span class="linenos">372</span></a>    <span class="n">extra</span><span class="o">=</span><span class="s2">&quot;allow&quot;</span><span class="p">,</span>
-</span><span id="InvalidDescr-373"><a href="#InvalidDescr-373"><span class="linenos">373</span></a>    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;An invalid resource description&quot;</span><span class="p">,</span>
-</span><span id="InvalidDescr-374"><a href="#InvalidDescr-374"><span class="linenos">374</span></a><span class="p">):</span>
-</span><span id="InvalidDescr-375"><a href="#InvalidDescr-375"><span class="linenos">375</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A representation of an invalid resource description&quot;&quot;&quot;</span>
-</span><span id="InvalidDescr-376"><a href="#InvalidDescr-376"><span class="linenos">376</span></a>
-</span><span id="InvalidDescr-377"><a href="#InvalidDescr-377"><span class="linenos">377</span></a>    <span class="n">implemented_type</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;unknown&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="s2">&quot;unknown&quot;</span>
-</span><span id="InvalidDescr-378"><a href="#InvalidDescr-378"><span class="linenos">378</span></a>    <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>  <span class="c1"># see NodeWithExplicitlySetFields</span>
-</span><span id="InvalidDescr-379"><a href="#InvalidDescr-379"><span class="linenos">379</span></a>        <span class="nb">type</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="s2">&quot;unknown&quot;</span>
-</span><span id="InvalidDescr-380"><a href="#InvalidDescr-380"><span class="linenos">380</span></a>    <span class="k">else</span><span class="p">:</span>
-</span><span id="InvalidDescr-381"><a href="#InvalidDescr-381"><span class="linenos">381</span></a>        <span class="nb">type</span><span class="p">:</span> <span class="n">Any</span>
-</span><span id="InvalidDescr-382"><a href="#InvalidDescr-382"><span class="linenos">382</span></a>
-</span><span id="InvalidDescr-383"><a href="#InvalidDescr-383"><span class="linenos">383</span></a>    <span class="n">implemented_format_version</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;unknown&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="s2">&quot;unknown&quot;</span>
-</span><span id="InvalidDescr-384"><a href="#InvalidDescr-384"><span class="linenos">384</span></a>    <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>  <span class="c1"># see NodeWithExplicitlySetFields</span>
-</span><span id="InvalidDescr-385"><a href="#InvalidDescr-385"><span class="linenos">385</span></a>        <span class="n">format_version</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="s2">&quot;unknown&quot;</span>
-</span><span id="InvalidDescr-386"><a href="#InvalidDescr-386"><span class="linenos">386</span></a>    <span class="k">else</span><span class="p">:</span>
-</span><span id="InvalidDescr-387"><a href="#InvalidDescr-387"><span class="linenos">387</span></a>        <span class="n">format_version</span><span class="p">:</span> <span class="n">Any</span>
+            <div class="pdoc-code codehilite"><pre><span></span><span id="InvalidDescr-392"><a href="#InvalidDescr-392"><span class="linenos">392</span></a><span class="k">class</span><span class="w"> </span><span class="nc">InvalidDescr</span><span class="p">(</span>
+</span><span id="InvalidDescr-393"><a href="#InvalidDescr-393"><span class="linenos">393</span></a>    <span class="n">ResourceDescrBase</span><span class="p">,</span>
+</span><span id="InvalidDescr-394"><a href="#InvalidDescr-394"><span class="linenos">394</span></a>    <span class="n">extra</span><span class="o">=</span><span class="s2">&quot;allow&quot;</span><span class="p">,</span>
+</span><span id="InvalidDescr-395"><a href="#InvalidDescr-395"><span class="linenos">395</span></a>    <span class="n">title</span><span class="o">=</span><span class="s2">&quot;An invalid resource description&quot;</span><span class="p">,</span>
+</span><span id="InvalidDescr-396"><a href="#InvalidDescr-396"><span class="linenos">396</span></a><span class="p">):</span>
+</span><span id="InvalidDescr-397"><a href="#InvalidDescr-397"><span class="linenos">397</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;A representation of an invalid resource description&quot;&quot;&quot;</span>
+</span><span id="InvalidDescr-398"><a href="#InvalidDescr-398"><span class="linenos">398</span></a>
+</span><span id="InvalidDescr-399"><a href="#InvalidDescr-399"><span class="linenos">399</span></a>    <span class="n">implemented_type</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;unknown&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="s2">&quot;unknown&quot;</span>
+</span><span id="InvalidDescr-400"><a href="#InvalidDescr-400"><span class="linenos">400</span></a>    <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>  <span class="c1"># see NodeWithExplicitlySetFields</span>
+</span><span id="InvalidDescr-401"><a href="#InvalidDescr-401"><span class="linenos">401</span></a>        <span class="nb">type</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="s2">&quot;unknown&quot;</span>
+</span><span id="InvalidDescr-402"><a href="#InvalidDescr-402"><span class="linenos">402</span></a>    <span class="k">else</span><span class="p">:</span>
+</span><span id="InvalidDescr-403"><a href="#InvalidDescr-403"><span class="linenos">403</span></a>        <span class="nb">type</span><span class="p">:</span> <span class="n">Any</span>
+</span><span id="InvalidDescr-404"><a href="#InvalidDescr-404"><span class="linenos">404</span></a>
+</span><span id="InvalidDescr-405"><a href="#InvalidDescr-405"><span class="linenos">405</span></a>    <span class="n">implemented_format_version</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;unknown&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="s2">&quot;unknown&quot;</span>
+</span><span id="InvalidDescr-406"><a href="#InvalidDescr-406"><span class="linenos">406</span></a>    <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>  <span class="c1"># see NodeWithExplicitlySetFields</span>
+</span><span id="InvalidDescr-407"><a href="#InvalidDescr-407"><span class="linenos">407</span></a>        <span class="n">format_version</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="s2">&quot;unknown&quot;</span>
+</span><span id="InvalidDescr-408"><a href="#InvalidDescr-408"><span class="linenos">408</span></a>    <span class="k">else</span><span class="p">:</span>
+</span><span id="InvalidDescr-409"><a href="#InvalidDescr-409"><span class="linenos">409</span></a>        <span class="n">format_version</span><span class="p">:</span> <span class="n">Any</span>
 </span></pre></div>
 
 
@@ -1161,7 +1161,7 @@ Protocol classes can be generic, they are defined as::</p>
                                 <div class="attr variable">
             <span class="name">model_config</span><span class="annotation">: ClassVar[pydantic.config.ConfigDict]</span>        =
 <input id="InvalidDescr.model_config-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
-            <label class="view-value-button pdoc-button" for="InvalidDescr.model_config-view-value"></label><span class="default_value">{&#39;extra&#39;: &#39;allow&#39;, &#39;frozen&#39;: False, &#39;populate_by_name&#39;: True, &#39;revalidate_instances&#39;: &#39;never&#39;, &#39;validate_assignment&#39;: True, &#39;validate_default&#39;: False, &#39;validate_return&#39;: True, &#39;use_attribute_docstrings&#39;: True, &#39;model_title_generator&#39;: &lt;function _node_title_generator&gt;, &#39;validate_by_alias&#39;: True, &#39;validate_by_name&#39;: True, &#39;title&#39;: &#39;An invalid resource description&#39;}</span>
+            <label class="view-value-button pdoc-button" for="InvalidDescr.model_config-view-value"></label><span class="default_value">{&#39;allow_inf_nan&#39;: False, &#39;extra&#39;: &#39;allow&#39;, &#39;frozen&#39;: False, &#39;model_title_generator&#39;: &lt;function _node_title_generator&gt;, &#39;populate_by_name&#39;: True, &#39;revalidate_instances&#39;: &#39;always&#39;, &#39;use_attribute_docstrings&#39;: True, &#39;validate_assignment&#39;: True, &#39;validate_default&#39;: True, &#39;validate_return&#39;: True, &#39;validate_by_alias&#39;: True, &#39;validate_by_name&#39;: True, &#39;title&#39;: &#39;An invalid resource description&#39;}</span>
 
         
     </div>

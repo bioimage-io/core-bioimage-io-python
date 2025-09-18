@@ -80,7 +80,7 @@
     </ul>
 
 
-            <footer>bioimageio.core 0.9.0</footer>
+            <footer>bioimageio.core 0.9.1</footer>
 
         <a class="attribution" title="pdoc: Python API documentation generator" href="https://pdoc.dev" target="_blank">
             built with <span class="visually-hidden">pdoc</span><img
@@ -106,7 +106,7 @@ bioimageio<wbr>.<a href="./../../spec.html">spec</a><wbr>.<a href="./../applicat
 </span><span id="L-5"><a href="#L-5"><span class="linenos"> 5</span></a>
 </span><span id="L-6"><a href="#L-6"><span class="linenos"> 6</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">.._internal.io</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileDescr</span> <span class="k">as</span> <span class="n">FileDescr</span>
 </span><span id="L-7"><a href="#L-7"><span class="linenos"> 7</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">.._internal.io_basics</span><span class="w"> </span><span class="kn">import</span> <span class="n">Sha256</span> <span class="k">as</span> <span class="n">Sha256</span>
-</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">.._internal.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">FileSource_</span>
+</span><span id="L-8"><a href="#L-8"><span class="linenos"> 8</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">.._internal.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">FAIR</span><span class="p">,</span> <span class="n">FileSource_</span>
 </span><span id="L-9"><a href="#L-9"><span class="linenos"> 9</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">.._internal.url</span><span class="w"> </span><span class="kn">import</span> <span class="n">HttpUrl</span> <span class="k">as</span> <span class="n">HttpUrl</span>
 </span><span id="L-10"><a href="#L-10"><span class="linenos">10</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">..generic.v0_3</span><span class="w"> </span><span class="kn">import</span> <span class="n">VALID_COVER_IMAGE_EXTENSIONS</span> <span class="k">as</span> <span class="n">VALID_COVER_IMAGE_EXTENSIONS</span>
 </span><span id="L-11"><a href="#L-11"><span class="linenos">11</span></a><span class="kn">from</span><span class="w"> </span><span class="nn">..generic.v0_3</span><span class="w"> </span><span class="kn">import</span> <span class="n">Author</span> <span class="k">as</span> <span class="n">Author</span>
@@ -147,7 +147,7 @@ bioimageio<wbr>.<a href="./../../spec.html">spec</a><wbr>.<a href="./../applicat
 </span><span id="L-46"><a href="#L-46"><span class="linenos">46</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The description from which this one is derived&quot;&quot;&quot;</span>
 </span><span id="L-47"><a href="#L-47"><span class="linenos">47</span></a>
 </span><span id="L-48"><a href="#L-48"><span class="linenos">48</span></a>    <span class="n">source</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
-</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a>        <span class="n">Optional</span><span class="p">[</span><span class="n">FileSource_</span><span class="p">],</span>
+</span><span id="L-49"><a href="#L-49"><span class="linenos">49</span></a>        <span class="n">FAIR</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">FileSource_</span><span class="p">]],</span>
 </span><span id="L-50"><a href="#L-50"><span class="linenos">50</span></a>        <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;URL or path to the source of the application&quot;</span><span class="p">),</span>
 </span><span id="L-51"><a href="#L-51"><span class="linenos">51</span></a>    <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="L-52"><a href="#L-52"><span class="linenos">52</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The primary source of the application&quot;&quot;&quot;</span>
@@ -229,7 +229,7 @@ errors defaults to 'strict'.</p>
 </span><span id="ApplicationDescr-47"><a href="#ApplicationDescr-47"><span class="linenos">47</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The description from which this one is derived&quot;&quot;&quot;</span>
 </span><span id="ApplicationDescr-48"><a href="#ApplicationDescr-48"><span class="linenos">48</span></a>
 </span><span id="ApplicationDescr-49"><a href="#ApplicationDescr-49"><span class="linenos">49</span></a>    <span class="n">source</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span>
-</span><span id="ApplicationDescr-50"><a href="#ApplicationDescr-50"><span class="linenos">50</span></a>        <span class="n">Optional</span><span class="p">[</span><span class="n">FileSource_</span><span class="p">],</span>
+</span><span id="ApplicationDescr-50"><a href="#ApplicationDescr-50"><span class="linenos">50</span></a>        <span class="n">FAIR</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">FileSource_</span><span class="p">]],</span>
 </span><span id="ApplicationDescr-51"><a href="#ApplicationDescr-51"><span class="linenos">51</span></a>        <span class="n">Field</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;URL or path to the source of the application&quot;</span><span class="p">),</span>
 </span><span id="ApplicationDescr-52"><a href="#ApplicationDescr-52"><span class="linenos">52</span></a>    <span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 </span><span id="ApplicationDescr-53"><a href="#ApplicationDescr-53"><span class="linenos">53</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The primary source of the application&quot;&quot;&quot;</span>
@@ -281,7 +281,7 @@ assigned by bioimage.io; version <strong>un</strong>specific.</p>
                             </div>
                             <div id="ApplicationDescr.source" class="classattr">
                                 <div class="attr variable">
-            <span class="name">source</span><span class="annotation">: Annotated[Optional[Annotated[Union[bioimageio.spec._internal.url.HttpUrl, bioimageio.spec._internal.io.RelativeFilePath, Annotated[pathlib.Path, PathType(path_type=&#39;file&#39;), FieldInfo(annotation=NoneType, required=True, title=&#39;FilePath&#39;)]], FieldInfo(annotation=NoneType, required=True, metadata=[_PydanticGeneralMetadata(union_mode=&#39;left_to_right&#39;)]), AfterValidator(func=&lt;function wo_special_file_name at 0x7ff2e362f920&gt;), PlainSerializer(func=&lt;function _package_serializer at 0x7ff2e33298a0&gt;, return_type=PydanticUndefined, when_used=&#39;unless-none&#39;)]], FieldInfo(annotation=NoneType, required=True, description=&#39;URL or path to the source of the application&#39;)]</span>
+            <span class="name">source</span><span class="annotation">: Annotated[Optional[Annotated[Union[bioimageio.spec._internal.url.HttpUrl, bioimageio.spec._internal.io.RelativeFilePath, Annotated[pathlib.Path, PathType(path_type=&#39;file&#39;), FieldInfo(annotation=NoneType, required=True, title=&#39;FilePath&#39;)]], FieldInfo(annotation=NoneType, required=True, metadata=[_PydanticGeneralMetadata(union_mode=&#39;left_to_right&#39;)]), AfterValidator(func=&lt;function wo_special_file_name at 0x7efcef82be20&gt;), PlainSerializer(func=&lt;function _package_serializer at 0x7efcef8e0860&gt;, return_type=PydanticUndefined, when_used=&#39;unless-none&#39;)]], AfterWarner(func=&lt;function as_warning.&lt;locals&gt;.wrapper at 0x7efcef8e2980&gt;, severity=35, msg=None, context=None), FieldInfo(annotation=NoneType, required=True, description=&#39;URL or path to the source of the application&#39;)]</span>
 
         
     </div>
@@ -308,7 +308,7 @@ assigned by bioimage.io; version <strong>un</strong>specific.</p>
                                 <div class="attr variable">
             <span class="name">model_config</span><span class="annotation">: ClassVar[pydantic.config.ConfigDict]</span>        =
 <input id="ApplicationDescr.model_config-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
-            <label class="view-value-button pdoc-button" for="ApplicationDescr.model_config-view-value"></label><span class="default_value">{&#39;extra&#39;: &#39;forbid&#39;, &#39;frozen&#39;: False, &#39;populate_by_name&#39;: True, &#39;revalidate_instances&#39;: &#39;never&#39;, &#39;validate_assignment&#39;: True, &#39;validate_default&#39;: False, &#39;validate_return&#39;: True, &#39;use_attribute_docstrings&#39;: True, &#39;model_title_generator&#39;: &lt;function _node_title_generator&gt;, &#39;validate_by_alias&#39;: True, &#39;validate_by_name&#39;: True}</span>
+            <label class="view-value-button pdoc-button" for="ApplicationDescr.model_config-view-value"></label><span class="default_value">{&#39;allow_inf_nan&#39;: False, &#39;extra&#39;: &#39;forbid&#39;, &#39;frozen&#39;: False, &#39;model_title_generator&#39;: &lt;function _node_title_generator&gt;, &#39;populate_by_name&#39;: True, &#39;revalidate_instances&#39;: &#39;always&#39;, &#39;use_attribute_docstrings&#39;: True, &#39;validate_assignment&#39;: True, &#39;validate_default&#39;: True, &#39;validate_return&#39;: True, &#39;validate_by_alias&#39;: True, &#39;validate_by_name&#39;: True}</span>
 
         
     </div>
@@ -388,10 +388,10 @@ assigned by bioimage.io; version <strong>un</strong>specific.</p>
                 <dd id="ApplicationDescr.links" class="variable"><a href="../generic/v0_3.html#GenericModelDescrBase.links">links</a></dd>
                 <dd id="ApplicationDescr.uploader" class="variable"><a href="../generic/v0_3.html#GenericModelDescrBase.uploader">uploader</a></dd>
                 <dd id="ApplicationDescr.maintainers" class="variable"><a href="../generic/v0_3.html#GenericModelDescrBase.maintainers">maintainers</a></dd>
-                <dd id="ApplicationDescr.check_maintainers_exist" class="function"><a href="../generic/v0_3.html#GenericModelDescrBase.check_maintainers_exist">check_maintainers_exist</a></dd>
                 <dd id="ApplicationDescr.tags" class="variable"><a href="../generic/v0_3.html#GenericModelDescrBase.tags">tags</a></dd>
                 <dd id="ApplicationDescr.warn_about_tag_categories" class="function"><a href="../generic/v0_3.html#GenericModelDescrBase.warn_about_tag_categories">warn_about_tag_categories</a></dd>
                 <dd id="ApplicationDescr.version" class="variable"><a href="../generic/v0_3.html#GenericModelDescrBase.version">version</a></dd>
+                <dd id="ApplicationDescr.version_comment" class="variable"><a href="../generic/v0_3.html#GenericModelDescrBase.version_comment">version_comment</a></dd>
 
             </div>
                                 </dl>
@@ -437,7 +437,7 @@ assigned by bioimage.io; version <strong>un</strong>specific.</p>
                                 <div class="attr variable">
             <span class="name">model_config</span><span class="annotation">: ClassVar[pydantic.config.ConfigDict]</span>        =
 <input id="LinkedApplication.model_config-view-value" class="view-value-toggle-state" type="checkbox" aria-hidden="true" tabindex="-1">
-            <label class="view-value-button pdoc-button" for="LinkedApplication.model_config-view-value"></label><span class="default_value">{&#39;extra&#39;: &#39;forbid&#39;, &#39;frozen&#39;: False, &#39;populate_by_name&#39;: True, &#39;revalidate_instances&#39;: &#39;never&#39;, &#39;validate_assignment&#39;: True, &#39;validate_default&#39;: False, &#39;validate_return&#39;: True, &#39;use_attribute_docstrings&#39;: True, &#39;model_title_generator&#39;: &lt;function _node_title_generator&gt;, &#39;validate_by_alias&#39;: True, &#39;validate_by_name&#39;: True}</span>
+            <label class="view-value-button pdoc-button" for="LinkedApplication.model_config-view-value"></label><span class="default_value">{&#39;allow_inf_nan&#39;: False, &#39;extra&#39;: &#39;forbid&#39;, &#39;frozen&#39;: False, &#39;model_title_generator&#39;: &lt;function _node_title_generator&gt;, &#39;populate_by_name&#39;: True, &#39;revalidate_instances&#39;: &#39;always&#39;, &#39;use_attribute_docstrings&#39;: True, &#39;validate_assignment&#39;: True, &#39;validate_default&#39;: True, &#39;validate_return&#39;: True, &#39;validate_by_alias&#39;: True, &#39;validate_by_name&#39;: True}</span>
 
         
     </div>
