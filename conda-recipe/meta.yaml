@@ -54,7 +54,6 @@ test:
     - tests
   requires:
     {% for dep in pyproject['project']['optional-dependencies']['dev'] %}
-    - {{ dep.replace('torch', 'pytorch').lower().replace('_', '-') }}
       {% if dep.startswith('torch>=') %}  # pip: torch  -> conda: pytorch
     - py{{ dep.lower() }}
       {% else %}
