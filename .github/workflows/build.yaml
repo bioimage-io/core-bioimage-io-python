@@ -193,7 +193,7 @@ jobs:
 
   pip-build:
     name: Build with pip and publish to PyPI
-    needs: test
+    needs: [test, conda-build]
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repository

@@ -16,7 +16,7 @@ build:
   noarch: python
   number: 0
   entry_points:
-    bioimageio = {{ pyproject['project']['scripts']['bioimageio'] }}
+    - bioimageio = {{ pyproject['project']['scripts']['bioimageio'] }}
   script: python -m pip install --no-deps --ignore-installed .
 
 requirements:
@@ -54,7 +54,6 @@ test:
     - tests
   requires:
     {% for dep in pyproject['project']['optional-dependencies']['dev'] %}
-    - {{ dep.replace('torch', 'pytorch').lower().replace('_', '-') }}
       {% if dep.startswith('torch>=') %}  # pip: torch  -> conda: pytorch
     - py{{ dep.lower() }}
       {% else %}
