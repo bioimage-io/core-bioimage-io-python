@@ -24,11 +24,6 @@ from typing import (
 )
 
 import numpy as np
-from loguru import logger
-from numpy.typing import NDArray
-from typing_extensions import NotRequired, TypedDict, Unpack, assert_never, get_args
-
-from bioimageio.core import __version__
 from bioimageio.spec import (
     AnyDatasetDescr,
     AnyModelDescr,
@@ -66,6 +61,11 @@ from bioimageio.spec.summary import (
     ValidationSummary,
     WarningEntry,
 )
+from loguru import logger
+from numpy.typing import NDArray
+from typing_extensions import NotRequired, TypedDict, Unpack, assert_never, get_args
+
+from bioimageio.core import __version__
 
 from ._prediction_pipeline import create_prediction_pipeline
 from .axis import AxisId, BatchSize
@@ -816,9 +816,7 @@ def _test_model_inference(
                 r_expected = expected_np[r_max_idx].item()
 
                 # Calculate the max absolute difference with the relative tolerance subtracted
-                abs_diff_wo_rtol: NDArray[np.float32] = (abs_diff - rtol_value).max(
-                    initial=0
-                )
+                abs_diff_wo_rtol: NDArray[np.float32] = abs_diff - rtol_value
                 a_max_idx = np.unravel_index(
                     abs_diff_wo_rtol.argmax(), abs_diff_wo_rtol.shape
                 )
