@@ -364,6 +364,10 @@ may be controlled with the `LOGURU_LEVEL` environment variable.
 
 ## Changelog
 
+### 0.9.2
+
+fix model inference tolerance reporting
+
 ### 0.9.1
 
 - fixes:
