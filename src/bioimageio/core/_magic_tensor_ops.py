@@ -71,12 +71,14 @@ class MagicTensorOpsMixin:
 
     def __eq__(self, other: _Compatible) -> Self:  # type: ignore[override]
         return self._binary_op(
-            other, nputils.array_eq  # pyright: ignore[reportUnknownArgumentType]
+            other,
+            nputils.array_eq,  # pyright: ignore[reportUnknownArgumentType]
         )
 
     def __ne__(self, other: _Compatible) -> Self:  # type: ignore[override]
         return self._binary_op(
-            other, nputils.array_ne  # pyright: ignore[reportUnknownArgumentType]
+            other,
+            nputils.array_ne,  # pyright: ignore[reportUnknownArgumentType]
         )
 
     # When __eq__ is defined but __hash__ is not, then an object is unhashable,
@@ -171,22 +173,30 @@ class MagicTensorOpsMixin:
 
     def round(self, *args: Any, **kwargs: Any) -> Self:
         return self._unary_op(
-            ops.round_, *args, **kwargs  # pyright: ignore[reportUnknownArgumentType]
+            ops.round_,
+            *args,
+            **kwargs,  # pyright: ignore[reportUnknownArgumentType]
         )
 
     def argsort(self, *args: Any, **kwargs: Any) -> Self:
         return self._unary_op(
-            ops.argsort, *args, **kwargs  # pyright: ignore[reportUnknownArgumentType]
+            ops.argsort,
+            *args,
+            **kwargs,  # pyright: ignore[reportUnknownArgumentType]
         )
 
     def conj(self, *args: Any, **kwargs: Any) -> Self:
         return self._unary_op(
-            ops.conj, *args, **kwargs  # pyright: ignore[reportUnknownArgumentType]
+            ops.conj,
+            *args,
+            **kwargs,  # pyright: ignore[reportUnknownArgumentType]
         )
 
     def conjugate(self, *args: Any, **kwargs: Any) -> Self:
         return self._unary_op(
-            ops.conjugate, *args, **kwargs  # pyright: ignore[reportUnknownArgumentType]
+            ops.conjugate,
+            *args,
+            **kwargs,  # pyright: ignore[reportUnknownArgumentType]
         )
 
     __add__.__doc__ = operator.add.__doc__
