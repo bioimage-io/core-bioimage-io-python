@@ -66,6 +66,7 @@ from numpy.typing import NDArray
 from typing_extensions import NotRequired, TypedDict, Unpack, assert_never, get_args
 
 from bioimageio.core import __version__
+from bioimageio.core.io import save_tensor
 
 from ._prediction_pipeline import create_prediction_pipeline
 from .axis import AxisId, BatchSize
@@ -789,58 +790,74 @@ def _test_model_inference(
                     else:
                         continue
 
-                expected_np = expected.data.to_numpy().astype(np.float32)
-                del expected
-                actual_np: NDArray[Any] = actual.data.to_numpy().astype(np.float32)
-                del actual
+                try:
+                    expected_np = expected.data.to_numpy().astype(np.float32)
+                    del expected
+                    actual_np: NDArray[Any] = actual.data.to_numpy().astype(np.float32)
 
-                rtol, atol, mismatched_tol = _get_tolerance(
-                    model, wf=weight_format, m=m, **deprecated
-                )
-                rtol_value = rtol * abs(expected_np)
-                abs_diff = abs(actual_np - expected_np)
-                mismatched = abs_diff > atol + rtol_value
-                mismatched_elements = mismatched.sum().item()
-                if not mismatched_elements:
-                    continue
+                    rtol, atol, mismatched_tol = _get_tolerance(
+                        model, wf=weight_format, m=m, **deprecated
+                    )
+                    rtol_value = rtol * abs(expected_np)
+                    abs_diff = abs(actual_np - expected_np)
+                    mismatched = abs_diff > atol + rtol_value
+                    mismatched_elements = mismatched.sum().item()
+                    if not mismatched_elements:
+                        continue
 
-                mismatched_ppm = mismatched_elements / expected_np.size * 1e6
-                abs_diff[~mismatched] = 0  # ignore non-mismatched elements
+                    actual_output_path = Path(f"actual_output_{m}_{weight_format}.npy")
+                    try:
+                        save_tensor(actual_output_path, actual)
+                    except Exception as e:
+                        logger.error(
+                            "Failed to save actual output tensor to {}: {}",
+                            actual_output_path,
+                            e,
+                        )
 
-                r_max_idx_flat = (
-                    r_diff := (abs_diff / (abs(expected_np) + 1e-6))
-                ).argmax()
-                r_max_idx = np.unravel_index(r_max_idx_flat, r_diff.shape)
-                r_max = r_diff[r_max_idx].item()
-                r_actual = actual_np[r_max_idx].item()
-                r_expected = expected_np[r_max_idx].item()
+                    mismatched_ppm = mismatched_elements / expected_np.size * 1e6
+                    abs_diff[~mismatched] = 0  # ignore non-mismatched elements
 
-                # Calculate the max absolute difference with the relative tolerance subtracted
-                abs_diff_wo_rtol: NDArray[np.float32] = abs_diff - rtol_value
-                a_max_idx = np.unravel_index(
-                    abs_diff_wo_rtol.argmax(), abs_diff_wo_rtol.shape
-                )
+                    r_max_idx_flat = (
+                        r_diff := (abs_diff / (abs(expected_np) + 1e-6))
+                    ).argmax()
+                    r_max_idx = np.unravel_index(r_max_idx_flat, r_diff.shape)
+                    r_max = r_diff[r_max_idx].item()
+                    r_actual = actual_np[r_max_idx].item()
+                    r_expected = expected_np[r_max_idx].item()
 
-                a_max = abs_diff[a_max_idx].item()
-                a_actual = actual_np[a_max_idx].item()
-                a_expected = expected_np[a_max_idx].item()
+                    # Calculate the max absolute difference with the relative tolerance subtracted
+                    abs_diff_wo_rtol: NDArray[np.float32] = abs_diff - rtol_value
+                    a_max_idx = np.unravel_index(
+                        abs_diff_wo_rtol.argmax(), abs_diff_wo_rtol.shape
+                    )
 
-                msg = (
-                    f"Output '{m}' disagrees with {mismatched_elements} of"
-                    + f" {expected_np.size} expected values"
-                    + f" ({mismatched_ppm:.1f} ppm)."
-                    + f"\n Max relative difference: {r_max:.2e}"
-                    + rf" (= \|{r_actual:.2e} - {r_expected:.2e}\|/\|{r_expected:.2e} + 1e-6\|)"
-                    + f" at {dict(zip(dims, r_max_idx))}"
-                    + f"\n Max absolute difference not accounted for by relative tolerance: {a_max:.2e}"
-                    + rf" (= \|{a_actual:.7e} - {a_expected:.7e}\|) at {dict(zip(dims, a_max_idx))}"
-                )
-                if mismatched_ppm > mismatched_tol:
+                    a_max = abs_diff[a_max_idx].item()
+                    a_actual = actual_np[a_max_idx].item()
+                    a_expected = expected_np[a_max_idx].item()
+                except Exception as e:
+                    msg = f"Output '{m}' disagrees with expected values."
                     add_error_entry(msg)
                     if stop_early:
                         break
                 else:
-                    add_warning_entry(msg)
+                    msg = (
+                        f"Output '{m}' disagrees with {mismatched_elements} of"
+                        + f" {expected_np.size} expected values"
+                        + f" ({mismatched_ppm:.1f} ppm)."
+                        + f"\n Max relative difference: {r_max:.2e}"
+                        + rf" (= \|{r_actual:.2e} - {r_expected:.2e}\|/\|{r_expected:.2e} + 1e-6\|)"
+                        + f" at {dict(zip(dims, r_max_idx))}"
+                        + f"\n Max absolute difference not accounted for by relative tolerance: {a_max:.2e}"
+                        + rf" (= \|{a_actual:.7e} - {a_expected:.7e}\|) at {dict(zip(dims, a_max_idx))}"
+                        + f"\n Saved actual output to {actual_output_path}."
+                    )
+                    if mismatched_ppm > mismatched_tol:
+                        add_error_entry(msg)
+                        if stop_early:
+                            break
+                    else:
+                        add_warning_entry(msg)
 
     except Exception as e:
         if get_validation_context().raise_errors:
