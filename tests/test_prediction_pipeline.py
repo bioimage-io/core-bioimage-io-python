@@ -18,9 +18,9 @@ def _test_prediction_pipeline(
     )
 
     bio_model = load_description(model_package)
-    assert isinstance(
-        bio_model, (ModelDescr, ModelDescr04)
-    ), bio_model.validation_summary.format()
+    assert isinstance(bio_model, (ModelDescr, ModelDescr04)), (
+        bio_model.validation_summary.format()
+    )
     pp = create_prediction_pipeline(
         bioimageio_model=bio_model, weight_format=weights_format
     )

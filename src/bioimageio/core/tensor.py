@@ -19,14 +19,13 @@ from typing import (
 
 import numpy as np
 import xarray as xr
+from bioimageio.spec.model import v0_5
 from loguru import logger
 from numpy.typing import DTypeLike, NDArray
 from typing_extensions import Self, assert_never
 
-from bioimageio.spec.model import v0_5
-
 from ._magic_tensor_ops import MagicTensorOpsMixin
-from .axis import Axis, AxisId, AxisInfo, AxisLike, PerAxis
+from .axis import Axis, AxisDescrLike, AxisId, AxisInfo, AxisLike, PerAxis
 from .common import (
     CropWhere,
     DTypeStr,
@@ -187,10 +186,12 @@ class Tensor(MagicTensorOpsMixin):
 
         if dims is None:
             return cls._interprete_array_wo_known_axes(array)
-        elif isinstance(dims, (str, Axis, v0_5.AxisBase)):
-            dims = [dims]
+        elif isinstance(dims, (AxisId, AxisDescrLike)):
+            dim_seq = [dims]
+        else:
+            dim_seq = list(dims)
 
-        axis_infos = [AxisInfo.create(a) for a in dims]
+        axis_infos = [AxisInfo.create(a) for a in dim_seq]
         original_shape = tuple(array.shape)
 
         successful_view = _get_array_view(array, axis_infos)

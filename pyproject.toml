@@ -44,11 +44,9 @@ onnx = ["onnxruntime"]
 pytorch = ["torch>=1.6,<3", "torchvision>=0.21", "keras>=3.0,<4"]
 tensorflow = ["tensorflow", "keras>=2.15,<4"]
 dev = [
-    "black",
     "cellpose",          # for model testing
     "crick",
     "httpx",
-    "jupyter-black",
     "jupyter",
     "keras>=3.0,<4",
     "matplotlib",
@@ -78,12 +76,6 @@ where = ["src/"]
 
 [tool.setuptools.dynamic]
 version = { attr = "bioimageio.core.__version__" }
-
-[tool.black]
-line-length = 88
-extend-exclude = "/presentations/"
-target-version = ["py39", "py310", "py311", "py312"]
-preview = true
 
 [tool.pyright]
 exclude = [

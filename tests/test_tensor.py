@@ -23,7 +23,6 @@ from bioimageio.core import AxisId, Tensor
     ],
 )
 def test_transpose_tensor_2d(axes: Sequence[str]):
-
     tensor = Tensor.from_numpy(np.random.rand(256, 256), dims=None)
     transposed = tensor.transpose([AxisId(a) for a in axes])
     assert transposed.ndim == len(axes)

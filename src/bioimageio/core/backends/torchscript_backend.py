@@ -44,7 +44,6 @@ class TorchscriptModelAdapter(ModelAdapter):
     def _forward_impl(
         self, input_arrays: Sequence[Optional[NDArray[Any]]]
     ) -> List[Optional[NDArray[Any]]]:
-
         with torch.no_grad():
             torch_tensor = [
                 None if a is None else torch.from_numpy(a).to(self.devices[0])
@@ -60,7 +59,9 @@ class TorchscriptModelAdapter(ModelAdapter):
                 (
                     None
                     if r is None
-                    else r.cpu().numpy() if isinstance(r, torch.Tensor) else r
+                    else r.cpu().numpy()
+                    if isinstance(r, torch.Tensor)
+                    else r
                 )
                 for r in output_seq
             ]
