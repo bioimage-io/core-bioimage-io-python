@@ -74,6 +74,8 @@ from .common import MemberId, SupportedWeightsFormat
 from .digest_spec import get_test_input_sample, get_test_output_sample
 from .sample import Sample
 
+CONDA_CMD = "conda.bat" if platform.system() == "Windows" else "conda"
+
 
 class DeprecatedKwargs(TypedDict):
     absolute_tolerance: NotRequired[AbsoluteTolerance]
@@ -191,7 +193,7 @@ def test_model(
 
 def default_run_command(args: Sequence[str]):
     logger.info("running '{}'...", " ".join(args))
-    _ = subprocess.run(args, shell=True, text=True, check=True)
+    _ = subprocess.check_call(args)
 
 
 def test_description(
@@ -379,21 +381,22 @@ def _test_in_env(
     env_name = hashlib.sha256(encoded_env).hexdigest()
 
     try:
-        run_command(["where" if platform.system() == "Windows" else "which", "conda"])
+        run_command(["where" if platform.system() == "Windows" else "which", CONDA_CMD])
     except Exception as e:
         raise RuntimeError("Conda not available") from e
 
     try:
-        run_command(["conda", "activate", env_name])
+        run_command([CONDA_CMD, "activate", env_name])
     except Exception:
+        working_dir.mkdir(parents=True, exist_ok=True)
         path = working_dir / "env.yaml"
         try:
             _ = path.write_bytes(encoded_env)
             logger.debug("written conda env to {}", path)
             run_command(
-                ["conda", "env", "create", f"--file={path}", f"--name={env_name}"]
+                [CONDA_CMD, "env", "create", f"--file={path}", f"--name={env_name}"]
             )
-            run_command(["conda", "activate", env_name])
+            run_command([CONDA_CMD, "activate", env_name])
         except Exception as e:
             summary = descr.validation_summary
             summary.add_detail(
@@ -424,7 +427,7 @@ def _test_in_env(
             run_command(
                 cmd := (
                     [
-                        "conda",
+                        CONDA_CMD,
                         "run",
                         "-n",
                         env_name,
