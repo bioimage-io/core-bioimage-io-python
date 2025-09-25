@@ -3,9 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal, Mapping, Optional, TypeVar, Union
 
-from typing_extensions import assert_never
-
 from bioimageio.spec.model import v0_5
+from typing_extensions import Protocol, assert_never, runtime_checkable
 
 
 def _guess_axis_type(a: str):
@@ -42,7 +41,16 @@ PerAxis = Mapping[AxisId, T]
 BatchSize = int
 
 AxisLetter = Literal["b", "i", "t", "c", "z", "y", "x"]
-AxisLike = Union[AxisId, AxisLetter, v0_5.AnyAxis, "Axis"]
+_AxisLikePlain = Union[str, AxisId, AxisLetter]
+
+
+@runtime_checkable
+class AxisDescrLike(Protocol):
+    id: _AxisLikePlain
+    type: Literal["batch", "channel", "index", "space", "time"]
+
+
+AxisLike = Union[_AxisLikePlain, "Axis", v0_5.AnyAxis, AxisDescrLike]
 
 
 @dataclass
@@ -60,14 +68,22 @@ class Axis:
     def create(cls, axis: AxisLike) -> Axis:
         if isinstance(axis, cls):
             return axis
-        elif isinstance(axis, Axis):
-            return Axis(id=axis.id, type=axis.type)
-        elif isinstance(axis, v0_5.AxisBase):
-            return Axis(id=AxisId(axis.id), type=axis.type)
-        elif isinstance(axis, str):
-            return Axis(id=AxisId(axis), type=_guess_axis_type(axis))
+
+        if isinstance(axis, (AxisId, str)):
+            axis_id = axis
+            axis_type = _guess_axis_type(str(axis))
         else:
-            assert_never(axis)
+            if hasattr(axis, "type"):
+                axis_type = axis.type
+            else:
+                axis_type = _guess_axis_type(str(axis))
+
+            if hasattr(axis, "id"):
+                axis_id = axis.id
+            else:
+                axis_id = axis
+
+        return Axis(id=AxisId(axis_id), type=axis_type)
 
 
 @dataclass
@@ -81,7 +97,7 @@ class AxisInfo(Axis):
 
         axis_base = super().create(axis)
         if maybe_singleton is None:
-            if isinstance(axis, (Axis, str)):
+            if not isinstance(axis, v0_5.AxisBase):
                 maybe_singleton = True
             else:
                 if axis.size is None:
