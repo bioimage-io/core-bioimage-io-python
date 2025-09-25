@@ -50,7 +50,7 @@ class AxisDescrLike(Protocol):
     type: Literal["batch", "channel", "index", "space", "time"]
 
 
-AxisLike = Union[_AxisLikePlain, "Axis", v0_5.AnyAxis, AxisDescrLike]
+AxisLike = Union[_AxisLikePlain, AxisDescrLike]
 
 
 @dataclass
