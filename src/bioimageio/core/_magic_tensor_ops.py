@@ -173,30 +173,30 @@ class MagicTensorOpsMixin:
 
     def round(self, *args: Any, **kwargs: Any) -> Self:
         return self._unary_op(
-            ops.round_,
+            ops.round_,  # pyright: ignore[reportUnknownArgumentType]
             *args,
-            **kwargs,  # pyright: ignore[reportUnknownArgumentType]
+            **kwargs,
         )
 
     def argsort(self, *args: Any, **kwargs: Any) -> Self:
         return self._unary_op(
-            ops.argsort,
+            ops.argsort,  # pyright: ignore[reportUnknownArgumentType]
             *args,
-            **kwargs,  # pyright: ignore[reportUnknownArgumentType]
+            **kwargs,
         )
 
     def conj(self, *args: Any, **kwargs: Any) -> Self:
         return self._unary_op(
-            ops.conj,
+            ops.conj,  # pyright: ignore[reportUnknownArgumentType]
             *args,
-            **kwargs,  # pyright: ignore[reportUnknownArgumentType]
+            **kwargs,
         )
 
     def conjugate(self, *args: Any, **kwargs: Any) -> Self:
         return self._unary_op(
-            ops.conjugate,
+            ops.conjugate,  # pyright: ignore[reportUnknownArgumentType]
             *args,
-            **kwargs,  # pyright: ignore[reportUnknownArgumentType]
+            **kwargs,
         )
 
     __add__.__doc__ = operator.add.__doc__
