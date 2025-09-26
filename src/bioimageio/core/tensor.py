@@ -25,7 +25,7 @@ from numpy.typing import DTypeLike, NDArray
 from typing_extensions import Self, assert_never
 
 from ._magic_tensor_ops import MagicTensorOpsMixin
-from .axis import Axis, AxisDescrLike, AxisId, AxisInfo, AxisLike, PerAxis
+from .axis import AxisId, AxisInfo, AxisLike, PerAxis
 from .common import (
     CropWhere,
     DTypeStr,
@@ -186,10 +186,10 @@ class Tensor(MagicTensorOpsMixin):
 
         if dims is None:
             return cls._interprete_array_wo_known_axes(array)
-        elif isinstance(dims, (AxisId, AxisDescrLike)):
-            dim_seq = [dims]
-        else:
+        elif isinstance(dims, collections.abc.Sequence):
             dim_seq = list(dims)
+        else:
+            dim_seq = [dims]
 
         axis_infos = [AxisInfo.create(a) for a in dim_seq]
         original_shape = tuple(array.shape)
