@@ -51,7 +51,7 @@ dev = [
     "keras>=3.0,<4",
     "matplotlib",
     "monai",             # for model testing
-    "numpy<2.0",         # for current typing
+    "numpy",
     "onnx",
     "onnxruntime",
     "packaging>=17.0",
