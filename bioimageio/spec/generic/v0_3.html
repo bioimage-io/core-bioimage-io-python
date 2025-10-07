@@ -314,7 +314,7 @@
     </ul>
 
 
-            <footer>bioimageio.core 0.9.2</footer>
+            <footer>bioimageio.core 0.9.3</footer>
 
         <a class="attribution" title="pdoc: Python API documentation generator" href="https://pdoc.dev" target="_blank">
             built with <span class="visually-hidden">pdoc</span><img
@@ -891,7 +891,7 @@ bioimageio<wbr>.<a href="./../../spec.html">spec</a><wbr>.<a href="./../generic.
 
                             <div id="Author.name" class="classattr">
                                 <div class="attr variable">
-            <span class="name">name</span><span class="annotation">: Annotated[str, Predicate(func=&lt;function _has_no_slash at 0x7f83912cb2e0&gt;)]</span>
+            <span class="name">name</span><span class="annotation">: Annotated[str, Predicate(func=&lt;function _has_no_slash at 0x7f021dcd67a0&gt;)]</span>
 
         
     </div>
@@ -1001,7 +1001,7 @@ bioimageio<wbr>.<a href="./../../spec.html">spec</a><wbr>.<a href="./../generic.
                             </div>
                             <div id="BadgeDescr.icon" class="classattr">
                                 <div class="attr variable">
-            <span class="name">icon</span><span class="annotation">: Annotated[Union[Annotated[Union[Annotated[pathlib.Path, PathType(path_type=&#39;file&#39;), FieldInfo(annotation=NoneType, required=True, title=&#39;FilePath&#39;)], <a href="#RelativeFilePath">RelativeFilePath</a>], AfterValidator(func=&lt;function wo_special_file_name at 0x7f8391333e20&gt;), PlainSerializer(func=&lt;function _package_serializer at 0x7f83913e8860&gt;, return_type=PydanticUndefined, when_used=&#39;unless-none&#39;)], <a href="#HttpUrl">HttpUrl</a>, pydantic.networks.HttpUrl, NoneType], FieldInfo(annotation=NoneType, required=True, examples=[&#39;https://colab.research.google.com/assets/colab-badge.svg&#39;])]</span>
+            <span class="name">icon</span><span class="annotation">: Annotated[Union[Annotated[Union[Annotated[pathlib.Path, PathType(path_type=&#39;file&#39;), FieldInfo(annotation=NoneType, required=True, title=&#39;FilePath&#39;)], <a href="#RelativeFilePath">RelativeFilePath</a>], AfterValidator(func=&lt;function wo_special_file_name at 0x7f022c187740&gt;), PlainSerializer(func=&lt;function _package_serializer at 0x7f021ddd51c0&gt;, return_type=PydanticUndefined, when_used=&#39;unless-none&#39;)], <a href="#HttpUrl">HttpUrl</a>, pydantic.networks.HttpUrl, NoneType], FieldInfo(annotation=NoneType, required=True, examples=[&#39;https://colab.research.google.com/assets/colab-badge.svg&#39;])]</span>
 
         
     </div>
@@ -1292,13 +1292,15 @@ errors defaults to 'strict'.</p>
 </span><span id="FileDescr-297"><a href="#FileDescr-297"><span class="linenos">297</span></a>            <span class="p">)</span>
 </span><span id="FileDescr-298"><a href="#FileDescr-298"><span class="linenos">298</span></a>
 </span><span id="FileDescr-299"><a href="#FileDescr-299"><span class="linenos">299</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_reader</span><span class="p">(</span>
-</span><span id="FileDescr-300"><a href="#FileDescr-300"><span class="linenos">300</span></a>        <span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">progressbar</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Progressbar</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Progressbar</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span id="FileDescr-301"><a href="#FileDescr-301"><span class="linenos">301</span></a>    <span class="p">):</span>
-</span><span id="FileDescr-302"><a href="#FileDescr-302"><span class="linenos">302</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;open the file source (download if needed)&quot;&quot;&quot;</span>
-</span><span id="FileDescr-303"><a href="#FileDescr-303"><span class="linenos">303</span></a>        <span class="k">return</span> <span class="n">get_reader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">progressbar</span><span class="o">=</span><span class="n">progressbar</span><span class="p">,</span> <span class="n">sha256</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sha256</span><span class="p">)</span>
-</span><span id="FileDescr-304"><a href="#FileDescr-304"><span class="linenos">304</span></a>
-</span><span id="FileDescr-305"><a href="#FileDescr-305"><span class="linenos">305</span></a>    <span class="n">download</span> <span class="o">=</span> <span class="n">get_reader</span>
-</span><span id="FileDescr-306"><a href="#FileDescr-306"><span class="linenos">306</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;alias for get_reader() method&quot;&quot;&quot;</span>
+</span><span id="FileDescr-300"><a href="#FileDescr-300"><span class="linenos">300</span></a>        <span class="bp">self</span><span class="p">,</span>
+</span><span id="FileDescr-301"><a href="#FileDescr-301"><span class="linenos">301</span></a>        <span class="o">*</span><span class="p">,</span>
+</span><span id="FileDescr-302"><a href="#FileDescr-302"><span class="linenos">302</span></a>        <span class="n">progressbar</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Progressbar</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Progressbar</span><span class="p">],</span> <span class="nb">bool</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="FileDescr-303"><a href="#FileDescr-303"><span class="linenos">303</span></a>    <span class="p">):</span>
+</span><span id="FileDescr-304"><a href="#FileDescr-304"><span class="linenos">304</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;open the file source (download if needed)&quot;&quot;&quot;</span>
+</span><span id="FileDescr-305"><a href="#FileDescr-305"><span class="linenos">305</span></a>        <span class="k">return</span> <span class="n">get_reader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">progressbar</span><span class="o">=</span><span class="n">progressbar</span><span class="p">,</span> <span class="n">sha256</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sha256</span><span class="p">)</span>
+</span><span id="FileDescr-306"><a href="#FileDescr-306"><span class="linenos">306</span></a>
+</span><span id="FileDescr-307"><a href="#FileDescr-307"><span class="linenos">307</span></a>    <span class="n">download</span> <span class="o">=</span> <span class="n">get_reader</span>
+</span><span id="FileDescr-308"><a href="#FileDescr-308"><span class="linenos">308</span></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;alias for get_reader() method&quot;&quot;&quot;</span>
 </span></pre></div>
 
 
@@ -1383,17 +1385,19 @@ errors defaults to 'strict'.</p>
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">get_reader</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="o">*</span>,</span><span class="param">	<span class="n">progressbar</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_internal</span><span class="o">.</span><span class="n">progress</span><span class="o">.</span><span class="n">Progressbar</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_internal</span><span class="o">.</span><span class="n">progress</span><span class="o">.</span><span class="n">Progressbar</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></span><span class="return-annotation">):</span></span>
+        <span class="name">get_reader</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="o">*</span>,</span><span class="param">	<span class="n">progressbar</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_internal</span><span class="o">.</span><span class="n">progress</span><span class="o">.</span><span class="n">Progressbar</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_internal</span><span class="o">.</span><span class="n">progress</span><span class="o">.</span><span class="n">Progressbar</span><span class="p">],</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">NoneType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></span><span class="return-annotation">):</span></span>
 
                 <label class="view-source-button" for="FileDescr.get_reader-view-source"><span>View Source</span></label>
 
     </div>
     <a class="headerlink" href="#FileDescr.get_reader"></a>
             <div class="pdoc-code codehilite"><pre><span></span><span id="FileDescr.get_reader-299"><a href="#FileDescr.get_reader-299"><span class="linenos">299</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_reader</span><span class="p">(</span>
-</span><span id="FileDescr.get_reader-300"><a href="#FileDescr.get_reader-300"><span class="linenos">300</span></a>        <span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">progressbar</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Progressbar</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Progressbar</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span id="FileDescr.get_reader-301"><a href="#FileDescr.get_reader-301"><span class="linenos">301</span></a>    <span class="p">):</span>
-</span><span id="FileDescr.get_reader-302"><a href="#FileDescr.get_reader-302"><span class="linenos">302</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;open the file source (download if needed)&quot;&quot;&quot;</span>
-</span><span id="FileDescr.get_reader-303"><a href="#FileDescr.get_reader-303"><span class="linenos">303</span></a>        <span class="k">return</span> <span class="n">get_reader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">progressbar</span><span class="o">=</span><span class="n">progressbar</span><span class="p">,</span> <span class="n">sha256</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sha256</span><span class="p">)</span>
+</span><span id="FileDescr.get_reader-300"><a href="#FileDescr.get_reader-300"><span class="linenos">300</span></a>        <span class="bp">self</span><span class="p">,</span>
+</span><span id="FileDescr.get_reader-301"><a href="#FileDescr.get_reader-301"><span class="linenos">301</span></a>        <span class="o">*</span><span class="p">,</span>
+</span><span id="FileDescr.get_reader-302"><a href="#FileDescr.get_reader-302"><span class="linenos">302</span></a>        <span class="n">progressbar</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Progressbar</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Progressbar</span><span class="p">],</span> <span class="nb">bool</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="FileDescr.get_reader-303"><a href="#FileDescr.get_reader-303"><span class="linenos">303</span></a>    <span class="p">):</span>
+</span><span id="FileDescr.get_reader-304"><a href="#FileDescr.get_reader-304"><span class="linenos">304</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;open the file source (download if needed)&quot;&quot;&quot;</span>
+</span><span id="FileDescr.get_reader-305"><a href="#FileDescr.get_reader-305"><span class="linenos">305</span></a>        <span class="k">return</span> <span class="n">get_reader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">progressbar</span><span class="o">=</span><span class="n">progressbar</span><span class="p">,</span> <span class="n">sha256</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sha256</span><span class="p">)</span>
 </span></pre></div>
 
 
@@ -1407,17 +1411,19 @@ errors defaults to 'strict'.</p>
 <div class="attr function">
             
         <span class="def">def</span>
-        <span class="name">download</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="o">*</span>,</span><span class="param">	<span class="n">progressbar</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_internal</span><span class="o">.</span><span class="n">progress</span><span class="o">.</span><span class="n">Progressbar</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_internal</span><span class="o">.</span><span class="n">progress</span><span class="o">.</span><span class="n">Progressbar</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span></span><span class="return-annotation">):</span></span>
+        <span class="name">download</span><span class="signature pdoc-code multiline">(<span class="param">	<span class="bp">self</span>,</span><span class="param">	<span class="o">*</span>,</span><span class="param">	<span class="n">progressbar</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_internal</span><span class="o">.</span><span class="n">progress</span><span class="o">.</span><span class="n">Progressbar</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">bioimageio</span><span class="o">.</span><span class="n">spec</span><span class="o">.</span><span class="n">_internal</span><span class="o">.</span><span class="n">progress</span><span class="o">.</span><span class="n">Progressbar</span><span class="p">],</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">NoneType</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span></span><span class="return-annotation">):</span></span>
 
                 <label class="view-source-button" for="FileDescr.download-view-source"><span>View Source</span></label>
 
     </div>
     <a class="headerlink" href="#FileDescr.download"></a>
             <div class="pdoc-code codehilite"><pre><span></span><span id="FileDescr.download-299"><a href="#FileDescr.download-299"><span class="linenos">299</span></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_reader</span><span class="p">(</span>
-</span><span id="FileDescr.download-300"><a href="#FileDescr.download-300"><span class="linenos">300</span></a>        <span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">progressbar</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Progressbar</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Progressbar</span><span class="p">],</span> <span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-</span><span id="FileDescr.download-301"><a href="#FileDescr.download-301"><span class="linenos">301</span></a>    <span class="p">):</span>
-</span><span id="FileDescr.download-302"><a href="#FileDescr.download-302"><span class="linenos">302</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;open the file source (download if needed)&quot;&quot;&quot;</span>
-</span><span id="FileDescr.download-303"><a href="#FileDescr.download-303"><span class="linenos">303</span></a>        <span class="k">return</span> <span class="n">get_reader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">progressbar</span><span class="o">=</span><span class="n">progressbar</span><span class="p">,</span> <span class="n">sha256</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sha256</span><span class="p">)</span>
+</span><span id="FileDescr.download-300"><a href="#FileDescr.download-300"><span class="linenos">300</span></a>        <span class="bp">self</span><span class="p">,</span>
+</span><span id="FileDescr.download-301"><a href="#FileDescr.download-301"><span class="linenos">301</span></a>        <span class="o">*</span><span class="p">,</span>
+</span><span id="FileDescr.download-302"><a href="#FileDescr.download-302"><span class="linenos">302</span></a>        <span class="n">progressbar</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Progressbar</span><span class="p">,</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">Progressbar</span><span class="p">],</span> <span class="nb">bool</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+</span><span id="FileDescr.download-303"><a href="#FileDescr.download-303"><span class="linenos">303</span></a>    <span class="p">):</span>
+</span><span id="FileDescr.download-304"><a href="#FileDescr.download-304"><span class="linenos">304</span></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;open the file source (download if needed)&quot;&quot;&quot;</span>
+</span><span id="FileDescr.download-305"><a href="#FileDescr.download-305"><span class="linenos">305</span></a>        <span class="k">return</span> <span class="n">get_reader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">,</span> <span class="n">progressbar</span><span class="o">=</span><span class="n">progressbar</span><span class="p">,</span> <span class="n">sha256</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sha256</span><span class="p">)</span>
 </span></pre></div>
 
 
@@ -1929,7 +1935,7 @@ errors defaults to 'strict'.</p>
 
                             <div id="Maintainer.name" class="classattr">
                                 <div class="attr variable">
-            <span class="name">name</span><span class="annotation">: Optional[Annotated[str, Predicate(func=&lt;function _has_no_slash at 0x7f83912cb2e0&gt;)]]</span>
+            <span class="name">name</span><span class="annotation">: Optional[Annotated[str, Predicate(func=&lt;function _has_no_slash at 0x7f021dcd67a0&gt;)]]</span>
 
         
     </div>
@@ -2242,7 +2248,7 @@ errors defaults to 'strict'.</p>
                             </div>
                             <div id="Uploader.name" class="classattr">
                                 <div class="attr variable">
-            <span class="name">name</span><span class="annotation">: Optional[Annotated[str, AfterValidator(func=&lt;function _remove_slashes at 0x7f8391251940&gt;)]]</span>
+            <span class="name">name</span><span class="annotation">: Optional[Annotated[str, AfterValidator(func=&lt;function _remove_slashes at 0x7f021dc3a2a0&gt;)]]</span>
 
         
     </div>
