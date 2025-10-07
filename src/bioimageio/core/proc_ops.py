@@ -237,9 +237,9 @@ class Clip(_SimpleOperator):
 
     def __post_init__(self):
         assert self.min is not None or self.max is not None, "missing min or max value"
-        assert (
-            self.min is None or self.max is None or self.min < self.max
-        ), f"expected min < max, but {self.min} !< {self.max}"
+        assert self.min is None or self.max is None or self.min < self.max, (
+            f"expected min < max, but {self.min} !< {self.max}"
+        )
 
     def _apply(self, x: Tensor, stat: Stat) -> Tensor:
         return x.clip(self.min, self.max)
@@ -321,9 +321,9 @@ class ScaleLinear(_SimpleOperator):
             gain = xr.DataArray(np.atleast_1d(kwargs.gain), dims=axis)
             offset = xr.DataArray(np.atleast_1d(kwargs.offset), dims=axis)
         else:
-            assert (
-                isinstance(kwargs.gain, (float, int)) or len(kwargs.gain) == 1
-            ), kwargs.gain
+            assert isinstance(kwargs.gain, (float, int)) or len(kwargs.gain) == 1, (
+                kwargs.gain
+            )
             gain = (
                 kwargs.gain if isinstance(kwargs.gain, (float, int)) else kwargs.gain[0]
             )

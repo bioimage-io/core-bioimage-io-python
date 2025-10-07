@@ -76,12 +76,12 @@ class Sample:
         pad_mode: PadMode,
         broadcast: bool = False,
     ) -> Tuple[TotalNumberOfBlocks, Iterable[SampleBlockWithOrigin]]:
-        assert not (
-            missing := [m for m in block_shapes if m not in self.members]
-        ), f"`block_shapes` specified for unknown members: {missing}"
-        assert not (
-            missing := [m for m in halo if m not in block_shapes]
-        ), f"`halo` specified for members without `block_shape`: {missing}"
+        assert not (missing := [m for m in block_shapes if m not in self.members]), (
+            f"`block_shapes` specified for unknown members: {missing}"
+        )
+        assert not (missing := [m for m in halo if m not in block_shapes]), (
+            f"`halo` specified for members without `block_shape`: {missing}"
+        )
 
         n_blocks, blocks = split_multiple_shapes_into_blocks(
             shapes=self.shape,

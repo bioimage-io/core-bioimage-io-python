@@ -2,9 +2,9 @@ name: Test and Deploy bioimageio.core
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ "**" ]
+    branches: ['**']
 
 defaults:
   run:
@@ -58,81 +58,69 @@ jobs:
       matrix:
         include:
           - python-version: '3.9'
-            conda-env: dev
-            spec: conda
             numpy-version: 1
           - python-version: '3.9'
-            conda-env: dev
-            spec: main
             numpy-version: 2
           - python-version: '3.10'
-            conda-env: full
             run-expensive-tests: true
             report-coverage: true
             save-cache: true
-            spec: conda
             numpy-version: 1
           - python-version: '3.11'
-            conda-env: dev
-            spec: main
             numpy-version: 2
           - python-version: '3.12'
-            conda-env: dev
-            spec: conda
             numpy-version: 1
           # - python-version: '3.13'
-          #   conda-env: '313'
-          #   spec: main
           #   numpy-version: 2
 
     steps:
-    - uses: actions/checkout@v4
-    - uses: actions/setup-python@v6
-      with:
-        python-version: ${{matrix.python-version}}
-        cache: 'pip'
-    - name: Install dependencies
-      run: |
-        pip install --upgrade pip
-        pip install -e .[dev] numpy==${{matrix.numpy-version}}.*
-    - name: Pyright
-      if: matrix.run-expensive-tests
-      run: |
-        pyright --version
-        pyright -p pyproject.toml --pythonversion ${{ matrix.python-version }}
-    - name: Restore bioimageio cache ${{needs.populate-cache.outputs.cache-key}}
-      uses: actions/cache/restore@v4
-      with:
-        path: bioimageio_cache
-        key: ${{needs.populate-cache.outputs.cache-key}}
-    - name: pytest
-      run: pytest --cov bioimageio --cov-report xml --cov-append --capture no --disable-pytest-warnings
-      env:
-        BIOIMAGEIO_CACHE_PATH: bioimageio_cache
-        RUN_EXPENSIVE_TESTS: ${{ matrix.run-expensive-tests && 'true' || 'false' }}
-    - name: Save bioimageio cache ${{needs.populate-cache.outputs.cache-key}}
-      if: matrix.save-cache
-      uses: actions/cache/save@v4
-      with:
-        path: bioimageio_cache
-        key: ${{needs.populate-cache.outputs.cache-key}}
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v6
+        with:
+          python-version: ${{matrix.python-version}}
+          cache: 'pip'
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -e .[dev] numpy==${{matrix.numpy-version}}.*
+      - name: Pyright
+        if: matrix.run-expensive-tests # pyright is not expensive, but we only want to run it once due to otherwise inconsistent typing
+        run: |
+          pyright --version
+          pyright -p pyproject.toml --pythonversion ${{ matrix.python-version }}
+      - name: Restore bioimageio cache ${{needs.populate-cache.outputs.cache-key}}
+        uses: actions/cache/restore@v4
+        with:
+          path: bioimageio_cache
+          key: ${{needs.populate-cache.outputs.cache-key}}
+      - name: pytest
+        run: pytest --cov bioimageio --cov-report xml --cov-append --capture no --disable-pytest-warnings
+        env:
+          BIOIMAGEIO_CACHE_PATH: bioimageio_cache
+          RUN_EXPENSIVE_TESTS: ${{ matrix.run-expensive-tests && 'true' || 'false' }}
+      - name: Save bioimageio cache ${{needs.populate-cache.outputs.cache-key}}
+        if: matrix.save-cache
+        uses: actions/cache/save@v4
+        with:
+          path: bioimageio_cache
+          key: ${{needs.populate-cache.outputs.cache-key}}
 
-    - if: matrix.report-coverage && github.event_name == 'pull_request'
-      uses: orgoro/coverage@v3.2
-      with:
-        coverageFile: coverage.xml
-        token: ${{secrets.GITHUB_TOKEN}}
-    - if: matrix.report-coverage && github.ref == 'refs/heads/main'
-      run: |
-        pip install genbadge[coverage]
-        genbadge coverage --input-file coverage.xml --output-file ./dist/coverage/coverage-badge.svg
-        coverage html -d dist/coverage
-    - if: matrix.report-coverage && github.ref == 'refs/heads/main'
-      uses: actions/upload-artifact@v4
-      with:
-        name: coverage
-        retention-days: 1
-        path: dist
+      - if: matrix.report-coverage && github.event_name == 'pull_request'
+        uses: orgoro/coverage@v3.2
+        with:
+          coverageFile: coverage.xml
+          token: ${{secrets.GITHUB_TOKEN}}
+      - if: matrix.report-coverage && github.ref == 'refs/heads/main'
+        run: |
+          pip install genbadge[coverage]
+          genbadge coverage --input-file coverage.xml --output-file ./dist/coverage/coverage-badge.svg
+          coverage html -d dist/coverage
+      - if: matrix.report-coverage && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          retention-days: 1
+          path: dist
 
   conda-build:
     needs: test
@@ -145,7 +133,7 @@ jobs:
         with:
           auto-update-conda: true
           auto-activate-base: true
-          activate-environment: ""
+          activate-environment: ''
           channel-priority: strict
           miniforge-version: latest
           conda-solver: libmamba
@@ -242,7 +230,7 @@ jobs:
         uses: pypa/gh-action-pypi-publish@release/v1.12
         with:
           user: __token__
-          password: "${{ secrets.PYPI_TOKEN }}"
+          password: '${{ secrets.PYPI_TOKEN }}'
           packages-dir: dist/
           verbose: true
       - name: Publish the release notes
@@ -250,6 +238,6 @@ jobs:
         uses: release-drafter/release-drafter@v6.0.0
         with:
           publish: "${{ steps.tag-version.outputs.new_tag != '' }}"
-          tag: "${{ steps.tag-version.outputs.new_tag }}"
+          tag: '${{ steps.tag-version.outputs.new_tag }}'
         env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'

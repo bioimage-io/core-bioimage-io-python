@@ -6,7 +6,7 @@ requires-python = ">=3.9"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [
-    "bioimageio.spec ==0.5.5.4",
+    "bioimageio.spec ==0.5.5.5",
     "h5py",
     "imagecodecs",
     "imageio>=2.10",
@@ -44,15 +44,14 @@ onnx = ["onnxruntime"]
 pytorch = ["torch>=1.6,<3", "torchvision>=0.21", "keras>=3.0,<4"]
 tensorflow = ["tensorflow", "keras>=2.15,<4"]
 dev = [
-    "black",
     "cellpose",          # for model testing
     "crick",
     "httpx",
-    "jupyter-black",
     "jupyter",
     "keras>=3.0,<4",
     "matplotlib",
     "monai",             # for model testing
+    "numpy",
     "onnx",
     "onnxruntime",
     "packaging>=17.0",
@@ -78,12 +77,6 @@ where = ["src/"]
 
 [tool.setuptools.dynamic]
 version = { attr = "bioimageio.core.__version__" }
-
-[tool.black]
-line-length = 88
-extend-exclude = "/presentations/"
-target-version = ["py39", "py310", "py311", "py312"]
-preview = true
 
 [tool.pyright]
 exclude = [

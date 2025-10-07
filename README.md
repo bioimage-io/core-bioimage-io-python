@@ -364,9 +364,16 @@ may be controlled with the `LOGURU_LEVEL` environment variable.
 
 ## Changelog
 
+### 0.9.3
+
+- bump bioimageio.spec library version to 0.5.5.5
+- more robust test model reporting
+- improved user input axis intepretation
+- fixed conda subprocess calls
+
 ### 0.9.2
 
-fix model inference tolerance reporting
+- fix model inference tolerance reporting
 
 ### 0.9.1
 

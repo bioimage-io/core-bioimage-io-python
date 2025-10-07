@@ -129,7 +129,9 @@ TENSORFLOW_MODELS = (
 KERAS_MODELS = (
     []
     if keras is None
-    else ["unet2d_keras"] if tf_major_version == 1 else ["unet2d_keras_tf2"]
+    else ["unet2d_keras"]
+    if tf_major_version == 1
+    else ["unet2d_keras_tf2"]
 )
 TENSORFLOW_JS_MODELS: List[str] = []  # TODO: add a tensorflow_js example model
 
@@ -230,7 +232,9 @@ def convert_to_onnx(request: FixtureRequest):
     params=(
         []
         if tf_major_version is None
-        else ["unet2d_keras"] if tf_major_version == 1 else ["unet2d_keras_tf2"]
+        else ["unet2d_keras"]
+        if tf_major_version == 1
+        else ["unet2d_keras_tf2"]
     )
 )
 def unet2d_keras(request: FixtureRequest):

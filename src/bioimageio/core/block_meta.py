@@ -198,13 +198,13 @@ class BlockMeta:
         if not isinstance(self.halo, Frozen):
             object.__setattr__(self, "halo", Frozen(self.halo))
 
-        assert all(
-            a in self.sample_shape for a in self.inner_slice
-        ), "block has axes not present in sample"
+        assert all(a in self.sample_shape for a in self.inner_slice), (
+            "block has axes not present in sample"
+        )
 
-        assert all(
-            a in self.inner_slice for a in self.halo
-        ), "halo has axes not present in block"
+        assert all(a in self.inner_slice for a in self.halo), (
+            "halo has axes not present in block"
+        )
 
         if any(s > self.sample_shape[a] for a, s in self.shape.items()):
             logger.warning(
@@ -343,9 +343,9 @@ def split_multiple_shapes_into_blocks(
     if strides is None:
         strides = {}
 
-    assert not (
-        unknown_block := [t for t in strides if t not in block_shapes]
-    ), f"`stride` specified for tensors without block shape: {unknown_block}"
+    assert not (unknown_block := [t for t in strides if t not in block_shapes]), (
+        f"`stride` specified for tensors without block shape: {unknown_block}"
+    )
 
     blocks: Dict[MemberId, Iterable[BlockMeta]] = {}
     n_blocks: Dict[MemberId, TotalNumberOfBlocks] = {}
