@@ -44,13 +44,15 @@ onnx = ["onnxruntime"]
 pytorch = ["torch>=1.6,<3", "torchvision>=0.21", "keras>=3.0,<4"]
 tensorflow = ["tensorflow", "keras>=2.15,<4"]
 dev = [
-    "cellpose",          # for model testing
+    # "biapy",          # pins core exactly
+    "careamics",
+    "cellpose",         # for model testing
     "crick",
     "httpx",
     "jupyter",
     "keras>=3.0,<4",
     "matplotlib",
-    "monai",             # for model testing
+    "monai",            # for model testing
     "numpy",
     "onnx",
     "onnxruntime",
@@ -61,7 +63,8 @@ dev = [
     "pytest-cov",
     "pytest",
     "python-dotenv",
-    "segment-anything",  # for model testing
+    "segment-anything", # for model testing
+    # "stardist",          # for model testing and stardist postprocessing  # TODO: add updated stardist to dev env
     "tensorflow",
     "timm",              # for model testing
     "torch>=1.6,<3",

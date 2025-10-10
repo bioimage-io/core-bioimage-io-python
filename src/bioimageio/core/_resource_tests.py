@@ -69,6 +69,7 @@ from bioimageio.core import __version__
 from bioimageio.core.io import save_tensor
 
 from ._prediction_pipeline import create_prediction_pipeline
+from ._settings import settings
 from .axis import AxisId, BatchSize
 from .common import MemberId, SupportedWeightsFormat
 from .digest_spec import get_test_input_sample, get_test_output_sample
@@ -394,7 +395,15 @@ def _test_in_env(
             _ = path.write_bytes(encoded_env)
             logger.debug("written conda env to {}", path)
             run_command(
-                [CONDA_CMD, "env", "create", f"--file={path}", f"--name={env_name}"]
+                [
+                    CONDA_CMD,
+                    "env",
+                    "create",
+                    "--yes",
+                    f"--file={path}",
+                    f"--name={env_name}",
+                ]
+                + (["--quiet"] if settings.CI else [])
             )
             run_command([CONDA_CMD, "activate", env_name])
         except Exception as e:
