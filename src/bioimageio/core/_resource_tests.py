@@ -260,6 +260,15 @@ def test_description(
     else:
         assert_never(runtime_env)
 
+    try:
+        run_command(["thiscommandshouldalwaysfail", "please"])
+    except Exception:
+        pass
+    else:
+        raise RuntimeError(
+            "given run_command does not raise an exception for a failing command"
+        )
+
     td_kwargs: Dict[str, Any] = (
         dict(ignore_cleanup_errors=True) if sys.version_info >= (3, 10) else {}
     )
@@ -387,8 +396,8 @@ def _test_in_env(
         raise RuntimeError("Conda not available") from e
 
     try:
-        run_command([CONDA_CMD, "activate", env_name])
-    except Exception:
+        run_command([CONDA_CMD, "run", "-n", env_name, "python", "--version"])
+    except Exception as e:
         working_dir.mkdir(parents=True, exist_ok=True)
         path = working_dir / "env.yaml"
         try:
@@ -405,7 +414,8 @@ def _test_in_env(
                 ]
                 + (["--quiet"] if settings.CI else [])
             )
-            run_command([CONDA_CMD, "activate", env_name])
+            # double check that environment was created successfully
+            run_command([CONDA_CMD, "run", "-n", env_name, "python", "--version"])
         except Exception as e:
             summary = descr.validation_summary
             summary.add_detail(
