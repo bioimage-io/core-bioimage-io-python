@@ -361,6 +361,14 @@ There are different environment files available that only install tensorflow or 
 
 `bioimageio.spec` and `bioimageio.core` use [loguru](https://github.com/Delgan/loguru) for logging, hence the logging level
 may be controlled with the `LOGURU_LEVEL` environment variable.
+The `bioimageio` CLI has logging enabled by default.
+To activate logging when using bioimageio.spec/bioimageio.core as a library, add
+
+```python
+from loguru import logger
+
+logger.enable("bioimageio")
+```
 
 ## Changelog
 
