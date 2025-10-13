@@ -1,5 +1,6 @@
 ### 0.9.4
 
+- bump bioimageio.spec library version to 0.5.5.6
 - Replace `conda activate <env name>` with `conda run -n <env name> python --version` when checking if a conda environment exists
   (This is closer to the actual `conda run` command we need and avoids requests by conda to rerun `conda init` (in CI).)
 
