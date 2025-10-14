@@ -124,7 +124,6 @@ testpaths = ["src", "tests"]
 
 [tool.ruff]
 line-length = 88
-target-version = "py39"
 include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
 exclude = [
     "presentations",
