@@ -6,7 +6,14 @@ import operator
 from typing import Any, Callable
 
 from typing_extensions import Self
-from xarray.core import nputils, ops
+from xarray.core import nputils
+
+try:
+    # xarray >= 2025.03
+    from xarray.computation import ops
+except ImportError:
+    # xarray < 2025.03
+    from xarray.core import ops  # type: ignore
 
 
 class MagicTensorOpsMixin:

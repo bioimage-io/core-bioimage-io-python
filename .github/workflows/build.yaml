@@ -82,7 +82,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install -e .[dev] numpy==${{matrix.numpy-version}}.*
+          pip install -e .[dev,partners] numpy==${{matrix.numpy-version}}.*
       - name: Pyright
         if: matrix.run-expensive-tests # pyright is not expensive, but we only want to run it once due to otherwise inconsistent typing
         run: |
@@ -165,7 +165,7 @@ jobs:
         with:
           python-version: '3.12'
           cache: 'pip'
-      - run: pip install -e .[dev]
+      - run: pip install -e .[dev,partners]
       - name: Generate developer docs
         run: ./scripts/pdoc/run.sh
       - run: cp README.md ./dist/README.md

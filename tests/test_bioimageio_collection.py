@@ -101,8 +101,8 @@ def test_rdf(
 
         for skip_if_depends_on in (
             "biapy",
-            "git+https://github.com/CAREamics/careamics.git",
-            "careamics",
+            "git+https://github.com/CAREamics/careamics.git",  # TODO: include tests depending on careamics
+            "careamics",  # TODO: include tests depending on careamics
             "inferno",
             "plantseg",
         ):

@@ -6,7 +6,7 @@ requires-python = ">=3.9"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [
-    "bioimageio.spec ==0.5.5.5",
+    "bioimageio.spec ==0.5.5.6",
     "h5py",
     "imagecodecs",
     "imageio>=2.10",
@@ -18,7 +18,7 @@ dependencies = [
     "scipy",
     "tqdm",
     "typing-extensions",
-    "xarray>=2023.01,<2025.3.0",
+    "xarray>=2023.01",
 ]
 classifiers = [
     "Development Status :: 3 - Alpha",
@@ -43,16 +43,19 @@ Source = "https://github.com/bioimage-io/core-bioimage-io-python"
 onnx = ["onnxruntime"]
 pytorch = ["torch>=1.6,<3", "torchvision>=0.21", "keras>=3.0,<4"]
 tensorflow = ["tensorflow", "keras>=2.15,<4"]
-dev = [
+partners = [
     # "biapy",          # pins core exactly
     "careamics",
-    "cellpose",         # for model testing
+    # "stardist",         # for model testing and stardist postprocessing  # TODO: add updated stardist to partners env
+]
+dev = [
+    "cellpose",          # for model testing
     "crick",
     "httpx",
     "jupyter",
     "keras>=3.0,<4",
     "matplotlib",
-    "monai",            # for model testing
+    "monai",             # for model testing
     "numpy",
     "onnx",
     "onnxruntime",
@@ -63,8 +66,7 @@ dev = [
     "pytest-cov",
     "pytest",
     "python-dotenv",
-    "segment-anything", # for model testing
-    # "stardist",          # for model testing and stardist postprocessing  # TODO: add updated stardist to dev env
+    "segment-anything",  # for model testing
     "tensorflow",
     "timm",              # for model testing
     "torch>=1.6,<3",
