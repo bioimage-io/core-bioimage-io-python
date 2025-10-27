@@ -40,7 +40,7 @@ Documentation = "https://bioimage-io.github.io/core-bioimage-io-python/bioimagei
 Source = "https://github.com/bioimage-io/core-bioimage-io-python"
 
 [project.optional-dependencies]
-onnx = ["onnxruntime"]
+onnx = ["onnxruntime", "onnxscript"]
 pytorch = ["torch>=1.6,<3", "torchvision>=0.21", "keras>=3.0,<4"]
 tensorflow = ["tensorflow", "keras>=2.15,<4"]
 partners = [
@@ -59,6 +59,7 @@ dev = [
     "numpy",
     "onnx",
     "onnxruntime",
+    "onnxscript",
     "packaging>=17.0",
     "pdoc",
     "pre-commit",
