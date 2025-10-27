@@ -274,15 +274,30 @@ def test_description(
     )
     with TemporaryDirectory(**td_kwargs) as _d:
         working_dir = Path(_d)
-        if isinstance(source, (dict, ResourceDescrBase)):
+
+        if isinstance(source, ResourceDescrBase):
+            descr = source
+        elif isinstance(source, dict):
+            context = get_validation_context().replace(
+                perform_io_checks=True  # make sure we perform io checks though
+            )
+
+            descr = build_description(source, context=context)
+        else:
+            descr = load_description(source, perform_io_checks=True)
+
+        if isinstance(descr, InvalidDescr):
+            return descr.validation_summary
+        elif isinstance(source, (dict, ResourceDescrBase)):
             file_source = save_bioimageio_package(
-                source, output_path=working_dir / "package.zip"
+                descr, output_path=working_dir / "package.zip"
             )
         else:
             file_source = source
 
-        return _test_in_env(
+        _test_in_env(
             file_source,
+            descr=descr,
             working_dir=working_dir,
             weight_format=weight_format,
             conda_env=conda_env,
@@ -295,10 +310,13 @@ def test_description(
             **deprecated,
         )
 
+    return descr.validation_summary
+
 
 def _test_in_env(
     source: PermissiveFileSource,
     *,
+    descr: ResourceDescr,
     working_dir: Path,
     weight_format: Optional[SupportedWeightsFormat],
     conda_env: Optional[BioimageioCondaEnv],
@@ -309,74 +327,69 @@ def _test_in_env(
     expected_type: Optional[str],
     sha256: Optional[Sha256],
     **deprecated: Unpack[DeprecatedKwargs],
-) -> ValidationSummary:
-    descr = load_description(source)
-
-    if not isinstance(descr, (v0_4.ModelDescr, v0_5.ModelDescr)):
-        raise NotImplementedError("Not yet implemented for non-model resources")
-
-    if weight_format is None:
-        all_present_wfs = [
-            wf for wf in get_args(WeightsFormat) if getattr(descr.weights, wf)
-        ]
-        ignore_wfs = [wf for wf in all_present_wfs if wf in ["tensorflow_js"]]
-        logger.info(
-            "Found weight formats {}. Start testing all{}...",
-            all_present_wfs,
-            f" (except: {', '.join(ignore_wfs)}) " if ignore_wfs else "",
-        )
-        summary = _test_in_env(
-            source,
-            working_dir=working_dir / all_present_wfs[0],
-            weight_format=all_present_wfs[0],
-            devices=devices,
-            determinism=determinism,
-            conda_env=conda_env,
-            run_command=run_command,
-            expected_type=expected_type,
-            sha256=sha256,
-            stop_early=stop_early,
-            **deprecated,
-        )
-        for wf in all_present_wfs[1:]:
-            additional_summary = _test_in_env(
-                source,
-                working_dir=working_dir / wf,
-                weight_format=wf,
-                devices=devices,
-                determinism=determinism,
-                conda_env=conda_env,
-                run_command=run_command,
-                expected_type=expected_type,
-                sha256=sha256,
-                stop_early=stop_early,
-                **deprecated,
+):
+    """Test a bioimage.io resource in a given conda environment.
+    Adds details to the existing validation summary of **descr**.
+    """
+    if isinstance(descr, (v0_4.ModelDescr, v0_5.ModelDescr)):
+        if weight_format is None:
+            # run tests for all present weight formats
+            all_present_wfs = [
+                wf for wf in get_args(WeightsFormat) if getattr(descr.weights, wf)
+            ]
+            ignore_wfs = [wf for wf in all_present_wfs if wf in ["tensorflow_js"]]
+            logger.info(
+                "Found weight formats {}. Start testing all{}...",
+                all_present_wfs,
+                f" (except: {', '.join(ignore_wfs)}) " if ignore_wfs else "",
             )
-            for d in additional_summary.details:
-                # TODO: filter reduntant details; group details
-                summary.add_detail(d)
-        return summary
+            for wf in all_present_wfs:
+                _test_in_env(
+                    source,
+                    descr=descr,
+                    working_dir=working_dir / wf,
+                    weight_format=wf,
+                    devices=devices,
+                    determinism=determinism,
+                    conda_env=conda_env,
+                    run_command=run_command,
+                    expected_type=expected_type,
+                    sha256=sha256,
+                    stop_early=stop_early,
+                    **deprecated,
+                )
 
-    if weight_format == "pytorch_state_dict":
-        wf = descr.weights.pytorch_state_dict
-    elif weight_format == "torchscript":
-        wf = descr.weights.torchscript
-    elif weight_format == "keras_hdf5":
-        wf = descr.weights.keras_hdf5
-    elif weight_format == "onnx":
-        wf = descr.weights.onnx
-    elif weight_format == "tensorflow_saved_model_bundle":
-        wf = descr.weights.tensorflow_saved_model_bundle
-    elif weight_format == "tensorflow_js":
-        raise RuntimeError(
-            "testing 'tensorflow_js' is not supported by bioimageio.core"
-        )
+            return
+
+        if weight_format == "pytorch_state_dict":
+            wf = descr.weights.pytorch_state_dict
+        elif weight_format == "torchscript":
+            wf = descr.weights.torchscript
+        elif weight_format == "keras_hdf5":
+            wf = descr.weights.keras_hdf5
+        elif weight_format == "onnx":
+            wf = descr.weights.onnx
+        elif weight_format == "tensorflow_saved_model_bundle":
+            wf = descr.weights.tensorflow_saved_model_bundle
+        elif weight_format == "tensorflow_js":
+            raise RuntimeError(
+                "testing 'tensorflow_js' is not supported by bioimageio.core"
+            )
+        else:
+            assert_never(weight_format)
+        assert wf is not None
+        if conda_env is None:
+            conda_env = get_conda_env(entry=wf)
+
+        test_loc = ("weights", weight_format)
     else:
-        assert_never(weight_format)
+        if conda_env is None:
+            warnings.warn(
+                "No conda environment description given for testing (And no default conda envs available for non-model descriptions)."
+            )
+            return
 
-    assert wf is not None
-    if conda_env is None:
-        conda_env = get_conda_env(entry=wf)
+        test_loc = ()
 
     # remove name as we crate a name based on the env description hash value
     conda_env.name = None
@@ -417,16 +430,15 @@ def _test_in_env(
             # double check that environment was created successfully
             run_command([CONDA_CMD, "run", "-n", env_name, "python", "--version"])
         except Exception as e:
-            summary = descr.validation_summary
-            summary.add_detail(
+            descr.validation_summary.add_detail(
                 ValidationDetail(
                     name="Conda environment creation",
                     status="failed",
-                    loc=("weights", weight_format),
+                    loc=test_loc,
                     recommended_env=conda_env,
                     errors=[
                         ErrorEntry(
-                            loc=("weights", weight_format),
+                            loc=test_loc,
                             msg=str(e),
                             type="conda",
                             with_traceback=True,
@@ -434,7 +446,7 @@ def _test_in_env(
                     ],
                 )
             )
-            return summary
+            return
 
     working_dir.mkdir(parents=True, exist_ok=True)
     summary_path = working_dir / "summary.json"
@@ -461,7 +473,7 @@ def _test_in_env(
                 )
             )
         except Exception as e:
-            cmd_error = f"Failed to run command '{' '.join(cmd)}': {e}."
+            cmd_error = f"Command '{' '.join(cmd)}' returned with error: {e}."
 
         if summary_path.exists():
             break
@@ -469,29 +481,27 @@ def _test_in_env(
         if cmd_error is not None:
             logger.warning(cmd_error)
 
-        return ValidationSummary(
-            name="calling bioimageio test command",
-            source_name=str(source),
-            status="failed",
-            type="unknown",
-            format_version="unknown",
-            details=[
-                ValidationDetail(
-                    name="run 'bioimageio test'",
-                    errors=[
-                        ErrorEntry(
-                            loc=(),
-                            type="bioimageio cli",
-                            msg=f"test command '{' '.join(cmd)}' did not produce a summary file at {summary_path}",
-                        )
-                    ],
-                    status="failed",
-                )
-            ],
-            env=set(),
+        descr.validation_summary.add_detail(
+            ValidationDetail(
+                name="run 'bioimageio test' command",
+                recommended_env=conda_env,
+                errors=[
+                    ErrorEntry(
+                        loc=(),
+                        type="bioimageio cli",
+                        msg=f"test command '{' '.join(cmd)}' did not produce a summary file at {summary_path}",
+                    )
+                ],
+                status="failed",
+            )
         )
+        return
 
-    return ValidationSummary.load_json(summary_path)
+    # add relevant details from command summary
+    command_summary = ValidationSummary.load_json(summary_path)
+    for detail in command_summary.details:
+        if detail.loc[: len(test_loc)] == test_loc:
+            descr.validation_summary.add_detail(detail)
 
 
 @overload
@@ -667,21 +677,18 @@ def load_description_and_test(
         enable_determinism(determinism, weight_formats=weight_formats)
         for w in weight_formats:
             _test_model_inference(rd, w, devices, stop_early=stop_early, **deprecated)
-            if stop_early and rd.validation_summary.status == "failed":
+            if stop_early and rd.validation_summary.status != "passed":
                 break
 
             if not isinstance(rd, v0_4.ModelDescr):
                 _test_model_inference_parametrized(
                     rd, w, devices, stop_early=stop_early
                 )
-                if stop_early and rd.validation_summary.status == "failed":
+                if stop_early and rd.validation_summary.status != "passed":
                     break
 
     # TODO: add execution of jupyter notebooks
     # TODO: add more tests
-
-    if rd.validation_summary.status == "valid-format":
-        rd.validation_summary.status = "passed"
 
     return rd
 
