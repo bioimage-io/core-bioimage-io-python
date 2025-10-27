@@ -146,7 +146,9 @@ def _import_from_file_impl(
             importlib_spec.loader.exec_module(module)
 
         except Exception as e:
-            del sys.modules[module_name]
+            if module_name in sys.modules:
+                del sys.modules[module_name]
+
             raise ImportError(f"Failed to import {source}") from e
 
     try:
