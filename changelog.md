@@ -1,3 +1,7 @@
+### 0.9.5 (not yet released)
+
+- bump bioimageio.spec library version to 0.5.5.6
+
 ### 0.9.4
 
 - bump bioimageio.spec library version to 0.5.5.6
