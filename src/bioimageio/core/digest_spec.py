@@ -23,10 +23,6 @@ from zipfile import ZipFile, is_zipfile
 
 import numpy as np
 import xarray as xr
-from loguru import logger
-from numpy.typing import NDArray
-from typing_extensions import Unpack, assert_never
-
 from bioimageio.spec._internal.io import HashKwargs
 from bioimageio.spec.common import FileDescr, FileSource, ZipPath
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
@@ -37,6 +33,9 @@ from bioimageio.spec.model.v0_5 import (
     ParameterizedSize_N,
 )
 from bioimageio.spec.utils import load_array
+from loguru import logger
+from numpy.typing import NDArray
+from typing_extensions import Unpack, assert_never
 
 from .axis import Axis, AxisId, AxisInfo, AxisLike, PerAxis
 from .block_meta import split_multiple_shapes_into_blocks
