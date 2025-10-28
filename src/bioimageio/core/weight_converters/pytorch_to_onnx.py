@@ -1,14 +1,13 @@
 from pathlib import Path
 
 import torch
-
 from bioimageio.spec.model.v0_5 import ModelDescr, OnnxWeightsDescr
 
 from .. import __version__
 from ..backends.pytorch_backend import load_torch_model
 from ..digest_spec import get_member_id, get_test_input_sample
 from ..proc_setup import get_pre_and_postprocessing
-from ._utils_onnx import get_dynamic_axes
+from ._utils_onnx import get_dynamic_shapes
 
 
 def convert(
@@ -64,9 +63,10 @@ def convert(
             model,
             tuple(inputs_torch),
             str(output_path),
+            dynamo=True,
             input_names=[str(d.id) for d in model_descr.inputs],
             output_names=[str(d.id) for d in model_descr.outputs],
-            dynamic_axes=get_dynamic_axes(model_descr),
+            dynamic_shapes=get_dynamic_shapes(model_descr),
             verbose=verbose,
             opset_version=opset_version,
         )
