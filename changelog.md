@@ -1,6 +1,8 @@
-### 0.9.5 (not yet released)
+### 0.9.5
 
-- bump bioimageio.spec library version to 0.5.5.6
+- bump bioimageio.spec library version to 0.5.6.0
+- improved ONNX export from pytorch state dict or torchscript using torch dynamo
+- default `opset_version` for `pytorch_to_onnx`/`torchscript_for_onnx` conversions bumped to 18.
 
 ### 0.9.4
 
