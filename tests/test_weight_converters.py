@@ -4,8 +4,7 @@ import zipfile
 from pathlib import Path
 
 import pytest
-
-from bioimageio.spec import load_description
+from bioimageio.spec import load_model_description
 from bioimageio.spec.model import v0_5
 
 
@@ -13,7 +12,7 @@ def test_pytorch_to_torchscript(any_torch_model, tmp_path):
     from bioimageio.core import test_model
     from bioimageio.core.weight_converters.pytorch_to_torchscript import convert
 
-    model_descr = load_description(any_torch_model, perform_io_checks=False)
+    model_descr = load_model_description(any_torch_model, perform_io_checks=False)
     if model_descr.implemented_format_version_tuple[:2] == (0, 4):
         pytest.skip("cannot convert to old 0.4 format")
 
@@ -31,9 +30,9 @@ def test_pytorch_to_onnx(convert_to_onnx, tmp_path):
     from bioimageio.core import test_model
     from bioimageio.core.weight_converters.pytorch_to_onnx import convert
 
-    model_descr = load_description(convert_to_onnx, format_version="latest")
+    model_descr = load_model_description(convert_to_onnx, format_version="latest")
     out_path = tmp_path / "weights.onnx"
-    opset_version = 15
+    opset_version = 18
     ret_val = convert(
         model_descr=model_descr,
         output_path=out_path,
@@ -55,7 +54,7 @@ def test_keras_to_tensorflow(any_keras_model: Path, tmp_path: Path):
     from bioimageio.core.weight_converters.keras_to_tensorflow import convert
 
     out_path = tmp_path / "weights.zip"
-    model_descr = load_description(any_keras_model)
+    model_descr = load_model_description(any_keras_model)
     ret_val = convert(model_descr, out_path)
 
     assert out_path.exists()
@@ -75,7 +74,7 @@ def test_keras_to_tensorflow(any_keras_model: Path, tmp_path: Path):
 # def test_tensorflow_to_keras(any_tensorflow_model: Path, tmp_path: Path):
 #     from bioimageio.core.weight_converters.tensorflow_to_keras import convert
 
-#     model_descr = load_description(any_tensorflow_model)
+#     model_descr = load_model_description(any_tensorflow_model)
 #     out_path = tmp_path / "weights.h5"
 #     ret_val = convert(model_descr, output_path=out_path)
 #     assert out_path.exists()
@@ -92,7 +91,7 @@ def test_keras_to_tensorflow(any_keras_model: Path, tmp_path: Path):
 #     from bioimageio.core.weight_converters.tensorflow_to_keras import convert
 
 #     out_path = tmp_path / "weights.zip"
-#     model_descr = load_description(any_tensorflow_model)
+#     model_descr = load_model_description(any_tensorflow_model)
 #     ret_val = convert(model_descr, out_path)
 
 #     assert out_path.exists()

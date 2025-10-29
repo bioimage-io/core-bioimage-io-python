@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING, DefaultDict, Dict, List, Literal, Tuple, Union
 
 import torch
 from bioimageio.spec.model.v0_5 import (
+    BatchAxis,
     FileDescr,
     InputAxis,
     ModelDescr,
@@ -71,17 +72,17 @@ else:
         # dynamic shapes as list to match the source code which may have
         # different arg names than the tensor ids in the model description
 
-        dynamic_shapes: List[Dict[int, TensorDim]] = []
+        dynamic_shapes: List[Dict[int, Union[int, TensorDim]]] = []
         potential_ref_axes: Dict[str, Tuple[InputAxis, int]] = {}
         # add dynamic dims from parameterized input sizes (and fixed sizes as None)
         for d in model_descr.inputs:
-            dynamic_tensor_dims: Dict[int, TensorDim] = {}
+            dynamic_tensor_dims: Dict[int, Union[int, TensorDim]] = {}
             for i, ax in enumerate(d.axes):
                 dim_name = f"{d.id}_{ax.id}"
                 if isinstance(ax.size, int):
-                    dim = STATIC_DIM  # fixed size
-                elif ax.size is None:
-                    dim = Dim(dim_name, min=1)
+                    dim = ax.size
+                elif isinstance(ax, BatchAxis):
+                    dim = Dim("batch", min=1)
                 elif isinstance(ax.size, ParameterizedSize):
                     dim = Dim(dim_name, min=ax.size.min)
                 elif isinstance(ax.size, SizeReference):
