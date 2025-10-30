@@ -1005,35 +1005,41 @@ def _test_model_inference_parametrized(
         ) as prediction_pipeline:
             for n, batch_size, inputs, exptected_output_shape in generate_test_cases():
                 error: Optional[str] = None
-                result = prediction_pipeline.predict_sample_without_blocking(inputs)
-                if len(result.members) != len(exptected_output_shape):
-                    error = (
-                        f"Expected {len(exptected_output_shape)} outputs,"
-                        + f" but got {len(result.members)}"
-                    )
-
+                try:
+                    result = prediction_pipeline.predict_sample_without_blocking(inputs)
+                except Exception as e:
+                    error = str(e)
                 else:
-                    for m, exp in exptected_output_shape.items():
-                        res = result.members.get(m)
-                        if res is None:
-                            error = "Output tensors may not be None for test case"
-                            break
+                    if len(result.members) != len(exptected_output_shape):
+                        error = (
+                            f"Expected {len(exptected_output_shape)} outputs,"
+                            + f" but got {len(result.members)}"
+                        )
 
-                        diff: Dict[AxisId, int] = {}
-                        for a, s in res.sizes.items():
-                            if isinstance((e_aid := exp[AxisId(a)]), int):
-                                if s != e_aid:
+                    else:
+                        for m, exp in exptected_output_shape.items():
+                            res = result.members.get(m)
+                            if res is None:
+                                error = "Output tensors may not be None for test case"
+                                break
+
+                            diff: Dict[AxisId, int] = {}
+                            for a, s in res.sizes.items():
+                                if isinstance((e_aid := exp[AxisId(a)]), int):
+                                    if s != e_aid:
+                                        diff[AxisId(a)] = s
+                                elif (
+                                    s < e_aid.min
+                                    or e_aid.max is not None
+                                    and s > e_aid.max
+                                ):
                                     diff[AxisId(a)] = s
-                            elif (
-                                s < e_aid.min or e_aid.max is not None and s > e_aid.max
-                            ):
-                                diff[AxisId(a)] = s
-                        if diff:
-                            error = (
-                                f"(n={n}) Expected output shape {exp},"
-                                + f" but got {res.sizes} (diff: {diff})"
-                            )
-                            break
+                            if diff:
+                                error = (
+                                    f"(n={n}) Expected output shape {exp},"
+                                    + f" but got {res.sizes} (diff: {diff})"
+                                )
+                                break
 
                 model.validation_summary.add_detail(
                     ValidationDetail(
