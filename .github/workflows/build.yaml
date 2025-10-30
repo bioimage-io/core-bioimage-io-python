@@ -147,6 +147,7 @@ jobs:
           path: dist
 
   conda-build:
+    needs: test # only so we run tests even if the pinned bioimageio.spec version is not yet published on conda-forge yet
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
