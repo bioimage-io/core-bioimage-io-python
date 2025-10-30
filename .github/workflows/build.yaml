@@ -93,7 +93,7 @@ jobs:
           path: bioimageio_cache
           key: ${{needs.populate-cache.outputs.cache-key}}
       - name: pytest
-        run: pytest --cov bioimageio --cov-append --capture no --disable-pytest-warnings
+        run: pytest --cov bioimageio.core --cov-append --capture no --disable-pytest-warnings
         env:
           BIOIMAGEIO_CACHE_PATH: bioimageio_cache
           RUN_EXPENSIVE_TESTS: ${{ matrix.run-expensive-tests && 'true' || 'false' }}
