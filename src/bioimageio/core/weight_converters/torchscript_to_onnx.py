@@ -2,8 +2,9 @@ from pathlib import Path
 
 import torch.jit
 from bioimageio.spec.model.v0_5 import ModelDescr, OnnxWeightsDescr
+from torch._export.converter import TS2EPConverter
 
-from ._utils_torch_onnx import export_to_onnx
+from ._utils_torch_onnx import export_to_onnx, get_torch_sample_inputs
 
 
 def convert(
@@ -44,9 +45,15 @@ def convert(
     model.to("cpu")
     model = model.eval()  # pyright: ignore[reportUnknownVariableType]
 
+    torch_sample_inputs = get_torch_sample_inputs(model_descr)
+    exported_program = TS2EPConverter(
+        model,  # pyright: ignore[reportUnknownArgumentType]
+        torch_sample_inputs,
+    ).convert()
+
     return export_to_onnx(
         model_descr,
-        model,  # pyright: ignore[reportUnknownArgumentType]
+        exported_program.module(),
         output_path,
         verbose,
         opset_version,

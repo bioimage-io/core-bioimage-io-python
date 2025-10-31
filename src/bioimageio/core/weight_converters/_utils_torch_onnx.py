@@ -23,13 +23,23 @@ from ..digest_spec import get_member_id, get_test_input_sample
 from ..proc_setup import get_pre_and_postprocessing
 
 if TYPE_CHECKING:
-    import torch.jit
     from torch.export.dynamic_shapes import (
         _DimHint as DimHint,  # pyright: ignore[reportPrivateUsage]
     )
 
 
+def get_torch_sample_inputs(model_descr: ModelDescr) -> Tuple[torch.Tensor, ...]:
+    sample = get_test_input_sample(model_descr)
+    procs = get_pre_and_postprocessing(
+        model_descr, dataset_for_initial_statistics=[sample]
+    )
+    procs.pre(sample)
+    inputs_numpy = [
         sample.members[get_member_id(ipt)].data.data for ipt in model_descr.inputs
+    ]
+    return tuple(torch.from_numpy(ipt) for ipt in inputs_numpy)
+
+
 def _get_dynamic_axes_noop(model_descr: ModelDescr):
     """noop for dynamo=True which uses `get_dynamic_shapes` instead"""
 
@@ -122,21 +132,13 @@ else:
 
 def export_to_onnx(
     model_descr: ModelDescr,
-    model: Union[torch.nn.Module, "torch.jit.ScriptModule"],
+    model: torch.nn.Module,
     output_path: Path,
     verbose: bool,
     opset_version: int,
     parent: Literal["torchscript", "pytorch_state_dict"],
 ) -> OnnxWeightsDescr:
-    sample = get_test_input_sample(model_descr)
-    procs = get_pre_and_postprocessing(
-        model_descr, dataset_for_initial_statistics=[sample]
-    )
-    procs.pre(sample)
-    inputs_numpy = [
-        sample.members[get_member_id(ipt)].data.data for ipt in model_descr.inputs
-    ]
-    inputs_torch = [torch.from_numpy(ipt) for ipt in inputs_numpy]
+    inputs_torch = get_torch_sample_inputs(model_descr)
 
     save_weights_externally = use_dynamo
     with torch.no_grad():
@@ -146,7 +148,7 @@ def export_to_onnx(
 
         _ = torch.onnx.export(
             model,
-            tuple(inputs_torch),
+            inputs_torch,
             str(output_path),
             dynamo=use_dynamo,
             external_data=save_weights_externally,
