@@ -70,7 +70,7 @@ dev = [
     "segment-anything",  # for model testing
     "tensorflow",
     "timm",              # for model testing
-    "torch>=1.6,<3",
+    "torch>=2.8,<3",
     "torchvision>=0.21",
 ]
 
