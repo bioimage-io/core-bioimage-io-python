@@ -48,6 +48,30 @@ def test_pytorch_to_onnx(convert_to_onnx, tmp_path):
     assert summary.status == "passed", summary.display()
 
 
+def test_torchscript_to_onnx(unet2d_nuclei_broad_model, tmp_path):
+    from bioimageio.core import test_model
+    from bioimageio.core.weight_converters.torchscript_to_onnx import convert
+
+    model_descr = load_model_description(
+        unet2d_nuclei_broad_model, format_version="latest"
+    )
+    out_path = tmp_path / "weights.onnx"
+    opset_version = 18
+    ret_val = convert(
+        model_descr=model_descr,
+        output_path=out_path,
+        opset_version=opset_version,
+    )
+    assert os.path.exists(out_path)
+    assert isinstance(ret_val, v0_5.OnnxWeightsDescr)
+    assert ret_val.opset_version == opset_version
+    assert ret_val.source == out_path
+
+    model_descr.weights.onnx = ret_val
+    summary = test_model(model_descr, weight_format="onnx")
+    assert summary.status == "passed", summary.display()
+
+
 @pytest.mark.skip()
 def test_keras_to_tensorflow(any_keras_model: Path, tmp_path: Path):
     from bioimageio.core import test_model
