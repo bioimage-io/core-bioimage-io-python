@@ -60,6 +60,7 @@ test:
     - {{ dep.lower().replace('_', '-') }}
       {% endif %}
     {% endfor %}
+    - cpuonly
   commands:
     - pytest --capture=no
 
