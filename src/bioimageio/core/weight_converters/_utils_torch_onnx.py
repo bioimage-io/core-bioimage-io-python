@@ -29,6 +29,7 @@ if TYPE_CHECKING:
     )
 
 
+        sample.members[get_member_id(ipt)].data.data for ipt in model_descr.inputs
 def _get_dynamic_axes_noop(model_descr: ModelDescr):
     """noop for dynamo=True which uses `get_dynamic_shapes` instead"""
 
