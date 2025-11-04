@@ -27,6 +27,11 @@ def test_pytorch_to_torchscript(any_torch_model, tmp_path):
 
 
 def test_pytorch_to_onnx(convert_to_onnx, tmp_path):
+    import torch
+
+    if tuple(map(int, torch.__version__.split(".")[:2])) < (2, 8):
+        pytest.skip("torch>=2.8 is required for sufficient torch dynamo support")
+
     from bioimageio.core import test_model
     from bioimageio.core.weight_converters.pytorch_to_onnx import convert
 
