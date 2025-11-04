@@ -6,7 +6,7 @@ requires-python = ">=3.9"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [
-    "bioimageio.spec ==0.5.5.6",
+    "bioimageio.spec ==0.5.6.0",
     "h5py",
     "imagecodecs",
     "imageio>=2.10",
@@ -40,7 +40,7 @@ Documentation = "https://bioimage-io.github.io/core-bioimage-io-python/bioimagei
 Source = "https://github.com/bioimage-io/core-bioimage-io-python"
 
 [project.optional-dependencies]
-onnx = ["onnxruntime"]
+onnx = ["onnxruntime", "onnxscript"]
 pytorch = ["torch>=1.6,<3", "torchvision>=0.21", "keras>=3.0,<4"]
 tensorflow = ["tensorflow", "keras>=2.15,<4"]
 partners = [
@@ -59,10 +59,11 @@ dev = [
     "numpy",
     "onnx",
     "onnxruntime",
+    "onnxscript",
     "packaging>=17.0",
     "pdoc",
     "pre-commit",
-    "pyright==1.1.404",
+    "pyright==1.1.407",
     "pytest-cov",
     "pytest",
     "python-dotenv",
@@ -124,7 +125,6 @@ testpaths = ["src", "tests"]
 
 [tool.ruff]
 line-length = 88
-target-version = "py39"
 include = ["*.py", "*.pyi", "**/pyproject.toml", "*.ipynb"]
 exclude = [
     "presentations",

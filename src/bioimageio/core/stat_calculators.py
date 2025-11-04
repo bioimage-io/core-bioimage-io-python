@@ -22,11 +22,10 @@ from typing import (
 
 import numpy as np
 import xarray as xr
+from bioimageio.spec.model.v0_5 import BATCH_AXIS_ID
 from loguru import logger
 from numpy.typing import NDArray
 from typing_extensions import assert_never
-
-from bioimageio.spec.model.v0_5 import BATCH_AXIS_ID
 
 from .axis import AxisId, PerAxis
 from .common import MemberId
@@ -140,13 +139,9 @@ class MeanVarStdCalculator:
             n = int(np.prod([tensor.sizes[d] for d in self._axes]))
 
         if xr.__version__.startswith("2023"):
-            var = (  # pyright: ignore[reportUnknownVariableType]
-                xr.dot(c, c, dims=self._axes) / n
-            )
+            var = xr.dot(c, c, dims=self._axes) / n
         else:
-            var = (  # pyright: ignore[reportUnknownVariableType]
-                xr.dot(c, c, dim=self._axes) / n
-            )
+            var = xr.dot(c, c, dim=self._axes) / n
 
         assert isinstance(var, xr.DataArray)
         std = np.sqrt(var)

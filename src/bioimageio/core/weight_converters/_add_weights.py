@@ -1,15 +1,14 @@
 import traceback
 from typing import Optional, Union
 
-from loguru import logger
-from pydantic import DirectoryPath
-
 from bioimageio.spec import (
     InvalidDescr,
     load_model_description,
     save_bioimageio_package_as_folder,
 )
 from bioimageio.spec.model.v0_5 import ModelDescr, WeightsFormat
+from loguru import logger
+from pydantic import DirectoryPath
 
 from .._resource_tests import load_description_and_test
 
@@ -113,15 +112,17 @@ def add_weights(
             available.add("torchscript")
             missing.discard("torchscript")
 
-    if "torchscript" in available and "onnx" in missing:
-        logger.info("Attempting to convert 'torchscript' weights to 'onnx'.")
-        from .torchscript_to_onnx import convert
+    if "pytorch_state_dict" in available and "onnx" in missing:
+        logger.info("Attempting to convert 'pytorch_state_dict' weights to 'onnx'.")
+        from .pytorch_to_onnx import convert
 
         try:
             onnx_weights_path = output_path / "weights.onnx"
+
             model_descr.weights.onnx = convert(
                 model_descr,
                 output_path=onnx_weights_path,
+                verbose=verbose,
             )
         except Exception as e:
             if verbose:
@@ -132,13 +133,12 @@ def add_weights(
             available.add("onnx")
             missing.discard("onnx")
 
-    if "pytorch_state_dict" in available and "onnx" in missing:
-        logger.info("Attempting to convert 'pytorch_state_dict' weights to 'onnx'.")
-        from .pytorch_to_onnx import convert
+    if "torchscript" in available and "onnx" in missing:
+        logger.info("Attempting to convert 'torchscript' weights to 'onnx'.")
+        from .torchscript_to_onnx import convert
 
         try:
             onnx_weights_path = output_path / "weights.onnx"
-
             model_descr.weights.onnx = convert(
                 model_descr,
                 output_path=onnx_weights_path,

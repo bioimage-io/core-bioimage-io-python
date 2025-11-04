@@ -54,9 +54,7 @@ test:
     - tests
   requires:
     {% for dep in pyproject['project']['optional-dependencies']['dev'] %}
-      {% if dep.startswith('torch>=') %}  # pip: torch  -> conda: pytorch
-    - py{{ dep.lower() }}
-      {% else %}
+      {% if 'torch' not in dep %}  # can't install pytorch>=2.8 from conda-forge smh
     - {{ dep.lower().replace('_', '-') }}
       {% endif %}
     {% endfor %}
