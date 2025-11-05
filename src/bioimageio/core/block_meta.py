@@ -52,7 +52,7 @@ class BlockMeta:
     The outer slice reaches from the sample member origin (0, 0) to the right halo point.
 
     ```terminal
-    ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─  ─ ─ ─ ─ ─ ─ ─ ┐
+    ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─┐
     ╷ halo(left)                         ╷
     ╷                                    ╷
     ╷  (0, 0)┏━━━━━━━━━━━━━━━━━┯━━━━━━━━━┯━━━➔
