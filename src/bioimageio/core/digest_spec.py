@@ -302,13 +302,15 @@ def get_input_halo(model: v0_5.ModelDescr, output_halo: PerMember[PerAxis[Halo]]
             axis = axes[a]
             ref_axis = {a.id: a for a in all_tensors[s.tensor_id].axes}[s.axis_id]
 
-            total_output_halo = sum(ah)
-            total_input_halo = total_output_halo * axis.scale / ref_axis.scale
-            assert (
-                total_input_halo == int(total_input_halo) and total_input_halo % 2 == 0
+            input_halo_left = ah.left * axis.scale / ref_axis.scale
+            input_halo_right = ah.right * axis.scale / ref_axis.scale
+            assert input_halo_left == int(input_halo_left), f"{input_halo_left} not int"
+            assert input_halo_right == int(input_halo_right), (
+                f"{input_halo_right} not int"
             )
+
             input_halo.setdefault(s.tensor_id, {})[a] = Halo(
-                int(total_input_halo // 2), int(total_input_halo // 2)
+                int(input_halo_left), int(input_halo_right)
             )
 
     return input_halo
