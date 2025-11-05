@@ -147,7 +147,7 @@ jobs:
           path: dist
 
   conda-build:
-    needs: test # only so we run tests even if the pinned bioimageio.spec version is not yet published on conda-forge yet
+    needs: [populate-cache, test] # only so we run tests even if the pinned bioimageio.spec version is not yet published on conda-forge
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -169,11 +169,17 @@ jobs:
             pkgs/noarch
             pkgs/channeldata.json
           key: ${{ github.sha }}-packages
+      - uses: actions/cache@v4
+        with:
+          path: bioimageio_cache
+          key: ${{needs.populate-cache.outputs.cache-key}}
       - name: linux conda build test
         shell: bash -l {0}
         run: |
           mkdir -p ./pkgs/noarch
           conda-build -c conda-forge conda-recipe --output-folder ./pkgs
+        env:
+          BIOIMAGEIO_CACHE_PATH: bioimageio_cache
 
   docs:
     needs: test
