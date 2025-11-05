@@ -64,8 +64,8 @@
             <a id="indexLink" class="nav" href="index.html">&Hat; index</a> &nbsp; &nbsp;
             <a id="nextFileLink" class="nav" href="z_5978e2765e206ae6_stat_calculators_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
-            <a class="nav" href="https://coverage.readthedocs.io/en/7.10.7">coverage.py v7.10.7</a>,
-            created at 2025-10-14 08:35 +0000
+            <a class="nav" href="https://coverage.readthedocs.io/en/7.11.0">coverage.py v7.11.0</a>,
+            created at 2025-11-05 12:31 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -159,10 +159,10 @@
     <p class="run run2"><span class="n"><a id="t77" href="#t77">77</a></span><span class="t">        <span class="nam">broadcast</span><span class="op">:</span> <span class="nam">bool</span> <span class="op">=</span> <span class="key">False</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t78" href="#t78">78</a></span><span class="t">    <span class="op">)</span> <span class="op">-></span> <span class="nam">Tuple</span><span class="op">[</span><span class="nam">TotalNumberOfBlocks</span><span class="op">,</span> <span class="nam">Iterable</span><span class="op">[</span><span class="nam">SampleBlockWithOrigin</span><span class="op">]</span><span class="op">]</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t79" href="#t79">79</a></span><span class="t">        <span class="key">assert</span> <span class="key">not</span> <span class="op">(</span><span class="nam">missing</span> <span class="op">:=</span> <span class="op">[</span><span class="nam">m</span> <span class="key">for</span> <span class="nam">m</span> <span class="key">in</span> <span class="nam">block_shapes</span> <span class="key">if</span> <span class="nam">m</span> <span class="key">not</span> <span class="key">in</span> <span class="nam">self</span><span class="op">.</span><span class="nam">members</span><span class="op">]</span><span class="op">)</span><span class="op">,</span> <span class="op">(</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t80" href="#t80">80</a></span><span class="t">            <span class="str">f"`block_shapes` specified for unknown members: {missing}"</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t80" href="#t80">80</a></span><span class="t">            <span class="fst">f"</span><span class="fst">`block_shapes` specified for unknown members: </span><span class="op">{</span><span class="nam">missing</span><span class="op">}</span><span class="fst">"</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t81" href="#t81">81</a></span><span class="t">        <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t82" href="#t82">82</a></span><span class="t">        <span class="key">assert</span> <span class="key">not</span> <span class="op">(</span><span class="nam">missing</span> <span class="op">:=</span> <span class="op">[</span><span class="nam">m</span> <span class="key">for</span> <span class="nam">m</span> <span class="key">in</span> <span class="nam">halo</span> <span class="key">if</span> <span class="nam">m</span> <span class="key">not</span> <span class="key">in</span> <span class="nam">block_shapes</span><span class="op">]</span><span class="op">)</span><span class="op">,</span> <span class="op">(</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t83" href="#t83">83</a></span><span class="t">            <span class="str">f"`halo` specified for members without `block_shape`: {missing}"</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t83" href="#t83">83</a></span><span class="t">            <span class="fst">f"</span><span class="fst">`halo` specified for members without `block_shape`: </span><span class="op">{</span><span class="nam">missing</span><span class="op">}</span><span class="fst">"</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t84" href="#t84">84</a></span><span class="t">        <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t85" href="#t85">85</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t86" href="#t86">86</a></span><span class="t">        <span class="nam">n_blocks</span><span class="op">,</span> <span class="nam">blocks</span> <span class="op">=</span> <span class="nam">split_multiple_shapes_into_blocks</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
@@ -307,8 +307,8 @@
     <p class="run"><span class="n"><a id="t225" href="#t225">225</a></span><span class="t">            <span class="nam">halo</span><span class="op">[</span><span class="nam">m</span><span class="op">]</span> <span class="op">=</span> <span class="nam">get_member_halo</span><span class="op">(</span><span class="nam">m</span><span class="op">,</span> <span class="nam">floor</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t226" href="#t226">226</a></span><span class="t">            <span class="key">if</span> <span class="nam">halo</span><span class="op">[</span><span class="nam">m</span><span class="op">]</span> <span class="op">!=</span> <span class="nam">get_member_halo</span><span class="op">(</span><span class="nam">m</span><span class="op">,</span> <span class="nam">ceil</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t227" href="#t227">227</a></span><span class="t">                <span class="key">raise</span> <span class="nam">ValueError</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis mis2 show_mis"><span class="n"><a id="t228" href="#t228">228</a></span><span class="t">                    <span class="str">f"failed to unambiguously scale halo {halo[m]} with {new_axes[m]}"</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis mis2 show_mis"><span class="n"><a id="t229" href="#t229">229</a></span><span class="t">                    <span class="op">+</span> <span class="str">f" for {m}."</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis mis2 show_mis"><span class="n"><a id="t228" href="#t228">228</a></span><span class="t">                    <span class="fst">f"</span><span class="fst">failed to unambiguously scale halo </span><span class="op">{</span><span class="nam">halo</span><span class="op">[</span><span class="nam">m</span><span class="op">]</span><span class="op">}</span><span class="fst"> with </span><span class="op">{</span><span class="nam">new_axes</span><span class="op">[</span><span class="nam">m</span><span class="op">]</span><span class="op">}</span><span class="fst">"</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis mis2 show_mis"><span class="n"><a id="t229" href="#t229">229</a></span><span class="t">                    <span class="op">+</span> <span class="fst">f"</span><span class="fst"> for </span><span class="op">{</span><span class="nam">m</span><span class="op">}</span><span class="fst">.</span><span class="fst">"</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis mis2 show_mis"><span class="n"><a id="t230" href="#t230">230</a></span><span class="t">                <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t231" href="#t231">231</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t232" href="#t232">232</a></span><span class="t">        <span class="nam">inner_slice</span> <span class="op">=</span> <span class="op">{</span>&nbsp;</span><span class="r"></span></p>
@@ -453,8 +453,8 @@
             <a class="nav" href="index.html">&Hat; index</a> &nbsp; &nbsp;
             <a class="nav" href="z_5978e2765e206ae6_stat_calculators_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
-            <a class="nav" href="https://coverage.readthedocs.io/en/7.10.7">coverage.py v7.10.7</a>,
-            created at 2025-10-14 08:35 +0000
+            <a class="nav" href="https://coverage.readthedocs.io/en/7.11.0">coverage.py v7.11.0</a>,
+            created at 2025-11-05 12:31 +0000
         </p>
     </div>
 </footer>

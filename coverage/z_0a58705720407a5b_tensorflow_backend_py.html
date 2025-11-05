@@ -64,8 +64,8 @@
             <a id="indexLink" class="nav" href="index.html">&Hat; index</a> &nbsp; &nbsp;
             <a id="nextFileLink" class="nav" href="z_0a58705720407a5b_torchscript_backend_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
-            <a class="nav" href="https://coverage.readthedocs.io/en/7.10.7">coverage.py v7.10.7</a>,
-            created at 2025-10-14 08:35 +0000
+            <a class="nav" href="https://coverage.readthedocs.io/en/7.11.0">coverage.py v7.11.0</a>,
+            created at 2025-11-05 12:31 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -111,7 +111,7 @@
     <p class="pln"><span class="n"><a id="t29" href="#t29">29</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t30" href="#t30">30</a></span><span class="t">        <span class="key">if</span> <span class="nam">devices</span> <span class="key">is</span> <span class="key">not</span> <span class="key">None</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t31" href="#t31">31</a></span><span class="t">            <span class="nam">logger</span><span class="op">.</span><span class="nam">warning</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis mis2 show_mis"><span class="n"><a id="t32" href="#t32">32</a></span><span class="t">                <span class="str">f"Device management is not implemented for tensorflow yet, ignoring the devices {devices}"</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis mis2 show_mis"><span class="n"><a id="t32" href="#t32">32</a></span><span class="t">                <span class="fst">f"</span><span class="fst">Device management is not implemented for tensorflow yet, ignoring the devices </span><span class="op">{</span><span class="nam">devices</span><span class="op">}</span><span class="fst">"</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis mis2 show_mis"><span class="n"><a id="t33" href="#t33">33</a></span><span class="t">            <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t34" href="#t34">34</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t35" href="#t35">35</a></span><span class="t">        <span class="com"># TODO: check how to load tf weights without unzipping</span>&nbsp;</span><span class="r"></span></p>
@@ -205,7 +205,7 @@
     <p class="run"><span class="n"><a id="t123" href="#t123">123</a></span><span class="t">        <span class="nam">super</span><span class="op">(</span><span class="op">)</span><span class="op">.</span><span class="nam">__init__</span><span class="op">(</span><span class="nam">model_description</span><span class="op">=</span><span class="nam">model_description</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t124" href="#t124">124</a></span><span class="t">        <span class="key">if</span> <span class="nam">devices</span> <span class="key">is</span> <span class="key">not</span> <span class="key">None</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t125" href="#t125">125</a></span><span class="t">            <span class="nam">logger</span><span class="op">.</span><span class="nam">warning</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis mis2 show_mis"><span class="n"><a id="t126" href="#t126">126</a></span><span class="t">                <span class="str">f"Device management is not implemented for tensorflow yet, ignoring the devices {devices}"</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis mis2 show_mis"><span class="n"><a id="t126" href="#t126">126</a></span><span class="t">                <span class="fst">f"</span><span class="fst">Device management is not implemented for tensorflow yet, ignoring the devices </span><span class="op">{</span><span class="nam">devices</span><span class="op">}</span><span class="fst">"</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis mis2 show_mis"><span class="n"><a id="t127" href="#t127">127</a></span><span class="t">            <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t128" href="#t128">128</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t129" href="#t129">129</a></span><span class="t">        <span class="com"># TODO: check how to load tf weights without unzipping</span>&nbsp;</span><span class="r"></span></p>
@@ -255,7 +255,7 @@
     <p class="run"><span class="n"><a id="t173" href="#t173">173</a></span><span class="t">    <span class="key">def</span> <span class="nam">unload</span><span class="op">(</span><span class="nam">self</span><span class="op">)</span> <span class="op">-></span> <span class="key">None</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t174" href="#t174">174</a></span><span class="t">        <span class="nam">logger</span><span class="op">.</span><span class="nam">warning</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t175" href="#t175">175</a></span><span class="t">            <span class="str">"Device management is not implemented for tensorflow>=2 models"</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t176" href="#t176">176</a></span><span class="t">            <span class="op">+</span> <span class="str">f" using `{self.__class__.__name__}`, cannot unload model"</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t176" href="#t176">176</a></span><span class="t">            <span class="op">+</span> <span class="fst">f"</span><span class="fst"> using `</span><span class="op">{</span><span class="nam">self</span><span class="op">.</span><span class="nam">__class__</span><span class="op">.</span><span class="nam">__name__</span><span class="op">}</span><span class="fst">`, cannot unload model</span><span class="fst">"</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t177" href="#t177">177</a></span><span class="t">        <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t178" href="#t178">178</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t179" href="#t179">179</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
@@ -271,11 +271,11 @@
     <p class="run"><span class="n"><a id="t189" href="#t189">189</a></span><span class="t">    <span class="key">if</span> <span class="nam">model_tf_version</span> <span class="key">is</span> <span class="key">None</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t190" href="#t190">190</a></span><span class="t">        <span class="nam">logger</span><span class="op">.</span><span class="nam">warning</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis mis2 show_mis"><span class="n"><a id="t191" href="#t191">191</a></span><span class="t">            <span class="str">"The model does not specify the tensorflow version."</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis mis2 show_mis"><span class="n"><a id="t192" href="#t192">192</a></span><span class="t">            <span class="op">+</span> <span class="str">f"Cannot check if it is compatible with intalled tensorflow {tf_version}."</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis mis2 show_mis"><span class="n"><a id="t192" href="#t192">192</a></span><span class="t">            <span class="op">+</span> <span class="fst">f"</span><span class="fst">Cannot check if it is compatible with intalled tensorflow </span><span class="op">{</span><span class="nam">tf_version</span><span class="op">}</span><span class="fst">.</span><span class="fst">"</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis mis2 show_mis"><span class="n"><a id="t193" href="#t193">193</a></span><span class="t">        <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t194" href="#t194">194</a></span><span class="t">    <span class="key">elif</span> <span class="nam">model_tf_version</span> <span class="op">></span> <span class="nam">tf_version</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t195" href="#t195">195</a></span><span class="t">        <span class="nam">logger</span><span class="op">.</span><span class="nam">warning</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis mis2 show_mis"><span class="n"><a id="t196" href="#t196">196</a></span><span class="t">            <span class="str">f"The model specifies a newer tensorflow version than installed: {model_tf_version} > {tf_version}."</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis mis2 show_mis"><span class="n"><a id="t196" href="#t196">196</a></span><span class="t">            <span class="fst">f"</span><span class="fst">The model specifies a newer tensorflow version than installed: </span><span class="op">{</span><span class="nam">model_tf_version</span><span class="op">}</span><span class="fst"> > </span><span class="op">{</span><span class="nam">tf_version</span><span class="op">}</span><span class="fst">.</span><span class="fst">"</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis mis2 show_mis"><span class="n"><a id="t197" href="#t197">197</a></span><span class="t">        <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t198" href="#t198">198</a></span><span class="t">    <span class="key">elif</span> <span class="op">(</span><span class="nam">model_tf_version</span><span class="op">.</span><span class="nam">major</span><span class="op">,</span> <span class="nam">model_tf_version</span><span class="op">.</span><span class="nam">minor</span><span class="op">)</span> <span class="op">!=</span> <span class="op">(</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t199" href="#t199">199</a></span><span class="t">        <span class="nam">tf_version</span><span class="op">.</span><span class="nam">major</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
@@ -283,7 +283,7 @@
     <p class="run run2"><span class="n"><a id="t201" href="#t201">201</a></span><span class="t">    <span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t202" href="#t202">202</a></span><span class="t">        <span class="nam">logger</span><span class="op">.</span><span class="nam">warning</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t203" href="#t203">203</a></span><span class="t">            <span class="str">"The tensorflow version specified by the model does not match the installed: "</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t204" href="#t204">204</a></span><span class="t">            <span class="op">+</span> <span class="str">f"{model_tf_version} != {tf_version}."</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t204" href="#t204">204</a></span><span class="t">            <span class="op">+</span> <span class="fst">f"</span><span class="op">{</span><span class="nam">model_tf_version</span><span class="op">}</span><span class="fst"> != </span><span class="op">{</span><span class="nam">tf_version</span><span class="op">}</span><span class="fst">.</span><span class="fst">"</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t205" href="#t205">205</a></span><span class="t">        <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t206" href="#t206">206</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t207" href="#t207">207</a></span><span class="t">    <span class="key">if</span> <span class="nam">tf_version</span><span class="op">.</span><span class="nam">major</span> <span class="op">&lt;=</span> <span class="num">1</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
@@ -300,8 +300,8 @@
             <a class="nav" href="index.html">&Hat; index</a> &nbsp; &nbsp;
             <a class="nav" href="z_0a58705720407a5b_torchscript_backend_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
-            <a class="nav" href="https://coverage.readthedocs.io/en/7.10.7">coverage.py v7.10.7</a>,
-            created at 2025-10-14 08:35 +0000
+            <a class="nav" href="https://coverage.readthedocs.io/en/7.11.0">coverage.py v7.11.0</a>,
+            created at 2025-11-05 12:31 +0000
         </p>
     </div>
 </footer>

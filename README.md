@@ -347,15 +347,24 @@ stats: inputs/dataset_statistics.json
 
 ## Set up Development Environment
 
-To set up a development conda environment run the following commands:
+To set up a development environment run the following commands:
 
 ```console
-conda env create -f dev/env.yaml
+conda create -n core python=$(grep -E '^requires-python' pyproject.toml | grep -oE '[0-9]+\.[0-9]+')
 conda activate core
-pip install -e . --no-deps
+pip install -e .[dev,partners]
 ```
 
-There are different environment files available that only install tensorflow or pytorch as dependencies, see [dev folder](https://github.com/bioimage-io/core-bioimage-io-python/tree/main/dev).
+### Joint development of bioimageio.spec and bioimageio.core
+
+Assuming [spec-bioimage-io](https://github.com/bioimage-io/spec-bioimage-io) is cloned to the parent folder
+a joint development environment can be created with the following commands:
+
+```console
+conda create -n core python=$(grep -E '^requires-python' pyproject.toml | grep -oE '[0-9]+\.[0-9]+')
+conda activate core
+pip install -e .[dev,partners] -e ../spec-bioimage-io[dev]
+```
 
 ## Logging level
 
