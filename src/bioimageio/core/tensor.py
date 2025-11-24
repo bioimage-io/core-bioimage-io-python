@@ -177,11 +177,11 @@ class Tensor(MagicTensorOpsMixin):
 
         Args:
             array: the nd numpy array
-            axes: A description of the array's axes,
+            dims: A description of the array's axes,
                 if None axes are guessed (which might fail and raise a ValueError.)
 
         Raises:
-            ValueError: if `axes` is None and axes guessing fails.
+            ValueError: if `dims` is None and dims guessing fails.
         """
 
         if dims is None:

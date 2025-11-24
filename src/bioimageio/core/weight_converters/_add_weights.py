@@ -30,8 +30,8 @@ def add_weights(
                        Default: choose automatically from any available.
         target_format: convert to a specific weights format.
                        Default: attempt to convert to any missing format.
-        devices: Devices that may be used during conversion.
         verbose: log more (error) output
+        allow_tracing: allow conversion to torchscript by tracing if scripting fails.
 
     Returns:
         A (potentially invalid) model copy stored at `output_path` with added weights if any conversion was possible.

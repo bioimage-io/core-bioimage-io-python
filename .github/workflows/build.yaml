@@ -8,7 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       force-publish:
-        description: 'Force publish even if no version change detected'
+        description: 'Force publish even if no version change was detected'
         required: false
         type: choice
         options:
@@ -190,34 +190,6 @@ jobs:
         env:
           BIOIMAGEIO_CACHE_PATH: bioimageio_cache
 
-  docs:
-    needs: [coverage, test]
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: coverage-summary
-          path: dist
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.12'
-          cache: 'pip'
-      - run: pip install -e .[dev,partners]
-      - name: Generate developer docs
-        run: ./scripts/pdoc/run.sh
-      - run: cp README.md ./dist/README.md
-      - name: copy rendered presentations
-        run: |
-          mkdir ./dist/presentations
-          cp -r ./presentations/*.html ./dist/presentations/
-      - name: Deploy to gh-pages 🚀
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          branch: gh-pages
-          folder: dist
-
   build:
     runs-on: ubuntu-latest
     steps:
@@ -235,21 +207,33 @@ jobs:
           path: dist/
           name: dist
 
-  publish:
-    needs: [test, build, conda-build, docs]
+  docs:
+    needs: [build, conda-build, coverage, test]
     runs-on: ubuntu-latest
-    environment:
-      name: release
-      url: https://pypi.org/project/bioimageio.core/
     permissions:
       contents: write # required for tag creation
-      id-token: write # required for pypi publish action
+    outputs:
+      new-version: ${{ steps.get-new-version.outputs.new-version }}
     steps:
-      - name: Check out the repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
           fetch-tags: true
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage-summary
+          path: dist
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      - run: pip install -e .[dev,docs,partners]
+      - name: Get branch name to deploy to
+        id: get_branch
+        shell: bash
+        run: |
+          if [[ -n '${{ github.event.pull_request.head.ref }}' ]]; then branch=gh-pages-${{ github.event.pull_request.head.ref }}; else branch=gh-pages; fi
+          echo "::set-output name=branch::$branch"
       - name: Get parent commit
         if: inputs.force-publish != 'true'
         id: get-parent-commit
@@ -258,7 +242,6 @@ jobs:
       - id: get-existing-tag
         if: inputs.force-publish == 'true'
         run: echo "existing-tag=$(git tag --points-at HEAD 'v[0-9]*.[0-9]*.[0-9]*')" >> $GITHUB_OUTPUT
-
       - name: Detect new version from last commit and create tag
         id: tag-version
         if: github.ref == 'refs/heads/main' && steps.get-parent-commit.outputs.sha && inputs.force-publish != 'true'
@@ -272,8 +255,6 @@ jobs:
         run: |
           import os
           from pathlib import Path
-
-
 
           if "${{ inputs.force-publish }}" == "true":
               existing_tag = "${{ steps.get-existing-tag.outputs.existing-tag }}"
@@ -291,23 +272,52 @@ jobs:
 
           with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
               print(f"new-version={new_version}", file=f)
+      - name: Configure Git Credentials
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+      - name: Generate developer docs
+        run: mike deploy --push --branch ${{ steps.get_branch.outputs.branch }} --update-aliases ${{ steps.get-new-version.outputs.new-version || 'dev'}} ${{ steps.get-new-version.outputs.new-version && 'latest' || ' '}}
+      - name: copy rendered presentations
+        run: |
+          mkdir ./dist/presentations
+          cp -r ./presentations/*.html ./dist/presentations/
+      - name: Deploy to gh-pages 🚀
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: dist
+          clean: true
+          clean-exclude: |
+            .nojekyll
+            index.html
+            versions.json
+            latest/
+            dev/
+            v0.*/
 
+  publish:
+    needs: [test, coverage, build, conda-build, docs]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && needs.docs.outputs.new-version
+    environment:
+      name: release
+      url: https://pypi.org/project/bioimageio.core/
+    permissions:
+      contents: write # required to create a github release (release drafter)
+      id-token: write # required for pypi publish action
+    steps:
       - uses: actions/download-artifact@v4
-        if: github.ref == 'refs/heads/main' && steps.get-new-version.outputs.new-version
         with:
           name: dist
           path: dist
       - name: Publish package on PyPI
-        if: github.ref == 'refs/heads/main' && steps.get-new-version.outputs.new-version
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           packages-dir: dist/
-
       - name: Publish the release notes
-        if: github.ref == 'refs/heads/main'
         uses: release-drafter/release-drafter@v6.0.0
         with:
-          publish: "${{ steps.get-new-version.outputs.new-version != '' }}"
-          tag: '${{ steps.get-new-version.outputs.new-version }}'
+          tag: '${{ needs.docs.outputs.new-version }}'
         env:
           GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'

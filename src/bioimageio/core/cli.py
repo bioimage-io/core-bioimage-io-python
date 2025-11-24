@@ -16,6 +16,7 @@ from io import StringIO
 from pathlib import Path
 from pprint import pformat, pprint
 from typing import (
+    Annotated,
     Any,
     Dict,
     Iterable,
@@ -30,24 +31,8 @@ from typing import (
     Union,
 )
 
-import rich.markdown
-from loguru import logger
-from pydantic import AliasChoices, BaseModel, Field, model_validator
-from pydantic_settings import (
-    BaseSettings,
-    CliPositionalArg,
-    CliSettingsSource,
-    CliSubCommand,
-    JsonConfigSettingsSource,
-    PydanticBaseSettingsSource,
-    SettingsConfigDict,
-    YamlConfigSettingsSource,
-)
-from tqdm import tqdm
-from typing_extensions import assert_never
-
 import bioimageio.spec
-from bioimageio.core import __version__
+import rich.markdown
 from bioimageio.spec import (
     AnyModelDescr,
     InvalidDescr,
@@ -65,6 +50,22 @@ from bioimageio.spec.dataset import DatasetDescr
 from bioimageio.spec.model import ModelDescr, v0_4, v0_5
 from bioimageio.spec.notebook import NotebookDescr
 from bioimageio.spec.utils import ensure_description_is_model, get_reader, write_yaml
+from loguru import logger
+from pydantic import AliasChoices, BaseModel, Field, PlainSerializer, model_validator
+from pydantic_settings import (
+    BaseSettings,
+    CliPositionalArg,
+    CliSettingsSource,
+    CliSubCommand,
+    JsonConfigSettingsSource,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+    YamlConfigSettingsSource,
+)
+from tqdm import tqdm
+from typing_extensions import assert_never
+
+from bioimageio.core import __version__
 
 from .commands import WeightFormatArgAll, WeightFormatArgAny, package, test
 from .common import MemberId, SampleId, SupportedWeightsFormat
@@ -450,7 +451,9 @@ class PredictCmd(CmdBase, WithSource):
     blockwise: bool = False
     """process inputs blockwise"""
 
-    stats: Path = Path("dataset_statistics.json")
+    stats: Annotated[Path, PlainSerializer(lambda p: p.as_posix())] = Path(
+        "dataset_statistics.json"
+    )
     """path to dataset statistics
     (will be written if it does not exist,
     but the model requires statistical dataset measures)

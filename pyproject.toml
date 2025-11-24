@@ -61,7 +61,6 @@ dev = [
     "onnxruntime",
     "onnxscript",
     "packaging>=17.0",
-    "pdoc",
     "pre-commit",
     "pyright==1.1.407",
     "pytest-cov",
@@ -72,6 +71,19 @@ dev = [
     "timm",              # for model testing
     "torch>=1.6,<3",
     "torchvision>=0.21",
+]
+docs = [
+    "griffe-pydantic",
+    "markdown-callouts",
+    "markdown-exec",
+    "mike",
+    "mkdocs-api-autonav",
+    "mkdocs-coverage",
+    "mkdocs-gen-files",
+    "mkdocs-literate-nav",
+    "mkdocs-literate-nav",
+    "mkdocs-material",
+    "mkdocs-section-index",
 ]
 
 [build-system]
