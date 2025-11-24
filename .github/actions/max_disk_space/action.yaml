@@ -1,0 +1,13 @@
+name: 'Maximize disk space'
+description: 'Maximize available disk space by removing unwanted software'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Maximize available disk space
+      uses: AdityaGarg8/remove-unwanted-software@v5
+      with:
+        remove-android: 'true'
+        remove-dotnet: 'true'
+        remove-haskell: 'true'
+        remove-codeql: 'true'
