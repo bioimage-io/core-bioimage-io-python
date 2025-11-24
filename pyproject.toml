@@ -102,8 +102,7 @@ exclude = [
     "**/node_modules",
     "dogfood",
     "presentations",
-    "scripts/pdoc/original.py",
-    "scripts/pdoc/patched.py",
+    "scripts/generate_api_doc_pages.py",
     "tests/old_*",
 ]
 include = ["src", "scripts", "tests"]

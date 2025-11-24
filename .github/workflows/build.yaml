@@ -232,6 +232,8 @@ jobs:
           python-version: '3.12'
           cache: 'pip'
       - run: pip install -e .[dev,docs,partners]
+      - name: Check doc scripts
+        run: pyright scripts/generate_api_doc_pages.py
       - name: Get branch name to deploy to
         id: get_branch
         shell: bash
