@@ -1,48 +1,42 @@
-# TODO: update add weights tests
-# import os
+import os
+from pathlib import Path
+
+import pytest
+from bioimageio.spec.model.v0_5 import WeightsFormat
+
+from bioimageio.core import add_weights, load_model_description
 
 
-# def _test_add_weights(model, tmp_path, base_weights, added_weights, **kwargs):
-#     from bioimageio.core.build_spec import add_weights
+@pytest.mark.parametrize(
+    ("model_fixture", "source_format", "target_format"),
+    [
+        ("unet2d_nuclei_broad_model", "pytorch_state_dict", "torchscript"),
+        ("unet2d_nuclei_broad_model", "pytorch_state_dict", "onnx"),
+        ("unet2d_nuclei_broad_model", "torchscript", "onnx"),
+    ],
+)
+def test_add_weights(
+    model_fixture: str,
+    source_format: WeightsFormat,
+    target_format: WeightsFormat,
+    tmp_path: Path,
+    request: pytest.FixtureRequest,
+):
+    model_source = request.getfixturevalue(model_fixture)
 
-#     rdf = load_raw_resource_description(model)
-#     assert base_weights in rdf.weights
-#     assert added_weights in rdf.weights
+    model = load_model_description(model_source, format_version="latest")
+    assert source_format in model.weights.available_formats, (
+        "source format not found in model"
+    )
+    if target_format in model.weights.available_formats:
+        model.weights[target_format] = None
 
-#     weight_path = load_description(model).weights[added_weights].source
-#     assert weight_path.exists()
+    out_path = tmp_path / "converted.zip"
+    converted = add_weights(
+        model,
+        output_path=out_path,
+        source_format=source_format,
+        target_format=target_format,
+    )
 
-#     drop_weights = set(rdf.weights.keys()) - {base_weights}
-#     for drop in drop_weights:
-#         rdf.weights.pop(drop)
-#     assert tuple(rdf.weights.keys()) == (base_weights,)
-
-#     in_path = tmp_path / "model1.zip"
-#     export_resource_package(rdf, output_path=in_path)
-
-#     out_path = tmp_path / "model2.zip"
-#     add_weights(in_path, weight_path, weight_type=added_weights, output_path=out_path, **kwargs)
-
-#     assert out_path.exists()
-#     new_rdf = load_description(out_path)
-#     assert set(new_rdf.weights.keys()) == {base_weights, added_weights}
-#     for weight in new_rdf.weights.values():
-#         assert weight.source.exists()
-
-#     test_res = _test_model(out_path, added_weights)
-#     failed = [s for s in test_res if s["status"] != "passed"]
-#     assert not failed, failed
-#     test_res = _test_model(out_path)
-#     failed = [s for s in test_res if s["status"] != "passed"]
-#     assert not failed, failed
-
-#     # make sure the weights were cleaned from the cwd
-#     assert not os.path.exists(os.path.split(weight_path)[1])
-
-
-# def test_add_torchscript(unet2d_nuclei_broad_model, tmp_path):
-#     _test_add_weights(unet2d_nuclei_broad_model, tmp_path, "pytorch_state_dict", "torchscript")
-
-
-# def test_add_onnx(unet2d_nuclei_broad_model, tmp_path):
-#     _test_add_weights(unet2d_nuclei_broad_model, tmp_path, "pytorch_state_dict", "onnx", opset_version=12)
+    assert target_format in converted.weights.available_formats
