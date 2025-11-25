@@ -4,8 +4,6 @@ defined in `bioimageio.core.cli`."""
 from pathlib import Path
 from typing import Optional, Sequence, Union
 
-from typing_extensions import Literal
-
 from bioimageio.spec import (
     InvalidDescr,
     ResourceDescr,
@@ -13,6 +11,7 @@ from bioimageio.spec import (
     save_bioimageio_package_as_folder,
 )
 from bioimageio.spec._internal.types import FormatVersionPlaceholder
+from typing_extensions import Literal
 
 from ._resource_tests import test_description
 
@@ -102,7 +101,7 @@ def package(
     Args:
         descr: a bioimageio resource description
         path: output path
-        weight-format: include only this single weight-format (if not 'all').
+        weight_format: include only this single weight-format (if not 'all').
     """
     if isinstance(descr, InvalidDescr):
         logged = descr.validation_summary.save()
