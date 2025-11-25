@@ -82,6 +82,7 @@ docs = [
     "mkdocs-gen-files",
     "mkdocs-literate-nav",
     "mkdocs-literate-nav",
+    "mkdocs-literate-nav",
     "mkdocs-material",
     "mkdocs-section-index",
 ]
