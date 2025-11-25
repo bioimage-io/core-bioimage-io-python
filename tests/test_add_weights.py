@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 import pytest
@@ -29,7 +28,7 @@ def test_add_weights(
         "source format not found in model"
     )
     if target_format in model.weights.available_formats:
-        model.weights[target_format] = None
+        setattr(model.weights, target_format, None)
 
     out_path = tmp_path / "converted.zip"
     converted = add_weights(
@@ -38,5 +37,8 @@ def test_add_weights(
         source_format=source_format,
         target_format=target_format,
     )
-
+    assert not isinstance(converted, InvalidDescr), (
+        "conversion resulted in invalid descr",
+        converted.validation_summary.display(),
+    )
     assert target_format in converted.weights.available_formats
