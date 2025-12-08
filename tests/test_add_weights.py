@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import pytest
+from bioimageio.spec import InvalidDescr
 from bioimageio.spec.model.v0_5 import WeightsFormat
 
 from bioimageio.core import add_weights, load_model_description
