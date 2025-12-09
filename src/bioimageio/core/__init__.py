@@ -1,5 +1,18 @@
-"""
-.. include:: ../../README.md
+"""bioimageio.core --- core functionality for BioImage.IO resources
+
+The main focus on this library is to provide functionality to run prediction with
+BioImage.IO models, including standardized pre- and postprocessing operations.
+The BioImage.IO models (and other resources) are described by---and can be loaded with---the bioimageio.spec package.
+
+See `predict` and `predict_many` for straight-forward model inference
+and `create_prediction_pipeline` for finer control of the inference process.
+
+Other notable bioimageio.core functionalities include:
+- Testing BioImage.IO resources beyond format validation, e.g. by generating model outputs from test inputs.
+  See `test_model` or for arbitrary resource types `test_description`.
+- Extending available model weight formats by converting existing ones, see `add_weights`.
+- Creating and manipulating `Sample`s consisting of tensors with associated statistics.
+- Computing statistics on datasets (represented as sequences of samples), see `compute_dataset_measures`.
 """
 # ruff: noqa: E402
 

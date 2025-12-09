@@ -9,6 +9,7 @@ edit_uri: edit/main/docs/
 
 theme:
   name: material
+  language: en
   features:
     - announce.dismiss
     - content.action.edit
@@ -75,6 +76,9 @@ plugins:
       html_report_dir: dist/coverage
   - markdown-exec
   - mkdocstrings:
+      enable_inventory: true
+      default_handler: python
+      locale: en
       handlers:
         python:
           inventories:
@@ -91,7 +95,7 @@ plugins:
               trim_doctest_flags: true
             docstring_section_style: spacy
             docstring_style: google
-            filters: 'public'
+            filters: ['!^_[^_]']
             heading_level: 1
             imported_members: false
             inherited_members: true
@@ -155,6 +159,8 @@ markdown_extensions:
   - pymdownx.tilde
   - toc:
       permalink: '¤'
+      permalink_title: Anchor link to this section for reference
+      toc_depth: 2
 
 nav:
   - Home:

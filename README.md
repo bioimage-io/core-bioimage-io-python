@@ -25,8 +25,7 @@ bioimage.core has to offer:
 1. test a model
 
     ```console
-    $ bioimageio test powerful-chipmunk
-    ...
+    bioimageio test powerful-chipmunk
     ```
 
     <details>
@@ -65,8 +64,7 @@ bioimage.core has to offer:
     or
 
     ```console
-    $ bioimageio test impartial-shrimp
-    ...
+    bioimageio test impartial-shrimp
     ```
 
     <details><summary>(Click to expand output)</summary>
@@ -144,8 +142,7 @@ bioimage.core has to offer:
 - display the `bioimageio-predict` command help to get an overview:
 
     ```console
-    $ bioimageio predict --help
-    ...
+    bioimageio predict --help
     ```
 
     <details>
@@ -233,8 +230,7 @@ bioimage.core has to offer:
 - create an example and run prediction locally!
 
     ```console
-    $ bioimageio predict impartial-shrimp --example=True
-    ...
+    bioimageio predict impartial-shrimp --example=True
     ```
 
     <details>
