@@ -147,5 +147,8 @@ exclude = [
 [tool.ruff.lint]
 select = ["NPY201"]
 
+[tool.ruff.lint.isort]
+known-first-party = ["bioimageio"]
+
 [tool.coverage.report]
 exclude_also = ["if TYPE_CHECKING:", "assert_never\\("]

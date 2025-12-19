@@ -12,9 +12,10 @@ from typing import (
     Union,
 )
 
-from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 from loguru import logger
 from tqdm import tqdm
+
+from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 
 from ._op_base import BlockedOperator
 from .axis import AxisId, PerAxis
