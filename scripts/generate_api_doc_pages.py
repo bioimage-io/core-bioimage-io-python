@@ -25,6 +25,12 @@ for path in sorted(src.rglob("*.py")):
     if parts == ("bioimageio",):
         continue
 
+    # Skip private submodules prefixed with '_'
+    if any(
+        part.startswith("_") and part not in ("__init__", "__main__") for part in parts
+    ):
+        continue
+
     if parts[-1] == "__init__":
         parts = parts[:-1]
         doc_path = doc_path.with_name("index.md")
@@ -64,6 +70,7 @@ for path in sorted(src.rglob("*.py")):
         if ident.endswith(".__init__"):
             ident = ident[:-9]  # Remove .__init__
         fd.write(f"::: {ident}")
+        print(f"Written {full_doc_path}")
 
     mkdocs_gen_files.set_edit_path(full_doc_path, path.relative_to(root))
 

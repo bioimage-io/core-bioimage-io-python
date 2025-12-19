@@ -120,6 +120,8 @@ plugins:
             extensions:
               - griffe_pydantic:
                   schema: true
+              - griffe_inherited_docstrings
+              - griffe_public_redundant_aliases
   - mike:
       alias_type: symlink
       canonical_version: latest
