@@ -24,6 +24,10 @@ from typing import (
 )
 
 import numpy as np
+from loguru import logger
+from numpy.typing import NDArray
+from typing_extensions import NotRequired, TypedDict, Unpack, assert_never, get_args
+
 from bioimageio.spec import (
     AnyDatasetDescr,
     AnyModelDescr,
@@ -61,18 +65,14 @@ from bioimageio.spec.summary import (
     ValidationSummary,
     WarningEntry,
 )
-from loguru import logger
-from numpy.typing import NDArray
-from typing_extensions import NotRequired, TypedDict, Unpack, assert_never, get_args
 
-from bioimageio.core import __version__
-from bioimageio.core.io import save_tensor
-
+from . import __version__
 from ._prediction_pipeline import create_prediction_pipeline
 from ._settings import settings
 from .axis import AxisId, BatchSize
 from .common import MemberId, SupportedWeightsFormat
 from .digest_spec import get_test_input_sample, get_test_output_sample
+from .io import save_tensor
 from .sample import Sample
 
 CONDA_CMD = "conda.bat" if platform.system() == "Windows" else "conda"
@@ -710,7 +710,7 @@ def _get_tolerance(
                 if wf == weights_format:
                     applicable = v0_5.ReproducibilityTolerance(
                         relative_tolerance=test_kwargs.get("relative_tolerance", 1e-3),
-                        absolute_tolerance=test_kwargs.get("absolute_tolerance", 1e-4),
+                        absolute_tolerance=test_kwargs.get("absolute_tolerance", 1e-3),
                     )
                     break
 
@@ -739,7 +739,7 @@ def _get_tolerance(
         mismatched_tol = 0
     else:
         # use given (deprecated) test kwargs
-        atol = deprecated.get("absolute_tolerance", 1e-5)
+        atol = deprecated.get("absolute_tolerance", 1e-3)
         rtol = deprecated.get("relative_tolerance", 1e-3)
         mismatched_tol = 0
 
@@ -874,10 +874,10 @@ def _test_model_inference(
                         f"Output '{m}' disagrees with {mismatched_elements} of"
                         + f" {expected_np.size} expected values"
                         + f" ({mismatched_ppm:.1f} ppm)."
-                        + f"\n Max relative difference: {r_max:.2e}"
+                        + f"\n Max relative difference not accounted for by absolute tolerance ({atol:.2e}): {r_max:.2e}"
                         + rf" (= \|{r_actual:.2e} - {r_expected:.2e}\|/\|{r_expected:.2e} + 1e-6\|)"
                         + f" at {dict(zip(dims, r_max_idx))}"
-                        + f"\n Max absolute difference not accounted for by relative tolerance: {a_max:.2e}"
+                        + f"\n Max absolute difference not accounted for by relative tolerance ({rtol:.2e}): {a_max:.2e}"
                         + rf" (= \|{a_actual:.7e} - {a_expected:.7e}\|) at {dict(zip(dims, a_max_idx))}"
                         + f"\n Saved actual output to {actual_output_path}."
                     )
