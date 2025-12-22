@@ -39,26 +39,25 @@ theme:
     - search.share
     - search.suggest
     - toc.follow
-    # - toc.integrate
 
   palette:
     - media: '(prefers-color-scheme)'
-      primary: 'deep-purple'
-      accent: 'blue'
+      primary: 'indigo'
+      accent: 'orange'
       toggle:
         icon: material/brightness-auto
         name: 'Switch to light mode'
     - media: '(prefers-color-scheme: light)'
       scheme: default
-      primary: 'deep-purple'
-      accent: 'blue'
+      primary: 'indigo'
+      accent: 'orange'
       toggle:
         icon: material/brightness-7
         name: 'Switch to dark mode'
     - media: '(prefers-color-scheme: dark)'
       scheme: slate
-      primary: 'deep-purple'
-      accent: 'blue'
+      primary: 'indigo'
+      accent: 'orange'
       toggle:
         icon: material/brightness-4
         name: 'Switch to system preference'
@@ -93,13 +92,11 @@ plugins:
               returns_multiple_items: false
               returns_named_value: false
               trim_doctest_flags: true
-            docstring_section_style: spacy
+            # docstring_section_style: spacy
             docstring_style: google
-            filters: ['!^_[^_]']
+            filters: public
             heading_level: 1
-            imported_members: false
             inherited_members: true
-            members: true
             merge_init_into_class: true
             parameter_headings: true
             preload_modules: [pydantic, bioimageio.spec]
@@ -112,11 +109,12 @@ plugins:
             show_root_heading: true
             show_signature_annotations: true
             show_source: true
+            show_submodules: true
             show_symbol_type_heading: true
             show_symbol_type_toc: true
             signature_crossrefs: true
             summary: true
-            # unwrap_annotated: true
+            unwrap_annotated: false
             extensions:
               - griffe_pydantic:
                   schema: true
@@ -126,9 +124,6 @@ plugins:
       alias_type: symlink
       canonical_version: latest
       version_selector: true
-  - gen-files:
-      scripts:
-        - scripts/generate_api_doc_pages.py
   - literate-nav:
       nav_file: SUMMARY.md
   - search
