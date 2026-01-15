@@ -55,7 +55,7 @@ test:
   requires:
     {% for dep in pyproject['project']['optional-dependencies']['dev'] %}
       {% if 'torch' not in dep %}  # can't install pytorch>=2.8 from conda-forge smh
-    - {{ dep.lower().replace('_', '-') }}
+    - {{ dep.lower().replace('_', '-').replace('onnx_ir!=0.1.14;python_version<"3.10"', 'onnx_ir!=0.1.14') }}
       {% endif %}
     {% endfor %}
   commands:
