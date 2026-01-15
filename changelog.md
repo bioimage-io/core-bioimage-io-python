@@ -1,3 +1,8 @@
+### 0.9.6
+
+- bump bioimageio.spec library version to 0.5.6.0
+- increase default reprducibility tolerance
+
 ### 0.9.5
 
 - bump bioimageio.spec library version to 0.5.6.0
