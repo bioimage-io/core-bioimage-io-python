@@ -40,7 +40,11 @@ Documentation = "https://bioimage-io.github.io/core-bioimage-io-python/bioimagei
 Source = "https://github.com/bioimage-io/core-bioimage-io-python"
 
 [project.optional-dependencies]
-onnx = ["onnxruntime", "onnxscript"]
+onnx = [
+    "onnxruntime",
+    "onnxscript",
+    'onnx_ir!=0.1.14;python_version<"3.10"', # uses typing.Concatentate which requires py>=3.10
+]
 pytorch = ["torch>=1.6,<3", "torchvision>=0.21", "keras>=3.0,<4"]
 tensorflow = ["tensorflow", "keras>=2.15,<4"]
 partners = [
@@ -49,7 +53,7 @@ partners = [
     # "stardist",         # for model testing and stardist postprocessing  # TODO: add updated stardist to partners env
 ]
 dev = [
-    "cellpose",                        # for model testing
+    "cellpose",                              # for model testing
     "crick",
     "griffe-pydantic",
     "griffe-inherited-docstrings",
@@ -58,20 +62,21 @@ dev = [
     "jupyter",
     "keras>=3.0,<4",
     "matplotlib",
-    "monai",                           # for model testing
+    "monai",                                 # for model testing
     "numpy",
     "onnx",
     "onnxruntime",
     "onnxscript",
+    'onnx_ir!=0.1.14;python_version<"3.10"', # uses typing.Concatentate which requires py>=3.10
     "packaging>=17.0",
     "pre-commit",
     "pyright==1.1.407",
     "pytest-cov",
     "pytest",
     "python-dotenv",
-    "segment-anything",                # for model testing
+    "segment-anything",                      # for model testing
     "tensorflow",
-    "timm",                            # for model testing
+    "timm",                                  # for model testing
     "torch>=1.6,<3",
     "torchvision>=0.21",
 ]
