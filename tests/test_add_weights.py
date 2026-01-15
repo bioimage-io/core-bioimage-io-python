@@ -1,30 +1,28 @@
 from pathlib import Path
 
 import pytest
+
+from bioimageio.core import add_weights, load_model_description
 from bioimageio.spec import InvalidDescr
 from bioimageio.spec.model.v0_5 import WeightsFormat
 
-from bioimageio.core import add_weights, load_model_description
-
 
 @pytest.mark.parametrize(
-    ("model_fixture", "source_format", "target_format"),
+    ("source_format", "target_format"),
     [
-        ("unet2d_nuclei_broad_model", "pytorch_state_dict", "torchscript"),
-        ("unet2d_nuclei_broad_model", "pytorch_state_dict", "onnx"),
-        ("unet2d_nuclei_broad_model", "torchscript", "onnx"),
+        ("pytorch_state_dict", "torchscript"),
+        ("pytorch_state_dict", "onnx"),
+        ("torchscript", "onnx"),
     ],
 )
 def test_add_weights(
-    model_fixture: str,
     source_format: WeightsFormat,
     target_format: WeightsFormat,
+    unet2d_nuclei_broad_model: str,
     tmp_path: Path,
     request: pytest.FixtureRequest,
 ):
-    model_source = request.getfixturevalue(model_fixture)
-
-    model = load_model_description(model_source, format_version="latest")
+    model = load_model_description(unet2d_nuclei_broad_model, format_version="latest")
     assert source_format in model.weights.available_formats, (
         "source format not found in model"
     )
