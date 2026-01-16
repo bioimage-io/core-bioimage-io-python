@@ -1,6 +1,7 @@
 import sys
 
 from loguru import logger
+from pydantic_settings import CliApp
 
 logger.enable("bioimageio")
 
@@ -17,8 +18,7 @@ from .cli import Bioimageio
 
 
 def main():
-    cli = Bioimageio()  # pyright: ignore[reportCallIssue]
-    cli.run()
+    _ = CliApp.run(Bioimageio)
 
 
 if __name__ == "__main__":

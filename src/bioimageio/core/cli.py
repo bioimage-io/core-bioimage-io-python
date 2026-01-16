@@ -31,8 +31,25 @@ from typing import (
     Union,
 )
 
-import bioimageio.spec
 import rich.markdown
+from loguru import logger
+from pydantic import AliasChoices, BaseModel, Field, PlainSerializer, model_validator
+from pydantic_settings import (
+    BaseSettings,
+    CliApp,
+    CliPositionalArg,
+    CliSettingsSource,
+    CliSubCommand,
+    JsonConfigSettingsSource,
+    PydanticBaseSettingsSource,
+    SettingsConfigDict,
+    YamlConfigSettingsSource,
+)
+from tqdm import tqdm
+from typing_extensions import assert_never
+
+import bioimageio.spec
+from bioimageio.core import __version__
 from bioimageio.spec import (
     AnyModelDescr,
     InvalidDescr,
@@ -50,22 +67,6 @@ from bioimageio.spec.dataset import DatasetDescr
 from bioimageio.spec.model import ModelDescr, v0_4, v0_5
 from bioimageio.spec.notebook import NotebookDescr
 from bioimageio.spec.utils import ensure_description_is_model, get_reader, write_yaml
-from loguru import logger
-from pydantic import AliasChoices, BaseModel, Field, PlainSerializer, model_validator
-from pydantic_settings import (
-    BaseSettings,
-    CliPositionalArg,
-    CliSettingsSource,
-    CliSubCommand,
-    JsonConfigSettingsSource,
-    PydanticBaseSettingsSource,
-    SettingsConfigDict,
-    YamlConfigSettingsSource,
-)
-from tqdm import tqdm
-from typing_extensions import assert_never
-
-from bioimageio.core import __version__
 
 from .commands import WeightFormatArgAll, WeightFormatArgAny, package, test
 from .common import MemberId, SampleId, SupportedWeightsFormat
@@ -161,7 +162,7 @@ class ValidateFormatCmd(CmdBase, WithSource, WithSummaryLogging):
     def descr(self):
         return load_description(self.source, perform_io_checks=self.perform_io_checks)
 
-    def run(self):
+    def cli_cmd(self):
         self.log(self.descr)
         sys.exit(
             0
@@ -213,7 +214,7 @@ class TestCmd(CmdBase, WithSource, WithSummaryLogging):
         - '0.4', '0.5', ...: Use the specified format version (may trigger auto updating)
     """
 
-    def run(self):
+    def cli_cmd(self):
         sys.exit(
             test(
                 self.descr,
@@ -242,7 +243,7 @@ class PackageCmd(CmdBase, WithSource, WithSummaryLogging):
     )
     """The weight format to include in the package (for model descriptions only)."""
 
-    def run(self):
+    def cli_cmd(self):
         if isinstance(self.descr, InvalidDescr):
             self.log(self.descr)
             raise ValueError(f"Invalid {self.descr.type} description.")
@@ -315,7 +316,7 @@ class UpdateCmdBase(CmdBase, WithSource, ABC):
     def updated(self) -> Union[ResourceDescr, InvalidDescr]:
         raise NotImplementedError
 
-    def run(self):
+    def cli_cmd(self):
         original_yaml = open_bioimageio_yaml(self.source).unparsed_content
         assert isinstance(original_yaml, str)
         stream = StringIO()
@@ -577,7 +578,7 @@ class PredictCmd(CmdBase, WithSource):
             + f"\n(note that a local '{JSON_FILE}' or '{YAML_FILE}' may interfere with this)"
         )
 
-    def run(self):
+    def cli_cmd(self):
         if self.example:
             return self._example()
 
@@ -745,6 +746,8 @@ class PredictCmd(CmdBase, WithSource):
 
 
 class AddWeightsCmd(CmdBase, WithSource, WithSummaryLogging):
+    """Add additional weights to a model description by converting from available formats."""
+
     output: CliPositionalArg[Path]
     """The path to write the updated model package to."""
 
@@ -761,7 +764,7 @@ class AddWeightsCmd(CmdBase, WithSource, WithSummaryLogging):
     """Allow tracing when converting pytorch_state_dict to torchscript
     (still uses scripting if possible)."""
 
-    def run(self):
+    def cli_cmd(self):
         model_descr = ensure_description_is_model(self.descr)
         if isinstance(model_descr, v0_4.ModelDescr):
             raise TypeError(
@@ -817,8 +820,7 @@ class Bioimageio(
     """Create a bioimageio.yaml description with updated file hashes."""
 
     add_weights: CliSubCommand[AddWeightsCmd] = Field(alias="add-weights")
-    """Add additional weights to the model descriptions converted from available
-    formats to improve deployability."""
+    """Add additional weights to a model description by converting from available formats."""
 
     @classmethod
     def settings_customise_sources(
@@ -852,22 +854,12 @@ class Bioimageio(
         )
         return data
 
-    def run(self):
+    def cli_cmd(self) -> None:
         logger.info(
             "executing CLI command:\n{}",
             pformat({k: v for k, v in self.model_dump().items() if v is not None}),
         )
-        cmd = (
-            self.add_weights
-            or self.package
-            or self.predict
-            or self.test
-            or self.update_format
-            or self.update_hashes
-            or self.validate_format
-        )
-        assert cmd is not None
-        cmd.run()
+        _ = CliApp.run_subcommand(self)
 
 
 assert isinstance(Bioimageio.__doc__, str)
