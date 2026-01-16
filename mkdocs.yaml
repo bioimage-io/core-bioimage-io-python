@@ -82,8 +82,7 @@ plugins:
         python:
           inventories:
             - https://docs.pydantic.dev/latest/objects.inv
-            - https://bioimage-io.github.io/spec-bioimage-io/latest/objects.inv
-            - https://bioimage-io.github.io/spec-bioimage-io/dev/objects.inv
+            - https://bioimage-io.github.io/spec-bioimage-io/v0.5.7.0/objects.inv
           options:
             annotations_path: source
             backlinks: tree
@@ -162,6 +161,10 @@ markdown_extensions:
 nav:
   - Home:
       - index.md
+      - Get started: get_started.md
+      - Installation: installation.md
+      - bioimageio CLI: cli.md
+      - Use in Python: use_in_python.md
       - Compatibility: compatibility.md
   - API Reference: reference/
   - Changelog: changelog.md
