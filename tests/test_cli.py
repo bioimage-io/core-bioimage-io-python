@@ -86,16 +86,16 @@ def _test_cli_predict_single(
 
     model = load_model_description(model_source, format_version="latest")
     assert model.inputs[0].test_tensor is not None
-    in_source = model.inputs[0].test_tensor.source
-
-    out_path = tmp_path.with_suffix(".npy")
+    in_path = tmp_path / "in.npy"
+    _ = in_path.write_bytes(model.inputs[0].test_tensor.get_reader().read())
+    out_path = tmp_path / "out.npy"
     cmd = [
         "bioimageio",
         "predict",
         str(model_source),
-        "--input",
-        str(in_source),
-        "--output",
+        "--inputs",
+        str(in_path),
+        "--outputs",
         str(out_path),
     ] + list(extra_cmd_args)
     ret = run_subprocess(cmd)
@@ -128,21 +128,23 @@ def _test_cli_predict_multiple(
     in_folder.mkdir()
     out_folder = tmp_path / "outputs"
     out_folder.mkdir()
-
+    out_file_pattern = "im-{sample_id}.npy"
+    inputs: List[str] = []
     expected_outputs: List[Path] = []
     for i in range(n_images):
-        path = in_folder / f"im-{i}.npy"
+        input_path = in_folder / f"im-{i}.npy"
         im = np.random.randint(0, 255, size=shape).astype("uint8")
-        np.save(path, im)
-        expected_outputs.append(out_folder / f"im-{i}.npy")
+        np.save(input_path, im)
+        inputs.extend(["--inputs", str(input_path)])
+        expected_outputs.append(out_folder / out_file_pattern.format(sample_id=i))
 
-    input_pattern = str(in_folder / "*.npy")
     cmd = [
         "bioimageio",
         "predict",
         model_source,
-        input_pattern,
-        str(out_folder),
+        *inputs,
+        "--outputs",
+        str(out_folder / out_file_pattern),
     ] + list(extra_cmd_args)
     ret = run_subprocess(cmd)
     assert ret.returncode == 0, ret.stdout

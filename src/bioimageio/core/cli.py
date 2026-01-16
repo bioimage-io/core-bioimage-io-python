@@ -659,7 +659,7 @@ class PredictCmd(CmdBase, WithSource):
                     )
                     for s in sample_ids
                 ]
-
+            # check for distinctness and correct number within each output sample
             for i, out in enumerate(outputs, start=1):
                 if len(set(out)) < len(out):
                     raise ValueError(
@@ -670,6 +670,14 @@ class PredictCmd(CmdBase, WithSource):
                     raise ValueError(
                         f"[output sample #{i}] Expected {len(output_ids)} outputs {output_ids}, got {out}"
                     )
+
+            # check for distinctness across all output samples
+            all_output_paths = [p for out in outputs for p in out]
+            if len(set(all_output_paths)) < len(all_output_paths):
+                raise ValueError(
+                    "Output paths are not distinct across samples. "
+                    + f"Make sure to include '{{sample_id}}' in the output path pattern."
+                )
 
             return outputs
 
