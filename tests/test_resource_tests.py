@@ -1,3 +1,7 @@
+from pathlib import Path
+
+import numpy as np
+
 from bioimageio.spec import InvalidDescr, ValidationContext
 
 
@@ -42,3 +46,31 @@ def test_loading_description_multiple_times(unet2d_nuclei_broad_model: str):
     # load again, which some users might end up doing
     model_descr = load_description(model_descr)  # pyright: ignore[reportArgumentType]
     assert not isinstance(model_descr, InvalidDescr)
+
+
+def test_test_description_runtime_env(unet2d_nuclei_broad_model: str):
+    from bioimageio.core._resource_tests import test_description
+
+    summary = test_description(unet2d_nuclei_broad_model, runtime_env="as-described")
+
+    assert summary.status == "passed", summary.display()
+
+
+def test_failed_reproducibility(unet2d_nuclei_broad_model: str, tmp_path: str):
+    from bioimageio.core import load_model
+    from bioimageio.core._resource_tests import test_model
+    from bioimageio.spec.common import FileDescr
+    from bioimageio.spec.utils import load_array, save_array
+
+    model = load_model(unet2d_nuclei_broad_model, format_version="latest")
+
+    # use corrupted test input to fail the reproducibility test
+    test_array_path = Path(tmp_path) / "input.npy"
+    assert model.inputs[0].test_tensor is not None
+    test_array = load_array(model.inputs[0].test_tensor)
+    save_array(test_array_path, np.zeros_like(test_array))
+    model.inputs[0].test_tensor = FileDescr(source=test_array_path)
+
+    summary = test_model(model)
+
+    assert summary.status == "valid-format"
