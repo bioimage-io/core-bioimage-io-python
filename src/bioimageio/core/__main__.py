@@ -16,10 +16,4 @@ _ = logger.add(
 
 from .cli import Bioimageio
 
-
-def main():
-    _ = CliApp.run(Bioimageio)
-
-
-if __name__ == "__main__":
-    main()
+_ = CliApp.run(Bioimageio)
