@@ -82,7 +82,7 @@ dev = [
 ]
 docs = [
     "markdown-callouts",
-    "markdown-exec",
+    "markdown-exec[ansi]",
     "markdown-pycon",
     "mike",
     "mkdocs-api-autonav",
