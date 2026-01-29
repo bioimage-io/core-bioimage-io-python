@@ -12,6 +12,7 @@ build/
 cache
 coverage.xml
 dist/
+docs/api/
 dogfood/
 pkgs/
 site/

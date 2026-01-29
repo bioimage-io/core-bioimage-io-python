@@ -73,7 +73,11 @@ plugins:
   - autorefs
   - coverage:
       html_report_dir: dist/coverage
-  - markdown-exec
+  - gen-files:
+      scripts:
+        - scripts/generate_api_doc_pages.py
+  - markdown-exec:
+      ansi: required
   - mkdocstrings:
       enable_inventory: true
       default_handler: python
@@ -107,8 +111,9 @@ plugins:
             show_root_full_path: false
             show_root_heading: true
             show_signature_annotations: true
+            show_signature_type_parameters: true
             show_source: true
-            show_submodules: true
+            show_submodules: false
             show_symbol_type_heading: true
             show_symbol_type_toc: true
             signature_crossrefs: true
@@ -166,7 +171,7 @@ nav:
       - bioimageio CLI: cli.md
       - Use in Python: use_in_python.md
       - Compatibility: compatibility.md
-  - API Reference: reference/
+  - API Reference: api/
   - Changelog: changelog.md
   - Coverage report: coverage.md
 

@@ -33,7 +33,14 @@ from typing import (
 
 import rich.markdown
 from loguru import logger
-from pydantic import AliasChoices, BaseModel, Field, PlainSerializer, model_validator
+from pydantic import (
+    AliasChoices,
+    BaseModel,
+    Field,
+    PlainSerializer,
+    WithJsonSchema,
+    model_validator,
+)
 from pydantic_settings import (
     BaseSettings,
     CliApp,
@@ -452,9 +459,11 @@ class PredictCmd(CmdBase, WithSource):
     blockwise: bool = False
     """process inputs blockwise"""
 
-    stats: Annotated[Path, PlainSerializer(lambda p: p.as_posix())] = Path(
-        "dataset_statistics.json"
-    )
+    stats: Annotated[
+        Path,
+        WithJsonSchema({"type": "string"}),
+        PlainSerializer(lambda p: p.as_posix(), return_type=str),
+    ] = Path("dataset_statistics.json")
     """path to dataset statistics
     (will be written if it does not exist,
     but the model requires statistical dataset measures)

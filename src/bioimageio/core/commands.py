@@ -4,6 +4,8 @@ defined in `bioimageio.core.cli`."""
 from pathlib import Path
 from typing import Optional, Sequence, Union
 
+from typing_extensions import Literal
+
 from bioimageio.spec import (
     InvalidDescr,
     ResourceDescr,
@@ -11,7 +13,6 @@ from bioimageio.spec import (
     save_bioimageio_package_as_folder,
 )
 from bioimageio.spec._internal.types import FormatVersionPlaceholder
-from typing_extensions import Literal
 
 from ._resource_tests import test_description
 
@@ -54,7 +55,7 @@ def test(
 ) -> int:
     """Test a bioimageio resource.
 
-    Arguments as described in `bioimageio.core.cli.TestCmd`
+    Arguments as described in [bioimageio.core.cli.TestCmd][]
     """
     if isinstance(descr, InvalidDescr):
         test_summary = descr.validation_summary

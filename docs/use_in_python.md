@@ -1,6 +1,6 @@
 Here you can find recommendations for using bioimageio.core in your Python package or scripts.
 
-See [API reference](reference/index.html) for details beyond this brief orientation.
+See [API reference](api/index.html) for details beyond this brief orientation.
 
 ## Run inference
 

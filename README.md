@@ -19,49 +19,28 @@ and compute selected dataset statistics used for preprocessing.
 
 [Here you find the bioimageio.core documentation.](https://bioimage-io.github.io/core-bioimage-io-python)
 
+#### Examples
+
+Notebooks that save and load resource descriptions and validate their format (using <a href="https://bioimage-io.github.io/core-bioimage-io-python/bioimageio/spec.html">bioimageio.spec</a>, a dependency of bioimageio.core)
+<ul>
+<li><a href="https://github.com/bioimage-io/spec-bioimage-io/blob/main/example/load_model_and_create_your_own.ipynb">load_model_and_create_your_own.ipynb</a> <a target="_blank" href="https://colab.research.google.com/github/bioimage-io/spec-bioimage-io/blob/main/example/load_model_and_create_your_own.ipynb">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+</a></li>
+<li><a href="https://github.com/bioimage-io/spec-bioimage-io/blob/main/example/dataset_creation.ipynb">dataset_creation.ipynb</a> <a target="_blank" href="https://colab.research.google.com/github/bioimage-io/spec-bioimage-io/blob/main/example/dataset_creation.ipynb">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+</a></li>
+</ul>
+
+Use the described resources in Python with <a href="https://bioimage-io.github.io/core-bioimage-io-python/bioimageio/core.html">bioimageio.core</a>
+<ul>
+<li><a href="https://github.com/bioimage-io/core-bioimage-io-python/blob/main/example/model_usage.ipynb">model_usage.ipynb</a><a target="_blank" href="https://colab.research.google.com/github/bioimage-io/core-bioimage-io-python/blob/main/example/model_usage.ipynb">
+  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
+</a></li>
+</ul>
+
 #### Presentations
 
 - [Create a model from scratch](https://bioimage-io.github.io/core-bioimage-io-python/presentations/create_ambitious_sloth.slides.html) ([source](https://github.com/bioimage-io/core-bioimage-io-python/tree/main/presentations))
-
-#### Examples
-
-<dl>
-  <dt>Notebooks that save and load resource descriptions and validate their format (using <a href="https://bioimage-io.github.io/core-bioimage-io-python/bioimageio/spec.html">bioimageio.spec</a>, a dependency of bioimageio.core)</dt>
-  <dd><a href="https://github.com/bioimage-io/spec-bioimage-io/blob/main/example/load_model_and_create_your_own.ipynb">load_model_and_create_your_own.ipynb</a> <a target="_blank" href="https://colab.research.google.com/github/bioimage-io/spec-bioimage-io/blob/main/example/load_model_and_create_your_own.ipynb">
-  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
-</a></dd>
-<dd><a href="https://github.com/bioimage-io/spec-bioimage-io/blob/main/example/dataset_creation.ipynb">dataset_creation.ipynb</a> <a target="_blank" href="https://colab.research.google.com/github/bioimage-io/spec-bioimage-io/blob/main/example/dataset_creation.ipynb">
-  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
-</a></dd>
-<dt>Use the described resources in Python with <a href="https://bioimage-io.github.io/core-bioimage-io-python/bioimageio/core.html">bioimageio.core</a></dt>
- <dd><a href="https://github.com/bioimage-io/core-bioimage-io-python/blob/main/example/model_usage.ipynb">model_usage.ipynb</a><a target="_blank" href="https://colab.research.google.com/github/bioimage-io/core-bioimage-io-python/blob/main/example/model_usage.ipynb">
-  <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
-</dl>
-
-## 💻 Use the Command Line Interface
-
-`bioimageio.core` installs a command line interface (CLI) for testing models and other functionality.
-You can list all the available commands via:
-
-```console
-bioimageio
-```
-
-For examples see [Get started](#get-started).
-
-### CLI inputs from file
-
-For convenience the command line options (not arguments) may be given in a `bioimageio-cli.json`
-or `bioimageio-cli.yaml` file, e.g.:
-
-```yaml
-# bioimageio-cli.yaml
-inputs: inputs/*_{tensor_id}.h5
-outputs: outputs_{model_id}/{sample_id}_{tensor_id}.h5
-overwrite: true
-blockwise: true
-stats: inputs/dataset_statistics.json
-```
 
 ## Set up Development Environment
 

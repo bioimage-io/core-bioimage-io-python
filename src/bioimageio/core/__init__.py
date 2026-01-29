@@ -21,55 +21,65 @@ from loguru import logger
 
 logger.disable("bioimageio.core")
 
-from bioimageio.spec import (
-    ValidationSummary,
-    build_description,
-    dump_description,
-    load_dataset_description,
-    load_description,
-    load_description_and_validate_format_only,
-    load_model_description,
-    save_bioimageio_package,
-    save_bioimageio_package_as_folder,
-    save_bioimageio_yaml_only,
-    validate_format,
-)
+import bioimageio.spec
 
-from . import (
-    axis,
-    block_meta,
-    cli,
-    commands,
-    common,
-    digest_spec,
-    io,
-    model_adapters,
-    prediction,
-    proc_ops,
-    proc_setup,
-    sample,
-    stat_calculators,
-    stat_measures,
-    tensor,
+from . import axis as axis
+from . import backends as backends
+from . import block_meta as block_meta
+from . import cli as cli
+from . import commands as commands
+from . import common as common
+from . import digest_spec as digest_spec
+from . import io as io
+from . import model_adapters as model_adapters
+from . import prediction as prediction
+from . import proc_ops as proc_ops
+from . import proc_setup as proc_setup
+from . import sample as sample
+from . import stat_calculators as stat_calculators
+from . import stat_measures as stat_measures
+from . import tensor as tensor
+from . import weight_converters as weight_converters
+from ._prediction_pipeline import PredictionPipeline as PredictionPipeline
+from ._prediction_pipeline import (
+    create_prediction_pipeline as create_prediction_pipeline,
 )
-from ._prediction_pipeline import PredictionPipeline, create_prediction_pipeline
-from ._resource_tests import (
-    enable_determinism,
-    load_description_and_test,
-    test_description,
-    test_model,
+from ._resource_tests import enable_determinism as enable_determinism
+from ._resource_tests import load_description_and_test as load_description_and_test
+from ._resource_tests import test_description as test_description
+from ._resource_tests import test_model as test_model
+from ._settings import Settings as Settings
+from ._settings import settings as settings
+
+# reexports from bioimageio.spec
+build_description = bioimageio.spec.build_description
+dump_description = bioimageio.spec.dump_description
+load_dataset_description = bioimageio.spec.load_dataset_description
+load_description = bioimageio.spec.load_description
+load_description_and_validate_format_only = (
+    bioimageio.spec.load_description_and_validate_format_only
 )
-from ._settings import settings
-from .axis import Axis, AxisId
-from .backends import create_model_adapter
-from .block_meta import BlockMeta
-from .common import MemberId
-from .prediction import predict, predict_many
-from .sample import Sample
-from .stat_calculators import compute_dataset_measures
-from .stat_measures import Stat
-from .tensor import Tensor
-from .weight_converters import add_weights
+load_model_description = bioimageio.spec.load_model_description
+save_bioimageio_package = bioimageio.spec.save_bioimageio_package
+save_bioimageio_package_as_folder = bioimageio.spec.save_bioimageio_package_as_folder
+save_bioimageio_yaml_only = bioimageio.spec.save_bioimageio_yaml_only
+validate_format = bioimageio.spec.validate_format
+ValidationSummary = bioimageio.spec.ValidationSummary
+
+
+# reexports from bioimageio.core submodules
+add_weights = weight_converters.add_weights
+Axis = axis.Axis
+AxisId = axis.AxisId
+BlockMeta = block_meta.BlockMeta
+compute_dataset_measures = stat_calculators.compute_dataset_measures
+create_model_adapter = backends.create_model_adapter
+MemberId = common.MemberId
+predict = prediction.predict
+predict_many = prediction.predict_many
+Sample = sample.Sample
+Stat = stat_measures.Stat
+Tensor = tensor.Tensor
 
 # aliases
 test_resource = test_description
@@ -78,55 +88,3 @@ load_resource = load_description
 """alias of `load_description`"""
 load_model = load_model_description
 """alias of `load_model_description`"""
-
-__all__ = [
-    "__version__",
-    "add_weights",
-    "axis",
-    "Axis",
-    "AxisId",
-    "block_meta",
-    "BlockMeta",
-    "build_description",
-    "cli",
-    "commands",
-    "common",
-    "compute_dataset_measures",
-    "create_model_adapter",
-    "create_prediction_pipeline",
-    "digest_spec",
-    "dump_description",
-    "enable_determinism",
-    "io",
-    "load_dataset_description",
-    "load_description_and_test",
-    "load_description_and_validate_format_only",
-    "load_description",
-    "load_model_description",
-    "load_model",
-    "load_resource",
-    "MemberId",
-    "model_adapters",
-    "predict_many",
-    "predict",
-    "prediction",
-    "PredictionPipeline",
-    "proc_ops",
-    "proc_setup",
-    "sample",
-    "Sample",
-    "save_bioimageio_package_as_folder",
-    "save_bioimageio_package",
-    "save_bioimageio_yaml_only",
-    "settings",
-    "stat_calculators",
-    "stat_measures",
-    "Stat",
-    "tensor",
-    "Tensor",
-    "test_description",
-    "test_model",
-    "test_resource",
-    "validate_format",
-    "ValidationSummary",
-]

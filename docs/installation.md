@@ -7,7 +7,7 @@ conda install -c conda-forge bioimageio.core
 ```
 
 If you do not install any additional deep learning libraries, you will only be able to use general convenience
-functionality, but not any functionality depending on model prediction.
+functionality, but model inference will be unavailable.
 To install additional deep learning libraries add `pytorch`, `onnxruntime`, `keras` or `tensorflow`.
 
 Deeplearning frameworks to consider installing alongside `bioimageio.core`:
