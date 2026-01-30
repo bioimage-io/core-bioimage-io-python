@@ -10,8 +10,6 @@ import pytest
     [
         "img.png",
         "img.tiff",
-        "img.h5",
-        "img.h5/img",
         "img.npy",
     ],
 )

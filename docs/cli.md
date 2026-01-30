@@ -15,8 +15,8 @@ For convenience the command line options (not arguments) may be given in a `bioi
 
 ```yaml
 # bioimageio-cli.yaml
-inputs: inputs/*_{tensor_id}.h5
-outputs: outputs_{model_id}/{sample_id}_{tensor_id}.h5
+inputs: inputs/*_{tensor_id}.tiff
+outputs: outputs_{model_id}/{sample_id}_{tensor_id}.tiff
 overwrite: true
 blockwise: true
 stats: inputs/dataset_statistics.json

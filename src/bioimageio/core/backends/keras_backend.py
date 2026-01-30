@@ -4,7 +4,6 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, Optional, Sequence, Union
 
-import h5py  # pyright: ignore[reportMissingTypeStubs]
 from keras.src.legacy.saving import (  # pyright: ignore[reportMissingTypeStubs]
     legacy_h5_format,
 )
@@ -76,6 +75,8 @@ class KerasModelAdapter(ModelAdapter):
 
         weight_reader = model_description.weights.keras_hdf5.get_reader()
         if weight_reader.suffix in (".h5", "hdf5"):
+            import h5py  # pyright: ignore[reportMissingTypeStubs]
+
             h5_file = h5py.File(weight_reader, mode="r")
             self._network = legacy_h5_format.load_model_from_hdf5(h5_file)
         else:
