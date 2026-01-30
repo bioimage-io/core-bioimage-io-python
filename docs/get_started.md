@@ -12,13 +12,13 @@ Recommended third party deep learning libraries to install alongside bioimageio.
 
 1. Get an overview of available commands
 
-    ```bash exec="1" source="console" result="ansi"
+    ```bash exec="1" source="console" result="ansi" width="200"
     bioimageio --help
     ```
 
 1. Test a model
 
-    ```bash exec="1" source="console" result="ansi"
+    ```bash exec="1" source="console" result="ansi" width="200"
     bioimageio test affable-shark
     ```
 
@@ -29,7 +29,7 @@ Recommended third party deep learning libraries to install alongside bioimageio.
 
     The Python equivalent would be:
 
-    ```python exec="1" souce="console"
+    ```python exec="1" souce="console" width="300"
     from bioimageio.core import test_description
 
     summary = test_description("affable-shark")
@@ -40,13 +40,13 @@ Recommended third party deep learning libraries to install alongside bioimageio.
 
 - Display the `bioimageio predict` command help to get an overview:
 
-    ```bash exec="1" source="console" result="ansi"
+    ```bash exec="1" source="console" result="ansi" width="200"
     bioimageio predict --help
     ```
 
 - create an example and run prediction locally!
 
-    ```bash exec="1" source="console" result="ansi"
+    ```bash exec="1" source="console" result="ansi" width="200"
     bioimageio predict affable-shark --example
     ```
 

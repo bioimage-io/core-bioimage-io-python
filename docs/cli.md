@@ -3,7 +3,7 @@
 `bioimageio.core` installs a command line interface (CLI) for testing models and other functionality.
 You can list all the available commands via:
 
-```console exec="1"
+```bash exec="1" source="console" result="ansi" width="200"
 bioimageio --help
 ```
 
