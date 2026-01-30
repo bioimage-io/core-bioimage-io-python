@@ -1,7 +1,7 @@
 import collections.abc
 import warnings
 import zipfile
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from shutil import copyfileobj
 from typing import (
     Any,
