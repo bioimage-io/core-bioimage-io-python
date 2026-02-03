@@ -260,14 +260,15 @@ def test_description(
     else:
         assert_never(runtime_env)
 
-    try:
-        run_command(["thiscommandshouldalwaysfail", "please"])
-    except Exception:
-        pass
-    else:
-        raise RuntimeError(
-            "given run_command does not raise an exception for a failing command"
-        )
+    if run_command is not default_run_command:
+        try:
+            run_command(["thiscommandshouldalwaysfail", "please"])
+        except Exception:
+            pass
+        else:
+            raise RuntimeError(
+                "given run_command does not raise an exception for a failing command"
+            )
 
     td_kwargs: Dict[str, Any] = (
         dict(ignore_cleanup_errors=True) if sys.version_info >= (3, 10) else {}
@@ -447,6 +448,22 @@ def _test_in_env(
                 )
             )
             return
+        else:
+            descr.validation_summary.add_detail(
+                ValidationDetail(
+                    name=f"Created conda environment '{env_name}'",
+                    status="passed",
+                    loc=test_loc,
+                )
+            )
+    else:
+        descr.validation_summary.add_detail(
+            ValidationDetail(
+                name=f"Found existing conda environment '{env_name}'",
+                status="passed",
+                loc=test_loc,
+            )
+        )
 
     working_dir.mkdir(parents=True, exist_ok=True)
     summary_path = working_dir / "summary.json"
