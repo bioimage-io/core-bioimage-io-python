@@ -52,6 +52,7 @@ def test(
     ] = "currently-active",
     determinism: Literal["seed_only", "full"] = "seed_only",
     format_version: Union[FormatVersionPlaceholder, str] = "discover",
+    working_dir: Optional[Path] = None,
 ) -> int:
     """Test a bioimageio resource.
 
@@ -67,6 +68,7 @@ def test(
             devices=[devices] if isinstance(devices, str) else devices,
             runtime_env=runtime_env,
             determinism=determinism,
+            working_dir=working_dir,
         )
 
     _ = test_summary.log(summary)

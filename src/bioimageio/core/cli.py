@@ -204,6 +204,9 @@ class TestCmd(CmdBase, WithSource, WithSummaryLogging):
           Note: The `bioimageio.core` dependency will be added automatically if not present.
     """
 
+    working_dir: Optional[Path] = Field(None, alias="working-dir")
+    """(for debugging) Directory to save any temporary files."""
+
     determinism: Literal["seed_only", "full"] = "seed_only"
     """Modes to improve reproducibility of test outputs."""
 
@@ -231,6 +234,7 @@ class TestCmd(CmdBase, WithSource, WithSummaryLogging):
                 runtime_env=self.runtime_env,
                 determinism=self.determinism,
                 format_version=self.format_version,
+                working_dir=self.working_dir,
             )
         )
 
