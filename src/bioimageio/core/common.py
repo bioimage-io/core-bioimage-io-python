@@ -25,6 +25,30 @@ SupportedWeightsFormat = Literal[
     "torchscript",
 ]
 
+QuantileMethod = Literal[
+    "inverted_cdf",
+    # "averaged_inverted_cdf",
+    # "closest_observation",
+    # "interpolated_inverted_cdf",
+    # "hazen",
+    # "weibull",
+    "linear",
+    # "median_unbiased",
+    # "normal_unbiased",
+]
+"""Methods to use when the desired quantile lies between two data points.
+See https://numpy.org/devdocs/reference/generated/numpy.quantile.html#numpy-quantile for details.
+
+Note:
+    Only relevant for `SampleQuantile` measures, as `DatasetQuantile` measures computed by [bioimageio.core.stat_calculators.][] are approximations (and use the "linear" method for each sample quantiles)
+
+!!! warning
+    Limited choices to map more easily to bioimageio.spec descriptions.
+    Current implementations:
+    - [bioimageio.spec.model.v0_5.ClipKwargs][] implies "inverted_cdf" for sample quantiles and "linear" (numpy's default) for dataset quantiles.
+    - [bioimageio.spec.model.v0_5.ScaleRangeKwargs][] implies "linear" (numpy's default)
+
+"""
 
 DTypeStr = Literal[
     "bool",

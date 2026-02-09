@@ -189,6 +189,51 @@ def test_clip(tid: MemberId):
     xr.testing.assert_equal(expected, sample.members[tid].data)
 
 
+def test_clip_percentiles():
+    from bioimageio.core.proc_ops import Clip
+    from bioimageio.core.stat_measures import SampleQuantile
+    from bioimageio.spec.model.v0_5 import AxisId, ClipDescr, ClipKwargs
+
+    descr = ClipDescr(
+        kwargs=ClipKwargs(min_percentile=20, max_percentile=60, axes=(AxisId("x"),))
+    )
+    op = Clip.from_proc_descr(
+        descr,
+        member_id=MemberId("data"),
+    )
+    assert op.required_measures == {
+        SampleQuantile(
+            member_id=MemberId("data"),
+            scope="sample",
+            name="quantile",
+            q=0.2,
+            axes=(AxisId("x"),),
+            method="inverted_cdf",
+        ),
+        SampleQuantile(
+            member_id=MemberId("data"),
+            scope="sample",
+            name="quantile",
+            q=0.6,
+            axes=(AxisId("x"),),
+            method="inverted_cdf",
+        ),
+    }
+
+    data = xr.DataArray(np.arange(15).reshape(3, 5), dims=("c", "x"))
+    sample = Sample(
+        members={MemberId("data"): Tensor.from_xarray(data)}, stat={}, id=None
+    )
+    sample.stat = compute_measures(op.required_measures, [sample])
+
+    expected = xr.DataArray(
+        np.array([[3, 3, 3, 4, 4], [7, 7, 8, 9, 9], [12, 12, 13, 14, 14]]),
+        dims=("c", "x"),
+    )
+    op(sample)
+    xr.testing.assert_equal(expected, sample.members[MemberId("data")].data)
+
+
 def test_combination_of_op_steps_with_dims_specified(tid: MemberId):
     from bioimageio.core.proc_ops import ZeroMeanUnitVariance
 
@@ -330,10 +375,10 @@ def test_scale_range_axes(tid: MemberId):
     eps = 1.0e-6
 
     lower_quantile = SampleQuantile(
-        member_id=tid, q=0.1, axes=(AxisId("x"), AxisId("y"))
+        member_id=tid, q=0.1, axes=(AxisId("x"), AxisId("y")), method="linear"
     )
     upper_quantile = SampleQuantile(
-        member_id=tid, q=0.9, axes=(AxisId("x"), AxisId("y"))
+        member_id=tid, q=0.9, axes=(AxisId("x"), AxisId("y")), method="linear"
     )
     op = ScaleRange(tid, tid, lower_quantile, upper_quantile, eps=eps)
 

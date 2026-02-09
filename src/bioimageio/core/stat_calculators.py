@@ -22,19 +22,20 @@ from typing import (
 
 import numpy as np
 import xarray as xr
-from bioimageio.spec.model.v0_5 import BATCH_AXIS_ID
 from loguru import logger
 from numpy.typing import NDArray
 from typing_extensions import assert_never
 
+from bioimageio.spec.model.v0_5 import BATCH_AXIS_ID
+
 from .axis import AxisId, PerAxis
-from .common import MemberId
+from .common import MemberId, QuantileMethod
 from .sample import Sample
 from .stat_measures import (
     DatasetMean,
     DatasetMeasure,
     DatasetMeasureBase,
-    DatasetPercentile,
+    DatasetQuantile,
     DatasetStd,
     DatasetVar,
     Measure,
@@ -208,33 +209,39 @@ class MeanVarStdCalculator:
             }
 
 
-class SamplePercentilesCalculator:
-    """to calculate sample percentiles"""
+class SampleQuantilesCalculator:
+    """to calculate sample quantiles"""
 
     def __init__(
         self,
         member_id: MemberId,
         axes: Optional[Sequence[AxisId]],
         qs: Collection[float],
+        method: QuantileMethod = "linear",
     ):
         super().__init__()
         assert all(0.0 <= q <= 1.0 for q in qs)
         self._qs = sorted(set(qs))
         self._axes = None if axes is None else tuple(axes)
         self._member_id = member_id
+        self._method = method
 
     def compute(self, sample: Sample) -> Dict[SampleQuantile, MeasureValue]:
         tensor = sample.members[self._member_id]
-        ps = tensor.quantile(self._qs, dim=self._axes)
+        ps = tensor.quantile(self._qs, dim=self._axes, method=self._method)
         return {
-            SampleQuantile(q=q, axes=self._axes, member_id=self._member_id): p
+            SampleQuantile(
+                q=q, axes=self._axes, member_id=self._member_id, method=self._method
+            ): p
             for q, p in zip(self._qs, ps)
         }
 
 
-class MeanPercentilesCalculator:
-    """to calculate dataset percentiles heuristically by averaging across samples
-    **note**: the returned dataset percentiles are an estiamte and **not mathematically correct**
+class MeanQuantilesCalculator:
+    """to calculate dataset quantiles heuristically by averaging across samples
+
+    Note:
+        The returned dataset quantiles are an estiamte and **not mathematically correct**
     """
 
     def __init__(
@@ -253,9 +260,9 @@ class MeanPercentilesCalculator:
 
     def update(self, sample: Sample):
         tensor = sample.members[self._member_id]
-        sample_estimates = tensor.quantile(self._qs, dim=self._axes).astype(
-            "float64", copy=False
-        )
+        sample_estimates = tensor.quantile(
+            self._qs, dim=self._axes, method="linear"
+        ).astype("float64", copy=False)
 
         # reduced voxel count
         n = int(tensor.size / np.prod(sample_estimates.shape_tuple[1:]))
@@ -271,7 +278,7 @@ class MeanPercentilesCalculator:
 
         self._n += n
 
-    def finalize(self) -> Dict[DatasetPercentile, MeasureValue]:
+    def finalize(self) -> Dict[DatasetQuantile, MeasureValue]:
         if self._estimates is None:
             return {}
         else:
@@ -279,13 +286,13 @@ class MeanPercentilesCalculator:
                 "Computed dataset percentiles naively by averaging percentiles of samples."
             )
             return {
-                DatasetPercentile(q=q, axes=self._axes, member_id=self._member_id): e
+                DatasetQuantile(q=q, axes=self._axes, member_id=self._member_id): e
                 for q, e in zip(self._qs, self._estimates)
             }
 
 
-class CrickPercentilesCalculator:
-    """to calculate dataset percentiles with the experimental [crick libray](https://github.com/dask/crick)"""
+class CrickQuantilesCalculator:
+    """to calculate dataset quantiles with the experimental [crick libray](https://github.com/dask/crick)"""
 
     def __init__(
         self,
@@ -293,12 +300,10 @@ class CrickPercentilesCalculator:
         axes: Optional[Sequence[AxisId]],
         qs: Collection[float],
     ):
-        warnings.warn(
-            "Computing dataset percentiles with experimental 'crick' library."
-        )
+        warnings.warn("Computing dataset quantiles with experimental 'crick' library.")
         super().__init__()
         assert all(0.0 <= q <= 1.0 for q in qs)
-        assert axes is None or "_percentiles" not in axes
+        assert axes is None or "_quantiles" not in axes
         self._qs = sorted(set(qs))
         self._axes = None if axes is None else tuple(axes)
         self._member_id = member_id
@@ -310,7 +315,7 @@ class CrickPercentilesCalculator:
     def _initialize(self, tensor_sizes: PerAxis[int]):
         assert crick is not None
         out_sizes: OrderedDict[AxisId, int] = collections.OrderedDict(
-            _percentiles=len(self._qs)
+            _quantiles=len(self._qs)
         )
         if self._axes is not None:
             for d, s in tensor_sizes.items():
@@ -329,7 +334,7 @@ class CrickPercentilesCalculator:
             if isinstance(part, Sample)
             else part.members[self._member_id].data
         )
-        assert "_percentiles" not in tensor.dims
+        assert "_quantiles" not in tensor.dims
         if self._digest is None:
             self._initialize(tensor.tagged_shape)
 
@@ -339,7 +344,7 @@ class CrickPercentilesCalculator:
         for i, idx in enumerate(self._indices):
             self._digest[i].update(tensor[dict(zip(self._dims[1:], idx))])
 
-    def finalize(self) -> Dict[DatasetPercentile, MeasureValue]:
+    def finalize(self) -> Dict[DatasetQuantile, MeasureValue]:
         if self._digest is None:
             return {}
         else:
@@ -350,7 +355,7 @@ class CrickPercentilesCalculator:
                 [[d.quantile(q) for d in self._digest] for q in self._qs]
             ).reshape(self._shape)
             return {
-                DatasetPercentile(
+                DatasetQuantile(
                     q=q, axes=self._axes, member_id=self._member_id
                 ): Tensor(v, dims=self._dims[1:])
                 for q, v in zip(self._qs, vs)
@@ -358,11 +363,11 @@ class CrickPercentilesCalculator:
 
 
 if crick is None:
-    DatasetPercentilesCalculator: Type[
-        Union[MeanPercentilesCalculator, CrickPercentilesCalculator]
-    ] = MeanPercentilesCalculator
+    DatasetQuantilesCalculator: Type[
+        Union[MeanQuantilesCalculator, CrickQuantilesCalculator]
+    ] = MeanQuantilesCalculator
 else:
-    DatasetPercentilesCalculator = CrickPercentilesCalculator
+    DatasetQuantilesCalculator = CrickQuantilesCalculator
 
 
 class NaiveSampleMeasureCalculator:
@@ -380,11 +385,11 @@ class NaiveSampleMeasureCalculator:
 SampleMeasureCalculator = Union[
     MeanCalculator,
     MeanVarStdCalculator,
-    SamplePercentilesCalculator,
+    SampleQuantilesCalculator,
     NaiveSampleMeasureCalculator,
 ]
 DatasetMeasureCalculator = Union[
-    MeanCalculator, MeanVarStdCalculator, DatasetPercentilesCalculator
+    MeanCalculator, MeanVarStdCalculator, DatasetQuantilesCalculator
 ]
 
 
@@ -493,10 +498,10 @@ def get_measure_calculators(
     required_dataset_mean_var_std: Set[Union[DatasetMean, DatasetVar, DatasetStd]] = (
         set()
     )
-    required_sample_percentiles: Dict[
-        Tuple[MemberId, Optional[Tuple[AxisId, ...]]], Set[float]
+    required_sample_quantiles: Dict[
+        Tuple[MemberId, Optional[Tuple[AxisId, ...]], QuantileMethod], Set[float]
     ] = {}
-    required_dataset_percentiles: Dict[
+    required_dataset_quantiles: Dict[
         Tuple[MemberId, Optional[Tuple[AxisId, ...]]], Set[float]
     ] = {}
 
@@ -522,11 +527,11 @@ def get_measure_calculators(
             )
             assert rm in required_dataset_mean_var_std
         elif isinstance(rm, SampleQuantile):
-            required_sample_percentiles.setdefault((rm.member_id, rm.axes), set()).add(
-                rm.q
-            )
-        elif isinstance(rm, DatasetPercentile):
-            required_dataset_percentiles.setdefault((rm.member_id, rm.axes), set()).add(
+            required_sample_quantiles.setdefault(
+                (rm.member_id, rm.axes, rm.method), set()
+            ).add(rm.q)
+        elif isinstance(rm, DatasetQuantile):
+            required_dataset_quantiles.setdefault((rm.member_id, rm.axes), set()).add(
                 rm.q
             )
         else:
@@ -556,14 +561,14 @@ def get_measure_calculators(
             MeanVarStdCalculator(member_id=rm.member_id, axes=rm.axes)
         )
 
-    for (tid, axes), qs in required_sample_percentiles.items():
+    for (tid, axes, m), qs in required_sample_quantiles.items():
         sample_calculators.append(
-            SamplePercentilesCalculator(member_id=tid, axes=axes, qs=qs)
+            SampleQuantilesCalculator(member_id=tid, axes=axes, qs=qs, method=m)
         )
 
-    for (tid, axes), qs in required_dataset_percentiles.items():
+    for (tid, axes), qs in required_dataset_quantiles.items():
         dataset_calculators.append(
-            DatasetPercentilesCalculator(member_id=tid, axes=axes, qs=qs)
+            DatasetQuantilesCalculator(member_id=tid, axes=axes, qs=qs)
         )
 
     return sample_calculators, dataset_calculators

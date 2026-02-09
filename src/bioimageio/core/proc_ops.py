@@ -1,6 +1,7 @@
 import collections.abc
 from abc import ABC, abstractmethod
 from dataclasses import InitVar, dataclass, field
+from functools import partial
 from typing import (
     Collection,
     Literal,
@@ -32,7 +33,7 @@ from .stat_calculators import StatsCalculator
 from .stat_measures import (
     DatasetMean,
     DatasetMeasure,
-    DatasetPercentile,
+    DatasetQuantile,
     DatasetStd,
     MeanMeasure,
     Measure,
@@ -230,19 +231,73 @@ class Binarize(_SimpleOperator):
 
 @dataclass
 class Clip(_SimpleOperator):
-    min: Optional[float] = None
+    min: Optional[Union[float, SampleQuantile, DatasetQuantile]] = None
     """minimum value for clipping"""
-    max: Optional[float] = None
+    max: Optional[Union[float, SampleQuantile, DatasetQuantile]] = None
     """maximum value for clipping"""
 
     def __post_init__(self):
-        assert self.min is not None or self.max is not None, "missing min or max value"
-        assert self.min is None or self.max is None or self.min < self.max, (
-            f"expected min < max, but {self.min} !< {self.max}"
-        )
+        if self.min is None and self.max is None:
+            raise ValueError("missing min or max value")
+
+        if (
+            isinstance(self.min, float)
+            and isinstance(self.max, float)
+            and self.min >= self.max
+        ):
+            raise ValueError(f"expected min < max, but {self.min} >= {self.max}")
+
+        if isinstance(self.min, (SampleQuantile, DatasetQuantile)) and isinstance(
+            self.max, (SampleQuantile, DatasetQuantile)
+        ):
+            if self.min.axes != self.max.axes:
+                raise NotImplementedError(
+                    f"expected min and max quantiles with same axes, but got {self.min.axes} and {self.max.axes}"
+                )
+            if self.min.q >= self.max.q:
+                raise ValueError(
+                    f"expected min quantile < max quantile, but {self.min.q} >= {self.max.q}"
+                )
+
+    @property
+    def required_measures(self):
+        return {
+            arg
+            for arg in (self.min, self.max)
+            if isinstance(arg, (SampleQuantile, DatasetQuantile))
+        }
 
     def _apply(self, x: Tensor, stat: Stat) -> Tensor:
-        return x.clip(self.min, self.max)
+        if isinstance(self.min, (SampleQuantile, DatasetQuantile)):
+            min_value = stat[self.min]
+            if isinstance(min_value, (int, float)):
+                # use clip for scalar value
+                min_clip_arg = min_value
+            else:
+                # clip does not support non-scalar values
+                x = Tensor.from_xarray(
+                    x.data.where(x.data >= min_value.data, min_value.data)
+                )
+                min_clip_arg = None
+        else:
+            min_clip_arg = self.min
+
+        if isinstance(self.max, (SampleQuantile, DatasetQuantile)):
+            max_value = stat[self.max]
+            if isinstance(max_value, (int, float)):
+                # use clip for scalar value
+                max_clip_arg = max_value
+            else:
+                # clip does not support non-scalar values
+                x = Tensor.from_xarray(x.data.where(x.data <= max_value, max_value))
+                max_clip_arg = None
+        else:
+            max_clip_arg = self.max
+
+        if min_clip_arg is not None or max_clip_arg is not None:
+            x = x.clip(min_clip_arg, max_clip_arg)
+
+        return x
 
     def get_output_shape(
         self, input_shape: Mapping[AxisId, int]
@@ -253,11 +308,48 @@ class Clip(_SimpleOperator):
     def from_proc_descr(
         cls, descr: Union[v0_4.ClipDescr, v0_5.ClipDescr], member_id: MemberId
     ) -> Self:
+        if isinstance(descr, v0_5.ClipDescr):
+            dataset_mode, axes = _get_axes(descr.kwargs)
+            if dataset_mode:
+                Quantile = DatasetQuantile
+            else:
+                Quantile = SampleQuantile
+
+            if descr.kwargs.min is not None:
+                min_arg = descr.kwargs.min
+            elif descr.kwargs.min_percentile is not None:
+                min_arg = Quantile(
+                    q=descr.kwargs.min_percentile / 100,
+                    axes=axes,
+                    member_id=member_id,
+                    method="inverted_cdf",
+                )
+            else:
+                min_arg = None
+
+            if descr.kwargs.max is not None:
+                max_arg = descr.kwargs.max
+            elif descr.kwargs.max_percentile is not None:
+                max_arg = Quantile(
+                    q=descr.kwargs.max_percentile / 100,
+                    axes=axes,
+                    member_id=member_id,
+                    method="inverted_cdf",
+                )
+            else:
+                max_arg = None
+
+        elif isinstance(descr, v0_4.ClipDescr):
+            min_arg = descr.kwargs.min
+            max_arg = descr.kwargs.max
+        else:
+            assert_never(descr)
+
         return cls(
             input=member_id,
             output=member_id,
-            min=descr.kwargs.min,
-            max=descr.kwargs.max,
+            min=min_arg,
+            max=max_arg,
         )
 
 
@@ -404,6 +496,7 @@ def _get_axes(
         v0_5.ScaleRangeKwargs,
         v0_4.ScaleMeanVarianceKwargs,
         v0_5.ScaleMeanVarianceKwargs,
+        v0_5.ClipKwargs,
     ],
 ) -> Tuple[bool, Optional[Tuple[AxisId, ...]]]:
     if kwargs.axes is None:
@@ -420,28 +513,28 @@ def _get_axes(
 
 @dataclass
 class ScaleRange(_SimpleOperator):
-    lower_percentile: InitVar[Optional[Union[SampleQuantile, DatasetPercentile]]] = None
-    upper_percentile: InitVar[Optional[Union[SampleQuantile, DatasetPercentile]]] = None
-    lower: Union[SampleQuantile, DatasetPercentile] = field(init=False)
-    upper: Union[SampleQuantile, DatasetPercentile] = field(init=False)
+    lower_quantile: InitVar[Optional[Union[SampleQuantile, DatasetQuantile]]] = None
+    upper_quantile: InitVar[Optional[Union[SampleQuantile, DatasetQuantile]]] = None
+    lower: Union[SampleQuantile, DatasetQuantile] = field(init=False)
+    upper: Union[SampleQuantile, DatasetQuantile] = field(init=False)
 
     eps: float = 1e-6
 
     def __post_init__(
         self,
-        lower_percentile: Optional[Union[SampleQuantile, DatasetPercentile]],
-        upper_percentile: Optional[Union[SampleQuantile, DatasetPercentile]],
+        lower_quantile: Optional[Union[SampleQuantile, DatasetQuantile]],
+        upper_quantile: Optional[Union[SampleQuantile, DatasetQuantile]],
     ):
-        if lower_percentile is None:
-            tid = self.input if upper_percentile is None else upper_percentile.member_id
-            self.lower = DatasetPercentile(q=0.0, member_id=tid)
+        if lower_quantile is None:
+            tid = self.input if upper_quantile is None else upper_quantile.member_id
+            self.lower = DatasetQuantile(q=0.0, member_id=tid)
         else:
-            self.lower = lower_percentile
+            self.lower = lower_quantile
 
-        if upper_percentile is None:
-            self.upper = DatasetPercentile(q=1.0, member_id=self.lower.member_id)
+        if upper_quantile is None:
+            self.upper = DatasetQuantile(q=1.0, member_id=self.lower.member_id)
         else:
-            self.upper = upper_percentile
+            self.upper = upper_quantile
 
         assert self.lower.member_id == self.upper.member_id
         assert self.lower.q < self.upper.q
@@ -470,18 +563,22 @@ class ScaleRange(_SimpleOperator):
         )
         dataset_mode, axes = _get_axes(descr.kwargs)
         if dataset_mode:
-            Percentile = DatasetPercentile
+            Quantile = DatasetQuantile
         else:
-            Percentile = SampleQuantile
+            Quantile = partial(SampleQuantile, method="linear")
 
         return cls(
             input=member_id,
             output=member_id,
-            lower_percentile=Percentile(
-                q=kwargs.min_percentile / 100, axes=axes, member_id=ref_tensor
+            lower_quantile=Quantile(
+                q=kwargs.min_percentile / 100,
+                axes=axes,
+                member_id=ref_tensor,
             ),
-            upper_percentile=Percentile(
-                q=kwargs.max_percentile / 100, axes=axes, member_id=ref_tensor
+            upper_quantile=Quantile(
+                q=kwargs.max_percentile / 100,
+                axes=axes,
+                member_id=ref_tensor,
             ),
         )
 

@@ -23,7 +23,7 @@ from pydantic import (
 from typing_extensions import Annotated
 
 from .axis import AxisId
-from .common import MemberId, PerMember
+from .common import MemberId, PerMember, QuantileMethod
 from .tensor import Tensor
 
 
@@ -157,19 +157,23 @@ class _Quantile(BaseModel, frozen=True):
 
 
 class SampleQuantile(_Quantile, SampleMeasureBase, frozen=True):
-    """The `n`th percentile of a single tensor"""
+    """The `q`th quantile of a single tensor"""
+
+    method: QuantileMethod = "linear"
+    """Method to use when the desired quantile lies between two data points.
+    See https://numpy.org/devdocs/reference/generated/numpy.quantile.html#numpy-quantile for details."""
 
     def compute(self, sample: SampleLike) -> MeasureValue:
         tensor = sample.members[self.member_id]
-        return tensor.quantile(self.q, dim=self.axes)
+        return tensor.quantile(self.q, dim=self.axes, method=self.method)
 
     def model_post_init(self, __context: Any):
         super().model_post_init(__context)
         assert self.axes is None or AxisId("batch") not in self.axes
 
 
-class DatasetPercentile(_Quantile, DatasetMeasureBase, frozen=True):
-    """The `n`th percentile across multiple samples"""
+class DatasetQuantile(_Quantile, DatasetMeasureBase, frozen=True):
+    """The `q`th quantile across multiple samples"""
 
     def model_post_init(self, __context: Any):
         super().model_post_init(__context)
@@ -180,7 +184,7 @@ SampleMeasure = Annotated[
     Union[SampleMean, SampleStd, SampleVar, SampleQuantile], Discriminator("name")
 ]
 DatasetMeasure = Annotated[
-    Union[DatasetMean, DatasetStd, DatasetVar, DatasetPercentile], Discriminator("name")
+    Union[DatasetMean, DatasetStd, DatasetVar, DatasetQuantile], Discriminator("name")
 ]
 Measure = Annotated[Union[SampleMeasure, DatasetMeasure], Discriminator("scope")]
 Stat = Dict[Measure, MeasureValue]
@@ -188,7 +192,7 @@ Stat = Dict[Measure, MeasureValue]
 MeanMeasure = Union[SampleMean, DatasetMean]
 StdMeasure = Union[SampleStd, DatasetStd]
 VarMeasure = Union[SampleVar, DatasetVar]
-PercentileMeasure = Union[SampleQuantile, DatasetPercentile]
+PercentileMeasure = Union[SampleQuantile, DatasetQuantile]
 MeanMeasureT = TypeVar("MeanMeasureT", bound=MeanMeasure)
 StdMeasureT = TypeVar("StdMeasureT", bound=StdMeasure)
 VarMeasureT = TypeVar("VarMeasureT", bound=VarMeasure)
