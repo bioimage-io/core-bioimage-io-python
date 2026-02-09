@@ -104,6 +104,7 @@ version = { attr = "bioimageio.core.__version__" }
 
 [tool.pyright]
 exclude = [
+    "**/.*",
     "**/__pycache__",
     "**/node_modules",
     "dogfood",
