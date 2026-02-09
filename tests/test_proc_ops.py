@@ -195,7 +195,7 @@ def test_clip_percentiles():
     from bioimageio.spec.model.v0_5 import AxisId, ClipDescr, ClipKwargs
 
     descr = ClipDescr(
-        kwargs=ClipKwargs(min_percentile=20, max_percentile=60, axes=(AxisId("x"),))
+        kwargs=ClipKwargs(min_percentile=30, max_percentile=70, axes=(AxisId("x"),))
     )
     op = Clip.from_proc_descr(
         descr,
@@ -206,7 +206,7 @@ def test_clip_percentiles():
             member_id=MemberId("data"),
             scope="sample",
             name="quantile",
-            q=0.2,
+            q=0.3,
             axes=(AxisId("x"),),
             method="inverted_cdf",
         ),
@@ -214,7 +214,7 @@ def test_clip_percentiles():
             member_id=MemberId("data"),
             scope="sample",
             name="quantile",
-            q=0.6,
+            q=0.7,
             axes=(AxisId("x"),),
             method="inverted_cdf",
         ),
@@ -227,7 +227,7 @@ def test_clip_percentiles():
     sample.stat = compute_measures(op.required_measures, [sample])
 
     expected = xr.DataArray(
-        np.array([[3, 3, 3, 4, 4], [7, 7, 8, 9, 9], [12, 12, 13, 14, 14]]),
+        np.array([[1, 1, 2, 3, 3], [6, 6, 7, 8, 8], [12, 12, 13, 14, 14]]),
         dims=("c", "x"),
     )
     op(sample)
