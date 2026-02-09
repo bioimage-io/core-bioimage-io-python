@@ -289,7 +289,9 @@ class Clip(_SimpleOperator):
                 max_clip_arg = max_value
             else:
                 # clip does not support non-scalar values
-                x = Tensor.from_xarray(x.data.where(x.data <= max_value, max_value))
+                x = Tensor.from_xarray(
+                    x.data.where(x.data <= max_value.data, max_value.data)
+                )
                 max_clip_arg = None
         else:
             max_clip_arg = self.max
@@ -313,7 +315,7 @@ class Clip(_SimpleOperator):
             if dataset_mode:
                 Quantile = DatasetQuantile
             else:
-                Quantile = SampleQuantile
+                Quantile = partial(SampleQuantile, method="inverted_cdf")
 
             if descr.kwargs.min is not None:
                 min_arg = descr.kwargs.min
@@ -322,7 +324,6 @@ class Clip(_SimpleOperator):
                     q=descr.kwargs.min_percentile / 100,
                     axes=axes,
                     member_id=member_id,
-                    method="inverted_cdf",
                 )
             else:
                 min_arg = None
@@ -334,7 +335,6 @@ class Clip(_SimpleOperator):
                     q=descr.kwargs.max_percentile / 100,
                     axes=axes,
                     member_id=member_id,
-                    method="inverted_cdf",
                 )
             else:
                 max_arg = None
