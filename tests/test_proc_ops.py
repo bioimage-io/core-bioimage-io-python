@@ -220,15 +220,15 @@ def test_clip_percentiles():
         ),
     }
 
-    data = xr.DataArray(np.arange(15).reshape(3, 5), dims=("c", "x"))
+    data = xr.DataArray(np.arange(15).reshape(3, 5), dims=("channel", "x"))
     sample = Sample(
         members={MemberId("data"): Tensor.from_xarray(data)}, stat={}, id=None
     )
     sample.stat = compute_measures(op.required_measures, [sample])
 
     expected = xr.DataArray(
-        np.array([[1, 1, 2, 3, 3], [6, 6, 7, 8, 8], [12, 12, 13, 14, 14]]),
-        dims=("c", "x"),
+        np.array([[1, 1, 2, 3, 3], [6, 6, 7, 8, 8], [11, 11, 12, 13, 13]]),
+        dims=("channel", "x"),
     )
     op(sample)
     xr.testing.assert_equal(expected, sample.members[MemberId("data")].data)
@@ -337,7 +337,7 @@ def test_scale_mean_variance_per_channel(tid: MemberId, axes_str: Optional[str])
     sample.stat = compute_measures(op.required_measures, [sample])
     op(sample)
 
-    if axes is not None and AxisId("c") not in axes:
+    if axes is not None and AxisId("channel") not in axes:
         # mean,std per channel should match exactly
         xr.testing.assert_allclose(
             ref_data, sample.members[tid].data, rtol=1e-5, atol=1e-7
