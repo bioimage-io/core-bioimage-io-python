@@ -126,7 +126,7 @@ jobs:
           include-hidden-files: true
 
   coverage:
-    needs: [test]
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -141,13 +141,11 @@ jobs:
           ls -la .coverage*
           coverage combine
           coverage xml -o coverage.xml
-      - uses: orgoro/coverage@v3.2
+      - uses: actions/upload-artifact@v4
         with:
-          coverageFile: coverage.xml
-          token: ${{ secrets.GITHUB_TOKEN }}
-          thresholdAll: 0.7
-          thresholdNew: 0.9
-          thresholdModified: 0.6
+          name: coverage.xml
+          path: coverage.xml
+          retention-days: 1
       - name: generate coverage badge and html report
         run: |
           pip install genbadge[coverage]
@@ -157,6 +155,23 @@ jobs:
         with:
           name: coverage-summary
           path: dist
+          retention-days: 1
+
+  coverage-comment:
+    needs: coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: coverage.xml
+      - uses: orgoro/coverage@v3.2
+        with:
+          coverageFile: coverage.xml
+          token: ${{ secrets.GITHUB_TOKEN }}
+          thresholdAll: 0.7
+          thresholdNew: 0.9
+          thresholdModified: 0.6
 
   conda-build:
     needs: [populate-cache, test] # only so we run tests even if the pinned bioimageio.spec version is not yet published on conda-forge
@@ -211,7 +226,7 @@ jobs:
           name: dist
 
   docs:
-    needs: [build, conda-build, coverage, test]
+    needs: coverage
     runs-on: ubuntu-latest
     permissions:
       contents: write # required for tag creation
