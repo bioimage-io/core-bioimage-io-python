@@ -495,6 +495,7 @@ def _test_in_env(
                         f"--{summary_path_arg_name}={summary_path.as_posix()}",
                         f"--determinism={determinism}",
                     ]
+                    + ([f"--weight-format={weight_format}"] if weight_format else [])
                     + ([f"--expected-type={expected_type}"] if expected_type else [])
                     + (["--stop-early"] if stop_early else [])
                 )
