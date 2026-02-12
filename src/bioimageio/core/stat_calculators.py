@@ -224,7 +224,7 @@ class SampleQuantilesCalculator:
         self._qs = sorted(set(qs))
         self._axes = None if axes is None else tuple(axes)
         self._member_id = member_id
-        self._method = method
+        self._method: QuantileMethod = method
 
     def compute(self, sample: Sample) -> Dict[SampleQuantile, MeasureValue]:
         tensor = sample.members[self._member_id]
