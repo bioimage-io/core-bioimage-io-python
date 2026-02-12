@@ -1,0 +1,1502 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Python specific core utilities for bioimage.io resources (in particular DL models).">
+      
+      
+        <meta name="author" content="Fynn Beuttenmüller">
+      
+      
+        <link rel="canonical" href="https://bioimage-io.github.io/core-bioimage-io-python/latest/get_started/">
+      
+      
+        <link rel="prev" href="..">
+      
+      
+        <link rel="next" href="../installation/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../images/favicon.ico">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+    
+    
+      
+        <title>Get started - bioimageio.core</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_markdown_exec_pyodide.css">
+    
+      <link rel="stylesheet" href="../assets/_markdown_exec_ansi.css">
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="orange">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#finding-a-compatible-python-environment" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="bioimageio.core" class="md-header__button md-logo" aria-label="bioimageio.core" data-md-component="logo">
+      
+  <img src="../images/bioimage-io-icon.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            bioimageio.core
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Get started
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="orange"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="orange"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="orange"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/bioimage-io/core-bioimage-io-python" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    bioimage-io/core-bioimage-io-python
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href=".." class="md-tabs__link">
+          
+  
+  
+    
+  
+  Home
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../api/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  API Reference
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../changelog/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Changelog
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../coverage/" class="md-tabs__link">
+        
+  
+  
+    
+  
+  Coverage report
+
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="bioimageio.core" class="md-nav__button md-logo" aria-label="bioimageio.core" data-md-component="logo">
+      
+  <img src="../images/bioimage-io-icon.png" alt="logo">
+
+    </a>
+    bioimageio.core
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/bioimage-io/core-bioimage-io-python" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
+  </div>
+  <div class="md-source__repository">
+    bioimage-io/core-bioimage-io-python
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+      
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
+        
+          
+          <div class="md-nav__link md-nav__container">
+            <a href=".." class="md-nav__link ">
+              
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_1" id="__nav_1_label" tabindex="">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_1">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    Home
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Get started
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Get started
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#finding-a-compatible-python-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Finding a compatible Python environment
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#test-modelenvironment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test model+environment
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cli-bioimageio-predict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CLI: bioimageio predict
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#python-bioimageiocorepredict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Python: bioimageio.core.predict
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#other-bioimageiocore-functionality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Other bioimageio.core functionality
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../installation/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Installation
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cli/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    bioimageio CLI
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../use_in_python/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Use in Python
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../compatibility/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Compatibility
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+      
+        
+        
+      
+    
+    <li class="md-nav__item md-nav__item--pruned md-nav__item--nested">
+      
+        
+  
+  
+  
+    <a href="../api/" class="md-nav__link">
+      
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    API Reference
+  
+
+    
+  </span>
+  
+  
+
+      
+        <span class="md-nav__icon md-icon"></span>
+      
+    </a>
+  
+
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Changelog
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../coverage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Coverage report
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#finding-a-compatible-python-environment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Finding a compatible Python environment
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#test-modelenvironment" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Test model+environment
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cli-bioimageio-predict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        CLI: bioimageio predict
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#python-bioimageiocorepredict" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Python: bioimageio.core.predict
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#other-bioimageiocore-functionality" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Other bioimageio.core functionality
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/bioimage-io/core-bioimage-io-python/edit/main/docs/get_started.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
+    </a>
+  
+  
+    
+      
+    
+    <a href="https://github.com/bioimage-io/core-bioimage-io-python/raw/main/docs/get_started.md" title="View source of this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M17 18c.56 0 1 .44 1 1s-.44 1-1 1-1-.44-1-1 .44-1 1-1m0-3c-2.73 0-5.06 1.66-6 4 .94 2.34 3.27 4 6 4s5.06-1.66 6-4c-.94-2.34-3.27-4-6-4m0 6.5a2.5 2.5 0 0 1-2.5-2.5 2.5 2.5 0 0 1 2.5-2.5 2.5 2.5 0 0 1 2.5 2.5 2.5 2.5 0 0 1-2.5 2.5M9.27 20H6V4h7v5h5v4.07c.7.08 1.36.25 2 .49V8l-6-6H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h4.5a8.2 8.2 0 0 1-1.23-2"/></svg>
+    </a>
+  
+
+
+  <h1>Get started</h1>
+
+<h2 id="finding-a-compatible-python-environment">Finding a compatible Python environment<a class="headerlink" href="#finding-a-compatible-python-environment" title="Anchor link to this section for reference">¤</a></h2>
+<p>For model inference you need a Python environment with the <code>bioimageio.core</code> package and model (framework) specific dependencies installed.
+You may choose to install <code>bioimageio.core</code> alongside (a) suitable framework(s) as optional dependencies with pip, e.g.:</p>
+<div class="language-bash highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>bioimageio.core<span class="o">[</span>pytorch,onnx<span class="o">]</span>
+</code></pre></div>
+<p>If you are not sure which framework you want to use this model with or the model comes with custom dependencies,
+you may choose to have the bioimageio Command Line Interface (CLI) create a suitable environment for a specific model,
+using <a href="https://github.com/conda-forge/miniforge">mini-forge</a> (or your favorite conda distribution).
+For more details on conda environments, <a href="https://conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html">checkout the conda docs</a>.
+First create/use any conda environment with <code>bioimageio.core&gt;0.9.6</code> in it:</p>
+<div class="language-bash highlight"><pre><span></span><code>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>bioimageio<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span><span class="s2">&quot;bioimageio.core&gt;0.9.6&quot;</span>
+conda<span class="w"> </span>activate<span class="w"> </span>bioimageio
+</code></pre></div>
+<p>Choose a model source, e.g. a bioimage.io model id like "affable-shark" or a path/url to a bioimageio.yaml (often named rdf.yaml).
+Then use the bioimageio CLI (or <a class="autorefs autorefs-internal" href="../api/#bioimageio.core.test_description">bioimageio.core.test_description</a>) to test the model.
+Use runtime-env=as-described to test each available weight format in the recommended conda environment that is installed on the fly if necessary:</p>
+<!-- TODO: execute during doc build -->
+
+<div class="language-bash highlight"><pre><span></span><code>bioimageio<span class="w"> </span><span class="nb">test</span><span class="w"> </span>affable-shark<span class="w"> </span>--runtime-env<span class="o">=</span>as-described
+</code></pre></div>
+<p>The resulting report shows details of the tests performed in the respective conda environments.
+Inspecting the report, choose a conda environment that passed all tests.
+The conda environments will be named by the SHA-256 value of the generated conda environment.yaml, e.g. "95227f474ca45b024cf315edb4101e4919199d0a79ef5ff1eb474dc8ce1ec4d8".</p>
+<p>You may want to rename or clone your chosen conda environment:</p>
+<div class="language-bash highlight"><pre><span></span><code>conda<span class="w"> </span>activate<span class="w"> </span>base
+conda<span class="w"> </span>rename<span class="w"> </span>-n<span class="w"> </span>95227f474ca45b024cf315edb4101e4919199d0a79ef5ff1eb474dc8ce1ec4d8<span class="w"> </span>bioimageio-affable-shark
+conda<span class="w"> </span>activate<span class="w"> </span>bioimageio-affable-shark
+</code></pre></div>
+<h2 id="test-modelenvironment">Test model+environment<a class="headerlink" href="#test-modelenvironment" title="Anchor link to this section for reference">¤</a></h2>
+<p>Test a bioimageio compatible model, e.g. "affable-shark" in an active Python environment:</p>
+<div class="language-ansi highlight"><pre><span></span><code>bioimageio test affable-shark
+<span class=" -Color -Color-Green">0:00:01.484056</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
+<span class=" -Color -Color-Bold">[&#39;/opt/hostedtoolcache/Python/3.12.12/x64/bin/bioimageio&#39;,</span>
+<span class=" -Color -Color-Bold"> &#39;test&#39;,</span>
+<span class=" -Color -Color-Bold"> &#39;affable-shark&#39;]</span>
+<span class=" -Color -Color-Green">0:00:01.484617</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
+<span class=" -Color -Color-Bold">{&#39;test&#39;: {&#39;source&#39;: &#39;affable-shark&#39;}}</span>
+<span class=" -Color -Color-Green">0:00:01.484817</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
+<span class=" -Color -Color-Bold">{&#39;test&#39;: {&#39;determinism&#39;: &#39;seed_only&#39;,</span>
+<span class=" -Color -Color-Bold">          &#39;devices&#39;: None,</span>
+<span class=" -Color -Color-Bold">          &#39;format_version&#39;: &#39;discover&#39;,</span>
+<span class=" -Color -Color-Bold">          &#39;runtime_env&#39;: &#39;currently-active&#39;,</span>
+<span class=" -Color -Color-Bold">          &#39;source&#39;: &#39;affable-shark&#39;,</span>
+<span class=" -Color -Color-Bold">          &#39;stop_early&#39;: False,</span>
+<span class=" -Color -Color-Bold">          &#39;summary&#39;: [&#39;display&#39;],</span>
+<span class=" -Color -Color-Bold">          &#39;weight_format&#39;: &#39;all&#39;,</span>
+<span class=" -Color -Color-Bold">          &#39;working_dir&#39;: None}}</span>
+<span class=" -Color -Color-BrightYellow">2026-02-12 23:28:05.918064247 [W:onnxruntime:Default, device_discovery.cc:131 GetPciBusId] Skipping pci_bus_id for PCI path at &quot;/sys/devices/LNXSYSTM:00/LNXSYBUS:00/ACPI0004:00/MSFT1000:00/5620e0c7-8062-4dce-aeb7-520c7ef76171&quot; because filename &quot;&quot;5620e0c7-8062-4dce-aeb7-520c7ef76171&quot;&quot; dit not match expected pattern of [0-9a-f]+:[0-9a-f]+:[0-9a-f]+[.][0-9a-f]+</span>
+/home/runner/work/core-bioimage-io-python/core-bioimage-io-python/src/bioimageio/core/backends/onnx_backend.py:105: UserWarning: Device management is not implemented for onnx yet, cannot unload model
+  warnings.warn(
+<span class=" -Color -Color-Green">0:01:10.042749</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_resource_tests</span> - <span class=" -Color -Color-Bold">Testing inference with &#39;onnx&#39; for 6 different inputs (B, N): {(1, 2), (2, 1), (1, 1), (2, 0), (2, 2), (1, 0)}</span>
+<span class=" -Color -Color-BrightYellow">2026-02-12 23:28:07.167843735 [W:onnxruntime:, execution_frame.cc:874 VerifyOutputSizes] Expected shape from model of {1,2,-1,-1} does not match actual shape of {2,2,64,64} for output output0</span>
+<span class=" -Color -Color-BrightYellow">2026-02-12 23:28:07.248617653 [W:onnxruntime:, execution_frame.cc:874 VerifyOutputSizes] Expected shape from model of {1,2,-1,-1} does not match actual shape of {2,2,80,80} for output output0</span>
+<span class=" -Color -Color-BrightYellow">2026-02-12 23:28:07.365122337 [W:onnxruntime:, execution_frame.cc:874 VerifyOutputSizes] Expected shape from model of {1,2,-1,-1} does not match actual shape of {2,2,96,96} for output output0</span>
+/home/runner/work/core-bioimage-io-python/core-bioimage-io-python/src/bioimageio/core/backends/onnx_backend.py:105: UserWarning: Device management is not implemented for onnx yet, cannot unload model
+  warnings.warn(
+<span class=" -Color -Color-Green">0:01:11.588329</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_resource_tests</span> - <span class=" -Color -Color-Bold">Testing inference with &#39;pytorch_state_dict&#39; for 6 different inputs (B, N): {(1, 2), (2, 1), (1, 1), (2, 0), (2, 2), (1, 0)}</span>
+<span class=" -Color -Color-Green">0:01:13.566578</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_resource_tests</span> - <span class=" -Color -Color-Bold">Testing inference with &#39;torchscript&#39; for 6 different inputs (B, N): {(1, 2), (2, 1), (1, 1), (2, 0), (2, 2), (1, 0)}</span>
+::warning file=/opt/hostedtoolcache/Python/3.12.12/x64/lib/python3.12/site-packages/bioimageio/spec/_get_conda_env.py,line=155,endLine=156,title=UPDATE NEEDED::Leaving torchvision and torchaudio unpinned for pytorch==2.8.0
+
+
+ ✔️               bioimageio format validation 
+ ───────────────────────────────────────────── 
+ status           passed                       
+ source           affable-shark                
+ id               affable-shark                
+ format version   model 0.5.7                  
+ bioimageio.core  0.9.6                        
+ bioimageio.spec  0.5.7.2                      
+
+
+
+     Location                    Details                                                                                      
+ ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+ ✔️                              Successfully created ModelDescr instance.                                                    
+ ✔️                              bioimageio.spec format validation model 0.5.7                                                
+ ✔️  weights.onnx                Reproduce test outputs from test inputs (onnx)                                               
+     weights.onnx                recommended conda environment (Reproduce test outputs from test inputs (onnx))               
+                                 See Recommended Conda Environment 1 below.                                                   
+     weights.onnx                conda compare (Reproduce test outputs from test inputs (onnx))                               
+                                 See Conda Environment Comparison 1 below.                                                    
+ ✔️  weights.onnx                Run onnx inference for inputs with batch_size: 1 and size parameter n: 0                     
+ ✔️  weights.onnx                Run onnx inference for inputs with batch_size: 1 and size parameter n: 1                     
+ ✔️  weights.onnx                Run onnx inference for inputs with batch_size: 1 and size parameter n: 2                     
+ ✔️  weights.onnx                Run onnx inference for inputs with batch_size: 2 and size parameter n: 0                     
+ ✔️  weights.onnx                Run onnx inference for inputs with batch_size: 2 and size parameter n: 1                     
+ ✔️  weights.onnx                Run onnx inference for inputs with batch_size: 2 and size parameter n: 2                     
+ ✔️  weights.pytorch_state_dict  Reproduce test outputs from test inputs (pytorch_state_dict)                                 
+     weights.pytorch_state_dict  recommended conda environment (Reproduce test outputs from test inputs (pytorch_state_dict)) 
+                                 See Recommended Conda Environment 2 below.                                                   
+     weights.pytorch_state_dict  conda compare (Reproduce test outputs from test inputs (pytorch_state_dict))                 
+                                 See Conda Environment Comparison 2 below.                                                    
+ ✔️  weights.pytorch_state_dict  Run pytorch_state_dict inference for inputs with batch_size: 1 and size parameter n: 0       
+ ✔️  weights.pytorch_state_dict  Run pytorch_state_dict inference for inputs with batch_size: 1 and size parameter n: 1       
+ ✔️  weights.pytorch_state_dict  Run pytorch_state_dict inference for inputs with batch_size: 1 and size parameter n: 2       
+ ✔️  weights.pytorch_state_dict  Run pytorch_state_dict inference for inputs with batch_size: 2 and size parameter n: 0       
+ ✔️  weights.pytorch_state_dict  Run pytorch_state_dict inference for inputs with batch_size: 2 and size parameter n: 1       
+ ✔️  weights.pytorch_state_dict  Run pytorch_state_dict inference for inputs with batch_size: 2 and size parameter n: 2       
+ ✔️  weights.torchscript         Reproduce test outputs from test inputs (torchscript)                                        
+     weights.torchscript         recommended conda environment (Reproduce test outputs from test inputs (torchscript))        
+                                 See Recommended Conda Environment 3 below.                                                   
+     weights.torchscript         conda compare (Reproduce test outputs from test inputs (torchscript))                        
+                                 See Conda Environment Comparison 3 below.                                                    
+ ✔️  weights.torchscript         Run torchscript inference for inputs with batch_size: 1 and size parameter n: 0              
+ ✔️  weights.torchscript         Run torchscript inference for inputs with batch_size: 1 and size parameter n: 1              
+ ✔️  weights.torchscript         Run torchscript inference for inputs with batch_size: 1 and size parameter n: 2              
+ ✔️  weights.torchscript         Run torchscript inference for inputs with batch_size: 2 and size parameter n: 0              
+ ✔️  weights.torchscript         Run torchscript inference for inputs with batch_size: 2 and size parameter n: 1              
+ ✔️  weights.torchscript         Run torchscript inference for inputs with batch_size: 2 and size parameter n: 2              
+
+Recommended Conda Environment 1
+
+ %YAML 1.2                                                                                                                                                                                              
+ ---                                                                                                                                                                                                    
+ channels:                                                                                                                                                                                              
+   - conda-forge                                                                                                                                                                                        
+   - nodefaults                                                                                                                                                                                         
+ dependencies:                                                                                                                                                                                          
+   - conda-forge::bioimageio.core                                                                                                                                                                       
+   - onnxruntime                                                                                                                                                                                        
+   - pip                                                                                                                                                                                                
+
+Conda Environment Comparison 1
+
+ bioimageio.core not found onnxruntime not found                                                                                                                                                        
+
+Recommended Conda Environment 2
+
+ %YAML 1.2                                                                                                                                                                                              
+ ---                                                                                                                                                                                                    
+ channels:                                                                                                                                                                                              
+   - pytorch                                                                                                                                                                                            
+   - conda-forge                                                                                                                                                                                        
+   - nodefaults                                                                                                                                                                                         
+ dependencies:                                                                                                                                                                                          
+   - conda-forge::bioimageio.core                                                                                                                                                                       
+   - mkl ==2024.0.0                                                                                                                                                                                     
+   - numpy &lt;2                                                                                                                                                                                           
+   - pip                                                                                                                                                                                                
+   - pytorch==1.10.0                                                                                                                                                                                    
+   - setuptools &lt;70.0.0                                                                                                                                                                                 
+   - torchaudio==0.10.0                                                                                                                                                                                 
+   - torchvision==0.11.0                                                                                                                                                                                
+
+Conda Environment Comparison 2
+
+ bioimageio.core not found mkl not found numpy not found pytorch not found setuptools found but                                                                                                         
+ mismatch. Specification pkg: setuptools[version=&#39;&lt;70.0.0&#39;], Running pkg:                                                                                                                               
+ setuptools=80.9.0=py313h06a4308_0 torchaudio not found torchvision not found                                                                                                                           
+
+Recommended Conda Environment 3
+
+ %YAML 1.2                                                                                                                                                                                              
+ ---                                                                                                                                                                                                    
+ channels:                                                                                                                                                                                              
+   - conda-forge                                                                                                                                                                                        
+   - nodefaults                                                                                                                                                                                         
+ dependencies:                                                                                                                                                                                          
+   - conda-forge::bioimageio.core                                                                                                                                                                       
+   - numpy &gt;=2,&lt;3                                                                                                                                                                                       
+   - pip                                                                                                                                                                                                
+   - pytorch==2.8.0                                                                                                                                                                                     
+   - torchaudio                                                                                                                                                                                         
+   - torchvision                                                                                                                                                                                        
+
+Conda Environment Comparison 3
+
+ bioimageio.core not found numpy not found pytorch not found torchaudio not found torchvision not                                                                                                       
+ found                                                                                                                                                                                                  
+</code></pre></div>
+<p>To test your model replace the already published model identifier 'affabl-shark' with a local folder or path to a bioimageio.yaml file.
+Check out the <a href="https://bioimage-io.github.io/spec-bioimage-io">bioimageio.spec documentation</a> for more information on the bioimage.io metadata description format.</p>
+<p>The Python equivalent would be:</p>
+<p></p>
+<h2 id="cli-bioimageio-predict">CLI: bioimageio predict<a class="headerlink" href="#cli-bioimageio-predict" title="Anchor link to this section for reference">¤</a></h2>
+<p>You can use the <code>bioimageio</code> Command Line Interface (CLI) provided by the <code>bioimageio.core</code> package to run prediction with a bioimageio compatible model in a <a href="#finding-a-compatible-python-environment">suitable Python environment</a>.</p>
+<div class="language-ansi highlight"><pre><span></span><code>bioimageio predict --help
+usage: bioimageio predict [-h] [--inputs List[{str,List[str]}]] [--outputs {str,Tuple[str,...]}] [--overwrite | --no-overwrite] [--blockwise | --no-blockwise] [--stats Path]
+                          [--preview | --no-preview] [--weight-format {keras_hdf5,onnx,pytorch_state_dict,tensorflow_saved_model_bundle,torchscript,any}] [--example | --no-example]
+                          SOURCE
+
+Run inference on your data with a bioimage.io model.
+
+positional arguments:
+  SOURCE                Url/path to a (folder with a) bioimageio.yaml/rdf.yaml file
+                        or a bioimage.io resource identifier, e.g. &#39;affable-shark&#39;
+
+options:
+  -h, --help            show this help message and exit
+  --inputs List[{str,List[str]}]
+                        Model input sample paths (for each input tensor)
+
+                        The input paths are expected to have shape...
+                         - (n_samples,) or (n_samples,1) for models expecting a single input tensor
+                         - (n_samples,) containing the substring &#39;{input_id}&#39;, or
+                         - (n_samples, n_model_inputs) to provide each input tensor path explicitly.
+
+                        All substrings that are replaced by metadata from the model description:
+                        - &#39;{model_id}&#39;
+                        - &#39;{input_id}&#39;
+
+                        Example inputs to process sample &#39;a&#39; and &#39;b&#39;
+                        for a model expecting a &#39;raw&#39; and a &#39;mask&#39; input tensor:
+                        --inputs=&quot;[[\&quot;a_raw.tif\&quot;,\&quot;a_mask.tif\&quot;],[\&quot;b_raw.tif\&quot;,\&quot;b_mask.tif\&quot;]]&quot;
+                        (Note that JSON double quotes need to be escaped.)
+
+                        Alternatively a `bioimageio-cli.yaml` (or `bioimageio-cli.json`) file
+                        may provide the arguments, e.g.:
+                        ```yaml
+                        inputs:
+                        - [a_raw.tif, a_mask.tif]
+                        - [b_raw.tif, b_mask.tif]
+                        ```
+
+                        `.npy` and any file extension supported by imageio are supported.
+                         Aavailable formats are listed at
+                        https://imageio.readthedocs.io/en/stable/formats/index.html#all-formats.
+                        Some formats have additional dependencies.
+
+                          (default factory: PredictCmd.&lt;lambda&gt;)
+  --outputs {str,Tuple[str,...]}
+                        Model output path pattern (per output tensor)
+
+                        All substrings that are replaced:
+                        - &#39;{model_id}&#39; (from model description)
+                        - &#39;{output_id}&#39; (from model description)
+                        - &#39;{sample_id}&#39; (extracted from input paths)
+
+                          (default: outputs_{model_id}/{output_id}/{sample_id}.tif)
+  --overwrite, --no-overwrite
+                        allow overwriting existing output files (default: False)
+  --blockwise, --no-blockwise
+                        process inputs blockwise (default: False)
+  --stats Path          path to dataset statistics
+                        (will be written if it does not exist,
+                        but the model requires statistical dataset measures)
+                          (default: dataset_statistics.json)
+  --preview, --no-preview
+                        preview which files would be processed
+                        and what outputs would be generated. (default: False)
+  --weight-format {keras_hdf5,onnx,pytorch_state_dict,tensorflow_saved_model_bundle,torchscript,any}, --weights-format {keras_hdf5,onnx,pytorch_state_dict,tensorflow_saved_model_bundle,torchscript,any}, --weight_format {keras_hdf5,onnx,pytorch_state_dict,tensorflow_saved_model_bundle,torchscript,any}, --weights_format {keras_hdf5,onnx,pytorch_state_dict,tensorflow_saved_model_bundle,torchscript,any}
+                        The weight format to use. (default: any)
+  --example, --no-example
+                        generate and run an example
+
+                        1. downloads example model inputs
+                        2. creates a `{model_id}_example` folder
+                        3. writes input arguments to `{model_id}_example/bioimageio-cli.yaml`
+                        4. executes a preview dry-run
+                        5. executes prediction with example input
+
+                          (default: False)
+</code></pre></div>
+<p>Create a local example and run prediction locally:</p>
+<div class="language-ansi highlight"><pre><span></span><code>bioimageio predict affable-shark --example
+<span class=" -Color -Color-Green">0:00:01.466254</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
+<span class=" -Color -Color-Bold">[&#39;/opt/hostedtoolcache/Python/3.12.12/x64/bin/bioimageio&#39;,</span>
+<span class=" -Color -Color-Bold"> &#39;predict&#39;,</span>
+<span class=" -Color -Color-Bold"> &#39;affable-shark&#39;,</span>
+<span class=" -Color -Color-Bold"> &#39;--example&#39;]</span>
+<span class=" -Color -Color-Green">0:00:01.466982</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
+<span class=" -Color -Color-Bold">{&#39;predict&#39;: {&#39;example&#39;: True, &#39;source&#39;: &#39;affable-shark&#39;}}</span>
+<span class=" -Color -Color-Green">0:00:01.467192</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
+<span class=" -Color -Color-Bold">{&#39;predict&#39;: {&#39;blockwise&#39;: False,</span>
+<span class=" -Color -Color-Bold">             &#39;example&#39;: True,</span>
+<span class=" -Color -Color-Bold">             &#39;inputs&#39;: [&#39;{input_id}/001.tif&#39;],</span>
+<span class=" -Color -Color-Bold">             &#39;outputs&#39;: &#39;outputs_{model_id}/{output_id}/{sample_id}.tif&#39;,</span>
+<span class=" -Color -Color-Bold">             &#39;overwrite&#39;: False,</span>
+<span class=" -Color -Color-Bold">             &#39;preview&#39;: False,</span>
+<span class=" -Color -Color-Bold">             &#39;source&#39;: &#39;affable-shark&#39;,</span>
+<span class=" -Color -Color-Bold">             &#39;stats&#39;: &#39;dataset_statistics.json&#39;,</span>
+<span class=" -Color -Color-Bold">             &#39;weight_format&#39;: &#39;any&#39;}}</span>
+<span class=" -Color -Color-Green">0:00:01.469280</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
+<span class=" -Color -Color-Bold">[&#39;/opt/hostedtoolcache/Python/3.12.12/x64/bin/bioimageio&#39;,</span>
+<span class=" -Color -Color-Bold"> &#39;predict&#39;,</span>
+<span class=" -Color -Color-Bold"> &#39;--preview&#39;,</span>
+<span class=" -Color -Color-Bold"> &#39;--overwrite&#39;,</span>
+<span class=" -Color -Color-Bold"> &#39;--stats=affable-shark_example/dataset_statistics.json&#39;,</span>
+<span class=" -Color -Color-Bold"> &#39;--inputs=[[&quot;affable-shark_example/input0/001.tif&quot;]]&#39;,</span>
+<span class=" -Color -Color-Bold"> &#39;--outputs=affable-shark_example/outputs/{output_id}/{sample_id}.tif&#39;,</span>
+<span class=" -Color -Color-Bold"> &#39;affable-shark&#39;]</span>
+<span class=" -Color -Color-Green">0:00:01.470309</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
+<span class=" -Color -Color-Bold">{&#39;predict&#39;: {&#39;inputs&#39;: [[&#39;affable-shark_example/input0/001.tif&#39;]],</span>
+<span class=" -Color -Color-Bold">             &#39;outputs&#39;: &#39;affable-shark_example/outputs/{output_id}/{sample_id}.tif&#39;,</span>
+<span class=" -Color -Color-Bold">             &#39;overwrite&#39;: True,</span>
+<span class=" -Color -Color-Bold">             &#39;preview&#39;: True,</span>
+<span class=" -Color -Color-Bold">             &#39;source&#39;: &#39;affable-shark&#39;,</span>
+<span class=" -Color -Color-Bold">             &#39;stats&#39;: &#39;affable-shark_example/dataset_statistics.json&#39;}}</span>
+<span class=" -Color -Color-Green">0:00:01.470554</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
+<span class=" -Color -Color-Bold">{&#39;predict&#39;: {&#39;blockwise&#39;: False,</span>
+<span class=" -Color -Color-Bold">             &#39;example&#39;: False,</span>
+<span class=" -Color -Color-Bold">             &#39;inputs&#39;: [[&#39;affable-shark_example/input0/001.tif&#39;]],</span>
+<span class=" -Color -Color-Bold">             &#39;outputs&#39;: &#39;affable-shark_example/outputs/{output_id}/{sample_id}.tif&#39;,</span>
+<span class=" -Color -Color-Bold">             &#39;overwrite&#39;: True,</span>
+<span class=" -Color -Color-Bold">             &#39;preview&#39;: True,</span>
+<span class=" -Color -Color-Bold">             &#39;source&#39;: &#39;affable-shark&#39;,</span>
+<span class=" -Color -Color-Bold">             &#39;stats&#39;: &#39;affable-shark_example/dataset_statistics.json&#39;,</span>
+<span class=" -Color -Color-Bold">             &#39;weight_format&#39;: &#39;any&#39;}}</span>
+🛈 bioimageio prediction preview structure:
+{&#39;{sample_id}&#39;: {&#39;inputs&#39;: {&#39;{input_id}&#39;: &#39;&lt;input path&gt;&#39;},
+                 &#39;outputs&#39;: {&#39;{output_id}&#39;: &#39;&lt;output path&gt;&#39;}}}
+🔎 bioimageio prediction preview output:
+{&#39;1&#39;: {&#39;inputs&#39;: {&#39;input0&#39;: &#39;affable-shark_example/input0/001.tif&#39;},
+       &#39;outputs&#39;: {&#39;output0&#39;: &#39;affable-shark_example/outputs/output0/1.tif&#39;}}}
+<span class=" -Color -Color-Green">0:00:01.466089</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
+<span class=" -Color -Color-Bold">[&#39;/opt/hostedtoolcache/Python/3.12.12/x64/bin/bioimageio&#39;,</span>
+<span class=" -Color -Color-Bold"> &#39;predict&#39;,</span>
+<span class=" -Color -Color-Bold"> &#39;--overwrite&#39;,</span>
+<span class=" -Color -Color-Bold"> &#39;--stats=affable-shark_example/dataset_statistics.json&#39;,</span>
+<span class=" -Color -Color-Bold"> &#39;--inputs=[[&quot;affable-shark_example/input0/001.tif&quot;]]&#39;,</span>
+<span class=" -Color -Color-Bold"> &#39;--outputs=affable-shark_example/outputs/{output_id}/{sample_id}.tif&#39;,</span>
+<span class=" -Color -Color-Bold"> &#39;affable-shark&#39;]</span>
+<span class=" -Color -Color-Green">0:00:01.467081</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
+<span class=" -Color -Color-Bold">{&#39;predict&#39;: {&#39;inputs&#39;: [[&#39;affable-shark_example/input0/001.tif&#39;]],</span>
+<span class=" -Color -Color-Bold">             &#39;outputs&#39;: &#39;affable-shark_example/outputs/{output_id}/{sample_id}.tif&#39;,</span>
+<span class=" -Color -Color-Bold">             &#39;overwrite&#39;: True,</span>
+<span class=" -Color -Color-Bold">             &#39;source&#39;: &#39;affable-shark&#39;,</span>
+<span class=" -Color -Color-Bold">             &#39;stats&#39;: &#39;affable-shark_example/dataset_statistics.json&#39;}}</span>
+<span class=" -Color -Color-Green">0:00:01.467340</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
+<span class=" -Color -Color-Bold">{&#39;predict&#39;: {&#39;blockwise&#39;: False,</span>
+<span class=" -Color -Color-Bold">             &#39;example&#39;: False,</span>
+<span class=" -Color -Color-Bold">             &#39;inputs&#39;: [[&#39;affable-shark_example/input0/001.tif&#39;]],</span>
+<span class=" -Color -Color-Bold">             &#39;outputs&#39;: &#39;affable-shark_example/outputs/{output_id}/{sample_id}.tif&#39;,</span>
+<span class=" -Color -Color-Bold">             &#39;overwrite&#39;: True,</span>
+<span class=" -Color -Color-Bold">             &#39;preview&#39;: False,</span>
+<span class=" -Color -Color-Bold">             &#39;source&#39;: &#39;affable-shark&#39;,</span>
+<span class=" -Color -Color-Bold">             &#39;stats&#39;: &#39;affable-shark_example/dataset_statistics.json&#39;,</span>
+<span class=" -Color -Color-Bold">             &#39;weight_format&#39;: &#39;any&#39;}}</span>
+
+predict with affable-shark:   0%|          | 0/1 [00:00&lt;?, ?sample/s]
+predict with affable-shark: 100%|██████████| 1/1 [00:00&lt;00:00,  2.06sample/s]
+predict with affable-shark: 100%|██████████| 1/1 [00:00&lt;00:00,  2.06sample/s]
+🎉 Sucessfully ran example prediction!
+To predict the example input using the CLI example config file affable-shark_example/bioimageio-cli.yaml, execute `bioimageio predict` from affable-shark_example:
+$ cd affable-shark_example
+$ bioimageio predict &quot;affable-shark&quot;
+
+Alternatively run the following command in the current workind directory, not the example folder:
+$ bioimageio predict --overwrite --stats=&quot;affable-shark_example/dataset_statistics.json&quot; --inputs=&quot;[[\&quot;affable-shark_example/input0/001.tif\&quot;]]&quot; --outputs=&quot;affable-shark_example/outputs/{output_id}/{sample_id}.tif&quot; &quot;affable-shark&quot;
+(note that a local &#39;bioimageio-cli.json&#39; or &#39;bioimageio-cli.yaml&#39; may interfere with this)
+</code></pre></div>
+<h2 id="python-bioimageiocorepredict">Python: bioimageio.core.predict<a class="headerlink" href="#python-bioimageiocorepredict" title="Anchor link to this section for reference">¤</a></h2>
+<p>Here is a code snippet to get started deploying a model in Python using the test sample provided by the model description:</p>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">bioimageio.core</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_model_description</span><span class="p">,</span> <span class="n">predict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bioimageio.core.digest_spec</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_test_input_sample</span>
+
+<span class="n">model_descr</span> <span class="o">=</span> <span class="n">load_model_description</span><span class="p">(</span><span class="s2">&quot;&lt;model.yaml or model.zip path or URL&gt;&quot;</span><span class="p">)</span>
+<span class="n">input_sample</span> <span class="o">=</span> <span class="n">get_test_input_sample</span><span class="p">(</span><span class="n">model_descr</span><span class="p">)</span>
+<span class="n">output_sample</span> <span class="o">=</span> <span class="n">predict</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model_descr</span><span class="p">,</span> <span class="n">inputs</span><span class="o">=</span><span class="n">input_sample</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="python-predict-your-own-data">Python: predict your own data<a class="headerlink" href="#python-predict-your-own-data" title="Anchor link to this section for reference">¤</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">bioimageio.core.digest_spec</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_sample_for_model</span>
+
+<span class="n">input_sample</span> <span class="o">=</span> <span class="n">create_sample_for_model</span><span class="p">(</span>
+    <span class="n">model_descr</span><span class="p">,</span>
+    <span class="n">inputs</span><span class="o">=</span><span class="p">{{</span><span class="s2">&quot;raw&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;path to your input image&gt;&quot;</span><span class="p">}}</span>
+<span class="p">)</span>
+<span class="n">output_sample</span> <span class="o">=</span> <span class="n">predict</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model_descr</span><span class="p">,</span> <span class="n">inputs</span><span class="o">=</span><span class="n">input_sample</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="python-prediction-options">Python: prediction options<a class="headerlink" href="#python-prediction-options" title="Anchor link to this section for reference">¤</a></h3>
+<p>For model inference from within Python these options are available:</p>
+<ul>
+<li><a class="autorefs autorefs-internal" href="../api/#bioimageio.core.predict">bioimageio.core.predict</a> to run inference on a single sample/image.</li>
+<li><a class="autorefs autorefs-internal" href="../api/#bioimageio.core.predict_many">bioimageio.core.predict_many</a> to run inference on a set of samples.</li>
+<li><a class="autorefs autorefs-internal" href="../api/#bioimageio.core.create_prediction_pipeline">bioimageio.core.create_prediction_pipeline</a> for reusing the instatiated model and more fine-grain control over the inference process this function creates a suitable <a class="autorefs autorefs-internal" href="../api/#bioimageio.core.PredictionPipeline">bioimageio.core.PredictionPipeline</a> for more advanced use.</li>
+</ul>
+<h2 id="other-bioimageiocore-functionality">Other bioimageio.core functionality<a class="headerlink" href="#other-bioimageiocore-functionality" title="Anchor link to this section for reference">¤</a></h2>
+<h3 id="cli-bioimageio-commands">CLI: bioimageio commands<a class="headerlink" href="#cli-bioimageio-commands" title="Anchor link to this section for reference">¤</a></h3>
+<p>To get an overview of available commands:</p>
+<div class="language-ansi highlight"><pre><span></span><code>bioimageio --help
+usage: bioimageio [-h] {validate-format,test,package,predict,update-format,update-hashes,add-weights} ...
+
+bioimageio - CLI for bioimage.io resources 🦒
+
+library versions:
+  bioimageio.core 0.9.6
+  bioimageio.spec 0.5.7.2
+
+spec format versions:
+        model RDF 0.5.7
+      dataset RDF 0.3.0
+     notebook RDF 0.3.0
+
+options:
+  -h, --help            show this help message and exit
+
+subcommands:
+  {validate-format,test,package,predict,update-format,update-hashes,add-weights}
+    validate-format     Validate the meta data format of a bioimageio resource.
+    test                Test a bioimageio resource (beyond meta data formatting).
+    package             Save a resource&#39;s metadata with its associated files.
+    predict             Run inference on your data with a bioimage.io model.
+    update-format       Update the metadata format to the latest format version.
+    update-hashes       Create a bioimageio.yaml description with updated file hashes.
+    add-weights         Add additional weights to a model description by converting from available formats.
+</code></pre></div>
+<h3 id="python-api-docs">Python: API docs<a class="headerlink" href="#python-api-docs" title="Anchor link to this section for reference">¤</a></h3>
+<p>See <a class="autorefs autorefs-internal" href="../api/#bioimageio.core">bioimageio.core</a>.</p>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href=".." class="md-footer__link md-footer__link--prev" aria-label="Previous: Index">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Index
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../installation/" class="md-footer__link md-footer__link--next" aria-label="Next: Installation">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Installation
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+      
+      
+    
+    <a href="https://github.com/bioimage-io" target="_blank" rel="noopener" title="github.com" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+      <div class="md-progress" data-md-component="progress" role="progressbar"></div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.expand", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.prune", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+        <script src="../assets/_markdown_exec_pyodide.js"></script>
+      
+    
+  </body>
+</html>
