@@ -261,7 +261,7 @@ jobs:
         shell: bash
         run: |
           if [[ -n '${{ github.event.pull_request.head.ref }}' ]]; then branch=gh-pages-${{ github.event.pull_request.head.ref }}; else branch=gh-pages; fi
-          echo "::set-output name=branch::$branch"
+          echo "name=branch::$branch" >> $GITHUB_OUTPUT
       - name: Get parent commit
         if: inputs.force-publish != 'true'
         id: get-parent-commit
