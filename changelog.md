@@ -1,6 +1,6 @@
 ### 0.9.6
 
-- bump bioimageio.spec library version to 0.5.7.3
+- bump bioimageio.spec library version to 0.5.7.4
 - increase default reprducibility tolerance
 - unify quantile (vs percentile) variable names
 - add quantile computation method parameter

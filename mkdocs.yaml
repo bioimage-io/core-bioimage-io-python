@@ -86,7 +86,7 @@ plugins:
         python:
           inventories:
             - https://docs.pydantic.dev/latest/objects.inv
-            - https://bioimage-io.github.io/spec-bioimage-io/v0.5.7.3/objects.inv
+            - https://bioimage-io.github.io/spec-bioimage-io/v0.5.7.4/objects.inv
           options:
             annotations_path: source
             backlinks: tree
