@@ -252,6 +252,7 @@ def test_description(
             expected_type=expected_type,
             sha256=sha256,
             stop_early=stop_early,
+            working_dir=working_dir,
             **deprecated,
         )
         return rd.validation_summary
@@ -275,6 +276,7 @@ def test_description(
                 "given run_command does not raise an exception for a failing command"
             )
 
+    verbose = working_dir is not None
     if working_dir is None:
         td_kwargs: Dict[str, Any] = (
             dict(ignore_cleanup_errors=True) if sys.version_info >= (3, 10) else {}
@@ -318,6 +320,7 @@ def test_description(
             sha256=sha256,
             stop_early=stop_early,
             run_command=run_command,
+            verbose=verbose,
             **deprecated,
         )
 
@@ -337,6 +340,7 @@ def _test_in_env(
     stop_early: bool,
     expected_type: Optional[str],
     sha256: Optional[Sha256],
+    verbose: bool,
     **deprecated: Unpack[DeprecatedKwargs],
 ):
     """Test a bioimage.io resource in a given conda environment.
@@ -367,6 +371,7 @@ def _test_in_env(
                     expected_type=expected_type,
                     sha256=sha256,
                     stop_early=stop_early,
+                    verbose=verbose,
                     **deprecated,
                 )
 
@@ -543,6 +548,7 @@ def load_description_and_test(
     expected_type: Literal["model"],
     sha256: Optional[Sha256] = None,
     stop_early: bool = True,
+    working_dir: Optional[Union[os.PathLike[str], str]] = None,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[ModelDescr, InvalidDescr]: ...
 
@@ -558,6 +564,7 @@ def load_description_and_test(
     expected_type: Literal["dataset"],
     sha256: Optional[Sha256] = None,
     stop_early: bool = True,
+    working_dir: Optional[Union[os.PathLike[str], str]] = None,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[DatasetDescr, InvalidDescr]: ...
 
@@ -573,6 +580,7 @@ def load_description_and_test(
     expected_type: Optional[str] = None,
     sha256: Optional[Sha256] = None,
     stop_early: bool = True,
+    working_dir: Optional[Union[os.PathLike[str], str]] = None,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[LatestResourceDescr, InvalidDescr]: ...
 
@@ -588,6 +596,7 @@ def load_description_and_test(
     expected_type: Literal["model"],
     sha256: Optional[Sha256] = None,
     stop_early: bool = True,
+    working_dir: Optional[Union[os.PathLike[str], str]] = None,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[AnyModelDescr, InvalidDescr]: ...
 
@@ -603,6 +612,7 @@ def load_description_and_test(
     expected_type: Literal["dataset"],
     sha256: Optional[Sha256] = None,
     stop_early: bool = True,
+    working_dir: Optional[Union[os.PathLike[str], str]] = None,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[AnyDatasetDescr, InvalidDescr]: ...
 
@@ -618,6 +628,7 @@ def load_description_and_test(
     expected_type: Optional[str] = None,
     sha256: Optional[Sha256] = None,
     stop_early: bool = True,
+    working_dir: Optional[Union[os.PathLike[str], str]] = None,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[ResourceDescr, InvalidDescr]: ...
 
@@ -632,6 +643,7 @@ def load_description_and_test(
     expected_type: Optional[str] = None,
     sha256: Optional[Sha256] = None,
     stop_early: bool = True,
+    working_dir: Optional[Union[os.PathLike[str], str]] = None,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[ResourceDescr, InvalidDescr]:
     """Test a bioimage.io resource dynamically,
@@ -704,7 +716,15 @@ def load_description_and_test(
 
         enable_determinism(determinism, weight_formats=weight_formats)
         for w in weight_formats:
-            _test_model_inference(rd, w, devices, stop_early=stop_early, **deprecated)
+            _test_model_inference(
+                rd,
+                w,
+                devices,
+                stop_early=stop_early,
+                working_dir=working_dir,
+                verbose=working_dir is not None,
+                **deprecated,
+            )
             if stop_early and rd.validation_summary.status != "passed":
                 break
 
@@ -779,6 +799,9 @@ def _test_model_inference(
     weight_format: SupportedWeightsFormat,
     devices: Optional[Sequence[str]],
     stop_early: bool,
+    *,
+    working_dir: Optional[Union[os.PathLike[str], str]],
+    verbose: bool,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> None:
     test_name = f"Reproduce test outputs from test inputs ({weight_format})"
@@ -862,15 +885,20 @@ def _test_model_inference(
                     if not mismatched_elements:
                         continue
 
-                    actual_output_path = Path(f"actual_output_{m}_{weight_format}.npy")
-                    try:
-                        save_tensor(actual_output_path, actual)
-                    except Exception as e:
-                        logger.error(
-                            "Failed to save actual output tensor to {}: {}",
-                            actual_output_path,
-                            e,
+                    if working_dir is not None and verbose:
+                        actual_output_path = (
+                            Path(working_dir) / f"actual_output_{m}_{weight_format}.npy"
                         )
+                        try:
+                            save_tensor(actual_output_path, actual)
+                        except Exception as e:
+                            logger.error(
+                                "Failed to save actual output tensor to {}: {}",
+                                actual_output_path,
+                                e,
+                            )
+                    else:
+                        actual_output_path = None
 
                     mismatched_ppm = mismatched_elements / expected_np.size * 1e6
                     abs_diff[~mismatched] = 0  # ignore non-mismatched elements
@@ -907,8 +935,10 @@ def _test_model_inference(
                         + f" at {dict(zip(dims, r_max_idx))}"
                         + f"\n Max absolute difference not accounted for by relative tolerance ({rtol:.2e}): {a_max:.2e}"
                         + rf" (= \|{a_actual:.7e} - {a_expected:.7e}\|) at {dict(zip(dims, a_max_idx))}"
-                        + f"\n Saved actual output to {actual_output_path}."
                     )
+                    if actual_output_path is not None:
+                        msg += f"\n Saved actual output to {actual_output_path}."
+
                     if mismatched_ppm > mismatched_tol:
                         add_error_entry(msg)
                         if stop_early:

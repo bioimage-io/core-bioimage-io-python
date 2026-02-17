@@ -5,6 +5,7 @@
 - unify quantile (vs percentile) variable names
 - add quantile computation method parameter
 - accept `SampleQuantile` or `DatasetQuantile` as `min`/`max` arguments to `proc_ops.Clip`
+- save actual output during model testing only if an explicit working directory was specified to produce less clutter
 
 ### 0.9.5
 
