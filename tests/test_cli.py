@@ -79,9 +79,15 @@ def test_empty_cache(tmp_path: Path, unet2d_nuclei_broad_model: str):
         settings.cache_path = tmp_path / "cache"
         assert not settings.cache_path.exists()
         _ = load_description(unet2d_nuclei_broad_model, perform_io_checks=False)
-        assert len(list(settings.cache_path.iterdir())) == 1
+        assert (
+            len([fn for fn in settings.cache_path.iterdir() if fn.suffix != ".lock"])
+            == 1
+        )
         empty_cache()
-        assert len(list(settings.cache_path.iterdir())) == 0
+        assert (
+            len([fn for fn in settings.cache_path.iterdir() if fn.suffix != ".lock"])
+            == 0
+        )
     finally:
         settings.cache_path = origingal_cache_path
 
