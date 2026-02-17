@@ -6,6 +6,8 @@ import numpy as np
 import pytest
 from pydantic import FilePath
 
+from bioimageio.spec import load_description, settings
+
 
 def run_subprocess(
     commands: Sequence[str], **kwargs: Any
@@ -67,6 +69,21 @@ def test_cli(
     ]
     ret = run_subprocess(["bioimageio", *resolved_args])
     assert ret.returncode == 0, ret.stdout
+
+
+def test_empty_cache(tmp_path: Path, unet2d_nuclei_broad_model: str):
+    from bioimageio.spec.utils import empty_cache
+
+    origingal_cache_path = settings.cache_path
+    try:
+        settings.cache_path = tmp_path / "cache"
+        assert not settings.cache_path.exists()
+        _ = load_description(unet2d_nuclei_broad_model, perform_io_checks=False)
+        assert len(list(settings.cache_path.iterdir())) == 1
+        empty_cache()
+        assert len(list(settings.cache_path.iterdir())) == 0
+    finally:
+        settings.cache_path = origingal_cache_path
 
 
 @pytest.mark.parametrize("args", [["test", "stardist_wrong_shape"]])

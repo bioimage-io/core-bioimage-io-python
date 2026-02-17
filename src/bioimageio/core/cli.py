@@ -73,7 +73,12 @@ from bioimageio.spec._internal.types import FormatVersionPlaceholder, NotEmpty
 from bioimageio.spec.dataset import DatasetDescr
 from bioimageio.spec.model import ModelDescr, v0_4, v0_5
 from bioimageio.spec.notebook import NotebookDescr
-from bioimageio.spec.utils import ensure_description_is_model, get_reader, write_yaml
+from bioimageio.spec.utils import (
+    empty_cache,
+    ensure_description_is_model,
+    get_reader,
+    write_yaml,
+)
 
 from .commands import WeightFormatArgAll, WeightFormatArgAny, package, test
 from .common import MemberId, SampleId, SupportedWeightsFormat
@@ -803,6 +808,13 @@ class AddWeightsCmd(CmdBase, WithSource, WithSummaryLogging):
         self.log(updated_model_descr)
 
 
+class EmptyCache(CmdBase):
+    """Empty the bioimageio cache directory."""
+
+    def cli_cmd(self):
+        empty_cache()
+
+
 JSON_FILE = "bioimageio-cli.json"
 YAML_FILE = "bioimageio-cli.yaml"
 
@@ -842,6 +854,9 @@ class Bioimageio(
 
     add_weights: CliSubCommand[AddWeightsCmd] = Field(alias="add-weights")
     """Add additional weights to a model description by converting from available formats."""
+
+    empty_cache: CliSubCommand[EmptyCache] = Field(alias="empty-cache")
+    """Empty the bioimageio cache directory."""
 
     @classmethod
     def settings_customise_sources(
