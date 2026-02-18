@@ -893,13 +893,13 @@
 <p><code>bioimageio.core</code> installs a command line interface (CLI) for testing models and other functionality.
 You can list all the available commands via:</p>
 <div class="language-ansi highlight"><pre><span></span><code>bioimageio --help
-usage: bioimageio [-h] {validate-format,test,package,predict,update-format,update-hashes,add-weights} ...
+usage: bioimageio [-h] {validate-format,test,package,predict,update-format,update-hashes,add-weights,empty-cache} ...
 
 bioimageio - CLI for bioimage.io resources 🦒
 
 library versions:
   bioimageio.core 0.9.6
-  bioimageio.spec 0.5.7.3
+  bioimageio.spec 0.5.7.4
 
 spec format versions:
         model RDF 0.5.7
@@ -910,7 +910,7 @@ options:
   -h, --help            show this help message and exit
 
 subcommands:
-  {validate-format,test,package,predict,update-format,update-hashes,add-weights}
+  {validate-format,test,package,predict,update-format,update-hashes,add-weights,empty-cache}
     validate-format     Validate the meta data format of a bioimageio resource.
     test                Test a bioimageio resource (beyond meta data formatting).
     package             Save a resource&#39;s metadata with its associated files.
@@ -918,6 +918,7 @@ subcommands:
     update-format       Update the metadata format to the latest format version.
     update-hashes       Create a bioimageio.yaml description with updated file hashes.
     add-weights         Add additional weights to a model description by converting from available formats.
+    empty-cache         Empty the bioimageio cache directory.
 </code></pre></div>
 <p>For concrete examples see <a href="get-started.md">Get started</a>.</p>
 <h3 id="cli-inputs-from-file">CLI inputs from file<a class="headerlink" href="#cli-inputs-from-file" title="Anchor link to this section for reference">¤</a></h3>
