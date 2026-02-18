@@ -16,6 +16,7 @@ from io import StringIO
 from pathlib import Path
 from pprint import pformat, pprint
 from typing import (
+    Annotated,
     Any,
     Dict,
     Iterable,
@@ -32,9 +33,17 @@ from typing import (
 
 import rich.markdown
 from loguru import logger
-from pydantic import AliasChoices, BaseModel, Field, model_validator
+from pydantic import (
+    AliasChoices,
+    BaseModel,
+    Field,
+    PlainSerializer,
+    WithJsonSchema,
+    model_validator,
+)
 from pydantic_settings import (
     BaseSettings,
+    CliApp,
     CliPositionalArg,
     CliSettingsSource,
     CliSubCommand,
@@ -64,7 +73,12 @@ from bioimageio.spec._internal.types import FormatVersionPlaceholder, NotEmpty
 from bioimageio.spec.dataset import DatasetDescr
 from bioimageio.spec.model import ModelDescr, v0_4, v0_5
 from bioimageio.spec.notebook import NotebookDescr
-from bioimageio.spec.utils import ensure_description_is_model, get_reader, write_yaml
+from bioimageio.spec.utils import (
+    empty_cache,
+    ensure_description_is_model,
+    get_reader,
+    write_yaml,
+)
 
 from .commands import WeightFormatArgAll, WeightFormatArgAny, package, test
 from .common import MemberId, SampleId, SupportedWeightsFormat
@@ -160,7 +174,7 @@ class ValidateFormatCmd(CmdBase, WithSource, WithSummaryLogging):
     def descr(self):
         return load_description(self.source, perform_io_checks=self.perform_io_checks)
 
-    def run(self):
+    def cli_cmd(self):
         self.log(self.descr)
         sys.exit(
             0
@@ -195,6 +209,9 @@ class TestCmd(CmdBase, WithSource, WithSummaryLogging):
           Note: The `bioimageio.core` dependency will be added automatically if not present.
     """
 
+    working_dir: Optional[Path] = Field(None, alias="working-dir")
+    """(for debugging) Directory to save any temporary files."""
+
     determinism: Literal["seed_only", "full"] = "seed_only"
     """Modes to improve reproducibility of test outputs."""
 
@@ -212,7 +229,7 @@ class TestCmd(CmdBase, WithSource, WithSummaryLogging):
         - '0.4', '0.5', ...: Use the specified format version (may trigger auto updating)
     """
 
-    def run(self):
+    def cli_cmd(self):
         sys.exit(
             test(
                 self.descr,
@@ -222,6 +239,7 @@ class TestCmd(CmdBase, WithSource, WithSummaryLogging):
                 runtime_env=self.runtime_env,
                 determinism=self.determinism,
                 format_version=self.format_version,
+                working_dir=self.working_dir,
             )
         )
 
@@ -241,7 +259,7 @@ class PackageCmd(CmdBase, WithSource, WithSummaryLogging):
     )
     """The weight format to include in the package (for model descriptions only)."""
 
-    def run(self):
+    def cli_cmd(self):
         if isinstance(self.descr, InvalidDescr):
             self.log(self.descr)
             raise ValueError(f"Invalid {self.descr.type} description.")
@@ -314,7 +332,7 @@ class UpdateCmdBase(CmdBase, WithSource, ABC):
     def updated(self) -> Union[ResourceDescr, InvalidDescr]:
         raise NotImplementedError
 
-    def run(self):
+    def cli_cmd(self):
         original_yaml = open_bioimageio_yaml(self.source).unparsed_content
         assert isinstance(original_yaml, str)
         stream = StringIO()
@@ -450,7 +468,11 @@ class PredictCmd(CmdBase, WithSource):
     blockwise: bool = False
     """process inputs blockwise"""
 
-    stats: Path = Path("dataset_statistics.json")
+    stats: Annotated[
+        Path,
+        WithJsonSchema({"type": "string"}),
+        PlainSerializer(lambda p: p.as_posix(), return_type=str),
+    ] = Path("dataset_statistics.json")
     """path to dataset statistics
     (will be written if it does not exist,
     but the model requires statistical dataset measures)
@@ -574,7 +596,7 @@ class PredictCmd(CmdBase, WithSource):
             + f"\n(note that a local '{JSON_FILE}' or '{YAML_FILE}' may interfere with this)"
         )
 
-    def run(self):
+    def cli_cmd(self):
         if self.example:
             return self._example()
 
@@ -655,7 +677,7 @@ class PredictCmd(CmdBase, WithSource):
                     )
                     for s in sample_ids
                 ]
-
+            # check for distinctness and correct number within each output sample
             for i, out in enumerate(outputs, start=1):
                 if len(set(out)) < len(out):
                     raise ValueError(
@@ -666,6 +688,14 @@ class PredictCmd(CmdBase, WithSource):
                     raise ValueError(
                         f"[output sample #{i}] Expected {len(output_ids)} outputs {output_ids}, got {out}"
                     )
+
+            # check for distinctness across all output samples
+            all_output_paths = [p for out in outputs for p in out]
+            if len(set(all_output_paths)) < len(all_output_paths):
+                raise ValueError(
+                    "Output paths are not distinct across samples. "
+                    + f"Make sure to include '{{sample_id}}' in the output path pattern."
+                )
 
             return outputs
 
@@ -742,6 +772,8 @@ class PredictCmd(CmdBase, WithSource):
 
 
 class AddWeightsCmd(CmdBase, WithSource, WithSummaryLogging):
+    """Add additional weights to a model description by converting from available formats."""
+
     output: CliPositionalArg[Path]
     """The path to write the updated model package to."""
 
@@ -758,7 +790,7 @@ class AddWeightsCmd(CmdBase, WithSource, WithSummaryLogging):
     """Allow tracing when converting pytorch_state_dict to torchscript
     (still uses scripting if possible)."""
 
-    def run(self):
+    def cli_cmd(self):
         model_descr = ensure_description_is_model(self.descr)
         if isinstance(model_descr, v0_4.ModelDescr):
             raise TypeError(
@@ -774,6 +806,13 @@ class AddWeightsCmd(CmdBase, WithSource, WithSummaryLogging):
             allow_tracing=self.tracing,
         )
         self.log(updated_model_descr)
+
+
+class EmptyCache(CmdBase):
+    """Empty the bioimageio cache directory."""
+
+    def cli_cmd(self):
+        empty_cache()
 
 
 JSON_FILE = "bioimageio-cli.json"
@@ -814,8 +853,10 @@ class Bioimageio(
     """Create a bioimageio.yaml description with updated file hashes."""
 
     add_weights: CliSubCommand[AddWeightsCmd] = Field(alias="add-weights")
-    """Add additional weights to the model descriptions converted from available
-    formats to improve deployability."""
+    """Add additional weights to a model description by converting from available formats."""
+
+    empty_cache: CliSubCommand[EmptyCache] = Field(alias="empty-cache")
+    """Empty the bioimageio cache directory."""
 
     @classmethod
     def settings_customise_sources(
@@ -849,22 +890,12 @@ class Bioimageio(
         )
         return data
 
-    def run(self):
+    def cli_cmd(self) -> None:
         logger.info(
             "executing CLI command:\n{}",
             pformat({k: v for k, v in self.model_dump().items() if v is not None}),
         )
-        cmd = (
-            self.add_weights
-            or self.package
-            or self.predict
-            or self.test
-            or self.update_format
-            or self.update_hashes
-            or self.validate_format
-        )
-        assert cmd is not None
-        cmd.run()
+        _ = CliApp.run_subcommand(self)
 
 
 assert isinstance(Bioimageio.__doc__, str)

@@ -66,7 +66,7 @@ class PredictionPipeline:
         default_blocksize_parameter: BlocksizeParameter = 10,
         default_batch_size: int = 1,
     ) -> None:
-        """Use `create_prediction_pipeline` to create a `PredictionPipeline`"""
+        """Consider using `create_prediction_pipeline` to create a `PredictionPipeline` with sensible defaults."""
         super().__init__()
         default_blocksize_parameter = default_ns or default_blocksize_parameter
         if default_ns is not None:

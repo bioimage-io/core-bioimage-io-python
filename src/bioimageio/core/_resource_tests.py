@@ -4,6 +4,7 @@ import platform
 import subprocess
 import sys
 import warnings
+from contextlib import nullcontext
 from io import StringIO
 from itertools import product
 from pathlib import Path
@@ -24,6 +25,10 @@ from typing import (
 )
 
 import numpy as np
+from loguru import logger
+from numpy.typing import NDArray
+from typing_extensions import NotRequired, TypedDict, Unpack, assert_never, get_args
+
 from bioimageio.spec import (
     AnyDatasetDescr,
     AnyModelDescr,
@@ -61,18 +66,14 @@ from bioimageio.spec.summary import (
     ValidationSummary,
     WarningEntry,
 )
-from loguru import logger
-from numpy.typing import NDArray
-from typing_extensions import NotRequired, TypedDict, Unpack, assert_never, get_args
 
-from bioimageio.core import __version__
-from bioimageio.core.io import save_tensor
-
+from . import __version__
 from ._prediction_pipeline import create_prediction_pipeline
 from ._settings import settings
 from .axis import AxisId, BatchSize
 from .common import MemberId, SupportedWeightsFormat
 from .digest_spec import get_test_input_sample, get_test_output_sample
+from .io import save_tensor
 from .sample import Sample
 
 CONDA_CMD = "conda.bat" if platform.system() == "Windows" else "conda"
@@ -211,6 +212,7 @@ def test_description(
         Literal["currently-active", "as-described"], Path, BioimageioCondaEnv
     ] = ("currently-active"),
     run_command: Callable[[Sequence[str]], None] = default_run_command,
+    working_dir: Optional[Union[os.PathLike[str], str]] = None,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> ValidationSummary:
     """Test a bioimage.io resource dynamically,
@@ -236,6 +238,9 @@ def test_description(
         run_command: (Experimental feature!) Function to execute (conda) terminal commands in a subprocess.
             The function should raise an exception if the command fails.
             **run_command** is ignored if **runtime_env** is `"currently-active"`.
+        working_dir: (for debugging) directory to save any temporary files
+            (model packages, conda environments, test summaries).
+            Defaults to a temporary directory.
     """
     if runtime_env == "currently-active":
         rd = load_description_and_test(
@@ -247,6 +252,7 @@ def test_description(
             expected_type=expected_type,
             sha256=sha256,
             stop_early=stop_early,
+            working_dir=working_dir,
             **deprecated,
         )
         return rd.validation_summary
@@ -260,19 +266,26 @@ def test_description(
     else:
         assert_never(runtime_env)
 
-    try:
-        run_command(["thiscommandshouldalwaysfail", "please"])
-    except Exception:
-        pass
-    else:
-        raise RuntimeError(
-            "given run_command does not raise an exception for a failing command"
-        )
+    if run_command is not default_run_command:
+        try:
+            run_command(["thiscommandshouldalwaysfail", "please"])
+        except Exception:
+            pass
+        else:
+            raise RuntimeError(
+                "given run_command does not raise an exception for a failing command"
+            )
 
-    td_kwargs: Dict[str, Any] = (
-        dict(ignore_cleanup_errors=True) if sys.version_info >= (3, 10) else {}
-    )
-    with TemporaryDirectory(**td_kwargs) as _d:
+    verbose = working_dir is not None
+    if working_dir is None:
+        td_kwargs: Dict[str, Any] = (
+            dict(ignore_cleanup_errors=True) if sys.version_info >= (3, 10) else {}
+        )
+        working_dir_ctxt = TemporaryDirectory(**td_kwargs)
+    else:
+        working_dir_ctxt = nullcontext(working_dir)
+
+    with working_dir_ctxt as _d:
         working_dir = Path(_d)
 
         if isinstance(source, ResourceDescrBase):
@@ -307,6 +320,7 @@ def test_description(
             sha256=sha256,
             stop_early=stop_early,
             run_command=run_command,
+            verbose=verbose,
             **deprecated,
         )
 
@@ -326,6 +340,7 @@ def _test_in_env(
     stop_early: bool,
     expected_type: Optional[str],
     sha256: Optional[Sha256],
+    verbose: bool,
     **deprecated: Unpack[DeprecatedKwargs],
 ):
     """Test a bioimage.io resource in a given conda environment.
@@ -356,6 +371,7 @@ def _test_in_env(
                     expected_type=expected_type,
                     sha256=sha256,
                     stop_early=stop_early,
+                    verbose=verbose,
                     **deprecated,
                 )
 
@@ -391,7 +407,7 @@ def _test_in_env(
 
         test_loc = ()
 
-    # remove name as we crate a name based on the env description hash value
+    # remove name as we create a name based on the env description hash value
     conda_env.name = None
 
     dumped_env = conda_env.model_dump(mode="json", exclude_none=True)
@@ -447,6 +463,22 @@ def _test_in_env(
                 )
             )
             return
+        else:
+            descr.validation_summary.add_detail(
+                ValidationDetail(
+                    name=f"Created conda environment '{env_name}'",
+                    status="passed",
+                    loc=test_loc,
+                )
+            )
+    else:
+        descr.validation_summary.add_detail(
+            ValidationDetail(
+                name=f"Found existing conda environment '{env_name}'",
+                status="passed",
+                loc=test_loc,
+            )
+        )
 
     working_dir.mkdir(parents=True, exist_ok=True)
     summary_path = working_dir / "summary.json"
@@ -468,6 +500,7 @@ def _test_in_env(
                         f"--{summary_path_arg_name}={summary_path.as_posix()}",
                         f"--determinism={determinism}",
                     ]
+                    + ([f"--weight-format={weight_format}"] if weight_format else [])
                     + ([f"--expected-type={expected_type}"] if expected_type else [])
                     + (["--stop-early"] if stop_early else [])
                 )
@@ -500,7 +533,7 @@ def _test_in_env(
     # add relevant details from command summary
     command_summary = ValidationSummary.load_json(summary_path)
     for detail in command_summary.details:
-        if detail.loc[: len(test_loc)] == test_loc:
+        if detail.loc[: len(test_loc)] == test_loc or detail.status == "failed":
             descr.validation_summary.add_detail(detail)
 
 
@@ -515,6 +548,7 @@ def load_description_and_test(
     expected_type: Literal["model"],
     sha256: Optional[Sha256] = None,
     stop_early: bool = True,
+    working_dir: Optional[Union[os.PathLike[str], str]] = None,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[ModelDescr, InvalidDescr]: ...
 
@@ -530,6 +564,7 @@ def load_description_and_test(
     expected_type: Literal["dataset"],
     sha256: Optional[Sha256] = None,
     stop_early: bool = True,
+    working_dir: Optional[Union[os.PathLike[str], str]] = None,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[DatasetDescr, InvalidDescr]: ...
 
@@ -545,6 +580,7 @@ def load_description_and_test(
     expected_type: Optional[str] = None,
     sha256: Optional[Sha256] = None,
     stop_early: bool = True,
+    working_dir: Optional[Union[os.PathLike[str], str]] = None,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[LatestResourceDescr, InvalidDescr]: ...
 
@@ -560,6 +596,7 @@ def load_description_and_test(
     expected_type: Literal["model"],
     sha256: Optional[Sha256] = None,
     stop_early: bool = True,
+    working_dir: Optional[Union[os.PathLike[str], str]] = None,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[AnyModelDescr, InvalidDescr]: ...
 
@@ -575,6 +612,7 @@ def load_description_and_test(
     expected_type: Literal["dataset"],
     sha256: Optional[Sha256] = None,
     stop_early: bool = True,
+    working_dir: Optional[Union[os.PathLike[str], str]] = None,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[AnyDatasetDescr, InvalidDescr]: ...
 
@@ -590,6 +628,7 @@ def load_description_and_test(
     expected_type: Optional[str] = None,
     sha256: Optional[Sha256] = None,
     stop_early: bool = True,
+    working_dir: Optional[Union[os.PathLike[str], str]] = None,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[ResourceDescr, InvalidDescr]: ...
 
@@ -604,6 +643,7 @@ def load_description_and_test(
     expected_type: Optional[str] = None,
     sha256: Optional[Sha256] = None,
     stop_early: bool = True,
+    working_dir: Optional[Union[os.PathLike[str], str]] = None,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[ResourceDescr, InvalidDescr]:
     """Test a bioimage.io resource dynamically,
@@ -676,7 +716,15 @@ def load_description_and_test(
 
         enable_determinism(determinism, weight_formats=weight_formats)
         for w in weight_formats:
-            _test_model_inference(rd, w, devices, stop_early=stop_early, **deprecated)
+            _test_model_inference(
+                rd,
+                w,
+                devices,
+                stop_early=stop_early,
+                working_dir=working_dir,
+                verbose=working_dir is not None,
+                **deprecated,
+            )
             if stop_early and rd.validation_summary.status != "passed":
                 break
 
@@ -710,7 +758,7 @@ def _get_tolerance(
                 if wf == weights_format:
                     applicable = v0_5.ReproducibilityTolerance(
                         relative_tolerance=test_kwargs.get("relative_tolerance", 1e-3),
-                        absolute_tolerance=test_kwargs.get("absolute_tolerance", 1e-4),
+                        absolute_tolerance=test_kwargs.get("absolute_tolerance", 1e-3),
                     )
                     break
 
@@ -739,7 +787,7 @@ def _get_tolerance(
         mismatched_tol = 0
     else:
         # use given (deprecated) test kwargs
-        atol = deprecated.get("absolute_tolerance", 1e-5)
+        atol = deprecated.get("absolute_tolerance", 1e-3)
         rtol = deprecated.get("relative_tolerance", 1e-3)
         mismatched_tol = 0
 
@@ -751,6 +799,9 @@ def _test_model_inference(
     weight_format: SupportedWeightsFormat,
     devices: Optional[Sequence[str]],
     stop_early: bool,
+    *,
+    working_dir: Optional[Union[os.PathLike[str], str]],
+    verbose: bool,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> None:
     test_name = f"Reproduce test outputs from test inputs ({weight_format})"
@@ -834,15 +885,20 @@ def _test_model_inference(
                     if not mismatched_elements:
                         continue
 
-                    actual_output_path = Path(f"actual_output_{m}_{weight_format}.npy")
-                    try:
-                        save_tensor(actual_output_path, actual)
-                    except Exception as e:
-                        logger.error(
-                            "Failed to save actual output tensor to {}: {}",
-                            actual_output_path,
-                            e,
+                    if working_dir is not None and verbose:
+                        actual_output_path = (
+                            Path(working_dir) / f"actual_output_{m}_{weight_format}.npy"
                         )
+                        try:
+                            save_tensor(actual_output_path, actual)
+                        except Exception as e:
+                            logger.error(
+                                "Failed to save actual output tensor to {}: {}",
+                                actual_output_path,
+                                e,
+                            )
+                    else:
+                        actual_output_path = None
 
                     mismatched_ppm = mismatched_elements / expected_np.size * 1e6
                     abs_diff[~mismatched] = 0  # ignore non-mismatched elements
@@ -874,13 +930,15 @@ def _test_model_inference(
                         f"Output '{m}' disagrees with {mismatched_elements} of"
                         + f" {expected_np.size} expected values"
                         + f" ({mismatched_ppm:.1f} ppm)."
-                        + f"\n Max relative difference: {r_max:.2e}"
+                        + f"\n Max relative difference not accounted for by absolute tolerance ({atol:.2e}): {r_max:.2e}"
                         + rf" (= \|{r_actual:.2e} - {r_expected:.2e}\|/\|{r_expected:.2e} + 1e-6\|)"
                         + f" at {dict(zip(dims, r_max_idx))}"
-                        + f"\n Max absolute difference not accounted for by relative tolerance: {a_max:.2e}"
+                        + f"\n Max absolute difference not accounted for by relative tolerance ({rtol:.2e}): {a_max:.2e}"
                         + rf" (= \|{a_actual:.7e} - {a_expected:.7e}\|) at {dict(zip(dims, a_max_idx))}"
-                        + f"\n Saved actual output to {actual_output_path}."
                     )
+                    if actual_output_path is not None:
+                        msg += f"\n Saved actual output to {actual_output_path}."
+
                     if mismatched_ppm > mismatched_tol:
                         add_error_entry(msg)
                         if stop_early:

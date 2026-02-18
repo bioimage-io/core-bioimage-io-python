@@ -19,10 +19,11 @@ from typing import (
 
 import numpy as np
 import xarray as xr
-from bioimageio.spec.model import v0_5
 from loguru import logger
 from numpy.typing import DTypeLike, NDArray
 from typing_extensions import Self, assert_never
+
+from bioimageio.spec.model import v0_5
 
 from ._magic_tensor_ops import MagicTensorOpsMixin
 from .axis import AxisId, AxisInfo, AxisLike, PerAxis
@@ -33,6 +34,7 @@ from .common import (
     PadWhere,
     PadWidth,
     PadWidthLike,
+    QuantileMethod,
     SliceInfo,
 )
 
@@ -177,11 +179,11 @@ class Tensor(MagicTensorOpsMixin):
 
         Args:
             array: the nd numpy array
-            axes: A description of the array's axes,
+            dims: A description of the array's axes,
                 if None axes are guessed (which might fail and raise a ValueError.)
 
         Raises:
-            ValueError: if `axes` is None and axes guessing fails.
+            ValueError: if `dims` is None and dims guessing fails.
         """
 
         if dims is None:
@@ -388,6 +390,7 @@ class Tensor(MagicTensorOpsMixin):
         self,
         q: Union[float, Sequence[float]],
         dim: Optional[Union[AxisId, Sequence[AxisId]]] = None,
+        method: QuantileMethod = "linear",
     ) -> Self:
         assert (
             isinstance(q, (float, int))
@@ -404,7 +407,9 @@ class Tensor(MagicTensorOpsMixin):
         assert dim is None or (
             (quantile_dim := AxisId("quantile")) != dim and quantile_dim not in set(dim)
         )
-        return self.__class__.from_xarray(self._data.quantile(q, dim=dim))
+        return self.__class__.from_xarray(
+            self._data.quantile(q, dim=dim, method=method)
+        )
 
     def resize_to(
         self,

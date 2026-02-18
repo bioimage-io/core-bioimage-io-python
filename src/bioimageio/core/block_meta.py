@@ -51,24 +51,25 @@ class BlockMeta:
     The inner slice (thin) is expanded by a halo in both dimensions on both sides.
     The outer slice reaches from the sample member origin (0, 0) to the right halo point.
 
-    ```terminal
+    ```
+    first block (at the sample origin)
     ┌ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─┐
     ╷ halo(left)                         ╷
-    ╷                                    ╷
+    ╷         padding outside the sample ╷
     ╷  (0, 0)┏━━━━━━━━━━━━━━━━━┯━━━━━━━━━┯━━━➔
     ╷        ┃                 │         ╷  sample member
-    ╷        ┃      inner      │         ╷
-    ╷        ┃   (and outer)   │  outer  ╷
-    ╷        ┃      slice      │  slice  ╷
+    ╷        ┃      inner      │  outer  ╷
+    ╷        ┃      region     │  region ╷
+    ╷        ┃      /slice     │  /slice ╷
     ╷        ┃                 │         ╷
     ╷        ┣─────────────────┘         ╷
-    ╷        ┃   outer slice             ╷
+    ╷        ┃   outer region/slice      ╷
     ╷        ┃               halo(right) ╷
     └ ─ ─ ─ ─┃─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─ ─┘
              ⬇
     ```
 
-    note:
+    Note:
     - Inner and outer slices are specified in sample member coordinates.
     - The outer_slice of a block at the sample edge may overlap by more than the
         halo with the neighboring block (the inner slices will not overlap though).
@@ -178,7 +179,7 @@ class BlockMeta:
         return self.shape
 
     @property
-    def inner_slice_wo_overlap(self):
+    def inner_slice_wo_overlap(self) -> PerAxis[SliceInfo]:
         """subslice of the inner slice, such that all `inner_slice_wo_overlap` can be
         stiched together trivially to form the original sample.
 

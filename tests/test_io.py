@@ -10,8 +10,6 @@ import pytest
     [
         "img.png",
         "img.tiff",
-        "img.h5",
-        "img.h5/img",
         "img.npy",
     ],
 )
@@ -25,7 +23,7 @@ import pytest
         (5, 3, 4),
     ],
 )
-def test_image_io(name: str, shape: Tuple[int, ...], tmp_path: Path):
+def test_tensor_io(name: str, shape: Tuple[int, ...], tmp_path: Path):
     from bioimageio.core import Tensor
     from bioimageio.core.io import load_tensor, save_tensor
 

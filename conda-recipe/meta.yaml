@@ -40,7 +40,7 @@ requirements:
       {% endif %}
     {% endfor %}
     {% for dep in pyproject['project']['optional-dependencies']['onnx'] %}
-    - {{ dep.lower() }}
+    - {{ dep.replace(';python_version<"3.10"', '').lower().replace('_', '-') }}
     {% endfor %}
     {% for dep in pyproject['project']['optional-dependencies']['tensorflow'] %}
     - {{ dep.lower() }}
@@ -55,7 +55,7 @@ test:
   requires:
     {% for dep in pyproject['project']['optional-dependencies']['dev'] %}
       {% if 'torch' not in dep %}  # can't install pytorch>=2.8 from conda-forge smh
-    - {{ dep.lower().replace('_', '-') }}
+      - {{ dep.replace(';python_version<"3.10"', '').lower().replace('_', '-') }}
       {% endif %}
     {% endfor %}
   commands:

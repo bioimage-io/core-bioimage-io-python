@@ -117,7 +117,7 @@ def test_predict_with_fixed_blocking(prep: Prep):
 
 
 def test_predict_save_output(prep: Prep, tmp_path: Path):
-    save_path = tmp_path / "{member_id}_{sample_id}.h5"
+    save_path = tmp_path / "{member_id}_{sample_id}.tiff"
     out = predict(
         model=prep.prediction_pipeline,
         inputs=prep.input_sample,

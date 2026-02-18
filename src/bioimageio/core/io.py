@@ -1,24 +1,21 @@
 import collections.abc
 import warnings
 import zipfile
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from shutil import copyfileobj
 from typing import (
     Any,
     Mapping,
     Optional,
     Sequence,
-    Tuple,
     TypeVar,
     Union,
 )
 
-import h5py  # pyright: ignore[reportMissingTypeStubs]
 from imageio.v3 import imread, imwrite  # type: ignore
 from loguru import logger
 from numpy.typing import NDArray
 from pydantic import BaseModel, ConfigDict, TypeAdapter
-from typing_extensions import assert_never
 
 from bioimageio.spec._internal.io import get_reader, interprete_file_source
 from bioimageio.spec._internal.type_guards import is_ndarray
@@ -32,16 +29,11 @@ from bioimageio.spec.common import (
 )
 from bioimageio.spec.utils import download, load_array, save_array
 
-from .axis import AxisLike
+from .axis import AxisId, AxisLike
 from .common import PerMember
 from .sample import Sample
 from .stat_measures import DatasetMeasure, MeasureValue
 from .tensor import Tensor
-
-DEFAULT_H5_DATASET_PATH = "data"
-
-
-SUFFIXES_WITH_DATAPATH = (".h5", ".hdf", ".hdf5")
 
 
 def load_image(
@@ -62,51 +54,14 @@ def load_image(
         parsed_source = interprete_file_source(source)
 
     if isinstance(parsed_source, RelativeFilePath):
-        src = parsed_source.absolute()
+        parsed_source = parsed_source.absolute()
+
+    if parsed_source.suffix == ".npy":
+        image = load_array(parsed_source)
     else:
-        src = parsed_source
-
-    if isinstance(src, Path):
-        file_source, suffix, subpath = _split_dataset_path(src)
-    elif isinstance(src, HttpUrl):
-        file_source, suffix, subpath = _split_dataset_path(src)
-    elif isinstance(src, ZipPath):
-        file_source, suffix, subpath = _split_dataset_path(src)
-    else:
-        assert_never(src)
-
-    if suffix == ".npy":
-        if subpath is not None:
-            logger.warning(
-                "Unexpected subpath {} for .npy source {}", subpath, file_source
-            )
-
-        image = load_array(file_source)
-    elif suffix in SUFFIXES_WITH_DATAPATH:
-        if subpath is None:
-            dataset_path = DEFAULT_H5_DATASET_PATH
-        else:
-            dataset_path = str(subpath)
-
-        reader = download(file_source)
-
-        with h5py.File(reader, "r") as f:
-            h5_dataset = f.get(  # pyright: ignore[reportUnknownVariableType]
-                dataset_path
-            )
-            if not isinstance(h5_dataset, h5py.Dataset):
-                raise ValueError(
-                    f"{file_source} did not load as {h5py.Dataset}, but has type "
-                    + str(
-                        type(h5_dataset)  # pyright: ignore[reportUnknownArgumentType]
-                    )
-                )
-            image: NDArray[Any]
-            image = h5_dataset[:]  # pyright: ignore[reportUnknownVariableType]
-    else:
-        reader = download(file_source)
+        reader = download(parsed_source)
         image = imread(  # pyright: ignore[reportUnknownVariableType]
-            reader.read(), extension=suffix
+            reader.read(), extension=parsed_source.suffix
         )
 
     assert is_ndarray(image)
@@ -127,62 +82,6 @@ _SourceT = TypeVar("_SourceT", Path, HttpUrl, ZipPath)
 Suffix = str
 
 
-def _split_dataset_path(
-    source: _SourceT,
-) -> Tuple[_SourceT, Suffix, Optional[PurePosixPath]]:
-    """Split off subpath (e.g. internal  h5 dataset path)
-    from a file path following a file extension.
-
-    Examples:
-        >>> _split_dataset_path(Path("my_file.h5/dataset"))
-        (...Path('my_file.h5'), '.h5', PurePosixPath('dataset'))
-
-        >>> _split_dataset_path(Path("my_plain_file"))
-        (...Path('my_plain_file'), '', None)
-
-    """
-    if isinstance(source, RelativeFilePath):
-        src = source.absolute()
-    else:
-        src = source
-
-    del source
-
-    def separate_pure_path(path: PurePosixPath):
-        for p in path.parents:
-            if p.suffix in SUFFIXES_WITH_DATAPATH:
-                return p, p.suffix, PurePosixPath(path.relative_to(p))
-
-        return path, path.suffix, None
-
-    if isinstance(src, HttpUrl):
-        file_path, suffix, data_path = separate_pure_path(PurePosixPath(src.path or ""))
-
-        if data_path is None:
-            return src, suffix, None
-
-        return (
-            HttpUrl(str(file_path).replace(f"/{data_path}", "")),
-            suffix,
-            data_path,
-        )
-
-    if isinstance(src, ZipPath):
-        file_path, suffix, data_path = separate_pure_path(PurePosixPath(str(src)))
-
-        if data_path is None:
-            return src, suffix, None
-
-        return (
-            ZipPath(str(file_path).replace(f"/{data_path}", "")),
-            suffix,
-            data_path,
-        )
-
-    file_path, suffix, data_path = separate_pure_path(PurePosixPath(src))
-    return Path(file_path), suffix, data_path
-
-
 def save_tensor(path: Union[Path, str], tensor: Tensor) -> None:
     # TODO: save axis meta data
 
@@ -190,32 +89,26 @@ def save_tensor(path: Union[Path, str], tensor: Tensor) -> None:
         tensor.data.to_numpy()
     )
     assert is_ndarray(data)
-    file_path, suffix, subpath = _split_dataset_path(Path(path))
-    if not suffix:
+    path = Path(path)
+    if not path.suffix:
         raise ValueError(f"No suffix (needed to decide file format) found in {path}")
 
-    file_path.parent.mkdir(exist_ok=True, parents=True)
-    if file_path.suffix == ".npy":
-        if subpath is not None:
-            raise ValueError(f"Unexpected subpath {subpath} found in .npy path {path}")
-        save_array(file_path, data)
-    elif suffix in (".h5", ".hdf", ".hdf5"):
-        if subpath is None:
-            dataset_path = DEFAULT_H5_DATASET_PATH
-        else:
-            dataset_path = str(subpath)
-
-        with h5py.File(file_path, "a") as f:
-            if dataset_path in f:
-                del f[dataset_path]
-
-            _ = f.create_dataset(dataset_path, data=data, chunks=True)
+    extension = path.suffix.lower()
+    path.parent.mkdir(exist_ok=True, parents=True)
+    if extension == ".npy":
+        save_array(path, data)
+    elif extension in (".h5", ".hdf", ".hdf5"):
+        raise NotImplementedError("Saving to h5 with dataset path is not implemented.")
     else:
-        # if singleton_axes := [a for a, s in tensor.tagged_shape.items() if s == 1]:
-        #     tensor = tensor[{a: 0 for a in singleton_axes}]
-        #     singleton_axes_msg = f"(without singleton axes {singleton_axes}) "
-        # else:
-        singleton_axes_msg = ""
+        if (
+            extension in (".tif", ".tiff")
+            and tensor.tagged_shape.get(ba := AxisId("batch")) == 1
+        ):
+            # remove singleton batch axis for saving
+            tensor = tensor[{ba: 0}]
+            singleton_axes_msg = f"(without singleton batch axes) "
+        else:
+            singleton_axes_msg = ""
 
         logger.debug(
             "writing tensor {} {}to {}",
@@ -223,7 +116,7 @@ def save_tensor(path: Union[Path, str], tensor: Tensor) -> None:
             singleton_axes_msg,
             path,
         )
-        imwrite(path, data)
+        imwrite(path, data, extension=extension)
 
 
 def save_sample(
@@ -309,19 +202,6 @@ def ensure_unzipped(
     return out_path
 
 
-def get_suffix(source: Union[ZipPath, FileSource]) -> str:
-    if isinstance(source, Path):
-        return source.suffix
-    elif isinstance(source, ZipPath):
-        return source.suffix
-    if isinstance(source, RelativeFilePath):
-        return source.path.suffix
-    elif isinstance(source, ZipPath):
-        return source.suffix
-    elif isinstance(source, HttpUrl):
-        if source.path is None:
-            return ""
-        else:
-            return PurePosixPath(source.path).suffix
-    else:
-        assert_never(source)
+def get_suffix(source: Union[ZipPath, FileSource]) -> Suffix:
+    """DEPRECATED: use source.suffix instead."""
+    return source.suffix

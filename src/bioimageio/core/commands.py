@@ -52,10 +52,11 @@ def test(
     ] = "currently-active",
     determinism: Literal["seed_only", "full"] = "seed_only",
     format_version: Union[FormatVersionPlaceholder, str] = "discover",
+    working_dir: Optional[Path] = None,
 ) -> int:
     """Test a bioimageio resource.
 
-    Arguments as described in `bioimageio.core.cli.TestCmd`
+    Arguments as described in [bioimageio.core.cli.TestCmd][]
     """
     if isinstance(descr, InvalidDescr):
         test_summary = descr.validation_summary
@@ -67,6 +68,7 @@ def test(
             devices=[devices] if isinstance(devices, str) else devices,
             runtime_env=runtime_env,
             determinism=determinism,
+            working_dir=working_dir,
         )
 
     _ = test_summary.log(summary)
@@ -102,7 +104,7 @@ def package(
     Args:
         descr: a bioimageio resource description
         path: output path
-        weight-format: include only this single weight-format (if not 'all').
+        weight_format: include only this single weight-format (if not 'all').
     """
     if isinstance(descr, InvalidDescr):
         logged = descr.validation_summary.save()

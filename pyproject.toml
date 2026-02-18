@@ -6,8 +6,7 @@ requires-python = ">=3.9"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [
-    "bioimageio.spec ==0.5.6.0",
-    "h5py",
+    "bioimageio.spec ==0.5.7.4",
     "imagecodecs",
     "imageio>=2.10",
     "loguru",
@@ -40,38 +39,57 @@ Documentation = "https://bioimage-io.github.io/core-bioimage-io-python/bioimagei
 Source = "https://github.com/bioimage-io/core-bioimage-io-python"
 
 [project.optional-dependencies]
-onnx = ["onnxruntime", "onnxscript"]
+onnx = [
+    "onnxruntime",
+    "onnxscript",
+    'onnx_ir!=0.1.14;python_version<"3.10"', # uses typing.Concatentate which requires py>=3.10
+]
 pytorch = ["torch>=1.6,<3", "torchvision>=0.21", "keras>=3.0,<4"]
-tensorflow = ["tensorflow", "keras>=2.15,<4"]
+tensorflow = ["tensorflow", "keras>=2.15,<4", "h5py"]
 partners = [
     # "biapy",          # pins core exactly
     "careamics",
     # "stardist",         # for model testing and stardist postprocessing  # TODO: add updated stardist to partners env
 ]
 dev = [
-    "cellpose",          # for model testing
+    "cellpose",                              # for model testing
     "crick",
     "httpx",
     "jupyter",
     "keras>=3.0,<4",
     "matplotlib",
-    "monai",             # for model testing
+    "monai",                                 # for model testing
     "numpy",
     "onnx",
     "onnxruntime",
     "onnxscript",
+    'onnx_ir!=0.1.14;python_version<"3.10"', # uses typing.Concatentate which requires py>=3.10
     "packaging>=17.0",
-    "pdoc",
     "pre-commit",
     "pyright==1.1.407",
     "pytest-cov",
     "pytest",
     "python-dotenv",
-    "segment-anything",  # for model testing
+    "segment-anything",                      # for model testing
     "tensorflow",
-    "timm",              # for model testing
+    "timm",                                  # for model testing
     "torch>=1.6,<3",
     "torchvision>=0.21",
+]
+docs = [
+    "griffe-pydantic",
+    "griffe-inherited-docstrings",
+    "griffe-public-redundant-aliases",
+    "markdown-callouts",
+    "markdown-exec[ansi]",
+    "markdown-pycon",
+    "mike",
+    "mkdocs-api-autonav",
+    "mkdocs-coverage",
+    "mkdocs-gen-files",
+    "mkdocs-literate-nav",
+    "mkdocs-material",
+    "mkdocs-section-index",
 ]
 
 [build-system]
@@ -86,12 +104,12 @@ version = { attr = "bioimageio.core.__version__" }
 
 [tool.pyright]
 exclude = [
+    "**/.*",
     "**/__pycache__",
     "**/node_modules",
     "dogfood",
     "presentations",
-    "scripts/pdoc/original.py",
-    "scripts/pdoc/patched.py",
+    "scripts/generate_api_doc_pages.py",
     "tests/old_*",
 ]
 include = ["src", "scripts", "tests"]
@@ -120,7 +138,7 @@ typeCheckingMode = "strict"
 useLibraryCodeForTypes = true
 
 [tool.pytest.ini_options]
-addopts = "--doctest-modules --failed-first --ignore dogfood --ignore src/bioimageio/core/backends --ignore src/bioimageio/core/weight_converters"
+addopts = "--doctest-modules --failed-first --ignore dogfood --ignore src/bioimageio/core/backends --ignore src/bioimageio/core/weight_converters --ignore scripts/generate_api_doc_pages.py"
 testpaths = ["src", "tests"]
 
 [tool.ruff]
@@ -135,5 +153,11 @@ exclude = [
 [tool.ruff.lint]
 select = ["NPY201"]
 
+[tool.ruff.lint.isort]
+known-first-party = ["bioimageio"]
+
 [tool.coverage.report]
 exclude_also = ["if TYPE_CHECKING:", "assert_never\\("]
+
+[tool.coverage.run]
+patch = ["subprocess"]
