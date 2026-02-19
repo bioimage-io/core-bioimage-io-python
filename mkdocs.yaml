@@ -181,3 +181,4 @@ extra:
       link: https://github.com/bioimage-io
   version:
     provider: mike
+    alias: true
