@@ -10,8 +10,9 @@ from keras.src.legacy.saving import (  # pyright: ignore[reportMissingTypeStubs]
 from loguru import logger
 from numpy.typing import NDArray
 
+from bioimageio.core.utils._compare import warn_about_version
+from bioimageio.spec._internal.version_type import Version
 from bioimageio.spec.model import v0_4, v0_5
-from bioimageio.spec.model.v0_5 import Version
 
 from .._settings import settings
 from ..digest_spec import get_axes_infos
@@ -44,27 +45,43 @@ class KerasModelAdapter(ModelAdapter):
         devices: Optional[Sequence[str]] = None,
     ) -> None:
         super().__init__(model_description=model_description)
-        if model_description.weights.keras_hdf5 is None:
-            raise ValueError("model has not keras_hdf5 weights specified")
-        model_tf_version = model_description.weights.keras_hdf5.tensorflow_version
 
-        if tf_version is None or model_tf_version is None:
-            logger.warning("Could not check tensorflow versions.")
-        elif model_tf_version > tf_version:
-            logger.warning(
-                "The model specifies a newer tensorflow version than installed: {} > {}.",
-                model_tf_version,
-                tf_version,
-            )
-        elif (model_tf_version.major, model_tf_version.minor) != (
-            tf_version.major,
-            tf_version.minor,
+        if (
+            not isinstance(model_description, v0_4.ModelDescr)
+            and model_description.weights.keras_v3 is not None
         ):
+            weight_reader = model_description.weights.keras_v3.get_reader()
+            backend, backend_version = model_description.weights.keras_v3.backend
+        elif model_description.weights.keras_hdf5 is not None:
+            backend = "legacy_tensorflow"
+            backend_version = model_description.weights.keras_hdf5.tensorflow_version
+            weight_reader = model_description.weights.keras_hdf5.get_reader()
+        else:
+            raise ValueError("model has no Keras weights")
+
+        if backend != "legacy_tensorflow" and backend != settings.keras_backend:
             logger.warning(
-                "Model tensorflow version {} does not match {}.",
-                model_tf_version,
-                tf_version,
+                "Model specifies Keras backend '{}', but environment variable KERAS_BACKEND is set to '{}'."
+                + " Attempting to load model with KERAS_BACKEND='{}' (this may fail if the model is not compatible with this backend).",
+                backend,
+                settings.keras_backend,
+                settings.keras_backend,
             )
+
+        if (backend == "legacy_tensorflow") or (
+            backend == settings.keras_backend == "tensorflow"
+        ):
+            warn_about_version("tensorflow", backend_version, tf_version)
+        elif backend == settings.keras_backend == "torch":
+            import torch
+
+            torch_version = Version(torch.__version__)
+            warn_about_version("torch", backend_version, torch_version)
+        elif backend == settings.keras_backend == "jax":
+            import jax
+
+            jax_version = Version(jax.__version__)
+            warn_about_version("jax", backend_version, jax_version)
 
         # TODO keras device management
         if devices is not None:
@@ -73,7 +90,6 @@ class KerasModelAdapter(ModelAdapter):
                 devices,
             )
 
-        weight_reader = model_description.weights.keras_hdf5.get_reader()
         if weight_reader.suffix in (".h5", "hdf5"):
             import h5py  # pyright: ignore[reportMissingTypeStubs]
 

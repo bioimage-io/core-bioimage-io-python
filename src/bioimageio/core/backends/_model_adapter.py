@@ -28,6 +28,7 @@ DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER: Tuple[SupportedWeightsFormat, ...] = (
     "tensorflow_saved_model_bundle",
     "torchscript",
     "onnx",
+    "keras_v3",
     "keras_hdf5",
 )
 
@@ -154,6 +155,19 @@ class ModelAdapter(ABC):
                         from .keras_backend import KerasModelAdapter
                     except Exception:
                         from .tensorflow_backend import KerasModelAdapter
+
+                    return KerasModelAdapter(
+                        model_description=model_description, devices=devices
+                    )
+                except Exception as e:
+                    errors.append(e)
+            elif wf == "keras_v3":
+                assert not isinstance(model_description, v0_4.ModelDescr), (
+                    "keras_v3 weights not supported for v0.4 specs"
+                )
+                assert weights.keras_v3 is not None
+                try:
+                    from .keras_backend import KerasModelAdapter
 
                     return KerasModelAdapter(
                         model_description=model_description, devices=devices

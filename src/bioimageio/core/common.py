@@ -19,6 +19,7 @@ from .axis import AxisId
 
 SupportedWeightsFormat = Literal[
     "keras_hdf5",
+    "keras_v3",
     "onnx",
     "pytorch_state_dict",
     "tensorflow_saved_model_bundle",
