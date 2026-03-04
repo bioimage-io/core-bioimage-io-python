@@ -1,5 +1,4 @@
 import collections.abc
-from abc import ABC, abstractmethod
 from dataclasses import InitVar, dataclass, field
 from functools import partial
 from typing import (
@@ -24,9 +23,8 @@ from bioimageio.spec.model.v0_5 import (
     _convert_proc,  # pyright: ignore [reportPrivateUsage]
 )
 
-from ._op_base import BlockedOperator, Operator
-from .axis import AxisId, PerAxis
-from .block import Block
+from ._op_base import BlockedOperator, Operator, SimpleOperator
+from .axis import AxisId
 from .common import DTypeStr, MemberId
 from .sample import Sample, SampleBlock, SampleBlockWithOrigin
 from .stat_calculators import StatsCalculator
@@ -63,49 +61,6 @@ def _convert_axis_ids(
 
     ret.extend([AxisId(a) for a in axes])
     return tuple(ret)
-
-
-@dataclass
-class _SimpleOperator(BlockedOperator, ABC):
-    input: MemberId
-    output: MemberId
-
-    @property
-    def required_measures(self) -> Collection[Measure]:
-        return set()
-
-    @abstractmethod
-    def get_output_shape(self, input_shape: PerAxis[int]) -> PerAxis[int]: ...
-
-    def __call__(self, sample: Union[Sample, SampleBlock]) -> None:
-        if self.input not in sample.members:
-            return
-
-        input_tensor = sample.members[self.input]
-        output_tensor = self._apply(input_tensor, sample.stat)
-
-        if self.output in sample.members:
-            assert (
-                sample.members[self.output].tagged_shape == output_tensor.tagged_shape
-            )
-
-        if isinstance(sample, Sample):
-            sample.members[self.output] = output_tensor
-        elif isinstance(sample, SampleBlock):
-            b = sample.blocks[self.input]
-            sample.blocks[self.output] = Block(
-                sample_shape=self.get_output_shape(sample.shape[self.input]),
-                data=output_tensor,
-                inner_slice=b.inner_slice,
-                halo=b.halo,
-                block_index=b.block_index,
-                blocks_in_sample=b.blocks_in_sample,
-            )
-        else:
-            assert_never(sample)
-
-    @abstractmethod
-    def _apply(self, x: Tensor, stat: Stat) -> Tensor: ...
 
 
 @dataclass
@@ -196,7 +151,7 @@ class UpdateStats(Operator):
 
 
 @dataclass
-class Binarize(_SimpleOperator):
+class Binarize(SimpleOperator):
     """'output = tensor > threshold'."""
 
     threshold: Union[float, Sequence[float]]
@@ -230,7 +185,7 @@ class Binarize(_SimpleOperator):
 
 
 @dataclass
-class Clip(_SimpleOperator):
+class Clip(SimpleOperator):
     min: Optional[Union[float, SampleQuantile, DatasetQuantile]] = None
     """minimum value for clipping"""
     max: Optional[Union[float, SampleQuantile, DatasetQuantile]] = None
@@ -354,7 +309,7 @@ class Clip(_SimpleOperator):
 
 
 @dataclass
-class EnsureDtype(_SimpleOperator):
+class EnsureDtype(SimpleOperator):
     dtype: DTypeStr
 
     @classmethod
@@ -374,7 +329,7 @@ class EnsureDtype(_SimpleOperator):
 
 
 @dataclass
-class ScaleLinear(_SimpleOperator):
+class ScaleLinear(SimpleOperator):
     gain: Union[float, xr.DataArray] = 1.0
     """multiplicative factor"""
 
@@ -430,7 +385,7 @@ class ScaleLinear(_SimpleOperator):
 
 
 @dataclass
-class ScaleMeanVariance(_SimpleOperator):
+class ScaleMeanVariance(SimpleOperator):
     axes: Optional[Sequence[AxisId]] = None
     reference_tensor: Optional[MemberId] = None
     eps: float = 1e-6
@@ -512,7 +467,7 @@ def _get_axes(
 
 
 @dataclass
-class ScaleRange(_SimpleOperator):
+class ScaleRange(SimpleOperator):
     lower_quantile: InitVar[Optional[Union[SampleQuantile, DatasetQuantile]]] = None
     upper_quantile: InitVar[Optional[Union[SampleQuantile, DatasetQuantile]]] = None
     lower: Union[SampleQuantile, DatasetQuantile] = field(init=False)
@@ -603,7 +558,7 @@ class ScaleRange(_SimpleOperator):
 
 
 @dataclass
-class Sigmoid(_SimpleOperator):
+class Sigmoid(SimpleOperator):
     """1 / (1 + e^(-input))."""
 
     def _apply(self, x: Tensor, stat: Stat) -> Tensor:
@@ -630,7 +585,7 @@ class Sigmoid(_SimpleOperator):
 
 
 @dataclass
-class Softmax(_SimpleOperator):
+class Softmax(SimpleOperator):
     """Softmax activation function."""
 
     axis: AxisId = AxisId("channel")
@@ -714,7 +669,7 @@ class ZeroMeanUnitVariance(_SimpleOperator):
 
 
 @dataclass
-class FixedZeroMeanUnitVariance(_SimpleOperator):
+class FixedZeroMeanUnitVariance(SimpleOperator):
     """normalize to zero mean, unit variance with precomputed values."""
 
     mean: Union[float, xr.DataArray]
