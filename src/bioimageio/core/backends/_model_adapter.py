@@ -18,7 +18,7 @@ from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 
 from ..common import SupportedWeightsFormat
 from ..digest_spec import get_axes_infos, get_member_ids
-from ..sample import Sample, SampleBlock, SampleBlockWithOrigin
+from ..sample import Sample, SampleBlock
 from ..tensor import Tensor
 
 # Known weight formats in order of priority
@@ -193,9 +193,7 @@ class ModelAdapter(ABC):
     def load(self, *, devices: Optional[Sequence[str]] = None) -> None:
         warnings.warn("Deprecated. ModelAdapter is loaded on initialization")
 
-    def forward(
-        self, input_sample: Union[Sample, SampleBlock, SampleBlockWithOrigin]
-    ) -> Sample:
+    def forward(self, input_sample: Union[Sample, SampleBlock]) -> Sample:
         """
         Run forward pass of model to get model predictions
 
