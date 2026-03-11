@@ -915,21 +915,8 @@ ProcDescr = Union[
     v0_5.PostprocessingDescr,
 ]
 
-Preprocessing = Union[
-    AddKnownDatasetStats,
-    Binarize,
-    Clip,
-    EnsureDtype,
-    FixedZeroMeanUnitVariance,
-    ScaleLinear,
-    ScaleMeanVariance,
-    ScaleRange,
-    Sigmoid,
-    Softmax,
-    UpdateStats,
-    ZeroMeanUnitVariance,
-]
-Postprocessing = Union[
+
+Processing = Union[
     AddKnownDatasetStats,
     Binarize,
     Clip,
@@ -945,7 +932,6 @@ Postprocessing = Union[
     UpdateStats,
     ZeroMeanUnitVariance,
 ]
-Processing = Union[Preprocessing, Postprocessing]
 
 
 def get_proc(
