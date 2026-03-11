@@ -6,7 +6,7 @@ requires-python = ">=3.9"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [
-    "bioimageio.spec ==0.5.7.4",
+    "bioimageio.spec ==0.5.7.5",
     "imagecodecs",
     "imageio>=2.10",
     "loguru",
@@ -51,6 +51,7 @@ partners = [
     "careamics",
     # "stardist",         # for model testing and stardist postprocessing  # TODO: add updated stardist to partners env
 ]
+stardist = ["stardist"]  # for stardist postprocessing
 dev = [
     "cellpose",                              # for model testing
     "crick",
@@ -136,6 +137,7 @@ reportUnusedVariable = "error"
 reportWildcardImportFromLibrary = "error"
 typeCheckingMode = "strict"
 useLibraryCodeForTypes = true
+extraPaths = ["../spec-bioimage-io/src"] # co-develop with bioimageio.spec
 
 [tool.pytest.ini_options]
 addopts = "--doctest-modules --failed-first --ignore dogfood --ignore src/bioimageio/core/backends --ignore src/bioimageio/core/weight_converters --ignore scripts/generate_api_doc_pages.py"
@@ -151,7 +153,7 @@ exclude = [
 ]
 
 [tool.ruff.lint]
-select = ["NPY201"]
+extend-select = ["NPY201"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["bioimageio"]
