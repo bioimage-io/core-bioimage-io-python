@@ -11,7 +11,7 @@ import sys
 from abc import ABC
 from argparse import RawTextHelpFormatter
 from difflib import SequenceMatcher
-from functools import cached_property
+from functools import cached_property, partial
 from io import StringIO
 from pathlib import Path
 from pprint import pformat, pprint
@@ -459,14 +459,21 @@ class PredictCmd(CmdBase, WithSource):
     - '{output_id}' (from model description)
     - '{sample_id}' (extracted from input paths)
 
-     
-    """
+     """
 
     overwrite: bool = False
     """allow overwriting existing output files"""
 
-    blockwise: bool = False
-    """process inputs blockwise"""
+    blockwise: Union[bool, int] = False
+    """Process inputs blockwise
+
+    - If an integer is given, it is used as the blocksize parameter 'n' for blockwise processing.
+    The blockize parameter determines the block size along axes with parameterized input size
+    by adding n*step_size to the minimum valid input size.
+    - If `True`, the blocksize parameter is set to 10.
+    - If `False`, inputs are processed as a whole without blocking.
+
+     """
 
     stats: Annotated[
         Path,
@@ -755,11 +762,14 @@ class PredictCmd(CmdBase, WithSource):
             model_descr,
             weight_format=None if self.weight_format == "any" else self.weight_format,
         )
-        predict_method = (
-            pp.predict_sample_with_blocking
-            if self.blockwise
-            else pp.predict_sample_without_blocking
-        )
+
+        if self.blockwise:
+            predict_method = partial(
+                pp.predict_sample_with_blocking,
+                ns=None if isinstance(self.blockwise, bool) else self.blockwise,
+            )
+        else:
+            predict_method = pp.predict_sample_without_blocking
 
         for sample_in, sp_out in tqdm(
             zip(input_dataset(dict(stat)), sample_paths_out),
