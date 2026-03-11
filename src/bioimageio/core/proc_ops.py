@@ -614,8 +614,188 @@ class Softmax(SimpleOperator):
         return v0_5.SoftmaxDescr(kwargs=v0_5.SoftmaxKwargs(axis=self.axis))
 
 
+NdTuple = TypeVar("NdTuple", Tuple[int, int], Tuple[int, int, int])
+
+
 @dataclass
-class ZeroMeanUnitVariance(_SimpleOperator):
+class _StardistPostprocessingBase(SamplewiseOperator, Generic[NdTuple], ABC):
+    raw_input_id: MemberId  # to determine image shape
+    prob_dist_input_id: MemberId
+    instance_labels_output_id: MemberId
+
+    grid: NdTuple
+    prob_threshold: float
+    nms_threshold: float
+
+    # TODO: consider adding these niche parameters
+    # b: int
+    # """border region in which object probability is set to zero"""
+    # use_bbox: bool
+    # """`use_bbox` parameter for NMS"""
+    # use_kdtree: bool
+    # """`use_kdtree` parameter for NMS"""
+
+    @property
+    def required_measures(self) -> Collection[Measure]:
+        return set()
+
+    def __call__(self, sample: Sample) -> None:
+        tagged_img_shape = sample.members[self.raw_input_id].tagged_shape
+
+        prob_dist = sample.members[self.prob_dist_input_id]
+
+        assert AxisId("channel") in prob_dist.dims, (
+            "expected 'channel' axis in stardist probability/distance input"
+        )
+        allowed_spatial = tuple(
+            map(AxisId, ("y", "x") if len(self.grid) == 2 else ("z", "y", "x"))
+        )
+        assert all(
+            a in allowed_spatial or a in (AxisId("batch"), AxisId("channel"))
+            for a in prob_dist.dims
+        ), (
+            f"expected prob_dist to have only 'batch', 'channel', and spatial axes {allowed_spatial}, but got {prob_dist.dims}"
+        )
+
+        spatial_shape = tuple(tagged_img_shape[a] for a in allowed_spatial)
+        if len(spatial_shape) == len(self.grid):
+            raise ValueError(
+                f"expected {len(self.grid)} spatial dimensions in raw input, but got {len(spatial_shape)}"
+            )
+        else:
+            spatial_shape = cast(NdTuple, spatial_shape)
+
+        prob_dist = prob_dist.transpose(
+            (AxisId("batch"), *allowed_spatial, AxisId("channel"))
+        )
+        labels: List[NDArray[Any]] = []
+        for batch_idx in range(prob_dist.sizes[AxisId("batch")]):
+            prob = prob_dist[
+                {AxisId("batch"): batch_idx, AxisId("channel"): 0}
+            ].to_numpy()
+            dist = prob_dist[
+                {AxisId("batch"): batch_idx, AxisId("channel"): slice(1, None)}
+            ].to_numpy()
+
+            labels_i = self._impl(prob, dist, spatial_shape)
+            assert labels_i.shape == spatial_shape, (
+                f"expected label image shape {spatial_shape}, but got {labels_i.shape}"
+            )
+            labels.append(labels_i)
+
+        instance_labels = Tensor(
+            np.stack(labels)[..., None],
+            dims=(AxisId("batch"), *allowed_spatial, AxisId("channel")),
+        )
+        sample.members[self.instance_labels_output_id] = instance_labels
+
+    @abstractmethod
+    def _impl(
+        self, prob: NDArray[Any], dist: NDArray[Any], spatial_shape: NdTuple
+    ) -> NDArray[np.int32]:
+        raise NotImplementedError
+
+
+class StardistPostprocessing2D(_StardistPostprocessingBase[Tuple[int, int]]):
+    def _impl(
+        self, prob: NDArray[Any], dist: NDArray[Any], spatial_shape: Tuple[int, int]
+    ) -> NDArray[np.int32]:
+        from stardist import non_maximum_suppression, polygons_to_label
+
+        points, probi, disti = non_maximum_suppression(
+            dist,
+            prob,
+            grid=self.grid,
+            prob_thresh=self.prob_threshold,
+            nms_thresh=self.nms_threshold,
+        )
+
+        return polygons_to_label(disti, points, prob=probi, shape=spatial_shape)
+
+    @classmethod
+    def from_proc_descr(
+        cls, descr: v0_5.StardistPostprocessingDescr, member_id: MemberId
+    ) -> Self:
+        if not isinstance(descr.kwargs, v0_5.StardistPostprocessingKwargs2D):
+            raise TypeError(
+                f"expected v0_5.StardistPostprocessingKwargs2D for 2D stardist post-processing, but got {type(descr.kwargs)}"
+            )
+
+        kwargs = descr.kwargs
+        return cls(
+            raw_input_id=member_id,
+            prob_dist_input_id=member_id,
+            instance_labels_output_id=member_id,
+            grid=kwargs.grid,
+            prob_threshold=kwargs.prob_threshold,
+            nms_threshold=kwargs.nms_threshold,
+        )
+
+
+class StardistPostprocessing3D(_StardistPostprocessingBase[Tuple[int, int, int]]):
+    n_rays: int
+    anisotropy: Tuple[float, float, float]
+
+    def _impl(
+        self,
+        prob: NDArray[Any],
+        dist: NDArray[Any],
+        spatial_shape: Tuple[int, int, int],
+    ) -> NDArray[np.int32]:
+        from stardist import (
+            Rays_GoldenSpiral,
+            non_maximum_suppression_3d,
+            polyhedron_to_label,
+        )
+        from stardist.matching import relabel_sequential
+
+        rays = Rays_GoldenSpiral(self.n_rays, anisotropy=self.anisotropy)
+
+        points, probi, disti = non_maximum_suppression_3d(
+            dist,
+            prob,
+            rays,
+            grid=self.grid,
+            prob_thresh=self.prob_threshold,
+            nms_thresh=self.nms_threshold,
+        )
+
+        labels = polyhedron_to_label(
+            disti,
+            points,
+            rays=rays,
+            prob=probi,
+            shape=spatial_shape,
+        )
+
+        labels, _, _ = relabel_sequential(labels)
+        assert isinstance(labels, np.ndarray) and labels.dtype == np.int32
+        return labels
+
+    @classmethod
+    def from_proc_descr(
+        cls, descr: v0_5.StardistPostprocessingDescr, member_id: MemberId
+    ) -> Self:
+        if not isinstance(descr.kwargs, v0_5.StardistPostprocessingKwargs3D):
+            raise TypeError(
+                f"expected v0_5.StardistPostprocessingKwargs3D for 3D stardist post-processing, but got {type(descr.kwargs)}"
+            )
+
+        kwargs = descr.kwargs
+        return cls(
+            raw_input_id=member_id,
+            prob_dist_input_id=member_id,
+            instance_labels_output_id=member_id,
+            grid=kwargs.grid,
+            prob_threshold=kwargs.prob_threshold,
+            nms_threshold=kwargs.nms_threshold,
+            n_rays=kwargs.n_rays,
+            anisotropy=kwargs.anisotropy,
+        )
+
+
+@dataclass
+class ZeroMeanUnitVariance(SimpleOperator):
     """normalize to zero mean, unit variance."""
 
     mean: MeanMeasure
@@ -818,5 +998,14 @@ def get_proc(
         return ZeroMeanUnitVariance.from_proc_descr(proc_descr, member_id)
     elif isinstance(proc_descr, v0_5.SoftmaxDescr):
         return Softmax.from_proc_descr(proc_descr, member_id)
+    elif isinstance(proc_descr, v0_5.StardistPostprocessingDescr):
+        if isinstance(proc_descr.kwargs, v0_5.StardistPostprocessingKwargs2D):
+            return StardistPostprocessing2D.from_proc_descr(proc_descr, member_id)
+        elif isinstance(proc_descr.kwargs, v0_5.StardistPostprocessingKwargs3D):
+            return StardistPostprocessing3D.from_proc_descr(proc_descr, member_id)
+        else:
+            raise ValueError(
+                f"expected ndim 2 or 3 for stardist postprocessing, but got {proc_descr.kwargs.ndim}"
+            )
     else:
         assert_never(proc_descr)
