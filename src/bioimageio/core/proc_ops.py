@@ -1,8 +1,12 @@
 import collections.abc
+from abc import ABC, abstractmethod
 from dataclasses import InitVar, dataclass, field
 from functools import partial
 from typing import (
+    Any,
     Collection,
+    Generic,
+    List,
     Literal,
     Mapping,
     Optional,
@@ -13,20 +17,21 @@ from typing import (
 )
 
 import numpy as np
-import scipy  # pyright: ignore[reportMissingTypeStubs]
+import scipy
 import xarray as xr
-from typing_extensions import Self, assert_never
+from numpy.typing import NDArray
+from typing_extensions import Self, TypeVar, assert_never, cast
 
 from bioimageio.core.digest_spec import get_member_id
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import (
-    _convert_proc,  # pyright: ignore [reportPrivateUsage]
+    _convert_proc,  # pyright: ignore[reportPrivateUsage]
 )
 
-from ._op_base import BlockedOperator, Operator, SimpleOperator
+from ._op_base import BlockwiseOperator, SamplewiseOperator, SimpleOperator
 from .axis import AxisId
 from .common import DTypeStr, MemberId
-from .sample import Sample, SampleBlock, SampleBlockWithOrigin
+from .sample import Sample, SampleBlock
 from .stat_calculators import StatsCalculator
 from .stat_measures import (
     DatasetMean,
@@ -64,11 +69,11 @@ def _convert_axis_ids(
 
 
 @dataclass
-class AddKnownDatasetStats(BlockedOperator):
+class AddKnownDatasetStats(BlockwiseOperator):
     dataset_stats: Mapping[DatasetMeasure, MeasureValue]
 
     @property
-    def required_measures(self) -> Set[Measure]:
+    def required_measures(self) -> Collection[Measure]:
         return set()
 
     def __call__(self, sample: Union[Sample, SampleBlock]) -> None:
@@ -94,7 +99,7 @@ class AddKnownDatasetStats(BlockedOperator):
 #     _stats_calculator: StatsCalculator = field(init=False)
 
 #     @property
-#     def required_measures(self) -> Set[Measure]:
+#     def required_measures(self) -> Collection[Measure]:
 #         return set()
 
 #     def __post_init__(self):
@@ -112,7 +117,7 @@ class AddKnownDatasetStats(BlockedOperator):
 
 
 @dataclass
-class UpdateStats(Operator):
+class UpdateStats(SamplewiseOperator):
     """Calculates sample and/or dataset measures"""
 
     stats_calculator: StatsCalculator
@@ -125,7 +130,7 @@ class UpdateStats(Operator):
     _keep_updating_dataset_stats: bool = field(init=False)
 
     @property
-    def required_measures(self) -> Set[Measure]:
+    def required_measures(self) -> Collection[Measure]:
         return set()
 
     def __post_init__(self):
@@ -134,20 +139,11 @@ class UpdateStats(Operator):
             or not self.stats_calculator.has_dataset_measures
         )
 
-    def __call__(self, sample: Union[Sample, SampleBlockWithOrigin]) -> None:
-        if isinstance(sample, SampleBlockWithOrigin):
-            # update stats with whole sample on first block
-            if sample.block_index != 0:
-                return
-
-            origin = sample.origin
-        else:
-            origin = sample
-
+    def __call__(self, sample: Sample) -> None:
         if self._keep_updating_dataset_stats:
-            sample.stat.update(self.stats_calculator.update_and_get_all(origin))
+            sample.stat.update(self.stats_calculator.update_and_get_all(sample))
         else:
-            sample.stat.update(self.stats_calculator.skip_update_and_get_all(origin))
+            sample.stat.update(self.stats_calculator.skip_update_and_get_all(sample))
 
 
 @dataclass
@@ -326,6 +322,10 @@ class EnsureDtype(SimpleOperator):
 
     def _apply(self, x: Tensor, stat: Stat) -> Tensor:
         return x.astype(self.dtype)
+
+    @property
+    def required_measures(self) -> Collection[Measure]:
+        return set()
 
 
 @dataclass
@@ -735,7 +735,7 @@ ProcDescr = Union[
     v0_5.PostprocessingDescr,
 ]
 
-Processing = Union[
+Preprocessing = Union[
     AddKnownDatasetStats,
     Binarize,
     Clip,
@@ -749,6 +749,23 @@ Processing = Union[
     UpdateStats,
     ZeroMeanUnitVariance,
 ]
+Postprocessing = Union[
+    AddKnownDatasetStats,
+    Binarize,
+    Clip,
+    EnsureDtype,
+    FixedZeroMeanUnitVariance,
+    ScaleLinear,
+    ScaleMeanVariance,
+    ScaleRange,
+    Sigmoid,
+    StardistPostprocessing2D,
+    StardistPostprocessing3D,
+    Softmax,
+    UpdateStats,
+    ZeroMeanUnitVariance,
+]
+Processing = Union[Preprocessing, Postprocessing]
 
 
 def get_proc(

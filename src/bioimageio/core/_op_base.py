@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Collection, Union
+from typing import Collection, Generic, Union
 
-from typing_extensions import assert_never
+from typing_extensions import TypeVar, assert_never
 
 from .axis import PerAxis
 from .block import Block
@@ -14,11 +14,15 @@ from .stat_measures import (
 )
 from .tensor import Tensor
 
+SampleT = TypeVar("SampleT", bound=Union[Sample, SampleBlock, SampleBlockWithOrigin])
+
 
 @dataclass
-class Operator(ABC):
+class Operator(Generic[SampleT], ABC):
+    """Base class for all operators."""
+
     @abstractmethod
-    def __call__(self, sample: Union[Sample, SampleBlockWithOrigin]) -> None: ...
+    def __call__(self, sample: SampleT) -> None: ...
 
     @property
     @abstractmethod
@@ -26,25 +30,21 @@ class Operator(ABC):
 
 
 @dataclass
-class BlockedOperator(Operator, ABC):
-    @abstractmethod
-    def __call__(
-        self, sample: Union[Sample, SampleBlock, SampleBlockWithOrigin]
-    ) -> None: ...
-
-    @property
-    @abstractmethod
-    def required_measures(self) -> Collection[Measure]: ...
+class SamplewiseOperator(Operator[Sample]):
+    """Base class for operators that can only be applied to whole samples."""
 
 
 @dataclass
-class SimpleOperator(BlockedOperator, ABC):
+class BlockwiseOperator(Operator[Union[Sample, SampleBlock]]):
+    """Base class for operators that can be applied to whole sample or blockwise."""
+
+
+@dataclass
+class SimpleOperator(BlockwiseOperator):
+    """Convenience base class for blockwise operators with a single input and single output."""
+
     input: MemberId
     output: MemberId
-
-    @property
-    def required_measures(self) -> Collection[Measure]:
-        return set()
 
     @abstractmethod
     def get_output_shape(self, input_shape: PerAxis[int]) -> PerAxis[int]: ...

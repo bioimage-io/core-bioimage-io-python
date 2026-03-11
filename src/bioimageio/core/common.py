@@ -113,7 +113,7 @@ class PadWidth(_LeftRight):
 
 
 PadWidthLike = _LeftRightLike[PadWidth]
-PadMode = Literal["edge", "reflect", "symmetric"]
+PadMode = Literal["constant", "edge", "reflect", "symmetric"]
 PadWhere = _Where
 
 

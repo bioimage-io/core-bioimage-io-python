@@ -17,7 +17,7 @@ from tqdm import tqdm
 
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 
-from ._op_base import BlockedOperator
+from ._op_base import BlockwiseOperator
 from .axis import AxisId, PerAxis
 from .common import (
     BlocksizeParameter,
@@ -34,7 +34,7 @@ from .digest_spec import (
 )
 from .model_adapters import ModelAdapter, create_model_adapter
 from .model_adapters import get_weight_formats as get_weight_formats
-from .proc_ops import Processing
+from .proc_ops import Postprocessing, Preprocessing
 from .proc_setup import setup_pre_and_postprocessing
 from .sample import Sample, SampleBlock, SampleBlockWithOrigin
 from .stat_measures import DatasetMeasure, MeasureValue, Stat
@@ -59,8 +59,8 @@ class PredictionPipeline:
         *,
         name: str,
         model_description: AnyModelDescr,
-        preprocessing: List[Processing],
-        postprocessing: List[Processing],
+        preprocessing: List[Preprocessing],
+        postprocessing: List[Postprocessing],
         model_adapter: ModelAdapter,
         default_ns: Optional[BlocksizeParameter] = None,
         default_blocksize_parameter: BlocksizeParameter = 10,
@@ -281,24 +281,27 @@ class PredictionPipeline:
     #     else:
     #         assert_never(inputs)
 
-    def apply_preprocessing(self, sample: Union[Sample, SampleBlockWithOrigin]) -> None:
-        """apply preprocessing in-place, also updates sample stats"""
+    def apply_preprocessing(self, sample: Union[Sample, SampleBlock]) -> None:
+        """apply preprocessing in-place, also may updates sample stats"""
         for op in self._preprocessing:
             op(sample)
 
-    def apply_postprocessing(
-        self, sample: Union[Sample, SampleBlock, SampleBlockWithOrigin]
-    ) -> None:
-        """apply postprocessing in-place, also updates samples stats"""
-        for op in self._postprocessing:
-            if isinstance(sample, (Sample, SampleBlockWithOrigin)):
-                op(sample)
-            elif not isinstance(op, BlockedOperator):
+    def apply_postprocessing(self, sample: Union[Sample, SampleBlock]) -> None:
+        """apply postprocessing in-place, also may updates samples stats"""
+        if isinstance(sample, SampleBlock):
+            not_blockwise = [
+                op
+                for op in self._postprocessing
+                if not isinstance(op, BlockwiseOperator)
+            ]
+            if not_blockwise:
                 raise NotImplementedError(
-                    "block wise update of output statistics not yet implemented"
+                    f"Blockwise posprocessing for {[op.__class__.__name__ for op in not_blockwise]} not implemented."
                 )
-            else:
-                op(sample)
+
+        for op in self._postprocessing:
+            assert isinstance(op, BlockwiseOperator)
+            op(sample)
 
     def load(self):
         """
