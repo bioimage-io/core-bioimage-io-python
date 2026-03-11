@@ -31,6 +31,7 @@ from typing import (
     Union,
 )
 
+import numpy as np
 import rich.markdown
 from loguru import logger
 from pydantic import (
@@ -481,8 +482,8 @@ class PredictCmd(CmdBase, WithSource):
         PlainSerializer(lambda p: p.as_posix(), return_type=str),
     ] = Path("dataset_statistics.json")
     """path to dataset statistics
-    (will be written if it does not exist,
-    but the model requires statistical dataset measures)
+    (will be written if it does not exist
+    and the model requires statistical dataset measures)
      """
 
     preview: bool = False
@@ -604,6 +605,10 @@ class PredictCmd(CmdBase, WithSource):
         )
 
     def cli_cmd(self):
+        for out_sample, out_path in self._yield_predictions(self.blockwise):
+            save_sample(out_path, out_sample)
+
+    def _yield_predictions(self, blockwise: Union[bool, int]):
         if self.example:
             return self._example()
 
@@ -701,7 +706,7 @@ class PredictCmd(CmdBase, WithSource):
             if len(set(all_output_paths)) < len(all_output_paths):
                 raise ValueError(
                     "Output paths are not distinct across samples. "
-                    + f"Make sure to include '{{sample_id}}' in the output path pattern."
+                    + "Make sure to include '{{sample_id}}' in the output path pattern."
                 )
 
             return outputs
@@ -763,10 +768,10 @@ class PredictCmd(CmdBase, WithSource):
             weight_format=None if self.weight_format == "any" else self.weight_format,
         )
 
-        if self.blockwise:
+        if blockwise:
             predict_method = partial(
                 pp.predict_sample_with_blocking,
-                ns=None if isinstance(self.blockwise, bool) else self.blockwise,
+                ns=None if isinstance(blockwise, bool) else blockwise,
             )
         else:
             predict_method = pp.predict_sample_without_blocking
@@ -777,8 +782,58 @@ class PredictCmd(CmdBase, WithSource):
             desc=f"predict with {self.descr_id}",
             unit="sample",
         ):
-            sample_out = predict_method(sample_in)
-            save_sample(sp_out, sample_out)
+            yield (predict_method(sample_in), sp_out)
+
+
+class PredictBlockArtifactsCmd(PredictCmd):
+    """Command to inspect block artifacts by subtracting the combined, blockwise predictions from a whole sample prediction.
+
+    Note:
+        - This command intentionally uses a small blocksize (default: 1) to create block artifacts for testing purposes.
+        - Typical sources of block artifacts include:
+            - Described halo is smaller than the model's receptive field
+            - Normalization layers inside the network cannot aggregate statistics over the whole sample.
+    """
+
+    blockwise: Union[Literal[True], int] = 1
+    """Process inputs blockwise
+
+    - If an integer is given, it is used as the blocksize parameter 'n' for blockwise processing.
+    The blockize parameter determines the block size along axes with parameterized input size
+    by adding n*step_size to the minimum valid input size.
+    - If `True`, the blocksize parameter is set to 10.
+
+    Defaults to a small blocksize to intentionally create block artifacts for testing purposes.
+     """
+
+    def cli_cmd(self):
+        for (out_sample, out_path), (out_sample_blockwise, _) in zip(
+            self._yield_predictions(False), self._yield_predictions(self.blockwise)
+        ):
+            diff_sample = self._subtract_samples(out_sample, out_sample_blockwise)
+            for k, v_a in out_sample.stat.items():
+                v_b = out_sample_blockwise.stat.get(k)
+                if v_b is None:
+                    logger.error(
+                        "measure '{}' not found in blockwise prediction statistics", k
+                    )
+                elif not np.not_equal(v_a, v_b):
+                    logger.error(
+                        "measure '{}' has different values (whole sample!=blockwise):  {}!={}",
+                        k,
+                        v_a,
+                        v_b,
+                    )
+
+            save_sample(out_path, diff_sample)
+
+    @staticmethod
+    def _subtract_samples(a: Sample, b: Sample) -> Sample:
+        return Sample(
+            members={t: a.members[t] - b.members[t] for t in a.members},
+            id=a.id,
+            stat=a.stat,
+        )
 
 
 class AddWeightsCmd(CmdBase, WithSource, WithSummaryLogging):
@@ -845,16 +900,21 @@ class Bioimageio(
     )
 
     validate_format: CliSubCommand[ValidateFormatCmd] = Field(alias="validate-format")
-    "Check a resource's metadata format"
+    """Check a resource's metadata format"""
 
     test: CliSubCommand[TestCmd]
-    "Test a bioimageio resource (beyond meta data formatting)"
+    """Test a bioimageio resource (beyond meta data formatting)"""
 
     package: CliSubCommand[PackageCmd]
-    "Package a resource"
+    """Package a resource"""
 
     predict: CliSubCommand[PredictCmd]
-    "Predict with a model resource"
+    """Predict with a model resource"""
+
+    predict_block_artifacts: CliSubCommand[PredictBlockArtifactsCmd] = Field(
+        alias="predict-block-artifacts"
+    )
+    """Save the difference between predicting blowise and whole sample to check for block artifacts."""
 
     update_format: CliSubCommand[UpdateFormatCmd] = Field(alias="update-format")
     """Update the metadata format"""

@@ -251,7 +251,7 @@ class PredictionPipeline:
         )
         for b in tqdm(
             input_blocks,
-            desc=f"predict {sample.id or ''} with {self.model_description.id or self.model_description.name}",
+            desc=f"predict sample {sample.id or ''} with {self.model_description.id or self.model_description.name}",
             unit="block",
             unit_divisor=1,
             total=n_blocks,
