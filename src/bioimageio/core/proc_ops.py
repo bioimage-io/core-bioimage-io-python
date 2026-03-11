@@ -696,6 +696,7 @@ class _StardistPostprocessingBase(SamplewiseOperator, Generic[NdTuple], ABC):
         raise NotImplementedError
 
 
+@dataclass
 class StardistPostprocessing2D(_StardistPostprocessingBase[Tuple[int, int]]):
     def _impl(
         self, prob: NDArray[Any], dist: NDArray[Any], spatial_shape: Tuple[int, int]
@@ -732,6 +733,7 @@ class StardistPostprocessing2D(_StardistPostprocessingBase[Tuple[int, int]]):
         )
 
 
+@dataclass
 class StardistPostprocessing3D(_StardistPostprocessingBase[Tuple[int, int, int]]):
     n_rays: int
     anisotropy: Tuple[float, float, float]
