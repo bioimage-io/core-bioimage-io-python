@@ -658,7 +658,7 @@ class _StardistPostprocessingBase(SamplewiseOperator, Generic[NdTuple], ABC):
         )
 
         spatial_shape = tuple(tagged_img_shape[a] for a in allowed_spatial)
-        if len(spatial_shape) == len(self.grid):
+        if len(spatial_shape) != len(self.grid):
             raise ValueError(
                 f"expected {len(self.grid)} spatial dimensions in raw input, but got {len(spatial_shape)}"
             )
