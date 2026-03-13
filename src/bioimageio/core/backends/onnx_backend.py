@@ -6,9 +6,10 @@ from pathlib import Path
 from typing import Any, List, Optional, Sequence, Union
 
 import onnxruntime as rt  # pyright: ignore[reportMissingTypeStubs]
-from bioimageio.spec.model import v0_4, v0_5
 from loguru import logger
 from numpy.typing import NDArray
+
+from bioimageio.spec.model import v0_4, v0_5
 
 from ..model_adapters import ModelAdapter
 from ..utils._type_guards import is_list, is_tuple
@@ -46,6 +47,7 @@ class ONNXModelAdapter(ModelAdapter):
                     "Loading ONNX model with external data from {}",
                     src.parent,
                 )
+                assert src.exists()
                 self._session = rt.InferenceSession(
                     src,
                     providers=providers,  # pyright: ignore[reportUnknownArgumentType]
@@ -65,6 +67,7 @@ class ONNXModelAdapter(ModelAdapter):
                     with src_data.open("wb") as f:
                         shutil.copyfileobj(src_data_reader, f)
 
+                    assert src.exists()
                     self._session = rt.InferenceSession(
                         src,
                         providers=providers,  # pyright: ignore[reportUnknownArgumentType]

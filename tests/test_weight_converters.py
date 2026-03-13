@@ -4,6 +4,7 @@ import zipfile
 from pathlib import Path
 
 import pytest
+
 from bioimageio.spec import load_model_description
 from bioimageio.spec.model import v0_5
 
@@ -71,6 +72,7 @@ def test_torchscript_to_onnx(unet2d_nuclei_broad_model, tmp_path):
     assert isinstance(ret_val, v0_5.OnnxWeightsDescr)
     assert ret_val.opset_version == opset_version
     assert ret_val.source == out_path
+    assert ret_val.external_data.source.exists()
 
     model_descr.weights.onnx = ret_val
     summary = test_model(model_descr, weight_format="onnx")

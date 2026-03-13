@@ -106,7 +106,7 @@ def save_tensor(path: Union[Path, str], tensor: Tensor) -> None:
         ):
             # remove singleton batch axis for saving
             tensor = tensor[{ba: 0}]
-            singleton_axes_msg = f"(without singleton batch axes) "
+            singleton_axes_msg = "(without singleton batch axes) "
         else:
             singleton_axes_msg = ""
 

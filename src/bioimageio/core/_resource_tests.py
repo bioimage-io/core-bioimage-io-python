@@ -56,6 +56,7 @@ from bioimageio.spec._internal.types import (
     RelativeTolerance,
 )
 from bioimageio.spec._internal.validation_context import get_validation_context
+from bioimageio.spec._internal.warning_levels import INFO, WARNING, WarningSeverity
 from bioimageio.spec.common import BioimageioYamlContent, PermissiveFileSource, Sha256
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import WeightsFormat
@@ -434,7 +435,7 @@ def _test_in_env(
 
     try:
         run_command([CONDA_CMD, "run", "-n", env_name, "python", "--version"])
-    except Exception as e:
+    except Exception:
         working_dir.mkdir(parents=True, exist_ok=True)
         path = working_dir / "env.yaml"
         try:
@@ -827,12 +828,13 @@ def _test_model_inference(
             )
         )
 
-    def add_warning_entry(msg: str):
+    def add_warning_entry(msg: str, severity: WarningSeverity):
         warning_entries.append(
             WarningEntry(
                 loc=("weights", weight_format),
                 msg=msg,
                 type="bioimageio.core",
+                severity=severity,
             )
         )
 
@@ -890,8 +892,6 @@ def _test_model_inference(
                     abs_diff = abs(actual_np - expected_np)
                     mismatched = abs_diff > atol + rtol_value
                     mismatched_elements = mismatched.sum().item()
-                    if not mismatched_elements:
-                        continue
 
                     if working_dir is not None and verbose:
                         actual_output_path = (
@@ -929,16 +929,22 @@ def _test_model_inference(
                     a_actual = actual_np[a_max_idx].item()
                     a_expected = expected_np[a_max_idx].item()
                 except Exception as e:
-                    msg = f"Output '{m}' disagrees with expected values."
+                    msg = f"Error while checking if '{m}' disagrees with expected values: {e}"
                     add_error_entry(msg)
                     if stop_early:
                         break
                 else:
-                    msg = (
-                        f"Output '{m}' disagrees with {mismatched_elements} of"
-                        + f" {expected_np.size} expected values"
-                        + f" ({mismatched_ppm:.1f} ppm)."
-                        + f"\n Max relative difference not accounted for by absolute tolerance ({atol:.2e}): {r_max:.2e}"
+                    if mismatched_elements:
+                        msg = (
+                            f"Output '{m}': {mismatched_elements} of "
+                            + f"{expected_np.size} elements disagree with expected values."
+                            + f" ({mismatched_ppm:.1f} ppm)."
+                        )
+                    else:
+                        msg = f"Output `{m}`: all elements agree with expected values."
+
+                    msg += (
+                        f"\n Max relative difference not accounted for by absolute tolerance ({atol:.2e}): {r_max:.2e}"
                         + rf" (= \|{r_actual:.2e} - {r_expected:.2e}\|/\|{r_expected:.2e} + 1e-6\|)"
                         + f" at {dict(zip(dims, r_max_idx))}"
                         + f"\n Max absolute difference not accounted for by relative tolerance ({rtol:.2e}): {a_max:.2e}"
@@ -952,7 +958,9 @@ def _test_model_inference(
                         if stop_early:
                             break
                     else:
-                        add_warning_entry(msg)
+                        add_warning_entry(
+                            msg, severity=WARNING if mismatched_elements else INFO
+                        )
 
     except Exception as e:
         if get_validation_context().raise_errors:
