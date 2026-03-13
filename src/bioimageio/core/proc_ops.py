@@ -156,6 +156,10 @@ class Binarize(SimpleOperator):
     def _apply(self, x: Tensor, stat: Stat) -> Tensor:
         return x > self.threshold
 
+    @property
+    def required_measures(self) -> Collection[Measure]:
+        return set()
+
     def get_output_shape(
         self, input_shape: Mapping[AxisId, int]
     ) -> Mapping[AxisId, int]:
@@ -338,6 +342,10 @@ class ScaleLinear(SimpleOperator):
 
     def _apply(self, x: Tensor, stat: Stat) -> Tensor:
         return x * self.gain + self.offset
+
+    @property
+    def required_measures(self) -> Collection[Measure]:
+        return set()
 
     def get_output_shape(
         self, input_shape: Mapping[AxisId, int]
@@ -598,7 +606,7 @@ class Softmax(SimpleOperator):
 
     @property
     def required_measures(self) -> Collection[Measure]:
-        return {}
+        return set()
 
     def get_output_shape(
         self, input_shape: Mapping[AxisId, int]
@@ -876,6 +884,10 @@ class FixedZeroMeanUnitVariance(SimpleOperator):
             or isinstance(self.std, (int, float))
             or self.mean.dims == self.std.dims
         )
+
+    @property
+    def required_measures(self) -> Collection[Measure]:
+        return set()
 
     def get_output_shape(
         self, input_shape: Mapping[AxisId, int]
