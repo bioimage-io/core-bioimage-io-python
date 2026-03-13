@@ -624,16 +624,16 @@ class _StardistPostprocessingBase(SamplewiseOperator, Generic[NdTuple], ABC):
     instance_labels_output_id: MemberId
 
     grid: NdTuple
-    prob_threshold: float
-    nms_threshold: float
+    """Grid size of network predictions."""
 
-    # TODO: consider adding these niche parameters
-    # b: int
-    # """border region in which object probability is set to zero"""
-    # use_bbox: bool
-    # """`use_bbox` parameter for NMS"""
-    # use_kdtree: bool
-    # """`use_kdtree` parameter for NMS"""
+    prob_threshold: float
+    """Object probability threshold for non-maximum suppression."""
+
+    nms_threshold: float
+    """The IoU threshold for non-maximum suppression."""
+
+    b: int
+    """Border region in which object probability is set to zero."""
 
     @property
     def required_measures(self) -> Collection[Measure]:
@@ -709,6 +709,7 @@ class StardistPostprocessing2D(_StardistPostprocessingBase[Tuple[int, int]]):
             grid=self.grid,
             prob_thresh=self.prob_threshold,
             nms_thresh=self.nms_threshold,
+            b=self.b,
         )
 
         return polygons_to_label(disti, points, prob=probi, shape=spatial_shape)
@@ -730,13 +731,20 @@ class StardistPostprocessing2D(_StardistPostprocessingBase[Tuple[int, int]]):
             grid=kwargs.grid,
             prob_threshold=kwargs.prob_threshold,
             nms_threshold=kwargs.nms_threshold,
+            b=kwargs.b,
         )
 
 
 @dataclass
 class StardistPostprocessing3D(_StardistPostprocessingBase[Tuple[int, int, int]]):
     n_rays: int
+    """Number of rays for 3D star-convex polyhedra."""
+
     anisotropy: Tuple[float, float, float]
+    """Anisotropy factors for 3D star-convex polyhedra, i.e. the physical pixel size along each spatial axis."""
+
+    overlap_label: Optional[int] = None
+    """Optional label to apply to any area of overlapping predicted objects."""
 
     def _impl(
         self,
@@ -768,6 +776,7 @@ class StardistPostprocessing3D(_StardistPostprocessingBase[Tuple[int, int, int]]
             rays=rays,
             prob=probi,
             shape=spatial_shape,
+            overlap_label=self.overlap_label,
         )
 
         labels, _, _ = relabel_sequential(labels)
@@ -793,6 +802,8 @@ class StardistPostprocessing3D(_StardistPostprocessingBase[Tuple[int, int, int]]
             nms_threshold=kwargs.nms_threshold,
             n_rays=kwargs.n_rays,
             anisotropy=kwargs.anisotropy,
+            b=kwargs.b,
+            overlap_label=kwargs.overlap_label,
         )
 
 

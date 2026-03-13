@@ -387,12 +387,20 @@ def _test_in_env(
             wf = descr.weights.onnx
         elif weight_format == "tensorflow_saved_model_bundle":
             wf = descr.weights.tensorflow_saved_model_bundle
+        elif weight_format == "keras_v3":
+            if isinstance(descr, v0_4.ModelDescr):
+                raise ValueError(
+                    "Weight format 'keras_v3' is not supported in v0.4 model descriptions. use format version >= 0.5"
+                )
+
+            wf = descr.weights.keras_v3
         elif weight_format == "tensorflow_js":
             raise RuntimeError(
                 "testing 'tensorflow_js' is not supported by bioimageio.core"
             )
         else:
             assert_never(weight_format)
+
         assert wf is not None
         if conda_env is None:
             conda_env = get_conda_env(entry=wf)
