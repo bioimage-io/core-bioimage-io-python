@@ -103,6 +103,9 @@ where = ["src/"]
 [tool.setuptools.dynamic]
 version = { attr = "bioimageio.core.__version__" }
 
+[tool.pylance]
+languageServerMode = "light"
+
 [tool.pyright]
 exclude = [
     "**/.*",
