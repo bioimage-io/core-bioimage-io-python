@@ -125,7 +125,7 @@ plugins:
               - griffe_inherited_docstrings
               - griffe_public_redundant_aliases
   - mike:
-      alias_type: symlink
+      alias_type: redirect
       canonical_version: latest
       version_selector: true
   - literate-nav:
