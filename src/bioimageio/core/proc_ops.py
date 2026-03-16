@@ -627,7 +627,6 @@ NdTuple = TypeVar("NdTuple", Tuple[int, int], Tuple[int, int, int])
 
 @dataclass
 class _StardistPostprocessingBase(SamplewiseOperator, Generic[NdTuple], ABC):
-    raw_input_id: MemberId  # to determine image shape
     prob_dist_input_id: MemberId
     instance_labels_output_id: MemberId
 
@@ -648,8 +647,6 @@ class _StardistPostprocessingBase(SamplewiseOperator, Generic[NdTuple], ABC):
         return set()
 
     def __call__(self, sample: Sample) -> None:
-        tagged_img_shape = sample.members[self.raw_input_id].tagged_shape
-
         prob_dist = sample.members[self.prob_dist_input_id]
 
         assert AxisId("channel") in prob_dist.dims, (
@@ -665,10 +662,12 @@ class _StardistPostprocessingBase(SamplewiseOperator, Generic[NdTuple], ABC):
             f"expected prob_dist to have only 'batch', 'channel', and spatial axes {allowed_spatial}, but got {prob_dist.dims}"
         )
 
-        spatial_shape = tuple(tagged_img_shape[a] for a in allowed_spatial)
+        spatial_shape = tuple(
+            prob_dist.tagged_shape[a] * g for a, g in zip(allowed_spatial, self.grid)
+        )
         if len(spatial_shape) != len(self.grid):
             raise ValueError(
-                f"expected {len(self.grid)} spatial dimensions in raw input, but got {len(spatial_shape)}"
+                f"expected {len(self.grid)} spatial dimensions in prob_dist tensor, but got {len(spatial_shape)}"
             )
         else:
             spatial_shape = cast(NdTuple, spatial_shape)
@@ -733,7 +732,6 @@ class StardistPostprocessing2D(_StardistPostprocessingBase[Tuple[int, int]]):
 
         kwargs = descr.kwargs
         return cls(
-            raw_input_id=member_id,
             prob_dist_input_id=member_id,
             instance_labels_output_id=member_id,
             grid=kwargs.grid,
@@ -802,7 +800,6 @@ class StardistPostprocessing3D(_StardistPostprocessingBase[Tuple[int, int, int]]
 
         kwargs = descr.kwargs
         return cls(
-            raw_input_id=member_id,
             prob_dist_input_id=member_id,
             instance_labels_output_id=member_id,
             grid=kwargs.grid,
