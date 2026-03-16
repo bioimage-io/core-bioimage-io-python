@@ -97,7 +97,9 @@ class ModelAdapter(ABC):
         )
         # limit weight formats to the ones present
         weight_format_priority_order_present: Sequence[SupportedWeightsFormat] = [
-            w for w in weight_format_priority_order if getattr(weights, w) is not None
+            w
+            for w in weight_format_priority_order
+            if getattr(weights, w, None) is not None
         ]
         if not weight_format_priority_order_present:
             raise ValueError(
@@ -162,7 +164,7 @@ class ModelAdapter(ABC):
                 except Exception as e:
                     errors.append(e)
             elif wf == "keras_v3":
-                assert not isinstance(model_description, v0_4.ModelDescr), (
+                assert not isinstance(weights, v0_4.WeightsDescr), (
                     "keras_v3 weights not supported for v0.4 specs"
                 )
                 assert weights.keras_v3 is not None
