@@ -719,7 +719,7 @@ class StardistPostprocessing2D(_StardistPostprocessingBase[Tuple[int, int]]):
             b=self.b,
         )
 
-        return polygons_to_label(disti, points, prob=probi, shape=spatial_shape)
+        return polygons_to_label(disti, points, prob=probi, shape=spatial_shape)  # pyright: ignore[reportUnknownVariableType]
 
     @classmethod
     def from_proc_descr(
