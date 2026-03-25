@@ -362,7 +362,7 @@ def create_prediction_pipeline(
     ),
     model_adapter: Optional[ModelAdapter] = None,
     ns: Optional[BlocksizeParameter] = None,
-    default_blocksize_parameter: BlocksizeParameter = 10,
+    default_blocksize_parameter: BlocksizeParameter = 10,  # TODO: default to None and find smart blocksize params per axis to reduce overlap of blocks with large halo
     **deprecated_kwargs: Any,
 ) -> PredictionPipeline:
     """
