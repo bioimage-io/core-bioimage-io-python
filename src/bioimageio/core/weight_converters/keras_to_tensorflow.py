@@ -6,7 +6,7 @@ from tempfile import TemporaryDirectory
 from typing import Any, Union, no_type_check
 from zipfile import ZipFile
 
-import tensorflow  # pyright: ignore[reportMissingTypeStubs]
+import tensorflow
 
 from bioimageio.spec._internal.version_type import Version
 from bioimageio.spec.common import ZipPath
@@ -59,7 +59,7 @@ def convert(
     Returns:
         A descriptor object containing information about the converted TensorFlow SavedModel bundle.
     """
-    tf_major_ver = int(tensorflow.__version__.split(".")[0])
+    tf_major_ver = int(tensorflow.__version__.split(".")[0])  # pyright: ignore[reportUnknownArgumentType]
 
     if output_path.suffix != ".zip":
         output_path = output_path.with_suffix("")
@@ -125,7 +125,7 @@ def _convert_tf2(
     return TensorflowSavedModelBundleWeightsDescr(
         source=output_path.absolute(),
         parent="keras_hdf5",
-        tensorflow_version=Version(tensorflow.__version__),
+        tensorflow_version=Version(tensorflow.__version__),  # pyright: ignore[reportUnknownArgumentType]
         comment=f"Converted with bioimageio.core {__version__}.",
     )
 
@@ -168,7 +168,7 @@ def _convert_tf1(
     return TensorflowSavedModelBundleWeightsDescr(
         source=output_path.absolute(),
         parent="keras_hdf5",
-        tensorflow_version=Version(tensorflow.__version__),
+        tensorflow_version=Version(tensorflow.__version__),  # pyright: ignore[reportUnknownArgumentType]
         comment=f"Converted with bioimageio.core {__version__}.",
     )
 

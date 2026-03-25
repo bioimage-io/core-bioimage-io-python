@@ -148,7 +148,7 @@ def enable_determinism(
         try:
             os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
             try:
-                import tensorflow as tf  # pyright: ignore[reportMissingTypeStubs]
+                import tensorflow as tf
             except ImportError:
                 pass
             else:

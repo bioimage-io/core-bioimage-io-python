@@ -4,12 +4,12 @@ import subprocess
 from itertools import chain
 from typing import Dict, List
 
-from bioimageio.spec import __version__ as bioimageio_spec_version
 from dotenv import load_dotenv
 from loguru import logger
 from pytest import FixtureRequest, fixture
 
 from bioimageio.core import enable_determinism
+from bioimageio.spec import __version__ as bioimageio_spec_version
 
 logger.enable("bioimageio")
 
@@ -34,9 +34,9 @@ except ImportError:
 skip_onnx = onnxruntime is None
 
 try:
-    import tensorflow  # type: ignore
+    import tensorflow
 
-    tf_major_version = int(tensorflow.__version__.split(".")[0])
+    tf_major_version = int(tensorflow.__version__.split(".")[0])  # pyright: ignore[reportUnknownArgumentType]
 except ImportError:
     tensorflow = None
     tf_major_version = None

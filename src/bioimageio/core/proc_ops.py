@@ -722,7 +722,7 @@ class StardistPostprocessing2D(_StardistPostprocessingBase[Tuple[int, int]]):
             b=self.b,
         )
 
-        return polygons_to_label(disti, points, prob=probi, shape=spatial_shape)  # pyright: ignore[reportUnknownVariableType]
+        return polygons_to_label(disti, points, prob=probi, shape=spatial_shape)
 
     @classmethod
     def from_proc_descr(
@@ -762,7 +762,7 @@ class StardistPostprocessing3D(_StardistPostprocessingBase[Tuple[int, int, int]]
         spatial_shape: Tuple[int, int, int],
     ) -> NDArray[np.int32]:
         from stardist import (
-            Rays_GoldenSpiral,  # pyright: ignore[reportUnknownVariableType]
+            Rays_GoldenSpiral,
             non_maximum_suppression_3d,  # pyright: ignore[reportUnknownVariableType]
             polyhedron_to_label,  # pyright: ignore[reportUnknownVariableType]
         )
@@ -770,7 +770,7 @@ class StardistPostprocessing3D(_StardistPostprocessingBase[Tuple[int, int, int]]
             relabel_sequential,  # pyright: ignore[reportUnknownVariableType]
         )
 
-        rays = Rays_GoldenSpiral(self.n_rays, anisotropy=self.anisotropy)  # pyright: ignore[reportUnknownVariableType]
+        rays = Rays_GoldenSpiral(self.n_rays, anisotropy=self.anisotropy)
 
         points, probi, disti = non_maximum_suppression_3d(  # pyright: ignore[reportUnknownVariableType]
             dist,
@@ -790,9 +790,9 @@ class StardistPostprocessing3D(_StardistPostprocessingBase[Tuple[int, int, int]]
             overlap_label=self.overlap_label,
         )
 
-        labels, _, _ = relabel_sequential(labels)  # pyright: ignore[reportUnknownVariableType]
+        labels, _, _ = relabel_sequential(labels)
         assert isinstance(labels, np.ndarray) and labels.dtype == np.int32
-        return labels  # pyright: ignore[reportUnknownVariableType]
+        return labels
 
     @classmethod
     def from_proc_descr(
