@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -893,16 +893,16 @@
 <p><code>bioimageio.core</code> installs a command line interface (CLI) for testing models and other functionality.
 You can list all the available commands via:</p>
 <div class="language-ansi highlight"><pre><span></span><code>bioimageio --help
-usage: bioimageio [-h] {validate-format,test,package,predict,update-format,update-hashes,add-weights,empty-cache} ...
+usage: bioimageio [-h] {validate-format,test,package,predict,predict-block-artifacts,update-format,update-hashes,add-weights,empty-cache} ...
 
 bioimageio - CLI for bioimage.io resources 🦒
 
 library versions:
   bioimageio.core 0.9.6
-  bioimageio.spec 0.5.7.4
+  bioimageio.spec 0.5.8.0
 
 spec format versions:
-        model RDF 0.5.7
+        model RDF 0.5.8
       dataset RDF 0.3.0
      notebook RDF 0.3.0
 
@@ -910,11 +910,19 @@ options:
   -h, --help            show this help message and exit
 
 subcommands:
-  {validate-format,test,package,predict,update-format,update-hashes,add-weights,empty-cache}
+  {validate-format,test,package,predict,predict-block-artifacts,update-format,update-hashes,add-weights,empty-cache}
     validate-format     Validate the meta data format of a bioimageio resource.
     test                Test a bioimageio resource (beyond meta data formatting).
     package             Save a resource&#39;s metadata with its associated files.
     predict             Run inference on your data with a bioimage.io model.
+    predict-block-artifacts
+                        Command to inspect block artifacts by subtracting the combined, blockwise predictions from a whole sample prediction.
+
+                            Note:
+                                - This command intentionally uses a small blocksize (default: 1) to create block artifacts for testing purposes.
+                                - Typical sources of block artifacts include:
+                                    - Described halo is smaller than the model&#39;s receptive field
+                                    - Normalization layers inside the network cannot aggregate statistics over the whole sample.
     update-format       Update the metadata format to the latest format version.
     update-hashes       Create a bioimageio.yaml description with updated file hashes.
     add-weights         Add additional weights to a model description by converting from available formats.
@@ -1045,7 +1053,7 @@ subcommands:
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.expand", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.prune", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.expand", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.prune", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
     
     
       <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
