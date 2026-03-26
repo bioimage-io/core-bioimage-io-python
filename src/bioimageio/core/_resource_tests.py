@@ -179,6 +179,7 @@ def test_model(
     determinism: Literal["seed_only", "full"] = "seed_only",
     sha256: Optional[Sha256] = None,
     stop_early: bool = True,
+    working_dir: Optional[Union[os.PathLike[str], str]] = None,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> ValidationSummary:
     """Test model inference"""
@@ -190,6 +191,7 @@ def test_model(
         expected_type="model",
         sha256=sha256,
         stop_early=stop_early,
+        working_dir=working_dir,
         **deprecated,
     )
 
