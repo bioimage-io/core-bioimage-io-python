@@ -623,10 +623,15 @@ class Softmax(SimpleOperator):
 
 
 NdTuple = TypeVar("NdTuple", Tuple[int, int], Tuple[int, int, int])
+NdBorder = TypeVar(
+    "NdBorder",
+    Tuple[Tuple[int, int], Tuple[int, int]],
+    Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int]],
+)
 
 
 @dataclass
-class _StardistPostprocessingBase(SamplewiseOperator, Generic[NdTuple], ABC):
+class _StardistPostprocessingBase(SamplewiseOperator, Generic[NdTuple, NdBorder], ABC):
     prob_dist_input_id: MemberId
     instance_labels_output_id: MemberId
 
@@ -639,7 +644,7 @@ class _StardistPostprocessingBase(SamplewiseOperator, Generic[NdTuple], ABC):
     nms_threshold: float
     """The IoU threshold for non-maximum suppression."""
 
-    b: int
+    b: Union[int, NdBorder]
     """Border region in which object probability is set to zero."""
 
     @property
@@ -704,7 +709,11 @@ class _StardistPostprocessingBase(SamplewiseOperator, Generic[NdTuple], ABC):
 
 
 @dataclass
-class StardistPostprocessing2D(_StardistPostprocessingBase[Tuple[int, int]]):
+class StardistPostprocessing2D(
+    _StardistPostprocessingBase[
+        Tuple[int, int], Tuple[Tuple[int, int], Tuple[int, int]]
+    ]
+):
     def _impl(
         self, prob: NDArray[Any], dist: NDArray[Any], spatial_shape: Tuple[int, int]
     ) -> NDArray[np.int32]:
@@ -745,7 +754,11 @@ class StardistPostprocessing2D(_StardistPostprocessingBase[Tuple[int, int]]):
 
 
 @dataclass
-class StardistPostprocessing3D(_StardistPostprocessingBase[Tuple[int, int, int]]):
+class StardistPostprocessing3D(
+    _StardistPostprocessingBase[
+        Tuple[int, int, int], Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int]]
+    ]
+):
     n_rays: int
     """Number of rays for 3D star-convex polyhedra."""
 
@@ -779,6 +792,7 @@ class StardistPostprocessing3D(_StardistPostprocessingBase[Tuple[int, int, int]]
             grid=self.grid,
             prob_thresh=self.prob_threshold,
             nms_thresh=self.nms_threshold,
+            b=self.b,
         )
 
         labels = polyhedron_to_label(  # pyright: ignore[reportUnknownVariableType]
