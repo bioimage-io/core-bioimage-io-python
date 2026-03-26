@@ -896,19 +896,24 @@ def _test_model_inference(
                     mismatched_elements = mismatched.sum().item()
 
                     if working_dir is not None and verbose:
-                        actual_output_path = (
-                            Path(working_dir) / f"actual_output_{m}_{weight_format}.npy"
-                        )
-                        try:
-                            save_tensor(actual_output_path, actual)
-                        except Exception as e:
-                            logger.error(
-                                "Failed to save actual output tensor to {}: {}",
-                                actual_output_path,
-                                e,
-                            )
+                        actual_output_paths: Optional[List[Path]] = []
+                        for p in [
+                            Path(working_dir)
+                            / f"actual_output_{m}_{weight_format}{suffix}"
+                            for suffix in (".npy", ".tiff")
+                        ]:
+                            try:
+                                save_tensor(p, actual)
+                            except Exception as e:
+                                logger.error(
+                                    "Failed to save actual output tensor to {}: {}",
+                                    p,
+                                    e,
+                                )
+                            else:
+                                actual_output_paths.append(p)
                     else:
-                        actual_output_path = None
+                        actual_output_paths = None
 
                     mismatched_ppm = mismatched_elements / expected_np.size * 1e6
                     abs_diff[~mismatched] = 0  # ignore non-mismatched elements
@@ -952,8 +957,8 @@ def _test_model_inference(
                         + f"\n Max absolute difference not accounted for by relative tolerance ({rtol:.2e}): {a_max:.2e}"
                         + rf" (= \|{a_actual:.7e} - {a_expected:.7e}\|) at {dict(zip(dims, a_max_idx))}"
                     )
-                    if actual_output_path is not None:
-                        msg += f"\n Saved actual output to {actual_output_path}."
+                    if actual_output_paths is not None:
+                        msg += f"\n Saved actual output to {actual_output_paths}."
 
                     if mismatched_ppm > mismatched_tol:
                         add_error_entry(msg)
