@@ -728,7 +728,7 @@ class StardistPostprocessing2D(
             grid=self.grid,
             prob_thresh=self.prob_threshold,
             nms_thresh=self.nms_threshold,
-            b=self.b,
+            b=self.b,  # pyright: ignore[reportArgumentType]
         )
 
         return polygons_to_label(disti, points, prob=probi, shape=spatial_shape)
@@ -792,7 +792,7 @@ class StardistPostprocessing3D(
             grid=self.grid,
             prob_thresh=self.prob_threshold,
             nms_thresh=self.nms_threshold,
-            b=self.b,
+            b=self.b,  # pyright: ignore[reportArgumentType]
         )
 
         labels = polyhedron_to_label(  # pyright: ignore[reportUnknownVariableType]
