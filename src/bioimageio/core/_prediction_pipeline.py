@@ -4,6 +4,7 @@ from typing import (
     Any,
     Iterable,
     List,
+    Literal,
     Mapping,
     Optional,
     Sequence,
@@ -17,7 +18,7 @@ from tqdm import tqdm
 
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 
-from ._op_base import BlockedOperator
+from ._op_base import BlockwiseOperator
 from .axis import AxisId, PerAxis
 from .common import (
     BlocksizeParameter,
@@ -34,9 +35,8 @@ from .digest_spec import (
 )
 from .model_adapters import ModelAdapter, create_model_adapter
 from .model_adapters import get_weight_formats as get_weight_formats
-from .proc_ops import Processing
-from .proc_setup import setup_pre_and_postprocessing
-from .sample import Sample, SampleBlock, SampleBlockWithOrigin
+from .proc_setup import Processing, setup_pre_and_postprocessing
+from .sample import Sample, SampleBlock
 from .stat_measures import DatasetMeasure, MeasureValue, Stat
 from .tensor import Tensor
 
@@ -119,9 +119,49 @@ class PredictionPipeline:
         self.unload()
         return False
 
+    @property
+    def has_blockwise_preprocessing(self) -> bool:
+        """`True` if all preprocessing operators in the pipeline are blockwise."""
+        return all(isinstance(op, BlockwiseOperator) for op in self._preprocessing)
+
+    @property
+    def has_blockwise_postprocessing(self) -> bool:
+        """`True` if all postprocessing operators in the pipeline are blockwise."""
+        return all(isinstance(op, BlockwiseOperator) for op in self._postprocessing)
+
+    def _raise_for_non_blockwise_processing(
+        self, proc_type: Literal["preprocessing", "postprocessing"]
+    ):
+        ops = (
+            self._preprocessing
+            if proc_type == "preprocessing"
+            else self._postprocessing
+        )
+        non_blockwise = [
+            op.__class__.__name__ for op in ops if not isinstance(op, BlockwiseOperator)
+        ]
+        if non_blockwise:
+            raise NotImplementedError(
+                f"Blockwise {proc_type} for non-blockwise operators {non_blockwise} not implemented."
+            )
+
+    def raise_for_non_blockwise_preprocessing(self):
+        """
+        Raises:
+            NotImplementedError: if there are any non-blockwise preprocessing operators in the pipeline
+        """
+        self._raise_for_non_blockwise_processing("preprocessing")
+
+    def raise_for_non_blockwise_postprocessing(self):
+        """
+        Raises:
+            NotImplementedError: if there are any non-blockwise postprocessing operators in the pipeline
+        """
+        self._raise_for_non_blockwise_processing("postprocessing")
+
     def predict_sample_block(
         self,
-        sample_block: SampleBlockWithOrigin,
+        sample_block: SampleBlock,
         skip_preprocessing: bool = False,
         skip_postprocessing: bool = False,
     ) -> SampleBlock:
@@ -131,6 +171,12 @@ class PredictionPipeline:
             )
         else:
             assert self._block_transform is not None
+
+        if not skip_preprocessing:
+            self.raise_for_non_blockwise_preprocessing()
+
+        if not skip_postprocessing:
+            self.raise_for_non_blockwise_postprocessing()
 
         if not skip_preprocessing:
             self.apply_preprocessing(sample_block)
@@ -150,9 +196,12 @@ class PredictionPipeline:
         skip_preprocessing: bool = False,
         skip_postprocessing: bool = False,
     ) -> Sample:
-        """predict a sample.
-        The sample's tensor shapes have to match the model's input tensor description.
-        If that is not the case, consider `predict_sample_with_blocking`"""
+        """predict a whole sample
+
+        Note:
+            The sample's tensor shapes have to match the model's input tensor description.
+            If that is not the case, consider `predict_sample_with_blocking`
+        """
 
         if not skip_preprocessing:
             self.apply_preprocessing(sample)
@@ -179,6 +228,11 @@ class PredictionPipeline:
         skip_preprocessing: bool = False,
         skip_postprocessing: bool = False,
     ) -> Sample:
+        """Predict `sample` with given `input_block_shape`.
+
+            Note:
+        `input_block_shape` is expected to be a valid input shape for the model.
+        """
         if not skip_preprocessing:
             self.apply_preprocessing(sample)
 
@@ -197,7 +251,7 @@ class PredictionPipeline:
         )
         for b in tqdm(
             input_blocks,
-            desc=f"predict {sample.id or ''} with {self.model_description.id or self.model_description.name}",
+            desc=f"predict sample {sample.id or ''} with {self.model_description.id or self.model_description.name}",
             unit="block",
             unit_divisor=1,
             total=n_blocks,
@@ -227,7 +281,10 @@ class PredictionPipeline:
         ] = None,
         batch_size: Optional[int] = None,
     ) -> Sample:
-        """predict a sample by splitting it into blocks according to the model and the `ns` parameter"""
+        """Predict a sample by splitting it into blocks according to the mode
+
+        The `ns` parameter allow scaling the model's default input block size.
+        """
 
         if isinstance(self.model_description, v0_4.ModelDescr):
             raise NotImplementedError(
@@ -255,48 +312,27 @@ class PredictionPipeline:
             skip_postprocessing=skip_postprocessing,
         )
 
-    # def predict(
-    #     self,
-    #     inputs: Predict_IO,
-    #     skip_preprocessing: bool = False,
-    #     skip_postprocessing: bool = False,
-    # ) -> Predict_IO:
-    #     """Run model prediction **including** pre/postprocessing."""
+    def apply_preprocessing(self, sample: Union[Sample, SampleBlock]) -> None:
+        """apply preprocessing in-place, also may updates sample stats"""
+        if isinstance(sample, SampleBlock):
+            self.raise_for_non_blockwise_preprocessing()
 
-    #     if isinstance(inputs, Sample):
-    #         return self.predict_sample_with_blocking(
-    #             inputs,
-    #             skip_preprocessing=skip_preprocessing,
-    #             skip_postprocessing=skip_postprocessing,
-    #         )
-    #     elif isinstance(inputs, collections.abc.Iterable):
-    #         return (
-    #             self.predict(
-    #                 ipt,
-    #                 skip_preprocessing=skip_preprocessing,
-    #                 skip_postprocessing=skip_postprocessing,
-    #             )
-    #             for ipt in inputs
-    #         )
-    #     else:
-    #         assert_never(inputs)
-
-    def apply_preprocessing(self, sample: Union[Sample, SampleBlockWithOrigin]) -> None:
-        """apply preprocessing in-place, also updates sample stats"""
         for op in self._preprocessing:
-            op(sample)
-
-    def apply_postprocessing(
-        self, sample: Union[Sample, SampleBlock, SampleBlockWithOrigin]
-    ) -> None:
-        """apply postprocessing in-place, also updates samples stats"""
-        for op in self._postprocessing:
-            if isinstance(sample, (Sample, SampleBlockWithOrigin)):
+            if isinstance(sample, SampleBlock):
+                assert isinstance(op, BlockwiseOperator)
                 op(sample)
-            elif not isinstance(op, BlockedOperator):
-                raise NotImplementedError(
-                    "block wise update of output statistics not yet implemented"
-                )
+            else:
+                op(sample)
+
+    def apply_postprocessing(self, sample: Union[Sample, SampleBlock]) -> None:
+        """apply postprocessing in-place, also may updates samples stats"""
+        if isinstance(sample, SampleBlock):
+            self.raise_for_non_blockwise_postprocessing()
+
+        for op in self._postprocessing:
+            if isinstance(sample, SampleBlock):
+                assert isinstance(op, BlockwiseOperator)
+                op(sample)
             else:
                 op(sample)
 
@@ -326,7 +362,7 @@ def create_prediction_pipeline(
     ),
     model_adapter: Optional[ModelAdapter] = None,
     ns: Optional[BlocksizeParameter] = None,
-    default_blocksize_parameter: BlocksizeParameter = 10,
+    default_blocksize_parameter: BlocksizeParameter = 10,  # TODO: default to None and find smart blocksize params per axis to reduce overlap of blocks with large halo
     **deprecated_kwargs: Any,
 ) -> PredictionPipeline:
     """

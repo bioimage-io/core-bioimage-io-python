@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Any, Optional, Sequence, Union
 
 import numpy as np
-import tensorflow as tf  # pyright: ignore[reportMissingTypeStubs]
+import tensorflow as tf
 from loguru import logger
 from numpy.typing import NDArray
 
@@ -46,19 +46,17 @@ class TensorflowModelAdapter(ModelAdapter):
     ):
         # TODO read from spec
         tag = (  # pyright: ignore[reportUnknownVariableType]
-            tf.saved_model.tag_constants.SERVING  # pyright: ignore[reportAttributeAccessIssue]
+            tf.saved_model.tag_constants.SERVING
         )
         signature_key = (  # pyright: ignore[reportUnknownVariableType]
-            tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY  # pyright: ignore[reportAttributeAccessIssue]
+            tf.saved_model.signature_constants.DEFAULT_SERVING_SIGNATURE_DEF_KEY
         )
 
         graph = tf.Graph()
         with graph.as_default():
-            with tf.Session(  # pyright: ignore[reportAttributeAccessIssue]
-                graph=graph
-            ) as sess:  # pyright: ignore[reportUnknownVariableType]
+            with tf.Session(graph=graph) as sess:  # pyright: ignore[reportUnknownVariableType]
                 # load the model and the signature
-                graph_def = tf.saved_model.loader.load(  # pyright: ignore[reportUnknownVariableType,reportAttributeAccessIssue]
+                graph_def = tf.saved_model.loader.load(  # pyright: ignore[reportUnknownVariableType]
                     sess, [tag], self._network
                 )
                 signature = (  # pyright: ignore[reportUnknownVariableType]
@@ -133,13 +131,13 @@ class KerasModelAdapter(ModelAdapter):
         )
 
         try:
-            self._network = tf.keras.layers.TFSMLayer(  # pyright: ignore[reportAttributeAccessIssue]
+            self._network = tf.keras.layers.TFSMLayer(
                 weight_file,
                 call_endpoint="serve",
             )
         except Exception as e:
             try:
-                self._network = tf.keras.layers.TFSMLayer(  # pyright: ignore[reportAttributeAccessIssue]
+                self._network = tf.keras.layers.TFSMLayer(
                     weight_file, call_endpoint="serving_default"
                 )
             except Exception as ee:
@@ -180,7 +178,7 @@ class KerasModelAdapter(ModelAdapter):
 def create_tf_model_adapter(
     model_description: AnyModelDescr, devices: Optional[Sequence[str]]
 ):
-    tf_version = v0_5.Version(tf.__version__)
+    tf_version = v0_5.Version(tf.__version__)  # type: ignore[reportUnknownVariableType]
     weights = model_description.weights.tensorflow_saved_model_bundle
     if weights is None:
         raise ValueError("No `tensorflow_saved_model_bundle` weights found")

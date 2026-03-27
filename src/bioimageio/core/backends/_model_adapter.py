@@ -18,7 +18,7 @@ from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 
 from ..common import SupportedWeightsFormat
 from ..digest_spec import get_axes_infos, get_member_ids
-from ..sample import Sample, SampleBlock, SampleBlockWithOrigin
+from ..sample import Sample, SampleBlock
 from ..tensor import Tensor
 
 # Known weight formats in order of priority
@@ -28,6 +28,7 @@ DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER: Tuple[SupportedWeightsFormat, ...] = (
     "tensorflow_saved_model_bundle",
     "torchscript",
     "onnx",
+    "keras_v3",
     "keras_hdf5",
 )
 
@@ -96,7 +97,9 @@ class ModelAdapter(ABC):
         )
         # limit weight formats to the ones present
         weight_format_priority_order_present: Sequence[SupportedWeightsFormat] = [
-            w for w in weight_format_priority_order if getattr(weights, w) is not None
+            w
+            for w in weight_format_priority_order
+            if getattr(weights, w, None) is not None
         ]
         if not weight_format_priority_order_present:
             raise ValueError(
@@ -160,6 +163,19 @@ class ModelAdapter(ABC):
                     )
                 except Exception as e:
                     errors.append(e)
+            elif wf == "keras_v3":
+                assert not isinstance(weights, v0_4.WeightsDescr), (
+                    "keras_v3 weights not supported for v0.4 specs"
+                )
+                assert weights.keras_v3 is not None
+                try:
+                    from .keras_backend import KerasModelAdapter
+
+                    return KerasModelAdapter(
+                        model_description=model_description, devices=devices
+                    )
+                except Exception as e:
+                    errors.append(e)
             else:
                 assert_never(wf)
 
@@ -179,9 +195,7 @@ class ModelAdapter(ABC):
     def load(self, *, devices: Optional[Sequence[str]] = None) -> None:
         warnings.warn("Deprecated. ModelAdapter is loaded on initialization")
 
-    def forward(
-        self, input_sample: Union[Sample, SampleBlock, SampleBlockWithOrigin]
-    ) -> Sample:
+    def forward(self, input_sample: Union[Sample, SampleBlock]) -> Sample:
         """
         Run forward pass of model to get model predictions
 

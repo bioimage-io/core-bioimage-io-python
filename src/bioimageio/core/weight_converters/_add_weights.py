@@ -1,14 +1,15 @@
 import traceback
 from typing import Optional, Union
 
+from loguru import logger
+from pydantic import DirectoryPath
+
 from bioimageio.spec import (
     InvalidDescr,
     load_model_description,
     save_bioimageio_package_as_folder,
 )
 from bioimageio.spec.model.v0_5 import ModelDescr, WeightsFormat
-from loguru import logger
-from pydantic import DirectoryPath
 
 from .._resource_tests import load_description_and_test
 

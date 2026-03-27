@@ -1,8 +1,6 @@
 {
     "window.title": "bioimageio.core",
-    "python.analysis.extraPaths": [
-        "../spec-bioimage-io",
-    ],
+    "python.analysis.languageServerMode": "full",
     "python.testing.unittestArgs": [
         "-v",
         "-s",
@@ -19,4 +17,9 @@
             "packageManager": "ms-python.python:conda"
         }
     ],
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+        "source.unusedImports": "explicit",
+        "source.organizeImports": "explicit"
+    },
 }

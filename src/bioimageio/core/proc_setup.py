@@ -1,3 +1,4 @@
+from itertools import chain
 from typing import (
     Callable,
     Iterable,
@@ -51,13 +52,6 @@ class _ProcessingCallables(NamedTuple):
     post: Callable[[Sample], None]
 
 
-class _SetupProcessing(NamedTuple):
-    pre: List[Processing]
-    post: List[Processing]
-    pre_measures: Set[Measure]
-    post_measures: Set[Measure]
-
-
 class _ApplyProcs:
     def __init__(self, procs: Sequence[Processing]):
         super().__init__()
@@ -92,14 +86,17 @@ def setup_pre_and_postprocessing(
     keep_updating_initial_dataset_stats: bool = False,
     fixed_dataset_stats: Optional[Mapping[DatasetMeasure, MeasureValue]] = None,
 ) -> PreAndPostprocessing:
-    """
-    Get pre- and postprocessing operators for a `model` description.
-    Used in `bioimageio.core.create_prediction_pipeline"""
-    prep, post, prep_meas, post_meas = _prepare_setup_pre_and_postprocessing(model)
+    """Get pre- and postprocessing operators for a `model` description.
 
+    Used in `bioimageio.core.create_prediction_pipeline
+    """
+
+    prep = _get_described_procs(model.inputs)
+    post = _get_described_procs(model.outputs)
+    required = {m for p in chain(prep, post) for m in p.required_measures}
     missing_dataset_stats = {
         m
-        for m in prep_meas | post_meas
+        for m in required
         if fixed_dataset_stats is None or m not in fixed_dataset_stats
     }
     if missing_dataset_stats:
@@ -108,28 +105,16 @@ def setup_pre_and_postprocessing(
             initial_stats_calc.update(sample)
 
         initial_stats = initial_stats_calc.finalize()
-    else:
-        initial_stats = {}
-
-    prep.insert(
-        0,
-        UpdateStats(
-            StatsCalculator(prep_meas, initial_stats),
-            keep_updating_initial_dataset_stats=keep_updating_initial_dataset_stats,
-        ),
-    )
-    if post_meas:
-        post.insert(
+        prep.insert(
             0,
             UpdateStats(
-                StatsCalculator(post_meas, initial_stats),
+                StatsCalculator(required, initial_stats),
                 keep_updating_initial_dataset_stats=keep_updating_initial_dataset_stats,
             ),
         )
 
     if fixed_dataset_stats:
         prep.insert(0, AddKnownDatasetStats(fixed_dataset_stats))
-        post.insert(0, AddKnownDatasetStats(fixed_dataset_stats))
 
     return PreAndPostprocessing(prep, post)
 
@@ -150,33 +135,32 @@ class RequiredSampleMeasures(NamedTuple):
 
 
 def get_requried_measures(model: AnyModelDescr) -> RequiredMeasures:
-    s = _prepare_setup_pre_and_postprocessing(model)
-    return RequiredMeasures(s.pre_measures, s.post_measures)
+    pre = _get_described_procs(model.inputs)
+    post = _get_described_procs(model.outputs)
+    return RequiredMeasures(
+        {m for proc in pre for m in proc.required_measures},
+        {m for proc in post for m in proc.required_measures},
+    )
 
 
 def get_required_dataset_measures(model: AnyModelDescr) -> RequiredDatasetMeasures:
-    s = _prepare_setup_pre_and_postprocessing(model)
+    req = get_requried_measures(model)
     return RequiredDatasetMeasures(
-        {m for m in s.pre_measures if isinstance(m, DatasetMeasureBase)},
-        {m for m in s.post_measures if isinstance(m, DatasetMeasureBase)},
+        {m for m in req.pre if isinstance(m, DatasetMeasureBase)},
+        {m for m in req.post if isinstance(m, DatasetMeasureBase)},
     )
 
 
 def get_requried_sample_measures(model: AnyModelDescr) -> RequiredSampleMeasures:
-    s = _prepare_setup_pre_and_postprocessing(model)
+    req = get_requried_measures(model)
     return RequiredSampleMeasures(
-        {m for m in s.pre_measures if isinstance(m, SampleMeasureBase)},
-        {m for m in s.post_measures if isinstance(m, SampleMeasureBase)},
+        {m for m in req.pre if isinstance(m, SampleMeasureBase)},
+        {m for m in req.post if isinstance(m, SampleMeasureBase)},
     )
 
 
-def _prepare_procs(
-    tensor_descrs: Union[
-        Sequence[v0_4.InputTensorDescr],
-        Sequence[v0_5.InputTensorDescr],
-        Sequence[v0_4.OutputTensorDescr],
-        Sequence[v0_5.OutputTensorDescr],
-    ],
+def _get_described_procs(
+    tensor_descrs: Iterable[TensorDescr],
 ) -> List[Processing]:
     procs: List[Processing] = []
     for t_descr in tensor_descrs:
@@ -212,21 +196,3 @@ def _prepare_procs(
             )
 
     return procs
-
-
-def _prepare_setup_pre_and_postprocessing(model: AnyModelDescr) -> _SetupProcessing:
-    if isinstance(model, v0_4.ModelDescr):
-        pre = _prepare_procs(model.inputs)
-        post = _prepare_procs(model.outputs)
-    elif isinstance(model, v0_5.ModelDescr):
-        pre = _prepare_procs(model.inputs)
-        post = _prepare_procs(model.outputs)
-    else:
-        assert_never(model)
-
-    return _SetupProcessing(
-        pre=pre,
-        post=post,
-        pre_measures={m for proc in pre for m in proc.required_measures},
-        post_measures={m for proc in post for m in proc.required_measures},
-    )

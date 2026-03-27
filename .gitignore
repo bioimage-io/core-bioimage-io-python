@@ -1,11 +1,12 @@
-__pycache__/
+**/tmp
+*.egg-info/
+*.pyc
+.DS_Store
 .coverage
 .env
 .idea/
 .tox/
-*.egg-info/
-*.pyc
-**/tmp
+__pycache__/
 bioimageio_cache/
 bioimageio_unzipped_tf_weights/
 build/

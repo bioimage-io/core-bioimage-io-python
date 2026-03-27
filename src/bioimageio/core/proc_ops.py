@@ -3,7 +3,10 @@ from abc import ABC, abstractmethod
 from dataclasses import InitVar, dataclass, field
 from functools import partial
 from typing import (
+    Any,
     Collection,
+    Generic,
+    List,
     Literal,
     Mapping,
     Optional,
@@ -14,21 +17,21 @@ from typing import (
 )
 
 import numpy as np
-import scipy  # pyright: ignore[reportMissingTypeStubs]
+import scipy
 import xarray as xr
-from typing_extensions import Self, assert_never
+from numpy.typing import NDArray
+from typing_extensions import Self, TypeVar, assert_never, cast
 
 from bioimageio.core.digest_spec import get_member_id
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import (
-    _convert_proc,  # pyright: ignore [reportPrivateUsage]
+    _convert_proc,  # pyright: ignore[reportPrivateUsage]
 )
 
-from ._op_base import BlockedOperator, Operator
-from .axis import AxisId, PerAxis
-from .block import Block
+from ._op_base import BlockwiseOperator, SamplewiseOperator, SimpleOperator
+from .axis import AxisId
 from .common import DTypeStr, MemberId
-from .sample import Sample, SampleBlock, SampleBlockWithOrigin
+from .sample import Sample, SampleBlock
 from .stat_calculators import StatsCalculator
 from .stat_measures import (
     DatasetMean,
@@ -66,54 +69,11 @@ def _convert_axis_ids(
 
 
 @dataclass
-class _SimpleOperator(BlockedOperator, ABC):
-    input: MemberId
-    output: MemberId
-
-    @property
-    def required_measures(self) -> Collection[Measure]:
-        return set()
-
-    @abstractmethod
-    def get_output_shape(self, input_shape: PerAxis[int]) -> PerAxis[int]: ...
-
-    def __call__(self, sample: Union[Sample, SampleBlock]) -> None:
-        if self.input not in sample.members:
-            return
-
-        input_tensor = sample.members[self.input]
-        output_tensor = self._apply(input_tensor, sample.stat)
-
-        if self.output in sample.members:
-            assert (
-                sample.members[self.output].tagged_shape == output_tensor.tagged_shape
-            )
-
-        if isinstance(sample, Sample):
-            sample.members[self.output] = output_tensor
-        elif isinstance(sample, SampleBlock):
-            b = sample.blocks[self.input]
-            sample.blocks[self.output] = Block(
-                sample_shape=self.get_output_shape(sample.shape[self.input]),
-                data=output_tensor,
-                inner_slice=b.inner_slice,
-                halo=b.halo,
-                block_index=b.block_index,
-                blocks_in_sample=b.blocks_in_sample,
-            )
-        else:
-            assert_never(sample)
-
-    @abstractmethod
-    def _apply(self, x: Tensor, stat: Stat) -> Tensor: ...
-
-
-@dataclass
-class AddKnownDatasetStats(BlockedOperator):
+class AddKnownDatasetStats(BlockwiseOperator):
     dataset_stats: Mapping[DatasetMeasure, MeasureValue]
 
     @property
-    def required_measures(self) -> Set[Measure]:
+    def required_measures(self) -> Collection[Measure]:
         return set()
 
     def __call__(self, sample: Union[Sample, SampleBlock]) -> None:
@@ -139,7 +99,7 @@ class AddKnownDatasetStats(BlockedOperator):
 #     _stats_calculator: StatsCalculator = field(init=False)
 
 #     @property
-#     def required_measures(self) -> Set[Measure]:
+#     def required_measures(self) -> Collection[Measure]:
 #         return set()
 
 #     def __post_init__(self):
@@ -157,7 +117,7 @@ class AddKnownDatasetStats(BlockedOperator):
 
 
 @dataclass
-class UpdateStats(Operator):
+class UpdateStats(SamplewiseOperator):
     """Calculates sample and/or dataset measures"""
 
     stats_calculator: StatsCalculator
@@ -170,7 +130,7 @@ class UpdateStats(Operator):
     _keep_updating_dataset_stats: bool = field(init=False)
 
     @property
-    def required_measures(self) -> Set[Measure]:
+    def required_measures(self) -> Collection[Measure]:
         return set()
 
     def __post_init__(self):
@@ -179,24 +139,15 @@ class UpdateStats(Operator):
             or not self.stats_calculator.has_dataset_measures
         )
 
-    def __call__(self, sample: Union[Sample, SampleBlockWithOrigin]) -> None:
-        if isinstance(sample, SampleBlockWithOrigin):
-            # update stats with whole sample on first block
-            if sample.block_index != 0:
-                return
-
-            origin = sample.origin
-        else:
-            origin = sample
-
+    def __call__(self, sample: Sample) -> None:
         if self._keep_updating_dataset_stats:
-            sample.stat.update(self.stats_calculator.update_and_get_all(origin))
+            sample.stat.update(self.stats_calculator.update_and_get_all(sample))
         else:
-            sample.stat.update(self.stats_calculator.skip_update_and_get_all(origin))
+            sample.stat.update(self.stats_calculator.skip_update_and_get_all(sample))
 
 
 @dataclass
-class Binarize(_SimpleOperator):
+class Binarize(SimpleOperator):
     """'output = tensor > threshold'."""
 
     threshold: Union[float, Sequence[float]]
@@ -204,6 +155,10 @@ class Binarize(_SimpleOperator):
 
     def _apply(self, x: Tensor, stat: Stat) -> Tensor:
         return x > self.threshold
+
+    @property
+    def required_measures(self) -> Collection[Measure]:
+        return set()
 
     def get_output_shape(
         self, input_shape: Mapping[AxisId, int]
@@ -230,7 +185,7 @@ class Binarize(_SimpleOperator):
 
 
 @dataclass
-class Clip(_SimpleOperator):
+class Clip(SimpleOperator):
     min: Optional[Union[float, SampleQuantile, DatasetQuantile]] = None
     """minimum value for clipping"""
     max: Optional[Union[float, SampleQuantile, DatasetQuantile]] = None
@@ -354,7 +309,7 @@ class Clip(_SimpleOperator):
 
 
 @dataclass
-class EnsureDtype(_SimpleOperator):
+class EnsureDtype(SimpleOperator):
     dtype: DTypeStr
 
     @classmethod
@@ -372,9 +327,13 @@ class EnsureDtype(_SimpleOperator):
     def _apply(self, x: Tensor, stat: Stat) -> Tensor:
         return x.astype(self.dtype)
 
+    @property
+    def required_measures(self) -> Collection[Measure]:
+        return set()
+
 
 @dataclass
-class ScaleLinear(_SimpleOperator):
+class ScaleLinear(SimpleOperator):
     gain: Union[float, xr.DataArray] = 1.0
     """multiplicative factor"""
 
@@ -383,6 +342,10 @@ class ScaleLinear(_SimpleOperator):
 
     def _apply(self, x: Tensor, stat: Stat) -> Tensor:
         return x * self.gain + self.offset
+
+    @property
+    def required_measures(self) -> Collection[Measure]:
+        return set()
 
     def get_output_shape(
         self, input_shape: Mapping[AxisId, int]
@@ -430,7 +393,7 @@ class ScaleLinear(_SimpleOperator):
 
 
 @dataclass
-class ScaleMeanVariance(_SimpleOperator):
+class ScaleMeanVariance(SimpleOperator):
     axes: Optional[Sequence[AxisId]] = None
     reference_tensor: Optional[MemberId] = None
     eps: float = 1e-6
@@ -512,7 +475,7 @@ def _get_axes(
 
 
 @dataclass
-class ScaleRange(_SimpleOperator):
+class ScaleRange(SimpleOperator):
     lower_quantile: InitVar[Optional[Union[SampleQuantile, DatasetQuantile]]] = None
     upper_quantile: InitVar[Optional[Union[SampleQuantile, DatasetQuantile]]] = None
     lower: Union[SampleQuantile, DatasetQuantile] = field(init=False)
@@ -603,7 +566,7 @@ class ScaleRange(_SimpleOperator):
 
 
 @dataclass
-class Sigmoid(_SimpleOperator):
+class Sigmoid(SimpleOperator):
     """1 / (1 + e^(-input))."""
 
     def _apply(self, x: Tensor, stat: Stat) -> Tensor:
@@ -630,7 +593,7 @@ class Sigmoid(_SimpleOperator):
 
 
 @dataclass
-class Softmax(_SimpleOperator):
+class Softmax(SimpleOperator):
     """Softmax activation function."""
 
     axis: AxisId = AxisId("channel")
@@ -643,7 +606,7 @@ class Softmax(_SimpleOperator):
 
     @property
     def required_measures(self) -> Collection[Measure]:
-        return {}
+        return set()
 
     def get_output_shape(
         self, input_shape: Mapping[AxisId, int]
@@ -659,8 +622,217 @@ class Softmax(_SimpleOperator):
         return v0_5.SoftmaxDescr(kwargs=v0_5.SoftmaxKwargs(axis=self.axis))
 
 
+NdTuple = TypeVar("NdTuple", Tuple[int, int], Tuple[int, int, int])
+NdBorder = TypeVar(
+    "NdBorder",
+    Tuple[Tuple[int, int], Tuple[int, int]],
+    Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int]],
+)
+
+
 @dataclass
-class ZeroMeanUnitVariance(_SimpleOperator):
+class _StardistPostprocessingBase(SamplewiseOperator, Generic[NdTuple, NdBorder], ABC):
+    prob_dist_input_id: MemberId
+    instance_labels_output_id: MemberId
+
+    grid: NdTuple
+    """Grid size of network predictions."""
+
+    prob_threshold: float
+    """Object probability threshold for non-maximum suppression."""
+
+    nms_threshold: float
+    """The IoU threshold for non-maximum suppression."""
+
+    b: Union[int, NdBorder]
+    """Border region in which object probability is set to zero."""
+
+    @property
+    def required_measures(self) -> Collection[Measure]:
+        return set()
+
+    def __call__(self, sample: Sample) -> None:
+        prob_dist = sample.members[self.prob_dist_input_id]
+
+        assert AxisId("channel") in prob_dist.dims, (
+            "expected 'channel' axis in stardist probability/distance input"
+        )
+        allowed_spatial = tuple(
+            map(AxisId, ("y", "x") if len(self.grid) == 2 else ("z", "y", "x"))
+        )
+        assert all(
+            a in allowed_spatial or a in (AxisId("batch"), AxisId("channel"))
+            for a in prob_dist.dims
+        ), (
+            f"expected prob_dist to have only 'batch', 'channel', and spatial axes {allowed_spatial}, but got {prob_dist.dims}"
+        )
+
+        spatial_shape = tuple(
+            prob_dist.tagged_shape[a] * g for a, g in zip(allowed_spatial, self.grid)
+        )
+        if len(spatial_shape) != len(self.grid):
+            raise ValueError(
+                f"expected {len(self.grid)} spatial dimensions in prob_dist tensor, but got {len(spatial_shape)}"
+            )
+        else:
+            spatial_shape = cast(NdTuple, spatial_shape)
+
+        prob_dist = prob_dist.transpose(
+            (AxisId("batch"), *allowed_spatial, AxisId("channel"))
+        )
+        labels: List[NDArray[Any]] = []
+        for batch_idx in range(prob_dist.sizes[AxisId("batch")]):
+            prob = prob_dist[
+                {AxisId("batch"): batch_idx, AxisId("channel"): 0}
+            ].to_numpy()
+            dist = prob_dist[
+                {AxisId("batch"): batch_idx, AxisId("channel"): slice(1, None)}
+            ].to_numpy()
+
+            labels_i = self._impl(prob, dist, spatial_shape)
+            assert labels_i.shape == spatial_shape, (
+                f"expected label image shape {spatial_shape}, but got {labels_i.shape}"
+            )
+            labels.append(labels_i)
+
+        instance_labels = Tensor(
+            np.stack(labels)[..., None],
+            dims=(AxisId("batch"), *allowed_spatial, AxisId("channel")),
+        )
+        sample.members[self.instance_labels_output_id] = instance_labels
+
+    @abstractmethod
+    def _impl(
+        self, prob: NDArray[Any], dist: NDArray[Any], spatial_shape: NdTuple
+    ) -> NDArray[np.int32]:
+        raise NotImplementedError
+
+
+@dataclass
+class StardistPostprocessing2D(
+    _StardistPostprocessingBase[
+        Tuple[int, int], Tuple[Tuple[int, int], Tuple[int, int]]
+    ]
+):
+    def _impl(
+        self, prob: NDArray[Any], dist: NDArray[Any], spatial_shape: Tuple[int, int]
+    ) -> NDArray[np.int32]:
+        from stardist import (
+            non_maximum_suppression,  # pyright: ignore[reportUnknownVariableType]
+            polygons_to_label,  # pyright: ignore[reportUnknownVariableType]
+        )
+
+        points, probi, disti = non_maximum_suppression(  # pyright: ignore[reportUnknownVariableType]
+            dist,
+            prob,
+            grid=self.grid,
+            prob_thresh=self.prob_threshold,
+            nms_thresh=self.nms_threshold,
+            b=self.b,  # pyright: ignore[reportArgumentType]
+        )
+
+        return polygons_to_label(disti, points, prob=probi, shape=spatial_shape)
+
+    @classmethod
+    def from_proc_descr(
+        cls, descr: v0_5.StardistPostprocessingDescr, member_id: MemberId
+    ) -> Self:
+        if not isinstance(descr.kwargs, v0_5.StardistPostprocessingKwargs2D):
+            raise TypeError(
+                f"expected v0_5.StardistPostprocessingKwargs2D for 2D stardist post-processing, but got {type(descr.kwargs)}"
+            )
+
+        kwargs = descr.kwargs
+        return cls(
+            prob_dist_input_id=member_id,
+            instance_labels_output_id=member_id,
+            grid=kwargs.grid,
+            prob_threshold=kwargs.prob_threshold,
+            nms_threshold=kwargs.nms_threshold,
+            b=kwargs.b,
+        )
+
+
+@dataclass
+class StardistPostprocessing3D(
+    _StardistPostprocessingBase[
+        Tuple[int, int, int], Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int]]
+    ]
+):
+    n_rays: int
+    """Number of rays for 3D star-convex polyhedra."""
+
+    anisotropy: Tuple[float, float, float]
+    """Anisotropy factors for 3D star-convex polyhedra, i.e. the physical pixel size along each spatial axis."""
+
+    overlap_label: Optional[int] = None
+    """Optional label to apply to any area of overlapping predicted objects."""
+
+    def _impl(
+        self,
+        prob: NDArray[Any],
+        dist: NDArray[Any],
+        spatial_shape: Tuple[int, int, int],
+    ) -> NDArray[np.int32]:
+        from stardist import (
+            Rays_GoldenSpiral,
+            non_maximum_suppression_3d,  # pyright: ignore[reportUnknownVariableType]
+            polyhedron_to_label,  # pyright: ignore[reportUnknownVariableType]
+        )
+        from stardist.matching import (
+            relabel_sequential,  # pyright: ignore[reportUnknownVariableType]
+        )
+
+        rays = Rays_GoldenSpiral(self.n_rays, anisotropy=self.anisotropy)
+
+        points, probi, disti = non_maximum_suppression_3d(  # pyright: ignore[reportUnknownVariableType]
+            dist,
+            prob,
+            rays,
+            grid=self.grid,
+            prob_thresh=self.prob_threshold,
+            nms_thresh=self.nms_threshold,
+            b=self.b,  # pyright: ignore[reportArgumentType]
+        )
+
+        labels = polyhedron_to_label(  # pyright: ignore[reportUnknownVariableType]
+            disti,
+            points,
+            rays=rays,
+            prob=probi,
+            shape=spatial_shape,
+            overlap_label=self.overlap_label,
+        )
+
+        labels, _, _ = relabel_sequential(labels)
+        assert isinstance(labels, np.ndarray) and labels.dtype == np.int32
+        return labels
+
+    @classmethod
+    def from_proc_descr(
+        cls, descr: v0_5.StardistPostprocessingDescr, member_id: MemberId
+    ) -> Self:
+        if not isinstance(descr.kwargs, v0_5.StardistPostprocessingKwargs3D):
+            raise TypeError(
+                f"expected v0_5.StardistPostprocessingKwargs3D for 3D stardist post-processing, but got {type(descr.kwargs)}"
+            )
+
+        kwargs = descr.kwargs
+        return cls(
+            prob_dist_input_id=member_id,
+            instance_labels_output_id=member_id,
+            grid=kwargs.grid,
+            prob_threshold=kwargs.prob_threshold,
+            nms_threshold=kwargs.nms_threshold,
+            n_rays=kwargs.n_rays,
+            anisotropy=kwargs.anisotropy,
+            b=kwargs.b,
+            overlap_label=kwargs.overlap_label,
+        )
+
+
+@dataclass
+class ZeroMeanUnitVariance(SimpleOperator):
     """normalize to zero mean, unit variance."""
 
     mean: MeanMeasure
@@ -714,7 +886,7 @@ class ZeroMeanUnitVariance(_SimpleOperator):
 
 
 @dataclass
-class FixedZeroMeanUnitVariance(_SimpleOperator):
+class FixedZeroMeanUnitVariance(SimpleOperator):
     """normalize to zero mean, unit variance with precomputed values."""
 
     mean: Union[float, xr.DataArray]
@@ -728,6 +900,10 @@ class FixedZeroMeanUnitVariance(_SimpleOperator):
             or isinstance(self.std, (int, float))
             or self.mean.dims == self.std.dims
         )
+
+    @property
+    def required_measures(self) -> Collection[Measure]:
+        return set()
 
     def get_output_shape(
         self, input_shape: Mapping[AxisId, int]
@@ -780,6 +956,7 @@ ProcDescr = Union[
     v0_5.PostprocessingDescr,
 ]
 
+
 Processing = Union[
     AddKnownDatasetStats,
     Binarize,
@@ -790,6 +967,8 @@ Processing = Union[
     ScaleMeanVariance,
     ScaleRange,
     Sigmoid,
+    StardistPostprocessing2D,
+    StardistPostprocessing3D,
     Softmax,
     UpdateStats,
     ZeroMeanUnitVariance,
@@ -846,5 +1025,14 @@ def get_proc(
         return ZeroMeanUnitVariance.from_proc_descr(proc_descr, member_id)
     elif isinstance(proc_descr, v0_5.SoftmaxDescr):
         return Softmax.from_proc_descr(proc_descr, member_id)
+    elif isinstance(proc_descr, v0_5.StardistPostprocessingDescr):
+        if isinstance(proc_descr.kwargs, v0_5.StardistPostprocessingKwargs2D):
+            return StardistPostprocessing2D.from_proc_descr(proc_descr, member_id)
+        elif isinstance(proc_descr.kwargs, v0_5.StardistPostprocessingKwargs3D):
+            return StardistPostprocessing3D.from_proc_descr(proc_descr, member_id)
+        else:
+            raise ValueError(
+                f"expected ndim 2 or 3 for stardist postprocessing, but got {proc_descr.kwargs.ndim}"
+            )
     else:
         assert_never(proc_descr)

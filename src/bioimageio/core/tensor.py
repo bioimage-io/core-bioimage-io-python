@@ -252,6 +252,10 @@ class Tensor(MagicTensorOpsMixin):
         """(alias for `sizes`) Ordered, immutable mapping from axis ids to lengths."""
         return self.sizes
 
+    def to_numpy(self) -> NDArray[Any]:
+        """Return the data of this tensor as a numpy array."""
+        return self.data.to_numpy()  # pyright: ignore[reportUnknownVariableType]
+
     def argmax(self) -> Mapping[AxisId, int]:
         ret = self._data.argmax(...)
         assert isinstance(ret, dict)

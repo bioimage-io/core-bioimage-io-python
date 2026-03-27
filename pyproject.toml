@@ -6,7 +6,7 @@ requires-python = ">=3.9"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [
-    "bioimageio.spec ==0.5.7.4",
+    "bioimageio.spec ==0.5.9.0",
     "imagecodecs",
     "imageio>=2.10",
     "loguru",
@@ -51,10 +51,12 @@ partners = [
     "careamics",
     # "stardist",         # for model testing and stardist postprocessing  # TODO: add updated stardist to partners env
 ]
+stardist = ["stardist"] # for stardist postprocessing
 dev = [
     "cellpose",                              # for model testing
     "crick",
     "httpx",
+    "jax",
     "jupyter",
     "keras>=3.0,<4",
     "matplotlib",
@@ -66,11 +68,12 @@ dev = [
     'onnx_ir!=0.1.14;python_version<"3.10"', # uses typing.Concatentate which requires py>=3.10
     "packaging>=17.0",
     "pre-commit",
-    "pyright==1.1.407",
+    "pyright==1.1.408",
     "pytest-cov",
     "pytest",
     "python-dotenv",
     "segment-anything",                      # for model testing
+    "stardist",
     "tensorflow",
     "timm",                                  # for model testing
     "torch>=1.6,<3",
@@ -101,6 +104,9 @@ where = ["src/"]
 
 [tool.setuptools.dynamic]
 version = { attr = "bioimageio.core.__version__" }
+
+[tool.pylance]
+languageServerMode = "light"
 
 [tool.pyright]
 exclude = [
@@ -136,6 +142,7 @@ reportUnusedVariable = "error"
 reportWildcardImportFromLibrary = "error"
 typeCheckingMode = "strict"
 useLibraryCodeForTypes = true
+extraPaths = ["../spec-bioimage-io/src"] # co-develop with bioimageio.spec
 
 [tool.pytest.ini_options]
 addopts = "--doctest-modules --failed-first --ignore dogfood --ignore src/bioimageio/core/backends --ignore src/bioimageio/core/weight_converters --ignore scripts/generate_api_doc_pages.py"
@@ -151,7 +158,7 @@ exclude = [
 ]
 
 [tool.ruff.lint]
-select = ["NPY201"]
+extend-select = ["NPY201"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["bioimageio"]
