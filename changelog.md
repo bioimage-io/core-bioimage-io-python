@@ -1,6 +1,6 @@
 ### 0.10.0 (not yet released)
 
-- bump bioimageio.spec library version to 0.5.8.0
+- bump bioimageio.spec library version to 0.5.9.0
 - support Keras v3 weights descriptions
 - new `bioimageio predict-block-artifacts` command
 
