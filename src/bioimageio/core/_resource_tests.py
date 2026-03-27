@@ -5,6 +5,7 @@ import subprocess
 import sys
 import warnings
 from contextlib import nullcontext
+from copy import deepcopy
 from io import StringIO
 from itertools import product
 from pathlib import Path
@@ -29,6 +30,7 @@ from loguru import logger
 from numpy.typing import NDArray
 from typing_extensions import NotRequired, TypedDict, Unpack, assert_never, get_args
 
+from bioimageio.core.tensor import Tensor
 from bioimageio.spec import (
     AnyDatasetDescr,
     AnyModelDescr,
@@ -840,6 +842,26 @@ def _test_model_inference(
             )
         )
 
+    def save_to_working_dir(name: str, tensor: Tensor) -> List[Path]:
+        saved_paths: List[Path] = []
+        if working_dir is not None and verbose:
+            for p in [
+                Path(working_dir) / f"{name}_{weight_format}{suffix}"
+                for suffix in (".npy", ".tiff")
+            ]:
+                try:
+                    save_tensor(p, tensor)
+                except Exception as e:
+                    logger.error(
+                        "Failed to save tensor {}: {}",
+                        p,
+                        e,
+                    )
+                else:
+                    saved_paths.append(p)
+
+        return saved_paths
+
     try:
         test_input = get_test_input_sample(model)
         expected = get_test_output_sample(model)
@@ -847,7 +869,15 @@ def _test_model_inference(
         with create_prediction_pipeline(
             bioimageio_model=model, devices=devices, weight_format=weight_format
         ) as prediction_pipeline:
-            results = prediction_pipeline.predict_sample_without_blocking(test_input)
+            prediction_pipeline.apply_preprocessing(test_input)
+            test_input_preprocessed = deepcopy(test_input)
+            results_not_postprocessed = (
+                prediction_pipeline.predict_sample_without_blocking(
+                    test_input, skip_postprocessing=True, skip_preprocessing=True
+                )
+            )
+            results = deepcopy(results_not_postprocessed)
+            prediction_pipeline.apply_postprocessing(results)
 
         if len(results.members) != len(expected.members):
             add_error_entry(
@@ -855,6 +885,14 @@ def _test_model_inference(
             )
 
         else:
+            intermediate_paths: List[Path] = []
+            for m, t in test_input_preprocessed.members.items():
+                intermediate_paths.extend(
+                    save_to_working_dir(f"test_input_preprocessed_{m}", t)
+                )
+            if intermediate_paths:
+                logger.debug("Saved preprocessed test inputs to {}", intermediate_paths)
+
             for m, expected in expected.members.items():
                 actual = results.members.get(m)
                 if actual is None:
@@ -883,6 +921,15 @@ def _test_model_inference(
                         continue
 
                 try:
+                    output_paths = save_to_working_dir(f"actual_output_{m}", actual)
+                    if m in results_not_postprocessed.members:
+                        output_paths.extend(
+                            save_to_working_dir(
+                                f"actual_output_{m}_not_postprocessed",
+                                results_not_postprocessed.members[m],
+                            )
+                        )
+
                     expected_np = expected.data.to_numpy().astype(np.float32)
                     del expected
                     actual_np: NDArray[Any] = actual.data.to_numpy().astype(np.float32)
@@ -894,26 +941,6 @@ def _test_model_inference(
                     abs_diff = abs(actual_np - expected_np)
                     mismatched = abs_diff > atol + rtol_value
                     mismatched_elements = mismatched.sum().item()
-
-                    if working_dir is not None and verbose:
-                        actual_output_paths: Optional[List[Path]] = []
-                        for p in [
-                            Path(working_dir)
-                            / f"actual_output_{m}_{weight_format}{suffix}"
-                            for suffix in (".npy", ".tiff")
-                        ]:
-                            try:
-                                save_tensor(p, actual)
-                            except Exception as e:
-                                logger.error(
-                                    "Failed to save actual output tensor to {}: {}",
-                                    p,
-                                    e,
-                                )
-                            else:
-                                actual_output_paths.append(p)
-                    else:
-                        actual_output_paths = None
 
                     mismatched_ppm = mismatched_elements / expected_np.size * 1e6
                     abs_diff[~mismatched] = 0  # ignore non-mismatched elements
@@ -957,8 +984,8 @@ def _test_model_inference(
                         + f"\n Max absolute difference not accounted for by relative tolerance ({rtol:.2e}): {a_max:.2e}"
                         + rf" (= \|{a_actual:.7e} - {a_expected:.7e}\|) at {dict(zip(dims, a_max_idx))}"
                     )
-                    if actual_output_paths is not None:
-                        msg += f"\n Saved actual output to {actual_output_paths}."
+                    if output_paths:
+                        msg += f"\n Saved (intermediate) outputs to {output_paths}."
 
                     if mismatched_ppm > mismatched_tol:
                         add_error_entry(msg)
