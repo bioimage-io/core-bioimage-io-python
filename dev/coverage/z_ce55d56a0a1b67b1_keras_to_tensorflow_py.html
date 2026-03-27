@@ -64,8 +64,8 @@
             <a id="indexLink" class="nav" href="covindex.html">&Hat; index</a> &nbsp; &nbsp;
             <a id="nextFileLink" class="nav" href="z_ce55d56a0a1b67b1_pytorch_to_onnx_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
-            <a class="nav" href="https://coverage.readthedocs.io/en/7.13.4">coverage.py v7.13.4</a>,
-            created at 2026-02-19 14:02 +0000
+            <a class="nav" href="https://coverage.readthedocs.io/en/7.13.5">coverage.py v7.13.5</a>,
+            created at 2026-03-27 15:45 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -88,7 +88,7 @@
     <p class="mis show_mis"><span class="n"><a id="t6" href="#t6">6</a></span><span class="t"><span class="key">from</span> <span class="nam">typing</span> <span class="key">import</span> <span class="nam">Any</span><span class="op">,</span> <span class="nam">Union</span><span class="op">,</span> <span class="nam">no_type_check</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t7" href="#t7">7</a></span><span class="t"><span class="key">from</span> <span class="nam">zipfile</span> <span class="key">import</span> <span class="nam">ZipFile</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t8" href="#t8">8</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t9" href="#t9">9</a></span><span class="t"><span class="key">import</span> <span class="nam">tensorflow</span>  <span class="com"># pyright: ignore[reportMissingTypeStubs]</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis show_mis"><span class="n"><a id="t9" href="#t9">9</a></span><span class="t"><span class="key">import</span> <span class="nam">tensorflow</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t10" href="#t10">10</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t11" href="#t11">11</a></span><span class="t"><span class="key">from</span> <span class="nam">bioimageio</span><span class="op">.</span><span class="nam">spec</span><span class="op">.</span><span class="nam">_internal</span><span class="op">.</span><span class="nam">version_type</span> <span class="key">import</span> <span class="nam">Version</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t12" href="#t12">12</a></span><span class="t"><span class="key">from</span> <span class="nam">bioimageio</span><span class="op">.</span><span class="nam">spec</span><span class="op">.</span><span class="nam">common</span> <span class="key">import</span> <span class="nam">ZipPath</span>&nbsp;</span><span class="r"></span></p>
@@ -141,7 +141,7 @@
     <p class="pln"><span class="n"><a id="t59" href="#t59">59</a></span><span class="t"><span class="str">    Returns:</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t60" href="#t60">60</a></span><span class="t"><span class="str">        A descriptor object containing information about the converted TensorFlow SavedModel bundle.</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t61" href="#t61">61</a></span><span class="t"><span class="str">    """</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t62" href="#t62">62</a></span><span class="t">    <span class="nam">tf_major_ver</span> <span class="op">=</span> <span class="nam">int</span><span class="op">(</span><span class="nam">tensorflow</span><span class="op">.</span><span class="nam">__version__</span><span class="op">.</span><span class="nam">split</span><span class="op">(</span><span class="str">"."</span><span class="op">)</span><span class="op">[</span><span class="num">0</span><span class="op">]</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis show_mis"><span class="n"><a id="t62" href="#t62">62</a></span><span class="t">    <span class="nam">tf_major_ver</span> <span class="op">=</span> <span class="nam">int</span><span class="op">(</span><span class="nam">tensorflow</span><span class="op">.</span><span class="nam">__version__</span><span class="op">.</span><span class="nam">split</span><span class="op">(</span><span class="str">"."</span><span class="op">)</span><span class="op">[</span><span class="num">0</span><span class="op">]</span><span class="op">)</span>  <span class="com"># pyright: ignore[reportUnknownArgumentType]</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t63" href="#t63">63</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t64" href="#t64">64</a></span><span class="t">    <span class="key">if</span> <span class="nam">output_path</span><span class="op">.</span><span class="nam">suffix</span> <span class="op">!=</span> <span class="str">".zip"</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t65" href="#t65">65</a></span><span class="t">        <span class="nam">output_path</span> <span class="op">=</span> <span class="nam">output_path</span><span class="op">.</span><span class="nam">with_suffix</span><span class="op">(</span><span class="str">""</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
@@ -207,7 +207,7 @@
     <p class="mis show_mis"><span class="n"><a id="t125" href="#t125">125</a></span><span class="t">    <span class="key">return</span> <span class="nam">TensorflowSavedModelBundleWeightsDescr</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis mis2 show_mis"><span class="n"><a id="t126" href="#t126">126</a></span><span class="t">        <span class="nam">source</span><span class="op">=</span><span class="nam">output_path</span><span class="op">.</span><span class="nam">absolute</span><span class="op">(</span><span class="op">)</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis mis2 show_mis"><span class="n"><a id="t127" href="#t127">127</a></span><span class="t">        <span class="nam">parent</span><span class="op">=</span><span class="str">"keras_hdf5"</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis mis2 show_mis"><span class="n"><a id="t128" href="#t128">128</a></span><span class="t">        <span class="nam">tensorflow_version</span><span class="op">=</span><span class="nam">Version</span><span class="op">(</span><span class="nam">tensorflow</span><span class="op">.</span><span class="nam">__version__</span><span class="op">)</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis mis2 show_mis"><span class="n"><a id="t128" href="#t128">128</a></span><span class="t">        <span class="nam">tensorflow_version</span><span class="op">=</span><span class="nam">Version</span><span class="op">(</span><span class="nam">tensorflow</span><span class="op">.</span><span class="nam">__version__</span><span class="op">)</span><span class="op">,</span>  <span class="com"># pyright: ignore[reportUnknownArgumentType]</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis mis2 show_mis"><span class="n"><a id="t129" href="#t129">129</a></span><span class="t">        <span class="nam">comment</span><span class="op">=</span><span class="fst">f"</span><span class="fst">Converted with bioimageio.core </span><span class="op">{</span><span class="nam">__version__</span><span class="op">}</span><span class="fst">.</span><span class="fst">"</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis mis2 show_mis"><span class="n"><a id="t130" href="#t130">130</a></span><span class="t">    <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t131" href="#t131">131</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
@@ -250,7 +250,7 @@
     <p class="mis show_mis"><span class="n"><a id="t168" href="#t168">168</a></span><span class="t">    <span class="key">return</span> <span class="nam">TensorflowSavedModelBundleWeightsDescr</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis mis2 show_mis"><span class="n"><a id="t169" href="#t169">169</a></span><span class="t">        <span class="nam">source</span><span class="op">=</span><span class="nam">output_path</span><span class="op">.</span><span class="nam">absolute</span><span class="op">(</span><span class="op">)</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis mis2 show_mis"><span class="n"><a id="t170" href="#t170">170</a></span><span class="t">        <span class="nam">parent</span><span class="op">=</span><span class="str">"keras_hdf5"</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis mis2 show_mis"><span class="n"><a id="t171" href="#t171">171</a></span><span class="t">        <span class="nam">tensorflow_version</span><span class="op">=</span><span class="nam">Version</span><span class="op">(</span><span class="nam">tensorflow</span><span class="op">.</span><span class="nam">__version__</span><span class="op">)</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis mis2 show_mis"><span class="n"><a id="t171" href="#t171">171</a></span><span class="t">        <span class="nam">tensorflow_version</span><span class="op">=</span><span class="nam">Version</span><span class="op">(</span><span class="nam">tensorflow</span><span class="op">.</span><span class="nam">__version__</span><span class="op">)</span><span class="op">,</span>  <span class="com"># pyright: ignore[reportUnknownArgumentType]</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis mis2 show_mis"><span class="n"><a id="t172" href="#t172">172</a></span><span class="t">        <span class="nam">comment</span><span class="op">=</span><span class="fst">f"</span><span class="fst">Converted with bioimageio.core </span><span class="op">{</span><span class="nam">__version__</span><span class="op">}</span><span class="fst">.</span><span class="fst">"</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis mis2 show_mis"><span class="n"><a id="t173" href="#t173">173</a></span><span class="t">    <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t174" href="#t174">174</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
@@ -278,8 +278,8 @@
             <a class="nav" href="covindex.html">&Hat; index</a> &nbsp; &nbsp;
             <a class="nav" href="z_ce55d56a0a1b67b1_pytorch_to_onnx_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
-            <a class="nav" href="https://coverage.readthedocs.io/en/7.13.4">coverage.py v7.13.4</a>,
-            created at 2026-02-19 14:02 +0000
+            <a class="nav" href="https://coverage.readthedocs.io/en/7.13.5">coverage.py v7.13.5</a>,
+            created at 2026-03-27 15:45 +0000
         </p>
     </div>
 </footer>

@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.2">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
       
@@ -1008,13 +1008,13 @@ conda<span class="w"> </span>activate<span class="w"> </span>bioimageio-affable-
 <h2 id="test-modelenvironment">Test model+environment<a class="headerlink" href="#test-modelenvironment" title="Anchor link to this section for reference">¤</a></h2>
 <p>Test a bioimageio compatible model, e.g. "affable-shark" in an active Python environment:</p>
 <div class="language-ansi highlight"><pre><span></span><code>bioimageio test affable-shark
-<span class=" -Color -Color-Green">0:00:01.753260</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
-<span class=" -Color -Color-Bold">[&#39;/opt/hostedtoolcache/Python/3.12.12/x64/bin/bioimageio&#39;,</span>
+<span class=" -Color -Color-Green">0:00:01.764841</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
+<span class=" -Color -Color-Bold">[&#39;/opt/hostedtoolcache/Python/3.12.13/x64/bin/bioimageio&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;test&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;affable-shark&#39;]</span>
-<span class=" -Color -Color-Green">0:00:01.753910</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
+<span class=" -Color -Color-Green">0:00:01.765508</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
 <span class=" -Color -Color-Bold">{&#39;test&#39;: {&#39;source&#39;: &#39;affable-shark&#39;}}</span>
-<span class=" -Color -Color-Green">0:00:01.754140</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
+<span class=" -Color -Color-Green">0:00:01.765772</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
 <span class=" -Color -Color-Bold">{&#39;test&#39;: {&#39;determinism&#39;: &#39;seed_only&#39;,</span>
 <span class=" -Color -Color-Bold">          &#39;devices&#39;: None,</span>
 <span class=" -Color -Color-Bold">          &#39;format_version&#39;: &#39;discover&#39;,</span>
@@ -1024,49 +1024,59 @@ conda<span class="w"> </span>activate<span class="w"> </span>bioimageio-affable-
 <span class=" -Color -Color-Bold">          &#39;summary&#39;: [&#39;display&#39;],</span>
 <span class=" -Color -Color-Bold">          &#39;weight_format&#39;: &#39;all&#39;,</span>
 <span class=" -Color -Color-Bold">          &#39;working_dir&#39;: None}}</span>
-<span class=" -Color -Color-Green">0:00:04.179219</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold">loaded affable-shark from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml</span>
-<span class=" -Color -Color-Green">0:00:57.548037</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_resource_tests</span> - <span class=" -Color -Color-Bold">Testing inference with &#39;pytorch_state_dict&#39; for 6 different inputs (B, N): {(1, 2), (2, 1), (1, 1), (2, 0), (2, 2), (1, 0)}</span>
-<span class=" -Color -Color-Green">0:00:59.570807</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_resource_tests</span> - <span class=" -Color -Color-Bold">Testing inference with &#39;torchscript&#39; for 6 different inputs (B, N): {(1, 2), (2, 1), (1, 1), (2, 0), (2, 2), (1, 0)}</span>
+<span class=" -Color -Color-Green">0:00:04.117963</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold">loaded affable-shark from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml</span>
+<span class=" -Color -Color-Green">0:00:57.114964</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_resource_tests</span> - <span class=" -Color -Color-Bold">Testing inference with &#39;pytorch_state_dict&#39; for 6 different inputs (B, N): {(1, 2), (2, 1), (1, 1), (2, 0), (2, 2), (1, 0)}</span>
+<span class=" -Color -Color-Green">0:00:59.113815</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_resource_tests</span> - <span class=" -Color -Color-Bold">Testing inference with &#39;torchscript&#39; for 6 different inputs (B, N): {(1, 2), (2, 1), (1, 1), (2, 0), (2, 2), (1, 0)}</span>
 
 
  ✔️               bioimageio format validation                                               
  ─────────────────────────────────────────────────────────────────────────────────────────── 
  status           passed                                                                     
  source           https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml 
- id               10.5281/zenodo.5764892/6647674                                             
+ id               affable-shark                                                              
  version          1.2                                                                        
- applied format   model 0.5.7                                                                
+ applied format   model 0.5.9                                                                
  bioimageio.core  0.9.6                                                                      
- bioimageio.spec  0.5.7.4                                                                    
+ bioimageio.spec  0.5.9.0                                                                    
 
 
 
-     Location                    Details                                                                                      
- ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
- ✔️                              Successfully created ModelDescr instance.                                                    
- ✔️                              bioimageio.spec format validation model 0.5.7                                                
- ✔️  weights.pytorch_state_dict  Reproduce test outputs from test inputs (pytorch_state_dict)                                 
-     weights.pytorch_state_dict  recommended conda environment (Reproduce test outputs from test inputs (pytorch_state_dict)) 
-                                 See Recommended Conda Environment 1 below.                                                   
-     weights.pytorch_state_dict  conda compare (Reproduce test outputs from test inputs (pytorch_state_dict))                 
-                                 See Conda Environment Comparison 1 below.                                                    
- ✔️  weights.pytorch_state_dict  Run pytorch_state_dict inference for inputs with batch_size: 1 and size parameter n: 0       
- ✔️  weights.pytorch_state_dict  Run pytorch_state_dict inference for inputs with batch_size: 1 and size parameter n: 1       
- ✔️  weights.pytorch_state_dict  Run pytorch_state_dict inference for inputs with batch_size: 1 and size parameter n: 2       
- ✔️  weights.pytorch_state_dict  Run pytorch_state_dict inference for inputs with batch_size: 2 and size parameter n: 0       
- ✔️  weights.pytorch_state_dict  Run pytorch_state_dict inference for inputs with batch_size: 2 and size parameter n: 1       
- ✔️  weights.pytorch_state_dict  Run pytorch_state_dict inference for inputs with batch_size: 2 and size parameter n: 2       
- ✔️  weights.torchscript         Reproduce test outputs from test inputs (torchscript)                                        
-     weights.torchscript         recommended conda environment (Reproduce test outputs from test inputs (torchscript))        
-                                 See Recommended Conda Environment 1 below.                                                   
-     weights.torchscript         conda compare (Reproduce test outputs from test inputs (torchscript))                        
-                                 See Conda Environment Comparison 1 below.                                                    
- ✔️  weights.torchscript         Run torchscript inference for inputs with batch_size: 1 and size parameter n: 0              
- ✔️  weights.torchscript         Run torchscript inference for inputs with batch_size: 1 and size parameter n: 1              
- ✔️  weights.torchscript         Run torchscript inference for inputs with batch_size: 1 and size parameter n: 2              
- ✔️  weights.torchscript         Run torchscript inference for inputs with batch_size: 2 and size parameter n: 0              
- ✔️  weights.torchscript         Run torchscript inference for inputs with batch_size: 2 and size parameter n: 1              
- ✔️  weights.torchscript         Run torchscript inference for inputs with batch_size: 2 and size parameter n: 2              
+     Location                    Details                                                                                                                                                                
+ ────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────── 
+ ✔️                              Successfully created ModelDescr instance.                                                                                                                              
+ ✔️                              bioimageio.spec format validation model 0.5.9                                                                                                                          
+ ✔️  weights.pytorch_state_dict  Reproduce test outputs from test inputs (pytorch_state_dict)                                                                                                           
+ ℹ   weights.pytorch_state_dict  Output output0: all elements agree with expected values.                                                                                                               
+                                 Max relative difference not accounted for by absolute tolerance (1.00e-03): 0.00e+00 (= |2.78e-01 - 2.78e-01|/|2.78e-01 + 1e-6|) at {&#39;batch&#39;: 0, &#39;channel&#39;: 0, &#39;y&#39;: 0, 
+                                 &#39;x&#39;: 0}                                                                                                                                                                
+                                 Max absolute difference not accounted for by relative tolerance (1.00e-03): 0.00e+00 (= |7.3491196e-05 - 7.3491268e-05|) at {&#39;batch&#39;: 0, &#39;channel&#39;: 1, &#39;y&#39;: 247, &#39;x&#39;:  
+                                 253}                                                                                                                                                                   
+     weights.pytorch_state_dict  recommended conda environment (Reproduce test outputs from test inputs (pytorch_state_dict))                                                                           
+                                 See Recommended Conda Environment 1 below.                                                                                                                             
+     weights.pytorch_state_dict  conda compare (Reproduce test outputs from test inputs (pytorch_state_dict))                                                                                           
+                                 See Conda Environment Comparison 1 below.                                                                                                                              
+ ✔️  weights.pytorch_state_dict  Run pytorch_state_dict inference for inputs with batch_size: 1 and size parameter n: 0                                                                                 
+ ✔️  weights.pytorch_state_dict  Run pytorch_state_dict inference for inputs with batch_size: 1 and size parameter n: 1                                                                                 
+ ✔️  weights.pytorch_state_dict  Run pytorch_state_dict inference for inputs with batch_size: 1 and size parameter n: 2                                                                                 
+ ✔️  weights.pytorch_state_dict  Run pytorch_state_dict inference for inputs with batch_size: 2 and size parameter n: 0                                                                                 
+ ✔️  weights.pytorch_state_dict  Run pytorch_state_dict inference for inputs with batch_size: 2 and size parameter n: 1                                                                                 
+ ✔️  weights.pytorch_state_dict  Run pytorch_state_dict inference for inputs with batch_size: 2 and size parameter n: 2                                                                                 
+ ✔️  weights.torchscript         Reproduce test outputs from test inputs (torchscript)                                                                                                                  
+ ℹ   weights.torchscript         Output output0: all elements agree with expected values.                                                                                                               
+                                 Max relative difference not accounted for by absolute tolerance (1.00e-03): 0.00e+00 (= |2.78e-01 - 2.78e-01|/|2.78e-01 + 1e-6|) at {&#39;batch&#39;: 0, &#39;channel&#39;: 0, &#39;y&#39;: 0, 
+                                 &#39;x&#39;: 0}                                                                                                                                                                
+                                 Max absolute difference not accounted for by relative tolerance (1.00e-03): 0.00e+00 (= |7.3491196e-05 - 7.3491268e-05|) at {&#39;batch&#39;: 0, &#39;channel&#39;: 1, &#39;y&#39;: 247, &#39;x&#39;:  
+                                 253}                                                                                                                                                                   
+     weights.torchscript         recommended conda environment (Reproduce test outputs from test inputs (torchscript))                                                                                  
+                                 See Recommended Conda Environment 1 below.                                                                                                                             
+     weights.torchscript         conda compare (Reproduce test outputs from test inputs (torchscript))                                                                                                  
+                                 See Conda Environment Comparison 1 below.                                                                                                                              
+ ✔️  weights.torchscript         Run torchscript inference for inputs with batch_size: 1 and size parameter n: 0                                                                                        
+ ✔️  weights.torchscript         Run torchscript inference for inputs with batch_size: 1 and size parameter n: 1                                                                                        
+ ✔️  weights.torchscript         Run torchscript inference for inputs with batch_size: 1 and size parameter n: 2                                                                                        
+ ✔️  weights.torchscript         Run torchscript inference for inputs with batch_size: 2 and size parameter n: 0                                                                                        
+ ✔️  weights.torchscript         Run torchscript inference for inputs with batch_size: 2 and size parameter n: 1                                                                                        
+ ✔️  weights.torchscript         Run torchscript inference for inputs with batch_size: 2 and size parameter n: 2                                                                                        
 
 Recommended Conda Environment 1
 
@@ -1082,14 +1092,13 @@ Recommended Conda Environment 1
    - pip                                                                                                                                                                                                
    - pytorch==1.13.0                                                                                                                                                                                    
    - setuptools &lt;70.0.0                                                                                                                                                                                 
-   - torchaudio==0.13.0                                                                                                                                                                                 
    - torchvision==0.14.0                                                                                                                                                                                
 
 Conda Environment Comparison 1
 
  bioimageio.core not found mkl not found numpy not found pytorch not found setuptools found but                                                                                                         
  mismatch. Specification pkg: setuptools[version=&#39;&lt;70.0.0&#39;], Running pkg:                                                                                                                               
- setuptools=80.9.0=py313h06a4308_0 torchaudio not found torchvision not found                                                                                                                           
+ setuptools=80.10.2=py313h06a4308_0 torchvision not found                                                                                                                                               
 </code></pre></div>
 <p>To test your model replace the already published model identifier 'affabl-shark' with a local folder or path to a bioimageio.yaml file.
 Check out the <a href="https://bioimage-io.github.io/spec-bioimage-io">bioimageio.spec documentation</a> for more information on the bioimage.io metadata description format.</p>
@@ -1098,8 +1107,8 @@ Check out the <a href="https://bioimage-io.github.io/spec-bioimage-io">bioimagei
 <h2 id="cli-bioimageio-predict">CLI: bioimageio predict<a class="headerlink" href="#cli-bioimageio-predict" title="Anchor link to this section for reference">¤</a></h2>
 <p>You can use the <code>bioimageio</code> Command Line Interface (CLI) provided by the <code>bioimageio.core</code> package to run prediction with a bioimageio compatible model in a <a href="#finding-a-compatible-python-environment">suitable Python environment</a>.</p>
 <div class="language-ansi highlight"><pre><span></span><code>bioimageio predict --help
-usage: bioimageio predict [-h] [--inputs List[{str,List[str]}]] [--outputs {str,Tuple[str,...]}] [--overwrite | --no-overwrite] [--blockwise | --no-blockwise] [--stats Path]
-                          [--preview | --no-preview] [--weight-format {keras_hdf5,onnx,pytorch_state_dict,tensorflow_saved_model_bundle,torchscript,any}] [--example | --no-example]
+usage: bioimageio predict [-h] [--inputs List[{str,List[str]}]] [--outputs {str,Tuple[str,...]}] [--overwrite | --no-overwrite] [--blockwise {bool,int}] [--stats Path] [--preview | --no-preview]
+                          [--weight-format {keras_hdf5,onnx,pytorch_state_dict,tensorflow_saved_model_bundle,torchscript,any}] [--example | --no-example]
                           SOURCE
 
 Run inference on your data with a bioimage.io model.
@@ -1152,11 +1161,19 @@ options:
                           (default: outputs_{model_id}/{output_id}/{sample_id}.tif)
   --overwrite, --no-overwrite
                         allow overwriting existing output files (default: False)
-  --blockwise, --no-blockwise
-                        process inputs blockwise (default: False)
+  --blockwise {bool,int}
+                        Process inputs blockwise
+
+                        - If an integer is given, it is used as the blocksize parameter &#39;n&#39; for blockwise processing.
+                        The blockize parameter determines the block size along axes with parameterized input size
+                        by adding n*step_size to the minimum valid input size.
+                        - If `True`, the blocksize parameter is set to 10.
+                        - If `False`, inputs are processed as a whole without blocking.
+
+                          (default: False)
   --stats Path          path to dataset statistics
-                        (will be written if it does not exist,
-                        but the model requires statistical dataset measures)
+                        (will be written if it does not exist
+                        and the model requires statistical dataset measures)
                           (default: dataset_statistics.json)
   --preview, --no-preview
                         preview which files would be processed
@@ -1176,14 +1193,14 @@ options:
 </code></pre></div>
 <p>Create a local example and run prediction locally:</p>
 <div class="language-ansi highlight"><pre><span></span><code>bioimageio predict affable-shark --example
-<span class=" -Color -Color-Green">0:00:01.700289</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
-<span class=" -Color -Color-Bold">[&#39;/opt/hostedtoolcache/Python/3.12.12/x64/bin/bioimageio&#39;,</span>
+<span class=" -Color -Color-Green">0:00:01.755750</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
+<span class=" -Color -Color-Bold">[&#39;/opt/hostedtoolcache/Python/3.12.13/x64/bin/bioimageio&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;predict&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;affable-shark&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;--example&#39;]</span>
-<span class=" -Color -Color-Green">0:00:01.701092</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
+<span class=" -Color -Color-Green">0:00:01.756702</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
 <span class=" -Color -Color-Bold">{&#39;predict&#39;: {&#39;example&#39;: True, &#39;source&#39;: &#39;affable-shark&#39;}}</span>
-<span class=" -Color -Color-Green">0:00:01.701317</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
+<span class=" -Color -Color-Green">0:00:01.756927</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
 <span class=" -Color -Color-Bold">{&#39;predict&#39;: {&#39;blockwise&#39;: False,</span>
 <span class=" -Color -Color-Bold">             &#39;example&#39;: True,</span>
 <span class=" -Color -Color-Bold">             &#39;inputs&#39;: [&#39;{input_id}/001.tif&#39;],</span>
@@ -1193,9 +1210,9 @@ options:
 <span class=" -Color -Color-Bold">             &#39;source&#39;: &#39;affable-shark&#39;,</span>
 <span class=" -Color -Color-Bold">             &#39;stats&#39;: &#39;dataset_statistics.json&#39;,</span>
 <span class=" -Color -Color-Bold">             &#39;weight_format&#39;: &#39;any&#39;}}</span>
-<span class=" -Color -Color-Green">0:00:02.495273</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold">loaded affable-shark from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml</span>
-<span class=" -Color -Color-Green">0:00:01.771733</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
-<span class=" -Color -Color-Bold">[&#39;/opt/hostedtoolcache/Python/3.12.12/x64/bin/bioimageio&#39;,</span>
+<span class=" -Color -Color-Green">0:00:02.675353</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold">loaded affable-shark from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml</span>
+<span class=" -Color -Color-Green">0:00:01.738151</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
+<span class=" -Color -Color-Bold">[&#39;/opt/hostedtoolcache/Python/3.12.13/x64/bin/bioimageio&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;predict&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;--preview&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;--overwrite&#39;,</span>
@@ -1203,14 +1220,14 @@ options:
 <span class=" -Color -Color-Bold"> &#39;--inputs=[[&quot;affable-shark_example/input0/001.tif&quot;]]&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;--outputs=affable-shark_example/outputs/{output_id}/{sample_id}.tif&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;affable-shark&#39;]</span>
-<span class=" -Color -Color-Green">0:00:01.772941</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
+<span class=" -Color -Color-Green">0:00:01.739483</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
 <span class=" -Color -Color-Bold">{&#39;predict&#39;: {&#39;inputs&#39;: [[&#39;affable-shark_example/input0/001.tif&#39;]],</span>
 <span class=" -Color -Color-Bold">             &#39;outputs&#39;: &#39;affable-shark_example/outputs/{output_id}/{sample_id}.tif&#39;,</span>
 <span class=" -Color -Color-Bold">             &#39;overwrite&#39;: True,</span>
 <span class=" -Color -Color-Bold">             &#39;preview&#39;: True,</span>
 <span class=" -Color -Color-Bold">             &#39;source&#39;: &#39;affable-shark&#39;,</span>
 <span class=" -Color -Color-Bold">             &#39;stats&#39;: &#39;affable-shark_example/dataset_statistics.json&#39;}}</span>
-<span class=" -Color -Color-Green">0:00:01.773212</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
+<span class=" -Color -Color-Green">0:00:01.739738</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
 <span class=" -Color -Color-Bold">{&#39;predict&#39;: {&#39;blockwise&#39;: False,</span>
 <span class=" -Color -Color-Bold">             &#39;example&#39;: False,</span>
 <span class=" -Color -Color-Bold">             &#39;inputs&#39;: [[&#39;affable-shark_example/input0/001.tif&#39;]],</span>
@@ -1220,28 +1237,28 @@ options:
 <span class=" -Color -Color-Bold">             &#39;source&#39;: &#39;affable-shark&#39;,</span>
 <span class=" -Color -Color-Bold">             &#39;stats&#39;: &#39;affable-shark_example/dataset_statistics.json&#39;,</span>
 <span class=" -Color -Color-Bold">             &#39;weight_format&#39;: &#39;any&#39;}}</span>
-<span class=" -Color -Color-Green">0:00:03.270213</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold">loaded affable-shark from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml</span>
+<span class=" -Color -Color-Green">0:00:03.318307</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold">loaded affable-shark from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml</span>
 🛈 bioimageio prediction preview structure:
 {&#39;{sample_id}&#39;: {&#39;inputs&#39;: {&#39;{input_id}&#39;: &#39;&lt;input path&gt;&#39;},
                  &#39;outputs&#39;: {&#39;{output_id}&#39;: &#39;&lt;output path&gt;&#39;}}}
 🔎 bioimageio prediction preview output:
 {&#39;1&#39;: {&#39;inputs&#39;: {&#39;input0&#39;: &#39;affable-shark_example/input0/001.tif&#39;},
        &#39;outputs&#39;: {&#39;output0&#39;: &#39;affable-shark_example/outputs/output0/1.tif&#39;}}}
-<span class=" -Color -Color-Green">0:00:01.705307</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
-<span class=" -Color -Color-Bold">[&#39;/opt/hostedtoolcache/Python/3.12.12/x64/bin/bioimageio&#39;,</span>
+<span class=" -Color -Color-Green">0:00:01.722423</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
+<span class=" -Color -Color-Bold">[&#39;/opt/hostedtoolcache/Python/3.12.13/x64/bin/bioimageio&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;predict&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;--overwrite&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;--stats=affable-shark_example/dataset_statistics.json&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;--inputs=[[&quot;affable-shark_example/input0/001.tif&quot;]]&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;--outputs=affable-shark_example/outputs/{output_id}/{sample_id}.tif&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;affable-shark&#39;]</span>
-<span class=" -Color -Color-Green">0:00:01.706427</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
+<span class=" -Color -Color-Green">0:00:01.723721</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
 <span class=" -Color -Color-Bold">{&#39;predict&#39;: {&#39;inputs&#39;: [[&#39;affable-shark_example/input0/001.tif&#39;]],</span>
 <span class=" -Color -Color-Bold">             &#39;outputs&#39;: &#39;affable-shark_example/outputs/{output_id}/{sample_id}.tif&#39;,</span>
 <span class=" -Color -Color-Bold">             &#39;overwrite&#39;: True,</span>
 <span class=" -Color -Color-Bold">             &#39;source&#39;: &#39;affable-shark&#39;,</span>
 <span class=" -Color -Color-Bold">             &#39;stats&#39;: &#39;affable-shark_example/dataset_statistics.json&#39;}}</span>
-<span class=" -Color -Color-Green">0:00:01.706713</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
+<span class=" -Color -Color-Green">0:00:01.723983</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
 <span class=" -Color -Color-Bold">{&#39;predict&#39;: {&#39;blockwise&#39;: False,</span>
 <span class=" -Color -Color-Bold">             &#39;example&#39;: False,</span>
 <span class=" -Color -Color-Bold">             &#39;inputs&#39;: [[&#39;affable-shark_example/input0/001.tif&#39;]],</span>
@@ -1251,11 +1268,11 @@ options:
 <span class=" -Color -Color-Bold">             &#39;source&#39;: &#39;affable-shark&#39;,</span>
 <span class=" -Color -Color-Bold">             &#39;stats&#39;: &#39;affable-shark_example/dataset_statistics.json&#39;,</span>
 <span class=" -Color -Color-Bold">             &#39;weight_format&#39;: &#39;any&#39;}}</span>
-<span class=" -Color -Color-Green">0:00:03.055113</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold">loaded affable-shark from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml</span>
+<span class=" -Color -Color-Green">0:00:03.284864</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold">loaded affable-shark from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml</span>
 
 predict with affable-shark:   0%|          | 0/1 [00:00&lt;?, ?sample/s]
-predict with affable-shark: 100%|██████████| 1/1 [00:00&lt;00:00,  1.40sample/s]
-predict with affable-shark: 100%|██████████| 1/1 [00:00&lt;00:00,  1.40sample/s]
+predict with affable-shark: 100%|██████████| 1/1 [00:00&lt;00:00,  1.46sample/s]
+predict with affable-shark: 100%|██████████| 1/1 [00:00&lt;00:00,  1.46sample/s]
 🎉 Sucessfully ran example prediction!
 To predict the example input using the CLI example config file affable-shark_example/bioimageio-cli.yaml, execute `bioimageio predict` from affable-shark_example:
 $ cd affable-shark_example
@@ -1294,16 +1311,16 @@ $ bioimageio predict --overwrite --stats=&quot;affable-shark_example/dataset_sta
 <h3 id="cli-bioimageio-commands">CLI: bioimageio commands<a class="headerlink" href="#cli-bioimageio-commands" title="Anchor link to this section for reference">¤</a></h3>
 <p>To get an overview of available commands:</p>
 <div class="language-ansi highlight"><pre><span></span><code>bioimageio --help
-usage: bioimageio [-h] {validate-format,test,package,predict,update-format,update-hashes,add-weights,empty-cache} ...
+usage: bioimageio [-h] {validate-format,test,package,predict,predict-block-artifacts,update-format,update-hashes,add-weights,empty-cache} ...
 
 bioimageio - CLI for bioimage.io resources 🦒
 
 library versions:
   bioimageio.core 0.9.6
-  bioimageio.spec 0.5.7.4
+  bioimageio.spec 0.5.9.0
 
 spec format versions:
-        model RDF 0.5.7
+        model RDF 0.5.9
       dataset RDF 0.3.0
      notebook RDF 0.3.0
 
@@ -1311,11 +1328,19 @@ options:
   -h, --help            show this help message and exit
 
 subcommands:
-  {validate-format,test,package,predict,update-format,update-hashes,add-weights,empty-cache}
+  {validate-format,test,package,predict,predict-block-artifacts,update-format,update-hashes,add-weights,empty-cache}
     validate-format     Validate the meta data format of a bioimageio resource.
     test                Test a bioimageio resource (beyond meta data formatting).
     package             Save a resource&#39;s metadata with its associated files.
     predict             Run inference on your data with a bioimage.io model.
+    predict-block-artifacts
+                        Command to inspect block artifacts by subtracting the combined, blockwise predictions from a whole sample prediction.
+
+                            Note:
+                                - This command intentionally uses a small blocksize (default: 1) to create block artifacts for testing purposes.
+                                - Typical sources of block artifacts include:
+                                    - Described halo is smaller than the model&#39;s receptive field
+                                    - Normalization layers inside the network cannot aggregate statistics over the whole sample.
     update-format       Update the metadata format to the latest format version.
     update-hashes       Create a bioimageio.yaml description with updated file hashes.
     add-weights         Add additional weights to a model description by converting from available formats.
