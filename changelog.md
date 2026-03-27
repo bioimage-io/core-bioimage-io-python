@@ -1,8 +1,10 @@
-### 0.10.0 (not yet released)
+### 0.10.0
 
 - bump bioimageio.spec library version to 0.5.9.0
 - support Keras v3 weights descriptions
 - new `bioimageio predict-block-artifacts` command
+- add support for stardist postprocessing
+- rename `BlockedOperator` to `BlockwiseOperator`
 
 ### 0.9.6
 
