@@ -180,7 +180,7 @@ def test_model(
     *,
     determinism: Literal["seed_only", "full"] = "seed_only",
     sha256: Optional[Sha256] = None,
-    stop_early: bool = True,
+    stop_early: bool = False,
     working_dir: Optional[Union[os.PathLike[str], str]] = None,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> ValidationSummary:
@@ -212,7 +212,7 @@ def test_description(
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Optional[str] = None,
     sha256: Optional[Sha256] = None,
-    stop_early: bool = True,
+    stop_early: bool = False,
     runtime_env: Union[
         Literal["currently-active", "as-described"], Path, BioimageioCondaEnv
     ] = ("currently-active"),
@@ -560,7 +560,7 @@ def load_description_and_test(
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Literal["model"],
     sha256: Optional[Sha256] = None,
-    stop_early: bool = True,
+    stop_early: bool = False,
     working_dir: Optional[Union[os.PathLike[str], str]] = None,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[ModelDescr, InvalidDescr]: ...
@@ -576,7 +576,7 @@ def load_description_and_test(
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Literal["dataset"],
     sha256: Optional[Sha256] = None,
-    stop_early: bool = True,
+    stop_early: bool = False,
     working_dir: Optional[Union[os.PathLike[str], str]] = None,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[DatasetDescr, InvalidDescr]: ...
@@ -592,7 +592,7 @@ def load_description_and_test(
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Optional[str] = None,
     sha256: Optional[Sha256] = None,
-    stop_early: bool = True,
+    stop_early: bool = False,
     working_dir: Optional[Union[os.PathLike[str], str]] = None,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[LatestResourceDescr, InvalidDescr]: ...
@@ -608,7 +608,7 @@ def load_description_and_test(
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Literal["model"],
     sha256: Optional[Sha256] = None,
-    stop_early: bool = True,
+    stop_early: bool = False,
     working_dir: Optional[Union[os.PathLike[str], str]] = None,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[AnyModelDescr, InvalidDescr]: ...
@@ -624,7 +624,7 @@ def load_description_and_test(
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Literal["dataset"],
     sha256: Optional[Sha256] = None,
-    stop_early: bool = True,
+    stop_early: bool = False,
     working_dir: Optional[Union[os.PathLike[str], str]] = None,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[AnyDatasetDescr, InvalidDescr]: ...
@@ -640,7 +640,7 @@ def load_description_and_test(
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Optional[str] = None,
     sha256: Optional[Sha256] = None,
-    stop_early: bool = True,
+    stop_early: bool = False,
     working_dir: Optional[Union[os.PathLike[str], str]] = None,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[ResourceDescr, InvalidDescr]: ...
@@ -655,7 +655,7 @@ def load_description_and_test(
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Optional[str] = None,
     sha256: Optional[Sha256] = None,
-    stop_early: bool = True,
+    stop_early: bool = False,
     working_dir: Optional[Union[os.PathLike[str], str]] = None,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> Union[ResourceDescr, InvalidDescr]:
