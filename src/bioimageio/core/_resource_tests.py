@@ -717,7 +717,15 @@ def load_description_and_test(
     )
 
     if expected_type is not None:
-        _test_expected_resource_type(rd, expected_type)
+        has_expected_type = _test_expected_resource_type(rd, expected_type)
+        if not has_expected_type:
+            # unexpected type -> invalid format
+            rd.validation_summary.status = "failed"
+            return rd
+
+    # elevate status valid-format to passed and start testing
+    if rd.validation_summary.status == "valid-format":
+        rd.validation_summary.status = "passed"
 
     if isinstance(rd, (v0_4.ModelDescr, v0_5.ModelDescr)):
         if weight_format is None:
@@ -729,7 +737,7 @@ def load_description_and_test(
 
         enable_determinism(determinism, weight_formats=weight_formats)
         for w in weight_formats:
-            _test_model_inference(
+            passed_recreate_test_outputs = _test_recreate_test_outputs(
                 rd,
                 w,
                 devices,
@@ -738,14 +746,15 @@ def load_description_and_test(
                 verbose=working_dir is not None,
                 **deprecated,
             )
-            if stop_early and rd.validation_summary.status != "passed":
+
+            if stop_early and not passed_recreate_test_outputs:
                 break
 
             if not isinstance(rd, v0_4.ModelDescr):
-                _test_model_inference_parametrized(
+                passed_parametrized_inference = _test_parametrized_inference(
                     rd, w, devices, stop_early=stop_early
                 )
-                if stop_early and rd.validation_summary.status != "passed":
+                if stop_early and not passed_parametrized_inference:
                     break
 
     # TODO: add execution of jupyter notebooks
@@ -807,7 +816,7 @@ def _get_tolerance(
     return rtol, atol, mismatched_tol
 
 
-def _test_model_inference(
+def _test_recreate_test_outputs(
     model: Union[v0_4.ModelDescr, v0_5.ModelDescr],
     weight_format: SupportedWeightsFormat,
     devices: Optional[Sequence[str]],
@@ -816,7 +825,7 @@ def _test_model_inference(
     working_dir: Optional[Union[os.PathLike[str], str]],
     verbose: bool,
     **deprecated: Unpack[DeprecatedKwargs],
-) -> None:
+) -> bool:
     test_name = f"Reproduce test outputs from test inputs ({weight_format})"
     logger.debug("starting '{}'", test_name)
     error_entries: List[ErrorEntry] = []
@@ -1012,9 +1021,10 @@ def _test_model_inference(
             warnings=warning_entries,
         )
     )
+    return bool(error_entries)
 
 
-def _test_model_inference_parametrized(
+def _test_parametrized_inference(
     model: v0_5.ModelDescr,
     weight_format: SupportedWeightsFormat,
     devices: Optional[Sequence[str]],
@@ -1194,7 +1204,7 @@ def _test_model_inference_parametrized(
 def _test_expected_resource_type(
     rd: Union[InvalidDescr, ResourceDescr], expected_type: str
 ):
-    has_expected_type = rd.type == expected_type
+    has_expected_type = rd.type is expected_type
     rd.validation_summary.details.append(
         ValidationDetail(
             name="Has expected resource type",
@@ -1213,6 +1223,7 @@ def _test_expected_resource_type(
             ),
         )
     )
+    return has_expected_type
 
 
 # TODO: Implement `debug_model()`
