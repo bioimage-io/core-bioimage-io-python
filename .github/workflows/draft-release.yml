@@ -1,6 +1,9 @@
 name: Draft release
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
   # pull_request event is required only for autolabeler
   pull_request:
@@ -13,3 +16,5 @@ jobs:
       - uses: release-drafter/release-drafter@v7
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          commitish: main
