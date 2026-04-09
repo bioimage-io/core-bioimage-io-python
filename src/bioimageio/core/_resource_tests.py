@@ -981,16 +981,16 @@ def _test_recreate_test_outputs(
                         msg = (
                             f"Output '{m}': {mismatched_elements} of "
                             + f"{expected_np.size} elements disagree with expected values."
-                            + f" ({mismatched_ppm:.1f} ppm)."
+                            + f" ({mismatched_ppm:.1f} ppm). "
                         )
                     else:
-                        msg = f"Output `{m}`: all elements agree with expected values."
+                        msg = f"Output `{m}`: all elements agree with expected values. "
 
                     msg += (
-                        f"\n Max relative difference not accounted for by absolute tolerance ({atol:.2e}): {r_max:.2e}"
+                        f"\nMax relative difference not accounted for by absolute tolerance ({atol:.2e}):\n{r_max:.2e}"
                         + rf" (= \|{r_actual:.2e} - {r_expected:.2e}\|/\|{r_expected:.2e} + 1e-6\|)"
-                        + f" at {dict(zip(dims, r_max_idx))}"
-                        + f"\n Max absolute difference not accounted for by relative tolerance ({rtol:.2e}): {a_max:.2e}"
+                        + f" at {dict(zip(dims, r_max_idx))} "
+                        + f"\nMax absolute difference not accounted for by relative tolerance ({rtol:.2e}):\n{a_max:.2e}"
                         + rf" (= \|{a_actual:.7e} - {a_expected:.7e}\|) at {dict(zip(dims, a_max_idx))}"
                     )
                     if output_paths:
