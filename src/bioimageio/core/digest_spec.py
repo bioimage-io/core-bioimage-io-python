@@ -23,8 +23,12 @@ from zipfile import ZipFile, is_zipfile
 
 import numpy as np
 import xarray as xr
-from bioimageio.spec._internal.io import HashKwargs
-from bioimageio.spec.common import FileDescr, FileSource, ZipPath
+from loguru import logger
+from numpy.typing import NDArray
+from typing_extensions import Unpack, assert_never
+
+from bioimageio.spec._internal.io import HashKwargs, PermissiveFileSource
+from bioimageio.spec.common import FileDescr, FileSource
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 from bioimageio.spec.model.v0_4 import CallableFromDepencency, CallableFromFile
 from bioimageio.spec.model.v0_5 import (
@@ -33,9 +37,6 @@ from bioimageio.spec.model.v0_5 import (
     ParameterizedSize_N,
 )
 from bioimageio.spec.utils import load_array
-from loguru import logger
-from numpy.typing import NDArray
-from typing_extensions import Unpack, assert_never
 
 from .axis import Axis, AxisId, AxisInfo, AxisLike, PerAxis
 from .block_meta import split_multiple_shapes_into_blocks
@@ -50,7 +51,7 @@ from .sample import (
 from .stat_measures import Stat
 from .tensor import Tensor
 
-TensorSource = Union[Tensor, xr.DataArray, NDArray[Any], Path]
+TensorSource = Union[Tensor, xr.DataArray, NDArray[Any], PermissiveFileSource]
 
 
 def import_callable(
@@ -403,19 +404,38 @@ def get_io_sample_block_metas(
 
 
 def get_tensor(
-    src: Union[ZipPath, TensorSource],
-    ipt: Union[v0_4.InputTensorDescr, v0_5.InputTensorDescr],
+    src: TensorSource,
+    descr: Union[
+        v0_4.InputTensorDescr,
+        v0_5.InputTensorDescr,
+        v0_4.OutputTensorDescr,
+        v0_5.OutputTensorDescr,
+        Sequence[AxisInfo],
+    ],
 ):
     """helper to cast/load various tensor sources"""
 
-    if isinstance(src, Tensor):
-        return src
-    elif isinstance(src, xr.DataArray):
-        return Tensor.from_xarray(src)
-    elif isinstance(src, np.ndarray):
-        return Tensor.from_numpy(src, dims=get_axes_infos(ipt))
+    if isinstance(
+        descr,
+        (
+            v0_4.InputTensorDescr,
+            v0_5.InputTensorDescr,
+            v0_4.OutputTensorDescr,
+            v0_5.OutputTensorDescr,
+        ),
+    ):
+        axes = get_axes_infos(descr)
     else:
-        return load_tensor(src, axes=get_axes_infos(ipt))
+        axes = descr
+
+    if isinstance(src, Tensor):
+        return src.transpose(axes=[a.id for a in axes])
+    elif isinstance(src, xr.DataArray):
+        return Tensor.from_xarray(src).transpose(axes=[a.id for a in axes])
+    elif isinstance(src, np.ndarray):
+        return Tensor.from_numpy(src, dims=axes)
+    else:
+        return load_tensor(src, axes=axes)
 
 
 def create_sample_for_model(

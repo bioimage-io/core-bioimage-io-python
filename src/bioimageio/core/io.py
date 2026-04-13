@@ -21,6 +21,7 @@ from bioimageio.spec._internal.io import get_reader, interprete_file_source
 from bioimageio.spec._internal.type_guards import is_ndarray
 from bioimageio.spec.common import (
     BytesReader,
+    FileDescr,
     FileSource,
     HttpUrl,
     PermissiveFileSource,
@@ -37,7 +38,7 @@ from .tensor import Tensor
 
 
 def load_image(
-    source: Union[ZipPath, PermissiveFileSource], is_volume: Optional[bool] = None
+    source: Union[PermissiveFileSource, ZipPath], is_volume: Optional[bool] = None
 ) -> NDArray[Any]:
     """load a single image as numpy array
 
@@ -48,7 +49,7 @@ def load_image(
     if is_volume is not None:
         warnings.warn("**is_volume** is deprecated and will be removed soon.")
 
-    if isinstance(source, ZipPath):
+    if isinstance(source, (FileDescr, ZipPath)):
         parsed_source = source
     else:
         parsed_source = interprete_file_source(source)
@@ -69,10 +70,12 @@ def load_image(
 
 
 def load_tensor(
-    path: Union[ZipPath, Path, str], axes: Optional[Sequence[AxisLike]] = None
+    source: Union[PermissiveFileSource, ZipPath],
+    /,
+    axes: Optional[Sequence[AxisLike]] = None,
 ) -> Tensor:
     # TODO: load axis meta data
-    array = load_image(path)
+    array = load_image(source)
 
     return Tensor.from_numpy(array, dims=axes)
 
