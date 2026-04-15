@@ -65,9 +65,9 @@ class Sample:
     def shape(self) -> PerMember[PerAxis[int]]:
         return {tid: t.sizes for tid, t in self.members.items()}
 
-    def as_arrays(self) -> Dict[str, NDArray[Any]]:
+    def as_arrays(self) -> Dict[MemberId, NDArray[Any]]:
         """Return sample as dictionary of arrays."""
-        return {str(m): t.data.to_numpy() for m, t in self.members.items()}
+        return {m: t.to_numpy() for m, t in self.members.items()}
 
     def split_into_blocks(
         self,

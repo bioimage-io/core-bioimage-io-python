@@ -183,15 +183,18 @@ def get_devices(
     devices: Optional[Sequence[Union[torch.device, str]]] = None,
 ) -> List[torch.device]:
     if not devices:
-        torch_devices = [
-            torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
-        ]
+        if torch.cuda.is_available():
+            torch_devices = [torch.device("cuda")]
+        elif torch.backends.mps.is_available():
+            torch_devices = [torch.device("mps")]
+        else:
+            torch_devices = [torch.device("cpu")]
     else:
         torch_devices = [torch.device(d) for d in devices]
 
     if len(torch_devices) > 1:
         warnings.warn(
-            f"Multiple devices for single pytorch model not yet implemented; ignoring {torch_devices[1:]}"
+            f"Multiple devices for pytorch model not yet implemented; ignoring {torch_devices[1:]}"
         )
         torch_devices = torch_devices[:1]
 

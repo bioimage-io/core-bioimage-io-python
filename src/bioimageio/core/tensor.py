@@ -64,6 +64,9 @@ class Tensor(MagicTensorOpsMixin):
         )
         self._data = xr.DataArray(array, dims=axes)
 
+    def __repr__(self) -> str:
+        return f"<Tensor {repr(self._data)}>"
+
     def __array__(self, dtype: DTypeLike = None):
         return np.asarray(self._data, dtype=dtype)
 

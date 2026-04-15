@@ -1,6 +1,5 @@
 # pyright: reportUnknownVariableType=false
 import gc
-import warnings
 from typing import Any, List, Optional, Sequence, Union
 
 import torch
@@ -10,6 +9,7 @@ from bioimageio.spec.model import v0_4, v0_5
 
 from ..model_adapters import ModelAdapter
 from ..utils._type_guards import is_list, is_tuple
+from .pytorch_backend import get_devices
 
 
 class TorchscriptModelAdapter(ModelAdapter):
@@ -25,15 +25,7 @@ class TorchscriptModelAdapter(ModelAdapter):
                 f"No torchscript weights found for model {model_description.name}"
             )
 
-        if devices is None:
-            self.devices = ["cuda" if torch.cuda.is_available() else "cpu"]
-        else:
-            self.devices = [torch.device(d) for d in devices]
-
-        if len(self.devices) > 1:
-            warnings.warn(
-                "Multiple devices for single torchscript model not yet implemented"
-            )
+        self.devices = get_devices(devices)
 
         weight_reader = model_description.weights.torchscript.get_reader()
         self._model = torch.jit.load(weight_reader)
