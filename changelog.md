@@ -1,3 +1,8 @@
+### 0.10.2
+
+- improve error message when `torch.load(weights_only=True)` fails on non-pure state dicts (#486)
+- add spec→runtime integration test for softmax postprocessing (#487)
+
 ### 0.10.1
 
 - bump bioimageio.spec library version to 0.5.9.1
