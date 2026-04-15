@@ -1008,13 +1008,13 @@ conda<span class="w"> </span>activate<span class="w"> </span>bioimageio-affable-
 <h2 id="test-modelenvironment">Test model+environment<a class="headerlink" href="#test-modelenvironment" title="Anchor link to this section for reference">¤</a></h2>
 <p>Test a bioimageio compatible model, e.g. "affable-shark" in an active Python environment:</p>
 <div class="language-ansi highlight"><pre><span></span><code>bioimageio test affable-shark
-<span class=" -Color -Color-Green">0:00:01.610530</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
+<span class=" -Color -Color-Green">0:00:01.364690</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
 <span class=" -Color -Color-Bold">[&#39;/opt/hostedtoolcache/Python/3.12.13/x64/bin/bioimageio&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;test&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;affable-shark&#39;]</span>
-<span class=" -Color -Color-Green">0:00:01.611171</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
+<span class=" -Color -Color-Green">0:00:01.365249</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
 <span class=" -Color -Color-Bold">{&#39;test&#39;: {&#39;source&#39;: &#39;affable-shark&#39;}}</span>
-<span class=" -Color -Color-Green">0:00:01.611393</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
+<span class=" -Color -Color-Green">0:00:01.365433</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
 <span class=" -Color -Color-Bold">{&#39;test&#39;: {&#39;determinism&#39;: &#39;seed_only&#39;,</span>
 <span class=" -Color -Color-Bold">          &#39;devices&#39;: None,</span>
 <span class=" -Color -Color-Bold">          &#39;format_version&#39;: &#39;discover&#39;,</span>
@@ -1024,9 +1024,9 @@ conda<span class="w"> </span>activate<span class="w"> </span>bioimageio-affable-
 <span class=" -Color -Color-Bold">          &#39;summary&#39;: [&#39;display&#39;],</span>
 <span class=" -Color -Color-Bold">          &#39;weight_format&#39;: &#39;all&#39;,</span>
 <span class=" -Color -Color-Bold">          &#39;working_dir&#39;: None}}</span>
-<span class=" -Color -Color-Green">0:00:03.434354</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold">loaded affable-shark from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml</span>
-<span class=" -Color -Color-Green">0:01:31.045668</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_resource_tests</span> - <span class=" -Color -Color-Bold">Testing inference with &#39;pytorch_state_dict&#39; for 6 different inputs (B, N): {(1, 2), (2, 1), (1, 1), (2, 0), (2, 2), (1, 0)}</span>
-<span class=" -Color -Color-Green">0:01:33.015445</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_resource_tests</span> - <span class=" -Color -Color-Bold">Testing inference with &#39;torchscript&#39; for 6 different inputs (B, N): {(1, 2), (2, 1), (1, 1), (2, 0), (2, 2), (1, 0)}</span>
+<span class=" -Color -Color-Green">0:00:03.099831</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold">loaded affable-shark from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml</span>
+<span class=" -Color -Color-Green">0:01:37.785084</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_resource_tests</span> - <span class=" -Color -Color-Bold">Testing inference with &#39;pytorch_state_dict&#39; for 6 different inputs (B, N): {(1, 2), (2, 1), (1, 1), (2, 0), (2, 2), (1, 0)}</span>
+<span class=" -Color -Color-Green">0:01:39.588293</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_resource_tests</span> - <span class=" -Color -Color-Bold">Testing inference with &#39;torchscript&#39; for 6 different inputs (B, N): {(1, 2), (2, 1), (1, 1), (2, 0), (2, 2), (1, 0)}</span>
 
 
  ✔️               bioimageio format validation                                               
@@ -1050,7 +1050,7 @@ conda<span class="w"> </span>activate<span class="w"> </span>bioimageio-affable-
                                  Max relative difference not accounted for by absolute tolerance (1.00e-03):                                                                
                                  0.00e+00 (= |2.78e-01 - 2.78e-01|/|2.78e-01 + 1e-6|) at {&#39;batch&#39;: np.int64(0), &#39;channel&#39;: np.int64(0), &#39;y&#39;: np.int64(0), &#39;x&#39;: np.int64(0)} 
                                  Max absolute difference not accounted for by relative tolerance (1.00e-03):                                                                
-                                 0.00e+00 (= |7.3491123e-05 - 7.3491268e-05|) at {&#39;batch&#39;: np.int64(0), &#39;channel&#39;: np.int64(1), &#39;y&#39;: np.int64(247), &#39;x&#39;: np.int64(253)}     
+                                 0.00e+00 (= |7.3491196e-05 - 7.3491268e-05|) at {&#39;batch&#39;: np.int64(0), &#39;channel&#39;: np.int64(1), &#39;y&#39;: np.int64(247), &#39;x&#39;: np.int64(253)}     
      weights.pytorch_state_dict  recommended conda environment (Reproduce test outputs from test inputs (pytorch_state_dict))                                               
                                  See Recommended Conda Environment 1 below.                                                                                                 
      weights.pytorch_state_dict  conda compare (Reproduce test outputs from test inputs (pytorch_state_dict))                                                               
@@ -1066,7 +1066,7 @@ conda<span class="w"> </span>activate<span class="w"> </span>bioimageio-affable-
                                  Max relative difference not accounted for by absolute tolerance (1.00e-03):                                                                
                                  0.00e+00 (= |2.78e-01 - 2.78e-01|/|2.78e-01 + 1e-6|) at {&#39;batch&#39;: np.int64(0), &#39;channel&#39;: np.int64(0), &#39;y&#39;: np.int64(0), &#39;x&#39;: np.int64(0)} 
                                  Max absolute difference not accounted for by relative tolerance (1.00e-03):                                                                
-                                 0.00e+00 (= |7.3491123e-05 - 7.3491268e-05|) at {&#39;batch&#39;: np.int64(0), &#39;channel&#39;: np.int64(1), &#39;y&#39;: np.int64(247), &#39;x&#39;: np.int64(253)}     
+                                 0.00e+00 (= |7.3491196e-05 - 7.3491268e-05|) at {&#39;batch&#39;: np.int64(0), &#39;channel&#39;: np.int64(1), &#39;y&#39;: np.int64(247), &#39;x&#39;: np.int64(253)}     
      weights.torchscript         recommended conda environment (Reproduce test outputs from test inputs (torchscript))                                                      
                                  See Recommended Conda Environment 1 below.                                                                                                 
      weights.torchscript         conda compare (Reproduce test outputs from test inputs (torchscript))                                                                      
@@ -1193,14 +1193,14 @@ options:
 </code></pre></div>
 <p>Create a local example and run prediction locally:</p>
 <div class="language-ansi highlight"><pre><span></span><code>bioimageio predict affable-shark --example
-<span class=" -Color -Color-Green">0:00:01.621767</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
+<span class=" -Color -Color-Green">0:00:01.355987</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
 <span class=" -Color -Color-Bold">[&#39;/opt/hostedtoolcache/Python/3.12.13/x64/bin/bioimageio&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;predict&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;affable-shark&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;--example&#39;]</span>
-<span class=" -Color -Color-Green">0:00:01.622761</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
+<span class=" -Color -Color-Green">0:00:01.356765</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
 <span class=" -Color -Color-Bold">{&#39;predict&#39;: {&#39;example&#39;: True, &#39;source&#39;: &#39;affable-shark&#39;}}</span>
-<span class=" -Color -Color-Green">0:00:01.623016</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
+<span class=" -Color -Color-Green">0:00:01.356968</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
 <span class=" -Color -Color-Bold">{&#39;predict&#39;: {&#39;blockwise&#39;: False,</span>
 <span class=" -Color -Color-Bold">             &#39;example&#39;: True,</span>
 <span class=" -Color -Color-Bold">             &#39;inputs&#39;: [&#39;{input_id}/001.tif&#39;],</span>
@@ -1210,8 +1210,8 @@ options:
 <span class=" -Color -Color-Bold">             &#39;source&#39;: &#39;affable-shark&#39;,</span>
 <span class=" -Color -Color-Bold">             &#39;stats&#39;: &#39;dataset_statistics.json&#39;,</span>
 <span class=" -Color -Color-Bold">             &#39;weight_format&#39;: &#39;any&#39;}}</span>
-<span class=" -Color -Color-Green">0:00:02.832946</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold">loaded affable-shark from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml</span>
-<span class=" -Color -Color-Green">0:00:01.626666</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
+<span class=" -Color -Color-Green">0:00:02.268140</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold">loaded affable-shark from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml</span>
+<span class=" -Color -Color-Green">0:00:01.360903</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
 <span class=" -Color -Color-Bold">[&#39;/opt/hostedtoolcache/Python/3.12.13/x64/bin/bioimageio&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;predict&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;--preview&#39;,</span>
@@ -1220,14 +1220,14 @@ options:
 <span class=" -Color -Color-Bold"> &#39;--inputs=[[&quot;affable-shark_example/input0/001.tif&quot;]]&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;--outputs=affable-shark_example/outputs/{output_id}/{sample_id}.tif&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;affable-shark&#39;]</span>
-<span class=" -Color -Color-Green">0:00:01.627938</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
+<span class=" -Color -Color-Green">0:00:01.362008</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
 <span class=" -Color -Color-Bold">{&#39;predict&#39;: {&#39;inputs&#39;: [[&#39;affable-shark_example/input0/001.tif&#39;]],</span>
 <span class=" -Color -Color-Bold">             &#39;outputs&#39;: &#39;affable-shark_example/outputs/{output_id}/{sample_id}.tif&#39;,</span>
 <span class=" -Color -Color-Bold">             &#39;overwrite&#39;: True,</span>
 <span class=" -Color -Color-Bold">             &#39;preview&#39;: True,</span>
 <span class=" -Color -Color-Bold">             &#39;source&#39;: &#39;affable-shark&#39;,</span>
 <span class=" -Color -Color-Bold">             &#39;stats&#39;: &#39;affable-shark_example/dataset_statistics.json&#39;}}</span>
-<span class=" -Color -Color-Green">0:00:01.628209</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
+<span class=" -Color -Color-Green">0:00:01.362217</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
 <span class=" -Color -Color-Bold">{&#39;predict&#39;: {&#39;blockwise&#39;: False,</span>
 <span class=" -Color -Color-Bold">             &#39;example&#39;: False,</span>
 <span class=" -Color -Color-Bold">             &#39;inputs&#39;: [[&#39;affable-shark_example/input0/001.tif&#39;]],</span>
@@ -1237,14 +1237,14 @@ options:
 <span class=" -Color -Color-Bold">             &#39;source&#39;: &#39;affable-shark&#39;,</span>
 <span class=" -Color -Color-Bold">             &#39;stats&#39;: &#39;affable-shark_example/dataset_statistics.json&#39;,</span>
 <span class=" -Color -Color-Bold">             &#39;weight_format&#39;: &#39;any&#39;}}</span>
-<span class=" -Color -Color-Green">0:00:02.458100</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold">loaded affable-shark from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml</span>
+<span class=" -Color -Color-Green">0:00:02.268441</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold">loaded affable-shark from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml</span>
 🛈 bioimageio prediction preview structure:
 {&#39;{sample_id}&#39;: {&#39;inputs&#39;: {&#39;{input_id}&#39;: &#39;&lt;input path&gt;&#39;},
                  &#39;outputs&#39;: {&#39;{output_id}&#39;: &#39;&lt;output path&gt;&#39;}}}
 🔎 bioimageio prediction preview output:
 {&#39;1&#39;: {&#39;inputs&#39;: {&#39;input0&#39;: &#39;affable-shark_example/input0/001.tif&#39;},
        &#39;outputs&#39;: {&#39;output0&#39;: &#39;affable-shark_example/outputs/output0/1.tif&#39;}}}
-<span class=" -Color -Color-Green">0:00:01.613517</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
+<span class=" -Color -Color-Green">0:00:01.410224</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
 <span class=" -Color -Color-Bold">[&#39;/opt/hostedtoolcache/Python/3.12.13/x64/bin/bioimageio&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;predict&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;--overwrite&#39;,</span>
@@ -1252,13 +1252,13 @@ options:
 <span class=" -Color -Color-Bold"> &#39;--inputs=[[&quot;affable-shark_example/input0/001.tif&quot;]]&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;--outputs=affable-shark_example/outputs/{output_id}/{sample_id}.tif&#39;,</span>
 <span class=" -Color -Color-Bold"> &#39;affable-shark&#39;]</span>
-<span class=" -Color -Color-Green">0:00:01.614723</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
+<span class=" -Color -Color-Green">0:00:01.411334</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
 <span class=" -Color -Color-Bold">{&#39;predict&#39;: {&#39;inputs&#39;: [[&#39;affable-shark_example/input0/001.tif&#39;]],</span>
 <span class=" -Color -Color-Bold">             &#39;outputs&#39;: &#39;affable-shark_example/outputs/{output_id}/{sample_id}.tif&#39;,</span>
 <span class=" -Color -Color-Bold">             &#39;overwrite&#39;: True,</span>
 <span class=" -Color -Color-Bold">             &#39;source&#39;: &#39;affable-shark&#39;,</span>
 <span class=" -Color -Color-Bold">             &#39;stats&#39;: &#39;affable-shark_example/dataset_statistics.json&#39;}}</span>
-<span class=" -Color -Color-Green">0:00:01.614988</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
+<span class=" -Color -Color-Green">0:00:01.411549</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
 <span class=" -Color -Color-Bold">{&#39;predict&#39;: {&#39;blockwise&#39;: False,</span>
 <span class=" -Color -Color-Bold">             &#39;example&#39;: False,</span>
 <span class=" -Color -Color-Bold">             &#39;inputs&#39;: [[&#39;affable-shark_example/input0/001.tif&#39;]],</span>
@@ -1268,11 +1268,11 @@ options:
 <span class=" -Color -Color-Bold">             &#39;source&#39;: &#39;affable-shark&#39;,</span>
 <span class=" -Color -Color-Bold">             &#39;stats&#39;: &#39;affable-shark_example/dataset_statistics.json&#39;,</span>
 <span class=" -Color -Color-Bold">             &#39;weight_format&#39;: &#39;any&#39;}}</span>
-<span class=" -Color -Color-Green">0:00:02.574886</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold">loaded affable-shark from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml</span>
+<span class=" -Color -Color-Green">0:00:02.369714</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold">loaded affable-shark from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml</span>
 
 predict with affable-shark:   0%|          | 0/1 [00:00&lt;?, ?sample/s]
-predict with affable-shark: 100%|██████████| 1/1 [00:00&lt;00:00,  1.43sample/s]
-predict with affable-shark: 100%|██████████| 1/1 [00:00&lt;00:00,  1.43sample/s]
+predict with affable-shark: 100%|██████████| 1/1 [00:00&lt;00:00,  1.76sample/s]
+predict with affable-shark: 100%|██████████| 1/1 [00:00&lt;00:00,  1.76sample/s]
 🎉 Sucessfully ran example prediction!
 To predict the example input using the CLI example config file affable-shark_example/bioimageio-cli.yaml, execute `bioimageio predict` from affable-shark_example:
 $ cd affable-shark_example
