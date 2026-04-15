@@ -37,6 +37,14 @@ class Settings(SpecSettings):
 
         return value
 
+    collection_index_url: str = "https://bioimage-io.github.io/collection/index.json"
+    """URL to the bioimageio collection index"""
+
+    collection_config_url: str = (
+        "https://bioimage-io.github.io/collection/bioimageio_collection_config.json"
+    )
+    """URL to the bioimageio collection config"""
+
 
 settings = Settings()
 """parsed environment variables for bioimageio.spec and bioimageio.core"""
