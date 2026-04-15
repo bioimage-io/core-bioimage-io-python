@@ -4373,6 +4373,17 @@ If that is not the case, consider <code>predict_sample_with_blocking</code></p>
             </td>
           </tr>
           <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.Settings.collection_config_url">collection_config_url</a></code></td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>URL to the bioimageio collection config</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.Settings.collection_http_pattern">collection_http_pattern</a></code></td>
             <td>
                   <code><span title="str">str</span></code>
@@ -4380,6 +4391,17 @@ If that is not the case, consider <code>predict_sample_with_blocking</code></p>
             <td>
               <div class="doc-md-description">
                 <p>A pattern to map bioimageio IDs to bioimageio.yaml URLs.</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.Settings.collection_index_url">collection_index_url</a></code></td>
+            <td>
+                  <code><span title="str">str</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>URL to the bioimageio collection index</p>
               </div>
             </td>
           </tr>
@@ -4663,6 +4685,32 @@ If that is not the case, consider <code>predict_sample_with_blocking</code></p>
 
 
 
+<h3 id="bioimageio.core.Settings.collection_config_url" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">collection_config_url</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#bioimageio.core.Settings.collection_config_url" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">collection_config_url</span><span class="p">:</span> <span class="n"><span title="str">str</span></span> <span class="o">=</span> <span class="s1">&#39;https://bioimage-io.github.io/collection/bioimageio_collection_config.json&#39;</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>URL to the bioimageio collection config</p>
+
+          
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
 <h3 id="bioimageio.core.Settings.collection_http_pattern" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">collection_http_pattern</span>
 
@@ -4684,6 +4732,32 @@ Notes:
   e.g. "affable-shark" when calling <code>load_description("affable-shark")</code>.
 - This method takes precedence over resolving via <code>id_map</code>.
 - If this endpoints fails, we fall back to <code>id_map</code>.</p>
+
+          
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="bioimageio.core.Settings.collection_index_url" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">collection_index_url</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#bioimageio.core.Settings.collection_index_url" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">collection_index_url</span><span class="p">:</span> <span class="n"><span title="str">str</span></span> <span class="o">=</span> <span class="s1">&#39;https://bioimage-io.github.io/collection/index.json&#39;</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>URL to the bioimageio collection index</p>
 
           
     </div>
