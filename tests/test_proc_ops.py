@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Iterable, Optional, Tuple, Type, TypeVar
 
 import numpy as np
@@ -460,7 +461,7 @@ def test_softmax_with_scipy(tid: MemberId):
     xr.testing.assert_allclose(exp, sample.members[tid].data, rtol=1e-5, atol=1e-7)
 
 
-def test_softmax_from_spec_descr(tid: MemberId, tmp_path: "Path"):
+def test_softmax_from_spec_descr(tid: MemberId, tmp_path: Path):
     """Verify the full spec→runtime path for softmax postprocessing.
 
     SoftmaxDescr (bioimageio.spec v0.5.9+) must be:
@@ -473,8 +474,6 @@ def test_softmax_from_spec_descr(tid: MemberId, tmp_path: "Path"):
     that softmax postprocessing IS supported end-to-end without needing to
     embed it inside the model's forward() method.
     """
-    from pathlib import Path
-
     from bioimageio.core.proc_ops import Softmax, get_proc
     from bioimageio.spec.model import v0_5
 
@@ -524,6 +523,9 @@ def test_softmax_from_spec_descr(tid: MemberId, tmp_path: "Path"):
     )
 
     # Output must be a valid probability distribution (sums to 1 over channel axis)
-    result = np.array(sample.members[tid].data)
-    channel_sums = result.sum(axis=0)
-    np.testing.assert_allclose(channel_sums, np.ones_like(channel_sums), atol=1e-6)
+    out_data = sample.members[tid].data
+    assert out_data is not None
+    channel_sums = out_data.sum(dim="channel")
+    xr.testing.assert_allclose(
+        channel_sums, xr.ones_like(channel_sums), atol=1e-6, rtol=0
+    )
