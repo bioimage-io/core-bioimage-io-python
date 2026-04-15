@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../../../images/favicon.ico">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.6">
     
     
       
@@ -1904,7 +1904,7 @@
   </span>
 
 <a href="#bioimageio.core.digest_spec.TensorSource" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">TensorSource</span> <span class="o">=</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../tensor/#bioimageio.core.tensor.Tensor">Tensor</a></span><span class="p">,</span> <span class="n"><span title="xarray">xr</span></span><span class="o">.</span><span class="n"><span title="xarray.DataArray">DataArray</span></span><span class="p">,</span> <span class="n"><span title="numpy.typing.NDArray">NDArray</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">],</span> <span class="n"><span title="pathlib.Path">Path</span></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">TensorSource</span> <span class="o">=</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../tensor/#bioimageio.core.tensor.Tensor">Tensor</a></span><span class="p">,</span> <span class="n"><span title="xarray">xr</span></span><span class="o">.</span><span class="n"><span title="xarray.DataArray">DataArray</span></span><span class="p">,</span> <span class="n"><span title="numpy.typing.NDArray">NDArray</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.io.PermissiveFileSource&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/common/#bioimageio.spec.common.PermissiveFileSource">PermissiveFileSource</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2245,7 +2245,7 @@
 
 
 <a href="#bioimageio.core.digest_spec.create_sample_for_model" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">create_sample_for_model</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.digest_spec.create_sample_for_model(model)">model</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.AnyModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/#bioimageio.spec.model.AnyModelDescr">AnyModelDescr</a></span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.digest_spec.create_sample_for_model(stat)">stat</a></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../stat_measures/#bioimageio.core.stat_measures.Stat">Stat</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n"><span title="bioimageio.core.digest_spec.create_sample_for_model(sample_id)">sample_id</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.SampleId">SampleId</a></span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.digest_spec.create_sample_for_model(inputs)">inputs</a></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.digest_spec.TensorSource">TensorSource</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.digest_spec.TensorSource">TensorSource</a></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="../sample/#bioimageio.core.sample.Sample">Sample</a></span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">create_sample_for_model</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.digest_spec.create_sample_for_model(model)">model</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.AnyModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/#bioimageio.spec.model.AnyModelDescr">AnyModelDescr</a></span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.digest_spec.create_sample_for_model(stat)">stat</a></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../stat_measures/#bioimageio.core.stat_measures.Stat">Stat</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n"><span title="bioimageio.core.digest_spec.create_sample_for_model(sample_id)">sample_id</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.SampleId">SampleId</a></span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.digest_spec.create_sample_for_model(inputs)">inputs</a></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.digest_spec.TensorSource">TensorSource</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.digest_spec.TensorSource">TensorSource</a></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="../sample/#bioimageio.core.sample.Sample">Sample</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2269,7 +2269,7 @@
 <h3 id="bioimageio.core.digest_spec.create_sample_for_model(model)" class="doc doc-heading doc-heading-parameter">                  <code>model</code>
 <a href="#bioimageio.core.digest_spec.create_sample_for_model(model)" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>            </td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.AnyModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/#bioimageio.spec.model.AnyModelDescr">AnyModelDescr</a></code>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.AnyModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/#bioimageio.spec.model.AnyModelDescr">AnyModelDescr</a></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2319,27 +2319,7 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/digest_spec.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">421</span>
-<span class="normal">422</span>
-<span class="normal">423</span>
-<span class="normal">424</span>
-<span class="normal">425</span>
-<span class="normal">426</span>
-<span class="normal">427</span>
-<span class="normal">428</span>
-<span class="normal">429</span>
-<span class="normal">430</span>
-<span class="normal">431</span>
-<span class="normal">432</span>
-<span class="normal">433</span>
-<span class="normal">434</span>
-<span class="normal">435</span>
-<span class="normal">436</span>
-<span class="normal">437</span>
-<span class="normal">438</span>
-<span class="normal">439</span>
-<span class="normal">440</span>
-<span class="normal">441</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">441</span>
 <span class="normal">442</span>
 <span class="normal">443</span>
 <span class="normal">444</span>
@@ -2362,7 +2342,27 @@
 <span class="normal">461</span>
 <span class="normal">462</span>
 <span class="normal">463</span>
-<span class="normal">464</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_sample_for_model</span><span class="p">(</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span>
+<span class="normal">467</span>
+<span class="normal">468</span>
+<span class="normal">469</span>
+<span class="normal">470</span>
+<span class="normal">471</span>
+<span class="normal">472</span>
+<span class="normal">473</span>
+<span class="normal">474</span>
+<span class="normal">475</span>
+<span class="normal">476</span>
+<span class="normal">477</span>
+<span class="normal">478</span>
+<span class="normal">479</span>
+<span class="normal">480</span>
+<span class="normal">481</span>
+<span class="normal">482</span>
+<span class="normal">483</span>
+<span class="normal">484</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_sample_for_model</span><span class="p">(</span>
     <span class="n">model</span><span class="p">:</span> <span class="n">AnyModelDescr</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">stat</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Stat</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -2420,7 +2420,7 @@
 
 
 <a href="#bioimageio.core.digest_spec.get_axes_infos" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_axes_infos</span><span class="p">(</span><span class="n"><span title="bioimageio.core.digest_spec.get_axes_infos(io_descr)">io_descr</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4">v0_4</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.InputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.InputTensorDescr">InputTensorDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4">v0_4</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.OutputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.OutputTensorDescr">OutputTensorDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.InputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.InputTensorDescr">InputTensorDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.OutputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.OutputTensorDescr">OutputTensorDescr</a></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.AxisInfo">AxisInfo</a></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_axes_infos</span><span class="p">(</span><span class="n"><span title="bioimageio.core.digest_spec.get_axes_infos(io_descr)">io_descr</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4">v0_4</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.InputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.InputTensorDescr">InputTensorDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4">v0_4</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.OutputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.OutputTensorDescr">OutputTensorDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.InputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.InputTensorDescr">InputTensorDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.OutputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.OutputTensorDescr">OutputTensorDescr</a></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.AxisInfo">AxisInfo</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2431,8 +2431,7 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/digest_spec.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">168</span>
-<span class="normal">169</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">169</span>
 <span class="normal">170</span>
 <span class="normal">171</span>
 <span class="normal">172</span>
@@ -2448,7 +2447,8 @@
 <span class="normal">182</span>
 <span class="normal">183</span>
 <span class="normal">184</span>
-<span class="normal">185</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_axes_infos</span><span class="p">(</span>
+<span class="normal">185</span>
+<span class="normal">186</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_axes_infos</span><span class="p">(</span>
     <span class="n">io_descr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
         <span class="n">v0_4</span><span class="o">.</span><span class="n">InputTensorDescr</span><span class="p">,</span>
         <span class="n">v0_4</span><span class="o">.</span><span class="n">OutputTensorDescr</span><span class="p">,</span>
@@ -2480,7 +2480,7 @@
 
 
 <a href="#bioimageio.core.digest_spec.get_block_transform" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_block_transform</span><span class="p">(</span><span class="n"><span title="bioimageio.core.digest_spec.get_block_transform(model)">model</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ModelDescr">ModelDescr</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../sample/#bioimageio.core.sample.LinearSampleAxisTransform">LinearSampleAxisTransform</a></span><span class="p">,</span> <span class="n"><span title="int">int</span></span><span class="p">]]]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_block_transform</span><span class="p">(</span><span class="n"><span title="bioimageio.core.digest_spec.get_block_transform(model)">model</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ModelDescr">ModelDescr</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../sample/#bioimageio.core.sample.LinearSampleAxisTransform">LinearSampleAxisTransform</a></span><span class="p">,</span> <span class="n"><span title="int">int</span></span><span class="p">]]]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2491,8 +2491,7 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/digest_spec.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">319</span>
-<span class="normal">320</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">320</span>
 <span class="normal">321</span>
 <span class="normal">322</span>
 <span class="normal">323</span>
@@ -2539,7 +2538,8 @@
 <span class="normal">364</span>
 <span class="normal">365</span>
 <span class="normal">366</span>
-<span class="normal">367</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_block_transform</span><span class="p">(</span>
+<span class="normal">367</span>
+<span class="normal">368</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_block_transform</span><span class="p">(</span>
     <span class="n">model</span><span class="p">:</span> <span class="n">v0_5</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">PerAxis</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">LinearSampleAxisTransform</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;returns how a model&#39;s output tensor shapes relates to its input shapes&quot;&quot;&quot;</span>
@@ -2602,7 +2602,7 @@
 
 
 <a href="#bioimageio.core.digest_spec.get_input_halo" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_input_halo</span><span class="p">(</span><span class="n"><span title="bioimageio.core.digest_spec.get_input_halo(model)">model</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ModelDescr">ModelDescr</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.digest_spec.get_input_halo(output_halo)">output_halo</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.Halo">Halo</a></span><span class="p">]])</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_input_halo</span><span class="p">(</span><span class="n"><span title="bioimageio.core.digest_spec.get_input_halo(model)">model</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ModelDescr">ModelDescr</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.digest_spec.get_input_halo(output_halo)">output_halo</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.Halo">Halo</a></span><span class="p">]])</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2614,8 +2614,7 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/digest_spec.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">285</span>
-<span class="normal">286</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">286</span>
 <span class="normal">287</span>
 <span class="normal">288</span>
 <span class="normal">289</span>
@@ -2645,7 +2644,8 @@
 <span class="normal">313</span>
 <span class="normal">314</span>
 <span class="normal">315</span>
-<span class="normal">316</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_input_halo</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">v0_5</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">,</span> <span class="n">output_halo</span><span class="p">:</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">PerAxis</span><span class="p">[</span><span class="n">Halo</span><span class="p">]]):</span>
+<span class="normal">316</span>
+<span class="normal">317</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_input_halo</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">v0_5</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">,</span> <span class="n">output_halo</span><span class="p">:</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">PerAxis</span><span class="p">[</span><span class="n">Halo</span><span class="p">]]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;returns which halo input tensors need to be divided into blocks with, such that</span>
 <span class="sd">    `output_halo` can be cropped from their outputs without introducing gaps.&quot;&quot;&quot;</span>
     <span class="n">input_halo</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">MemberId</span><span class="p">,</span> <span class="n">Dict</span><span class="p">[</span><span class="n">AxisId</span><span class="p">,</span> <span class="n">Halo</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
@@ -2691,7 +2691,7 @@
 
 
 <a href="#bioimageio.core.digest_spec.get_io_sample_block_metas" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_io_sample_block_metas</span><span class="p">(</span><span class="n"><span title="bioimageio.core.digest_spec.get_io_sample_block_metas(model)">model</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ModelDescr">ModelDescr</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.digest_spec.get_io_sample_block_metas(input_sample_shape)">input_sample_shape</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">]],</span> <span class="n"><span title="bioimageio.core.digest_spec.get_io_sample_block_metas(ns)">ns</span></span><span class="p">:</span> <span class="n"><span title="typing.Mapping">Mapping</span></span><span class="p">[</span><span class="n"><span title="typing.Tuple">Tuple</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.AxisId">AxisId</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ParameterizedSize_N&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ParameterizedSize_N">ParameterizedSize_N</a></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.digest_spec.get_io_sample_block_metas(batch_size)">batch_size</span></span><span class="p">:</span> <span class="n"><span title="int">int</span></span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.Tuple">Tuple</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.TotalNumberOfBlocks">TotalNumberOfBlocks</a></span><span class="p">,</span> <span class="n"><span title="typing.Iterable">Iterable</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.digest_spec.IO_SampleBlockMeta">IO_SampleBlockMeta</a></span><span class="p">]]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_io_sample_block_metas</span><span class="p">(</span><span class="n"><span title="bioimageio.core.digest_spec.get_io_sample_block_metas(model)">model</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ModelDescr">ModelDescr</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.digest_spec.get_io_sample_block_metas(input_sample_shape)">input_sample_shape</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">]],</span> <span class="n"><span title="bioimageio.core.digest_spec.get_io_sample_block_metas(ns)">ns</span></span><span class="p">:</span> <span class="n"><span title="typing.Mapping">Mapping</span></span><span class="p">[</span><span class="n"><span title="typing.Tuple">Tuple</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.AxisId">AxisId</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ParameterizedSize_N&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ParameterizedSize_N">ParameterizedSize_N</a></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.digest_spec.get_io_sample_block_metas(batch_size)">batch_size</span></span><span class="p">:</span> <span class="n"><span title="int">int</span></span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.Tuple">Tuple</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.TotalNumberOfBlocks">TotalNumberOfBlocks</a></span><span class="p">,</span> <span class="n"><span title="typing.Iterable">Iterable</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.digest_spec.IO_SampleBlockMeta">IO_SampleBlockMeta</a></span><span class="p">]]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2702,8 +2702,7 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/digest_spec.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">370</span>
-<span class="normal">371</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">371</span>
 <span class="normal">372</span>
 <span class="normal">373</span>
 <span class="normal">374</span>
@@ -2734,7 +2733,8 @@
 <span class="normal">399</span>
 <span class="normal">400</span>
 <span class="normal">401</span>
-<span class="normal">402</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_io_sample_block_metas</span><span class="p">(</span>
+<span class="normal">402</span>
+<span class="normal">403</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_io_sample_block_metas</span><span class="p">(</span>
     <span class="n">model</span><span class="p">:</span> <span class="n">v0_5</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">,</span>
     <span class="n">input_sample_shape</span><span class="p">:</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">PerAxis</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
     <span class="n">ns</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">MemberId</span><span class="p">,</span> <span class="n">AxisId</span><span class="p">],</span> <span class="n">ParameterizedSize_N</span><span class="p">],</span>
@@ -2781,7 +2781,7 @@
 
 
 <a href="#bioimageio.core.digest_spec.get_member_id" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_member_id</span><span class="p">(</span><span class="n"><span title="bioimageio.core.digest_spec.get_member_id(tensor_description)">tensor_description</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4">v0_4</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.InputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.InputTensorDescr">InputTensorDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4">v0_4</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.OutputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.OutputTensorDescr">OutputTensorDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.InputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.InputTensorDescr">InputTensorDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.OutputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.OutputTensorDescr">OutputTensorDescr</a></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a></span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_member_id</span><span class="p">(</span><span class="n"><span title="bioimageio.core.digest_spec.get_member_id(tensor_description)">tensor_description</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4">v0_4</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.InputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.InputTensorDescr">InputTensorDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4">v0_4</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.OutputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.OutputTensorDescr">OutputTensorDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.InputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.InputTensorDescr">InputTensorDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.OutputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.OutputTensorDescr">OutputTensorDescr</a></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2792,8 +2792,7 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/digest_spec.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">188</span>
-<span class="normal">189</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">189</span>
 <span class="normal">190</span>
 <span class="normal">191</span>
 <span class="normal">192</span>
@@ -2809,7 +2808,8 @@
 <span class="normal">202</span>
 <span class="normal">203</span>
 <span class="normal">204</span>
-<span class="normal">205</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_member_id</span><span class="p">(</span>
+<span class="normal">205</span>
+<span class="normal">206</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_member_id</span><span class="p">(</span>
     <span class="n">tensor_description</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
         <span class="n">v0_4</span><span class="o">.</span><span class="n">InputTensorDescr</span><span class="p">,</span>
         <span class="n">v0_4</span><span class="o">.</span><span class="n">OutputTensorDescr</span><span class="p">,</span>
@@ -2841,7 +2841,7 @@
 
 
 <a href="#bioimageio.core.digest_spec.get_member_ids" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_member_ids</span><span class="p">(</span><span class="n"><span title="bioimageio.core.digest_spec.get_member_ids(tensor_descriptions)">tensor_descriptions</span></span><span class="p">:</span> <span class="n"><span title="typing.Sequence">Sequence</span></span><span class="p">[</span><span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4">v0_4</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.InputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.InputTensorDescr">InputTensorDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4">v0_4</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.OutputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.OutputTensorDescr">OutputTensorDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.InputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.InputTensorDescr">InputTensorDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.OutputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.OutputTensorDescr">OutputTensorDescr</a></span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_member_ids</span><span class="p">(</span><span class="n"><span title="bioimageio.core.digest_spec.get_member_ids(tensor_descriptions)">tensor_descriptions</span></span><span class="p">:</span> <span class="n"><span title="typing.Sequence">Sequence</span></span><span class="p">[</span><span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4">v0_4</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.InputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.InputTensorDescr">InputTensorDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4">v0_4</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.OutputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.OutputTensorDescr">OutputTensorDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.InputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.InputTensorDescr">InputTensorDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.OutputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.OutputTensorDescr">OutputTensorDescr</a></span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2852,8 +2852,7 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/digest_spec.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">208</span>
-<span class="normal">209</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">209</span>
 <span class="normal">210</span>
 <span class="normal">211</span>
 <span class="normal">212</span>
@@ -2863,7 +2862,8 @@
 <span class="normal">216</span>
 <span class="normal">217</span>
 <span class="normal">218</span>
-<span class="normal">219</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_member_ids</span><span class="p">(</span>
+<span class="normal">219</span>
+<span class="normal">220</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_member_ids</span><span class="p">(</span>
     <span class="n">tensor_descriptions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span>
         <span class="n">Union</span><span class="p">[</span>
             <span class="n">v0_4</span><span class="o">.</span><span class="n">InputTensorDescr</span><span class="p">,</span>
@@ -2889,7 +2889,7 @@
 
 
 <a href="#bioimageio.core.digest_spec.get_tensor" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_tensor</span><span class="p">(</span><span class="n"><span title="bioimageio.core.digest_spec.get_tensor(src)">src</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.ZipPath&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/common/#bioimageio.spec.common.ZipPath">ZipPath</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.digest_spec.TensorSource">TensorSource</a></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.digest_spec.get_tensor(ipt)">ipt</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4">v0_4</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.InputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.InputTensorDescr">InputTensorDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.InputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.InputTensorDescr">InputTensorDescr</a></span><span class="p">])</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_tensor</span><span class="p">(</span><span class="n"><span title="bioimageio.core.digest_spec.get_tensor(src)">src</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.digest_spec.TensorSource">TensorSource</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.digest_spec.get_tensor(descr)">descr</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4">v0_4</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.InputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.InputTensorDescr">InputTensorDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.InputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.InputTensorDescr">InputTensorDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4">v0_4</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.OutputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.OutputTensorDescr">OutputTensorDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.OutputTensorDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.OutputTensorDescr">OutputTensorDescr</a></span><span class="p">,</span> <span class="n"><span title="typing.Sequence">Sequence</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.AxisInfo">AxisInfo</a></span><span class="p">]])</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2900,8 +2900,7 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/digest_spec.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">405</span>
-<span class="normal">406</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">406</span>
 <span class="normal">407</span>
 <span class="normal">408</span>
 <span class="normal">409</span>
@@ -2913,20 +2912,59 @@
 <span class="normal">415</span>
 <span class="normal">416</span>
 <span class="normal">417</span>
-<span class="normal">418</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_tensor</span><span class="p">(</span>
-    <span class="n">src</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ZipPath</span><span class="p">,</span> <span class="n">TensorSource</span><span class="p">],</span>
-    <span class="n">ipt</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">v0_4</span><span class="o">.</span><span class="n">InputTensorDescr</span><span class="p">,</span> <span class="n">v0_5</span><span class="o">.</span><span class="n">InputTensorDescr</span><span class="p">],</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
+<span class="normal">424</span>
+<span class="normal">425</span>
+<span class="normal">426</span>
+<span class="normal">427</span>
+<span class="normal">428</span>
+<span class="normal">429</span>
+<span class="normal">430</span>
+<span class="normal">431</span>
+<span class="normal">432</span>
+<span class="normal">433</span>
+<span class="normal">434</span>
+<span class="normal">435</span>
+<span class="normal">436</span>
+<span class="normal">437</span>
+<span class="normal">438</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_tensor</span><span class="p">(</span>
+    <span class="n">src</span><span class="p">:</span> <span class="n">TensorSource</span><span class="p">,</span>
+    <span class="n">descr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
+        <span class="n">v0_4</span><span class="o">.</span><span class="n">InputTensorDescr</span><span class="p">,</span>
+        <span class="n">v0_5</span><span class="o">.</span><span class="n">InputTensorDescr</span><span class="p">,</span>
+        <span class="n">v0_4</span><span class="o">.</span><span class="n">OutputTensorDescr</span><span class="p">,</span>
+        <span class="n">v0_5</span><span class="o">.</span><span class="n">OutputTensorDescr</span><span class="p">,</span>
+        <span class="n">Sequence</span><span class="p">[</span><span class="n">AxisInfo</span><span class="p">],</span>
+    <span class="p">],</span>
 <span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;helper to cast/load various tensor sources&quot;&quot;&quot;</span>
 
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">src</span>
-    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Tensor</span><span class="o">.</span><span class="n">from_xarray</span><span class="p">(</span><span class="n">src</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Tensor</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dims</span><span class="o">=</span><span class="n">get_axes_infos</span><span class="p">(</span><span class="n">ipt</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span>
+        <span class="n">descr</span><span class="p">,</span>
+        <span class="p">(</span>
+            <span class="n">v0_4</span><span class="o">.</span><span class="n">InputTensorDescr</span><span class="p">,</span>
+            <span class="n">v0_5</span><span class="o">.</span><span class="n">InputTensorDescr</span><span class="p">,</span>
+            <span class="n">v0_4</span><span class="o">.</span><span class="n">OutputTensorDescr</span><span class="p">,</span>
+            <span class="n">v0_5</span><span class="o">.</span><span class="n">OutputTensorDescr</span><span class="p">,</span>
+        <span class="p">),</span>
+    <span class="p">):</span>
+        <span class="n">axes</span> <span class="o">=</span> <span class="n">get_axes_infos</span><span class="p">(</span><span class="n">descr</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">load_tensor</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="n">get_axes_infos</span><span class="p">(</span><span class="n">ipt</span><span class="p">))</span>
+        <span class="n">axes</span> <span class="o">=</span> <span class="n">descr</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">src</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">axes</span><span class="o">=</span><span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">axes</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Tensor</span><span class="o">.</span><span class="n">from_xarray</span><span class="p">(</span><span class="n">src</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">axes</span><span class="o">=</span><span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">axes</span><span class="p">])</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">Tensor</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dims</span><span class="o">=</span><span class="n">axes</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">load_tensor</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="n">axes</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2941,7 +2979,7 @@
 
 
 <a href="#bioimageio.core.digest_spec.get_test_input_sample" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_test_input_sample</span><span class="p">(</span><span class="n"><span title="bioimageio.core.digest_spec.get_test_input_sample(model)">model</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.AnyModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/#bioimageio.spec.model.AnyModelDescr">AnyModelDescr</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="../sample/#bioimageio.core.sample.Sample">Sample</a></span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_test_input_sample</span><span class="p">(</span><span class="n"><span title="bioimageio.core.digest_spec.get_test_input_sample(model)">model</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.AnyModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/#bioimageio.spec.model.AnyModelDescr">AnyModelDescr</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="../sample/#bioimageio.core.sample.Sample">Sample</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2973,11 +3011,11 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/digest_spec.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">222</span>
-<span class="normal">223</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">223</span>
 <span class="normal">224</span>
 <span class="normal">225</span>
-<span class="normal">226</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_test_input_sample</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">AnyModelDescr</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sample</span><span class="p">:</span>
+<span class="normal">226</span>
+<span class="normal">227</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_test_input_sample</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">AnyModelDescr</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sample</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">_get_test_sample</span><span class="p">(</span>
         <span class="n">model</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span>
         <span class="n">model</span><span class="o">.</span><span class="n">test_inputs</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">v0_4</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">)</span> <span class="k">else</span> <span class="n">model</span><span class="o">.</span><span class="n">inputs</span><span class="p">,</span>
@@ -2996,7 +3034,7 @@
 
 
 <a href="#bioimageio.core.digest_spec.get_test_output_sample" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_test_output_sample</span><span class="p">(</span><span class="n"><span title="bioimageio.core.digest_spec.get_test_output_sample(model)">model</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.AnyModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/#bioimageio.spec.model.AnyModelDescr">AnyModelDescr</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="../sample/#bioimageio.core.sample.Sample">Sample</a></span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_test_output_sample</span><span class="p">(</span><span class="n"><span title="bioimageio.core.digest_spec.get_test_output_sample(model)">model</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.AnyModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/#bioimageio.spec.model.AnyModelDescr">AnyModelDescr</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="../sample/#bioimageio.core.sample.Sample">Sample</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3030,12 +3068,12 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/digest_spec.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">233</span>
-<span class="normal">234</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">234</span>
 <span class="normal">235</span>
 <span class="normal">236</span>
 <span class="normal">237</span>
-<span class="normal">238</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_test_output_sample</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">AnyModelDescr</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sample</span><span class="p">:</span>
+<span class="normal">238</span>
+<span class="normal">239</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_test_output_sample</span><span class="p">(</span><span class="n">model</span><span class="p">:</span> <span class="n">AnyModelDescr</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sample</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;returns a model&#39;s test output sample&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">_get_test_sample</span><span class="p">(</span>
         <span class="n">model</span><span class="o">.</span><span class="n">outputs</span><span class="p">,</span>
@@ -3055,7 +3093,7 @@
 
 
 <a href="#bioimageio.core.digest_spec.import_callable" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">import_callable</span><span class="p">(</span><span class="n"><span title="bioimageio.core.digest_spec.import_callable(node)">node</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ArchitectureFromFileDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ArchitectureFromFileDescr">ArchitectureFromFileDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ArchitectureFromLibraryDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ArchitectureFromLibraryDescr">ArchitectureFromLibraryDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.CallableFromDepencency&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.CallableFromDepencency">CallableFromDepencency</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.CallableFromFile&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.CallableFromFile">CallableFromFile</a></span><span class="p">],</span> <span class="o">/</span><span class="p">,</span> <span class="o">**</span><span class="n"><span title="bioimageio.core.digest_spec.import_callable(**kwargs)">kwargs</span></span><span class="p">:</span> <span class="n"><span title="typing_extensions.Unpack">Unpack</span></span><span class="p">[</span><span class="n"><span title="bioimageio.spec._internal.io.HashKwargs">HashKwargs</span></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.Callable">Callable</span></span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">import_callable</span><span class="p">(</span><span class="n"><span title="bioimageio.core.digest_spec.import_callable(node)">node</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ArchitectureFromFileDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ArchitectureFromFileDescr">ArchitectureFromFileDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ArchitectureFromLibraryDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ArchitectureFromLibraryDescr">ArchitectureFromLibraryDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.CallableFromDepencency&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.CallableFromDepencency">CallableFromDepencency</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.CallableFromFile&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.CallableFromFile">CallableFromFile</a></span><span class="p">],</span> <span class="o">/</span><span class="p">,</span> <span class="o">**</span><span class="n"><span title="bioimageio.core.digest_spec.import_callable(**kwargs)">kwargs</span></span><span class="p">:</span> <span class="n"><span title="typing_extensions.Unpack">Unpack</span></span><span class="p">[</span><span class="n"><span title="bioimageio.spec._internal.io.HashKwargs">HashKwargs</span></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.Callable">Callable</span></span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3066,8 +3104,7 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/digest_spec.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">56</span>
-<span class="normal">57</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">57</span>
 <span class="normal">58</span>
 <span class="normal">59</span>
 <span class="normal">60</span>
@@ -3093,7 +3130,8 @@
 <span class="normal">80</span>
 <span class="normal">81</span>
 <span class="normal">82</span>
-<span class="normal">83</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_callable</span><span class="p">(</span>
+<span class="normal">83</span>
+<span class="normal">84</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">import_callable</span><span class="p">(</span>
     <span class="n">node</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
         <span class="n">ArchitectureFromFileDescr</span><span class="p">,</span>
         <span class="n">ArchitectureFromLibraryDescr</span><span class="p">,</span>
@@ -3135,7 +3173,7 @@
 
 
 <a href="#bioimageio.core.digest_spec.load_sample_for_model" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">load_sample_for_model</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n"><span title="bioimageio.core.digest_spec.load_sample_for_model(model)">model</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.AnyModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.0/api/bioimageio/spec/model/#bioimageio.spec.model.AnyModelDescr">AnyModelDescr</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.digest_spec.load_sample_for_model(paths)">paths</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><span title="pathlib.Path">Path</span></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.digest_spec.load_sample_for_model(axes)">axes</span></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><span title="typing.Sequence">Sequence</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.AxisLike">AxisLike</a></span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n"><span title="bioimageio.core.digest_spec.load_sample_for_model(stat)">stat</span></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../stat_measures/#bioimageio.core.stat_measures.Stat">Stat</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n"><span title="bioimageio.core.digest_spec.load_sample_for_model(sample_id)">sample_id</span></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.SampleId">SampleId</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">load_sample_for_model</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n"><span title="bioimageio.core.digest_spec.load_sample_for_model(model)">model</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.AnyModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/#bioimageio.spec.model.AnyModelDescr">AnyModelDescr</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.digest_spec.load_sample_for_model(paths)">paths</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><span title="pathlib.Path">Path</span></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.digest_spec.load_sample_for_model(axes)">axes</span></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><span title="typing.Sequence">Sequence</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.AxisLike">AxisLike</a></span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n"><span title="bioimageio.core.digest_spec.load_sample_for_model(stat)">stat</span></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../stat_measures/#bioimageio.core.stat_measures.Stat">Stat</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n"><span title="bioimageio.core.digest_spec.load_sample_for_model(sample_id)">sample_id</span></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.SampleId">SampleId</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3146,27 +3184,7 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/digest_spec.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">467</span>
-<span class="normal">468</span>
-<span class="normal">469</span>
-<span class="normal">470</span>
-<span class="normal">471</span>
-<span class="normal">472</span>
-<span class="normal">473</span>
-<span class="normal">474</span>
-<span class="normal">475</span>
-<span class="normal">476</span>
-<span class="normal">477</span>
-<span class="normal">478</span>
-<span class="normal">479</span>
-<span class="normal">480</span>
-<span class="normal">481</span>
-<span class="normal">482</span>
-<span class="normal">483</span>
-<span class="normal">484</span>
-<span class="normal">485</span>
-<span class="normal">486</span>
-<span class="normal">487</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">487</span>
 <span class="normal">488</span>
 <span class="normal">489</span>
 <span class="normal">490</span>
@@ -3187,7 +3205,27 @@
 <span class="normal">505</span>
 <span class="normal">506</span>
 <span class="normal">507</span>
-<span class="normal">508</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">load_sample_for_model</span><span class="p">(</span>
+<span class="normal">508</span>
+<span class="normal">509</span>
+<span class="normal">510</span>
+<span class="normal">511</span>
+<span class="normal">512</span>
+<span class="normal">513</span>
+<span class="normal">514</span>
+<span class="normal">515</span>
+<span class="normal">516</span>
+<span class="normal">517</span>
+<span class="normal">518</span>
+<span class="normal">519</span>
+<span class="normal">520</span>
+<span class="normal">521</span>
+<span class="normal">522</span>
+<span class="normal">523</span>
+<span class="normal">524</span>
+<span class="normal">525</span>
+<span class="normal">526</span>
+<span class="normal">527</span>
+<span class="normal">528</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">load_sample_for_model</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">model</span><span class="p">:</span> <span class="n">AnyModelDescr</span><span class="p">,</span>
     <span class="n">paths</span><span class="p">:</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">Path</span><span class="p">],</span>
