@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import Iterable, Optional, Tuple, Type, TypeVar
 
 import numpy as np
@@ -458,3 +459,73 @@ def test_softmax_with_scipy(tid: MemberId):
         dims=axes,
     )
     xr.testing.assert_allclose(exp, sample.members[tid].data, rtol=1e-5, atol=1e-7)
+
+
+def test_softmax_from_spec_descr(tid: MemberId, tmp_path: Path):
+    """Verify the full spec→runtime path for softmax postprocessing.
+
+    SoftmaxDescr (bioimageio.spec v0.5.9+) must be:
+      1. Accepted as a valid postprocessing descriptor by the spec.
+      2. Correctly dispatched by get_proc() to the Softmax operator.
+      3. Numerically identical to scipy.special.softmax over the channel axis.
+
+    This test guards against regressions where softmax is defined in the spec
+    but silently dropped or misrouted in the core runtime. It also documents
+    that softmax postprocessing IS supported end-to-end without needing to
+    embed it inside the model's forward() method.
+    """
+    from bioimageio.core.proc_ops import Softmax, get_proc
+    from bioimageio.spec.model import v0_5
+
+    shape = (3, 16, 16)
+    axes = ("channel", "y", "x")
+    np_data = np.random.rand(*shape).astype(np.float32)
+    data = xr.DataArray(np_data, dims=axes)
+    sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
+
+    # Write a dummy test tensor so FileDescr validates
+    test_npy = tmp_path / "test.npy"
+    np.save(test_npy, np_data)
+
+    # Build spec descriptor — SoftmaxDescr requires bioimageio.spec >= 0.5.9
+    softmax_descr = v0_5.SoftmaxDescr(
+        kwargs=v0_5.SoftmaxKwargs(axis=AxisId("channel"))
+    )
+    tensor_descr = v0_5.OutputTensorDescr(
+        id=v0_5.TensorId(str(tid)),
+        axes=[
+            v0_5.ChannelAxis(
+                channel_names=[
+                    v0_5.Identifier("c0"),
+                    v0_5.Identifier("c1"),
+                    v0_5.Identifier("c2"),
+                ]
+            ),
+            v0_5.SpaceOutputAxis(id=AxisId("y"), size=16),
+            v0_5.SpaceOutputAxis(id=AxisId("x"), size=16),
+        ],
+        test_tensor=v0_5.FileDescr(source=test_npy),
+        postprocessing=[softmax_descr],
+    )
+
+    # Dispatch through get_proc — must return a Softmax instance
+    op = get_proc(softmax_descr, tensor_descr)
+    assert isinstance(op, Softmax), f"Expected Softmax, got {type(op)}"
+
+    # Apply and verify numerical correctness
+    op(sample)
+    expected = scipy.special.softmax(np_data, axis=0)
+    xr.testing.assert_allclose(
+        xr.DataArray(expected, dims=axes),
+        sample.members[tid].data,
+        rtol=1e-5,
+        atol=1e-7,
+    )
+
+    # Output must be a valid probability distribution (sums to 1 over channel axis)
+    out_data = sample.members[tid].data
+    assert out_data is not None
+    channel_sums = out_data.sum(dim="channel")
+    xr.testing.assert_allclose(
+        channel_sums, xr.ones_like(channel_sums), atol=1e-6, rtol=0
+    )
