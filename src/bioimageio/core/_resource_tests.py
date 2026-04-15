@@ -313,6 +313,8 @@ def test_description(
         else:
             file_source = source
 
+        # elevate status valid-format to passed and start testing
+        descr.validation_summary.status = "passed"
         _test_in_env(
             file_source,
             descr=descr,
