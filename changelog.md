@@ -1,7 +1,9 @@
-### 0.10.1 (to be released)
+### 0.10.1
 
 - bump bioimageio.spec library version to 0.5.9.1
-
+- enable Pytorch Metal Performance Shaper (MPS) fallback per default
+- improved validation summary status tracking
+- broader argument types (e.g. for bioimageio.core.digest_spec.get_tensor())
 
 ### 0.10.0
 
