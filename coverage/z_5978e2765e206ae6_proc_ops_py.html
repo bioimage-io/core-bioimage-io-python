@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Coverage for src/bioimageio/core/proc_ops.py: 71%</title>
+    <title>Coverage for src/bioimageio/core/proc_ops.py: 72%</title>
     <link rel="icon" sizes="32x32" href="favicon_32_cb_c827f16f.png">
     <link rel="stylesheet" href="style_cb_9ff733b0.css" type="text/css">
     <script src="coverage_html_cb_dd2e7eb5.js" defer></script>
@@ -12,7 +12,7 @@
     <div class="content">
         <h1>
             <span class="text">Coverage for </span><b>src&#8201;/&#8201;bioimageio&#8201;/&#8201;core&#8201;/&#8201;proc_ops.py</b>:
-            <span class="pc_cov">71%</span>
+            <span class="pc_cov">72%</span>
         </h1>
         <aside id="help_panel_wrapper">
             <input id="help_panel_state" type="checkbox">
@@ -55,8 +55,8 @@
         </aside>
         <h2>
             <span class="text">463 statements &nbsp;</span>
-            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">330<span class="text"> run</span></button>
-            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">133<span class="text"> missing</span></button>
+            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">334<span class="text"> run</span></button>
+            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">129<span class="text"> missing</span></button>
             <button type="button" class="exc show_exc button_toggle_exc" value="exc" data-shortcut="x" title="Toggle lines excluded">7<span class="text"> excluded</span></button>
         </h2>
         <p class="text">
@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="z_5978e2765e206ae6_proc_setup_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.13.5">coverage.py v7.13.5</a>,
-            created at 2026-04-15 11:01 +0000
+            created at 2026-04-15 17:22 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -697,8 +697,8 @@
     <p class="pln"><span class="n"><a id="t615" href="#t615">615</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t616" href="#t616">616</a></span><span class="t">    <span class="op">@</span><span class="nam">classmethod</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t617" href="#t617">617</a></span><span class="t">    <span class="key">def</span> <span class="nam">from_proc_descr</span><span class="op">(</span><span class="nam">cls</span><span class="op">,</span> <span class="nam">descr</span><span class="op">:</span> <span class="nam">v0_5</span><span class="op">.</span><span class="nam">SoftmaxDescr</span><span class="op">,</span> <span class="nam">member_id</span><span class="op">:</span> <span class="nam">MemberId</span><span class="op">)</span> <span class="op">-></span> <span class="nam">Self</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t618" href="#t618">618</a></span><span class="t">        <span class="key">assert</span> <span class="nam">isinstance</span><span class="op">(</span><span class="nam">descr</span><span class="op">,</span> <span class="nam">v0_5</span><span class="op">.</span><span class="nam">SoftmaxDescr</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t619" href="#t619">619</a></span><span class="t">        <span class="key">return</span> <span class="nam">cls</span><span class="op">(</span><span class="nam">input</span><span class="op">=</span><span class="nam">member_id</span><span class="op">,</span> <span class="nam">output</span><span class="op">=</span><span class="nam">member_id</span><span class="op">,</span> <span class="nam">axis</span><span class="op">=</span><span class="nam">descr</span><span class="op">.</span><span class="nam">kwargs</span><span class="op">.</span><span class="nam">axis</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t618" href="#t618">618</a></span><span class="t">        <span class="key">assert</span> <span class="nam">isinstance</span><span class="op">(</span><span class="nam">descr</span><span class="op">,</span> <span class="nam">v0_5</span><span class="op">.</span><span class="nam">SoftmaxDescr</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t619" href="#t619">619</a></span><span class="t">        <span class="key">return</span> <span class="nam">cls</span><span class="op">(</span><span class="nam">input</span><span class="op">=</span><span class="nam">member_id</span><span class="op">,</span> <span class="nam">output</span><span class="op">=</span><span class="nam">member_id</span><span class="op">,</span> <span class="nam">axis</span><span class="op">=</span><span class="nam">descr</span><span class="op">.</span><span class="nam">kwargs</span><span class="op">.</span><span class="nam">axis</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t620" href="#t620">620</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t621" href="#t621">621</a></span><span class="t">    <span class="key">def</span> <span class="nam">get_descr</span><span class="op">(</span><span class="nam">self</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t622" href="#t622">622</a></span><span class="t">        <span class="key">return</span> <span class="nam">v0_5</span><span class="op">.</span><span class="nam">SoftmaxDescr</span><span class="op">(</span><span class="nam">kwargs</span><span class="op">=</span><span class="nam">v0_5</span><span class="op">.</span><span class="nam">SoftmaxKwargs</span><span class="op">(</span><span class="nam">axis</span><span class="op">=</span><span class="nam">self</span><span class="op">.</span><span class="nam">axis</span><span class="op">)</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
@@ -1105,8 +1105,8 @@
     <p class="run run2"><span class="n"><a id="t1023" href="#t1023">1023</a></span><span class="t">        <span class="op">(</span><span class="nam">v0_4</span><span class="op">.</span><span class="nam">ZeroMeanUnitVarianceDescr</span><span class="op">,</span> <span class="nam">v0_5</span><span class="op">.</span><span class="nam">ZeroMeanUnitVarianceDescr</span><span class="op">)</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t1024" href="#t1024">1024</a></span><span class="t">    <span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t1025" href="#t1025">1025</a></span><span class="t">        <span class="key">return</span> <span class="nam">ZeroMeanUnitVariance</span><span class="op">.</span><span class="nam">from_proc_descr</span><span class="op">(</span><span class="nam">proc_descr</span><span class="op">,</span> <span class="nam">member_id</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t1026" href="#t1026">1026</a></span><span class="t">    <span class="key">elif</span> <span class="nam">isinstance</span><span class="op">(</span><span class="nam">proc_descr</span><span class="op">,</span> <span class="nam">v0_5</span><span class="op">.</span><span class="nam">SoftmaxDescr</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t1027" href="#t1027">1027</a></span><span class="t">        <span class="key">return</span> <span class="nam">Softmax</span><span class="op">.</span><span class="nam">from_proc_descr</span><span class="op">(</span><span class="nam">proc_descr</span><span class="op">,</span> <span class="nam">member_id</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t1026" href="#t1026">1026</a></span><span class="t">    <span class="key">elif</span> <span class="nam">isinstance</span><span class="op">(</span><span class="nam">proc_descr</span><span class="op">,</span> <span class="nam">v0_5</span><span class="op">.</span><span class="nam">SoftmaxDescr</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t1027" href="#t1027">1027</a></span><span class="t">        <span class="key">return</span> <span class="nam">Softmax</span><span class="op">.</span><span class="nam">from_proc_descr</span><span class="op">(</span><span class="nam">proc_descr</span><span class="op">,</span> <span class="nam">member_id</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t1028" href="#t1028">1028</a></span><span class="t">    <span class="key">elif</span> <span class="nam">isinstance</span><span class="op">(</span><span class="nam">proc_descr</span><span class="op">,</span> <span class="nam">v0_5</span><span class="op">.</span><span class="nam">StardistPostprocessingDescr</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t1029" href="#t1029">1029</a></span><span class="t">        <span class="key">if</span> <span class="nam">isinstance</span><span class="op">(</span><span class="nam">proc_descr</span><span class="op">.</span><span class="nam">kwargs</span><span class="op">,</span> <span class="nam">v0_5</span><span class="op">.</span><span class="nam">StardistPostprocessingKwargs2D</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t1030" href="#t1030">1030</a></span><span class="t">            <span class="key">return</span> <span class="nam">StardistPostprocessing2D</span><span class="op">.</span><span class="nam">from_proc_descr</span><span class="op">(</span><span class="nam">proc_descr</span><span class="op">,</span> <span class="nam">member_id</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
@@ -1127,7 +1127,7 @@
             <a class="nav" href="z_5978e2765e206ae6_proc_setup_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.13.5">coverage.py v7.13.5</a>,
-            created at 2026-04-15 11:01 +0000
+            created at 2026-04-15 17:22 +0000
         </p>
     </div>
 </footer>
