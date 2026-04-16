@@ -213,7 +213,7 @@ jobs:
           mkdir -p ./pkgs/noarch
           conda-build -c conda-forge conda-recipe --output-folder ./pkgs
         env:
-          BIOIMAGEIO_CACHE_PATH: bioimageio_cache
+          BIOIMAGEIO_CACHE_PATH: ${{ github.workspace }}/bioimageio_cache
 
   build:
     runs-on: ubuntu-latest
