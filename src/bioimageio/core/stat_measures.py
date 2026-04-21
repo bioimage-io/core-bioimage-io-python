@@ -20,7 +20,7 @@ from pydantic import (
     Discriminator,
     PlainSerializer,
 )
-from typing_extensions import Annotated
+from typing_extensions import Annotated, TypeAlias
 
 from .axis import AxisId
 from .common import MemberId, PerMember, QuantileMethod
@@ -186,8 +186,10 @@ SampleMeasure = Annotated[
 DatasetMeasure = Annotated[
     Union[DatasetMean, DatasetStd, DatasetVar, DatasetQuantile], Discriminator("name")
 ]
-Measure = Annotated[Union[SampleMeasure, DatasetMeasure], Discriminator("scope")]
-Stat = Dict[Measure, MeasureValue]
+Measure: TypeAlias = Annotated[
+    Union[SampleMeasure, DatasetMeasure], Discriminator("scope")
+]
+Stat: TypeAlias = Dict[Measure, MeasureValue]
 
 MeanMeasure = Union[SampleMean, DatasetMean]
 StdMeasure = Union[SampleStd, DatasetStd]

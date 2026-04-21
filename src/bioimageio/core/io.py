@@ -5,6 +5,7 @@ from pathlib import Path
 from shutil import copyfileobj
 from typing import (
     Any,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -15,7 +16,7 @@ from typing import (
 from imageio.v3 import imread, imwrite  # type: ignore
 from loguru import logger
 from numpy.typing import NDArray
-from pydantic import BaseModel, ConfigDict, TypeAdapter
+from pydantic import BaseModel, RootModel
 
 from bioimageio.spec._internal.io import get_reader, interprete_file_source
 from bioimageio.spec._internal.type_guards import is_ndarray
@@ -32,8 +33,8 @@ from bioimageio.spec.utils import download, load_array, save_array
 
 from .axis import AxisId, AxisLike
 from .common import PerMember
-from .sample import Sample
-from .stat_measures import DatasetMeasure, MeasureValue
+from .sample import Sample, Stat
+from .stat_measures import DatasetMeasure, MeasureValue, SampleMeasure
 from .tensor import Tensor
 
 
@@ -151,29 +152,44 @@ def save_sample(
         save_tensor(p_formatted, t)
 
 
-class _SerializedDatasetStatsEntry(
-    BaseModel, frozen=True, arbitrary_types_allowed=True
-):
-    measure: DatasetMeasure
+class _StatEntry(BaseModel, frozen=True, arbitrary_types_allowed=True):
+    """Serializable stat entry"""
+
+    measure: Union[DatasetMeasure, SampleMeasure]
     value: MeasureValue
 
 
-_stat_adapter = TypeAdapter(
-    Sequence[_SerializedDatasetStatsEntry],
-    config=ConfigDict(arbitrary_types_allowed=True),
-)
+class _StatList(RootModel[List[_StatEntry]]):
+    """Serializable stat mapping"""
+
+    pass
 
 
-def save_dataset_stat(stat: Mapping[DatasetMeasure, MeasureValue], path: Path):
-    serializable = [
-        _SerializedDatasetStatsEntry(measure=k, value=v) for k, v in stat.items()
-    ]
-    _ = path.write_bytes(_stat_adapter.dump_json(serializable))
+def save_stat(
+    stat: Mapping[Union[DatasetMeasure, SampleMeasure], MeasureValue], path: Path
+) -> None:
+    """Save sample and dataset statistics as a JSON file at **path**"""
+
+    stat_list = _StatList([_StatEntry(measure=k, value=v) for k, v in stat.items()])
+    _ = path.write_text(stat_list.model_dump_json(), encoding="utf-8")
 
 
-def load_dataset_stat(path: Path):
-    seq = _stat_adapter.validate_json(path.read_bytes())
-    return {e.measure: e.value for e in seq}
+def load_stat(path: Path) -> Stat:
+    """Load sample and dataset statistics from a JSON file at **path**"""
+    seq = _StatList.model_validate_json(path.read_bytes())
+    return {e.measure: e.value for e in seq.root}
+
+
+def save_dataset_stat(stat: Mapping[DatasetMeasure, MeasureValue], path: Path) -> None:
+    """DEPRECATED alias for save_stat(): use `save_stats()` instead."""
+    warnings.warn("`save_dataset_stat()` is deprecated, use `save_stats()` instead.")
+    save_stat({k: v for k, v in stat.items()}, path)
+
+
+def load_dataset_stat(path: Path) -> Stat:
+    """DEPRECATED alias for `load_stat()`: use `load_stat()` instead."""
+    warnings.warn("`load_dataset_stat()` is deprecated, use `load_stats()` instead.")
+    return load_stat(path)
 
 
 def ensure_unzipped(
