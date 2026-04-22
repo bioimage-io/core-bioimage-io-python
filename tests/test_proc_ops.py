@@ -557,7 +557,7 @@ class double_values:
     )
     op(sample)
 
-    result = sample.members[out_id].data.values
+    result = np.asarray(sample.members[out_id].data)
     np.testing.assert_allclose(result, np.full((2, 3), 3.0, dtype=np.float32))
 
 
@@ -588,4 +588,4 @@ def threshold_op(threshold: float = 0.5):
     op(sample)
 
     expected = np.array([[0, 1], [0, 1]], dtype=np.uint8)
-    np.testing.assert_array_equal(sample.members[out_id].data.values, expected)
+    np.testing.assert_array_equal(np.asarray(sample.members[out_id].data), expected)
