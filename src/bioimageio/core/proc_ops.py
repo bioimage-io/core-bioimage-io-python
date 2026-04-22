@@ -994,7 +994,6 @@ class CustomPostprocessing(SamplewiseOperator):
     _op: Any = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
-        import hashlib
         import importlib.util
         import sys
 

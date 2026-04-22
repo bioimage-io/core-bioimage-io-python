@@ -188,7 +188,7 @@ def _get_described_procs(
             for proc_d in t_descr.postprocessing:
                 if (
                     _CustomPostprocessingDescr is not None
-                    and isinstance(proc_d, _CustomPostprocessingDescr)
+                    and isinstance(proc_d, _CustomPostprocessingDescr)  # pyright: ignore[reportArgumentType]
                     and isinstance(t_descr, v0_5.OutputTensorDescr)
                 ):
                     procs.append(
