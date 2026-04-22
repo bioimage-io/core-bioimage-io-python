@@ -557,8 +557,8 @@ class double_values:
     )
     op(sample)
 
-    result = np.asarray(sample.members[out_id].data)
-    np.testing.assert_allclose(result, np.full((2, 3), 3.0, dtype=np.float32))
+    expected = xr.DataArray(np.full((2, 3), 3.0, dtype=np.float32), dims=("y", "x"))
+    xr.testing.assert_allclose(expected, sample.members[out_id].data, rtol=1e-5, atol=1e-7)
 
 
 def test_custom_postprocessing_factory_function(tid: MemberId) -> None:
@@ -587,5 +587,5 @@ def threshold_op(threshold: float = 0.5):
     )
     op(sample)
 
-    expected = np.array([[0, 1], [0, 1]], dtype=np.uint8)
-    np.testing.assert_array_equal(np.asarray(sample.members[out_id].data), expected)
+    expected = xr.DataArray(np.array([[0, 1], [0, 1]], dtype=np.uint8), dims=("y", "x"))
+    xr.testing.assert_equal(expected, sample.members[out_id].data)
