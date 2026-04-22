@@ -529,3 +529,63 @@ def test_softmax_from_spec_descr(tid: MemberId, tmp_path: Path):
     xr.testing.assert_allclose(
         channel_sums, xr.ones_like(channel_sums), atol=1e-6, rtol=0
     )
+
+
+def test_custom_postprocessing_callable_class(tid: MemberId) -> None:
+    """CustomPostprocessing loads a callable class from source bytes and applies it."""
+    from bioimageio.core.proc_ops import CustomPostprocessing
+
+    source_code = b"""
+import numpy as np
+
+class double_values:
+    def __init__(self, scale: float = 2.0) -> None:
+        self.scale = scale
+    def __call__(self, *arrays):
+        return (arrays[0] * self.scale).astype(np.float32)
+"""
+    data = xr.DataArray(np.ones((2, 3), dtype=np.float32), dims=("y", "x"))
+    out_id = MemberId("out")
+    sample = Sample(members={out_id: Tensor.from_xarray(data)}, stat={}, id=None)
+
+    op = CustomPostprocessing(
+        output_id=out_id,
+        input_ids=[out_id],
+        callable_name="double_values",
+        source_code=source_code,
+        kwargs={"scale": 3.0},
+    )
+    op(sample)
+
+    result = sample.members[out_id].data.values
+    np.testing.assert_allclose(result, np.full((2, 3), 3.0, dtype=np.float32))
+
+
+def test_custom_postprocessing_factory_function(tid: MemberId) -> None:
+    """CustomPostprocessing also works with a factory-function style callable."""
+    from bioimageio.core.proc_ops import CustomPostprocessing
+
+    source_code = b"""
+import numpy as np
+
+def threshold_op(threshold: float = 0.5):
+    def run(*arrays):
+        return (arrays[0] > threshold).astype(np.uint8)
+    return run
+"""
+    np_data = np.array([[0.1, 0.6], [0.4, 0.9]], dtype=np.float32)
+    data = xr.DataArray(np_data, dims=("y", "x"))
+    out_id = MemberId("out2")
+    sample = Sample(members={out_id: Tensor.from_xarray(data)}, stat={}, id=None)
+
+    op = CustomPostprocessing(
+        output_id=out_id,
+        input_ids=[out_id],
+        callable_name="threshold_op",
+        source_code=source_code,
+        kwargs={"threshold": 0.5},
+    )
+    op(sample)
+
+    expected = np.array([[0, 1], [0, 1]], dtype=np.uint8)
+    np.testing.assert_array_equal(sample.members[out_id].data.values, expected)
