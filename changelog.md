@@ -1,3 +1,7 @@
+### 0.10.3 (to be released)
+
+- add `bioimageio.core.io.serialize_stat`
+
 ### 0.10.2
 
 - improve error message when `torch.load(weights_only=True)` fails on non-pure state dicts (#486)

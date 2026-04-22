@@ -1,10 +1,14 @@
 import collections.abc
+import json
 import warnings
 import zipfile
+from contextlib import nullcontext
+from io import BytesIO
 from pathlib import Path
 from shutil import copyfileobj
 from typing import (
     Any,
+    Dict,
     List,
     Mapping,
     Optional,
@@ -36,6 +40,10 @@ from .common import PerMember
 from .sample import Sample, Stat
 from .stat_measures import DatasetMeasure, MeasureValue, SampleMeasure
 from .tensor import Tensor
+
+JsonValue = Union[
+    bool, int, float, str, None, List["JsonValue"], Dict[str, "JsonValue"]
+]
 
 
 def load_image(
@@ -165,18 +173,39 @@ class _StatList(RootModel[List[_StatEntry]]):
     pass
 
 
-def save_stat(
-    stat: Mapping[Union[DatasetMeasure, SampleMeasure], MeasureValue], path: Path
-) -> None:
-    """Save sample and dataset statistics as a JSON file at **path**"""
-
+def serialize_stat(
+    stat: Mapping[Union[DatasetMeasure, SampleMeasure], MeasureValue],
+) -> List[JsonValue]:
+    """Serialize a stat mapping to a JSON string"""
     stat_list = _StatList([_StatEntry(measure=k, value=v) for k, v in stat.items()])
-    _ = path.write_text(stat_list.model_dump_json(), encoding="utf-8")
+    return stat_list.model_dump(mode="json")
 
 
-def load_stat(path: Path) -> Stat:
-    """Load sample and dataset statistics from a JSON file at **path**"""
-    seq = _StatList.model_validate_json(path.read_bytes())
+def save_stat(
+    stat: Mapping[Union[DatasetMeasure, SampleMeasure], MeasureValue],
+    output: Union[Path, BytesIO],
+) -> None:
+    """Save sample and dataset statistics as a JSON file"""
+
+    if isinstance(output, Path):
+        ctxt = output.open("wb", encoding="utf-8")
+    else:
+        ctxt = nullcontext(output)
+
+    with ctxt as out:
+        json.dump(serialize_stat(stat), out, indent=2)
+
+
+def load_stat(source: Union[Path, str, Sequence[JsonValue]]) -> Stat:
+    """Load sample and dataset statistics from JSON"""
+    if isinstance(source, Path):
+        source = source.read_text(encoding="utf-8")
+
+    if isinstance(source, str):
+        seq = _StatList.model_validate_json(source)
+    else:
+        seq = _StatList.model_validate(source)
+
     return {e.measure: e.value for e in seq.root}
 
 
