@@ -16,6 +16,9 @@ from typing_extensions import assert_never
 from bioimageio.core.digest_spec import get_member_id
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 
+# CustomPostprocessingDescr was added after spec 0.5.9.1; guard for older installs
+_CustomPostprocessingDescr = getattr(v0_5, "CustomPostprocessingDescr", None)
+
 from .proc_ops import (
     AddKnownDatasetStats,
     CustomPostprocessing,
@@ -183,8 +186,11 @@ def _get_described_procs(
                 procs.append(get_proc(proc_d, t_descr))
         elif isinstance(t_descr, (v0_4.OutputTensorDescr, v0_5.OutputTensorDescr)):
             for proc_d in t_descr.postprocessing:
-                if isinstance(proc_d, v0_5.CustomPostprocessingDescr):
-                    assert isinstance(t_descr, v0_5.OutputTensorDescr)
+                if (
+                    _CustomPostprocessingDescr is not None
+                    and isinstance(proc_d, _CustomPostprocessingDescr)
+                    and isinstance(t_descr, v0_5.OutputTensorDescr)
+                ):
                     procs.append(
                         CustomPostprocessing.from_proc_descr(
                             proc_d, t_descr, all_output_ids

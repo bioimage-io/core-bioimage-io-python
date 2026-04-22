@@ -1036,7 +1036,7 @@ class CustomPostprocessing(SamplewiseOperator):
     @classmethod
     def from_proc_descr(
         cls,
-        descr: v0_5.CustomPostprocessingDescr,
+        descr: Any,  # v0_5.CustomPostprocessingDescr (guarded for older spec versions)
         tensor_descr: v0_5.OutputTensorDescr,
         all_output_ids: Sequence[MemberId],
     ) -> "CustomPostprocessing":
@@ -1142,10 +1142,5 @@ def get_proc(
             raise ValueError(
                 f"expected ndim 2 or 3 for stardist postprocessing, but got {proc_descr.kwargs.ndim}"
             )
-    elif isinstance(proc_descr, v0_5.CustomPostprocessingDescr):
-        raise ValueError(
-            "CustomPostprocessingDescr must be handled in proc_setup._get_described_procs,"
-            " not in get_proc, as it requires access to all output tensor ids."
-        )
     else:
         assert_never(proc_descr)
