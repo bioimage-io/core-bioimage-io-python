@@ -1,5 +1,6 @@
 ### 0.10.3 (to be released)
 
+- allow for precomputed sample statistics
 - add `bioimageio.core.io.serialize_stat`
 
 ### 0.10.2

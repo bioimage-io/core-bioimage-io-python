@@ -37,7 +37,7 @@ from .model_adapters import ModelAdapter, create_model_adapter
 from .model_adapters import get_weight_formats as get_weight_formats
 from .proc_setup import Processing, setup_pre_and_postprocessing
 from .sample import Sample, SampleBlock
-from .stat_measures import DatasetMeasure, MeasureValue, Stat
+from .stat_measures import Measure, MeasureValue, Stat
 from .tensor import Tensor
 
 Predict_IO = TypeVar(
@@ -357,9 +357,7 @@ def create_prediction_pipeline(
     weights_format: Optional[SupportedWeightsFormat] = None,
     dataset_for_initial_statistics: Iterable[Union[Sample, Sequence[Tensor]]] = tuple(),
     keep_updating_initial_dataset_statistics: bool = False,
-    fixed_dataset_statistics: Mapping[DatasetMeasure, MeasureValue] = MappingProxyType(
-        {}
-    ),
+    fixed_dataset_statistics: Mapping[Measure, MeasureValue] = MappingProxyType({}),
     model_adapter: Optional[ModelAdapter] = None,
     ns: Optional[BlocksizeParameter] = None,
     default_blocksize_parameter: BlocksizeParameter = 10,  # TODO: default to None and find smart blocksize params per axis to reduce overlap of blocks with large halo
@@ -387,7 +385,9 @@ def create_prediction_pipeline(
         keep_updating_initial_dataset_statistics: (optional) Set to `True` if you want
             to update dataset statistics with each processed sample.
         fixed_dataset_statistics: (optional) Allows you to specify a mapping of
-            `DatasetMeasure`s to precomputed `MeasureValue`s.
+            `Measure`s to precomputed `MeasureValue`s.
+            Any included `SampleMeasures` will not be calculated on the fly and it the callers
+            responsibility to use samples with the corresponding statistics in `sample.stat`.
         model_adapter: (optional) Allows you to use a custom **model_adapter** instead
             of creating one according to the present/selected **weights_format**.
         ns: deprecated in favor of **default_blocksize_parameter**

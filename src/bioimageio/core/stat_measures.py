@@ -40,7 +40,7 @@ def tensor_custom_serializer(t: Tensor) -> Dict[str, Any]:
     return {"data": t.data.data.tolist(), "dims": list(map(str, t.dims))}
 
 
-MeasureValue = Union[
+MeasureValue: TypeAlias = Union[
     float,
     Annotated[
         Tensor,
@@ -180,10 +180,10 @@ class DatasetQuantile(_Quantile, DatasetMeasureBase, frozen=True):
         assert self.axes is None or AxisId("batch") in self.axes
 
 
-SampleMeasure = Annotated[
+SampleMeasure: TypeAlias = Annotated[
     Union[SampleMean, SampleStd, SampleVar, SampleQuantile], Discriminator("name")
 ]
-DatasetMeasure = Annotated[
+DatasetMeasure: TypeAlias = Annotated[
     Union[DatasetMean, DatasetStd, DatasetVar, DatasetQuantile], Discriminator("name")
 ]
 Measure: TypeAlias = Annotated[
@@ -191,10 +191,10 @@ Measure: TypeAlias = Annotated[
 ]
 Stat: TypeAlias = Dict[Measure, MeasureValue]
 
-MeanMeasure = Union[SampleMean, DatasetMean]
-StdMeasure = Union[SampleStd, DatasetStd]
-VarMeasure = Union[SampleVar, DatasetVar]
-PercentileMeasure = Union[SampleQuantile, DatasetQuantile]
+MeanMeasure: TypeAlias = Union[SampleMean, DatasetMean]
+StdMeasure: TypeAlias = Union[SampleStd, DatasetStd]
+VarMeasure: TypeAlias = Union[SampleVar, DatasetVar]
+PercentileMeasure: TypeAlias = Union[SampleQuantile, DatasetQuantile]
 MeanMeasureT = TypeVar("MeanMeasureT", bound=MeanMeasure)
 StdMeasureT = TypeVar("StdMeasureT", bound=StdMeasure)
 VarMeasureT = TypeVar("VarMeasureT", bound=VarMeasure)
