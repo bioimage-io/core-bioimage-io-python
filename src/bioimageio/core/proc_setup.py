@@ -18,6 +18,7 @@ from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 
 from .proc_ops import (
     AddKnownDatasetStats,
+    CustomPostprocessing,
     EnsureDtype,
     Processing,
     UpdateStats,
@@ -162,6 +163,13 @@ def get_requried_sample_measures(model: AnyModelDescr) -> RequiredSampleMeasures
 def _get_described_procs(
     tensor_descrs: Iterable[TensorDescr],
 ) -> List[Processing]:
+    tensor_descrs = list(tensor_descrs)
+    all_output_ids = [
+        get_member_id(d)
+        for d in tensor_descrs
+        if isinstance(d, (v0_4.OutputTensorDescr, v0_5.OutputTensorDescr))
+    ]
+
     procs: List[Processing] = []
     for t_descr in tensor_descrs:
         if isinstance(t_descr, (v0_4.InputTensorDescr, v0_4.OutputTensorDescr)):
@@ -175,7 +183,15 @@ def _get_described_procs(
                 procs.append(get_proc(proc_d, t_descr))
         elif isinstance(t_descr, (v0_4.OutputTensorDescr, v0_5.OutputTensorDescr)):
             for proc_d in t_descr.postprocessing:
-                procs.append(get_proc(proc_d, t_descr))
+                if isinstance(proc_d, v0_5.CustomPostprocessingDescr):
+                    assert isinstance(t_descr, v0_5.OutputTensorDescr)
+                    procs.append(
+                        CustomPostprocessing.from_proc_descr(
+                            proc_d, t_descr, all_output_ids
+                        )
+                    )
+                else:
+                    procs.append(get_proc(proc_d, t_descr))
         else:
             assert_never(t_descr)
 

@@ -949,6 +949,113 @@ class FixedZeroMeanUnitVariance(SimpleOperator):
         return (x - self.mean) / (self.std + self.eps)
 
 
+@dataclass
+class CustomPostprocessing(SamplewiseOperator):
+    """Execute a user-supplied custom postprocessing callable.
+
+    The callable is loaded from a Python source file packaged with the model.
+    The source file's SHA-256 hash is verified before loading.
+
+    Two styles are supported — callable class and factory function::
+
+        # Callable class style
+        class my_postprocess:
+            def __init__(self, threshold=0.5):
+                self.threshold = threshold
+            def __call__(self, *arrays):
+                return (arrays[0] > self.threshold).astype(np.uint8)
+
+        # Factory function style
+        def my_postprocess(threshold=0.5):
+            def run(*arrays):
+                return (arrays[0] > threshold).astype(np.uint8)
+            return run
+
+    Runtime protocol: ``op = callable(**kwargs)`` once at construction;
+    ``result = op(*tensors)`` once per sample.
+    """
+
+    output_id: MemberId
+    """The model output tensor that will be replaced with the op result."""
+
+    input_ids: Sequence[MemberId]
+    """All model output tensor ids, passed to the op in rdf.yaml declaration order."""
+
+    callable_name: str
+    """Name of the class or factory function in ``source``."""
+
+    source_path: str
+    """Path to the source ``.py`` file (after extraction from the model package)."""
+
+    kwargs: Mapping[str, Any]
+    """Keyword arguments forwarded to the callable."""
+
+    # Initialised in __post_init__
+    _op: Any = field(init=False, repr=False)
+
+    def __post_init__(self) -> None:
+        import hashlib
+        import importlib.util
+        import sys
+
+        # Load and execute the source module
+        spec = importlib.util.spec_from_file_location(
+            f"_bioimageio_custom_op_{self.callable_name}", self.source_path
+        )
+        if spec is None or spec.loader is None:
+            raise ImportError(
+                f"Cannot load custom op from {self.source_path!r}"
+            )
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module  # type: ignore[index]
+        spec.loader.exec_module(module)  # type: ignore[union-attr]
+
+        callable_obj = getattr(module, self.callable_name, None)
+        if callable_obj is None:
+            raise AttributeError(
+                f"No attribute {self.callable_name!r} found in {self.source_path!r}"
+            )
+        self._op = callable_obj(**self.kwargs)
+
+    @property
+    def required_measures(self) -> Collection[Measure]:
+        return set()
+
+    def __call__(self, sample: Sample) -> None:
+        arrays = [
+            sample.members[mid].data.values
+            for mid in self.input_ids
+            if mid in sample.members
+        ]
+        result_array: NDArray[Any] = self._op(*arrays)
+        result_xr = xr.DataArray(
+            result_array, dims=sample.members[self.output_id].dims
+        )
+        sample.members[self.output_id] = Tensor.from_xarray(result_xr)
+
+    @classmethod
+    def from_proc_descr(
+        cls,
+        descr: v0_5.CustomPostprocessingDescr,
+        tensor_descr: v0_5.OutputTensorDescr,
+        all_output_ids: Sequence[MemberId],
+    ) -> "CustomPostprocessing":
+        from bioimageio.spec._internal.io import get_reader
+
+        output_id = get_member_id(tensor_descr)
+        # Resolve the source file path (works after model package extraction)
+        reader = get_reader(descr.source, sha256=descr.sha256)
+        source_path = str(reader.path)
+
+        return cls(
+            output_id=output_id,
+            input_ids=list(all_output_ids),
+            callable_name=descr.callable,
+            source_path=source_path,
+            kwargs=dict(descr.kwargs),
+        )
+
+
 ProcDescr = Union[
     v0_4.PreprocessingDescr,
     v0_4.PostprocessingDescr,
@@ -961,6 +1068,7 @@ Processing = Union[
     AddKnownDatasetStats,
     Binarize,
     Clip,
+    CustomPostprocessing,
     EnsureDtype,
     FixedZeroMeanUnitVariance,
     ScaleLinear,
@@ -1034,5 +1142,10 @@ def get_proc(
             raise ValueError(
                 f"expected ndim 2 or 3 for stardist postprocessing, but got {proc_descr.kwargs.ndim}"
             )
+    elif isinstance(proc_descr, v0_5.CustomPostprocessingDescr):
+        raise ValueError(
+            "CustomPostprocessingDescr must be handled in proc_setup._get_described_procs,"
+            " not in get_proc, as it requires access to all output tensor ids."
+        )
     else:
         assert_never(proc_descr)
