@@ -54,7 +54,7 @@ EXAMPLE_DESCRIPTIONS = "https://raw.githubusercontent.com/bioimage-io/spec-bioim
 
 # TODO: use models from new collection on S3
 MODEL_SOURCES: Dict[str, str] = {
-    "hpa_densenet": "polite-pig/1.1",
+    "hpa_densenet": "polite-pig",
     "stardist": (
         EXAMPLE_DESCRIPTIONS + "models/stardist_example_model/v0_4.bioimageio.yaml"
     ),

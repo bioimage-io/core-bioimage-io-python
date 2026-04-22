@@ -181,7 +181,24 @@ def load_torch_state_dict(
         if Version(str(torch.__version__)) < Version("1.13"):
             state = torch.load(f, map_location=devices[0])
         else:
-            state = torch.load(f, map_location=devices[0], weights_only=True)
+            try:
+                state = torch.load(f, map_location=devices[0], weights_only=True)
+            except Exception as e:
+                msg = (
+                    f"Failed to load weights with `weights_only=True`: {e}\n\n"
+                    + "This usually means the weights file contains non-tensor objects"
+                    + " (e.g. numpy arrays, custom classes, or nested dicts with"
+                    + " metadata). The BioImage.IO spec requires a pure state dict —"
+                    + " an OrderedDict mapping parameter names to tensors only.\n\n"
+                    + "To fix this, extract only the state dict from your checkpoint:\n\n"
+                    + "    import torch\n"
+                    + "    checkpoint = torch.load('original.pth', weights_only=False)\n"
+                    + "    # Inspect keys, e.g.: checkpoint.keys()"
+                    + " -> dict_keys(['model', 'optimizer', ...])\n"
+                    + "    torch.save(checkpoint['model'], 'weights.pt')\n\n"
+                    + "Then reference 'weights.pt' in your bioimageio.yaml."
+                )
+                raise ValueError(msg) from e
 
     incompatible = model.load_state_dict(state)
     if (
