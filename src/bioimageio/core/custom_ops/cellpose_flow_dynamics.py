@@ -12,10 +12,11 @@ Usage in rdf.yaml
     postprocessing:
       - id: custom
         callable: cellpose_flow_dynamics
+        source: <path/to/cellpose_flow_dynamics.py>
+        sha256: <sha256 of the file>
         kwargs:                      # all optional — defaults shown
           cellprob_threshold: 0.0
           flow_threshold: 0.4
-          interp: true
           do_3D: false
 
 Expected model outputs (in rdf.yaml declaration order):
@@ -36,19 +37,13 @@ https://doi.org/10.1038/s41592-020-01018-x
 Pachitariu & Stringer (2022) "Cellpose 2.0: how to train your own model."
 Nature Methods 19, 1634-1641.
 https://doi.org/10.1038/s41592-022-01663-4
-
----
-Two implementation styles are shown below — both are equivalent.
-The class style is used as the actual export; the function style is
-shown in comments as an alternative for contributors to follow.
----
 """
 
-import numpy as np
+from typing import Any
 
-# ---------------------------------------------------------------------------
-# Style 1 — callable class  (kwargs → __init__, tensors → __call__)
-# ---------------------------------------------------------------------------
+import numpy as np
+from numpy.typing import NDArray
+
 
 class cellpose_flow_dynamics:
     """Cellpose flow-dynamics postprocessing as a callable class.
@@ -65,15 +60,14 @@ class cellpose_flow_dynamics:
         self,
         cellprob_threshold: float = 0.0,
         flow_threshold: float = 0.4,
-        interp: bool = True,
         do_3D: bool = False,
     ) -> None:
+        super().__init__()
         self.cellprob_threshold = cellprob_threshold
         self.flow_threshold = flow_threshold
-        self.interp = interp
         self.do_3D = do_3D
 
-    def __call__(self, *arrays: np.ndarray) -> np.ndarray:
+    def __call__(self, *arrays: "NDArray[Any]") -> "NDArray[np.int32]":
         """Decode flow fields into instance labels.
 
         Args:
@@ -87,53 +81,27 @@ class cellpose_flow_dynamics:
         """
         if len(arrays) < 3:
             raise ValueError(
-                f"cellpose_flow_dynamics expects 3 output tensors "
-                f"(flow_y, flow_x, cellprob), got {len(arrays)}."
+                "cellpose_flow_dynamics expects 3 output tensors"
+                f" (flow_y, flow_x, cellprob), got {len(arrays)}."
             )
 
         flow_y, flow_x, cellprob = arrays[0], arrays[1], arrays[2]
 
         try:
-            from cellpose import dynamics
+            from cellpose import dynamics  # pyright: ignore[reportMissingModuleSource]
         except ImportError as e:
             raise ImportError(
-                "cellpose is required for cellpose_flow_dynamics. "
-                "Install with: pip install cellpose"
+                "cellpose is required for cellpose_flow_dynamics."
+                " Install with: pip install cellpose"
             ) from e
 
-        flows = np.stack([flow_y, flow_x], axis=0)  # (2, H, W)
-        masks, *_ = dynamics.compute_masks(
+        flows: NDArray[Any] = np.stack([flow_y, flow_x], axis=0)  # (2, H, W)
+        result = dynamics.compute_masks(  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
             flows,
             cellprob,
             cellprob_threshold=self.cellprob_threshold,
             flow_threshold=self.flow_threshold,
-            interp=self.interp,
             do_3D=self.do_3D,
         )
+        masks: NDArray[Any] = result[0]  # pyright: ignore[reportUnknownVariableType]
         return masks.astype(np.int32)
-
-
-# ---------------------------------------------------------------------------
-# Style 2 — factory function  (alternative, identical behaviour)
-# ---------------------------------------------------------------------------
-#
-# def cellpose_flow_dynamics(
-#     cellprob_threshold: float = 0.0,
-#     flow_threshold: float = 0.4,
-#     interp: bool = True,
-#     do_3D: bool = False,
-# ):
-#     """Factory: called once with kwargs, returns per-image function."""
-#     def run(*arrays: np.ndarray) -> np.ndarray:
-#         flow_y, flow_x, cellprob = arrays[0], arrays[1], arrays[2]
-#         from cellpose import dynamics
-#         flows = np.stack([flow_y, flow_x], axis=0)
-#         masks, *_ = dynamics.compute_masks(
-#             flows, cellprob,
-#             cellprob_threshold=cellprob_threshold,
-#             flow_threshold=flow_threshold,
-#             interp=interp,
-#             do_3D=do_3D,
-#         )
-#         return masks.astype(np.int32)
-#     return run

@@ -982,10 +982,10 @@ class CustomPostprocessing(SamplewiseOperator):
     """All model output tensor ids, passed to the op in rdf.yaml declaration order."""
 
     callable_name: str
-    """Name of the class or factory function in ``source``."""
+    """Name of the class or factory function defined in ``source_code``."""
 
-    source_path: str
-    """Path to the source ``.py`` file (after extraction from the model package)."""
+    source_code: bytes
+    """Python source code of the op file."""
 
     kwargs: Mapping[str, Any]
     """Keyword arguments forwarded to the callable."""
@@ -996,23 +996,32 @@ class CustomPostprocessing(SamplewiseOperator):
     def __post_init__(self) -> None:
         import importlib.util
         import sys
+        import tempfile
 
-        # Load and execute the source module
+        # Write source to a temp file so importlib can load it properly
+        with tempfile.NamedTemporaryFile(
+            suffix=".py",
+            prefix=f"_bioimageio_custom_{self.callable_name}_",
+            delete=False,
+        ) as tmp:
+            tmp.write(self.source_code)
+            tmp_path = tmp.name
+
         spec = importlib.util.spec_from_file_location(
-            f"_bioimageio_custom_op_{self.callable_name}", self.source_path
+            f"_bioimageio_custom_op_{self.callable_name}", tmp_path
         )
         if spec is None or spec.loader is None:
             raise ImportError(
-                f"Cannot load custom op from {self.source_path!r}"
+                f"Cannot create module spec from {tmp_path!r}"
             )
         module = importlib.util.module_from_spec(spec)
-        sys.modules[spec.name] = module  # type: ignore[index]
-        spec.loader.exec_module(module)  # type: ignore[union-attr]
+        sys.modules[spec.name] = module  # pyright: ignore[reportArgumentType]
+        spec.loader.exec_module(module)  # pyright: ignore[reportAttributeAccessIssue]
 
         callable_obj = getattr(module, self.callable_name, None)
         if callable_obj is None:
             raise AttributeError(
-                f"No attribute {self.callable_name!r} found in {self.source_path!r}"
+                f"No attribute {self.callable_name!r} found in custom op source"
             )
         self._op = callable_obj(**self.kwargs)
 
@@ -1021,8 +1030,8 @@ class CustomPostprocessing(SamplewiseOperator):
         return set()
 
     def __call__(self, sample: Sample) -> None:
-        arrays = [
-            sample.members[mid].data.values
+        arrays: List[NDArray[Any]] = [
+            sample.members[mid].data.values  # pyright: ignore[reportUnknownMemberType]
             for mid in self.input_ids
             if mid in sample.members
         ]
@@ -1042,15 +1051,14 @@ class CustomPostprocessing(SamplewiseOperator):
         from bioimageio.spec._internal.io import get_reader
 
         output_id = get_member_id(tensor_descr)
-        # Resolve the source file path (works after model package extraction)
         reader = get_reader(descr.source, sha256=descr.sha256)
-        source_path = str(reader.path)
+        source_code: bytes = reader.read()
 
         return cls(
             output_id=output_id,
             input_ids=list(all_output_ids),
             callable_name=descr.callable,
-            source_path=source_path,
+            source_code=source_code,
             kwargs=dict(descr.kwargs),
         )
 
