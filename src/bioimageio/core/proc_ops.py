@@ -1004,7 +1004,7 @@ class CustomPostprocessing(SamplewiseOperator):
             prefix=f"_bioimageio_custom_{self.callable_name}_",
             delete=False,
         ) as tmp:
-            tmp.write(self.source_code)
+            _ = tmp.write(self.source_code)
             tmp_path = tmp.name
 
         spec = importlib.util.spec_from_file_location(
@@ -1015,8 +1015,8 @@ class CustomPostprocessing(SamplewiseOperator):
                 f"Cannot create module spec from {tmp_path!r}"
             )
         module = importlib.util.module_from_spec(spec)
-        sys.modules[spec.name] = module  # pyright: ignore[reportArgumentType]
-        spec.loader.exec_module(module)  # pyright: ignore[reportAttributeAccessIssue]
+        sys.modules[spec.name] = module
+        spec.loader.exec_module(module)  # pyright: ignore[reportUnknownMemberType]
 
         callable_obj = getattr(module, self.callable_name, None)
         if callable_obj is None:
@@ -1031,7 +1031,7 @@ class CustomPostprocessing(SamplewiseOperator):
 
     def __call__(self, sample: Sample) -> None:
         arrays: List[NDArray[Any]] = [
-            sample.members[mid].data.values  # pyright: ignore[reportUnknownMemberType]
+            sample.members[mid].data.values
             for mid in self.input_ids
             if mid in sample.members
         ]

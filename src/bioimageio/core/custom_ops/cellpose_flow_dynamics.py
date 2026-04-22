@@ -39,7 +39,7 @@ Nature Methods 19, 1634-1641.
 https://doi.org/10.1038/s41592-022-01663-4
 """
 
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 from numpy.typing import NDArray
@@ -80,28 +80,27 @@ class cellpose_flow_dynamics:
             Integer label image (H x W), int32. 0 = background.
         """
         if len(arrays) < 3:
+            n = len(arrays)
             raise ValueError(
-                "cellpose_flow_dynamics expects 3 output tensors"
-                f" (flow_y, flow_x, cellprob), got {len(arrays)}."
+                f"cellpose_flow_dynamics expects 3 output tensors (flow_y, flow_x, cellprob), got {n}."
             )
 
         flow_y, flow_x, cellprob = arrays[0], arrays[1], arrays[2]
 
         try:
-            from cellpose import dynamics  # pyright: ignore[reportMissingModuleSource]
+            from cellpose import dynamics  # pyright: ignore[reportMissingTypeStubs]
         except ImportError as e:
             raise ImportError(
-                "cellpose is required for cellpose_flow_dynamics."
-                " Install with: pip install cellpose"
+                "cellpose is required for cellpose_flow_dynamics. Install with: pip install cellpose"
             ) from e
 
         flows: NDArray[Any] = np.stack([flow_y, flow_x], axis=0)  # (2, H, W)
-        result = dynamics.compute_masks(  # pyright: ignore[reportUnknownVariableType, reportUnknownMemberType]
+        result: Any = dynamics.compute_masks(  # pyright: ignore[reportUnknownVariableType]
             flows,
             cellprob,
             cellprob_threshold=self.cellprob_threshold,
             flow_threshold=self.flow_threshold,
             do_3D=self.do_3D,
         )
-        masks: NDArray[Any] = result[0]  # pyright: ignore[reportUnknownVariableType]
+        masks: NDArray[Any] = cast(NDArray[Any], result[0])
         return masks.astype(np.int32)
