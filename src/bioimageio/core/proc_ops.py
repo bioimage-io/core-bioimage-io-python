@@ -1016,7 +1016,7 @@ class CustomPostprocessing(SamplewiseOperator):
             )
         module = importlib.util.module_from_spec(spec)
         sys.modules[spec.name] = module
-        spec.loader.exec_module(module)  # pyright: ignore[reportUnknownMemberType]
+        spec.loader.exec_module(module)
 
         callable_obj = getattr(module, self.callable_name, None)
         if callable_obj is None:
