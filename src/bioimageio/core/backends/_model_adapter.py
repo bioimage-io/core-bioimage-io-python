@@ -253,7 +253,7 @@ class ModelAdapter(ABC):
     @abstractmethod
     def _forward_impl(
         self, input_arrays: Sequence[Optional[NDArray[Any]]]
-    ) -> Union[List[Optional[NDArray[Any]]], Tuple[Optional[NDArray[Any]]]]:
+    ) -> Union[List[Optional[NDArray[Any]]], Tuple[Optional[NDArray[Any]], ...]]:
         """framework specific forward implementation"""
 
     @abstractmethod
@@ -262,9 +262,6 @@ class ModelAdapter(ABC):
         Unload model from any devices, freeing their memory.
         The moder adapter should be considered unusable afterwards.
         """
-
-    def _get_input_args_numpy(self, input_sample: Sample):
-        """helper to extract tensor args as transposed numpy arrays"""
 
 
 create_model_adapter = ModelAdapter.create
