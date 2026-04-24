@@ -384,10 +384,9 @@ def create_prediction_pipeline(
             specifcy a dataset from which these statistics are computed.
         keep_updating_initial_dataset_statistics: (optional) Set to `True` if you want
             to update dataset statistics with each processed sample.
-        fixed_dataset_statistics: (optional) Allows you to specify a mapping of
-            `Measure`s to precomputed `MeasureValue`s.
-            Any included `SampleMeasures` will not be calculated on the fly and it the callers
-            responsibility to use samples with the corresponding statistics in `sample.stat`.
+        fixed_dataset_statistics: (optional) Precomputed dataset (and optionally sample) statistics.
+            Any included sample statistics will not be calculated on the fly and it is the callers
+            responsibility to use samples with the corresponding statistics availble in `sample.stat`.
         model_adapter: (optional) Allows you to use a custom **model_adapter** instead
             of creating one according to the present/selected **weights_format**.
         ns: deprecated in favor of **default_blocksize_parameter**
