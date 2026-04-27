@@ -1,10 +1,11 @@
 from pathlib import Path
-from typing import Iterable, Optional, Tuple, Type, TypeVar
+from typing import Any, Iterable, Optional, Tuple, Type, TypeVar
 
 import numpy as np
 import pytest
 import scipy  # pyright: ignore[reportMissingTypeStubs]
 import xarray as xr
+from numpy.typing import NDArray
 from typing_extensions import TypeGuard
 
 from bioimageio.core.axis import AxisId
@@ -488,9 +489,7 @@ def test_softmax_from_spec_descr(tid: MemberId, tmp_path: Path):
     np.save(test_npy, np_data)
 
     # Build spec descriptor — SoftmaxDescr requires bioimageio.spec >= 0.5.9
-    softmax_descr = v0_5.SoftmaxDescr(
-        kwargs=v0_5.SoftmaxKwargs(axis=AxisId("channel"))
-    )
+    softmax_descr = v0_5.SoftmaxDescr(kwargs=v0_5.SoftmaxKwargs(axis=AxisId("channel")))
     tensor_descr = v0_5.OutputTensorDescr(
         id=v0_5.TensorId(str(tid)),
         axes=[
@@ -533,56 +532,53 @@ def test_softmax_from_spec_descr(tid: MemberId, tmp_path: Path):
 
 def test_custom_postprocessing_callable_class(tid: MemberId) -> None:
     """CustomPostprocessing loads a callable class from source bytes and applies it."""
-    from bioimageio.core.proc_ops import CustomPostprocessing
+    from bioimageio.core.proc_ops import CustomProcessing
 
-    source_code = b"""
-import numpy as np
+    class DoubleValues:
+        def __init__(self, scale: float = 2.0) -> None:
+            super().__init__()
+            self.scale = scale
 
-class double_values:
-    def __init__(self, scale: float = 2.0) -> None:
-        self.scale = scale
-    def __call__(self, *arrays):
-        return (arrays[0] * self.scale).astype(np.float32)
-"""
+        def __call__(self, array: NDArray[Any]) -> NDArray[Any]:
+            return (array * self.scale).astype(np.float32)
+
     data = xr.DataArray(np.ones((2, 3), dtype=np.float32), dims=("y", "x"))
     out_id = MemberId("out")
     sample = Sample(members={out_id: Tensor.from_xarray(data)}, stat={}, id=None)
 
-    op = CustomPostprocessing(
-        output_id=out_id,
-        input_ids=[out_id],
-        callable_name="double_values",
-        source_code=source_code,
+    op = CustomProcessing(
+        input=out_id,
+        output=out_id,
+        custom_factory=DoubleValues,
         kwargs={"scale": 3.0},
     )
     op(sample)
 
     expected = xr.DataArray(np.full((2, 3), 3.0, dtype=np.float32), dims=("y", "x"))
-    xr.testing.assert_allclose(expected, sample.members[out_id].data, rtol=1e-5, atol=1e-7)
+    xr.testing.assert_allclose(
+        expected, sample.members[out_id].data, rtol=1e-5, atol=1e-7
+    )
 
 
 def test_custom_postprocessing_factory_function(tid: MemberId) -> None:
     """CustomPostprocessing also works with a factory-function style callable."""
-    from bioimageio.core.proc_ops import CustomPostprocessing
+    from bioimageio.core.proc_ops import CustomProcessing
 
-    source_code = b"""
-import numpy as np
+    def threshold_op(threshold: float = 0.5):
+        def run(array: NDArray[Any]) -> NDArray[Any]:
+            return (array > threshold).astype(np.uint8)
 
-def threshold_op(threshold: float = 0.5):
-    def run(*arrays):
-        return (arrays[0] > threshold).astype(np.uint8)
-    return run
-"""
+        return run
+
     np_data = np.array([[0.1, 0.6], [0.4, 0.9]], dtype=np.float32)
     data = xr.DataArray(np_data, dims=("y", "x"))
     out_id = MemberId("out2")
     sample = Sample(members={out_id: Tensor.from_xarray(data)}, stat={}, id=None)
 
-    op = CustomPostprocessing(
-        output_id=out_id,
-        input_ids=[out_id],
-        callable_name="threshold_op",
-        source_code=source_code,
+    op = CustomProcessing(
+        input=out_id,
+        output=out_id,
+        custom_factory=threshold_op,
         kwargs={"threshold": 0.5},
     )
     op(sample)

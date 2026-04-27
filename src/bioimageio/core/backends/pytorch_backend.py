@@ -134,6 +134,9 @@ def load_torch_model(
                 torch_model,
                 path=download(weight_spec),
                 devices=use_devices,
+                strict=weight_spec.strict
+                if isinstance(weight_spec, v0_5.PytorchStateDictWeightsDescr)
+                else True,
             )
     return torch_model
 
@@ -142,6 +145,7 @@ def load_torch_state_dict(
     model: nn.Module,
     path: Union[Path, ZipPath, BytesReader],
     devices: Sequence[torch.device],
+    strict: bool = True,
 ) -> nn.Module:
     model = model.to(devices[0])
     if isinstance(path, (Path, ZipPath)):
@@ -173,7 +177,7 @@ def load_torch_state_dict(
                 )
                 raise ValueError(msg) from e
 
-    incompatible = model.load_state_dict(state)
+    incompatible = model.load_state_dict(state, strict=strict)
     if (
         isinstance(incompatible, tuple)
         and hasattr(incompatible, "missing_keys")

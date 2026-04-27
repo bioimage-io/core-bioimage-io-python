@@ -13,15 +13,11 @@ from typing import (
 
 from typing_extensions import assert_never
 
-from bioimageio.core.digest_spec import get_member_id
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 
-# CustomPostprocessingDescr was added after spec 0.5.9.1; guard for older installs
-_CustomPostprocessingDescr = getattr(v0_5, "CustomPostprocessingDescr", None)
-
+from .digest_spec import get_member_id
 from .proc_ops import (
     AddKnownDatasetStats,
-    CustomPostprocessing,
     EnsureDtype,
     Processing,
     UpdateStats,
@@ -167,12 +163,6 @@ def _get_described_procs(
     tensor_descrs: Iterable[TensorDescr],
 ) -> List[Processing]:
     tensor_descrs = list(tensor_descrs)
-    all_output_ids = [
-        get_member_id(d)
-        for d in tensor_descrs
-        if isinstance(d, (v0_4.OutputTensorDescr, v0_5.OutputTensorDescr))
-    ]
-
     procs: List[Processing] = []
     for t_descr in tensor_descrs:
         if isinstance(t_descr, (v0_4.InputTensorDescr, v0_4.OutputTensorDescr)):
@@ -186,18 +176,7 @@ def _get_described_procs(
                 procs.append(get_proc(proc_d, t_descr))
         elif isinstance(t_descr, (v0_4.OutputTensorDescr, v0_5.OutputTensorDescr)):
             for proc_d in t_descr.postprocessing:
-                if (
-                    _CustomPostprocessingDescr is not None
-                    and isinstance(proc_d, _CustomPostprocessingDescr)
-                    and isinstance(t_descr, v0_5.OutputTensorDescr)
-                ):
-                    procs.append(
-                        CustomPostprocessing.from_proc_descr(
-                            proc_d, t_descr, all_output_ids
-                        )
-                    )
-                else:
-                    procs.append(get_proc(proc_d, t_descr))
+                procs.append(get_proc(proc_d, t_descr))
         else:
             assert_never(t_descr)
 

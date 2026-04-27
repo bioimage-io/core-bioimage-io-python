@@ -60,6 +60,7 @@ def import_callable(
         ArchitectureFromLibraryDescr,
         CallableFromDepencency,
         CallableFromFile,
+        v0_5.CustomProcessingDescr,
     ],
     /,
     **kwargs: Unpack[HashKwargs],

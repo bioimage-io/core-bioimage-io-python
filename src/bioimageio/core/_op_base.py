@@ -51,7 +51,7 @@ class SimpleOperator(BlockwiseOperator):
 
     def __call__(self, sample: Union[Sample, SampleBlock]) -> None:
         if self.input not in sample.members:
-            return
+            return  # TODO: raise?
 
         input_tensor = sample.members[self.input]
         output_tensor = self._apply(input_tensor, sample.stat)

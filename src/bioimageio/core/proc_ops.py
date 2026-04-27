@@ -1,12 +1,10 @@
 import collections.abc
-from abc import ABC, abstractmethod
 from dataclasses import InitVar, dataclass, field
 from functools import partial
 from typing import (
     Any,
+    Callable,
     Collection,
-    Generic,
-    List,
     Literal,
     Mapping,
     Optional,
@@ -20,17 +18,20 @@ import numpy as np
 import scipy
 import xarray as xr
 from numpy.typing import NDArray
-from typing_extensions import Self, TypeVar, assert_never, cast
+from typing_extensions import Self, assert_never
 
-from bioimageio.core.digest_spec import get_member_id
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import (
     _convert_proc,  # pyright: ignore[reportPrivateUsage]
 )
 
 from ._op_base import BlockwiseOperator, SamplewiseOperator, SimpleOperator
+from ._ops_cellpose import CellposeFlowDynamics
+from ._ops_stardist import StardistPostprocessing2D as StardistPostprocessing2D
+from ._ops_stardist import StardistPostprocessing3D as StardistPostprocessing3D
 from .axis import AxisId
 from .common import DTypeStr, MemberId
+from .digest_spec import get_member_id, import_callable
 from .sample import Sample, SampleBlock
 from .stat_calculators import StatsCalculator
 from .stat_measures import (
@@ -622,215 +623,6 @@ class Softmax(SimpleOperator):
         return v0_5.SoftmaxDescr(kwargs=v0_5.SoftmaxKwargs(axis=self.axis))
 
 
-NdTuple = TypeVar("NdTuple", Tuple[int, int], Tuple[int, int, int])
-NdBorder = TypeVar(
-    "NdBorder",
-    Tuple[Tuple[int, int], Tuple[int, int]],
-    Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int]],
-)
-
-
-@dataclass
-class _StardistPostprocessingBase(SamplewiseOperator, Generic[NdTuple, NdBorder], ABC):
-    prob_dist_input_id: MemberId
-    instance_labels_output_id: MemberId
-
-    grid: NdTuple
-    """Grid size of network predictions."""
-
-    prob_threshold: float
-    """Object probability threshold for non-maximum suppression."""
-
-    nms_threshold: float
-    """The IoU threshold for non-maximum suppression."""
-
-    b: Union[int, NdBorder]
-    """Border region in which object probability is set to zero."""
-
-    @property
-    def required_measures(self) -> Collection[Measure]:
-        return set()
-
-    def __call__(self, sample: Sample) -> None:
-        prob_dist = sample.members[self.prob_dist_input_id]
-
-        assert AxisId("channel") in prob_dist.dims, (
-            "expected 'channel' axis in stardist probability/distance input"
-        )
-        allowed_spatial = tuple(
-            map(AxisId, ("y", "x") if len(self.grid) == 2 else ("z", "y", "x"))
-        )
-        assert all(
-            a in allowed_spatial or a in (AxisId("batch"), AxisId("channel"))
-            for a in prob_dist.dims
-        ), (
-            f"expected prob_dist to have only 'batch', 'channel', and spatial axes {allowed_spatial}, but got {prob_dist.dims}"
-        )
-
-        spatial_shape = tuple(
-            prob_dist.tagged_shape[a] * g for a, g in zip(allowed_spatial, self.grid)
-        )
-        if len(spatial_shape) != len(self.grid):
-            raise ValueError(
-                f"expected {len(self.grid)} spatial dimensions in prob_dist tensor, but got {len(spatial_shape)}"
-            )
-        else:
-            spatial_shape = cast(NdTuple, spatial_shape)
-
-        prob_dist = prob_dist.transpose(
-            (AxisId("batch"), *allowed_spatial, AxisId("channel"))
-        )
-        labels: List[NDArray[Any]] = []
-        for batch_idx in range(prob_dist.sizes[AxisId("batch")]):
-            prob = prob_dist[
-                {AxisId("batch"): batch_idx, AxisId("channel"): 0}
-            ].to_numpy()
-            dist = prob_dist[
-                {AxisId("batch"): batch_idx, AxisId("channel"): slice(1, None)}
-            ].to_numpy()
-
-            labels_i = self._impl(prob, dist, spatial_shape)
-            assert labels_i.shape == spatial_shape, (
-                f"expected label image shape {spatial_shape}, but got {labels_i.shape}"
-            )
-            labels.append(labels_i)
-
-        instance_labels = Tensor(
-            np.stack(labels)[..., None],
-            dims=(AxisId("batch"), *allowed_spatial, AxisId("channel")),
-        )
-        sample.members[self.instance_labels_output_id] = instance_labels
-
-    @abstractmethod
-    def _impl(
-        self, prob: NDArray[Any], dist: NDArray[Any], spatial_shape: NdTuple
-    ) -> NDArray[np.int32]:
-        raise NotImplementedError
-
-
-@dataclass
-class StardistPostprocessing2D(
-    _StardistPostprocessingBase[
-        Tuple[int, int], Tuple[Tuple[int, int], Tuple[int, int]]
-    ]
-):
-    def _impl(
-        self, prob: NDArray[Any], dist: NDArray[Any], spatial_shape: Tuple[int, int]
-    ) -> NDArray[np.int32]:
-        from stardist import (
-            non_maximum_suppression,  # pyright: ignore[reportUnknownVariableType]
-            polygons_to_label,  # pyright: ignore[reportUnknownVariableType]
-        )
-
-        points, probi, disti = non_maximum_suppression(  # pyright: ignore[reportUnknownVariableType]
-            dist,
-            prob,
-            grid=self.grid,
-            prob_thresh=self.prob_threshold,
-            nms_thresh=self.nms_threshold,
-            b=self.b,  # pyright: ignore[reportArgumentType]
-        )
-
-        return polygons_to_label(disti, points, prob=probi, shape=spatial_shape)
-
-    @classmethod
-    def from_proc_descr(
-        cls, descr: v0_5.StardistPostprocessingDescr, member_id: MemberId
-    ) -> Self:
-        if not isinstance(descr.kwargs, v0_5.StardistPostprocessingKwargs2D):
-            raise TypeError(
-                f"expected v0_5.StardistPostprocessingKwargs2D for 2D stardist post-processing, but got {type(descr.kwargs)}"
-            )
-
-        kwargs = descr.kwargs
-        return cls(
-            prob_dist_input_id=member_id,
-            instance_labels_output_id=member_id,
-            grid=kwargs.grid,
-            prob_threshold=kwargs.prob_threshold,
-            nms_threshold=kwargs.nms_threshold,
-            b=kwargs.b,
-        )
-
-
-@dataclass
-class StardistPostprocessing3D(
-    _StardistPostprocessingBase[
-        Tuple[int, int, int], Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int]]
-    ]
-):
-    n_rays: int
-    """Number of rays for 3D star-convex polyhedra."""
-
-    anisotropy: Tuple[float, float, float]
-    """Anisotropy factors for 3D star-convex polyhedra, i.e. the physical pixel size along each spatial axis."""
-
-    overlap_label: Optional[int] = None
-    """Optional label to apply to any area of overlapping predicted objects."""
-
-    def _impl(
-        self,
-        prob: NDArray[Any],
-        dist: NDArray[Any],
-        spatial_shape: Tuple[int, int, int],
-    ) -> NDArray[np.int32]:
-        from stardist import (
-            Rays_GoldenSpiral,
-            non_maximum_suppression_3d,  # pyright: ignore[reportUnknownVariableType]
-            polyhedron_to_label,  # pyright: ignore[reportUnknownVariableType]
-        )
-        from stardist.matching import (
-            relabel_sequential,  # pyright: ignore[reportUnknownVariableType]
-        )
-
-        rays = Rays_GoldenSpiral(self.n_rays, anisotropy=self.anisotropy)
-
-        points, probi, disti = non_maximum_suppression_3d(  # pyright: ignore[reportUnknownVariableType]
-            dist,
-            prob,
-            rays,
-            grid=self.grid,
-            prob_thresh=self.prob_threshold,
-            nms_thresh=self.nms_threshold,
-            b=self.b,  # pyright: ignore[reportArgumentType]
-        )
-
-        labels = polyhedron_to_label(  # pyright: ignore[reportUnknownVariableType]
-            disti,
-            points,
-            rays=rays,
-            prob=probi,
-            shape=spatial_shape,
-            overlap_label=self.overlap_label,
-        )
-
-        labels, _, _ = relabel_sequential(labels)
-        assert isinstance(labels, np.ndarray) and labels.dtype == np.int32
-        return labels
-
-    @classmethod
-    def from_proc_descr(
-        cls, descr: v0_5.StardistPostprocessingDescr, member_id: MemberId
-    ) -> Self:
-        if not isinstance(descr.kwargs, v0_5.StardistPostprocessingKwargs3D):
-            raise TypeError(
-                f"expected v0_5.StardistPostprocessingKwargs3D for 3D stardist post-processing, but got {type(descr.kwargs)}"
-            )
-
-        kwargs = descr.kwargs
-        return cls(
-            prob_dist_input_id=member_id,
-            instance_labels_output_id=member_id,
-            grid=kwargs.grid,
-            prob_threshold=kwargs.prob_threshold,
-            nms_threshold=kwargs.nms_threshold,
-            n_rays=kwargs.n_rays,
-            anisotropy=kwargs.anisotropy,
-            b=kwargs.b,
-            overlap_label=kwargs.overlap_label,
-        )
-
-
 @dataclass
 class ZeroMeanUnitVariance(SimpleOperator):
     """normalize to zero mean, unit variance."""
@@ -950,115 +742,65 @@ class FixedZeroMeanUnitVariance(SimpleOperator):
 
 
 @dataclass
-class CustomPostprocessing(SamplewiseOperator):
-    """Execute a user-supplied custom postprocessing callable.
-
-    The callable is loaded from a Python source file packaged with the model.
-    The source file's SHA-256 hash is verified before loading.
+class CustomProcessing(SimpleOperator):
+    """Execute a user-supplied custom processing callable.
 
     Two styles are supported — callable class and factory function::
 
         # Callable class style
-        class my_postprocess:
+        class my_factory:
             def __init__(self, threshold=0.5):
                 self.threshold = threshold
             def __call__(self, *arrays):
                 return (arrays[0] > self.threshold).astype(np.uint8)
 
         # Factory function style
-        def my_postprocess(threshold=0.5):
+        def my_factory(threshold=0.5):
             def run(*arrays):
                 return (arrays[0] > threshold).astype(np.uint8)
             return run
 
-    Runtime protocol: ``op = callable(**kwargs)`` once at construction;
-    ``result = op(*tensors)`` once per sample.
+    Runtime protocol: ``custom_callable = my_factory(**kwargs)`` once at construction;
+    ``result = custom_callable(tensor)`` once per sample.
+
+    Note: The custom callable may not change the shape of the input tensor.
     """
 
-    output_id: MemberId
-    """The model output tensor that will be replaced with the op result."""
-
-    input_ids: Sequence[MemberId]
-    """All model output tensor ids, passed to the op in rdf.yaml declaration order."""
-
-    callable_name: str
-    """Name of the class or factory function defined in ``source_code``."""
-
-    source_code: bytes
-    """Python source code of the op file."""
+    custom_factory: Callable[..., Callable[[NDArray[Any]], NDArray[Any]]]
 
     kwargs: Mapping[str, Any]
-    """Keyword arguments forwarded to the callable."""
+    """Keyword arguments forwarded to the custom factory."""
 
     # Initialised in __post_init__
-    _op: Any = field(init=False, repr=False)
+    _custom_callable: Any = field(init=False, repr=False)
 
     def __post_init__(self) -> None:
-        import importlib.util
-        import sys
-        import tempfile
+        self._custom_callable = self.custom_factory(**self.kwargs)
 
-        # Write source to a temp file so importlib can load it properly
-        with tempfile.NamedTemporaryFile(
-            suffix=".py",
-            prefix=f"_bioimageio_custom_{self.callable_name}_",
-            delete=False,
-        ) as tmp:
-            _ = tmp.write(self.source_code)
-            tmp_path = tmp.name
+    def _apply(self, x: Tensor, stat: Stat) -> Tensor:
+        return Tensor.from_numpy(self._custom_callable(x.to_numpy()), dims=x.dims)
 
-        spec = importlib.util.spec_from_file_location(
-            f"_bioimageio_custom_op_{self.callable_name}", tmp_path
-        )
-        if spec is None or spec.loader is None:
-            raise ImportError(
-                f"Cannot create module spec from {tmp_path!r}"
-            )
-        module = importlib.util.module_from_spec(spec)
-        sys.modules[spec.name] = module
-        spec.loader.exec_module(module)
-
-        callable_obj = getattr(module, self.callable_name, None)
-        if callable_obj is None:
-            raise AttributeError(
-                f"No attribute {self.callable_name!r} found in custom op source"
-            )
-        self._op = callable_obj(**self.kwargs)
+    def get_output_shape(
+        self, input_shape: Mapping[AxisId, int]
+    ) -> Mapping[AxisId, int]:
+        return input_shape
 
     @property
     def required_measures(self) -> Collection[Measure]:
         return set()
 
-    def __call__(self, sample: Sample) -> None:
-        arrays: List[NDArray[Any]] = [
-            sample.members[mid].data.values
-            for mid in self.input_ids
-            if mid in sample.members
-        ]
-        result_array: NDArray[Any] = self._op(*arrays)
-        result_xr = xr.DataArray(
-            result_array, dims=sample.members[self.output_id].dims
-        )
-        sample.members[self.output_id] = Tensor.from_xarray(result_xr)
-
     @classmethod
     def from_proc_descr(
         cls,
-        descr: Any,  # v0_5.CustomPostprocessingDescr (guarded for older spec versions)
-        tensor_descr: v0_5.OutputTensorDescr,
-        all_output_ids: Sequence[MemberId],
-    ) -> "CustomPostprocessing":
-        from bioimageio.spec._internal.io import get_reader
-
-        output_id = get_member_id(tensor_descr)
-        reader = get_reader(descr.source, sha256=descr.sha256)
-        source_code: bytes = reader.read()
+        descr: v0_5.CustomProcessingDescr,
+        member_id: MemberId,
+    ) -> Self:
+        factory = import_callable(descr)
 
         return cls(
-            output_id=output_id,
-            input_ids=list(all_output_ids),
-            callable_name=descr.callable,
-            source_code=source_code,
+            input=member_id,
+            output=member_id,
+            custom_factory=factory,
             kwargs=dict(descr.kwargs),
         )
 
@@ -1075,7 +817,8 @@ Processing = Union[
     AddKnownDatasetStats,
     Binarize,
     Clip,
-    CustomPostprocessing,
+    CellposeFlowDynamics,
+    CustomProcessing,
     EnsureDtype,
     FixedZeroMeanUnitVariance,
     ScaleLinear,
@@ -1103,8 +846,12 @@ def get_proc(
 
     if isinstance(proc_descr, (v0_4.BinarizeDescr, v0_5.BinarizeDescr)):
         return Binarize.from_proc_descr(proc_descr, member_id)
+    elif isinstance(proc_descr, v0_5.CellposeFlowDynamicsDescr):
+        return CellposeFlowDynamics.from_proc_descr(proc_descr, member_id)
     elif isinstance(proc_descr, (v0_4.ClipDescr, v0_5.ClipDescr)):
         return Clip.from_proc_descr(proc_descr, member_id)
+    elif isinstance(proc_descr, v0_5.CustomProcessingDescr):
+        return CustomProcessing.from_proc_descr(proc_descr, member_id)
     elif isinstance(proc_descr, v0_5.EnsureDtypeDescr):
         return EnsureDtype.from_proc_descr(proc_descr, member_id)
     elif isinstance(proc_descr, v0_5.FixedZeroMeanUnitVarianceDescr):
@@ -1133,11 +880,6 @@ def get_proc(
         v5_proc_descr = _convert_proc(proc_descr, tensor_descr.axes)
         assert isinstance(v5_proc_descr, v0_5.FixedZeroMeanUnitVarianceDescr)
         return FixedZeroMeanUnitVariance.from_proc_descr(v5_proc_descr, member_id)
-    elif isinstance(
-        proc_descr,
-        (v0_4.ZeroMeanUnitVarianceDescr, v0_5.ZeroMeanUnitVarianceDescr),
-    ):
-        return ZeroMeanUnitVariance.from_proc_descr(proc_descr, member_id)
     elif isinstance(proc_descr, v0_5.SoftmaxDescr):
         return Softmax.from_proc_descr(proc_descr, member_id)
     elif isinstance(proc_descr, v0_5.StardistPostprocessingDescr):
@@ -1149,5 +891,10 @@ def get_proc(
             raise ValueError(
                 f"expected ndim 2 or 3 for stardist postprocessing, but got {proc_descr.kwargs.ndim}"
             )
+    elif isinstance(
+        proc_descr,
+        (v0_4.ZeroMeanUnitVarianceDescr, v0_5.ZeroMeanUnitVarianceDescr),
+    ):
+        return ZeroMeanUnitVariance.from_proc_descr(proc_descr, member_id)
     else:
         assert_never(proc_descr)
