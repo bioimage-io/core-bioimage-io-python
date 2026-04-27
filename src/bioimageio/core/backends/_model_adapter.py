@@ -214,7 +214,12 @@ class ModelAdapter(ABC):
             for in_id, in_order in zip(self._input_ids, self._input_axes)
         ]
         output_arrays = self._forward_impl(input_arrays)
-        assert len(output_arrays) <= len(self._output_ids)
+        if len(output_arrays) > len(self._output_ids):
+            warnings.warn(
+                f"Model produced more outputs ({len(output_arrays)}) than specified in the model description ({len(self._output_ids)}). Extra outputs will be ignored."
+            )
+            output_arrays = output_arrays[: len(self._output_ids)]
+
         output_tensors = [
             None if a is None else Tensor(a, dims=d)
             for a, d in zip(output_arrays, self._output_axes)
