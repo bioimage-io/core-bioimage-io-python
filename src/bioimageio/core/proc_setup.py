@@ -84,7 +84,7 @@ def setup_pre_and_postprocessing(
     model: AnyModelDescr,
     dataset_for_initial_statistics: Iterable[Sample],
     keep_updating_initial_dataset_stats: bool = False,
-    fixed_dataset_stats: Optional[Mapping[DatasetMeasure, MeasureValue]] = None,
+    fixed_dataset_stats: Optional[Mapping[Measure, MeasureValue]] = None,
 ) -> PreAndPostprocessing:
     """Get pre- and postprocessing operators for a `model` description.
 
@@ -94,13 +94,13 @@ def setup_pre_and_postprocessing(
     prep = _get_described_procs(model.inputs)
     post = _get_described_procs(model.outputs)
     required = {m for p in chain(prep, post) for m in p.required_measures}
-    missing_dataset_stats = {
+    missing_stats = {
         m
         for m in required
         if fixed_dataset_stats is None or m not in fixed_dataset_stats
     }
-    if missing_dataset_stats:
-        initial_stats_calc = StatsCalculator(missing_dataset_stats)
+    if missing_stats:
+        initial_stats_calc = StatsCalculator(missing_stats)
         for sample in dataset_for_initial_statistics:
             initial_stats_calc.update(sample)
 

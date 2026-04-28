@@ -36,7 +36,6 @@ from .sample import Sample, SampleBlock
 from .stat_calculators import StatsCalculator
 from .stat_measures import (
     DatasetMean,
-    DatasetMeasure,
     DatasetQuantile,
     DatasetStd,
     MeanMeasure,
@@ -71,14 +70,20 @@ def _convert_axis_ids(
 
 @dataclass
 class AddKnownDatasetStats(BlockwiseOperator):
-    dataset_stats: Mapping[DatasetMeasure, MeasureValue]
+    dataset_stats: Mapping[Measure, MeasureValue]
+
+    def __post_init__(self):
+        # keep only dataset measures
+        self.dataset_stats = {
+            k: v for k, v in self.dataset_stats.items() if k.scope == "dataset"
+        }
 
     @property
     def required_measures(self) -> Collection[Measure]:
         return set()
 
     def __call__(self, sample: Union[Sample, SampleBlock]) -> None:
-        sample.stat.update(self.dataset_stats.items())
+        sample.stat.update(self.dataset_stats)
 
 
 # @dataclass

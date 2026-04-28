@@ -84,10 +84,9 @@ from bioimageio.spec.utils import (
 from .commands import WeightFormatArgAll, WeightFormatArgAny, package, test
 from .common import MemberId, SampleId, SupportedWeightsFormat
 from .digest_spec import get_member_ids, load_sample_for_model
-from .io import load_dataset_stat, save_dataset_stat, save_sample
+from .io import load_stat, save_sample, save_stat
 from .prediction import create_prediction_pipeline
 from .proc_setup import (
-    DatasetMeasure,
     Measure,
     MeasureValue,
     StatsCalculator,
@@ -279,7 +278,7 @@ def _get_stat(
     dataset: Iterable[Sample],
     dataset_length: int,
     stats_path: Path,
-) -> Mapping[DatasetMeasure, MeasureValue]:
+) -> Stat:
     req_dataset_meas, _ = get_required_dataset_measures(model_descr)
     if not req_dataset_meas:
         return {}
@@ -288,7 +287,7 @@ def _get_stat(
 
     if stats_path.exists():
         logger.info("loading precomputed dataset measures from {}", stats_path)
-        stat = load_dataset_stat(stats_path)
+        stat = load_stat(stats_path)
         for m in req_dataset_meas:
             if m not in stat:
                 raise ValueError(f"Missing {m} in {stats_path}")
@@ -302,9 +301,8 @@ def _get_stat(
     ):
         stats_calc.update(sample)
 
-    stat = stats_calc.finalize()
-    save_dataset_stat(stat, stats_path)
-
+    stat: Dict[Measure, MeasureValue] = {k: v for k, v in stats_calc.finalize().items()}
+    save_stat(stat, stats_path)
     return stat
 
 
