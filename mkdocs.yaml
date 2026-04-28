@@ -1,7 +1,8 @@
 site_name: 'bioimageio.core'
 site_url: 'https://bioimage-io.github.io/core-bioimage-io-python'
 site_author: Fynn Beuttenmüller
-site_description: 'Python specific core utilities for bioimage.io resources (in particular DL models).'
+site_description: 'Python specific core utilities for bioimage.io resources (in
+  particular DL models).'
 
 repo_name: bioimage-io/core-bioimage-io-python
 repo_url: https://github.com/bioimage-io/core-bioimage-io-python
@@ -86,7 +87,7 @@ plugins:
         python:
           inventories:
             - https://docs.pydantic.dev/latest/objects.inv
-            - https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/objects.inv
+            - https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/objects.inv
           options:
             annotations_path: source
             backlinks: tree
@@ -102,7 +103,7 @@ plugins:
             inherited_members: true
             merge_init_into_class: true
             parameter_headings: true
-            preload_modules: [pydantic, bioimageio.spec]
+            preload_modules: [ pydantic, bioimageio.spec ]
             scoped_crossrefs: true
             separate_signature: true
             show_docstring_examples: true
@@ -141,13 +142,13 @@ markdown_extensions:
   - footnotes
   - pymdownx.details
   - pymdownx.emoji:
-      emoji_index: !!python/name:material.extensions.emoji.twemoji
-      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji ''
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg ''
   - pymdownx.highlight:
       pygments_lang_class: true
   - pymdownx.magiclink
   - pymdownx.snippets:
-      base_path: [!relative $config_dir]
+      base_path: [ !relative $config_dir ]
       check_paths: true
   - pymdownx.superfences
   - pymdownx.tabbed:

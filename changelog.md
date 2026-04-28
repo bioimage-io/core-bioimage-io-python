@@ -1,5 +1,7 @@
 ### 0.10.3
 
+- bump spec to 0.5.10.0
+- add cellpose flow dynamics op
 - allow for precomputed sample statistics
 - add `bioimageio.core.io.serialize_stat`
 
