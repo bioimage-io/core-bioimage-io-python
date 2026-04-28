@@ -27,6 +27,8 @@ class CellposeFlowDynamics(SamplewiseOperator):
     cellprob_threshold: float = 0.0
     flow_threshold: float = 0.4
     do_3D: bool = False
+    min_size: int = 15
+    """Minimum size of objects to keep, in pixels. Default is 15, which is the default in Cellpose. Set to 0 to disable filtering by size."""
     labels_id: MemberId = MemberId("labels")
     output_dtype: Literal["uint16", "uint32"] = "uint16"
 
@@ -41,6 +43,7 @@ class CellposeFlowDynamics(SamplewiseOperator):
             flow_threshold=kwargs.flow_threshold,
             do_3D=kwargs.do_3D,
             output_dtype=kwargs.output_dtype,
+            min_size=kwargs.min_size,
         )
 
     @property
@@ -79,16 +82,21 @@ class CellposeFlowDynamics(SamplewiseOperator):
         """apply on a tensor without batch dimension"""
         *flows, cellprob = x.to_numpy()
         try:
-            from cellpose import dynamics  # pyright: ignore[reportMissingTypeStubs]
+            from cellpose.dynamics import (  # pyright: ignore[reportMissingTypeStubs]
+                compute_masks,  # pyright: ignore[reportUnknownVariableType]
+            )
+            from cellpose.utils import (  # pyright: ignore[reportMissingTypeStubs]
+                fill_holes_and_remove_small_masks,  # pyright: ignore[reportUnknownVariableType]
+            )
         except ImportError as e:
             raise ImportError(
                 "cellpose is required for cellpose_flow_dynamics. Install with: pip install cellpose"
             ) from e
 
         flows = np.stack(flows, axis=0)
-        result = cast(
+        mask = cast(
             NDArray[Any],
-            dynamics.compute_masks(
+            compute_masks(
                 flows,
                 cellprob,
                 cellprob_threshold=self.cellprob_threshold,
@@ -96,6 +104,8 @@ class CellposeFlowDynamics(SamplewiseOperator):
                 do_3D=self.do_3D,
             ),
         )
+        mask = fill_holes_and_remove_small_masks(mask, min_size=self.min_size)
+
         # add singleton channel axis for output to keep dims consistent with postprocessing input
-        result = result[None]
-        return result.astype(np.dtype(self.output_dtype))
+        mask = mask[None]
+        return mask.astype(np.dtype(self.output_dtype))
