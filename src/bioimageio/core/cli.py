@@ -63,6 +63,8 @@ from bioimageio.spec import (
     InvalidDescr,
     ResourceDescr,
     load_description,
+    save_bioimageio_package,
+    save_bioimageio_package_as_folder,
     save_bioimageio_yaml_only,
     settings,
     update_format,
@@ -362,8 +364,16 @@ class UpdateCmdBase(CmdBase, WithSource, ABC):
             console.print(rich.markdown.Markdown(diff_md))
 
         if isinstance(self.output, Path):
-            _ = self.output.write_text(updated_yaml, encoding="utf-8")
-            logger.info(f"written updated description to {self.output}")
+            if self.output.suffix in (".yaml", ".yml"):
+                _ = self.output.write_text(updated_yaml, encoding="utf-8")
+                logger.info(f"written updated description to {self.output}")
+            elif not self.output.suffix:
+                _ = save_bioimageio_package_as_folder(
+                    self.updated, output_path=self.output
+                )
+            else:
+                _ = save_bioimageio_package(self.updated, output_path=self.output)
+
         elif self.output == "display":
             updated_md = f"## Updated bioimageio.yaml\n\n```yaml\n{updated_yaml}\n```"
             rich.console.Console().print(rich.markdown.Markdown(updated_md))
