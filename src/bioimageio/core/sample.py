@@ -73,7 +73,7 @@ class Sample:
         self,
         block_shapes: PerMember[PerAxis[int]],
         halo: PerMember[PerAxis[HaloLike]],
-        pad_mode: PadMode,
+        pad_mode: Union[PadMode, PerMember[PadMode]],
         broadcast: bool = False,
     ) -> Tuple[TotalNumberOfBlocks, Iterable[SampleBlockWithOrigin]]:
         assert not (missing := [m for m in block_shapes if m not in self.members]), (
@@ -345,14 +345,18 @@ def sample_block_generator(
     blocks: Iterable[PerMember[BlockMeta]],
     *,
     origin: Sample,
-    pad_mode: PadMode,
+    pad_mode: Union[PadMode, PerMember[PadMode]],
 ) -> Iterable[SampleBlockWithOrigin]:
     for member_blocks in blocks:
         cons = _ConsolidatedMemberBlocks(member_blocks)
         yield SampleBlockWithOrigin(
             blocks={
                 m: Block.from_sample_member(
-                    origin.members[m], block=member_blocks[m], pad_mode=pad_mode
+                    origin.members[m],
+                    block=member_blocks[m],
+                    pad_mode=pad_mode
+                    if isinstance(pad_mode, str)
+                    else pad_mode.get(m, "symmetric"),
                 )
                 for m in origin.members
             },
