@@ -108,12 +108,21 @@ class PredictionPipeline:
             else:
                 self._samplewise_postprocessing.insert(0, op)
 
+        self.pad_mode = (
+            {}
+            if isinstance(model_description, v0_4.ModelDescr)
+            else {
+                descr.id: descr.pad or v0_5.SymmetricPadding()
+                for descr in model_description.inputs
+            }
+        )
         self.model_description = model_description
         if isinstance(model_description, v0_4.ModelDescr):
+            self._default_output_halo: PerMember[PerAxis[Halo]] = {}
             self._default_input_halo: PerMember[PerAxis[Halo]] = {}
             self._block_transform = None
         else:
-            default_output_halo = {
+            self._default_output_halo = {
                 t.id: {
                     a.id: Halo(a.halo, a.halo)
                     for a in t.axes
@@ -122,7 +131,7 @@ class PredictionPipeline:
                 for t in model_description.outputs
             }
             self._default_input_halo = get_input_halo(
-                model_description, default_output_halo
+                model_description, self._default_output_halo
             )
             self._block_transform = get_block_transform(model_description)
 
@@ -218,13 +227,24 @@ class PredictionPipeline:
         sample: Sample,
         skip_preprocessing: bool = False,
         skip_postprocessing: bool = False,
+        skip_input_padding: bool = False,
+        skip_output_cropping: bool = False,
     ) -> Sample:
         """predict a whole sample
 
+        Args:
+            sample: input sample
+            skip_preprocessing: if `True`, skip all preprocessing steps.
+            skip_postprocessing: if `True`, skip all postprocessing steps.
+            skip_input_padding: if `True`, skip padding the input sample according to the model's (optional) output halos.
+            skip_output_cropping: if `True`, skip cropping any output halos from the model output.
         Note:
             The sample's tensor shapes have to match the model's input tensor description.
             If that is not the case, consider `predict_sample_with_blocking`
         """
+
+        if not skip_input_padding:
+            sample = sample.pad(pad_width=self._default_input_halo, mode=self.pad_mode)
 
         if not skip_preprocessing:
             self.apply_preprocessing(sample)
@@ -232,6 +252,19 @@ class PredictionPipeline:
         output = self._adapter.forward(sample)
         if not skip_postprocessing:
             self.apply_postprocessing(output)
+
+        if not skip_output_cropping:
+            output.members = {
+                m: t
+                if m not in self._default_output_halo
+                else t[
+                    {
+                        a: slice(h.left, None if h.right == 0 else -h.right)
+                        for a, h in self._default_output_halo[m].items()
+                    }
+                ]
+                for m, t in output.members.items()
+            }
 
         return output
 
@@ -263,7 +296,7 @@ class PredictionPipeline:
         n_blocks, input_blocks = sample.split_into_blocks(
             input_block_shape,
             halo=self._default_input_halo,
-            pad_mode="symmetric",
+            pad_mode=self.pad_mode,
         )
         input_blocks = list(input_blocks)
         predicted_blocks: List[SampleBlock] = []

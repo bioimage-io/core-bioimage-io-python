@@ -45,6 +45,23 @@ if TYPE_CHECKING:
 _ScalarOrArray = Union["ArrayLike", np.generic, "NDArray[Any]"]  # TODO: add "DaskArray"
 
 
+def _resolve_pad_mode(mode: PadMode) -> Tuple[str, Optional[float]]:
+    constant_value = None
+    if isinstance(mode, str):
+        mode_name = mode
+    elif isinstance(mode, v0_5.ConstantPadding):
+        mode_name = mode.mode
+        constant_value = mode.constant_value
+    elif isinstance(
+        mode, (v0_5.EdgePadding, v0_5.ReflectPadding, v0_5.SymmetricPadding)
+    ):
+        mode_name = mode.mode
+    else:
+        assert_never(mode)
+
+    return mode_name, constant_value
+
+
 # TODO: complete docstrings
 # TODO: in the long run---with improved typing in xarray---we should probably replace `Tensor` with xr.DataArray
 class Tensor(MagicTensorOpsMixin):
@@ -347,8 +364,11 @@ class Tensor(MagicTensorOpsMixin):
         mode: PadMode = "symmetric",
     ) -> Self:
         pad_width = {a: PadWidth.create(p) for a, p in pad_width.items()}
+        mode_name, constant_value = _resolve_pad_mode(mode)
         return self.__class__.from_xarray(
-            self._data.pad(pad_width=pad_width, mode=mode)
+            self._data.pad(
+                pad_width=pad_width, mode=mode_name, constant_values=constant_value
+            )
         )
 
     def pad_to(

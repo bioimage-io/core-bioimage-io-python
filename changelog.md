@@ -5,6 +5,7 @@
 - allow for precomputed sample statistics
 - add `bioimageio.core.io.serialize_stat`
 - apply pre-/postprocessing blockwise when possible.
+- default to pad input tensors and crop output tensors according to any specified output halos.
 
 ### 0.10.2
 

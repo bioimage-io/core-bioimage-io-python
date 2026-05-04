@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections
 from dataclasses import dataclass
 from math import ceil, floor
 from typing import (
@@ -16,7 +17,7 @@ from typing import (
 
 import numpy as np
 from numpy.typing import NDArray
-from typing_extensions import Self
+from typing_extensions import Self, assert_never
 
 from .axis import AxisId, PerAxis
 from .block import Block
@@ -31,6 +32,7 @@ from .common import (
     HaloLike,
     MemberId,
     PadMode,
+    PadWidthLike,
     PerMember,
     SampleId,
     SliceInfo,
@@ -149,6 +151,30 @@ class Sample:
                 members[m][block.inner_slice] = block.inner_data
 
         return cls(members=members, stat=stat, id=sample_id)
+
+    def pad(
+        self,
+        pad_width: PerMember[PerAxis[Union[int, PadWidthLike]]],
+        mode: Union[PerMember[PadMode], PadMode],
+    ) -> Self:
+        """Convenience method to pad sample members."""
+        if isinstance(mode, str):
+            mode_per_member: Dict[MemberId, PadMode] = {}
+        elif isinstance(mode, collections.Mapping):
+            mode_per_member = mode
+        else:
+            assert_never(mode)
+
+        return self.__class__(
+            members={
+                m: t.pad(
+                    pad_width=pad_width.get(m, {}), mode=mode_per_member.get(m, mode)
+                )
+                for m, t in self.members.items()
+            },
+            stat=self.stat,
+            id=self.id,
+        )
 
 
 BlockT = TypeVar("BlockT", Block, BlockMeta)
