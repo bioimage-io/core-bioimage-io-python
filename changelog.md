@@ -4,6 +4,7 @@
 - add cellpose flow dynamics op
 - allow for precomputed sample statistics
 - add `bioimageio.core.io.serialize_stat`
+- apply pre-/postprocessing blockwise when possible.
 
 ### 0.10.2
 

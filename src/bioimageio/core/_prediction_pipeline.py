@@ -16,6 +16,7 @@ from typing import (
 from loguru import logger
 from tqdm import tqdm
 
+from bioimageio.core._ops_cellpose import SamplewiseOperator
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 
 from ._op_base import BlockwiseOperator
@@ -82,8 +83,30 @@ class PredictionPipeline:
             )
 
         self.name = name
-        self._preprocessing = preprocessing
-        self._postprocessing = postprocessing
+        # split preprocessing into samplewise and blockwise. samplewise preprocessing is all preprocessing up to including the last samplewise operator, blockwise preprocessing are the remaining blockwise operators.
+        # I.e. some samplewise preprocessing may be a blockwise op (at some point followed by a samplewise op).
+        self._samplewise_preprocessing: List[
+            Union[SamplewiseOperator, BlockwiseOperator]
+        ] = []
+        self._blockwise_preprocessing: List[BlockwiseOperator] = []
+        for op in preprocessing[::-1]:
+            if isinstance(op, BlockwiseOperator) and not self._samplewise_preprocessing:
+                self._blockwise_preprocessing.insert(0, op)
+            else:
+                self._samplewise_preprocessing.insert(0, op)
+        # split postprocessing analougly, but here we start blockwise and switch to samplewise at the first samplewise operator.
+        self._blockwise_postprocessing: List[BlockwiseOperator] = []
+        self._samplewise_postprocessing: List[
+            Union[BlockwiseOperator, SamplewiseOperator]
+        ] = []
+        for op in postprocessing:
+            if (
+                isinstance(op, BlockwiseOperator)
+                and not self._samplewise_postprocessing
+            ):
+                self._blockwise_postprocessing.insert(0, op)
+            else:
+                self._samplewise_postprocessing.insert(0, op)
 
         self.model_description = model_description
         if isinstance(model_description, v0_4.ModelDescr):
@@ -122,27 +145,27 @@ class PredictionPipeline:
     @property
     def has_blockwise_preprocessing(self) -> bool:
         """`True` if all preprocessing operators in the pipeline are blockwise."""
-        return all(isinstance(op, BlockwiseOperator) for op in self._preprocessing)
+        return bool(self._blockwise_preprocessing)
 
     @property
     def has_blockwise_postprocessing(self) -> bool:
         """`True` if all postprocessing operators in the pipeline are blockwise."""
-        return all(isinstance(op, BlockwiseOperator) for op in self._postprocessing)
+        return bool(self._blockwise_postprocessing)
 
     def _raise_for_non_blockwise_processing(
         self, proc_type: Literal["preprocessing", "postprocessing"]
     ):
         ops = (
-            self._preprocessing
+            self._samplewise_preprocessing
             if proc_type == "preprocessing"
-            else self._postprocessing
+            else self._samplewise_postprocessing
         )
         non_blockwise = [
             op.__class__.__name__ for op in ops if not isinstance(op, BlockwiseOperator)
         ]
         if non_blockwise:
             raise NotImplementedError(
-                f"Blockwise {proc_type} for non-blockwise operators {non_blockwise} not implemented."
+                f"Blockwise {proc_type} for {non_blockwise} not implemented."
             )
 
     def raise_for_non_blockwise_preprocessing(self):
@@ -234,12 +257,13 @@ class PredictionPipeline:
         `input_block_shape` is expected to be a valid input shape for the model.
         """
         if not skip_preprocessing:
-            self.apply_preprocessing(sample)
+            for op in self._samplewise_preprocessing:
+                op(sample)
 
         n_blocks, input_blocks = sample.split_into_blocks(
             input_block_shape,
             halo=self._default_input_halo,
-            pad_mode="reflect",
+            pad_mode="symmetric",
         )
         input_blocks = list(input_blocks)
         predicted_blocks: List[SampleBlock] = []
@@ -256,15 +280,23 @@ class PredictionPipeline:
             unit_divisor=1,
             total=n_blocks,
         ):
+            if not skip_preprocessing:
+                for op in self._blockwise_preprocessing:
+                    op(b)
+
             predicted_blocks.append(
                 self.predict_sample_block(
                     b, skip_preprocessing=True, skip_postprocessing=True
                 )
             )
+            if not skip_postprocessing:
+                for op in self._blockwise_postprocessing:
+                    op(predicted_blocks[-1])
 
         predicted_sample = Sample.from_blocks(predicted_blocks)
         if not skip_postprocessing:
-            self.apply_postprocessing(predicted_sample)
+            for op in self._samplewise_postprocessing:
+                op(predicted_sample)
 
         return predicted_sample
 
@@ -317,7 +349,7 @@ class PredictionPipeline:
         if isinstance(sample, SampleBlock):
             self.raise_for_non_blockwise_preprocessing()
 
-        for op in self._preprocessing:
+        for op in self._samplewise_preprocessing + self._blockwise_preprocessing:
             if isinstance(sample, SampleBlock):
                 assert isinstance(op, BlockwiseOperator)
                 op(sample)
@@ -329,7 +361,7 @@ class PredictionPipeline:
         if isinstance(sample, SampleBlock):
             self.raise_for_non_blockwise_postprocessing()
 
-        for op in self._postprocessing:
+        for op in self._blockwise_postprocessing + self._samplewise_postprocessing:
             if isinstance(sample, SampleBlock):
                 assert isinstance(op, BlockwiseOperator)
                 op(sample)
