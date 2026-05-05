@@ -255,7 +255,12 @@ def _get_test_sample(
     ],
     test_sources: Sequence[Union[FileSource, v0_5.TensorDescr]],
 ) -> Sample:
-    """returns a model's input/output test sample"""
+    """get a test sample (only input or input and output)
+
+    Returns:
+        A model's input/output test sample.
+
+    """
     member_ids = get_member_ids(tensor_descrs)
     arrays: List[NDArray[Any]] = []
     for src in test_sources:
@@ -269,7 +274,7 @@ def _get_test_sample(
             arrays.append(load_array(src))
 
     axes = [get_axes_infos(t) for t in tensor_descrs]
-    return Sample(
+    sample = Sample(
         members={
             m: Tensor.from_numpy(arr, dims=ax)
             for m, arr, ax in zip(member_ids, arrays, axes)
@@ -277,6 +282,80 @@ def _get_test_sample(
         stat={},
         id="test-sample",
     )
+    halos = v0_5.get_halos({k: v[0] for k, v in tensor_descrs.items()})
+    if not halos:
+        return sample
+
+    # pad input tenors if unpadded test inputs are invalid
+    v0_5_input_tensors = {
+        d.id: (d, sample.members.get(d.id))
+        for d in tensor_descrs
+        if isinstance(d, (v0_5.InputTensorDescr))
+    }
+
+    try:
+        v0_5.validate_tensors(v0_5_input_tensors, pad_inputs=False)
+    except Exception as e:
+        input_halos = {k: halos[k] for k in v0_5_input_tensors if k in halos}
+        if not v0_5_input_tensors or not input_halos:
+            raise e
+
+        try:
+            # pad inputs
+            sample = sample.pad(
+                pad_width=input_halos,
+                mode={
+                    k: v0_5_input_tensors[k][0].pad
+                    for k in input_halos
+                    if k in v0_5_input_tensors
+                },
+            )
+            # select relevant input tensors again after padding
+            v0_5_input_tensors = {
+                d.id: (d, sample.members.get(d.id))
+                for d in tensor_descrs
+                if isinstance(d, (v0_5.InputTensorDescr))
+            }
+            # validate again
+            v0_5.validate_tensors(v0_5_input_tensors, pad_inputs=False)
+        except Exception:
+            raise e  # raise original exception if padding did not help
+
+    all_tensors = {
+        m: (t, sample.members.get(m)) for m, t in zip(member_ids, tensor_descrs)
+    }
+    output_halos = {
+        k: halos[k]
+        for k, v in zip(member_ids, tensor_descrs)
+        if isinstance(v, (v0_5.OutputTensorDescr)) and k in halos
+    }
+    try:
+        v0_5.validate_tensors(all_tensors, pad_inputs=False, crop_outputs=False)
+    except Exception as e:
+        if not output_halos:
+            raise e
+        try:
+            # crop output halos from sample
+            sample = sample[
+                {
+                    m: slice(
+                        halos[m].left, -halos[m].right if halos[m].right > 0 else None
+                    )
+                    if m in output_halos
+                    else slice(None)
+                    for m in member_ids
+                }
+            ]
+            # reselect all tensors for validation
+            all_tensors = {
+                m: (t, sample.members.get(m)) for m, t in zip(member_ids, tensor_descrs)
+            }
+            # validate again after cropping
+            v0_5.validate_tensors(all_tensors, pad_inputs=False, crop_outputs=False)
+        except Exception:
+            raise e  # raise original exception if cropping did not help
+
+    return sample
 
 
 class IO_SampleBlockMeta(NamedTuple):
