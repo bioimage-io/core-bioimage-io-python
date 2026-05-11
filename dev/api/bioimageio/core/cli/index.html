@@ -499,8 +499,6 @@
       
         
       
-        
-      
     
     
     
@@ -988,34 +986,6 @@
     
   
     bioimageio.core.common
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../custom_ops/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    bioimageio.core.custom_ops
   
 
     
@@ -5428,22 +5398,22 @@ In that case, it will be called later, when the model is rebuilt automatically o
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/cli.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">858</span>
-<span class="normal">859</span>
-<span class="normal">860</span>
-<span class="normal">861</span>
-<span class="normal">862</span>
-<span class="normal">863</span>
-<span class="normal">864</span>
-<span class="normal">865</span>
-<span class="normal">866</span>
-<span class="normal">867</span>
-<span class="normal">868</span>
-<span class="normal">869</span>
-<span class="normal">870</span>
-<span class="normal">871</span>
-<span class="normal">872</span>
-<span class="normal">873</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">882</span>
+<span class="normal">883</span>
+<span class="normal">884</span>
+<span class="normal">885</span>
+<span class="normal">886</span>
+<span class="normal">887</span>
+<span class="normal">888</span>
+<span class="normal">889</span>
+<span class="normal">890</span>
+<span class="normal">891</span>
+<span class="normal">892</span>
+<span class="normal">893</span>
+<span class="normal">894</span>
+<span class="normal">895</span>
+<span class="normal">896</span>
+<span class="normal">897</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="n">model_descr</span> <span class="o">=</span> <span class="n">ensure_description_is_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_descr</span><span class="p">,</span> <span class="n">v0_4</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
@@ -6024,7 +5994,7 @@ In that case, it will be called later, when the model is rebuilt automatically o
 
 
 <a href="#bioimageio.core.cli.AddWeightsCmd.log" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">log</span><span class="p">(</span><span class="n"><span title="bioimageio.core.cli.AddWeightsCmd.log(descr)">descr</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.ResourceDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/#bioimageio.spec.ResourceDescr">ResourceDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.InvalidDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/#bioimageio.spec.InvalidDescr">InvalidDescr</a></span><span class="p">])</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">log</span><span class="p">(</span><span class="n"><span title="bioimageio.core.cli.AddWeightsCmd.log(descr)">descr</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.ResourceDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/#bioimageio.spec.ResourceDescr">ResourceDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.InvalidDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/#bioimageio.spec.InvalidDescr">InvalidDescr</a></span><span class="p">])</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -6033,8 +6003,8 @@ In that case, it will be called later, when the model is rebuilt automatically o
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/cli.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">132</span>
-<span class="normal">133</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">descr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ResourceDescr</span><span class="p">,</span> <span class="n">InvalidDescr</span><span class="p">]):</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">133</span>
+<span class="normal">134</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">descr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ResourceDescr</span><span class="p">,</span> <span class="n">InvalidDescr</span><span class="p">]):</span>
     <span class="n">_</span> <span class="o">=</span> <span class="n">descr</span><span class="o">.</span><span class="n">validation_summary</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">summary</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -16918,12 +16888,12 @@ See the <a class="autorefs autorefs-external" href="https://docs.pydantic.dev/la
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/cli.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">963</span>
-<span class="normal">964</span>
-<span class="normal">965</span>
-<span class="normal">966</span>
-<span class="normal">967</span>
-<span class="normal">968</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">987</span>
+<span class="normal">988</span>
+<span class="normal">989</span>
+<span class="normal">990</span>
+<span class="normal">991</span>
+<span class="normal">992</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
         <span class="s2">&quot;executing CLI command:</span><span class="se">\n</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
         <span class="n">pformat</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">}),</span>
@@ -16956,28 +16926,28 @@ See the <a class="autorefs autorefs-external" href="https://docs.pydantic.dev/la
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/cli.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">931</span>
-<span class="normal">932</span>
-<span class="normal">933</span>
-<span class="normal">934</span>
-<span class="normal">935</span>
-<span class="normal">936</span>
-<span class="normal">937</span>
-<span class="normal">938</span>
-<span class="normal">939</span>
-<span class="normal">940</span>
-<span class="normal">941</span>
-<span class="normal">942</span>
-<span class="normal">943</span>
-<span class="normal">944</span>
-<span class="normal">945</span>
-<span class="normal">946</span>
-<span class="normal">947</span>
-<span class="normal">948</span>
-<span class="normal">949</span>
-<span class="normal">950</span>
-<span class="normal">951</span>
-<span class="normal">952</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">955</span>
+<span class="normal">956</span>
+<span class="normal">957</span>
+<span class="normal">958</span>
+<span class="normal">959</span>
+<span class="normal">960</span>
+<span class="normal">961</span>
+<span class="normal">962</span>
+<span class="normal">963</span>
+<span class="normal">964</span>
+<span class="normal">965</span>
+<span class="normal">966</span>
+<span class="normal">967</span>
+<span class="normal">968</span>
+<span class="normal">969</span>
+<span class="normal">970</span>
+<span class="normal">971</span>
+<span class="normal">972</span>
+<span class="normal">973</span>
+<span class="normal">974</span>
+<span class="normal">975</span>
+<span class="normal">976</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">settings_customise_sources</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="n">settings_cls</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">BaseSettings</span><span class="p">],</span>
@@ -27100,8 +27070,8 @@ In that case, it will be called later, when the model is rebuilt automatically o
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/cli.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">879</span>
-<span class="normal">880</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">903</span>
+<span class="normal">904</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="n">empty_cache</span><span class="p">()</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -34357,10 +34327,7 @@ In that case, it will be called later, when the model is rebuilt automatically o
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/cli.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">263</span>
-<span class="normal">264</span>
-<span class="normal">265</span>
-<span class="normal">266</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">266</span>
 <span class="normal">267</span>
 <span class="normal">268</span>
 <span class="normal">269</span>
@@ -34368,7 +34335,10 @@ In that case, it will be called later, when the model is rebuilt automatically o
 <span class="normal">271</span>
 <span class="normal">272</span>
 <span class="normal">273</span>
-<span class="normal">274</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="p">,</span> <span class="n">InvalidDescr</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="p">)</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="o">.</span><span class="n">type</span><span class="si">}</span><span class="s2"> description.&quot;</span><span class="p">)</span>
@@ -34945,7 +34915,7 @@ In that case, it will be called later, when the model is rebuilt automatically o
 
 
 <a href="#bioimageio.core.cli.PackageCmd.log" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">log</span><span class="p">(</span><span class="n"><span title="bioimageio.core.cli.PackageCmd.log(descr)">descr</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.ResourceDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/#bioimageio.spec.ResourceDescr">ResourceDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.InvalidDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/#bioimageio.spec.InvalidDescr">InvalidDescr</a></span><span class="p">])</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">log</span><span class="p">(</span><span class="n"><span title="bioimageio.core.cli.PackageCmd.log(descr)">descr</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.ResourceDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/#bioimageio.spec.ResourceDescr">ResourceDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.InvalidDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/#bioimageio.spec.InvalidDescr">InvalidDescr</a></span><span class="p">])</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -34954,8 +34924,8 @@ In that case, it will be called later, when the model is rebuilt automatically o
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/cli.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">132</span>
-<span class="normal">133</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">descr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ResourceDescr</span><span class="p">,</span> <span class="n">InvalidDescr</span><span class="p">]):</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">133</span>
+<span class="normal">134</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">descr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ResourceDescr</span><span class="p">,</span> <span class="n">InvalidDescr</span><span class="p">]):</span>
     <span class="n">_</span> <span class="o">=</span> <span class="n">descr</span><span class="o">.</span><span class="n">validation_summary</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">summary</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -39174,6 +39144,17 @@ validated to form a valid model.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.cli.PredictBlockArtifactsCmd.devices">devices</a></code></td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="typing.List">List</span>[<span title="str">str</span>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Device(s) to use</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.cli.PredictBlockArtifactsCmd.example">example</a></code></td>
             <td>
                   <code><span title="bool">bool</span></code>
@@ -39187,7 +39168,7 @@ validated to form a valid model.</p>
           <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.cli.PredictBlockArtifactsCmd.inputs">inputs</a></code></td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.types.NotEmpty&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.NotEmpty">NotEmpty</a>[<span title="typing.List">List</span>[<span title="typing.Union">Union</span>[<span title="str">str</span>, <a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.types.NotEmpty&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.NotEmpty">NotEmpty</a>[<span title="typing.List">List</span>[<span title="str">str</span>]]]]]</code>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.types.NotEmpty&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.NotEmpty">NotEmpty</a>[<span title="typing.List">List</span>[<span title="typing.Union">Union</span>[<span title="str">str</span>, <a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.types.NotEmpty&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.NotEmpty">NotEmpty</a>[<span title="typing.List">List</span>[<span title="str">str</span>]]]]]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -39231,7 +39212,7 @@ validated to form a valid model.</p>
           <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.cli.PredictBlockArtifactsCmd.outputs">outputs</a></code></td>
             <td>
-                  <code><span title="typing.Union">Union</span>[<span title="str">str</span>, <a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.types.NotEmpty&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.NotEmpty">NotEmpty</a>[<span title="typing.Tuple">Tuple</span>[<span title="str">str</span>, ...]]]</code>
+                  <code><span title="typing.Union">Union</span>[<span title="str">str</span>, <a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.types.NotEmpty&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.NotEmpty">NotEmpty</a>[<span title="typing.Tuple">Tuple</span>[<span title="str">str</span>, ...]]]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -40124,6 +40105,32 @@ by adding n*step_size to the minimum valid input size.</li>
 
 
 
+<h3 id="bioimageio.core.cli.PredictBlockArtifactsCmd.devices" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">devices</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#bioimageio.core.cli.PredictBlockArtifactsCmd.devices" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">devices</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">]]</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pydantic.Field&lt;/code&gt;" href="https://docs.pydantic.dev/latest/api/pydantic/fields/#pydantic.fields.Field">Field</a></span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n"><span title="pydantic.Field(validation_alias)">validation_alias</span></span><span class="o">=</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pydantic.AliasChoices&lt;/code&gt;" href="https://docs.pydantic.dev/latest/api/pydantic/aliases/#pydantic.aliases.AliasChoices">AliasChoices</a></span><span class="p">(</span><span class="s1">&#39;devices&#39;</span><span class="p">,</span> <span class="s1">&#39;device&#39;</span><span class="p">))</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Device(s) to use</p>
+
+          
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
 <h3 id="bioimageio.core.cli.PredictBlockArtifactsCmd.example" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">example</span>
 
@@ -40167,7 +40174,7 @@ by adding n*step_size to the minimum valid input size.</li>
   </span>
 
 <a href="#bioimageio.core.cli.PredictBlockArtifactsCmd.inputs" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">inputs</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.types.NotEmpty&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.NotEmpty">NotEmpty</a></span><span class="p">[</span><span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.types.NotEmpty&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.NotEmpty">NotEmpty</a></span><span class="p">[</span><span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">]]]]]</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pydantic.Field&lt;/code&gt;" href="https://docs.pydantic.dev/latest/api/pydantic/fields/#pydantic.fields.Field">Field</a></span><span class="p">(</span><span class="n"><span title="pydantic.Field(default_factory)">default_factory</span></span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;</span><span class="si">{input_id}</span><span class="s1">/001.tif&#39;</span><span class="p">])</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">inputs</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.types.NotEmpty&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.NotEmpty">NotEmpty</a></span><span class="p">[</span><span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.types.NotEmpty&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.NotEmpty">NotEmpty</a></span><span class="p">[</span><span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">]]]]]</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pydantic.Field&lt;/code&gt;" href="https://docs.pydantic.dev/latest/api/pydantic/fields/#pydantic.fields.Field">Field</a></span><span class="p">(</span><span class="n"><span title="pydantic.Field(default_factory)">default_factory</span></span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;</span><span class="si">{input_id}</span><span class="s1">/001.tif&#39;</span><span class="p">],</span> <span class="n"><span title="pydantic.Field(validation_alias)">validation_alias</span></span><span class="o">=</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pydantic.AliasChoices&lt;/code&gt;" href="https://docs.pydantic.dev/latest/api/pydantic/aliases/#pydantic.aliases.AliasChoices">AliasChoices</a></span><span class="p">(</span><span class="s1">&#39;inputs&#39;</span><span class="p">,</span> <span class="s1">&#39;input&#39;</span><span class="p">))</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -40336,7 +40343,7 @@ Some formats have additional dependencies.</p>
   </span>
 
 <a href="#bioimageio.core.cli.PredictBlockArtifactsCmd.outputs" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">outputs</span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.types.NotEmpty&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.NotEmpty">NotEmpty</a></span><span class="p">[</span><span class="n"><span title="typing.Tuple">Tuple</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="o">...</span><span class="p">]]]</span> <span class="o">=</span> <span class="s1">&#39;outputs_</span><span class="si">{model_id}</span><span class="s1">/</span><span class="si">{output_id}</span><span class="s1">/</span><span class="si">{sample_id}</span><span class="s1">.tif&#39;</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">outputs</span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.types.NotEmpty&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.NotEmpty">NotEmpty</a></span><span class="p">[</span><span class="n"><span title="typing.Tuple">Tuple</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="o">...</span><span class="p">]]]</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pydantic.Field&lt;/code&gt;" href="https://docs.pydantic.dev/latest/api/pydantic/fields/#pydantic.fields.Field">Field</a></span><span class="p">(</span><span class="s1">&#39;outputs_</span><span class="si">{model_id}</span><span class="s1">/</span><span class="si">{output_id}</span><span class="s1">/</span><span class="si">{sample_id}</span><span class="s1">.tif&#39;</span><span class="p">,</span> <span class="n"><span title="pydantic.Field(validation_alias)">validation_alias</span></span><span class="o">=</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pydantic.AliasChoices&lt;/code&gt;" href="https://docs.pydantic.dev/latest/api/pydantic/aliases/#pydantic.aliases.AliasChoices">AliasChoices</a></span><span class="p">(</span><span class="s1">&#39;outputs&#39;</span><span class="p">,</span> <span class="s1">&#39;output&#39;</span><span class="p">))</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -41883,26 +41890,26 @@ In that case, it will be called later, when the model is rebuilt automatically o
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/cli.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">809</span>
-<span class="normal">810</span>
-<span class="normal">811</span>
-<span class="normal">812</span>
-<span class="normal">813</span>
-<span class="normal">814</span>
-<span class="normal">815</span>
-<span class="normal">816</span>
-<span class="normal">817</span>
-<span class="normal">818</span>
-<span class="normal">819</span>
-<span class="normal">820</span>
-<span class="normal">821</span>
-<span class="normal">822</span>
-<span class="normal">823</span>
-<span class="normal">824</span>
-<span class="normal">825</span>
-<span class="normal">826</span>
-<span class="normal">827</span>
-<span class="normal">828</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">833</span>
+<span class="normal">834</span>
+<span class="normal">835</span>
+<span class="normal">836</span>
+<span class="normal">837</span>
+<span class="normal">838</span>
+<span class="normal">839</span>
+<span class="normal">840</span>
+<span class="normal">841</span>
+<span class="normal">842</span>
+<span class="normal">843</span>
+<span class="normal">844</span>
+<span class="normal">845</span>
+<span class="normal">846</span>
+<span class="normal">847</span>
+<span class="normal">848</span>
+<span class="normal">849</span>
+<span class="normal">850</span>
+<span class="normal">851</span>
+<span class="normal">852</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="k">for</span> <span class="p">(</span><span class="n">out_sample</span><span class="p">,</span> <span class="n">out_path</span><span class="p">),</span> <span class="p">(</span><span class="n">out_sample_blockwise</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_yield_predictions</span><span class="p">(</span><span class="kc">False</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_yield_predictions</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blockwise</span><span class="p">)</span>
     <span class="p">):</span>
@@ -46696,6 +46703,17 @@ validated to form a valid model.</p>
             </td>
           </tr>
           <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.cli.PredictCmd.devices">devices</a></code></td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[<span title="typing.List">List</span>[<span title="str">str</span>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Device(s) to use</p>
+              </div>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.cli.PredictCmd.example">example</a></code></td>
             <td>
                   <code><span title="bool">bool</span></code>
@@ -46709,7 +46727,7 @@ validated to form a valid model.</p>
           <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.cli.PredictCmd.inputs">inputs</a></code></td>
             <td>
-                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.types.NotEmpty&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.NotEmpty">NotEmpty</a>[<span title="typing.List">List</span>[<span title="typing.Union">Union</span>[<span title="str">str</span>, <a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.types.NotEmpty&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.NotEmpty">NotEmpty</a>[<span title="typing.List">List</span>[<span title="str">str</span>]]]]]</code>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.types.NotEmpty&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.NotEmpty">NotEmpty</a>[<span title="typing.List">List</span>[<span title="typing.Union">Union</span>[<span title="str">str</span>, <a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.types.NotEmpty&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.NotEmpty">NotEmpty</a>[<span title="typing.List">List</span>[<span title="str">str</span>]]]]]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -46753,7 +46771,7 @@ validated to form a valid model.</p>
           <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.cli.PredictCmd.outputs">outputs</a></code></td>
             <td>
-                  <code><span title="typing.Union">Union</span>[<span title="str">str</span>, <a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.types.NotEmpty&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.NotEmpty">NotEmpty</a>[<span title="typing.Tuple">Tuple</span>[<span title="str">str</span>, ...]]]</code>
+                  <code><span title="typing.Union">Union</span>[<span title="str">str</span>, <a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.types.NotEmpty&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.NotEmpty">NotEmpty</a>[<span title="typing.Tuple">Tuple</span>[<span title="str">str</span>, ...]]]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -47646,6 +47664,32 @@ by adding n*step_size to the minimum valid input size.</li>
 
 
 
+<h3 id="bioimageio.core.cli.PredictCmd.devices" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">devices</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
+      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
+  </span>
+
+<a href="#bioimageio.core.cli.PredictCmd.devices" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">devices</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">]]</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pydantic.Field&lt;/code&gt;" href="https://docs.pydantic.dev/latest/api/pydantic/fields/#pydantic.fields.Field">Field</a></span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n"><span title="pydantic.Field(validation_alias)">validation_alias</span></span><span class="o">=</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pydantic.AliasChoices&lt;/code&gt;" href="https://docs.pydantic.dev/latest/api/pydantic/aliases/#pydantic.aliases.AliasChoices">AliasChoices</a></span><span class="p">(</span><span class="s1">&#39;devices&#39;</span><span class="p">,</span> <span class="s1">&#39;device&#39;</span><span class="p">))</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Device(s) to use</p>
+
+          
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-attribute">
+
+
+
 <h3 id="bioimageio.core.cli.PredictCmd.example" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">example</span>
 
@@ -47689,7 +47733,7 @@ by adding n*step_size to the minimum valid input size.</li>
   </span>
 
 <a href="#bioimageio.core.cli.PredictCmd.inputs" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">inputs</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.types.NotEmpty&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.NotEmpty">NotEmpty</a></span><span class="p">[</span><span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.types.NotEmpty&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.NotEmpty">NotEmpty</a></span><span class="p">[</span><span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">]]]]]</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pydantic.Field&lt;/code&gt;" href="https://docs.pydantic.dev/latest/api/pydantic/fields/#pydantic.fields.Field">Field</a></span><span class="p">(</span><span class="n"><span title="pydantic.Field(default_factory)">default_factory</span></span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;</span><span class="si">{input_id}</span><span class="s1">/001.tif&#39;</span><span class="p">])</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">inputs</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.types.NotEmpty&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.NotEmpty">NotEmpty</a></span><span class="p">[</span><span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.types.NotEmpty&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.NotEmpty">NotEmpty</a></span><span class="p">[</span><span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">]]]]]</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pydantic.Field&lt;/code&gt;" href="https://docs.pydantic.dev/latest/api/pydantic/fields/#pydantic.fields.Field">Field</a></span><span class="p">(</span><span class="n"><span title="pydantic.Field(default_factory)">default_factory</span></span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;</span><span class="si">{input_id}</span><span class="s1">/001.tif&#39;</span><span class="p">],</span> <span class="n"><span title="pydantic.Field(validation_alias)">validation_alias</span></span><span class="o">=</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pydantic.AliasChoices&lt;/code&gt;" href="https://docs.pydantic.dev/latest/api/pydantic/aliases/#pydantic.aliases.AliasChoices">AliasChoices</a></span><span class="p">(</span><span class="s1">&#39;inputs&#39;</span><span class="p">,</span> <span class="s1">&#39;input&#39;</span><span class="p">))</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -47858,7 +47902,7 @@ Some formats have additional dependencies.</p>
   </span>
 
 <a href="#bioimageio.core.cli.PredictCmd.outputs" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">outputs</span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.types.NotEmpty&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.NotEmpty">NotEmpty</a></span><span class="p">[</span><span class="n"><span title="typing.Tuple">Tuple</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="o">...</span><span class="p">]]]</span> <span class="o">=</span> <span class="s1">&#39;outputs_</span><span class="si">{model_id}</span><span class="s1">/</span><span class="si">{output_id}</span><span class="s1">/</span><span class="si">{sample_id}</span><span class="s1">.tif&#39;</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">outputs</span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.types.NotEmpty&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.NotEmpty">NotEmpty</a></span><span class="p">[</span><span class="n"><span title="typing.Tuple">Tuple</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="o">...</span><span class="p">]]]</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pydantic.Field&lt;/code&gt;" href="https://docs.pydantic.dev/latest/api/pydantic/fields/#pydantic.fields.Field">Field</a></span><span class="p">(</span><span class="s1">&#39;outputs_</span><span class="si">{model_id}</span><span class="s1">/</span><span class="si">{output_id}</span><span class="s1">/</span><span class="si">{sample_id}</span><span class="s1">.tif&#39;</span><span class="p">,</span> <span class="n"><span title="pydantic.Field(validation_alias)">validation_alias</span></span><span class="o">=</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pydantic.AliasChoices&lt;/code&gt;" href="https://docs.pydantic.dev/latest/api/pydantic/aliases/#pydantic.aliases.AliasChoices">AliasChoices</a></span><span class="p">(</span><span class="s1">&#39;outputs&#39;</span><span class="p">,</span> <span class="s1">&#39;output&#39;</span><span class="p">))</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -49405,9 +49449,9 @@ In that case, it will be called later, when the model is rebuilt automatically o
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/cli.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">607</span>
-<span class="normal">608</span>
-<span class="normal">609</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">630</span>
+<span class="normal">631</span>
+<span class="normal">632</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="k">for</span> <span class="n">out_sample</span><span class="p">,</span> <span class="n">out_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_yield_predictions</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blockwise</span><span class="p">):</span>
         <span class="n">save_sample</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="n">out_sample</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -54207,7 +54251,7 @@ validated to form a valid model.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>Device(s) to use for testing</p>
+                <p>Device(s) to use</p>
               </div>
             </td>
           </tr>
@@ -55154,12 +55198,12 @@ and the <code>parameter</code> item maps to the <code>__parameter__</code> attri
   </span>
 
 <a href="#bioimageio.core.cli.TestCmd.devices" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">devices</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">devices</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">]]</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pydantic.Field&lt;/code&gt;" href="https://docs.pydantic.dev/latest/api/pydantic/fields/#pydantic.fields.Field">Field</a></span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n"><span title="pydantic.Field(validation_alias)">validation_alias</span></span><span class="o">=</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pydantic.AliasChoices&lt;/code&gt;" href="https://docs.pydantic.dev/latest/api/pydantic/aliases/#pydantic.aliases.AliasChoices">AliasChoices</a></span><span class="p">(</span><span class="s1">&#39;devices&#39;</span><span class="p">,</span> <span class="s1">&#39;device&#39;</span><span class="p">))</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Device(s) to use for testing</p>
+        <p>Device(s) to use</p>
 
           
     </div>
@@ -56880,10 +56924,7 @@ In that case, it will be called later, when the model is rebuilt automatically o
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/cli.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">233</span>
-<span class="normal">234</span>
-<span class="normal">235</span>
-<span class="normal">236</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">236</span>
 <span class="normal">237</span>
 <span class="normal">238</span>
 <span class="normal">239</span>
@@ -56892,7 +56933,10 @@ In that case, it will be called later, when the model is rebuilt automatically o
 <span class="normal">242</span>
 <span class="normal">243</span>
 <span class="normal">244</span>
-<span class="normal">245</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span>
         <span class="n">test</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="p">,</span>
@@ -57470,7 +57514,7 @@ In that case, it will be called later, when the model is rebuilt automatically o
 
 
 <a href="#bioimageio.core.cli.TestCmd.log" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">log</span><span class="p">(</span><span class="n"><span title="bioimageio.core.cli.TestCmd.log(descr)">descr</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.ResourceDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/#bioimageio.spec.ResourceDescr">ResourceDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.InvalidDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/#bioimageio.spec.InvalidDescr">InvalidDescr</a></span><span class="p">])</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">log</span><span class="p">(</span><span class="n"><span title="bioimageio.core.cli.TestCmd.log(descr)">descr</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.ResourceDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/#bioimageio.spec.ResourceDescr">ResourceDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.InvalidDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/#bioimageio.spec.InvalidDescr">InvalidDescr</a></span><span class="p">])</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -57479,8 +57523,8 @@ In that case, it will be called later, when the model is rebuilt automatically o
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/cli.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">132</span>
-<span class="normal">133</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">descr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ResourceDescr</span><span class="p">,</span> <span class="n">InvalidDescr</span><span class="p">]):</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">133</span>
+<span class="normal">134</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">descr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ResourceDescr</span><span class="p">,</span> <span class="n">InvalidDescr</span><span class="p">]):</span>
     <span class="n">_</span> <span class="o">=</span> <span class="n">descr</span><span class="o">.</span><span class="n">validation_summary</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">summary</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -61793,7 +61837,7 @@ validated to form a valid model.</p>
           <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.cli.UpdateCmdBase.updated">updated</a></code></td>
             <td>
-                  <code><span title="typing.Union">Union</span>[<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.ResourceDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/#bioimageio.spec.ResourceDescr">ResourceDescr</a>, <a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.InvalidDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/#bioimageio.spec.InvalidDescr">InvalidDescr</a>]</code>
+                  <code><span title="typing.Union">Union</span>[<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.ResourceDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/#bioimageio.spec.ResourceDescr">ResourceDescr</a>, <a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.InvalidDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/#bioimageio.spec.InvalidDescr">InvalidDescr</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -62866,7 +62910,7 @@ or a bioimage.io resource identifier, e.g. 'affable-shark'</p>
   </span>
 
 <a href="#bioimageio.core.cli.UpdateCmdBase.updated" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">updated</span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.ResourceDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/#bioimageio.spec.ResourceDescr">ResourceDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.InvalidDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/#bioimageio.spec.InvalidDescr">InvalidDescr</a></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">updated</span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.ResourceDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/#bioimageio.spec.ResourceDescr">ResourceDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.InvalidDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/#bioimageio.spec.InvalidDescr">InvalidDescr</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -64274,9 +64318,7 @@ In that case, it will be called later, when the model is rebuilt automatically o
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/cli.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">336</span>
-<span class="normal">337</span>
-<span class="normal">338</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">338</span>
 <span class="normal">339</span>
 <span class="normal">340</span>
 <span class="normal">341</span>
@@ -64317,7 +64359,23 @@ In that case, it will be called later, when the model is rebuilt automatically o
 <span class="normal">376</span>
 <span class="normal">377</span>
 <span class="normal">378</span>
-<span class="normal">379</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span>
+<span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span>
+<span class="normal">386</span>
+<span class="normal">387</span>
+<span class="normal">388</span>
+<span class="normal">389</span>
+<span class="normal">390</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="n">original_yaml</span> <span class="o">=</span> <span class="n">open_bioimageio_yaml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">)</span><span class="o">.</span><span class="n">unparsed_content</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">original_yaml</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
     <span class="n">stream</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
@@ -64348,8 +64406,22 @@ In that case, it will be called later, when the model is rebuilt automatically o
         <span class="n">console</span><span class="o">.</span><span class="n">print</span><span class="p">(</span><span class="n">rich</span><span class="o">.</span><span class="n">markdown</span><span class="o">.</span><span class="n">Markdown</span><span class="p">(</span><span class="n">diff_md</span><span class="p">))</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">,</span> <span class="n">Path</span><span class="p">):</span>
-        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">updated_yaml</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;written updated description to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">suffix</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;.yaml&quot;</span><span class="p">,</span> <span class="s2">&quot;.yml&quot;</span><span class="p">):</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">updated_yaml</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;written updated description to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">updated</span><span class="p">,</span> <span class="n">InvalidDescr</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Cannot save invalid description package to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot; To save the metadata only, choose an output with a &#39;.yaml&#39; extension.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">suffix</span><span class="p">:</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="n">save_bioimageio_package_as_folder</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">updated</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="n">save_bioimageio_package</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">updated</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+
     <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span> <span class="o">==</span> <span class="s2">&quot;display&quot;</span><span class="p">:</span>
         <span class="n">updated_md</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;## Updated bioimageio.yaml</span><span class="se">\n\n</span><span class="s2">```yaml</span><span class="se">\n</span><span class="si">{</span><span class="n">updated_yaml</span><span class="si">}</span><span class="se">\n</span><span class="s2">```&quot;</span>
         <span class="n">rich</span><span class="o">.</span><span class="n">console</span><span class="o">.</span><span class="n">Console</span><span class="p">()</span><span class="o">.</span><span class="n">print</span><span class="p">(</span><span class="n">rich</span><span class="o">.</span><span class="n">markdown</span><span class="o">.</span><span class="n">Markdown</span><span class="p">(</span><span class="n">updated_md</span><span class="p">))</span>
@@ -70258,7 +70330,7 @@ Notes:
   </span>
 
 <a href="#bioimageio.core.cli.UpdateFormatCmd.perform_io_checks" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">perform_io_checks</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pydantic.Field&lt;/code&gt;" href="https://docs.pydantic.dev/latest/api/pydantic/fields/#pydantic.fields.Field">Field</a></span><span class="p">(</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.settings&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/#bioimageio.spec.settings">settings</a></span><span class="o">.</span><span class="n"><span title="bioimageio.spec.settings.perform_io_checks">perform_io_checks</span></span><span class="p">,</span> <span class="n"><span title="pydantic.Field(alias)">alias</span></span><span class="o">=</span><span class="s1">&#39;perform-io-checks&#39;</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">perform_io_checks</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pydantic.Field&lt;/code&gt;" href="https://docs.pydantic.dev/latest/api/pydantic/fields/#pydantic.fields.Field">Field</a></span><span class="p">(</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.settings&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/#bioimageio.spec.settings">settings</a></span><span class="o">.</span><span class="n"><span title="bioimageio.spec.settings.perform_io_checks">perform_io_checks</span></span><span class="p">,</span> <span class="n"><span title="pydantic.Field(alias)">alias</span></span><span class="o">=</span><span class="s1">&#39;perform-io-checks&#39;</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -71719,9 +71791,7 @@ In that case, it will be called later, when the model is rebuilt automatically o
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/cli.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">336</span>
-<span class="normal">337</span>
-<span class="normal">338</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">338</span>
 <span class="normal">339</span>
 <span class="normal">340</span>
 <span class="normal">341</span>
@@ -71762,7 +71832,23 @@ In that case, it will be called later, when the model is rebuilt automatically o
 <span class="normal">376</span>
 <span class="normal">377</span>
 <span class="normal">378</span>
-<span class="normal">379</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span>
+<span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span>
+<span class="normal">386</span>
+<span class="normal">387</span>
+<span class="normal">388</span>
+<span class="normal">389</span>
+<span class="normal">390</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="n">original_yaml</span> <span class="o">=</span> <span class="n">open_bioimageio_yaml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">)</span><span class="o">.</span><span class="n">unparsed_content</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">original_yaml</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
     <span class="n">stream</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
@@ -71793,8 +71879,22 @@ In that case, it will be called later, when the model is rebuilt automatically o
         <span class="n">console</span><span class="o">.</span><span class="n">print</span><span class="p">(</span><span class="n">rich</span><span class="o">.</span><span class="n">markdown</span><span class="o">.</span><span class="n">Markdown</span><span class="p">(</span><span class="n">diff_md</span><span class="p">))</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">,</span> <span class="n">Path</span><span class="p">):</span>
-        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">updated_yaml</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;written updated description to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">suffix</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;.yaml&quot;</span><span class="p">,</span> <span class="s2">&quot;.yml&quot;</span><span class="p">):</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">updated_yaml</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;written updated description to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">updated</span><span class="p">,</span> <span class="n">InvalidDescr</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Cannot save invalid description package to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot; To save the metadata only, choose an output with a &#39;.yaml&#39; extension.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">suffix</span><span class="p">:</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="n">save_bioimageio_package_as_folder</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">updated</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="n">save_bioimageio_package</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">updated</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+
     <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span> <span class="o">==</span> <span class="s2">&quot;display&quot;</span><span class="p">:</span>
         <span class="n">updated_md</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;## Updated bioimageio.yaml</span><span class="se">\n\n</span><span class="s2">```yaml</span><span class="se">\n</span><span class="si">{</span><span class="n">updated_yaml</span><span class="si">}</span><span class="se">\n</span><span class="s2">```&quot;</span>
         <span class="n">rich</span><span class="o">.</span><span class="n">console</span><span class="o">.</span><span class="n">Console</span><span class="p">()</span><span class="o">.</span><span class="n">print</span><span class="p">(</span><span class="n">rich</span><span class="o">.</span><span class="n">markdown</span><span class="o">.</span><span class="n">Markdown</span><span class="p">(</span><span class="n">updated_md</span><span class="p">))</span>
@@ -79121,9 +79221,7 @@ In that case, it will be called later, when the model is rebuilt automatically o
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/cli.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">336</span>
-<span class="normal">337</span>
-<span class="normal">338</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">338</span>
 <span class="normal">339</span>
 <span class="normal">340</span>
 <span class="normal">341</span>
@@ -79164,7 +79262,23 @@ In that case, it will be called later, when the model is rebuilt automatically o
 <span class="normal">376</span>
 <span class="normal">377</span>
 <span class="normal">378</span>
-<span class="normal">379</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span>
+<span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span>
+<span class="normal">386</span>
+<span class="normal">387</span>
+<span class="normal">388</span>
+<span class="normal">389</span>
+<span class="normal">390</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="n">original_yaml</span> <span class="o">=</span> <span class="n">open_bioimageio_yaml</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">source</span><span class="p">)</span><span class="o">.</span><span class="n">unparsed_content</span>
     <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">original_yaml</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
     <span class="n">stream</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
@@ -79195,8 +79309,22 @@ In that case, it will be called later, when the model is rebuilt automatically o
         <span class="n">console</span><span class="o">.</span><span class="n">print</span><span class="p">(</span><span class="n">rich</span><span class="o">.</span><span class="n">markdown</span><span class="o">.</span><span class="n">Markdown</span><span class="p">(</span><span class="n">diff_md</span><span class="p">))</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">,</span> <span class="n">Path</span><span class="p">):</span>
-        <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">updated_yaml</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;written updated description to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">suffix</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;.yaml&quot;</span><span class="p">,</span> <span class="s2">&quot;.yml&quot;</span><span class="p">):</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">updated_yaml</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;written updated description to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">updated</span><span class="p">,</span> <span class="n">InvalidDescr</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Cannot save invalid description package to </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="o">+</span> <span class="s2">&quot; To save the metadata only, choose an output with a &#39;.yaml&#39; extension.&quot;</span>
+            <span class="p">)</span>
+
+        <span class="k">elif</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="o">.</span><span class="n">suffix</span><span class="p">:</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="n">save_bioimageio_package_as_folder</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">updated</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="n">save_bioimageio_package</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">updated</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">output</span><span class="p">)</span>
+
     <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">output</span> <span class="o">==</span> <span class="s2">&quot;display&quot;</span><span class="p">:</span>
         <span class="n">updated_md</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;## Updated bioimageio.yaml</span><span class="se">\n\n</span><span class="s2">```yaml</span><span class="se">\n</span><span class="si">{</span><span class="n">updated_yaml</span><span class="si">}</span><span class="se">\n</span><span class="s2">```&quot;</span>
         <span class="n">rich</span><span class="o">.</span><span class="n">console</span><span class="o">.</span><span class="n">Console</span><span class="p">()</span><span class="o">.</span><span class="n">print</span><span class="p">(</span><span class="n">rich</span><span class="o">.</span><span class="n">markdown</span><span class="o">.</span><span class="n">Markdown</span><span class="p">(</span><span class="n">updated_md</span><span class="p">))</span>
@@ -84959,7 +85087,7 @@ and the <code>parameter</code> item maps to the <code>__parameter__</code> attri
   </span>
 
 <a href="#bioimageio.core.cli.ValidateFormatCmd.perform_io_checks" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">perform_io_checks</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pydantic.Field&lt;/code&gt;" href="https://docs.pydantic.dev/latest/api/pydantic/fields/#pydantic.fields.Field">Field</a></span><span class="p">(</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.settings&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/#bioimageio.spec.settings">settings</a></span><span class="o">.</span><span class="n"><span title="bioimageio.spec.settings.perform_io_checks">perform_io_checks</span></span><span class="p">,</span> <span class="n"><span title="pydantic.Field(alias)">alias</span></span><span class="o">=</span><span class="s1">&#39;perform-io-checks&#39;</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">perform_io_checks</span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pydantic.Field&lt;/code&gt;" href="https://docs.pydantic.dev/latest/api/pydantic/fields/#pydantic.fields.Field">Field</a></span><span class="p">(</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.settings&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/#bioimageio.spec.settings">settings</a></span><span class="o">.</span><span class="n"><span title="bioimageio.spec.settings.perform_io_checks">perform_io_checks</span></span><span class="p">,</span> <span class="n"><span title="pydantic.Field(alias)">alias</span></span><span class="o">=</span><span class="s1">&#39;perform-io-checks&#39;</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -86425,13 +86553,13 @@ In that case, it will be called later, when the model is rebuilt automatically o
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/cli.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">178</span>
-<span class="normal">179</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">179</span>
 <span class="normal">180</span>
 <span class="normal">181</span>
 <span class="normal">182</span>
 <span class="normal">183</span>
-<span class="normal">184</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="normal">184</span>
+<span class="normal">185</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="p">)</span>
     <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span>
         <span class="mi">0</span>
@@ -87003,7 +87131,7 @@ In that case, it will be called later, when the model is rebuilt automatically o
 
 
 <a href="#bioimageio.core.cli.ValidateFormatCmd.log" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">log</span><span class="p">(</span><span class="n"><span title="bioimageio.core.cli.ValidateFormatCmd.log(descr)">descr</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.ResourceDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/#bioimageio.spec.ResourceDescr">ResourceDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.InvalidDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/#bioimageio.spec.InvalidDescr">InvalidDescr</a></span><span class="p">])</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">log</span><span class="p">(</span><span class="n"><span title="bioimageio.core.cli.ValidateFormatCmd.log(descr)">descr</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.ResourceDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/#bioimageio.spec.ResourceDescr">ResourceDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.InvalidDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/#bioimageio.spec.InvalidDescr">InvalidDescr</a></span><span class="p">])</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -87012,8 +87140,8 @@ In that case, it will be called later, when the model is rebuilt automatically o
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/cli.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">132</span>
-<span class="normal">133</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">descr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ResourceDescr</span><span class="p">,</span> <span class="n">InvalidDescr</span><span class="p">]):</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">133</span>
+<span class="normal">134</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">descr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ResourceDescr</span><span class="p">,</span> <span class="n">InvalidDescr</span><span class="p">]):</span>
     <span class="n">_</span> <span class="o">=</span> <span class="n">descr</span><span class="o">.</span><span class="n">validation_summary</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">summary</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -101227,7 +101355,7 @@ In that case, it will be called later, when the model is rebuilt automatically o
 
 
 <a href="#bioimageio.core.cli.WithSummaryLogging.log" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">log</span><span class="p">(</span><span class="n"><span title="bioimageio.core.cli.WithSummaryLogging.log(descr)">descr</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.ResourceDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/#bioimageio.spec.ResourceDescr">ResourceDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.InvalidDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/api/#bioimageio.spec.InvalidDescr">InvalidDescr</a></span><span class="p">])</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">log</span><span class="p">(</span><span class="n"><span title="bioimageio.core.cli.WithSummaryLogging.log(descr)">descr</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.ResourceDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/#bioimageio.spec.ResourceDescr">ResourceDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.InvalidDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.0/api/#bioimageio.spec.InvalidDescr">InvalidDescr</a></span><span class="p">])</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -101236,8 +101364,8 @@ In that case, it will be called later, when the model is rebuilt automatically o
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/cli.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">132</span>
-<span class="normal">133</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">descr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ResourceDescr</span><span class="p">,</span> <span class="n">InvalidDescr</span><span class="p">]):</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">133</span>
+<span class="normal">134</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">log</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">descr</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ResourceDescr</span><span class="p">,</span> <span class="n">InvalidDescr</span><span class="p">]):</span>
     <span class="n">_</span> <span class="o">=</span> <span class="n">descr</span><span class="o">.</span><span class="n">validation_summary</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">summary</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>

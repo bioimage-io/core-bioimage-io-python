@@ -492,8 +492,6 @@
       
         
       
-        
-      
     
     
     
@@ -659,6 +657,23 @@
 
   <h1>Changelog</h1>
 
+<h3 id="0103">0.10.3<a class="headerlink" href="#0103" title="Anchor link to this section for reference">¤</a></h3>
+<ul>
+<li>bump spec to 0.5.10.0</li>
+<li>add cellpose flow dynamics op</li>
+<li>allow for precomputed sample statistics</li>
+<li>add <code>bioimageio.core.io.serialize_stat</code></li>
+<li>apply pre-/postprocessing blockwise when possible.</li>
+<li>default to pad input tensors and crop output tensors according to any specified output halos.</li>
+<li>note: during testing padding/cropping is skipped, i.e. test inputs/outputs are expected to match without padding/cropping</li>
+<li>ONNX model adapter: all available onnx inference providers are tried one by one until one single provider works.
+  (Letting onnxruntime 1.23.2 handle backup providers does not work reliably.)</li>
+<li>CLI predict command:</li>
+<li>add <code>input</code>/<code>output</code> alias for <code>inputs</code>/<code>outputs</code> argument.</li>
+<li>add <code>devices</code> argument (with alias device)</li>
+<li>CLI test command:</li>
+<li>add <code>device</code> alias for <code>devices</code> argument</li>
+</ul>
 <h3 id="0102">0.10.2<a class="headerlink" href="#0102" title="Anchor link to this section for reference">¤</a></h3>
 <ul>
 <li>improve error message when <code>torch.load(weights_only=True)</code> fails on non-pure state dicts (#486)</li>
