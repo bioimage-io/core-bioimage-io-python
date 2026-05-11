@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import collections
+import collections.abc
 from dataclasses import dataclass
 from math import ceil, floor
 from typing import (
@@ -9,6 +9,7 @@ from typing import (
     Dict,
     Generic,
     Iterable,
+    Mapping,
     Optional,
     Tuple,
     TypeVar,
@@ -16,8 +17,9 @@ from typing import (
 )
 
 import numpy as np
+import xarray as xr
 from numpy.typing import NDArray
-from typing_extensions import Self, assert_never
+from typing_extensions import Self
 
 from .axis import AxisId, PerAxis
 from .block import Block
@@ -62,6 +64,25 @@ class Sample:
 
     id: SampleId
     """Identifies the `Sample` within the dataset -- typically a number or a string."""
+
+    def __getitem__(
+        self,
+        key: PerMember[
+            Union[
+                SliceInfo,
+                slice,
+                int,
+                PerAxis[Union[SliceInfo, slice, int]],
+                Tensor,
+                xr.DataArray,
+            ]
+        ],
+    ) -> Self:
+        return self.__class__(
+            members={m: t[key[m]] for m, t in self.members.items() if m in key},
+            stat=self.stat,
+            id=self.id,
+        )
 
     @property
     def shape(self) -> PerMember[PerAxis[int]]:
@@ -158,17 +179,18 @@ class Sample:
         mode: Union[PerMember[PadMode], PadMode],
     ) -> Self:
         """Convenience method to pad sample members."""
-        if isinstance(mode, str):
-            mode_per_member: Dict[MemberId, PadMode] = {}
-        elif isinstance(mode, collections.Mapping):
+        default_mode = "symmetric"
+        if isinstance(mode, collections.abc.Mapping):
             mode_per_member = mode
         else:
-            assert_never(mode)
+            mode_per_member: Mapping[MemberId, PadMode] = {}
+            default_mode = mode
 
         return self.__class__(
             members={
                 m: t.pad(
-                    pad_width=pad_width.get(m, {}), mode=mode_per_member.get(m, mode)
+                    pad_width=pad_width.get(m, {}),
+                    mode=mode_per_member.get(m, default_mode),
                 )
                 for m, t in self.members.items()
             },
@@ -380,9 +402,9 @@ def sample_block_generator(
                 m: Block.from_sample_member(
                     origin.members[m],
                     block=member_blocks[m],
-                    pad_mode=pad_mode
-                    if isinstance(pad_mode, str)
-                    else pad_mode.get(m, "symmetric"),
+                    pad_mode=pad_mode.get(m, "symmetric")
+                    if isinstance(pad_mode, collections.abc.Mapping)
+                    else pad_mode,
                 )
                 for m in origin.members
             },

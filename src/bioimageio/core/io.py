@@ -17,6 +17,7 @@ from typing import (
     Union,
 )
 
+import xarray as xr
 from imageio.v3 import imread, imwrite  # type: ignore
 from loguru import logger
 from numpy.typing import NDArray
@@ -97,10 +98,6 @@ Suffix = str
 def save_tensor(path: Union[Path, str], tensor: Tensor) -> None:
     # TODO: save axis meta data
 
-    data: NDArray[Any] = (  # pyright: ignore[reportUnknownVariableType]
-        tensor.data.to_numpy()
-    )
-    assert is_ndarray(data)
     path = Path(path)
     if not path.suffix:
         raise ValueError(f"No suffix (needed to decide file format) found in {path}")
@@ -108,27 +105,52 @@ def save_tensor(path: Union[Path, str], tensor: Tensor) -> None:
     extension = path.suffix.lower()
     path.parent.mkdir(exist_ok=True, parents=True)
     if extension == ".npy":
-        save_array(path, data)
+        save_array(path, tensor.to_numpy())
     elif extension in (".h5", ".hdf", ".hdf5"):
         raise NotImplementedError("Saving to h5 with dataset path is not implemented.")
     else:
-        if (
-            extension in (".tif", ".tiff")
-            and tensor.tagged_shape.get(ba := AxisId("batch")) == 1
-        ):
-            # remove singleton batch axis for saving
-            tensor = tensor[{ba: 0}]
-            singleton_axes_msg = "(without singleton batch axes) "
+        removed_singleton_axes: List[AxisId] = []
+        remove_singletons = {
+            AxisId("batch"): [
+                ".tif",
+                ".tiff",
+            ],  # remove singleton batch dim for tiff files
+            **{
+                a: [".png", ".jpg", ".jpeg"] for a in tensor.dims
+            },  # remove any singleton axis for png and jpg files
+        }
+        for rm_a, rm_ext in remove_singletons.items():
+            if extension in rm_ext and tensor.tagged_shape.get(rm_a) == 1:
+                tensor = tensor[{rm_a: 0}]
+                removed_singleton_axes.append(rm_a)
+
+        if removed_singleton_axes:
+            singleton_axes_msg = f"(with removed singleton axes {list(map(str, removed_singleton_axes))}) "
         else:
             singleton_axes_msg = ""
 
-        logger.debug(
+        logger.info(
             "writing tensor {} {}to {}",
             dict(tensor.tagged_shape),
             singleton_axes_msg,
             path,
         )
-        imwrite(path, data, extension=extension)
+        if extension in (".png", ".jpg", ".jpeg") and tensor.dtype in (
+            "float32",
+            "float64",
+        ):
+            logger.warning(
+                "converting tensor of dtype {} to uint8 for saving as {}",
+                tensor.dtype,
+                extension,
+            )
+            tensor = (
+                (tensor - (t_min := tensor.data.min()))
+                / xr.ufuncs.maximum(tensor.data.max() - t_min, 1e-8)
+                * 255
+            ).astype("uint8")
+
+        imwrite(path, tensor, extension=extension)
 
 
 def save_sample(

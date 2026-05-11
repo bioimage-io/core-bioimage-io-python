@@ -74,7 +74,7 @@ def import_callable(
         c = getattr(module, str(node.callable))
     elif isinstance(node, CallableFromFile):
         c = _import_from_file_impl(node.source_file, str(node.callable_name), **kwargs)
-    elif isinstance(node, ArchitectureFromFileDescr):
+    elif isinstance(node, (ArchitectureFromFileDescr, v0_5.CustomProcessingDescr)):
         c = _import_from_file_impl(node.source, str(node.callable), sha256=node.sha256)
     else:
         assert_never(node)
@@ -208,7 +208,7 @@ def get_member_id(
 
 
 def get_member_ids(
-    tensor_descriptions: Sequence[
+    tensor_descriptions: Iterable[
         Union[
             v0_4.InputTensorDescr,
             v0_4.OutputTensorDescr,
@@ -222,10 +222,14 @@ def get_member_ids(
 
 
 def get_test_input_sample(model: AnyModelDescr) -> Sample:
-    return _get_test_sample(
-        model.inputs,
-        model.test_inputs if isinstance(model, v0_4.ModelDescr) else model.inputs,
-    )
+    if isinstance(model, v0_4.ModelDescr):
+        info = {
+            MemberId(d.name): (d, t) for d, t in zip(model.inputs, model.test_inputs)
+        }
+    else:
+        info = {d.id: d for d in model.inputs}
+
+    return _get_test_sample(info)
 
 
 get_test_inputs = get_test_input_sample
@@ -234,128 +238,60 @@ get_test_inputs = get_test_input_sample
 
 def get_test_output_sample(model: AnyModelDescr) -> Sample:
     """returns a model's test output sample"""
-    return _get_test_sample(
-        model.outputs,
-        model.test_outputs if isinstance(model, v0_4.ModelDescr) else model.outputs,
-    )
+    if isinstance(model, v0_4.ModelDescr):
+        info = {
+            MemberId(d.name): (d, t) for d, t in zip(model.outputs, model.test_outputs)
+        }
+    else:
+        info = {d.id: d for d in model.outputs}
+
+    return _get_test_sample(info)
 
 
 get_test_outputs = get_test_output_sample
-"""DEPRECATED: use `get_test_input_sample` instead"""
+"""DEPRECATED: use `get_test_output_sample` instead"""
 
 
 def _get_test_sample(
-    tensor_descrs: Sequence[
-        Union[
-            v0_4.InputTensorDescr,
-            v0_4.OutputTensorDescr,
-            v0_5.InputTensorDescr,
-            v0_5.OutputTensorDescr,
-        ]
+    info: Union[
+        Mapping[MemberId, Union[v0_5.InputTensorDescr, v0_5.OutputTensorDescr]],
+        Mapping[
+            MemberId,
+            Tuple[
+                v0_4.InputTensorDescr,
+                FileSource,
+            ],
+        ],
+        Mapping[
+            MemberId,
+            Tuple[
+                v0_4.OutputTensorDescr,
+                FileSource,
+            ],
+        ],
     ],
-    test_sources: Sequence[Union[FileSource, v0_5.TensorDescr]],
 ) -> Sample:
-    """get a test sample (only input or input and output)
-
-    Returns:
-        A model's input/output test sample.
-
-    """
-    member_ids = get_member_ids(tensor_descrs)
-    arrays: List[NDArray[Any]] = []
-    for src in test_sources:
-        if isinstance(src, (v0_5.InputTensorDescr, v0_5.OutputTensorDescr)):
+    arrays: Dict[MemberId, NDArray[Any]] = {}
+    for m, src in info.items():
+        if isinstance(src, tuple):
+            arrays[m] = load_array(src[1])
+        elif isinstance(src, (v0_5.InputTensorDescr, v0_5.OutputTensorDescr)):
             if src.test_tensor is None:
                 raise ValueError(
-                    f"Model input '{src.id}' has no test tensor defined, cannot create test sample."
+                    f"Model input '{m}' has no test tensor defined, cannot create test sample."
                 )
-            arrays.append(load_array(src.test_tensor))
+            arrays[m] = load_array(src.test_tensor)
         else:
-            arrays.append(load_array(src))
+            assert_never(src)
 
-    axes = [get_axes_infos(t) for t in tensor_descrs]
-    sample = Sample(
-        members={
-            m: Tensor.from_numpy(arr, dims=ax)
-            for m, arr, ax in zip(member_ids, arrays, axes)
-        },
+    axes = {
+        m: get_axes_infos(t[0] if isinstance(t, tuple) else t) for m, t in info.items()
+    }
+    return Sample(
+        members={m: Tensor.from_numpy(arrays[m], dims=axes[m]) for m in info},
         stat={},
         id="test-sample",
     )
-    halos = v0_5.get_halos({k: v[0] for k, v in tensor_descrs.items()})
-    if not halos:
-        return sample
-
-    # pad input tenors if unpadded test inputs are invalid
-    v0_5_input_tensors = {
-        d.id: (d, sample.members.get(d.id))
-        for d in tensor_descrs
-        if isinstance(d, (v0_5.InputTensorDescr))
-    }
-
-    try:
-        v0_5.validate_tensors(v0_5_input_tensors, pad_inputs=False)
-    except Exception as e:
-        input_halos = {k: halos[k] for k in v0_5_input_tensors if k in halos}
-        if not v0_5_input_tensors or not input_halos:
-            raise e
-
-        try:
-            # pad inputs
-            sample = sample.pad(
-                pad_width=input_halos,
-                mode={
-                    k: v0_5_input_tensors[k][0].pad
-                    for k in input_halos
-                    if k in v0_5_input_tensors
-                },
-            )
-            # select relevant input tensors again after padding
-            v0_5_input_tensors = {
-                d.id: (d, sample.members.get(d.id))
-                for d in tensor_descrs
-                if isinstance(d, (v0_5.InputTensorDescr))
-            }
-            # validate again
-            v0_5.validate_tensors(v0_5_input_tensors, pad_inputs=False)
-        except Exception:
-            raise e  # raise original exception if padding did not help
-
-    all_tensors = {
-        m: (t, sample.members.get(m)) for m, t in zip(member_ids, tensor_descrs)
-    }
-    output_halos = {
-        k: halos[k]
-        for k, v in zip(member_ids, tensor_descrs)
-        if isinstance(v, (v0_5.OutputTensorDescr)) and k in halos
-    }
-    try:
-        v0_5.validate_tensors(all_tensors, pad_inputs=False, crop_outputs=False)
-    except Exception as e:
-        if not output_halos:
-            raise e
-        try:
-            # crop output halos from sample
-            sample = sample[
-                {
-                    m: slice(
-                        halos[m].left, -halos[m].right if halos[m].right > 0 else None
-                    )
-                    if m in output_halos
-                    else slice(None)
-                    for m in member_ids
-                }
-            ]
-            # reselect all tensors for validation
-            all_tensors = {
-                m: (t, sample.members.get(m)) for m, t in zip(member_ids, tensor_descrs)
-            }
-            # validate again after cropping
-            v0_5.validate_tensors(all_tensors, pad_inputs=False, crop_outputs=False)
-        except Exception:
-            raise e  # raise original exception if cropping did not help
-
-    return sample
 
 
 class IO_SampleBlockMeta(NamedTuple):

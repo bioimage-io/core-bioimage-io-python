@@ -5,12 +5,12 @@ import numpy as np
 from numpy.typing import NDArray
 from typing_extensions import Literal, cast
 
-from bioimageio.core.sample import Sample
 from bioimageio.spec.model.v0_5 import CellposeFlowDynamicsDescr
 
 from ._op_base import SamplewiseOperator
 from .axis import AxisId, PerAxis
 from .common import MemberId
+from .sample import Sample
 from .stat_measures import Measure
 from .tensor import Tensor
 

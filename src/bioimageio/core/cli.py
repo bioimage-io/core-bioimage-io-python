@@ -197,8 +197,10 @@ class TestCmd(CmdBase, WithSource, WithSummaryLogging):
 
     (only relevant for model resources)"""
 
-    devices: Optional[List[str]] = None
-    """Device(s) to use for testing"""
+    devices: Optional[List[str]] = Field(
+        None, validation_alias=AliasChoices("devices", "device")
+    )
+    """Device(s) to use"""
 
     runtime_env: Union[Literal["currently-active", "as-described"], Path] = Field(
         "currently-active", alias="runtime-env"
@@ -367,6 +369,12 @@ class UpdateCmdBase(CmdBase, WithSource, ABC):
             if self.output.suffix in (".yaml", ".yml"):
                 _ = self.output.write_text(updated_yaml, encoding="utf-8")
                 logger.info(f"written updated description to {self.output}")
+            elif isinstance(self.updated, InvalidDescr):
+                raise ValueError(
+                    f"Cannot save invalid description package to {self.output}."
+                    + " To save the metadata only, choose an output with a '.yaml' extension."
+                )
+
             elif not self.output.suffix:
                 _ = save_bioimageio_package_as_folder(
                     self.updated, output_path=self.output
@@ -424,7 +432,8 @@ class PredictCmd(CmdBase, WithSource):
     """Run inference on your data with a bioimage.io model."""
 
     inputs: NotEmpty[List[Union[str, NotEmpty[List[str]]]]] = Field(
-        default_factory=lambda: ["{input_id}/001.tif"]
+        default_factory=lambda: ["{input_id}/001.tif"],
+        validation_alias=AliasChoices("inputs", "input"),
     )
     """Model input sample paths (for each input tensor)
 
@@ -458,8 +467,9 @@ class PredictCmd(CmdBase, WithSource):
      
     """
 
-    outputs: Union[str, NotEmpty[Tuple[str, ...]]] = (
-        "outputs_{model_id}/{output_id}/{sample_id}.tif"
+    outputs: Union[str, NotEmpty[Tuple[str, ...]]] = Field(
+        "outputs_{model_id}/{output_id}/{sample_id}.tif",
+        validation_alias=AliasChoices("outputs", "output"),
     )
     """Model output path pattern (per output tensor)
 
@@ -504,6 +514,11 @@ class PredictCmd(CmdBase, WithSource):
         validation_alias=WEIGHT_FORMAT_ALIASES,
     )
     """The weight format to use."""
+
+    devices: Optional[List[str]] = Field(
+        None, validation_alias=AliasChoices("devices", "device")
+    )
+    """Device(s) to use"""
 
     example: bool = False
     """generate and run an example
@@ -774,6 +789,7 @@ class PredictCmd(CmdBase, WithSource):
         pp = create_prediction_pipeline(
             model_descr,
             weight_format=None if self.weight_format == "any" else self.weight_format,
+            devices=self.devices,
         )
 
         if blockwise:

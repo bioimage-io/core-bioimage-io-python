@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Tuple, Union
+from typing import Any, Optional, Sequence, Tuple, Union
 
 import torch
 from torch.jit import ScriptModule
@@ -8,7 +8,7 @@ from bioimageio.spec._internal.version_type import Version
 from bioimageio.spec.model.v0_5 import ModelDescr, TorchscriptWeightsDescr
 
 from .. import __version__
-from ..backends.pytorch_backend import load_torch_model
+from ..backends.pytorch_backend import get_devices, load_torch_model
 
 
 def convert(
@@ -16,6 +16,7 @@ def convert(
     output_path: Path,
     *,
     use_tracing: bool = True,
+    devices: Optional[Sequence[Union[str, torch.device]]] = None,
 ) -> TorchscriptWeightsDescr:
     """
     Convert model weights from the PyTorch `state_dict` format to TorchScript.
@@ -44,10 +45,13 @@ def convert(
         )
 
     input_data = model_descr.get_input_test_arrays()
+    devices = get_devices(devices)
 
     with torch.no_grad():
-        input_data = [torch.from_numpy(inp) for inp in input_data]
-        model = load_torch_model(state_dict_weights_descr, load_state=True)
+        input_data = [torch.from_numpy(inp).to(device=devices[0]) for inp in input_data]
+        model = load_torch_model(
+            state_dict_weights_descr, load_state=True, devices=devices
+        )
         scripted_model: Union[  # pyright: ignore[reportUnknownVariableType]
             ScriptModule, Tuple[Any, ...]
         ] = (

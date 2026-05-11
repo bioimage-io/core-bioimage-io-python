@@ -16,10 +16,9 @@ from typing import (
 from loguru import logger
 from tqdm import tqdm
 
-from bioimageio.core._ops_cellpose import SamplewiseOperator
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 
-from ._op_base import BlockwiseOperator
+from ._op_base import BlockwiseOperator, SamplewiseOperator
 from .axis import AxisId, PerAxis
 from .common import (
     BlocksizeParameter,

@@ -1,9 +1,12 @@
 from pathlib import Path
+from typing import Optional, Sequence, Union
 
 import torch.jit
-from bioimageio.spec.model.v0_5 import ModelDescr, OnnxWeightsDescr
 from torch._export.converter import TS2EPConverter
 
+from bioimageio.spec.model.v0_5 import ModelDescr, OnnxWeightsDescr
+
+from ..backends.pytorch_backend import get_devices
 from ._utils_torch_onnx import export_to_onnx, get_torch_sample_inputs
 
 
@@ -13,6 +16,7 @@ def convert(
     *,
     verbose: bool = False,
     opset_version: int = 18,
+    devices: Optional[Sequence[Union[str, torch.device]]] = None,
 ) -> OnnxWeightsDescr:
     """
     Convert model weights from the PyTorch state_dict format to the ONNX format.
@@ -42,10 +46,13 @@ def convert(
 
     weight_reader = torchscript_descr.get_reader()
     model = torch.jit.load(weight_reader)  # pyright: ignore[reportUnknownVariableType]
-    model.to("cpu")
+    devices = get_devices(devices)
+    model.to(devices[0])
     model = model.eval()  # pyright: ignore[reportUnknownVariableType]
 
-    torch_sample_inputs = get_torch_sample_inputs(model_descr)
+    torch_sample_inputs = tuple(
+        t.to(device=devices[0]) for t in get_torch_sample_inputs(model_descr)
+    )
     exported_program = TS2EPConverter(
         model,  # pyright: ignore[reportUnknownArgumentType]
         torch_sample_inputs,

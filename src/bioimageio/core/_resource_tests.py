@@ -30,7 +30,6 @@ from loguru import logger
 from numpy.typing import NDArray
 from typing_extensions import NotRequired, TypedDict, Unpack, assert_never, get_args
 
-from bioimageio.core.tensor import Tensor
 from bioimageio.spec import (
     AnyDatasetDescr,
     AnyModelDescr,
@@ -78,6 +77,7 @@ from .common import MemberId, SupportedWeightsFormat
 from .digest_spec import get_test_input_sample, get_test_output_sample
 from .io import save_tensor
 from .sample import Sample
+from .tensor import Tensor
 
 CONDA_CMD = "conda.bat" if platform.system() == "Windows" else "conda"
 
@@ -884,7 +884,11 @@ def _test_recreate_test_outputs(
             test_input_preprocessed = deepcopy(test_input)
             results_not_postprocessed = (
                 prediction_pipeline.predict_sample_without_blocking(
-                    test_input, skip_postprocessing=True, skip_preprocessing=True
+                    test_input,
+                    skip_postprocessing=True,
+                    skip_preprocessing=True,
+                    skip_input_padding=True,
+                    skip_output_cropping=True,
                 )
             )
             results = deepcopy(results_not_postprocessed)
@@ -1126,7 +1130,9 @@ def _test_parametrized_inference(
             for n, batch_size, inputs, exptected_output_shape in generate_test_cases():
                 error: Optional[str] = None
                 try:
-                    result = prediction_pipeline.predict_sample_without_blocking(inputs)
+                    result = prediction_pipeline.predict_sample_without_blocking(
+                        inputs, skip_input_padding=True, skip_output_cropping=True
+                    )
                 except Exception as e:
                     error = str(e)
                 else:
