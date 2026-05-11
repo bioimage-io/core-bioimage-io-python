@@ -67,7 +67,7 @@ def get_pre_and_postprocessing(
     *,
     dataset_for_initial_statistics: Iterable[Sample],
     keep_updating_initial_dataset_stats: bool = False,
-    fixed_dataset_stats: Optional[Mapping[DatasetMeasure, MeasureValue]] = None,
+    fixed_dataset_stats: Optional[Mapping[Measure, MeasureValue]] = None,
 ) -> _ProcessingCallables:
     """Creates callables to apply pre- and postprocessing in-place to a sample"""
 

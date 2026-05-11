@@ -35,7 +35,8 @@ from .digest_spec import (
 )
 from .model_adapters import ModelAdapter, create_model_adapter
 from .model_adapters import get_weight_formats as get_weight_formats
-from .proc_setup import Processing, setup_pre_and_postprocessing
+from .proc_ops import Processing
+from .proc_setup import setup_pre_and_postprocessing
 from .sample import Sample, SampleBlock
 from .stat_measures import Measure, MeasureValue, Stat
 from .tensor import Tensor

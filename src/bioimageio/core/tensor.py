@@ -45,13 +45,13 @@ if TYPE_CHECKING:
 _ScalarOrArray = Union["ArrayLike", np.generic, "NDArray[Any]"]  # TODO: add "DaskArray"
 
 
-def _resolve_pad_mode(mode: PadMode) -> Tuple[str, Optional[float]]:
+def _resolve_pad_mode(mode: PadMode):
     constant_value = None
     if isinstance(mode, str):
         mode_name = mode
     elif isinstance(mode, v0_5.ConstantPadding):
         mode_name = mode.mode
-        constant_value = mode.constant_value
+        constant_value = mode.value
     elif isinstance(
         mode, (v0_5.EdgePadding, v0_5.ReflectPadding, v0_5.SymmetricPadding)
     ):
