@@ -144,8 +144,12 @@ def _test_cli_predict_multiple(
     model_source: str, tmp_path: Path, extra_cmd_args: Sequence[str] = ()
 ):
     n_images = 3
-    shape = (1, 1, 128, 128)
-    expected_shape = (1, 1, 128, 128)
+    if "/unet2d_nuclei_broad/" in model_source:
+        shape = (1, 1, 512, 512)
+        expected_shape = (1, 1, 512, 512)
+    else:
+        shape = (1, 1, 128, 128)
+        expected_shape = (1, 1, 128, 128)
 
     in_folder = tmp_path / "inputs"
     in_folder.mkdir()
