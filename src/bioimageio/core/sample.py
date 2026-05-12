@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections.abc
 from dataclasses import dataclass
 from math import ceil, floor
 from typing import (
@@ -8,6 +9,7 @@ from typing import (
     Dict,
     Generic,
     Iterable,
+    Mapping,
     Optional,
     Tuple,
     TypeVar,
@@ -15,6 +17,7 @@ from typing import (
 )
 
 import numpy as np
+import xarray as xr
 from numpy.typing import NDArray
 from typing_extensions import Self
 
@@ -31,6 +34,7 @@ from .common import (
     HaloLike,
     MemberId,
     PadMode,
+    PadWidthLike,
     PerMember,
     SampleId,
     SliceInfo,
@@ -61,6 +65,25 @@ class Sample:
     id: SampleId
     """Identifies the `Sample` within the dataset -- typically a number or a string."""
 
+    def __getitem__(
+        self,
+        key: PerMember[
+            Union[
+                SliceInfo,
+                slice,
+                int,
+                PerAxis[Union[SliceInfo, slice, int]],
+                Tensor,
+                xr.DataArray,
+            ]
+        ],
+    ) -> Self:
+        return self.__class__(
+            members={m: t[key[m]] for m, t in self.members.items() if m in key},
+            stat=self.stat,
+            id=self.id,
+        )
+
     @property
     def shape(self) -> PerMember[PerAxis[int]]:
         return {tid: t.sizes for tid, t in self.members.items()}
@@ -73,7 +96,7 @@ class Sample:
         self,
         block_shapes: PerMember[PerAxis[int]],
         halo: PerMember[PerAxis[HaloLike]],
-        pad_mode: PadMode,
+        pad_mode: Union[PadMode, PerMember[PadMode]],
         broadcast: bool = False,
     ) -> Tuple[TotalNumberOfBlocks, Iterable[SampleBlockWithOrigin]]:
         assert not (missing := [m for m in block_shapes if m not in self.members]), (
@@ -149,6 +172,31 @@ class Sample:
                 members[m][block.inner_slice] = block.inner_data
 
         return cls(members=members, stat=stat, id=sample_id)
+
+    def pad(
+        self,
+        pad_width: PerMember[PerAxis[Union[int, PadWidthLike]]],
+        mode: Union[PerMember[PadMode], PadMode],
+    ) -> Self:
+        """Convenience method to pad sample members."""
+        default_mode = "symmetric"
+        if isinstance(mode, collections.abc.Mapping):
+            mode_per_member = mode
+        else:
+            mode_per_member: Mapping[MemberId, PadMode] = {}
+            default_mode = mode
+
+        return self.__class__(
+            members={
+                m: t.pad(
+                    pad_width=pad_width.get(m, {}),
+                    mode=mode_per_member.get(m, default_mode),
+                )
+                for m, t in self.members.items()
+            },
+            stat=self.stat,
+            id=self.id,
+        )
 
 
 BlockT = TypeVar("BlockT", Block, BlockMeta)
@@ -345,14 +393,18 @@ def sample_block_generator(
     blocks: Iterable[PerMember[BlockMeta]],
     *,
     origin: Sample,
-    pad_mode: PadMode,
+    pad_mode: Union[PadMode, PerMember[PadMode]],
 ) -> Iterable[SampleBlockWithOrigin]:
     for member_blocks in blocks:
         cons = _ConsolidatedMemberBlocks(member_blocks)
         yield SampleBlockWithOrigin(
             blocks={
                 m: Block.from_sample_member(
-                    origin.members[m], block=member_blocks[m], pad_mode=pad_mode
+                    origin.members[m],
+                    block=member_blocks[m],
+                    pad_mode=pad_mode.get(m, "symmetric")
+                    if isinstance(pad_mode, collections.abc.Mapping)
+                    else pad_mode,
                 )
                 for m in origin.members
             },

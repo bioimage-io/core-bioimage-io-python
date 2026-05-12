@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional, Sequence
 
 from bioimageio.spec.model.v0_5 import ModelDescr, OnnxWeightsDescr
 
@@ -12,6 +13,7 @@ def convert(
     *,
     verbose: bool = False,
     opset_version: int = 18,
+    devices: Optional[Sequence[str]] = None,
 ) -> OnnxWeightsDescr:
     """
     Convert model weights from the Torchscript state_dict format to the ONNX format.
@@ -40,7 +42,9 @@ def convert(
             "The provided model does not have weights in the pytorch state dict format"
         )
 
-    model = load_torch_model(state_dict_weights_descr, load_state=True)
+    model = load_torch_model(
+        state_dict_weights_descr, load_state=True, devices=devices
+    ).eval()
 
     return export_to_onnx(
         model_descr,

@@ -3,8 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal, Mapping, Optional, TypeVar, Union
 
-from bioimageio.spec.model import v0_5
 from typing_extensions import Protocol, assert_never, runtime_checkable
+
+from bioimageio.spec.model import v0_5
 
 
 def _guess_axis_type(a: str):
@@ -50,7 +51,7 @@ class AxisDescrLike(Protocol):
     type: Literal["batch", "channel", "index", "space", "time"]
 
 
-AxisLike = Union[_AxisLikePlain, AxisDescrLike, v0_5.AnyAxis, "Axis"]
+AxisLike = Union[_AxisLikePlain, AxisDescrLike, v0_5.AnyAxis, "Axis", "AxisInfo"]
 
 
 @dataclass
@@ -87,41 +88,50 @@ class Axis:
 
 
 @dataclass
+class AxisSize:
+    min: int
+    max: Optional[int] = None
+    step: Optional[int] = None
+
+
+@dataclass
 class AxisInfo(Axis):
-    maybe_singleton: bool  # TODO: replace 'maybe_singleton' with size min/max for better axis guessing
+    size: AxisSize
 
     @classmethod
-    def create(cls, axis: AxisLike, maybe_singleton: Optional[bool] = None) -> AxisInfo:
+    def create(
+        cls, axis: AxisLike, size: Optional[Union[int, AxisSize]] = None
+    ) -> AxisInfo:
         if isinstance(axis, AxisInfo):
             return axis
 
         axis_base = super().create(axis)
-        if maybe_singleton is None:
+        if size is None:
             if not isinstance(axis, v0_5.AxisBase):
-                maybe_singleton = True
+                size = AxisSize(min=1)
             else:
                 if axis.size is None:
-                    maybe_singleton = True
+                    size = AxisSize(min=1)
                 elif isinstance(axis.size, int):
-                    maybe_singleton = axis.size == 1
-                elif isinstance(axis.size, v0_5.SizeReference):
-                    maybe_singleton = (
-                        True  # TODO: check if singleton is ok for a `SizeReference`
+                    size = AxisSize(
+                        min=axis.size,
+                        max=None
+                        if isinstance(axis, (v0_5.TimeAxisBase, v0_5.SpaceAxisBase))
+                        or (
+                            not isinstance(axis, v0_5.IndexOutputAxis)
+                            and axis.concatenable
+                        )
+                        else axis.size,
                     )
-                elif isinstance(
-                    axis.size, (v0_5.ParameterizedSize, v0_5.DataDependentSize)
-                ):
-                    try:
-                        maybe_size_one = axis.size.validate_size(
-                            1
-                        )  # TODO: refactor validate_size() to have boolean func here
-                    except ValueError:
-                        maybe_singleton = False
-                    else:
-                        maybe_singleton = maybe_size_one == 1
+                elif isinstance(axis.size, v0_5.SizeReference):
+                    size = AxisSize(min=axis.size.offset + 1)
+                elif isinstance(axis.size, v0_5.ParameterizedSize):
+                    size = AxisSize(min=axis.size.min, step=axis.size.step)
+                elif isinstance(axis.size, v0_5.DataDependentSize):
+                    size = AxisSize(min=axis.size.min, max=axis.size.max)
                 else:
                     assert_never(axis.size)
+        elif isinstance(size, int):
+            size = AxisSize(min=size, max=size)
 
-        return AxisInfo(
-            id=axis_base.id, type=axis_base.type, maybe_singleton=maybe_singleton
-        )
+        return AxisInfo(id=axis_base.id, type=axis_base.type, size=size)

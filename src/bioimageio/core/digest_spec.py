@@ -38,7 +38,7 @@ from bioimageio.spec.model.v0_5 import (
 )
 from bioimageio.spec.utils import load_array
 
-from .axis import Axis, AxisId, AxisInfo, AxisLike, PerAxis
+from .axis import AxisId, AxisInfo, AxisLike, PerAxis
 from .block_meta import split_multiple_shapes_into_blocks
 from .common import Halo, MemberId, PerMember, SampleId, TotalNumberOfBlocks
 from .io import load_tensor
@@ -60,6 +60,7 @@ def import_callable(
         ArchitectureFromLibraryDescr,
         CallableFromDepencency,
         CallableFromFile,
+        v0_5.CustomProcessingDescr,
     ],
     /,
     **kwargs: Unpack[HashKwargs],
@@ -73,7 +74,7 @@ def import_callable(
         c = getattr(module, str(node.callable))
     elif isinstance(node, CallableFromFile):
         c = _import_from_file_impl(node.source_file, str(node.callable_name), **kwargs)
-    elif isinstance(node, ArchitectureFromFileDescr):
+    elif isinstance(node, (ArchitectureFromFileDescr, v0_5.CustomProcessingDescr)):
         c = _import_from_file_impl(node.source, str(node.callable), sha256=node.sha256)
     else:
         assert_never(node)
@@ -175,15 +176,7 @@ def get_axes_infos(
     ],
 ) -> List[AxisInfo]:
     """get a unified, simplified axis representation from spec axes"""
-    ret: List[AxisInfo] = []
-    for a in io_descr.axes:
-        if isinstance(a, v0_5.AxisBase):
-            ret.append(AxisInfo.create(Axis(id=a.id, type=a.type)))
-        else:
-            assert a in ("b", "i", "t", "c", "z", "y", "x")
-            ret.append(AxisInfo.create(a))
-
-    return ret
+    return [AxisInfo.create(a) for a in io_descr.axes]
 
 
 def get_member_id(
@@ -207,7 +200,7 @@ def get_member_id(
 
 
 def get_member_ids(
-    tensor_descriptions: Sequence[
+    tensor_descriptions: Iterable[
         Union[
             v0_4.InputTensorDescr,
             v0_4.OutputTensorDescr,
@@ -221,10 +214,14 @@ def get_member_ids(
 
 
 def get_test_input_sample(model: AnyModelDescr) -> Sample:
-    return _get_test_sample(
-        model.inputs,
-        model.test_inputs if isinstance(model, v0_4.ModelDescr) else model.inputs,
-    )
+    if isinstance(model, v0_4.ModelDescr):
+        info = {
+            MemberId(d.name): (d, t) for d, t in zip(model.inputs, model.test_inputs)
+        }
+    else:
+        info = {d.id: d for d in model.inputs}
+
+    return _get_test_sample(info)
 
 
 get_test_inputs = get_test_input_sample
@@ -233,46 +230,57 @@ get_test_inputs = get_test_input_sample
 
 def get_test_output_sample(model: AnyModelDescr) -> Sample:
     """returns a model's test output sample"""
-    return _get_test_sample(
-        model.outputs,
-        model.test_outputs if isinstance(model, v0_4.ModelDescr) else model.outputs,
-    )
+    if isinstance(model, v0_4.ModelDescr):
+        info = {
+            MemberId(d.name): (d, t) for d, t in zip(model.outputs, model.test_outputs)
+        }
+    else:
+        info = {d.id: d for d in model.outputs}
+
+    return _get_test_sample(info)
 
 
 get_test_outputs = get_test_output_sample
-"""DEPRECATED: use `get_test_input_sample` instead"""
+"""DEPRECATED: use `get_test_output_sample` instead"""
 
 
 def _get_test_sample(
-    tensor_descrs: Sequence[
-        Union[
-            v0_4.InputTensorDescr,
-            v0_4.OutputTensorDescr,
-            v0_5.InputTensorDescr,
-            v0_5.OutputTensorDescr,
-        ]
+    info: Union[
+        Mapping[MemberId, Union[v0_5.InputTensorDescr, v0_5.OutputTensorDescr]],
+        Mapping[
+            MemberId,
+            Tuple[
+                v0_4.InputTensorDescr,
+                FileSource,
+            ],
+        ],
+        Mapping[
+            MemberId,
+            Tuple[
+                v0_4.OutputTensorDescr,
+                FileSource,
+            ],
+        ],
     ],
-    test_sources: Sequence[Union[FileSource, v0_5.TensorDescr]],
 ) -> Sample:
-    """returns a model's input/output test sample"""
-    member_ids = get_member_ids(tensor_descrs)
-    arrays: List[NDArray[Any]] = []
-    for src in test_sources:
-        if isinstance(src, (v0_5.InputTensorDescr, v0_5.OutputTensorDescr)):
+    arrays: Dict[MemberId, NDArray[Any]] = {}
+    for m, src in info.items():
+        if isinstance(src, tuple):
+            arrays[m] = load_array(src[1])
+        elif isinstance(src, (v0_5.InputTensorDescr, v0_5.OutputTensorDescr)):
             if src.test_tensor is None:
                 raise ValueError(
-                    f"Model input '{src.id}' has no test tensor defined, cannot create test sample."
+                    f"Model input '{m}' has no test tensor defined, cannot create test sample."
                 )
-            arrays.append(load_array(src.test_tensor))
+            arrays[m] = load_array(src.test_tensor)
         else:
-            arrays.append(load_array(src))
+            assert_never(src)
 
-    axes = [get_axes_infos(t) for t in tensor_descrs]
+    axes = {
+        m: get_axes_infos(t[0] if isinstance(t, tuple) else t) for m, t in info.items()
+    }
     return Sample(
-        members={
-            m: Tensor.from_numpy(arr, dims=ax)
-            for m, arr, ax in zip(member_ids, arrays, axes)
-        },
+        members={m: Tensor.from_numpy(arrays[m], dims=axes[m]) for m in info},
         stat={},
         id="test-sample",
     )
@@ -362,6 +370,19 @@ def get_block_transform(
                 assert_never(a.size)
 
             new_axes[a.id] = s
+
+        # account for postprocessing that changes the nubmer of output channels by
+        # overwriting described output shape by the intermediate output shape
+        c = AxisId("channel")
+        if c not in new_axes:
+            continue
+        for post in out.postprocessing:
+            if post.id == "cellpose_flow_dynamics":
+                new_axes[c] = 3
+                break
+            elif post.id == "stardist_postprocessing":
+                new_axes[c] = post.kwargs.n_rays + 1
+                break
 
         ret[out.id] = new_axes
 
@@ -513,7 +534,7 @@ def load_sample_for_model(
     for m, p in paths.items():
         if m not in axes:
             axes[m] = get_axes_infos(model_inputs[m])
-            logger.debug(
+            logger.info(
                 "loading '{}' from {} with default input axes {} ",
                 m,
                 p,

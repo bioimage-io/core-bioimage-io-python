@@ -1,15 +1,16 @@
 import gc
 import warnings
+from abc import abstractmethod
 from contextlib import nullcontext
 from io import BytesIO, TextIOWrapper
 from pathlib import Path
-from typing import Any, List, Literal, Optional, Sequence, Union
+from typing import Any, List, Literal, Mapping, Optional, Sequence, Tuple, Union
 
 import torch
 from loguru import logger
 from numpy.typing import NDArray
 from torch import nn
-from typing_extensions import assert_never
+from typing_extensions import Protocol, Self, assert_never, runtime_checkable
 
 from bioimageio.spec._internal.version_type import Version
 from bioimageio.spec.common import BytesReader, ZipPath
@@ -19,6 +20,32 @@ from bioimageio.spec.utils import download
 from ..digest_spec import import_callable
 from ..utils._type_guards import is_list, is_ndarray, is_tuple
 from ._model_adapter import ModelAdapter
+
+
+@runtime_checkable
+class TorchNNModuleLike(Protocol):
+    @abstractmethod
+    def load_state_dict(
+        self, state_dict: Mapping[str, Any], strict: bool = True, assign: bool = False
+    ) -> Self: ...
+
+    @abstractmethod
+    def to(
+        self,
+        *,
+        device: Optional[torch.device] = None,
+        dtype: Optional[torch.dtype] = None,
+        non_blocking: bool = False,
+    ) -> Self: ...
+
+    @abstractmethod
+    def forward(
+        self, *input: torch.Tensor
+    ) -> Union[torch.Tensor, Tuple[torch.Tensor, ...], List[torch.Tensor]]: ...
+
+    def eval(self) -> Self:
+        """Set model to eval mode"""
+        return self
 
 
 class PytorchModelAdapter(ModelAdapter):
@@ -134,6 +161,9 @@ def load_torch_model(
                 torch_model,
                 path=download(weight_spec),
                 devices=use_devices,
+                strict=weight_spec.strict
+                if isinstance(weight_spec, v0_5.PytorchStateDictWeightsDescr)
+                else True,
             )
     return torch_model
 
@@ -142,6 +172,7 @@ def load_torch_state_dict(
     model: nn.Module,
     path: Union[Path, ZipPath, BytesReader],
     devices: Sequence[torch.device],
+    strict: bool = True,
 ) -> nn.Module:
     model = model.to(devices[0])
     if isinstance(path, (Path, ZipPath)):
@@ -173,7 +204,7 @@ def load_torch_state_dict(
                 )
                 raise ValueError(msg) from e
 
-    incompatible = model.load_state_dict(state)
+    incompatible = model.load_state_dict(state, strict=strict)
     if (
         isinstance(incompatible, tuple)
         and hasattr(incompatible, "missing_keys")

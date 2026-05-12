@@ -63,6 +63,8 @@ from bioimageio.spec import (
     InvalidDescr,
     ResourceDescr,
     load_description,
+    save_bioimageio_package,
+    save_bioimageio_package_as_folder,
     save_bioimageio_yaml_only,
     settings,
     update_format,
@@ -84,10 +86,9 @@ from bioimageio.spec.utils import (
 from .commands import WeightFormatArgAll, WeightFormatArgAny, package, test
 from .common import MemberId, SampleId, SupportedWeightsFormat
 from .digest_spec import get_member_ids, load_sample_for_model
-from .io import load_dataset_stat, save_dataset_stat, save_sample
+from .io import load_stat, save_sample, save_stat
 from .prediction import create_prediction_pipeline
 from .proc_setup import (
-    DatasetMeasure,
     Measure,
     MeasureValue,
     StatsCalculator,
@@ -196,8 +197,10 @@ class TestCmd(CmdBase, WithSource, WithSummaryLogging):
 
     (only relevant for model resources)"""
 
-    devices: Optional[List[str]] = None
-    """Device(s) to use for testing"""
+    devices: Optional[List[str]] = Field(
+        None, validation_alias=AliasChoices("devices", "device")
+    )
+    """Device(s) to use"""
 
     runtime_env: Union[Literal["currently-active", "as-described"], Path] = Field(
         "currently-active", alias="runtime-env"
@@ -279,7 +282,7 @@ def _get_stat(
     dataset: Iterable[Sample],
     dataset_length: int,
     stats_path: Path,
-) -> Mapping[DatasetMeasure, MeasureValue]:
+) -> Stat:
     req_dataset_meas, _ = get_required_dataset_measures(model_descr)
     if not req_dataset_meas:
         return {}
@@ -288,7 +291,7 @@ def _get_stat(
 
     if stats_path.exists():
         logger.info("loading precomputed dataset measures from {}", stats_path)
-        stat = load_dataset_stat(stats_path)
+        stat = load_stat(stats_path)
         for m in req_dataset_meas:
             if m not in stat:
                 raise ValueError(f"Missing {m} in {stats_path}")
@@ -302,9 +305,8 @@ def _get_stat(
     ):
         stats_calc.update(sample)
 
-    stat = stats_calc.finalize()
-    save_dataset_stat(stat, stats_path)
-
+    stat: Dict[Measure, MeasureValue] = {k: v for k, v in stats_calc.finalize().items()}
+    save_stat(stat, stats_path)
     return stat
 
 
@@ -364,8 +366,22 @@ class UpdateCmdBase(CmdBase, WithSource, ABC):
             console.print(rich.markdown.Markdown(diff_md))
 
         if isinstance(self.output, Path):
-            _ = self.output.write_text(updated_yaml, encoding="utf-8")
-            logger.info(f"written updated description to {self.output}")
+            if self.output.suffix in (".yaml", ".yml"):
+                _ = self.output.write_text(updated_yaml, encoding="utf-8")
+                logger.info(f"written updated description to {self.output}")
+            elif isinstance(self.updated, InvalidDescr):
+                raise ValueError(
+                    f"Cannot save invalid description package to {self.output}."
+                    + " To save the metadata only, choose an output with a '.yaml' extension."
+                )
+
+            elif not self.output.suffix:
+                _ = save_bioimageio_package_as_folder(
+                    self.updated, output_path=self.output
+                )
+            else:
+                _ = save_bioimageio_package(self.updated, output_path=self.output)
+
         elif self.output == "display":
             updated_md = f"## Updated bioimageio.yaml\n\n```yaml\n{updated_yaml}\n```"
             rich.console.Console().print(rich.markdown.Markdown(updated_md))
@@ -416,7 +432,8 @@ class PredictCmd(CmdBase, WithSource):
     """Run inference on your data with a bioimage.io model."""
 
     inputs: NotEmpty[List[Union[str, NotEmpty[List[str]]]]] = Field(
-        default_factory=lambda: ["{input_id}/001.tif"]
+        default_factory=lambda: ["{input_id}/001.tif"],
+        validation_alias=AliasChoices("inputs", "input"),
     )
     """Model input sample paths (for each input tensor)
 
@@ -450,8 +467,9 @@ class PredictCmd(CmdBase, WithSource):
      
     """
 
-    outputs: Union[str, NotEmpty[Tuple[str, ...]]] = (
-        "outputs_{model_id}/{output_id}/{sample_id}.tif"
+    outputs: Union[str, NotEmpty[Tuple[str, ...]]] = Field(
+        "outputs_{model_id}/{output_id}/{sample_id}.tif",
+        validation_alias=AliasChoices("outputs", "output"),
     )
     """Model output path pattern (per output tensor)
 
@@ -480,7 +498,7 @@ class PredictCmd(CmdBase, WithSource):
         Path,
         WithJsonSchema({"type": "string"}),
         PlainSerializer(lambda p: p.as_posix(), return_type=str),
-    ] = Path("dataset_statistics.json")
+    ] = Path("precomputed_statistics.json")
     """path to dataset statistics
     (will be written if it does not exist
     and the model requires statistical dataset measures)
@@ -496,6 +514,11 @@ class PredictCmd(CmdBase, WithSource):
         validation_alias=WEIGHT_FORMAT_ALIASES,
     )
     """The weight format to use."""
+
+    devices: Optional[List[str]] = Field(
+        None, validation_alias=AliasChoices("devices", "device")
+    )
+    """Device(s) to use"""
 
     example: bool = False
     """generate and run an example
@@ -540,7 +563,7 @@ class PredictCmd(CmdBase, WithSource):
         output_pattern = f"{example_path}/outputs/{{output_id}}/{{sample_id}}.tif"
 
         bioimageio_cli_path = example_path / YAML_FILE
-        stats_file = "dataset_statistics.json"
+        stats_file = "precomputed_statistics.json"
         stats = (example_path / stats_file).as_posix()
         cli_example_args = dict(
             inputs=inputs,
@@ -570,7 +593,7 @@ class PredictCmd(CmdBase, WithSource):
                 # --no-preview not supported for py=3.8
                 *(["--preview"] if preview else []),
                 "--overwrite",
-                *(["--blockwise"] if self.blockwise else []),
+                f"--blockwise={self.blockwise}",
                 f"--stats={q}{stats}{q}",
                 f"--inputs={q}{inputs_escaped if escape else inputs_json}{q}",
                 f"--outputs={q}{output_pattern}{q}",
@@ -605,8 +628,16 @@ class PredictCmd(CmdBase, WithSource):
         )
 
     def cli_cmd(self):
-        for out_sample, out_path in self._yield_predictions(self.blockwise):
-            save_sample(out_path, out_sample)
+        try:
+            for out_sample, out_path in self._yield_predictions(self.blockwise):
+                save_sample(out_path, out_sample)
+        except Exception as e:
+            if not self.blockwise:
+                raise RuntimeError(
+                    f"Prediction failed ({e}).\nConsider using blockwise processing, "
+                    + "e.g. with `--blockwise=10` to process inputs in blocks."
+                ) from e
+            raise e
 
     def _yield_predictions(self, blockwise: Union[bool, int]):
         if self.example:
@@ -766,6 +797,7 @@ class PredictCmd(CmdBase, WithSource):
         pp = create_prediction_pipeline(
             model_descr,
             weight_format=None if self.weight_format == "any" else self.weight_format,
+            devices=self.devices,
         )
 
         if blockwise:
@@ -782,6 +814,21 @@ class PredictCmd(CmdBase, WithSource):
             desc=f"predict with {self.descr_id}",
             unit="sample",
         ):
+            if self.blockwise is False and not isinstance(
+                pp.model_description, v0_4.ModelDescr
+            ):
+                try:
+                    _ = pp.model_description.validate_input_tensors(
+                        sample_in.as_arrays()
+                    )
+                except Exception as e:
+                    logger.warning(
+                        "Input sample '{}' failed validation for whole-sample prediction: {}\n"
+                        + "Consider using blockwise processing, e.g. with `--blockwise=10` to process inputs in blocks.",
+                        sample_in.id,
+                        e,
+                    )
+
             yield (predict_method(sample_in), sp_out)
 
 

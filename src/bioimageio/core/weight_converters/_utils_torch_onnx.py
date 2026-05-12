@@ -3,9 +3,23 @@
 from collections import defaultdict
 from itertools import chain
 from pathlib import Path
-from typing import TYPE_CHECKING, DefaultDict, Dict, List, Literal, Tuple, Union
+from typing import (
+    TYPE_CHECKING,
+    DefaultDict,
+    Dict,
+    List,
+    Literal,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 import torch
+from loguru import logger
+from torch.export import ExportedProgram
+from typing_extensions import assert_never
+
 from bioimageio.spec.model.v0_5 import (
     BatchAxis,
     FileDescr,
@@ -15,10 +29,9 @@ from bioimageio.spec.model.v0_5 import (
     ParameterizedSize,
     SizeReference,
 )
-from loguru import logger
-from typing_extensions import assert_never
 
 from .. import __version__
+from ..backends.pytorch_backend import get_devices
 from ..digest_spec import get_member_id, get_test_input_sample
 from ..proc_setup import get_pre_and_postprocessing
 
@@ -132,14 +145,18 @@ else:
 
 def export_to_onnx(
     model_descr: ModelDescr,
-    model: torch.nn.Module,
+    model: Union[ExportedProgram, torch.nn.Module],
     output_path: Path,
     verbose: bool,
     opset_version: int,
     parent: Literal["torchscript", "pytorch_state_dict"],
+    devices: Optional[Sequence[Union[str, torch.device]]] = None,
 ) -> OnnxWeightsDescr:
-    inputs_torch = get_torch_sample_inputs(model_descr)
-
+    inputs_torch = get_torch_sample_inputs(
+        model_descr
+    )  # TODO: be more thorough about the device?
+    devices = get_devices(devices)
+    inputs_torch = tuple(t.to(devices[0]) for t in inputs_torch)
     save_weights_externally = use_dynamo
     with torch.no_grad():
         outputs_original_torch = model(*inputs_torch)

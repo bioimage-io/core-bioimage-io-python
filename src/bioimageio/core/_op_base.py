@@ -51,7 +51,7 @@ class SimpleOperator(BlockwiseOperator):
 
     def __call__(self, sample: Union[Sample, SampleBlock]) -> None:
         if self.input not in sample.members:
-            return
+            return  # TODO: raise?
 
         input_tensor = sample.members[self.input]
         output_tensor = self._apply(input_tensor, sample.stat)
@@ -66,7 +66,7 @@ class SimpleOperator(BlockwiseOperator):
         elif isinstance(sample, SampleBlock):
             b = sample.blocks[self.input]
             sample.blocks[self.output] = Block(
-                sample_shape=self.get_output_shape(sample.shape[self.input]),
+                sample_shape=self.get_output_shape(sample.sample_shape[self.input]),
                 data=output_tensor,
                 inner_slice=b.inner_slice,
                 halo=b.halo,

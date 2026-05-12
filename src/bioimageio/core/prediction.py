@@ -73,7 +73,10 @@ def predict(
                 raise ValueError(f"expected model description, but got {loaded}")
             model = loaded
 
-        pp = create_prediction_pipeline(model)
+        pp = create_prediction_pipeline(
+            model,
+            fixed_dataset_statistics=inputs.stat if isinstance(inputs, Sample) else {},
+        )
 
     if save_output_path is not None:
         if (

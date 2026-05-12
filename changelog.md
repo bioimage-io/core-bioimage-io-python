@@ -1,3 +1,21 @@
+### 0.10.3
+
+- bump spec to 0.5.10.1
+- add cellpose flow dynamics op
+- allow for precomputed sample statistics
+- add `bioimageio.core.io.serialize_stat`
+- apply pre-/postprocessing blockwise when possible.
+- default to pad input tensors and crop output tensors according to any specified output halos.
+  - note: during testing padding/cropping is skipped, i.e. test inputs/outputs are expected to match without padding/cropping
+- ONNX model adapter: all available onnx inference providers are tried one by one until one single provider works.
+  (Letting onnxruntime 1.23.2 handle backup providers does not work reliably.)
+- CLI predict command:
+  - add `input`/`output` alias for `inputs`/`outputs` argument.
+  - add `devices` argument (with alias device)
+- CLI test command:
+  - add `device` alias for `devices` argument
+- AxisInfo.create(axis, maybe_singleton: bool) -> AxisInfo.create(axis, size: Union[int, AxisSize ])
+
 ### 0.10.2
 
 - improve error message when `torch.load(weights_only=True)` fails on non-pure state dicts (#486)

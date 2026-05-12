@@ -26,7 +26,9 @@ def _test_prediction_pipeline(
     )
 
     inputs = get_test_input_sample(bio_model)
-    outputs = pp.predict_sample_without_blocking(inputs)
+    outputs = pp.predict_sample_without_blocking(
+        inputs, skip_input_padding=True, skip_output_cropping=True
+    )
 
     expected_outputs = get_test_output_sample(bio_model)
     assert len(outputs.shape) == len(expected_outputs.shape)

@@ -2,10 +2,12 @@
 import shutil
 import tempfile
 import warnings
+from contextlib import contextmanager, nullcontext
 from pathlib import Path
-from typing import Any, List, Optional, Sequence, Union
+from typing import Any, List, Optional, Sequence, Union, cast
 
 import onnxruntime as rt  # pyright: ignore[reportMissingTypeStubs]
+from exceptiongroup import ExceptionGroup
 from loguru import logger
 from numpy.typing import NDArray
 
@@ -28,9 +30,17 @@ class ONNXModelAdapter(ModelAdapter):
         if onnx_descr is None:
             raise ValueError("No ONNX weights specified for {model_description.name}")
 
-        providers = None
+        available_providers: Any = None
         if hasattr(rt, "get_available_providers"):
-            providers = rt.get_available_providers()
+            available_providers = cast(Any, rt.get_available_providers())
+
+        if is_list(available_providers):
+            if len(available_providers) == 0:
+                providers = [None]
+            else:
+                providers = available_providers
+        else:
+            providers = [available_providers]
 
         if (
             isinstance(onnx_descr, v0_5.OnnxWeightsDescr)
@@ -47,41 +57,67 @@ class ONNXModelAdapter(ModelAdapter):
                     "Loading ONNX model with external data from {}",
                     src.parent,
                 )
-                assert src.exists()
-                self._session = rt.InferenceSession(
-                    src,
-                    providers=providers,  # pyright: ignore[reportUnknownArgumentType]
-                )
+                source_context = nullcontext(src)
             else:
                 src_reader = onnx_descr.get_reader()
                 src_data_reader = onnx_descr.external_data.get_reader()
-                with tempfile.TemporaryDirectory() as tmpdir:
-                    logger.debug(
-                        "Loading ONNX model with external data from {}",
-                        tmpdir,
-                    )
-                    src = Path(tmpdir) / src_reader.original_file_name
-                    src_data = Path(tmpdir) / src_data_reader.original_file_name
-                    with src.open("wb") as f:
-                        shutil.copyfileobj(src_reader, f)
-                    with src_data.open("wb") as f:
-                        shutil.copyfileobj(src_data_reader, f)
 
-                    assert src.exists()
-                    self._session = rt.InferenceSession(
-                        src,
-                        providers=providers,  # pyright: ignore[reportUnknownArgumentType]
-                    )
+                @contextmanager
+                def source_context_func():
+                    with tempfile.TemporaryDirectory() as tmpdir:
+                        logger.debug(
+                            "Loading ONNX model with external data from {}",
+                            tmpdir,
+                        )
+                        src = Path(tmpdir) / src_reader.original_file_name
+                        src_data = Path(tmpdir) / src_data_reader.original_file_name
+                        with src.open("wb") as f:
+                            shutil.copyfileobj(src_reader, f)
+                        with src_data.open("wb") as f:
+                            shutil.copyfileobj(src_data_reader, f)
+                        yield src
+
+                source_context = source_context_func()
+
         else:
             # load single source file from bytes (without external data, so probably <2GB)
             logger.debug(
                 "Loading ONNX model from bytes (read from {})", onnx_descr.source
             )
-            reader = onnx_descr.get_reader()
-            self._session = rt.InferenceSession(
-                reader.read(),
-                providers=providers,  # pyright: ignore[reportUnknownArgumentType]
-            )
+            source_context = nullcontext(onnx_descr.get_reader().read())
+
+        with source_context as s:
+            assert isinstance(s, bytes) or s.exists()
+
+            # try providers in order until one works
+            # TODO: check if issue with backup providers is fixed and evaluate handing over all available providers
+            # currently (onnxruntime 1.23.2) if a higher priority providers fails a RUNTIME_EXCEPTION may be raised
+            # stating 'model_path must not be empty' instead of trying the next provider, see # TODO: reference issue
+            provider_exceptions: List[Exception] = []
+            for p in providers:
+                try:
+                    self._session = rt.InferenceSession(
+                        s,
+                        providers=None if p is None else [p],
+                    )
+                except Exception as e:
+                    provider_exceptions.append(e)
+                else:
+                    for bad_p, e in zip(
+                        providers[: len(provider_exceptions)], provider_exceptions
+                    ):
+                        logger.warning(
+                            "Failed to load ONNX model with provider {}: {}",
+                            bad_p,
+                            e,
+                        )
+
+                    break
+            else:
+                raise ExceptionGroup(
+                    "Failed to load ONNX model with any of the available providers.",
+                    provider_exceptions,
+                )
 
         onnx_inputs = self._session.get_inputs()
         self._input_names: List[str] = [ipt.name for ipt in onnx_inputs]

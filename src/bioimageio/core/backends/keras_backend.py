@@ -10,12 +10,12 @@ from keras.src.legacy.saving import (  # pyright: ignore[reportMissingTypeStubs]
 from loguru import logger
 from numpy.typing import NDArray
 
-from bioimageio.core.utils._compare import warn_about_version
 from bioimageio.spec._internal.version_type import Version
 from bioimageio.spec.model import v0_4, v0_5
 
 from .._settings import settings
 from ..digest_spec import get_axes_infos
+from ..utils._compare import warn_about_version
 from ..utils._type_guards import is_list, is_tuple
 from ._model_adapter import ModelAdapter
 

@@ -1,7 +1,8 @@
 site_name: 'bioimageio.core'
 site_url: 'https://bioimage-io.github.io/core-bioimage-io-python'
 site_author: Fynn Beuttenmüller
-site_description: 'Python specific core utilities for bioimage.io resources (in particular DL models).'
+site_description: 'Python specific core utilities for bioimage.io resources (in
+  particular DL models).'
 
 repo_name: bioimage-io/core-bioimage-io-python
 repo_url: https://github.com/bioimage-io/core-bioimage-io-python
@@ -86,7 +87,7 @@ plugins:
         python:
           inventories:
             - https://docs.pydantic.dev/latest/objects.inv
-            - https://bioimage-io.github.io/spec-bioimage-io/v0.5.9.1/objects.inv
+            - https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.1/objects.inv
           options:
             annotations_path: source
             backlinks: tree
@@ -141,8 +142,8 @@ markdown_extensions:
   - footnotes
   - pymdownx.details
   - pymdownx.emoji:
-      emoji_index: !!python/name:material.extensions.emoji.twemoji
-      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+      emoji_index: !!python/name:material.extensions.emoji.twemoji ''
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg ''
   - pymdownx.highlight:
       pygments_lang_class: true
   - pymdownx.magiclink

@@ -6,9 +6,9 @@ import tensorflow as tf
 from loguru import logger
 from numpy.typing import NDArray
 
-from bioimageio.core.io import ensure_unzipped
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 
+from ..io import ensure_unzipped
 from ._model_adapter import ModelAdapter
 
 

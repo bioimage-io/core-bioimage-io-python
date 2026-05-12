@@ -1,10 +1,15 @@
 import collections.abc
+import json
 import warnings
 import zipfile
+from contextlib import nullcontext
+from io import BytesIO
 from pathlib import Path
 from shutil import copyfileobj
 from typing import (
     Any,
+    Dict,
+    List,
     Mapping,
     Optional,
     Sequence,
@@ -12,10 +17,11 @@ from typing import (
     Union,
 )
 
+import xarray as xr
 from imageio.v3 import imread, imwrite  # type: ignore
 from loguru import logger
 from numpy.typing import NDArray
-from pydantic import BaseModel, ConfigDict, TypeAdapter
+from pydantic import BaseModel, RootModel
 
 from bioimageio.spec._internal.io import get_reader, interprete_file_source
 from bioimageio.spec._internal.type_guards import is_ndarray
@@ -32,9 +38,13 @@ from bioimageio.spec.utils import download, load_array, save_array
 
 from .axis import AxisId, AxisLike
 from .common import PerMember
-from .sample import Sample
-from .stat_measures import DatasetMeasure, MeasureValue
+from .sample import Sample, Stat
+from .stat_measures import DatasetMeasure, MeasureValue, SampleMeasure
 from .tensor import Tensor
+
+JsonValue = Union[
+    bool, int, float, str, None, List["JsonValue"], Dict[str, "JsonValue"]
+]
 
 
 def load_image(
@@ -88,10 +98,6 @@ Suffix = str
 def save_tensor(path: Union[Path, str], tensor: Tensor) -> None:
     # TODO: save axis meta data
 
-    data: NDArray[Any] = (  # pyright: ignore[reportUnknownVariableType]
-        tensor.data.to_numpy()
-    )
-    assert is_ndarray(data)
     path = Path(path)
     if not path.suffix:
         raise ValueError(f"No suffix (needed to decide file format) found in {path}")
@@ -99,27 +105,52 @@ def save_tensor(path: Union[Path, str], tensor: Tensor) -> None:
     extension = path.suffix.lower()
     path.parent.mkdir(exist_ok=True, parents=True)
     if extension == ".npy":
-        save_array(path, data)
+        save_array(path, tensor.to_numpy())
     elif extension in (".h5", ".hdf", ".hdf5"):
         raise NotImplementedError("Saving to h5 with dataset path is not implemented.")
     else:
-        if (
-            extension in (".tif", ".tiff")
-            and tensor.tagged_shape.get(ba := AxisId("batch")) == 1
-        ):
-            # remove singleton batch axis for saving
-            tensor = tensor[{ba: 0}]
-            singleton_axes_msg = "(without singleton batch axes) "
+        removed_singleton_axes: List[AxisId] = []
+        remove_singletons = {
+            AxisId("batch"): [
+                ".tif",
+                ".tiff",
+            ],  # remove singleton batch dim for tiff files
+            **{
+                a: [".png", ".jpg", ".jpeg"] for a in tensor.dims
+            },  # remove any singleton axis for png and jpg files
+        }
+        for rm_a, rm_ext in remove_singletons.items():
+            if extension in rm_ext and tensor.tagged_shape.get(rm_a) == 1:
+                tensor = tensor[{rm_a: 0}]
+                removed_singleton_axes.append(rm_a)
+
+        if removed_singleton_axes:
+            singleton_axes_msg = f"(with removed singleton axes {list(map(str, removed_singleton_axes))}) "
         else:
             singleton_axes_msg = ""
 
-        logger.debug(
+        logger.info(
             "writing tensor {} {}to {}",
             dict(tensor.tagged_shape),
             singleton_axes_msg,
             path,
         )
-        imwrite(path, data, extension=extension)
+        if extension in (".png", ".jpg", ".jpeg") and tensor.dtype in (
+            "float32",
+            "float64",
+        ):
+            logger.warning(
+                "converting tensor of dtype {} to uint8 for saving as {}",
+                tensor.dtype,
+                extension,
+            )
+            tensor = (
+                (tensor - (t_min := tensor.data.min()))
+                / xr.ufuncs.maximum(tensor.data.max() - t_min, 1e-8)
+                * 255
+            ).astype("uint8")
+
+        imwrite(path, tensor, extension=extension)
 
 
 def save_sample(
@@ -151,29 +182,65 @@ def save_sample(
         save_tensor(p_formatted, t)
 
 
-class _SerializedDatasetStatsEntry(
-    BaseModel, frozen=True, arbitrary_types_allowed=True
-):
-    measure: DatasetMeasure
+class _StatEntry(BaseModel, frozen=True, arbitrary_types_allowed=True):
+    """Serializable stat entry"""
+
+    measure: Union[DatasetMeasure, SampleMeasure]
     value: MeasureValue
 
 
-_stat_adapter = TypeAdapter(
-    Sequence[_SerializedDatasetStatsEntry],
-    config=ConfigDict(arbitrary_types_allowed=True),
-)
+class _StatList(RootModel[List[_StatEntry]]):
+    """Serializable stat mapping"""
+
+    pass
 
 
-def save_dataset_stat(stat: Mapping[DatasetMeasure, MeasureValue], path: Path):
-    serializable = [
-        _SerializedDatasetStatsEntry(measure=k, value=v) for k, v in stat.items()
-    ]
-    _ = path.write_bytes(_stat_adapter.dump_json(serializable))
+def serialize_stat(
+    stat: Mapping[Union[DatasetMeasure, SampleMeasure], MeasureValue],
+) -> List[JsonValue]:
+    """Serialize a stat mapping to a JSON string"""
+    stat_list = _StatList([_StatEntry(measure=k, value=v) for k, v in stat.items()])
+    return stat_list.model_dump(mode="json")
 
 
-def load_dataset_stat(path: Path):
-    seq = _stat_adapter.validate_json(path.read_bytes())
-    return {e.measure: e.value for e in seq}
+def save_stat(
+    stat: Mapping[Union[DatasetMeasure, SampleMeasure], MeasureValue],
+    output: Union[Path, BytesIO],
+) -> None:
+    """Save sample and dataset statistics as a JSON file"""
+
+    if isinstance(output, Path):
+        ctxt = output.open("wb")
+    else:
+        ctxt = nullcontext(output)
+
+    with ctxt as out:
+        _ = out.write(json.dumps(serialize_stat(stat), indent=2).encode("utf-8"))
+
+
+def load_stat(source: Union[Path, str, Sequence[JsonValue]]) -> Stat:
+    """Load sample and dataset statistics from JSON"""
+    if isinstance(source, Path):
+        source = source.read_text(encoding="utf-8")
+
+    if isinstance(source, str):
+        seq = _StatList.model_validate_json(source)
+    else:
+        seq = _StatList.model_validate(source)
+
+    return {e.measure: e.value for e in seq.root}
+
+
+def save_dataset_stat(stat: Mapping[DatasetMeasure, MeasureValue], path: Path) -> None:
+    """DEPRECATED alias for save_stat(): use `save_stats()` instead."""
+    warnings.warn("`save_dataset_stat()` is deprecated, use `save_stats()` instead.")
+    save_stat({k: v for k, v in stat.items()}, path)
+
+
+def load_dataset_stat(path: Path) -> Stat:
+    """DEPRECATED alias for `load_stat()`: use `load_stat()` instead."""
+    warnings.warn("`load_dataset_stat()` is deprecated, use `load_stats()` instead.")
+    return load_stat(path)
 
 
 def ensure_unzipped(
