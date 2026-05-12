@@ -210,12 +210,12 @@ def save_stat(
     """Save sample and dataset statistics as a JSON file"""
 
     if isinstance(output, Path):
-        ctxt = output.open("wb", encoding="utf-8")
+        ctxt = output.open("wb")
     else:
         ctxt = nullcontext(output)
 
     with ctxt as out:
-        json.dump(serialize_stat(stat), out, indent=2)
+        _ = out.write(json.dumps(serialize_stat(stat), indent=2).encode("utf-8"))
 
 
 def load_stat(source: Union[Path, str, Sequence[JsonValue]]) -> Stat:

@@ -50,6 +50,9 @@ class _StardistPostprocessingBase(SamplewiseOperator, Generic[NdTuple, NdBorder]
     b: Union[int, NdBorder]
     """Border region in which object probability is set to zero."""
 
+    n_rays: int
+    """Number of radial lines (rays) cast from the center of an object to its boundary."""
+
     @property
     def required_measures(self) -> Collection[Measure]:
         return set()
@@ -153,6 +156,7 @@ class StardistPostprocessing2D(
             prob_threshold=kwargs.prob_threshold,
             nms_threshold=kwargs.nms_threshold,
             b=kwargs.b,
+            n_rays=kwargs.n_rays,
         )
 
 
@@ -162,9 +166,6 @@ class StardistPostprocessing3D(
         Tuple[int, int, int], Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int]]
     ]
 ):
-    n_rays: int
-    """Number of rays for 3D star-convex polyhedra."""
-
     anisotropy: Tuple[float, float, float]
     """Anisotropy factors for 3D star-convex polyhedra, i.e. the physical pixel size along each spatial axis."""
 

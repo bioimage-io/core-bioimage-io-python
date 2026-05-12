@@ -199,9 +199,9 @@ class Tensor(MagicTensorOpsMixin):
 
         Args:
             array: the nd numpy array
-            dims: A description of the array's axes,
-                if None axes are guessed (which might fail and raise a ValueError.)
-
+            dims: A description of the array's axes.
+                If None axes are guessed (which might fail and raise a ValueError.)
+                If dims do not match array shape, permutations and singleton dimensions are tried to find a match.
         Raises:
             ValueError: if `dims` is None and dims guessing fails.
         """
@@ -573,7 +573,7 @@ def _add_singletons(arr: NDArray[Any], axis_infos: Sequence[AxisInfo]):
         if len(arr.shape) >= len(axis_infos):
             break
 
-        if a.maybe_singleton:
+        if a.size.min == 1:
             arr = np.expand_dims(arr, i)
 
     return arr
@@ -583,7 +583,6 @@ def _get_array_view(
     original_array: NDArray[Any], axis_infos: Sequence[AxisInfo]
 ) -> Optional[NDArray[Any]]:
     perms = list(permutations(range(len(original_array.shape))))
-    perms.insert(1, perms.pop())  # try A and A.T first
 
     for perm in perms:
         view = original_array.transpose(perm)
@@ -592,7 +591,11 @@ def _get_array_view(
             return None
 
         for s, a in zip(view.shape, axis_infos):
-            if s == 1 and not a.maybe_singleton:
+            if (
+                s < a.size.min
+                or (a.size.max is not None and s > a.size.max)
+                or (a.size.step is not None and (s - a.size.min) % a.size.step != 0)
+            ):
                 break
         else:
             return view

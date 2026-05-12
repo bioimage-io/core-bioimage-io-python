@@ -498,7 +498,7 @@ class PredictCmd(CmdBase, WithSource):
         Path,
         WithJsonSchema({"type": "string"}),
         PlainSerializer(lambda p: p.as_posix(), return_type=str),
-    ] = Path("dataset_statistics.json")
+    ] = Path("precomputed_statistics.json")
     """path to dataset statistics
     (will be written if it does not exist
     and the model requires statistical dataset measures)
@@ -563,7 +563,7 @@ class PredictCmd(CmdBase, WithSource):
         output_pattern = f"{example_path}/outputs/{{output_id}}/{{sample_id}}.tif"
 
         bioimageio_cli_path = example_path / YAML_FILE
-        stats_file = "dataset_statistics.json"
+        stats_file = "precomputed_statistics.json"
         stats = (example_path / stats_file).as_posix()
         cli_example_args = dict(
             inputs=inputs,
@@ -593,7 +593,7 @@ class PredictCmd(CmdBase, WithSource):
                 # --no-preview not supported for py=3.8
                 *(["--preview"] if preview else []),
                 "--overwrite",
-                *(["--blockwise"] if self.blockwise else []),
+                f"--blockwise={self.blockwise}",
                 f"--stats={q}{stats}{q}",
                 f"--inputs={q}{inputs_escaped if escape else inputs_json}{q}",
                 f"--outputs={q}{output_pattern}{q}",
@@ -628,8 +628,16 @@ class PredictCmd(CmdBase, WithSource):
         )
 
     def cli_cmd(self):
-        for out_sample, out_path in self._yield_predictions(self.blockwise):
-            save_sample(out_path, out_sample)
+        try:
+            for out_sample, out_path in self._yield_predictions(self.blockwise):
+                save_sample(out_path, out_sample)
+        except Exception as e:
+            if not self.blockwise:
+                raise RuntimeError(
+                    f"Prediction failed ({e}).\nConsider using blockwise processing, "
+                    + "e.g. with `--blockwise=10` to process inputs in blocks."
+                ) from e
+            raise e
 
     def _yield_predictions(self, blockwise: Union[bool, int]):
         if self.example:
@@ -806,6 +814,21 @@ class PredictCmd(CmdBase, WithSource):
             desc=f"predict with {self.descr_id}",
             unit="sample",
         ):
+            if self.blockwise is False and not isinstance(
+                pp.model_description, v0_4.ModelDescr
+            ):
+                try:
+                    _ = pp.model_description.validate_input_tensors(
+                        sample_in.as_arrays()
+                    )
+                except Exception as e:
+                    logger.warning(
+                        "Input sample '{}' failed validation for whole-sample prediction: {}\n"
+                        + "Consider using blockwise processing, e.g. with `--blockwise=10` to process inputs in blocks.",
+                        sample_in.id,
+                        e,
+                    )
+
             yield (predict_method(sample_in), sp_out)
 
 

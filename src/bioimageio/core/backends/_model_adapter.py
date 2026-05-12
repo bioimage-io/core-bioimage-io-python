@@ -11,6 +11,7 @@ from typing import (
 )
 
 from exceptiongroup import ExceptionGroup
+from loguru import logger
 from numpy.typing import NDArray
 from typing_extensions import assert_never
 
@@ -213,7 +214,15 @@ class ModelAdapter(ABC):
             )
             for in_id, in_order in zip(self._input_ids, self._input_axes)
         ]
+        logger.debug(
+            "NN input shapes: {}",
+            [a.shape if a is not None else None for a in input_arrays],
+        )
         output_arrays = self._forward_impl(input_arrays)
+        logger.debug(
+            "NN output shapes: {}",
+            [a.shape if a is not None else None for a in output_arrays],
+        )
         if len(output_arrays) > len(self._output_ids):
             warnings.warn(
                 f"Model produced more outputs ({len(output_arrays)}) than specified in the model description ({len(self._output_ids)}). Extra outputs will be ignored."

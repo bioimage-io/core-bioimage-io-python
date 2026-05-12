@@ -37,13 +37,12 @@ class Block(BlockMeta):
         super().__post_init__()
         assert not any(v == -1 for v in self.sample_shape.values()), self.sample_shape
         for a, s in self.data.sizes.items():
-            slice_ = self.inner_slice[a]
+            slice_ = self.local_slice[a]
             halo = self.halo.get(a, Halo(0, 0))
-            assert s == halo.left + (slice_.stop - slice_.start) + halo.right, (
-                s,
-                slice_,
-                halo,
-            )
+            if s != (s_exp := halo.left + (slice_.stop - slice_.start) + halo.right):
+                raise ValueError(
+                    f"Block data shape does not match block meta information for axis {a}: data size is {s} but expected {s_exp} (halo: {halo}, slice: {slice_})",
+                )
 
     @classmethod
     def from_sample_member(

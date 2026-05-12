@@ -1,6 +1,6 @@
 ### 0.10.3
 
-- bump spec to 0.5.10.0
+- bump spec to 0.5.10.1
 - add cellpose flow dynamics op
 - allow for precomputed sample statistics
 - add `bioimageio.core.io.serialize_stat`
@@ -14,6 +14,7 @@
   - add `devices` argument (with alias device)
 - CLI test command:
   - add `device` alias for `devices` argument
+- AxisInfo.create(axis, maybe_singleton: bool) -> AxisInfo.create(axis, size: Union[int, AxisSize ])
 
 ### 0.10.2
 

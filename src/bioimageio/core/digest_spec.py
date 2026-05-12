@@ -38,7 +38,7 @@ from bioimageio.spec.model.v0_5 import (
 )
 from bioimageio.spec.utils import load_array
 
-from .axis import Axis, AxisId, AxisInfo, AxisLike, PerAxis
+from .axis import AxisId, AxisInfo, AxisLike, PerAxis
 from .block_meta import split_multiple_shapes_into_blocks
 from .common import Halo, MemberId, PerMember, SampleId, TotalNumberOfBlocks
 from .io import load_tensor
@@ -176,15 +176,7 @@ def get_axes_infos(
     ],
 ) -> List[AxisInfo]:
     """get a unified, simplified axis representation from spec axes"""
-    ret: List[AxisInfo] = []
-    for a in io_descr.axes:
-        if isinstance(a, v0_5.AxisBase):
-            ret.append(AxisInfo.create(Axis(id=a.id, type=a.type)))
-        else:
-            assert a in ("b", "i", "t", "c", "z", "y", "x")
-            ret.append(AxisInfo.create(a))
-
-    return ret
+    return [AxisInfo.create(a) for a in io_descr.axes]
 
 
 def get_member_id(
@@ -379,6 +371,19 @@ def get_block_transform(
 
             new_axes[a.id] = s
 
+        # account for postprocessing that changes the nubmer of output channels by
+        # overwriting described output shape by the intermediate output shape
+        c = AxisId("channel")
+        if c not in new_axes:
+            continue
+        for post in out.postprocessing:
+            if post.id == "cellpose_flow_dynamics":
+                new_axes[c] = 3
+                break
+            elif post.id == "stardist_postprocessing":
+                new_axes[c] = post.kwargs.n_rays + 1
+                break
+
         ret[out.id] = new_axes
 
     return ret
@@ -529,7 +534,7 @@ def load_sample_for_model(
     for m, p in paths.items():
         if m not in axes:
             axes[m] = get_axes_infos(model_inputs[m])
-            logger.debug(
+            logger.info(
                 "loading '{}' from {} with default input axes {} ",
                 m,
                 p,
