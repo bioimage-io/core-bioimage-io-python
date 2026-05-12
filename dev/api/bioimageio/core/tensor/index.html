@@ -4389,8 +4389,9 @@ At least one of max or min must be given.</p>
             </td>
             <td>
               <div class="doc-md-description">
-                <p>A description of the array's axes,
-if None axes are guessed (which might fail and raise a ValueError.)</p>
+                <p>A description of the array's axes.
+If None axes are guessed (which might fail and raise a ValueError.)
+If dims do not match array shape, permutations and singleton dimensions are tried to find a match.</p>
               </div>
             </td>
             <td>
@@ -4399,29 +4400,8 @@ if None axes are guessed (which might fail and raise a ValueError.)</p>
           </tr>
       </tbody>
     </table>
-
-
-<p><span class="doc-section-title">Raises:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td>
-                  <code><span title="ValueError">ValueError</span></code>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                <p>if <code>dims</code> is None and dims guessing fails.</p>
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
+        <p>Raises:
+    ValueError: if <code>dims</code> is None and dims guessing fails.</p>
 
           
 
@@ -4472,9 +4452,9 @@ if None axes are guessed (which might fail and raise a ValueError.)</p>
 
 <span class="sd">    Args:</span>
 <span class="sd">        array: the nd numpy array</span>
-<span class="sd">        dims: A description of the array&#39;s axes,</span>
-<span class="sd">            if None axes are guessed (which might fail and raise a ValueError.)</span>
-
+<span class="sd">        dims: A description of the array&#39;s axes.</span>
+<span class="sd">            If None axes are guessed (which might fail and raise a ValueError.)</span>
+<span class="sd">            If dims do not match array shape, permutations and singleton dimensions are tried to find a match.</span>
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: if `dims` is None and dims guessing fails.</span>
 <span class="sd">    &quot;&quot;&quot;</span>

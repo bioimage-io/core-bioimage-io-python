@@ -54,8 +54,8 @@
             </div>
         </aside>
         <h2>
-            <span class="text">258 statements &nbsp;</span>
-            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">214<span class="text"> run</span></button>
+            <span class="text">257 statements &nbsp;</span>
+            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">213<span class="text"> run</span></button>
             <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">44<span class="text"> missing</span></button>
             <button type="button" class="exc show_exc button_toggle_exc" value="exc" data-shortcut="x" title="Toggle lines excluded">5<span class="text"> excluded</span></button>
         </h2>
@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="z_58cd9c0c70051b4a___init___py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.14.0">coverage.py v7.14.0</a>,
-            created at 2026-05-11 18:07 +0000
+            created at 2026-05-12 18:05 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -281,9 +281,9 @@
     <p class="pln"><span class="n"><a id="t199" href="#t199">199</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t200" href="#t200">200</a></span><span class="t"><span class="str">        Args:</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t201" href="#t201">201</a></span><span class="t"><span class="str">            array: the nd numpy array</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t202" href="#t202">202</a></span><span class="t"><span class="str">            dims: A description of the array's axes,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t203" href="#t203">203</a></span><span class="t"><span class="str">                if None axes are guessed (which might fail and raise a ValueError.)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t204" href="#t204">204</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t202" href="#t202">202</a></span><span class="t"><span class="str">            dims: A description of the array's axes.</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t203" href="#t203">203</a></span><span class="t"><span class="str">                If None axes are guessed (which might fail and raise a ValueError.)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t204" href="#t204">204</a></span><span class="t"><span class="str">                If dims do not match array shape, permutations and singleton dimensions are tried to find a match.</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t205" href="#t205">205</a></span><span class="t"><span class="str">        Raises:</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t206" href="#t206">206</a></span><span class="t"><span class="str">            ValueError: if `dims` is None and dims guessing fails.</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t207" href="#t207">207</a></span><span class="t"><span class="str">        """</span>&nbsp;</span><span class="r"></span></p>
@@ -655,7 +655,7 @@
     <p class="run"><span class="n"><a id="t573" href="#t573">573</a></span><span class="t">        <span class="key">if</span> <span class="nam">len</span><span class="op">(</span><span class="nam">arr</span><span class="op">.</span><span class="nam">shape</span><span class="op">)</span> <span class="op">>=</span> <span class="nam">len</span><span class="op">(</span><span class="nam">axis_infos</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t574" href="#t574">574</a></span><span class="t">            <span class="key">break</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t575" href="#t575">575</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t576" href="#t576">576</a></span><span class="t">        <span class="key">if</span> <span class="nam">a</span><span class="op">.</span><span class="nam">maybe_singleton</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t576" href="#t576">576</a></span><span class="t">        <span class="key">if</span> <span class="nam">a</span><span class="op">.</span><span class="nam">size</span><span class="op">.</span><span class="nam">min</span> <span class="op">==</span> <span class="num">1</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t577" href="#t577">577</a></span><span class="t">            <span class="nam">arr</span> <span class="op">=</span> <span class="nam">np</span><span class="op">.</span><span class="nam">expand_dims</span><span class="op">(</span><span class="nam">arr</span><span class="op">,</span> <span class="nam">i</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t578" href="#t578">578</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t579" href="#t579">579</a></span><span class="t">    <span class="key">return</span> <span class="nam">arr</span>&nbsp;</span><span class="r"></span></p>
@@ -665,21 +665,24 @@
     <p class="run run2"><span class="n"><a id="t583" href="#t583">583</a></span><span class="t">    <span class="nam">original_array</span><span class="op">:</span> <span class="nam">NDArray</span><span class="op">[</span><span class="nam">Any</span><span class="op">]</span><span class="op">,</span> <span class="nam">axis_infos</span><span class="op">:</span> <span class="nam">Sequence</span><span class="op">[</span><span class="nam">AxisInfo</span><span class="op">]</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t584" href="#t584">584</a></span><span class="t"><span class="op">)</span> <span class="op">-></span> <span class="nam">Optional</span><span class="op">[</span><span class="nam">NDArray</span><span class="op">[</span><span class="nam">Any</span><span class="op">]</span><span class="op">]</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t585" href="#t585">585</a></span><span class="t">    <span class="nam">perms</span> <span class="op">=</span> <span class="nam">list</span><span class="op">(</span><span class="nam">permutations</span><span class="op">(</span><span class="nam">range</span><span class="op">(</span><span class="nam">len</span><span class="op">(</span><span class="nam">original_array</span><span class="op">.</span><span class="nam">shape</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t586" href="#t586">586</a></span><span class="t">    <span class="nam">perms</span><span class="op">.</span><span class="nam">insert</span><span class="op">(</span><span class="num">1</span><span class="op">,</span> <span class="nam">perms</span><span class="op">.</span><span class="nam">pop</span><span class="op">(</span><span class="op">)</span><span class="op">)</span>  <span class="com"># try A and A.T first</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t587" href="#t587">587</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t588" href="#t588">588</a></span><span class="t">    <span class="key">for</span> <span class="nam">perm</span> <span class="key">in</span> <span class="nam">perms</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t589" href="#t589">589</a></span><span class="t">        <span class="nam">view</span> <span class="op">=</span> <span class="nam">original_array</span><span class="op">.</span><span class="nam">transpose</span><span class="op">(</span><span class="nam">perm</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t590" href="#t590">590</a></span><span class="t">        <span class="nam">view</span> <span class="op">=</span> <span class="nam">_add_singletons</span><span class="op">(</span><span class="nam">view</span><span class="op">,</span> <span class="nam">axis_infos</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t591" href="#t591">591</a></span><span class="t">        <span class="key">if</span> <span class="nam">len</span><span class="op">(</span><span class="nam">view</span><span class="op">.</span><span class="nam">shape</span><span class="op">)</span> <span class="op">!=</span> <span class="nam">len</span><span class="op">(</span><span class="nam">axis_infos</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t592" href="#t592">592</a></span><span class="t">            <span class="key">return</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t593" href="#t593">593</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t594" href="#t594">594</a></span><span class="t">        <span class="key">for</span> <span class="nam">s</span><span class="op">,</span> <span class="nam">a</span> <span class="key">in</span> <span class="nam">zip</span><span class="op">(</span><span class="nam">view</span><span class="op">.</span><span class="nam">shape</span><span class="op">,</span> <span class="nam">axis_infos</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t595" href="#t595">595</a></span><span class="t">            <span class="key">if</span> <span class="nam">s</span> <span class="op">==</span> <span class="num">1</span> <span class="key">and</span> <span class="key">not</span> <span class="nam">a</span><span class="op">.</span><span class="nam">maybe_singleton</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t596" href="#t596">596</a></span><span class="t">                <span class="key">break</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t597" href="#t597">597</a></span><span class="t">        <span class="key">else</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t598" href="#t598">598</a></span><span class="t">            <span class="key">return</span> <span class="nam">view</span>&nbsp;</span><span class="r"></span></p>
-    <p class="pln"><span class="n"><a id="t599" href="#t599">599</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t600" href="#t600">600</a></span><span class="t">    <span class="key">return</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t586" href="#t586">586</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t587" href="#t587">587</a></span><span class="t">    <span class="key">for</span> <span class="nam">perm</span> <span class="key">in</span> <span class="nam">perms</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t588" href="#t588">588</a></span><span class="t">        <span class="nam">view</span> <span class="op">=</span> <span class="nam">original_array</span><span class="op">.</span><span class="nam">transpose</span><span class="op">(</span><span class="nam">perm</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t589" href="#t589">589</a></span><span class="t">        <span class="nam">view</span> <span class="op">=</span> <span class="nam">_add_singletons</span><span class="op">(</span><span class="nam">view</span><span class="op">,</span> <span class="nam">axis_infos</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t590" href="#t590">590</a></span><span class="t">        <span class="key">if</span> <span class="nam">len</span><span class="op">(</span><span class="nam">view</span><span class="op">.</span><span class="nam">shape</span><span class="op">)</span> <span class="op">!=</span> <span class="nam">len</span><span class="op">(</span><span class="nam">axis_infos</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis show_mis"><span class="n"><a id="t591" href="#t591">591</a></span><span class="t">            <span class="key">return</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t592" href="#t592">592</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t593" href="#t593">593</a></span><span class="t">        <span class="key">for</span> <span class="nam">s</span><span class="op">,</span> <span class="nam">a</span> <span class="key">in</span> <span class="nam">zip</span><span class="op">(</span><span class="nam">view</span><span class="op">.</span><span class="nam">shape</span><span class="op">,</span> <span class="nam">axis_infos</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t594" href="#t594">594</a></span><span class="t">            <span class="key">if</span> <span class="op">(</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t595" href="#t595">595</a></span><span class="t">                <span class="nam">s</span> <span class="op">&lt;</span> <span class="nam">a</span><span class="op">.</span><span class="nam">size</span><span class="op">.</span><span class="nam">min</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t596" href="#t596">596</a></span><span class="t">                <span class="key">or</span> <span class="op">(</span><span class="nam">a</span><span class="op">.</span><span class="nam">size</span><span class="op">.</span><span class="nam">max</span> <span class="key">is</span> <span class="key">not</span> <span class="key">None</span> <span class="key">and</span> <span class="nam">s</span> <span class="op">></span> <span class="nam">a</span><span class="op">.</span><span class="nam">size</span><span class="op">.</span><span class="nam">max</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t597" href="#t597">597</a></span><span class="t">                <span class="key">or</span> <span class="op">(</span><span class="nam">a</span><span class="op">.</span><span class="nam">size</span><span class="op">.</span><span class="nam">step</span> <span class="key">is</span> <span class="key">not</span> <span class="key">None</span> <span class="key">and</span> <span class="op">(</span><span class="nam">s</span> <span class="op">-</span> <span class="nam">a</span><span class="op">.</span><span class="nam">size</span><span class="op">.</span><span class="nam">min</span><span class="op">)</span> <span class="op">%</span> <span class="nam">a</span><span class="op">.</span><span class="nam">size</span><span class="op">.</span><span class="nam">step</span> <span class="op">!=</span> <span class="num">0</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t598" href="#t598">598</a></span><span class="t">            <span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis show_mis"><span class="n"><a id="t599" href="#t599">599</a></span><span class="t">                <span class="key">break</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t600" href="#t600">600</a></span><span class="t">        <span class="key">else</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t601" href="#t601">601</a></span><span class="t">            <span class="key">return</span> <span class="nam">view</span>&nbsp;</span><span class="r"></span></p>
+    <p class="pln"><span class="n"><a id="t602" href="#t602">602</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
+    <p class="mis show_mis"><span class="n"><a id="t603" href="#t603">603</a></span><span class="t">    <span class="key">return</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
 </main>
 <footer>
     <div class="content">
@@ -689,7 +692,7 @@
             <a class="nav" href="z_58cd9c0c70051b4a___init___py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.14.0">coverage.py v7.14.0</a>,
-            created at 2026-05-11 18:07 +0000
+            created at 2026-05-12 18:05 +0000
         </p>
     </div>
 </footer>
