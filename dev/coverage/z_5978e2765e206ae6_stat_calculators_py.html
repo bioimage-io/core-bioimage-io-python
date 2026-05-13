@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Coverage for src/bioimageio/core/stat_calculators.py: 75%</title>
+    <title>Coverage for src/bioimageio/core/stat_calculators.py: 77%</title>
     <link rel="icon" sizes="32x32" href="favicon_32_cb_c827f16f.png">
     <link rel="stylesheet" href="style_cb_9ff733b0.css" type="text/css">
     <script src="coverage_html_cb_dd2e7eb5.js" defer></script>
@@ -12,7 +12,7 @@
     <div class="content">
         <h1>
             <span class="text">Coverage for </span><b>src&#8201;/&#8201;bioimageio&#8201;/&#8201;core&#8201;/&#8201;stat_calculators.py</b>:
-            <span class="pc_cov">75%</span>
+            <span class="pc_cov">77%</span>
         </h1>
         <aside id="help_panel_wrapper">
             <input id="help_panel_state" type="checkbox">
@@ -55,8 +55,8 @@
         </aside>
         <h2>
             <span class="text">328 statements &nbsp;</span>
-            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">247<span class="text"> run</span></button>
-            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">81<span class="text"> missing</span></button>
+            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">254<span class="text"> run</span></button>
+            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">74<span class="text"> missing</span></button>
             <button type="button" class="exc show_exc button_toggle_exc" value="exc" data-shortcut="x" title="Toggle lines excluded">1<span class="text"> excluded</span></button>
         </h2>
         <p class="text">
@@ -64,8 +64,8 @@
             <a id="indexLink" class="nav" href="covindex.html">&Hat; index</a> &nbsp; &nbsp;
             <a id="nextFileLink" class="nav" href="z_5978e2765e206ae6_stat_measures_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
-            <a class="nav" href="https://coverage.readthedocs.io/en/7.13.5">coverage.py v7.13.5</a>,
-            created at 2026-04-16 00:13 +0000
+            <a class="nav" href="https://coverage.readthedocs.io/en/7.14.0">coverage.py v7.14.0</a>,
+            created at 2026-05-13 18:40 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -400,9 +400,9 @@
     <p class="run run2"><span class="n"><a id="t318" href="#t318">318</a></span><span class="t">            <span class="nam">_quantiles</span><span class="op">=</span><span class="nam">len</span><span class="op">(</span><span class="nam">self</span><span class="op">.</span><span class="nam">_qs</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t319" href="#t319">319</a></span><span class="t">        <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t320" href="#t320">320</a></span><span class="t">        <span class="key">if</span> <span class="nam">self</span><span class="op">.</span><span class="nam">_axes</span> <span class="key">is</span> <span class="key">not</span> <span class="key">None</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t321" href="#t321">321</a></span><span class="t">            <span class="key">for</span> <span class="nam">d</span><span class="op">,</span> <span class="nam">s</span> <span class="key">in</span> <span class="nam">tensor_sizes</span><span class="op">.</span><span class="nam">items</span><span class="op">(</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t322" href="#t322">322</a></span><span class="t">                <span class="key">if</span> <span class="nam">d</span> <span class="key">not</span> <span class="key">in</span> <span class="nam">self</span><span class="op">.</span><span class="nam">_axes</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t323" href="#t323">323</a></span><span class="t">                    <span class="nam">out_sizes</span><span class="op">[</span><span class="nam">d</span><span class="op">]</span> <span class="op">=</span> <span class="nam">s</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t321" href="#t321">321</a></span><span class="t">            <span class="key">for</span> <span class="nam">d</span><span class="op">,</span> <span class="nam">s</span> <span class="key">in</span> <span class="nam">tensor_sizes</span><span class="op">.</span><span class="nam">items</span><span class="op">(</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t322" href="#t322">322</a></span><span class="t">                <span class="key">if</span> <span class="nam">d</span> <span class="key">not</span> <span class="key">in</span> <span class="nam">self</span><span class="op">.</span><span class="nam">_axes</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t323" href="#t323">323</a></span><span class="t">                    <span class="nam">out_sizes</span><span class="op">[</span><span class="nam">d</span><span class="op">]</span> <span class="op">=</span> <span class="nam">s</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t324" href="#t324">324</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t325" href="#t325">325</a></span><span class="t">        <span class="nam">self</span><span class="op">.</span><span class="nam">_dims</span><span class="op">,</span> <span class="nam">self</span><span class="op">.</span><span class="nam">_shape</span> <span class="op">=</span> <span class="nam">zip</span><span class="op">(</span><span class="op">*</span><span class="nam">out_sizes</span><span class="op">.</span><span class="nam">items</span><span class="op">(</span><span class="op">)</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t326" href="#t326">326</a></span><span class="t">        <span class="key">assert</span> <span class="nam">self</span><span class="op">.</span><span class="nam">_shape</span> <span class="key">is</span> <span class="key">not</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
@@ -428,7 +428,7 @@
     <p class="pln"><span class="n"><a id="t346" href="#t346">346</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t347" href="#t347">347</a></span><span class="t">    <span class="key">def</span> <span class="nam">finalize</span><span class="op">(</span><span class="nam">self</span><span class="op">)</span> <span class="op">-></span> <span class="nam">Dict</span><span class="op">[</span><span class="nam">DatasetQuantile</span><span class="op">,</span> <span class="nam">MeasureValue</span><span class="op">]</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t348" href="#t348">348</a></span><span class="t">        <span class="key">if</span> <span class="nam">self</span><span class="op">.</span><span class="nam">_digest</span> <span class="key">is</span> <span class="key">None</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t349" href="#t349">349</a></span><span class="t">            <span class="key">return</span> <span class="op">{</span><span class="op">}</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t349" href="#t349">349</a></span><span class="t">            <span class="key">return</span> <span class="op">{</span><span class="op">}</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t350" href="#t350">350</a></span><span class="t">        <span class="key">else</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t351" href="#t351">351</a></span><span class="t">            <span class="key">assert</span> <span class="nam">self</span><span class="op">.</span><span class="nam">_dims</span> <span class="key">is</span> <span class="key">not</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t352" href="#t352">352</a></span><span class="t">            <span class="key">assert</span> <span class="nam">self</span><span class="op">.</span><span class="nam">_shape</span> <span class="key">is</span> <span class="key">not</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
@@ -524,8 +524,8 @@
     <p class="run"><span class="n"><a id="t442" href="#t442">442</a></span><span class="t">        <span class="key">if</span> <span class="nam">self</span><span class="op">.</span><span class="nam">_current_dataset_measures</span> <span class="key">is</span> <span class="key">None</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t443" href="#t443">443</a></span><span class="t">            <span class="nam">self</span><span class="op">.</span><span class="nam">_current_dataset_measures</span> <span class="op">=</span> <span class="op">{</span><span class="op">}</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t444" href="#t444">444</a></span><span class="t">            <span class="key">for</span> <span class="nam">calc</span> <span class="key">in</span> <span class="nam">self</span><span class="op">.</span><span class="nam">dataset_calculators</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t445" href="#t445">445</a></span><span class="t">                <span class="nam">values</span> <span class="op">=</span> <span class="nam">calc</span><span class="op">.</span><span class="nam">finalize</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t446" href="#t446">446</a></span><span class="t">                <span class="nam">self</span><span class="op">.</span><span class="nam">_current_dataset_measures</span><span class="op">.</span><span class="nam">update</span><span class="op">(</span><span class="nam">values</span><span class="op">.</span><span class="nam">items</span><span class="op">(</span><span class="op">)</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t445" href="#t445">445</a></span><span class="t">                <span class="nam">values</span> <span class="op">=</span> <span class="nam">calc</span><span class="op">.</span><span class="nam">finalize</span><span class="op">(</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t446" href="#t446">446</a></span><span class="t">                <span class="nam">self</span><span class="op">.</span><span class="nam">_current_dataset_measures</span><span class="op">.</span><span class="nam">update</span><span class="op">(</span><span class="nam">values</span><span class="op">.</span><span class="nam">items</span><span class="op">(</span><span class="op">)</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t447" href="#t447">447</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t448" href="#t448">448</a></span><span class="t">        <span class="key">return</span> <span class="nam">self</span><span class="op">.</span><span class="nam">_current_dataset_measures</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t449" href="#t449">449</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
@@ -559,7 +559,7 @@
     <p class="run"><span class="n"><a id="t477" href="#t477">477</a></span><span class="t">        <span class="key">for</span> <span class="nam">el</span> <span class="key">in</span> <span class="nam">samples</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t478" href="#t478">478</a></span><span class="t">            <span class="nam">last_sample</span> <span class="op">=</span> <span class="nam">el</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t479" href="#t479">479</a></span><span class="t">            <span class="key">for</span> <span class="nam">calc</span> <span class="key">in</span> <span class="nam">self</span><span class="op">.</span><span class="nam">dataset_calculators</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t480" href="#t480">480</a></span><span class="t">                <span class="nam">calc</span><span class="op">.</span><span class="nam">update</span><span class="op">(</span><span class="nam">el</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t480" href="#t480">480</a></span><span class="t">                <span class="nam">calc</span><span class="op">.</span><span class="nam">update</span><span class="op">(</span><span class="nam">el</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t481" href="#t481">481</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t482" href="#t482">482</a></span><span class="t">        <span class="nam">self</span><span class="op">.</span><span class="nam">_current_dataset_measures</span> <span class="op">=</span> <span class="key">None</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t483" href="#t483">483</a></span><span class="t">        <span class="key">return</span> <span class="nam">last_sample</span>&nbsp;</span><span class="r"></span></p>
@@ -718,8 +718,8 @@
             <a class="nav" href="covindex.html">&Hat; index</a> &nbsp; &nbsp;
             <a class="nav" href="z_5978e2765e206ae6_stat_measures_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
-            <a class="nav" href="https://coverage.readthedocs.io/en/7.13.5">coverage.py v7.13.5</a>,
-            created at 2026-04-16 00:13 +0000
+            <a class="nav" href="https://coverage.readthedocs.io/en/7.14.0">coverage.py v7.14.0</a>,
+            created at 2026-05-13 18:40 +0000
         </p>
     </div>
 </footer>
