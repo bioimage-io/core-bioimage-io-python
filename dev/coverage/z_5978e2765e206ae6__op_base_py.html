@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Coverage for src/bioimageio/core/_op_base.py: 88%</title>
+    <title>Coverage for src/bioimageio/core/_op_base.py: 97%</title>
     <link rel="icon" sizes="32x32" href="favicon_32_cb_c827f16f.png">
     <link rel="stylesheet" href="style_cb_9ff733b0.css" type="text/css">
     <script src="coverage_html_cb_dd2e7eb5.js" defer></script>
@@ -12,7 +12,7 @@
     <div class="content">
         <h1>
             <span class="text">Coverage for </span><b>src&#8201;/&#8201;bioimageio&#8201;/&#8201;core&#8201;/&#8201;_op_base.py</b>:
-            <span class="pc_cov">88%</span>
+            <span class="pc_cov">97%</span>
         </h1>
         <aside id="help_panel_wrapper">
             <input id="help_panel_state" type="checkbox">
@@ -55,17 +55,17 @@
         </aside>
         <h2>
             <span class="text">33 statements &nbsp;</span>
-            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">29<span class="text"> run</span></button>
-            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">4<span class="text"> missing</span></button>
+            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">32<span class="text"> run</span></button>
+            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">1<span class="text"> missing</span></button>
             <button type="button" class="exc show_exc button_toggle_exc" value="exc" data-shortcut="x" title="Toggle lines excluded">15<span class="text"> excluded</span></button>
         </h2>
         <p class="text">
             <a id="prevFileLink" class="nav" href="z_5978e2765e206ae6__magic_tensor_ops_py.html">&#xab; prev</a> &nbsp; &nbsp;
             <a id="indexLink" class="nav" href="covindex.html">&Hat; index</a> &nbsp; &nbsp;
-            <a id="nextFileLink" class="nav" href="z_5978e2765e206ae6__prediction_pipeline_py.html">&#xbb; next</a>
+            <a id="nextFileLink" class="nav" href="z_5978e2765e206ae6__ops_cellpose_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
-            <a class="nav" href="https://coverage.readthedocs.io/en/7.13.5">coverage.py v7.13.5</a>,
-            created at 2026-04-15 10:00 +0000
+            <a class="nav" href="https://coverage.readthedocs.io/en/7.14.0">coverage.py v7.14.0</a>,
+            created at 2026-05-13 15:04 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -133,7 +133,7 @@
     <p class="exc show_exc"><span class="n"><a id="t51" href="#t51">51</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t52" href="#t52">52</a></span><span class="t">    <span class="key">def</span> <span class="nam">__call__</span><span class="op">(</span><span class="nam">self</span><span class="op">,</span> <span class="nam">sample</span><span class="op">:</span> <span class="nam">Union</span><span class="op">[</span><span class="nam">Sample</span><span class="op">,</span> <span class="nam">SampleBlock</span><span class="op">]</span><span class="op">)</span> <span class="op">-></span> <span class="key">None</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t53" href="#t53">53</a></span><span class="t">        <span class="key">if</span> <span class="nam">self</span><span class="op">.</span><span class="nam">input</span> <span class="key">not</span> <span class="key">in</span> <span class="nam">sample</span><span class="op">.</span><span class="nam">members</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t54" href="#t54">54</a></span><span class="t">            <span class="key">return</span>&nbsp;</span><span class="r"></span></p>
+    <p class="mis show_mis"><span class="n"><a id="t54" href="#t54">54</a></span><span class="t">            <span class="key">return</span>  <span class="com"># TODO: raise?</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t55" href="#t55">55</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t56" href="#t56">56</a></span><span class="t">        <span class="nam">input_tensor</span> <span class="op">=</span> <span class="nam">sample</span><span class="op">.</span><span class="nam">members</span><span class="op">[</span><span class="nam">self</span><span class="op">.</span><span class="nam">input</span><span class="op">]</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t57" href="#t57">57</a></span><span class="t">        <span class="nam">output_tensor</span> <span class="op">=</span> <span class="nam">self</span><span class="op">.</span><span class="nam">_apply</span><span class="op">(</span><span class="nam">input_tensor</span><span class="op">,</span> <span class="nam">sample</span><span class="op">.</span><span class="nam">stat</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
@@ -145,16 +145,16 @@
     <p class="pln"><span class="n"><a id="t63" href="#t63">63</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t64" href="#t64">64</a></span><span class="t">        <span class="key">if</span> <span class="nam">isinstance</span><span class="op">(</span><span class="nam">sample</span><span class="op">,</span> <span class="nam">Sample</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t65" href="#t65">65</a></span><span class="t">            <span class="nam">sample</span><span class="op">.</span><span class="nam">members</span><span class="op">[</span><span class="nam">self</span><span class="op">.</span><span class="nam">output</span><span class="op">]</span> <span class="op">=</span> <span class="nam">output_tensor</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t66" href="#t66">66</a></span><span class="t">        <span class="key">elif</span> <span class="nam">isinstance</span><span class="op">(</span><span class="nam">sample</span><span class="op">,</span> <span class="nam">SampleBlock</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t67" href="#t67">67</a></span><span class="t">            <span class="nam">b</span> <span class="op">=</span> <span class="nam">sample</span><span class="op">.</span><span class="nam">blocks</span><span class="op">[</span><span class="nam">self</span><span class="op">.</span><span class="nam">input</span><span class="op">]</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t68" href="#t68">68</a></span><span class="t">            <span class="nam">sample</span><span class="op">.</span><span class="nam">blocks</span><span class="op">[</span><span class="nam">self</span><span class="op">.</span><span class="nam">output</span><span class="op">]</span> <span class="op">=</span> <span class="nam">Block</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis mis2 show_mis"><span class="n"><a id="t69" href="#t69">69</a></span><span class="t">                <span class="nam">sample_shape</span><span class="op">=</span><span class="nam">self</span><span class="op">.</span><span class="nam">get_output_shape</span><span class="op">(</span><span class="nam">sample</span><span class="op">.</span><span class="nam">shape</span><span class="op">[</span><span class="nam">self</span><span class="op">.</span><span class="nam">input</span><span class="op">]</span><span class="op">)</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis mis2 show_mis"><span class="n"><a id="t70" href="#t70">70</a></span><span class="t">                <span class="nam">data</span><span class="op">=</span><span class="nam">output_tensor</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis mis2 show_mis"><span class="n"><a id="t71" href="#t71">71</a></span><span class="t">                <span class="nam">inner_slice</span><span class="op">=</span><span class="nam">b</span><span class="op">.</span><span class="nam">inner_slice</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis mis2 show_mis"><span class="n"><a id="t72" href="#t72">72</a></span><span class="t">                <span class="nam">halo</span><span class="op">=</span><span class="nam">b</span><span class="op">.</span><span class="nam">halo</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis mis2 show_mis"><span class="n"><a id="t73" href="#t73">73</a></span><span class="t">                <span class="nam">block_index</span><span class="op">=</span><span class="nam">b</span><span class="op">.</span><span class="nam">block_index</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis mis2 show_mis"><span class="n"><a id="t74" href="#t74">74</a></span><span class="t">                <span class="nam">blocks_in_sample</span><span class="op">=</span><span class="nam">b</span><span class="op">.</span><span class="nam">blocks_in_sample</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis mis2 show_mis"><span class="n"><a id="t75" href="#t75">75</a></span><span class="t">            <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t66" href="#t66">66</a></span><span class="t">        <span class="key">elif</span> <span class="nam">isinstance</span><span class="op">(</span><span class="nam">sample</span><span class="op">,</span> <span class="nam">SampleBlock</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t67" href="#t67">67</a></span><span class="t">            <span class="nam">b</span> <span class="op">=</span> <span class="nam">sample</span><span class="op">.</span><span class="nam">blocks</span><span class="op">[</span><span class="nam">self</span><span class="op">.</span><span class="nam">input</span><span class="op">]</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t68" href="#t68">68</a></span><span class="t">            <span class="nam">sample</span><span class="op">.</span><span class="nam">blocks</span><span class="op">[</span><span class="nam">self</span><span class="op">.</span><span class="nam">output</span><span class="op">]</span> <span class="op">=</span> <span class="nam">Block</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t69" href="#t69">69</a></span><span class="t">                <span class="nam">sample_shape</span><span class="op">=</span><span class="nam">self</span><span class="op">.</span><span class="nam">get_output_shape</span><span class="op">(</span><span class="nam">sample</span><span class="op">.</span><span class="nam">sample_shape</span><span class="op">[</span><span class="nam">self</span><span class="op">.</span><span class="nam">input</span><span class="op">]</span><span class="op">)</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t70" href="#t70">70</a></span><span class="t">                <span class="nam">data</span><span class="op">=</span><span class="nam">output_tensor</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t71" href="#t71">71</a></span><span class="t">                <span class="nam">inner_slice</span><span class="op">=</span><span class="nam">b</span><span class="op">.</span><span class="nam">inner_slice</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t72" href="#t72">72</a></span><span class="t">                <span class="nam">halo</span><span class="op">=</span><span class="nam">b</span><span class="op">.</span><span class="nam">halo</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t73" href="#t73">73</a></span><span class="t">                <span class="nam">block_index</span><span class="op">=</span><span class="nam">b</span><span class="op">.</span><span class="nam">block_index</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t74" href="#t74">74</a></span><span class="t">                <span class="nam">blocks_in_sample</span><span class="op">=</span><span class="nam">b</span><span class="op">.</span><span class="nam">blocks_in_sample</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t75" href="#t75">75</a></span><span class="t">            <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t76" href="#t76">76</a></span><span class="t">        <span class="key">else</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="exc show_exc"><span class="n"><a id="t77" href="#t77">77</a></span><span class="t">            <span class="nam">assert_never</span><span class="op">(</span><span class="nam">sample</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t78" href="#t78">78</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
@@ -166,10 +166,10 @@
         <p>
             <a class="nav" href="z_5978e2765e206ae6__magic_tensor_ops_py.html">&#xab; prev</a> &nbsp; &nbsp;
             <a class="nav" href="covindex.html">&Hat; index</a> &nbsp; &nbsp;
-            <a class="nav" href="z_5978e2765e206ae6__prediction_pipeline_py.html">&#xbb; next</a>
+            <a class="nav" href="z_5978e2765e206ae6__ops_cellpose_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
-            <a class="nav" href="https://coverage.readthedocs.io/en/7.13.5">coverage.py v7.13.5</a>,
-            created at 2026-04-15 10:00 +0000
+            <a class="nav" href="https://coverage.readthedocs.io/en/7.14.0">coverage.py v7.14.0</a>,
+            created at 2026-05-13 15:04 +0000
         </p>
     </div>
 </footer>

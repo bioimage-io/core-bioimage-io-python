@@ -657,6 +657,34 @@
 
   <h1>Changelog</h1>
 
+<h3 id="0104">0.10.4<a class="headerlink" href="#0104" title="Anchor link to this section for reference">¤</a></h3>
+<ul>
+<li>fix postprocessing order</li>
+<li>bump spec to 0.5.10.2</li>
+</ul>
+<h3 id="0103">0.10.3<a class="headerlink" href="#0103" title="Anchor link to this section for reference">¤</a></h3>
+<ul>
+<li>bump spec to 0.5.10.1</li>
+<li>add cellpose flow dynamics op</li>
+<li>allow for precomputed sample statistics</li>
+<li>add <code>bioimageio.core.io.serialize_stat</code></li>
+<li>apply pre-/postprocessing blockwise when possible.</li>
+<li>default to pad input tensors and crop output tensors according to any specified output halos.</li>
+<li>note: during testing padding/cropping is skipped, i.e. test inputs/outputs are expected to match without padding/cropping</li>
+<li>ONNX model adapter: all available onnx inference providers are tried one by one until one single provider works.
+  (Letting onnxruntime 1.23.2 handle backup providers does not work reliably.)</li>
+<li>CLI predict command:</li>
+<li>add <code>input</code>/<code>output</code> alias for <code>inputs</code>/<code>outputs</code> argument.</li>
+<li>add <code>devices</code> argument (with alias device)</li>
+<li>CLI test command:</li>
+<li>add <code>device</code> alias for <code>devices</code> argument</li>
+<li>AxisInfo.create(axis, maybe_singleton: bool) -&gt; AxisInfo.create(axis, size: Union[int, AxisSize ])</li>
+</ul>
+<h3 id="0102">0.10.2<a class="headerlink" href="#0102" title="Anchor link to this section for reference">¤</a></h3>
+<ul>
+<li>improve error message when <code>torch.load(weights_only=True)</code> fails on non-pure state dicts (#486)</li>
+<li>add spec→runtime integration test for softmax postprocessing (#487)</li>
+</ul>
 <h3 id="0101">0.10.1<a class="headerlink" href="#0101" title="Anchor link to this section for reference">¤</a></h3>
 <ul>
 <li>bump bioimageio.spec library version to 0.5.9.1</li>
