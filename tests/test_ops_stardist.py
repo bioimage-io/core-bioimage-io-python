@@ -11,10 +11,10 @@ def test_stardist_export(name: str, tmp_path: Path):
     try:
         import stardist
     except ImportError:
-        pytest.mark.skip("stardist not installed")
+        pytest.skip("stardist not installed")
 
-    if Version(stardist.__version__) <= Version("0.9.2"):
-        pytest.mark.skip("requires stardist > 0.9.2")
+    if Version(stardist.__version__) < Version("0.9.3"):
+        pytest.skip("requires stardist >= 0.9.3")
 
     import stardist.data
     from stardist.models import StarDist2D
