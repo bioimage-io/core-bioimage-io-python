@@ -2,16 +2,22 @@
 from pathlib import Path
 
 import pytest
+from packaging.version import Version
 
 
 @pytest.mark.parametrize("name", ["2D_versatile_fluo"])
 def test_stardist_export(name: str, tmp_path: Path):
     """test case analog to the example in example/export_stardist_model"""
     try:
-        import stardist.data
-        from stardist.models import StarDist2D
+        import stardist
     except ImportError:
-        pytest.mark.skip("compatible stardist version not installed")
+        pytest.mark.skip("stardist not installed")
+
+    if Version(stardist.__version__) <= Version("0.9.2"):
+        pytest.mark.skip("requires stardist > 0.9.2")
+
+    import stardist.data
+    from stardist.models import StarDist2D
 
     from bioimageio.core import test_model
 
