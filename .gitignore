@@ -18,3 +18,4 @@ dogfood/
 pkgs/
 site/
 typings/pooch/
+example/**/output/

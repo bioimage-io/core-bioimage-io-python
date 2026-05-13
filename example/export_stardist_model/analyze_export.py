@@ -11,14 +11,27 @@ def summarize(a: np.ndarray, name: str):
 
 
 if __name__ == "__main__":
-    original_output = np.load("test_output.npy")
+    original_output = np.load("output/test_output_instances.npy")
     bioimageio_output = np.load(
-        "export_test/actual_output_labels_pytorch_state_dict.npy"
+        "output/export_test/actual_output_instance_labels_keras_v3.npy"
     )
 
     summarize(original_output, "original")
     summarize(bioimageio_output, "bioimageio")
     diff = original_output - bioimageio_output
     summarize(diff, "diff")
-    plt.imshow(diff.squeeze())
+    f = plt.figure()
+    s = f.add_subplot(111)
+    s.imshow(original_output.squeeze())
+    s.set_title("original output")
+
+    f = plt.figure()
+    s = f.add_subplot(111)
+    s.imshow(bioimageio_output.squeeze())
+    s.set_title("bioimageio output")
+
+    f = plt.figure()
+    s = f.add_subplot(111)
+    s.imshow(diff.squeeze())
+    s.set_title("diff")
     plt.show()

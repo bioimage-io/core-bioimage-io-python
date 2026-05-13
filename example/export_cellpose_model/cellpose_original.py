@@ -1,5 +1,8 @@
 """Run original cellpose model and save an analog input and output for bioimageio tests"""
 
+import os
+from pathlib import Path
+
 import cellpose.models
 import imageio
 import numpy as np
@@ -7,6 +10,7 @@ import numpy as np
 if __name__ == "__main__":
     cellpose_original = cellpose.models.CellposeModel(gpu=False)
 
+    os.chdir(Path(__file__).parent)
     input_array = imageio.imread("sample_input.png").transpose(2, 0, 1)
     assert isinstance(input_array, np.ndarray)
     print("input:", input_array.shape)
@@ -29,8 +33,9 @@ if __name__ == "__main__":
         input_array, ((0, 0), (0, 0), (p, p), (p, p)), mode="constant"
     )
     print("test input padded:", input_array_padded.shape)
-    np.save("test_input.npy", input_array_padded)
-    imageio.imwrite("test_input.tiff", input_array_padded[0].transpose(1, 2, 0))
+    Path("output").mkdir(exist_ok=True)
+    np.save("output/test_input.npy", input_array_padded)
+    imageio.imwrite("output/test_input.tiff", input_array_padded[0].transpose(1, 2, 0))
 
     # run original cellpose model
     mask, flows, styles = cellpose_original.eval(input_array.transpose(0, 2, 3, 1))
@@ -41,11 +46,11 @@ if __name__ == "__main__":
 
     # save output with batch and channel axes
     print("padded mask shape:", mask.shape)
-    np.save("test_output.npy", mask[None, None])
-    imageio.imwrite("test_output.tiff", mask.astype(np.uint16))
+    np.save("output/test_output.npy", mask[None, None])
+    imageio.imwrite("output/test_output.tiff", mask.astype(np.uint16))
 
     # write out flows for debugging
     flows = flows[0]
     print("flows", flows.shape)
-    np.save("flows.npy", flows)
-    imageio.imwrite("flows.tiff", flows)
+    np.save("output/flows.npy", flows)
+    imageio.imwrite("output/flows.tiff", flows)
