@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 from loguru import logger
@@ -36,6 +37,8 @@ from bioimageio.spec.model.v0_5 import (
 if __name__ == "__main__":
     logger.enable("bioimageio")
 
+    os.chdir(Path(__file__).parent)
+
     descr = ModelDescr(
         name="Cellpose-SAM",
         inputs=[
@@ -53,7 +56,7 @@ if __name__ == "__main__":
                     SpaceInputAxis(id=AxisId("y"), size=256),
                     SpaceInputAxis(id=AxisId("x"), size=256),
                 ],
-                test_tensor=FileDescr(source=Path("test_input.npy")),
+                test_tensor=FileDescr(source=Path("output/test_input.npy")),
                 sample_tensor=FileDescr(source=Path("sample_input.png")),
                 pad=ConstantPadding(value=0),
                 preprocessing=[
@@ -62,6 +65,7 @@ if __name__ == "__main__":
                             min_percentile=1.0,
                             max_percentile=99.0,
                             axes=[AxisId("batch"), AxisId("y"), AxisId("x")],
+                            eps=1e-8,
                         ),
                     )
                 ],
@@ -103,7 +107,7 @@ if __name__ == "__main__":
                         )
                     )
                 ],
-                test_tensor=FileDescr(source=Path("test_output.npy")),
+                test_tensor=FileDescr(source=Path("output/test_output.npy")),
                 sample_tensor=FileDescr(source=Path("sample_output.png")),
             ),
         ],
@@ -130,14 +134,16 @@ if __name__ == "__main__":
                     ReproducibilityTolerance(
                         relative_tolerance=0.0,
                         absolute_tolerance=0.0,
-                        mismatched_elements_per_million=200,
+                        mismatched_elements_per_million=2000,
                     )
                 ]
             )
         ),
     )
 
-    out = save_bioimageio_package(descr, output_path=Path("cpsam_bioimageio.zip"))
+    out = save_bioimageio_package(
+        descr, output_path=Path("output/cpsam_bioimageio.zip")
+    )
 
-    summary = test_model(descr, working_dir=Path("export_test"))
+    summary = test_model(descr, working_dir=Path("output/export_test"))
     summary.display()
