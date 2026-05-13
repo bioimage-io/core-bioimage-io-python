@@ -1,3 +1,7 @@
+### 0.10.4
+
+- fix postprocessing order
+
 ### 0.10.3
 
 - bump spec to 0.5.10.1

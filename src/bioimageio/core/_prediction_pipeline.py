@@ -104,9 +104,9 @@ class PredictionPipeline:
                 isinstance(op, BlockwiseOperator)
                 and not self._samplewise_postprocessing
             ):
-                self._blockwise_postprocessing.insert(0, op)
+                self._blockwise_postprocessing.append(op)
             else:
-                self._samplewise_postprocessing.insert(0, op)
+                self._samplewise_postprocessing.append(op)
 
         self.pad_mode = (
             {}
