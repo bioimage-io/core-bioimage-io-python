@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Coverage for src/bioimageio/core/_resource_tests.py: 73%</title>
+    <title>Coverage for src/bioimageio/core/_resource_tests.py: 74%</title>
     <link rel="icon" sizes="32x32" href="favicon_32_cb_c827f16f.png">
     <link rel="stylesheet" href="style_cb_9ff733b0.css" type="text/css">
     <script src="coverage_html_cb_dd2e7eb5.js" defer></script>
@@ -12,7 +12,7 @@
     <div class="content">
         <h1>
             <span class="text">Coverage for </span><b>src&#8201;/&#8201;bioimageio&#8201;/&#8201;core&#8201;/&#8201;_resource_tests.py</b>:
-            <span class="pc_cov">73%</span>
+            <span class="pc_cov">74%</span>
         </h1>
         <aside id="help_panel_wrapper">
             <input id="help_panel_state" type="checkbox">
@@ -55,8 +55,8 @@
         </aside>
         <h2>
             <span class="text">426 statements &nbsp;</span>
-            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">311<span class="text"> run</span></button>
-            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">115<span class="text"> missing</span></button>
+            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">317<span class="text"> run</span></button>
+            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">109<span class="text"> missing</span></button>
             <button type="button" class="exc show_exc button_toggle_exc" value="exc" data-shortcut="x" title="Toggle lines excluded">98<span class="text"> excluded</span></button>
         </h2>
         <p class="text">
@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="z_5978e2765e206ae6__settings_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.14.0">coverage.py v7.14.0</a>,
-            created at 2026-05-12 20:52 +0000
+            created at 2026-05-13 15:04 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -938,12 +938,12 @@
     <p class="run"><span class="n"><a id="t856" href="#t856">856</a></span><span class="t">    <span class="key">def</span> <span class="nam">save_to_working_dir</span><span class="op">(</span><span class="nam">name</span><span class="op">:</span> <span class="nam">str</span><span class="op">,</span> <span class="nam">tensor</span><span class="op">:</span> <span class="nam">Tensor</span><span class="op">)</span> <span class="op">-></span> <span class="nam">List</span><span class="op">[</span><span class="nam">Path</span><span class="op">]</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t857" href="#t857">857</a></span><span class="t">        <span class="nam">saved_paths</span><span class="op">:</span> <span class="nam">List</span><span class="op">[</span><span class="nam">Path</span><span class="op">]</span> <span class="op">=</span> <span class="op">[</span><span class="op">]</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t858" href="#t858">858</a></span><span class="t">        <span class="key">if</span> <span class="nam">working_dir</span> <span class="key">is</span> <span class="key">not</span> <span class="key">None</span> <span class="key">and</span> <span class="nam">verbose</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t859" href="#t859">859</a></span><span class="t">            <span class="key">for</span> <span class="nam">p</span> <span class="key">in</span> <span class="op">[</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis mis2 show_mis"><span class="n"><a id="t860" href="#t860">860</a></span><span class="t">                <span class="nam">Path</span><span class="op">(</span><span class="nam">working_dir</span><span class="op">)</span> <span class="op">/</span> <span class="fst">f"</span><span class="op">{</span><span class="nam">name</span><span class="op">}</span><span class="fst">_</span><span class="op">{</span><span class="nam">weight_format</span><span class="op">}</span><span class="op">{</span><span class="nam">suffix</span><span class="op">}</span><span class="fst">"</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis mis2 show_mis"><span class="n"><a id="t861" href="#t861">861</a></span><span class="t">                <span class="key">for</span> <span class="nam">suffix</span> <span class="key">in</span> <span class="op">(</span><span class="str">".npy"</span><span class="op">,</span> <span class="str">".tiff"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis mis2 show_mis"><span class="n"><a id="t862" href="#t862">862</a></span><span class="t">            <span class="op">]</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t863" href="#t863">863</a></span><span class="t">                <span class="key">try</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t864" href="#t864">864</a></span><span class="t">                    <span class="nam">save_tensor</span><span class="op">(</span><span class="nam">p</span><span class="op">,</span> <span class="nam">tensor</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t859" href="#t859">859</a></span><span class="t">            <span class="key">for</span> <span class="nam">p</span> <span class="key">in</span> <span class="op">[</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t860" href="#t860">860</a></span><span class="t">                <span class="nam">Path</span><span class="op">(</span><span class="nam">working_dir</span><span class="op">)</span> <span class="op">/</span> <span class="fst">f"</span><span class="op">{</span><span class="nam">name</span><span class="op">}</span><span class="fst">_</span><span class="op">{</span><span class="nam">weight_format</span><span class="op">}</span><span class="op">{</span><span class="nam">suffix</span><span class="op">}</span><span class="fst">"</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t861" href="#t861">861</a></span><span class="t">                <span class="key">for</span> <span class="nam">suffix</span> <span class="key">in</span> <span class="op">(</span><span class="str">".npy"</span><span class="op">,</span> <span class="str">".tiff"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t862" href="#t862">862</a></span><span class="t">            <span class="op">]</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t863" href="#t863">863</a></span><span class="t">                <span class="key">try</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t864" href="#t864">864</a></span><span class="t">                    <span class="nam">save_tensor</span><span class="op">(</span><span class="nam">p</span><span class="op">,</span> <span class="nam">tensor</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t865" href="#t865">865</a></span><span class="t">                <span class="key">except</span> <span class="nam">Exception</span> <span class="key">as</span> <span class="nam">e</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t866" href="#t866">866</a></span><span class="t">                    <span class="nam">logger</span><span class="op">.</span><span class="nam">error</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis mis2 show_mis"><span class="n"><a id="t867" href="#t867">867</a></span><span class="t">                        <span class="str">"Failed to save tensor {}: {}"</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
@@ -951,7 +951,7 @@
     <p class="mis mis2 show_mis"><span class="n"><a id="t869" href="#t869">869</a></span><span class="t">                        <span class="nam">e</span><span class="op">,</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis mis2 show_mis"><span class="n"><a id="t870" href="#t870">870</a></span><span class="t">                    <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t871" href="#t871">871</a></span><span class="t">                <span class="key">else</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t872" href="#t872">872</a></span><span class="t">                    <span class="nam">saved_paths</span><span class="op">.</span><span class="nam">append</span><span class="op">(</span><span class="nam">p</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t872" href="#t872">872</a></span><span class="t">                    <span class="nam">saved_paths</span><span class="op">.</span><span class="nam">append</span><span class="op">(</span><span class="nam">p</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t873" href="#t873">873</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t874" href="#t874">874</a></span><span class="t">        <span class="key">return</span> <span class="nam">saved_paths</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t875" href="#t875">875</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
@@ -988,7 +988,7 @@
     <p class="run run2"><span class="n"><a id="t906" href="#t906">906</a></span><span class="t">                    <span class="nam">save_to_working_dir</span><span class="op">(</span><span class="fst">f"</span><span class="fst">test_input_preprocessed_</span><span class="op">{</span><span class="nam">m</span><span class="op">}</span><span class="fst">"</span><span class="op">,</span> <span class="nam">t</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t907" href="#t907">907</a></span><span class="t">                <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t908" href="#t908">908</a></span><span class="t">            <span class="key">if</span> <span class="nam">intermediate_paths</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t909" href="#t909">909</a></span><span class="t">                <span class="nam">logger</span><span class="op">.</span><span class="nam">debug</span><span class="op">(</span><span class="str">"Saved preprocessed test inputs to {}"</span><span class="op">,</span> <span class="nam">intermediate_paths</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t909" href="#t909">909</a></span><span class="t">                <span class="nam">logger</span><span class="op">.</span><span class="nam">debug</span><span class="op">(</span><span class="str">"Saved preprocessed test inputs to {}"</span><span class="op">,</span> <span class="nam">intermediate_paths</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t910" href="#t910">910</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t911" href="#t911">911</a></span><span class="t">            <span class="key">for</span> <span class="nam">m</span><span class="op">,</span> <span class="nam">expected</span> <span class="key">in</span> <span class="nam">expected</span><span class="op">.</span><span class="nam">members</span><span class="op">.</span><span class="nam">items</span><span class="op">(</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t912" href="#t912">912</a></span><span class="t">                <span class="nam">actual</span> <span class="op">=</span> <span class="nam">results</span><span class="op">.</span><span class="nam">members</span><span class="op">.</span><span class="nam">get</span><span class="op">(</span><span class="nam">m</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
@@ -1082,7 +1082,7 @@
     <p class="run run2"><span class="n"><a id="t1000" href="#t1000">1000</a></span><span class="t">                        <span class="op">+</span> <span class="fst">rf"</span><span class="fst"> (= \|</span><span class="op">{</span><span class="nam">a_actual</span><span class="op">:</span><span class="fst">.7e</span><span class="op">}</span><span class="fst"> - </span><span class="op">{</span><span class="nam">a_expected</span><span class="op">:</span><span class="fst">.7e</span><span class="op">}</span><span class="fst">\|) at </span><span class="op">{</span><span class="nam">dict</span><span class="op">(</span><span class="nam">zip</span><span class="op">(</span><span class="nam">dims</span><span class="op">,</span> <span class="nam">a_max_idx</span><span class="op">)</span><span class="op">)</span><span class="op">}</span><span class="fst">"</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t1001" href="#t1001">1001</a></span><span class="t">                    <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t1002" href="#t1002">1002</a></span><span class="t">                    <span class="key">if</span> <span class="nam">output_paths</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t1003" href="#t1003">1003</a></span><span class="t">                        <span class="nam">msg</span> <span class="op">+=</span> <span class="fst">f"</span><span class="fst">\n Saved (intermediate) outputs to </span><span class="op">{</span><span class="nam">output_paths</span><span class="op">}</span><span class="fst">.</span><span class="fst">"</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t1003" href="#t1003">1003</a></span><span class="t">                        <span class="nam">msg</span> <span class="op">+=</span> <span class="fst">f"</span><span class="fst">\n Saved (intermediate) outputs to </span><span class="op">{</span><span class="nam">output_paths</span><span class="op">}</span><span class="fst">.</span><span class="fst">"</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t1004" href="#t1004">1004</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t1005" href="#t1005">1005</a></span><span class="t">                    <span class="key">if</span> <span class="nam">mismatched_ppm</span> <span class="op">></span> <span class="nam">mismatched_tol</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t1006" href="#t1006">1006</a></span><span class="t">                        <span class="nam">add_error_entry</span><span class="op">(</span><span class="nam">msg</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
@@ -1393,7 +1393,7 @@
             <a class="nav" href="z_5978e2765e206ae6__settings_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.14.0">coverage.py v7.14.0</a>,
-            created at 2026-05-12 20:52 +0000
+            created at 2026-05-13 15:04 +0000
         </p>
     </div>
 </footer>

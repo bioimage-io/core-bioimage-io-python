@@ -55,8 +55,8 @@
         </aside>
         <h2>
             <span class="text">416 statements &nbsp;</span>
-            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">327<span class="text"> run</span></button>
-            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">89<span class="text"> missing</span></button>
+            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">329<span class="text"> run</span></button>
+            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">87<span class="text"> missing</span></button>
             <button type="button" class="exc show_exc button_toggle_exc" value="exc" data-shortcut="x" title="Toggle lines excluded">7<span class="text"> excluded</span></button>
         </h2>
         <p class="text">
@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="z_5978e2765e206ae6_proc_setup_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.14.0">coverage.py v7.14.0</a>,
-            created at 2026-05-12 20:52 +0000
+            created at 2026-05-13 15:04 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -614,7 +614,7 @@
     <p class="run run2"><span class="n"><a id="t532" href="#t532">532</a></span><span class="t">        <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t533" href="#t533">533</a></span><span class="t">        <span class="nam">dataset_mode</span><span class="op">,</span> <span class="nam">axes</span> <span class="op">=</span> <span class="nam">_get_axes</span><span class="op">(</span><span class="nam">descr</span><span class="op">.</span><span class="nam">kwargs</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t534" href="#t534">534</a></span><span class="t">        <span class="key">if</span> <span class="nam">dataset_mode</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t535" href="#t535">535</a></span><span class="t">            <span class="nam">Quantile</span> <span class="op">=</span> <span class="nam">DatasetQuantile</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t535" href="#t535">535</a></span><span class="t">            <span class="nam">Quantile</span> <span class="op">=</span> <span class="nam">DatasetQuantile</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t536" href="#t536">536</a></span><span class="t">        <span class="key">else</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t537" href="#t537">537</a></span><span class="t">            <span class="nam">Quantile</span> <span class="op">=</span> <span class="nam">partial</span><span class="op">(</span><span class="nam">SampleQuantile</span><span class="op">,</span> <span class="nam">method</span><span class="op">=</span><span class="str">"linear"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t538" href="#t538">538</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
@@ -934,7 +934,7 @@
     <p class="run"><span class="n"><a id="t852" href="#t852">852</a></span><span class="t">    <span class="key">if</span> <span class="nam">isinstance</span><span class="op">(</span><span class="nam">proc_descr</span><span class="op">,</span> <span class="op">(</span><span class="nam">v0_4</span><span class="op">.</span><span class="nam">BinarizeDescr</span><span class="op">,</span> <span class="nam">v0_5</span><span class="op">.</span><span class="nam">BinarizeDescr</span><span class="op">)</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t853" href="#t853">853</a></span><span class="t">        <span class="key">return</span> <span class="nam">Binarize</span><span class="op">.</span><span class="nam">from_proc_descr</span><span class="op">(</span><span class="nam">proc_descr</span><span class="op">,</span> <span class="nam">member_id</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t854" href="#t854">854</a></span><span class="t">    <span class="key">elif</span> <span class="nam">isinstance</span><span class="op">(</span><span class="nam">proc_descr</span><span class="op">,</span> <span class="nam">v0_5</span><span class="op">.</span><span class="nam">CellposeFlowDynamicsDescr</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t855" href="#t855">855</a></span><span class="t">        <span class="key">return</span> <span class="nam">CellposeFlowDynamics</span><span class="op">.</span><span class="nam">from_proc_descr</span><span class="op">(</span><span class="nam">proc_descr</span><span class="op">,</span> <span class="nam">member_id</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t855" href="#t855">855</a></span><span class="t">        <span class="key">return</span> <span class="nam">CellposeFlowDynamics</span><span class="op">.</span><span class="nam">from_proc_descr</span><span class="op">(</span><span class="nam">proc_descr</span><span class="op">,</span> <span class="nam">member_id</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t856" href="#t856">856</a></span><span class="t">    <span class="key">elif</span> <span class="nam">isinstance</span><span class="op">(</span><span class="nam">proc_descr</span><span class="op">,</span> <span class="op">(</span><span class="nam">v0_4</span><span class="op">.</span><span class="nam">ClipDescr</span><span class="op">,</span> <span class="nam">v0_5</span><span class="op">.</span><span class="nam">ClipDescr</span><span class="op">)</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t857" href="#t857">857</a></span><span class="t">        <span class="key">return</span> <span class="nam">Clip</span><span class="op">.</span><span class="nam">from_proc_descr</span><span class="op">(</span><span class="nam">proc_descr</span><span class="op">,</span> <span class="nam">member_id</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t858" href="#t858">858</a></span><span class="t">    <span class="key">elif</span> <span class="nam">isinstance</span><span class="op">(</span><span class="nam">proc_descr</span><span class="op">,</span> <span class="nam">v0_5</span><span class="op">.</span><span class="nam">CustomProcessingDescr</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
@@ -994,7 +994,7 @@
             <a class="nav" href="z_5978e2765e206ae6_proc_setup_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.14.0">coverage.py v7.14.0</a>,
-            created at 2026-05-12 20:52 +0000
+            created at 2026-05-13 15:04 +0000
         </p>
     </div>
 </footer>

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>Coverage for src/bioimageio/core/digest_spec.py: 83%</title>
+    <title>Coverage for src/bioimageio/core/digest_spec.py: 85%</title>
     <link rel="icon" sizes="32x32" href="favicon_32_cb_c827f16f.png">
     <link rel="stylesheet" href="style_cb_9ff733b0.css" type="text/css">
     <script src="coverage_html_cb_dd2e7eb5.js" defer></script>
@@ -12,7 +12,7 @@
     <div class="content">
         <h1>
             <span class="text">Coverage for </span><b>src&#8201;/&#8201;bioimageio&#8201;/&#8201;core&#8201;/&#8201;digest_spec.py</b>:
-            <span class="pc_cov">83%</span>
+            <span class="pc_cov">85%</span>
         </h1>
         <aside id="help_panel_wrapper">
             <input id="help_panel_state" type="checkbox">
@@ -55,8 +55,8 @@
         </aside>
         <h2>
             <span class="text">230 statements &nbsp;</span>
-            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">192<span class="text"> run</span></button>
-            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">38<span class="text"> missing</span></button>
+            <button type="button" class="run button_toggle_run" value="run" data-shortcut="r" title="Toggle lines run">196<span class="text"> run</span></button>
+            <button type="button" class="mis show_mis button_toggle_mis" value="mis" data-shortcut="m" title="Toggle lines missing">34<span class="text"> missing</span></button>
             <button type="button" class="exc show_exc button_toggle_exc" value="exc" data-shortcut="x" title="Toggle lines excluded">4<span class="text"> excluded</span></button>
         </h2>
         <p class="text">
@@ -65,7 +65,7 @@
             <a id="nextFileLink" class="nav" href="z_5978e2765e206ae6_io_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.14.0">coverage.py v7.14.0</a>,
-            created at 2026-05-12 20:52 +0000
+            created at 2026-05-13 15:04 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -152,8 +152,8 @@
     <p class="mis show_mis"><span class="n"><a id="t70" href="#t70">70</a></span><span class="t">        <span class="nam">module</span> <span class="op">=</span> <span class="nam">importlib</span><span class="op">.</span><span class="nam">import_module</span><span class="op">(</span><span class="nam">node</span><span class="op">.</span><span class="nam">module_name</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t71" href="#t71">71</a></span><span class="t">        <span class="nam">c</span> <span class="op">=</span> <span class="nam">getattr</span><span class="op">(</span><span class="nam">module</span><span class="op">,</span> <span class="nam">str</span><span class="op">(</span><span class="nam">node</span><span class="op">.</span><span class="nam">callable_name</span><span class="op">)</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t72" href="#t72">72</a></span><span class="t">    <span class="key">elif</span> <span class="nam">isinstance</span><span class="op">(</span><span class="nam">node</span><span class="op">,</span> <span class="nam">ArchitectureFromLibraryDescr</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t73" href="#t73">73</a></span><span class="t">        <span class="nam">module</span> <span class="op">=</span> <span class="nam">importlib</span><span class="op">.</span><span class="nam">import_module</span><span class="op">(</span><span class="nam">node</span><span class="op">.</span><span class="nam">import_from</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t74" href="#t74">74</a></span><span class="t">        <span class="nam">c</span> <span class="op">=</span> <span class="nam">getattr</span><span class="op">(</span><span class="nam">module</span><span class="op">,</span> <span class="nam">str</span><span class="op">(</span><span class="nam">node</span><span class="op">.</span><span class="nam">callable</span><span class="op">)</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t73" href="#t73">73</a></span><span class="t">        <span class="nam">module</span> <span class="op">=</span> <span class="nam">importlib</span><span class="op">.</span><span class="nam">import_module</span><span class="op">(</span><span class="nam">node</span><span class="op">.</span><span class="nam">import_from</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t74" href="#t74">74</a></span><span class="t">        <span class="nam">c</span> <span class="op">=</span> <span class="nam">getattr</span><span class="op">(</span><span class="nam">module</span><span class="op">,</span> <span class="nam">str</span><span class="op">(</span><span class="nam">node</span><span class="op">.</span><span class="nam">callable</span><span class="op">)</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t75" href="#t75">75</a></span><span class="t">    <span class="key">elif</span> <span class="nam">isinstance</span><span class="op">(</span><span class="nam">node</span><span class="op">,</span> <span class="nam">CallableFromFile</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t76" href="#t76">76</a></span><span class="t">        <span class="nam">c</span> <span class="op">=</span> <span class="nam">_import_from_file_impl</span><span class="op">(</span><span class="nam">node</span><span class="op">.</span><span class="nam">source_file</span><span class="op">,</span> <span class="nam">str</span><span class="op">(</span><span class="nam">node</span><span class="op">.</span><span class="nam">callable_name</span><span class="op">)</span><span class="op">,</span> <span class="op">**</span><span class="nam">kwargs</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t77" href="#t77">77</a></span><span class="t">    <span class="key">elif</span> <span class="nam">isinstance</span><span class="op">(</span><span class="nam">node</span><span class="op">,</span> <span class="op">(</span><span class="nam">ArchitectureFromFileDescr</span><span class="op">,</span> <span class="nam">v0_5</span><span class="op">.</span><span class="nam">CustomProcessingDescr</span><span class="op">)</span><span class="op">)</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
@@ -460,8 +460,8 @@
     <p class="mis show_mis"><span class="n"><a id="t378" href="#t378">378</a></span><span class="t">            <span class="key">continue</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t379" href="#t379">379</a></span><span class="t">        <span class="key">for</span> <span class="nam">post</span> <span class="key">in</span> <span class="nam">out</span><span class="op">.</span><span class="nam">postprocessing</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t380" href="#t380">380</a></span><span class="t">            <span class="key">if</span> <span class="nam">post</span><span class="op">.</span><span class="nam">id</span> <span class="op">==</span> <span class="str">"cellpose_flow_dynamics"</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t381" href="#t381">381</a></span><span class="t">                <span class="nam">new_axes</span><span class="op">[</span><span class="nam">c</span><span class="op">]</span> <span class="op">=</span> <span class="num">3</span>&nbsp;</span><span class="r"></span></p>
-    <p class="mis show_mis"><span class="n"><a id="t382" href="#t382">382</a></span><span class="t">                <span class="key">break</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t381" href="#t381">381</a></span><span class="t">                <span class="nam">new_axes</span><span class="op">[</span><span class="nam">c</span><span class="op">]</span> <span class="op">=</span> <span class="num">3</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t382" href="#t382">382</a></span><span class="t">                <span class="key">break</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t383" href="#t383">383</a></span><span class="t">            <span class="key">elif</span> <span class="nam">post</span><span class="op">.</span><span class="nam">id</span> <span class="op">==</span> <span class="str">"stardist_postprocessing"</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t384" href="#t384">384</a></span><span class="t">                <span class="nam">new_axes</span><span class="op">[</span><span class="nam">c</span><span class="op">]</span> <span class="op">=</span> <span class="nam">post</span><span class="op">.</span><span class="nam">kwargs</span><span class="op">.</span><span class="nam">n_rays</span> <span class="op">+</span> <span class="num">1</span>&nbsp;</span><span class="r"></span></p>
     <p class="mis show_mis"><span class="n"><a id="t385" href="#t385">385</a></span><span class="t">                <span class="key">break</span>&nbsp;</span><span class="r"></span></p>
@@ -638,7 +638,7 @@
             <a class="nav" href="z_5978e2765e206ae6_io_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
             <a class="nav" href="https://coverage.readthedocs.io/en/7.14.0">coverage.py v7.14.0</a>,
-            created at 2026-05-12 20:52 +0000
+            created at 2026-05-13 15:04 +0000
         </p>
     </div>
 </footer>
