@@ -1,3 +1,25 @@
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+version-resolver:
+  major:
+    labels:
+      - 'breaking'
+  minor:
+    labels:
+      - 'enhancement'
+  patch:
+    labels:
+      - 'bug'
+      - 'performance'
+      - 'testing'
+      - 'ci'
+      - 'github_actions'
+      - 'documentation'
+      - 'refactoring'
+      - 'style'
+      - 'dependencies'
+      - 'build'
+  default: patch
 autolabeler:
   - label: "github_actions"
     files:
