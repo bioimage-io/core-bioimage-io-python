@@ -16,7 +16,7 @@ Other notable bioimageio.core functionalities include:
 """
 # ruff: noqa: E402
 
-__version__ = "0.10.3"
+__version__ = "0.10.4"
 from loguru import logger
 
 logger.disable("bioimageio.core")
