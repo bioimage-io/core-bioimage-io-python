@@ -11,7 +11,7 @@ from typing import (
     Union,
 )
 
-from typing_extensions import Self, assert_never
+from typing_extensions import Self, TypeAlias, assert_never
 
 from bioimageio.spec.model import v0_5
 
@@ -112,10 +112,10 @@ class PadWidth(_LeftRight):
     pass
 
 
-PadWidthLike = _LeftRightLike[PadWidth]
-Padding = v0_5.Padding
-PadMode = Union[Literal["constant", "edge", "reflect", "symmetric"], Padding]
-PadWhere = _Where
+PadWidthLike: TypeAlias = _LeftRightLike[PadWidth]
+Padding: TypeAlias = v0_5.Padding
+PadMode: TypeAlias = Union[Literal["constant", "edge", "reflect", "symmetric"], Padding]
+PadWhere: TypeAlias = _Where
 
 
 class SliceInfo(NamedTuple):

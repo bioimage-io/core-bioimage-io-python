@@ -161,9 +161,13 @@ class BlockMeta:
         """inner slice wrt the block, **not** the sample"""
         return Frozen(
             {
-                a: SliceInfo(
-                    self.halo[a].left,
-                    self.halo[a].left + self.inner_shape[a],
+                a: (
+                    SliceInfo(
+                        h.left,
+                        h.left + self.inner_shape[a],
+                    )
+                    if (h := self.halo.get(a)) is not None
+                    else SliceInfo(0, self.inner_shape[a])
                 )
                 for a in self.inner_slice
             }

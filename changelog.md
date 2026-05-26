@@ -1,3 +1,9 @@
+### 0.11.0 (not yet released)
+
+- bump spec to 0.5.11.0
+- support ONNX provider choice (as 'devices')
+- added experimental bioimageio.core.backends.gradio_backend
+
 ### 0.10.4
 
 - fix postprocessing order

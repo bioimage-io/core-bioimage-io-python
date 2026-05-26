@@ -1,7 +1,6 @@
 # pyright: reportUnknownVariableType=false
 import shutil
 import tempfile
-import warnings
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
 from typing import Any, List, Optional, Sequence, Union, cast
@@ -41,6 +40,20 @@ class ONNXModelAdapter(ModelAdapter):
                 providers = available_providers
         else:
             providers = [available_providers]
+
+        if devices is not None:
+            available_devices = [d for d in devices if d in providers]
+            unavailable_devices = [d for d in devices if d not in providers]
+            if available_devices:
+                if unavailable_devices:
+                    logger.warning(
+                        "The following requested devices are not available for ONNX Runtime and will be ignored: {}.\nSelected available providers/devices are: {}\nOther available providers are: {}",
+                        unavailable_devices,
+                        available_devices,
+                        [p for p in providers if p not in devices],
+                    )
+
+                providers = available_devices
 
         if (
             isinstance(onnx_descr, v0_5.OnnxWeightsDescr)
@@ -122,11 +135,6 @@ class ONNXModelAdapter(ModelAdapter):
         onnx_inputs = self._session.get_inputs()
         self._input_names: List[str] = [ipt.name for ipt in onnx_inputs]
 
-        if devices is not None:
-            warnings.warn(
-                f"Device management is not implemented for onnx yet, ignoring the devices {devices}"
-            )
-
     def _forward_impl(
         self, input_arrays: Sequence[Optional[NDArray[Any]]]
     ) -> List[Optional[NDArray[Any]]]:
@@ -141,6 +149,4 @@ class ONNXModelAdapter(ModelAdapter):
         return result_seq
 
     def unload(self) -> None:
-        warnings.warn(
-            "Device management is not implemented for onnx yet, cannot unload model"
-        )
+        logger.warning("Model unloading not implemented for ONNX, cannot unload model")

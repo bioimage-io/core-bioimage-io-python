@@ -72,12 +72,16 @@ add_weights = weight_converters.add_weights
 Axis = axis.Axis
 AxisId = axis.AxisId
 BlockMeta = block_meta.BlockMeta
+SampleBlockMeta = sample.SampleBlockMeta
 compute_dataset_measures = stat_calculators.compute_dataset_measures
+compute_measures = stat_calculators.compute_measures
+compute_sample_measures = stat_calculators.compute_sample_measures
 create_model_adapter = backends.create_model_adapter
 MemberId = common.MemberId
 predict = prediction.predict
 predict_many = prediction.predict_many
 Sample = sample.Sample
+SampleBlock = sample.SampleBlock
 Stat = stat_measures.Stat
 Tensor = tensor.Tensor
 

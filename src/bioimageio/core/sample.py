@@ -84,6 +84,29 @@ class Sample:
             id=self.id,
         )
 
+    def set_block(self, block: SampleBlock) -> None:
+        """Set values of `block`.
+
+        Note:
+            - Updates only existing sample members (extra block members are ignored)
+            - Ignores missing block members (i.e. members in the sample but not in the block are not modified)
+
+        Raises:
+            ValueError if block and sample members do not overlap at all.
+        """
+        no_overlap = True
+        for m in self.members:
+            if m not in block.blocks:
+                continue
+            b = block.blocks[m]
+            self.members[m][b.inner_slice] = b.inner_data
+            no_overlap = False
+
+        if no_overlap:
+            raise ValueError(
+                f"block with members {list(block.blocks)} does not overlap with sample members {list(self.members)}"
+            )
+
     @property
     def shape(self) -> PerMember[PerAxis[int]]:
         return {tid: t.sizes for tid, t in self.members.items()}
@@ -199,7 +222,7 @@ class Sample:
         )
 
 
-BlockT = TypeVar("BlockT", Block, BlockMeta)
+BlockT = TypeVar("BlockT", bound=BlockMeta)
 
 
 @dataclass
@@ -351,6 +374,32 @@ class SampleBlock(SampleBlockBase[Block]):
             block_index=self.block_index,
             blocks_in_sample=self.blocks_in_sample,
         ).get_transformed(new_axes)
+
+    @classmethod
+    def from_meta(
+        cls, meta: SampleBlockMeta, data: PerMember[Tensor], stat: Stat
+    ) -> Self:
+        return cls(
+            sample_shape=meta.sample_shape,
+            sample_id=meta.sample_id,
+            blocks={
+                m: Block.from_meta(b, data=data[m]) for m, b in meta.blocks.items()
+            },
+            stat=stat,
+            block_index=meta.block_index,
+            blocks_in_sample=meta.blocks_in_sample,
+        )
+
+    def get_meta(self) -> SampleBlockMeta:
+        return SampleBlockMeta(
+            sample_id=self.sample_id,
+            blocks={m: b.get_meta() for m, b in self.blocks.items()},
+            sample_shape={  # avoid xarray.core.utils.Frozen, which pydantic cannot handle to make the meta class (pydantic) serializable
+                m: dict(v) for m, v in (self.sample_shape).items()
+            },
+            block_index=self.block_index,
+            blocks_in_sample=self.blocks_in_sample,
+        )
 
 
 @dataclass
