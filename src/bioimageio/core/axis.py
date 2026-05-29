@@ -1,9 +1,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal, Mapping, Optional, TypeVar, Union
+from typing import (
+    Literal,
+    Mapping,
+    Optional,
+    TypeVar,
+    Union,
+)
 
-from typing_extensions import Protocol, assert_never, runtime_checkable
+from typing_extensions import Protocol, TypeAlias, assert_never, runtime_checkable
 
 from bioimageio.spec.model import v0_5
 
@@ -33,11 +39,12 @@ def _guess_axis_type(a: str):
 S = TypeVar("S", bound=str)
 
 
-AxisId = v0_5.AxisId
+AxisId: TypeAlias = v0_5.AxisId
 """An axis identifier, e.g. 'batch', 'channel', 'z', 'y', 'x'"""
 
-T = TypeVar("T")
-PerAxis = Mapping[AxisId, T]
+_T = TypeVar("_T")
+PerAxis = Mapping[AxisId, _T]
+
 
 BatchSize = int
 

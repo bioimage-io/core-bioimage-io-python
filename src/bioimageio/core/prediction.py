@@ -78,6 +78,7 @@ def predict(
             fixed_dataset_statistics=inputs.stat if isinstance(inputs, Sample) else {},
         )
 
+    model = pp.model_descr
     if save_output_path is not None:
         if (
             "{output_id}" not in str(save_output_path)

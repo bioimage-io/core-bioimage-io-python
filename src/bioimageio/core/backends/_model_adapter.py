@@ -2,18 +2,19 @@ import warnings
 from abc import ABC, abstractmethod
 from typing import (
     Any,
+    Generic,
+    Iterable,
     List,
     Optional,
     Sequence,
     Tuple,
     Union,
-    final,
 )
 
 from exceptiongroup import ExceptionGroup
 from loguru import logger
 from numpy.typing import NDArray
-from typing_extensions import assert_never
+from typing_extensions import assert_never, final
 
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 
@@ -21,6 +22,7 @@ from ..common import SupportedWeightsFormat
 from ..digest_spec import get_axes_infos, get_member_ids
 from ..sample import Sample, SampleBlock
 from ..tensor import Tensor
+from ._sample_serializer import SampleSerializer, SerializedSampleBlockType
 
 # Known weight formats in order of priority
 # First match wins
@@ -44,12 +46,12 @@ class ModelAdapter(ABC):
     model = load_description(...)
 
     # option 1:
-    adapter = ModelAdapter.create(model)
+    adapter = create_model_adapter(model)
     adapter.forward(...)
     adapter.unload()
 
     # option 2:
-    with ModelAdapter.create(model) as adapter:
+    with create_model_adapter(model) as adapter:
         adapter.forward(...)
     ```
     """
@@ -71,131 +73,23 @@ class ModelAdapter(ABC):
             self._input_is_optional = [ipt.optional for ipt in model_description.inputs]
 
     @final
-    @classmethod
-    def create(
-        cls,
-        model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
-        *,
-        devices: Optional[Sequence[str]] = None,
-        weight_format_priority_order: Optional[Sequence[SupportedWeightsFormat]] = None,
-    ):
-        """
-        Creates model adapter based on the passed spec
-        Note: All specific adapters should happen inside this function to prevent different framework
-        initializations interfering with each other
-        """
-        if not isinstance(model_description, (v0_4.ModelDescr, v0_5.ModelDescr)):
-            raise TypeError(
-                f"expected v0_4.ModelDescr or v0_5.ModelDescr, but got {type(model_description)}"
-            )
-
-        weights = model_description.weights
-        errors: List[Exception] = []
-        weight_format_priority_order = (
-            DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER
-            if weight_format_priority_order is None
-            else weight_format_priority_order
-        )
-        # limit weight formats to the ones present
-        weight_format_priority_order_present: Sequence[SupportedWeightsFormat] = [
-            w
-            for w in weight_format_priority_order
-            if getattr(weights, w, None) is not None
-        ]
-        if not weight_format_priority_order_present:
-            raise ValueError(
-                f"None of the specified weight formats ({weight_format_priority_order}) is present ({weight_format_priority_order_present})"
-            )
-
-        for wf in weight_format_priority_order_present:
-            if wf == "pytorch_state_dict":
-                assert weights.pytorch_state_dict is not None
-                try:
-                    from .pytorch_backend import PytorchModelAdapter
-
-                    return PytorchModelAdapter(
-                        model_description=model_description, devices=devices
-                    )
-                except Exception as e:
-                    errors.append(e)
-            elif wf == "tensorflow_saved_model_bundle":
-                assert weights.tensorflow_saved_model_bundle is not None
-                try:
-                    from .tensorflow_backend import create_tf_model_adapter
-
-                    return create_tf_model_adapter(
-                        model_description=model_description, devices=devices
-                    )
-                except Exception as e:
-                    errors.append(e)
-            elif wf == "onnx":
-                assert weights.onnx is not None
-                try:
-                    from .onnx_backend import ONNXModelAdapter
-
-                    return ONNXModelAdapter(
-                        model_description=model_description, devices=devices
-                    )
-                except Exception as e:
-                    errors.append(e)
-            elif wf == "torchscript":
-                assert weights.torchscript is not None
-                try:
-                    from .torchscript_backend import TorchscriptModelAdapter
-
-                    return TorchscriptModelAdapter(
-                        model_description=model_description, devices=devices
-                    )
-                except Exception as e:
-                    errors.append(e)
-            elif wf == "keras_hdf5":
-                assert weights.keras_hdf5 is not None
-                # keras can either be installed as a separate package or used as part of tensorflow
-                # we try to first import the keras model adapter using the separate package and,
-                # if it is not available, try to load the one using tf
-                try:
-                    try:
-                        from .keras_backend import KerasModelAdapter
-                    except Exception:
-                        from .tensorflow_backend import KerasModelAdapter
-
-                    return KerasModelAdapter(
-                        model_description=model_description, devices=devices
-                    )
-                except Exception as e:
-                    errors.append(e)
-            elif wf == "keras_v3":
-                assert not isinstance(weights, v0_4.WeightsDescr), (
-                    "keras_v3 weights not supported for v0.4 specs"
-                )
-                assert weights.keras_v3 is not None
-                try:
-                    from .keras_backend import KerasModelAdapter
-
-                    return KerasModelAdapter(
-                        model_description=model_description, devices=devices
-                    )
-                except Exception as e:
-                    errors.append(e)
-            else:
-                assert_never(wf)
-
-        assert errors
-        if len(weight_format_priority_order) == 1:
-            assert len(errors) == 1
-            raise errors[0]
-
-        else:
-            msg = (
-                "None of the weight format specific model adapters could be created"
-                + " in this environment."
-            )
-            raise ExceptionGroup(msg, errors)
-
-    @final
     def load(self, *, devices: Optional[Sequence[str]] = None) -> None:
         warnings.warn("Deprecated. ModelAdapter is loaded on initialization")
 
+    @abstractmethod
+    def forward(
+        self, input_sample: Union[Sample, SampleBlock]
+    ) -> Union[Sample, SampleBlock]: ...
+
+    @abstractmethod
+    def unload(self):
+        """
+        Unload model from any devices, freeing their memory.
+        The moder adapter should be considered unusable afterwards.
+        """
+
+
+class LocalModelAdapter(ModelAdapter, ABC):
     def forward(self, input_sample: Union[Sample, SampleBlock]) -> Sample:
         """
         Run forward pass of model to get model predictions
@@ -256,12 +150,152 @@ class ModelAdapter(ABC):
     ) -> Union[List[Optional[NDArray[Any]]], Tuple[Optional[NDArray[Any]], ...]]:
         """framework specific forward implementation"""
 
+
+class RemoteModelAdapter(ModelAdapter, ABC, Generic[SerializedSampleBlockType]):
+    """Model adapter to use a remote service for model inference."""
+
+    def __init__(
+        self,
+        model_description: AnyModelDescr,
+        sample_serializer: SampleSerializer[SerializedSampleBlockType],
+    ):
+        super().__init__(model_description)
+        self._serializer = sample_serializer
+
+    def forward(
+        self, input_sample: Union[Sample, SampleBlock]
+    ) -> Union[Sample, SampleBlock]:
+        if isinstance(input_sample, Sample):
+            serialized_input = self._serializer.serialize_sample(input_sample)
+            serialized_output = self._forward_sample(serialized_input)
+            return self._serializer.deserialize_sample(serialized_output)
+        elif isinstance(input_sample, SampleBlock):
+            serialized_input = self._serializer.serialize_sample_block(input_sample)
+            serialized_output = self._forward_sample_block(serialized_input)
+            return self._serializer.deserialize_sample_block(serialized_output)
+        else:
+            assert_never(input_sample)
+
     @abstractmethod
-    def unload(self):
-        """
-        Unload model from any devices, freeing their memory.
-        The moder adapter should be considered unusable afterwards.
-        """
+    def _forward_sample(
+        self, serialized_input_sample: Iterable[SerializedSampleBlockType]
+    ) -> Iterable[SerializedSampleBlockType]: ...
+
+    @abstractmethod
+    def _forward_sample_block(
+        self, serialized_input_sample_block: SerializedSampleBlockType
+    ) -> SerializedSampleBlockType: ...
 
 
-create_model_adapter = ModelAdapter.create
+def create_model_adapter(
+    model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
+    *,
+    devices: Optional[Sequence[str]] = None,
+    weight_format_priority_order: Optional[Sequence[SupportedWeightsFormat]] = None,
+):
+    """Creates model adapter for `model_descritption`"""
+    if not isinstance(model_description, (v0_4.ModelDescr, v0_5.ModelDescr)):
+        raise TypeError(
+            f"expected v0_4.ModelDescr or v0_5.ModelDescr, but got {type(model_description)}"
+        )
+
+    weights = model_description.weights
+    errors: List[Exception] = []
+    weight_format_priority_order = (
+        DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER
+        if weight_format_priority_order is None
+        else weight_format_priority_order
+    )
+    # limit weight formats to the ones present
+    weight_format_priority_order_present: Sequence[SupportedWeightsFormat] = [
+        w for w in weight_format_priority_order if getattr(weights, w, None) is not None
+    ]
+    if not weight_format_priority_order_present:
+        raise ValueError(
+            f"None of the specified weight formats ({weight_format_priority_order}) is present ({weight_format_priority_order_present})"
+        )
+
+    for wf in weight_format_priority_order_present:
+        if wf == "pytorch_state_dict":
+            assert weights.pytorch_state_dict is not None
+            try:
+                from .pytorch_backend import PytorchModelAdapter
+
+                return PytorchModelAdapter(
+                    model_description=model_description, devices=devices
+                )
+            except Exception as e:
+                errors.append(e)
+        elif wf == "tensorflow_saved_model_bundle":
+            assert weights.tensorflow_saved_model_bundle is not None
+            try:
+                from .tensorflow_backend import create_tf_model_adapter
+
+                return create_tf_model_adapter(
+                    model_description=model_description, devices=devices
+                )
+            except Exception as e:
+                errors.append(e)
+        elif wf == "onnx":
+            assert weights.onnx is not None
+            try:
+                from .onnx_backend import ONNXModelAdapter
+
+                return ONNXModelAdapter(
+                    model_description=model_description, devices=devices
+                )
+            except Exception as e:
+                errors.append(e)
+        elif wf == "torchscript":
+            assert weights.torchscript is not None
+            try:
+                from .torchscript_backend import TorchscriptModelAdapter
+
+                return TorchscriptModelAdapter(
+                    model_description=model_description, devices=devices
+                )
+            except Exception as e:
+                errors.append(e)
+        elif wf == "keras_hdf5":
+            assert weights.keras_hdf5 is not None
+            # keras can either be installed as a separate package or used as part of tensorflow
+            # we try to first import the keras model adapter using the separate package and,
+            # if it is not available, try to load the one using tf
+            try:
+                try:
+                    from .keras_backend import KerasModelAdapter
+                except Exception:
+                    from .tensorflow_backend import KerasModelAdapter
+
+                return KerasModelAdapter(
+                    model_description=model_description, devices=devices
+                )
+            except Exception as e:
+                errors.append(e)
+        elif wf == "keras_v3":
+            assert not isinstance(weights, v0_4.WeightsDescr), (
+                "keras_v3 weights not supported for v0.4 specs"
+            )
+            assert weights.keras_v3 is not None
+            try:
+                from .keras_backend import KerasModelAdapter
+
+                return KerasModelAdapter(
+                    model_description=model_description, devices=devices
+                )
+            except Exception as e:
+                errors.append(e)
+        else:
+            assert_never(wf)
+
+    assert errors
+    if len(weight_format_priority_order) == 1:
+        assert len(errors) == 1
+        raise errors[0]
+
+    else:
+        msg = (
+            "None of the weight format specific model adapters could be created"
+            + " in this environment."
+        )
+        raise ExceptionGroup(msg, errors)

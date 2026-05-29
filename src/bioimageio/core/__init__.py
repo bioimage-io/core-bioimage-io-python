@@ -40,7 +40,9 @@ from . import stat_calculators as stat_calculators
 from . import stat_measures as stat_measures
 from . import tensor as tensor
 from . import weight_converters as weight_converters
+from ._prediction_pipeline import IntermediatePrediction as IntermediatePrediction
 from ._prediction_pipeline import PredictionPipeline as PredictionPipeline
+from ._prediction_pipeline import RemotePredictionPipeline as RemotePredictionPipeline
 from ._prediction_pipeline import (
     create_prediction_pipeline as create_prediction_pipeline,
 )
@@ -50,6 +52,7 @@ from ._resource_tests import test_description as test_description
 from ._resource_tests import test_model as test_model
 from ._settings import Settings as Settings
 from ._settings import settings as settings
+from .backends._sample_serializer import SampleSerializer as SampleSerializer
 
 # reexports from bioimageio.spec
 build_description = bioimageio.spec.build_description

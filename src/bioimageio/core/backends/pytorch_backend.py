@@ -19,7 +19,7 @@ from bioimageio.spec.utils import download
 
 from ..digest_spec import import_callable
 from ..utils._type_guards import is_list, is_ndarray, is_tuple
-from ._model_adapter import ModelAdapter
+from ._model_adapter import LocalModelAdapter
 
 
 @runtime_checkable
@@ -48,7 +48,7 @@ class TorchNNModuleLike(Protocol):
         return self
 
 
-class PytorchModelAdapter(ModelAdapter):
+class PytorchModelAdapter(LocalModelAdapter):
     def __init__(
         self,
         *,

@@ -60,7 +60,7 @@ def _convert_axis_ids(
     if mode == "per_sample":
         ret = []
     elif mode == "per_dataset":
-        ret = [v0_5.BATCH_AXIS_ID]
+        ret = [AxisId(v0_5.BATCH_AXIS_ID)]
     else:
         assert_never(mode)
 
@@ -562,7 +562,9 @@ class ScaleRange(SimpleOperator):
 
         return v0_5.ScaleRangeDescr(
             kwargs=v0_5.ScaleRangeKwargs(
-                axes=self.lower.axes,
+                axes=None
+                if self.lower.axes is None
+                else [v0_5.AxisId(a) for a in self.lower.axes],
                 min_percentile=self.lower.q * 100,
                 max_percentile=self.upper.q * 100,
                 eps=self.eps,
@@ -625,7 +627,7 @@ class Softmax(SimpleOperator):
         return cls(input=member_id, output=member_id, axis=descr.kwargs.axis)
 
     def get_descr(self):
-        return v0_5.SoftmaxDescr(kwargs=v0_5.SoftmaxKwargs(axis=self.axis))
+        return v0_5.SoftmaxDescr(kwargs=v0_5.SoftmaxKwargs(axis=v0_5.AxisId(self.axis)))
 
 
 @dataclass

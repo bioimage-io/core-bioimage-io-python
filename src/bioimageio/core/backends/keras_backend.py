@@ -17,7 +17,7 @@ from .._settings import settings
 from ..digest_spec import get_axes_infos
 from ..utils._compare import warn_about_version
 from ..utils._type_guards import is_list, is_tuple
-from ._model_adapter import ModelAdapter
+from ._model_adapter import LocalModelAdapter
 
 os.environ["KERAS_BACKEND"] = settings.keras_backend
 
@@ -35,7 +35,7 @@ except Exception:
     tf_version = None
 
 
-class KerasModelAdapter(ModelAdapter):
+class KerasModelAdapter(LocalModelAdapter):
     def __init__(
         self,
         *,

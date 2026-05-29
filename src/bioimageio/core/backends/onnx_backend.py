@@ -12,11 +12,11 @@ from numpy.typing import NDArray
 
 from bioimageio.spec.model import v0_4, v0_5
 
-from ..model_adapters import ModelAdapter
+from ..model_adapters import LocalModelAdapter
 from ..utils._type_guards import is_list, is_tuple
 
 
-class ONNXModelAdapter(ModelAdapter):
+class ONNXModelAdapter(LocalModelAdapter):
     def __init__(
         self,
         *,

@@ -3,7 +3,9 @@
 from typing import List
 
 from .backends._model_adapter import DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER
+from .backends._model_adapter import LocalModelAdapter as LocalModelAdapter
 from .backends._model_adapter import ModelAdapter as ModelAdapter
+from .backends._model_adapter import RemoteModelAdapter as RemoteModelAdapter
 from .backends._model_adapter import create_model_adapter as create_model_adapter
 
 

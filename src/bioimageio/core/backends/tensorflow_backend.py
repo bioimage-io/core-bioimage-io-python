@@ -9,10 +9,10 @@ from numpy.typing import NDArray
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 
 from ..io import ensure_unzipped
-from ._model_adapter import ModelAdapter
+from ._model_adapter import LocalModelAdapter
 
 
-class TensorflowModelAdapter(ModelAdapter):
+class TensorflowModelAdapter(LocalModelAdapter):
     weight_format = "tensorflow_saved_model_bundle"
 
     def __init__(
@@ -108,7 +108,7 @@ class TensorflowModelAdapter(ModelAdapter):
         )
 
 
-class KerasModelAdapter(ModelAdapter):
+class KerasModelAdapter(LocalModelAdapter):
     def __init__(
         self,
         *,

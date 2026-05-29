@@ -511,8 +511,8 @@ class Tensor(MagicTensorOpsMixin):
         ndim = array.ndim
         if ndim == 2:
             current_axes = (
-                v0_5.SpaceInputAxis(id=AxisId("y"), size=array.shape[0]),
-                v0_5.SpaceInputAxis(id=AxisId("x"), size=array.shape[1]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=array.shape[0]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=array.shape[1]),
             )
         elif ndim == 3 and any(s <= 3 for s in array.shape):
             current_axes = (
@@ -521,14 +521,14 @@ class Tensor(MagicTensorOpsMixin):
                         v0_5.Identifier(f"channel{i}") for i in range(array.shape[0])
                     ]
                 ),
-                v0_5.SpaceInputAxis(id=AxisId("y"), size=array.shape[1]),
-                v0_5.SpaceInputAxis(id=AxisId("x"), size=array.shape[2]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=array.shape[1]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=array.shape[2]),
             )
         elif ndim == 3:
             current_axes = (
-                v0_5.SpaceInputAxis(id=AxisId("z"), size=array.shape[0]),
-                v0_5.SpaceInputAxis(id=AxisId("y"), size=array.shape[1]),
-                v0_5.SpaceInputAxis(id=AxisId("x"), size=array.shape[2]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("z"), size=array.shape[0]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=array.shape[1]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=array.shape[2]),
             )
         elif ndim == 4:
             current_axes = (
@@ -537,9 +537,9 @@ class Tensor(MagicTensorOpsMixin):
                         v0_5.Identifier(f"channel{i}") for i in range(array.shape[0])
                     ]
                 ),
-                v0_5.SpaceInputAxis(id=AxisId("z"), size=array.shape[1]),
-                v0_5.SpaceInputAxis(id=AxisId("y"), size=array.shape[2]),
-                v0_5.SpaceInputAxis(id=AxisId("x"), size=array.shape[3]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("z"), size=array.shape[1]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=array.shape[2]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=array.shape[3]),
             )
         elif ndim == 5:
             current_axes = (
@@ -549,9 +549,9 @@ class Tensor(MagicTensorOpsMixin):
                         v0_5.Identifier(f"channel{i}") for i in range(array.shape[1])
                     ]
                 ),
-                v0_5.SpaceInputAxis(id=AxisId("z"), size=array.shape[2]),
-                v0_5.SpaceInputAxis(id=AxisId("y"), size=array.shape[3]),
-                v0_5.SpaceInputAxis(id=AxisId("x"), size=array.shape[4]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("z"), size=array.shape[2]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=array.shape[3]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=array.shape[4]),
             )
         else:
             raise ValueError(f"Could not guess an axis mapping for {array.shape}")

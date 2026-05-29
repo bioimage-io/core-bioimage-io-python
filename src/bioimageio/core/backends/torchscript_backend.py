@@ -7,12 +7,12 @@ from numpy.typing import NDArray
 
 from bioimageio.spec.model import v0_4, v0_5
 
-from ..model_adapters import ModelAdapter
+from ..model_adapters import LocalModelAdapter
 from ..utils._type_guards import is_list, is_tuple
 from .pytorch_backend import get_devices
 
 
-class TorchscriptModelAdapter(ModelAdapter):
+class TorchscriptModelAdapter(LocalModelAdapter):
     def __init__(
         self,
         *,

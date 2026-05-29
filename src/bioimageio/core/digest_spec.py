@@ -17,6 +17,7 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
+    TypeAlias,
     Union,
 )
 from zipfile import ZipFile, is_zipfile
@@ -46,12 +47,15 @@ from .sample import (
     LinearSampleAxisTransform,
     Sample,
     SampleBlockMeta,
+    SampleBlockWithOrigin,
     sample_block_meta_generator,
 )
 from .stat_measures import Stat
 from .tensor import Tensor
 
-TensorSource = Union[Tensor, xr.DataArray, NDArray[Any], PermissiveFileSource]
+TensorSource: TypeAlias = Union[
+    Tensor, xr.DataArray, NDArray[Any], PermissiveFileSource
+]
 
 
 def import_callable(
@@ -546,4 +550,34 @@ def load_sample_for_model(
         members=members,
         stat={} if stat is None else stat,
         id=sample_id or tuple(sorted(paths.values())),
+    )
+
+
+def split_sample_into_blocks_for_model(
+    sample: Sample,
+    model: v0_5.ModelDescr,
+    blocksize_parameter: int,
+    batch_size: int = 1,
+) -> Tuple[TotalNumberOfBlocks, Iterable[SampleBlockWithOrigin]]:
+    if isinstance(model, v0_4.ModelDescr):
+        raise NotImplementedError(
+            "`predict_sample_with_blocking` not implemented for v0_4.ModelDescr"
+            + f" {model.name}."
+            + " Consider using `predict_sample_with_fixed_blocking` or update the model description to format version 0.5."
+        )
+
+    ns = {
+        (ipt.id, a.id): blocksize_parameter
+        for ipt in model.inputs
+        for a in ipt.axes
+        if isinstance(a.size, v0_5.ParameterizedSize)
+    }
+    halo = get_input_halo(model)
+
+    input_block_shape = model.get_tensor_sizes(ns, batch_size=batch_size).inputs
+
+    return sample.split_into_blocks(
+        block_shapes=input_block_shape,
+        halo=halo,
+        pad_mode={ipt.id: ipt.pad or "symmetric" for ipt in model.inputs},
     )
