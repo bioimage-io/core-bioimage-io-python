@@ -21,7 +21,7 @@ and compute selected dataset statistics used for preprocessing.
 
 #### Examples
 
-Notebooks that save and load resource descriptions and validate their format (using <a href="https://bioimage-io.github.io/core-bioimage-io-python/bioimageio/spec.html">bioimageio.spec</a>, a dependency of bioimageio.core)
+Notebooks that save and load resource descriptions and validate their format (using <a href="https://bioimage-io.github.io/spec-bioimage-io/">bioimageio.spec</a>, a dependency of bioimageio.core)
 <ul>
 <li><a href="https://github.com/bioimage-io/spec-bioimage-io/blob/main/example/load_model_and_create_your_own.ipynb">load_model_and_create_your_own.ipynb</a> <a target="_blank" href="https://colab.research.google.com/github/bioimage-io/spec-bioimage-io/blob/main/example/load_model_and_create_your_own.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
@@ -31,7 +31,7 @@ Notebooks that save and load resource descriptions and validate their format (us
 </a></li>
 </ul>
 
-Use the described resources in Python with <a href="https://bioimage-io.github.io/core-bioimage-io-python/bioimageio/core.html">bioimageio.core</a>
+Use the described resources in Python with <a href="https://bioimage-io.github.io/core-bioimage-io-python/">bioimageio.core</a>
 <ul>
 <li><a href="https://github.com/bioimage-io/core-bioimage-io-python/blob/main/example/model_usage.ipynb">model_usage.ipynb</a><a target="_blank" href="https://colab.research.google.com/github/bioimage-io/core-bioimage-io-python/blob/main/example/model_usage.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
