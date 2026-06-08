@@ -17,7 +17,6 @@ from typing import (
     Optional,
     Sequence,
     Tuple,
-    TypeAlias,
     Union,
 )
 from zipfile import ZipFile, is_zipfile
@@ -26,7 +25,7 @@ import numpy as np
 import xarray as xr
 from loguru import logger
 from numpy.typing import NDArray
-from typing_extensions import Unpack, assert_never
+from typing_extensions import TypeAlias, Unpack, assert_never
 
 from bioimageio.spec._internal.io import HashKwargs, PermissiveFileSource
 from bioimageio.spec.common import FileDescr, FileSource
@@ -295,12 +294,23 @@ class IO_SampleBlockMeta(NamedTuple):
     output: SampleBlockMeta
 
 
-def get_input_halo(model: v0_5.ModelDescr, output_halo: PerMember[PerAxis[Halo]]):
+def get_input_halo(
+    model: v0_5.ModelDescr, output_halo: Optional[PerMember[PerAxis[Halo]]] = None
+):
     """returns which halo input tensors need to be divided into blocks with, such that
     `output_halo` can be cropped from their outputs without introducing gaps."""
     input_halo: Dict[MemberId, Dict[AxisId, Halo]] = {}
     outputs = {t.id: t for t in model.outputs}
     all_tensors = {**{t.id: t for t in model.inputs}, **outputs}
+    if output_halo is None:
+        output_halo = {
+            t.id: {
+                a.id: Halo(a.halo, a.halo)
+                for a in t.axes
+                if isinstance(a, v0_5.WithHalo)
+            }
+            for t in model.outputs
+        }
 
     for t, th in output_halo.items():
         axes = {a.id: a for a in outputs[t].axes}

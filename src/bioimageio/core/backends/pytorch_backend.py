@@ -17,9 +17,9 @@ from bioimageio.spec.common import BytesReader, ZipPath
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 from bioimageio.spec.utils import download
 
+from .._model_adapter import LocalModelAdapter
 from ..digest_spec import import_callable
 from ..utils._type_guards import is_list, is_ndarray, is_tuple
-from ._model_adapter import LocalModelAdapter
 
 
 @runtime_checkable
@@ -115,7 +115,6 @@ class PytorchModelAdapter(LocalModelAdapter):
     def unload(self) -> None:
         del self._model
         _ = gc.collect()  # deallocate memory
-        assert torch is not None
         torch.cuda.empty_cache()  # release reserved memory
 
 

@@ -8,8 +8,8 @@ from numpy.typing import NDArray
 
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 
+from .._model_adapter import LocalModelAdapter
 from ..io import ensure_unzipped
-from ._model_adapter import LocalModelAdapter
 
 
 class TensorflowModelAdapter(LocalModelAdapter):

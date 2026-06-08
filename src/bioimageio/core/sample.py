@@ -208,7 +208,7 @@ class Sample:
         output = cls(members={}, stat={}, id=None)
         for sample_block in sample_blocks:
             if output.id is None:
-                output.sample_id = sample_block.sample_id
+                output.id = sample_block.sample_id
             else:
                 assert output.id == sample_block.sample_id, (
                     "sample id changed between sample blocks"
@@ -397,6 +397,9 @@ class SampleBlockMeta(SampleBlockBase[BlockMeta]):
 class SampleBlock(SampleBlockBase[Block]):
     """A block of a dataset sample"""
 
+    blocks: Dict[MemberId, Block]
+    """Individual tensor blocks comprising this sample block"""
+
     stat: Stat
     """computed statistics"""
 
@@ -438,6 +441,19 @@ class SampleBlock(SampleBlockBase[Block]):
             sample_shape=self.sample_shape,
             block_index=self.block_index,
             blocks_in_sample=self.blocks_in_sample,
+        )
+
+    def as_sample(self) -> Sample:
+        """Convert this sample block to a `Sample` with the shape of this block.
+
+        Note:
+            If you want to convert one or more sample block to a sample with the shape of the original, whole sample,
+            use `Sample.from_blocks()` instead.
+        """
+        return Sample(
+            members=dict(self.members),
+            stat=dict(self.stat),
+            id=self.sample_id,
         )
 
 

@@ -9,10 +9,10 @@ from typing import (
 
 from bioimageio.spec.model import v0_5
 
-from ..axis import PerAxis
-from ..common import PadMode, PerMember
-from ..digest_spec import split_sample_into_blocks_for_model
-from ..sample import Sample, SampleBlock
+from .axis import PerAxis
+from .common import HaloLike, PadMode, PerMember
+from .digest_spec import split_sample_into_blocks_for_model
+from .sample import Sample, SampleBlock
 
 SerializedSampleBlockType = TypeVar("SerializedSampleBlockType")
 
@@ -28,9 +28,13 @@ class SampleSerializer(ABC, Generic[SerializedSampleBlockType]):
 
     @classmethod
     def deserialize_sample(
-        cls, serialized: Iterable[SerializedSampleBlockType]
+        cls,
+        serialized: Iterable[SerializedSampleBlockType],
+        fill_value: float = float("nan"),
     ) -> Sample:
-        return Sample.from_blocks((cls.deserialize_sample_block(s) for s in serialized))
+        return Sample.from_blocks(
+            (cls.deserialize_sample_block(s) for s in serialized), fill_value=fill_value
+        )
 
     def serialize_sample_blockwise(
         self,
@@ -42,12 +46,13 @@ class SampleSerializer(ABC, Generic[SerializedSampleBlockType]):
     ) -> Iterable[SerializedSampleBlockType]:
         """Split a sample into blocks according to the model's input specifications and `blocksize_parameter` and serialize each block."""
 
-        for block in split_sample_into_blocks_for_model(
+        _n_blocks, blocks = split_sample_into_blocks_for_model(
             sample,
             model=model,
             blocksize_parameter=blocksize_parameter,
             batch_size=batch_size,
-        ):
+        )
+        for block in blocks:
             yield self.serialize_sample_block(block)
 
     @classmethod
@@ -56,7 +61,7 @@ class SampleSerializer(ABC, Generic[SerializedSampleBlockType]):
         sample: Sample,
         *,
         block_shapes: PerMember[PerAxis[int]],
-        halo: PerMember[PerAxis[int]],
+        halo: PerMember[PerAxis[HaloLike]],
         pad_mode: Union[PadMode, PerMember[PadMode]] = "symmetric",
     ) -> Iterable[SerializedSampleBlockType]:
 

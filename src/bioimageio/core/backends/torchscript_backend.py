@@ -7,7 +7,7 @@ from numpy.typing import NDArray
 
 from bioimageio.spec.model import v0_4, v0_5
 
-from ..model_adapters import LocalModelAdapter
+from .._model_adapter import LocalModelAdapter
 from ..utils._type_guards import is_list, is_tuple
 from .pytorch_backend import get_devices
 

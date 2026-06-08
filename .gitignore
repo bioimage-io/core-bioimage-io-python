@@ -6,6 +6,7 @@
 .env
 .idea/
 .tox/
+Unet 2D Nuclei Broad_example/
 __pycache__/
 bioimageio_cache/
 bioimageio_unzipped_tf_weights/
@@ -15,7 +16,8 @@ coverage.xml
 dist/
 docs/api/
 dogfood/
+example/**/output/
+output.zip
 pkgs/
 site/
 typings/pooch/
-example/**/output/

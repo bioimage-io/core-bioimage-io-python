@@ -31,7 +31,6 @@ from . import commands as commands
 from . import common as common
 from . import digest_spec as digest_spec
 from . import io as io
-from . import model_adapters as model_adapters
 from . import prediction as prediction
 from . import proc_ops as proc_ops
 from . import proc_setup as proc_setup
@@ -46,13 +45,16 @@ from ._prediction_pipeline import RemotePredictionPipeline as RemotePredictionPi
 from ._prediction_pipeline import (
     create_prediction_pipeline as create_prediction_pipeline,
 )
+from ._prediction_pipeline import (
+    create_remote_prediction_pipeline as create_remote_prediction_pipeline,
+)
 from ._resource_tests import enable_determinism as enable_determinism
 from ._resource_tests import load_description_and_test as load_description_and_test
 from ._resource_tests import test_description as test_description
 from ._resource_tests import test_model as test_model
+from ._sample_serializer import SampleSerializer as SampleSerializer
 from ._settings import Settings as Settings
 from ._settings import settings as settings
-from .backends._sample_serializer import SampleSerializer as SampleSerializer
 
 # reexports from bioimageio.spec
 build_description = bioimageio.spec.build_description
