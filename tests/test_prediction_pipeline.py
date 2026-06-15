@@ -1,11 +1,23 @@
+from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 from pathlib import Path
 
 from numpy.testing import assert_array_almost_equal
 
+from bioimageio.core import Sample
 from bioimageio.core.common import SupportedWeightsFormat
 from bioimageio.spec import load_description
 from bioimageio.spec.model.v0_4 import ModelDescr as ModelDescr04
 from bioimageio.spec.model.v0_5 import ModelDescr
+
+
+def _alter_sample(sample: Sample, offset: float) -> Sample:
+    # add 1 to all values to get a different sample with the same shape and axes
+    return Sample(
+        id=f"{sample.id}_altered",
+        members={m: t + offset for m, t in sample.members.items()},
+        stat=sample.stat,
+    )
 
 
 def _test_prediction_pipeline(
@@ -21,14 +33,28 @@ def _test_prediction_pipeline(
     assert isinstance(bio_model, (ModelDescr, ModelDescr04)), (
         bio_model.validation_summary.format()
     )
+
     pp = create_prediction_pipeline(
-        bioimageio_model=bio_model, weight_format=weights_format
+        bioimageio_model=bio_model, weight_format=weights_format, devices=["cpu", "cpu"]
     )
 
     inputs = get_test_input_sample(bio_model)
-    outputs = pp.predict_sample_without_blocking(
-        inputs, skip_input_padding=True, skip_output_cropping=True
-    )
+
+    # test in a multi-threaded setting
+    multiple_inputs = [inputs, _alter_sample(inputs, offset=1.0)]
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        multiple_outputs = list(
+            executor.map(
+                partial(
+                    pp.predict_sample_without_blocking,
+                    skip_input_padding=True,
+                    skip_output_cropping=True,
+                ),
+                multiple_inputs,
+            )
+        )
+
+    outputs = multiple_outputs[0]
 
     expected_outputs = get_test_output_sample(bio_model)
     assert len(outputs.shape) == len(expected_outputs.shape)

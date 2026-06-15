@@ -52,13 +52,13 @@ partners = [
     # "stardist",         # for model testing and stardist postprocessing  # TODO: add updated stardist to partners env
 ]
 stardist = ["stardist"] # for stardist postprocessing
-gradio-server = ['gradio[mcp]']
-gradio-client = ['gradio_client']
+gradio-server = ['gradio[mcp];python_version>="3.10"']
+gradio-client = ['gradio_client;python_version>="3.10"']
 dev = [
     "cellpose",                              # for model testing
     "crick",
-    "gradio",
-    "gradio_client",
+    'gradio[mcp];python_version>="3.10"',
+    'gradio_client;python_version>="3.10"',
     "httpx",
     "jax",
     "jupyter",

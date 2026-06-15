@@ -18,7 +18,7 @@ def test_pytorch_to_torchscript(any_torch_model, tmp_path):
         pytest.skip("cannot convert to old 0.4 format")
 
     out_path = tmp_path / "weights.pt"
-    ret_val = convert(model_descr, out_path)
+    ret_val = convert(model_descr, out_path, devices=["cpu"])
     assert out_path.exists()
     assert isinstance(ret_val, v0_5.TorchscriptWeightsDescr)
     assert ret_val.source == out_path

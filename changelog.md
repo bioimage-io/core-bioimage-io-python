@@ -1,4 +1,4 @@
-### 0.11.0 (not yet released)
+### 0.11.0
 
 - bump spec to 0.5.11.0
 - support ONNX provider choice (as 'devices')

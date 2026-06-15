@@ -2,7 +2,7 @@ import os
 import shutil
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Optional, Sequence, Tuple
 
 from keras.src.legacy.saving import (  # pyright: ignore[reportMissingTypeStubs]
     legacy_h5_format,
@@ -11,11 +11,10 @@ from loguru import logger
 from numpy.typing import NDArray
 
 from bioimageio.spec._internal.version_type import Version
-from bioimageio.spec.model import v0_4, v0_5
+from bioimageio.spec.model import v0_4
 
 from .._model_adapter import LocalModelAdapter
 from .._settings import settings
-from ..digest_spec import get_axes_infos
 from ..utils._compare import warn_about_version
 from ..utils._type_guards import is_list, is_tuple
 
@@ -35,25 +34,27 @@ except Exception:
     tf_version = None
 
 
-class KerasModelAdapter(LocalModelAdapter):
-    def __init__(
-        self,
-        *,
-        model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
-        devices: Optional[Sequence[str]] = None,
-    ) -> None:
-        super().__init__(model_description=model_description)
+class KerasModelAdapter(LocalModelAdapter[None, Any]):
+    def _parse_devices(self, devices: Optional[Sequence[str]]) -> Tuple[None]:
+        # TODO keras device management
+        if devices is not None:
+            logger.warning(
+                "Device management is not implemented for keras yet, ignoring the devices {}",
+                devices,
+            )
+        return (None,)
 
+    def _init_model_on_device(self, device: None) -> Any:
         if (
-            not isinstance(model_description, v0_4.ModelDescr)
-            and model_description.weights.keras_v3 is not None
+            not isinstance(self._model_descr, v0_4.ModelDescr)
+            and self._model_descr.weights.keras_v3 is not None
         ):
-            weight_reader = model_description.weights.keras_v3.get_reader()
-            backend, backend_version = model_description.weights.keras_v3.backend
-        elif model_description.weights.keras_hdf5 is not None:
+            weight_reader = self._model_descr.weights.keras_v3.get_reader()
+            backend, backend_version = self._model_descr.weights.keras_v3.backend
+        elif self._model_descr.weights.keras_hdf5 is not None:
             backend = "legacy_tensorflow"
-            backend_version = model_description.weights.keras_hdf5.tensorflow_version
-            weight_reader = model_description.weights.keras_hdf5.get_reader()
+            backend_version = self._model_descr.weights.keras_hdf5.tensorflow_version
+            weight_reader = self._model_descr.weights.keras_hdf5.get_reader()
         else:
             raise ValueError("model has no Keras weights")
 
@@ -81,41 +82,33 @@ class KerasModelAdapter(LocalModelAdapter):
             jax_version = Version(jax.__version__)
             warn_about_version("jax", backend_version, jax_version)
 
-        # TODO keras device management
-        if devices is not None:
-            logger.warning(
-                "Device management is not implemented for keras yet, ignoring the devices {}",
-                devices,
-            )
-
         if weight_reader.suffix in (".h5", "hdf5"):
             import h5py  # pyright: ignore[reportMissingTypeStubs]
 
             h5_file = h5py.File(weight_reader, mode="r")
-            self._network = legacy_h5_format.load_model_from_hdf5(h5_file)
+            return legacy_h5_format.load_model_from_hdf5(h5_file)  # pyright: ignore[reportUnknownVariableType]
         else:
             with TemporaryDirectory() as temp_dir:
                 temp_path = Path(temp_dir) / weight_reader.original_file_name
                 with temp_path.open("wb") as f:
                     shutil.copyfileobj(weight_reader, f)
 
-                self._network = keras.models.load_model(temp_path)
+                return keras.models.load_model(temp_path)  # pyright: ignore[reportUnknownVariableType]
 
-        self._output_axes = [
-            tuple(a.id for a in get_axes_infos(out))
-            for out in model_description.outputs
-        ]
-
-    def _forward_impl(  # pyright: ignore[reportUnknownParameterType]
-        self, input_arrays: Sequence[Optional[NDArray[Any]]]
+    def _forward_impl(
+        self,
+        device: None,
+        model: Any,
+        input_arrays: Sequence[Optional[NDArray[Any]]],
     ):
-        network_output = self._network.predict(*input_arrays)  # type: ignore
+        network_output = model.predict(*input_arrays)
         if is_list(network_output) or is_tuple(network_output):
             return network_output
         else:
-            return [network_output]  # pyright: ignore[reportUnknownVariableType]
+            return [network_output]
 
-    def unload(self) -> None:
-        logger.warning(
-            "Device management is not implemented for keras yet, cannot unload model"
-        )
+    def _cleanup_pre_model_deletion(self, device: None, model: Any) -> None:
+        return
+
+    def _cleanup_post_model_deletion(self, device: None) -> None:
+        return

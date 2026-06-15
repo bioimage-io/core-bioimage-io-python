@@ -19,9 +19,11 @@ from bioimageio.core.tensor import Tensor
 
 @pytest.mark.parametrize(
     "name,axes",
-    product(
-        ["mean", "var", "std"],
-        [None, (AxisId("c"),), (AxisId("x"), AxisId("y"))],
+    list(
+        product(
+            ["mean", "var", "std"],
+            [None, (AxisId("c"),), (AxisId("x"), AxisId("y"))],
+        )
     ),
 )
 def test_individual_normal_measure(

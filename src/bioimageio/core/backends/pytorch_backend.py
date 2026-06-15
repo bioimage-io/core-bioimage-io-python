@@ -1,5 +1,4 @@
 import gc
-import warnings
 from abc import abstractmethod
 from contextlib import nullcontext
 from io import BytesIO, TextIOWrapper
@@ -48,37 +47,43 @@ class TorchNNModuleLike(Protocol):
         return self
 
 
-class PytorchModelAdapter(LocalModelAdapter):
+class PytorchModelAdapter(LocalModelAdapter[torch.device, nn.Module]):
     def __init__(
-        self,
-        *,
-        model_description: AnyModelDescr,
-        devices: Optional[Sequence[Union[str, torch.device]]] = None,
-        mode: Literal["eval", "train"] = "eval",
+        self, model_description: AnyModelDescr, mode: Literal["eval", "train"] = "eval"
     ):
-        super().__init__(model_description=model_description)
         weights = model_description.weights.pytorch_state_dict
         if weights is None:
             raise ValueError("No `pytorch_state_dict` weights found")
 
-        devices = get_devices(devices)
-        self._model = load_torch_model(weights, load_state=True, devices=devices)
-        if mode == "eval":
-            self._model = self._model.eval()
-        elif mode == "train":
-            self._model = self._model.train()
-        else:
-            assert_never(mode)
-
+        self._weights = weights
         self._mode: Literal["eval", "train"] = mode
-        self._primary_device = devices[0]
+        super().__init__(model_description=model_description)
+
+    def _parse_devices(
+        self, devices: Optional[Sequence[str]]
+    ) -> Sequence[torch.device]:
+        return get_devices(devices)
+
+    def _init_model_on_device(self, device: torch.device) -> nn.Module:
+        model = load_torch_model(self._weights, load_state=True, devices=[device])
+
+        if self._mode == "eval":
+            model = model.eval()
+        elif self._mode == "train":
+            model = model.train()
+        else:
+            assert_never(self._mode)
+
+        return model
 
     def _forward_impl(
-        self, input_arrays: Sequence[Optional[NDArray[Any]]]
+        self,
+        device: torch.device,
+        model: nn.Module,
+        input_arrays: Sequence[Optional[NDArray[Any]]],
     ) -> List[Optional[NDArray[Any]]]:
         tensors = [
-            None if a is None else torch.from_numpy(a).to(self._primary_device)
-            for a in input_arrays
+            None if a is None else torch.from_numpy(a).to(device) for a in input_arrays
         ]
 
         if self._mode == "eval":
@@ -89,7 +94,7 @@ class PytorchModelAdapter(LocalModelAdapter):
             assert_never(self._mode)
 
         with ctxt():
-            model_out = self._model(*tensors)
+            model_out = model(*tensors)
 
         if is_tuple(model_out) or is_list(model_out):
             model_out_seq = model_out
@@ -112,10 +117,15 @@ class PytorchModelAdapter(LocalModelAdapter):
 
         return result
 
-    def unload(self) -> None:
-        del self._model
+    def _cleanup_pre_model_deletion(
+        self, device: torch.device, model: nn.Module
+    ) -> None:
+        return
+
+    def _cleanup_post_model_deletion(self, device: torch.device) -> None:
         _ = gc.collect()  # deallocate memory
-        torch.cuda.empty_cache()  # release reserved memory
+        if device.type == "cuda":
+            torch.cuda.empty_cache()  # release reserved memory
 
 
 def load_torch_model(
@@ -238,11 +248,5 @@ def get_devices(
             torch_devices = [torch.device("cpu")]
     else:
         torch_devices = [torch.device(d) for d in devices]
-
-    if len(torch_devices) > 1:
-        warnings.warn(
-            f"Multiple devices for pytorch model not yet implemented; ignoring {torch_devices[1:]}"
-        )
-        torch_devices = torch_devices[:1]
 
     return torch_devices

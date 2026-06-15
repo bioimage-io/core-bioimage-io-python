@@ -1,6 +1,7 @@
 from itertools import chain
 from typing import (
     Any,
+    Dict,
     Iterable,
     Literal,
     Optional,
@@ -186,8 +187,12 @@ def test_model(
     return summary.model_dump_json()
 
 
+def _cache_key(kwargs: Dict[str, Any]) -> str:
+    return kwargs["sha256"]
+
+
 @gr.cache(  # pyright: ignore[reportUntypedFunctionDecorator]
-    key=lambda kw: kw["sha256"],  # pyright ignore[reportUnknownLambdaType]
+    key=_cache_key,
     max_size=bioimageio.core.settings.gradio_server_model_cache_max_size,
     max_memory=bioimageio.core.settings.gradio_server_model_cache_max_memory,
     per_session=False,

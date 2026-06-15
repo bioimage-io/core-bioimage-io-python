@@ -1,19 +1,13 @@
+import gc
 import warnings
 from abc import ABC, abstractmethod
-from typing import (
-    Any,
-    Generic,
-    Iterable,
-    List,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-)
+from queue import LifoQueue
+from typing import Any, Dict, Generic, Iterable, List, Optional, Sequence, Tuple, Union
 
+from exceptiongroup import ExceptionGroup
 from loguru import logger
 from numpy.typing import NDArray
-from typing_extensions import final
+from typing_extensions import TypeVar, final
 
 from bioimageio.spec import ValidationSummary
 from bioimageio.spec.model import AnyModelDescr, v0_4
@@ -91,7 +85,56 @@ class ModelAdapter(ABC):
         self.unload()
 
 
-class LocalModelAdapter(ModelAdapter, ABC):
+DeviceType = TypeVar("DeviceType")
+ModelType = TypeVar("ModelType")
+
+
+class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
+    def __init__(
+        self, model_description: AnyModelDescr, devices: Optional[Sequence[str]] = None
+    ):
+        super().__init__(model_description)
+        self._model_queue: LifoQueue[Tuple[DeviceType, ModelType]] = LifoQueue()
+        parsed_devices = self._parse_devices(devices)
+        assert parsed_devices
+        # prioritize devices by order specified by user
+        device_exceptions: Dict[str, Exception] = {}
+        self._initialized_devices: List[str] = []
+        for d in parsed_devices[::-1]:
+            try:
+                model = self._init_model_on_device(d)
+            except Exception as e:
+                device_exceptions[str(d)] = e
+            else:
+                self._model_queue.put((d, model))
+                self._initialized_devices.insert(0, str(d))
+
+        if self._model_queue.empty():
+            raise ExceptionGroup(
+                "Failed to initialize model on any of the requested devices.",
+                list(device_exceptions.values())[::-1],
+            )
+
+        if device_exceptions:
+            logger.warning(
+                "Failed to initialize model on some of the requested devices. Successfully initialized on {}, but got the following errors for other devices: {}",
+                self._initialized_devices,
+                device_exceptions,
+            )
+
+    @abstractmethod
+    def _parse_devices(self, devices: Optional[Sequence[str]]) -> Sequence[DeviceType]:
+        """Parse devices
+
+        Note:
+            - May not return an empty sequence.
+            - The order of devices in the returned sequence determines the priority of device usage in the forward pass.
+              First devices has highgest priority, last device has lowest priority.
+        """
+
+    @abstractmethod
+    def _init_model_on_device(self, device: DeviceType) -> ModelType: ...
+
     def forward(
         self, inputs: PerMember[Optional[Tensor]]
     ) -> PerMember[Optional[Tensor]]:
@@ -116,7 +159,12 @@ class LocalModelAdapter(ModelAdapter, ABC):
             "NN input shapes: {}",
             [a.shape if a is not None else None for a in input_arrays],
         )
-        output_arrays = self._forward_impl(input_arrays)
+        device, model = self._model_queue.get()
+        try:
+            output_arrays = self._forward_impl(device, model, input_arrays)
+        finally:
+            self._model_queue.put((device, model))
+
         logger.debug(
             "NN output shapes: {}",
             [a.shape if a is not None else None for a in output_arrays],
@@ -142,9 +190,40 @@ class LocalModelAdapter(ModelAdapter, ABC):
 
     @abstractmethod
     def _forward_impl(
-        self, input_arrays: Sequence[Optional[NDArray[Any]]]
+        self,
+        device: DeviceType,
+        model: ModelType,
+        input_arrays: Sequence[Optional[NDArray[Any]]],
     ) -> Union[List[Optional[NDArray[Any]]], Tuple[Optional[NDArray[Any]], ...]]:
         """framework specific forward implementation"""
+
+    def unload(self):
+        for _ in range(len(self._initialized_devices)):
+            device, model = self._model_queue.get()
+            try:
+                self._cleanup_pre_model_deletion(device, model)
+            except Exception as e:
+                logger.warning(
+                    "Got error during pre-deletion cleanup on device {}: {}", device, e
+                )
+            finally:
+                del model
+            try:
+                self._cleanup_post_model_deletion(device)
+            except Exception as e:
+                logger.warning(
+                    "Got error during post-deletion cleanup on device {}: {}", device, e
+                )
+
+        _ = gc.collect()  # deallocate memory
+
+    @abstractmethod
+    def _cleanup_pre_model_deletion(self, device: DeviceType, model: ModelType) -> None:
+        """Clean up before model reference deletion"""
+
+    @abstractmethod
+    def _cleanup_post_model_deletion(self, device: DeviceType) -> None:
+        """Clean up after model reference deletion"""
 
 
 class RemoteModelAdapter(ModelAdapter, ABC, Generic[SerializedSampleBlockType]):

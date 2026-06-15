@@ -44,7 +44,7 @@ class GradioModelAdapter(RemoteModelAdapter[SerializedSampleBlock]):
             server=server or settings.default_gradio_server,
             sample_serializer=GradioSampleSerializer(),
         )
-        self._client = Client(self.server)
+        self._client = Client(self.server, httpx_kwargs={"timeout": 60})
         self._serialized_model, self._sha256 = (
             DescriptionSerializer.serialize_to_string_and_hash(model_description)
         )
@@ -131,7 +131,7 @@ class GradioPredictionPipeline(RemotePredictionPipeline):
             default_blocksize_parameter=default_blocksize_parameter,
             default_batch_size=default_batch_size,
         )
-        self._client = Client(self.server)
+        self._client = Client(self.server, httpx_kwargs={"timeout": 60})
         self._serialized_model, self._sha256 = (
             DescriptionSerializer.serialize_to_string_and_hash(model_description)
         )

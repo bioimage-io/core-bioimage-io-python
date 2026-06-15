@@ -1,7 +1,9 @@
 from pathlib import Path
 
 import numpy as np
+import pytest
 
+from bioimageio.core import __version__
 from bioimageio.spec import InvalidDescr, ValidationContext
 
 
@@ -32,7 +34,7 @@ def test_test_model(any_model: str):
     from bioimageio.core._resource_tests import test_model
 
     with ValidationContext(raise_errors=True):
-        summary = test_model(any_model)
+        summary = test_model(any_model, devices=["cpu"])
 
     assert summary.status == "passed", summary.display()
 
@@ -48,6 +50,10 @@ def test_loading_description_multiple_times(unet2d_nuclei_broad_model: str):
     assert not isinstance(model_descr, InvalidDescr)
 
 
+@pytest.mark.skipif(
+    __version__ == "0.11.0",
+    reason="Previously released bioimageio.core 0.10.4 is incompatible with updated unet2d nuclei broad model description 0.5.11",
+)
 def test_test_description_runtime_env(unet2d_nuclei_broad_model: str):
     from bioimageio.core._resource_tests import test_description
 
