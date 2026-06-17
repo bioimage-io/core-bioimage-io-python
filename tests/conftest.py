@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import subprocess
 from itertools import chain
+from pathlib import Path
 from typing import Dict, List
 
 from dotenv import load_dotenv
@@ -50,7 +51,14 @@ skip_tensorflow = tensorflow is None
 
 logger.warning("testing with bioimageio.spec {}", bioimageio_spec_version)
 
-EXAMPLE_DESCRIPTIONS = "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/"
+EXAMPLE_DESCRIPTIONS = (
+    LOCAL_EXAMPLE_DESCRIPTIONS.as_posix() + "/"
+    if (
+        LOCAL_EXAMPLE_DESCRIPTIONS := Path(__file__).parent
+        / "../../spec-bioimage-io/example_descriptions/"
+    ).exists()
+    else "https://raw.githubusercontent.com/bioimage-io/spec-bioimage-io/main/example_descriptions/"
+)
 
 # TODO: use models from new collection on S3
 MODEL_SOURCES: Dict[str, str] = {

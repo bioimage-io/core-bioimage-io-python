@@ -14,14 +14,18 @@ from .pytorch_backend import get_devices
 
 
 class TorchscriptModelAdapter(LocalModelAdapter[torch.device, Any]):
-    def __init__(self, model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr]):
+    def __init__(
+        self,
+        model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
+        devices: Optional[Sequence[str]] = None,
+    ):
         if model_description.weights.torchscript is None:
             raise ValueError(
                 f"No torchscript weights found for model {model_description.name}"
             )
 
         self._weight_reader = model_description.weights.torchscript.get_reader()
-        super().__init__(model_description=model_description)
+        super().__init__(model_description=model_description, devices=devices)
 
     def _parse_devices(
         self, devices: Optional[Sequence[str]]

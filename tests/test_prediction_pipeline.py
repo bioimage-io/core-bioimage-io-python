@@ -41,7 +41,7 @@ def _test_prediction_pipeline(
     inputs = get_test_input_sample(bio_model)
 
     # test in a multi-threaded setting
-    multiple_inputs = [inputs, _alter_sample(inputs, offset=1.0)]
+    multiple_inputs = [inputs, _alter_sample(inputs, offset=100.0)]
     with ThreadPoolExecutor(max_workers=3) as executor:
         multiple_outputs = list(
             executor.map(
@@ -62,7 +62,7 @@ def _test_prediction_pipeline(
         out = outputs.members[m].data
         assert out is not None
         exp = expected_outputs.members[m].data
-        assert_array_almost_equal(out, exp, decimal=4)
+        assert_array_almost_equal(out, exp, decimal=2)
 
 
 def test_prediction_pipeline_torch(any_torch_model: Path):

@@ -7,7 +7,7 @@ from typing import Any, Dict, Generic, Iterable, List, Optional, Sequence, Tuple
 from exceptiongroup import ExceptionGroup
 from loguru import logger
 from numpy.typing import NDArray
-from typing_extensions import TypeVar, final
+from typing_extensions import TypeVar
 
 from bioimageio.spec import ValidationSummary
 from bioimageio.spec.model import AnyModelDescr, v0_4
@@ -39,7 +39,9 @@ class ModelAdapter(ABC):
     ```
     """
 
-    def __init__(self, model_description: AnyModelDescr):
+    def __init__(
+        self, model_description: AnyModelDescr, devices: Optional[Sequence[str]]
+    ):
         super().__init__()
         self._model_descr = model_description
         self._input_ids = get_member_ids(model_description.inputs)
@@ -55,13 +57,16 @@ class ModelAdapter(ABC):
         else:
             self._input_is_optional = [ipt.optional for ipt in model_description.inputs]
 
+        self._devices = devices
+        self.load()
+
     @property
     def model_descr(self) -> AnyModelDescr:
         return self._model_descr
 
-    @final
-    def load(self, *, devices: Optional[Sequence[str]] = None) -> None:
-        warnings.warn("ModelAdapter is loaded on initialization")
+    @abstractmethod
+    def load(self) -> None:
+        self._loaded = True
 
     @abstractmethod
     def forward(
@@ -75,6 +80,7 @@ class ModelAdapter(ABC):
         Note:
             The moder adapter should be considered unusable afterwards.
         """
+        self._loaded = False
 
     def close(self):
         """Close the model adapter, freeing any resources.
@@ -90,10 +96,8 @@ ModelType = TypeVar("ModelType")
 
 
 class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
-    def __init__(
-        self, model_description: AnyModelDescr, devices: Optional[Sequence[str]] = None
-    ):
-        super().__init__(model_description)
+    def load(self) -> None:
+        devices = self._devices
         self._model_queue: LifoQueue[Tuple[DeviceType, ModelType]] = LifoQueue()
         parsed_devices = self._parse_devices(devices)
         assert parsed_devices
@@ -122,6 +126,8 @@ class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
                 device_exceptions,
             )
 
+        super().load()
+
     @abstractmethod
     def _parse_devices(self, devices: Optional[Sequence[str]]) -> Sequence[DeviceType]:
         """Parse devices
@@ -143,6 +149,9 @@ class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
 
         Note: sample id and stample stat attributes are passed through
         """
+        if not self._loaded:
+            raise RuntimeError("Model must be `.load()`ed before calling forward()")
+
         unexpected = [mid for mid in inputs if mid not in self._input_ids]
         if unexpected:
             warnings.warn(f"Got unexpected input tensor IDs: {unexpected}")
@@ -216,6 +225,7 @@ class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
                 )
 
         _ = gc.collect()  # deallocate memory
+        super().unload()
 
     @abstractmethod
     def _cleanup_pre_model_deletion(self, device: DeviceType, model: ModelType) -> None:
@@ -235,7 +245,7 @@ class RemoteModelAdapter(ModelAdapter, ABC, Generic[SerializedSampleBlockType]):
         server: str,
         sample_serializer: SampleSerializer[SerializedSampleBlockType],
     ):
-        super().__init__(model_description)
+        super().__init__(model_description, devices=None)
         self._server = server
         self._serializer = sample_serializer
 
@@ -260,10 +270,6 @@ class RemoteModelAdapter(ModelAdapter, ABC, Generic[SerializedSampleBlockType]):
     def _forward_impl(
         self, serialized_input_sample: Iterable[SerializedSampleBlockType]
     ) -> Iterable[SerializedSampleBlockType]: ...
-
-    @abstractmethod
-    def load_model(self):
-        """Load the model on the remote service, if applicable."""
 
     @abstractmethod
     def test_model(self) -> Optional[ValidationSummary]:

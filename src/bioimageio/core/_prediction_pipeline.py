@@ -642,7 +642,7 @@ class PredictionPipeline(_PredictionPipelineBase):
         Note:
             For some model adapters loading is currently part of the constructor making them unusable after unloading.
         """
-        pass
+        self._adapter.load()
 
     def unload(self):
         """Free any device memory in use.

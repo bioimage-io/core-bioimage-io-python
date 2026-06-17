@@ -25,10 +25,7 @@ class GradioModelAdapter(RemoteModelAdapter[SerializedSampleBlock]):
     """Model adapter to use the bioimage-io-gradio-runner as a backend for model inference."""
 
     def __init__(
-        self,
-        model_description: AnyModelDescr,
-        *,
-        server: Optional[str] = None,
+        self, model_description: AnyModelDescr, *, server: Optional[str] = None
     ):
         """Initialize the GradioModelAdapter.
 
@@ -37,7 +34,7 @@ class GradioModelAdapter(RemoteModelAdapter[SerializedSampleBlock]):
 
         Args:
             model_description: The model to run inference with.
-            bioimageio_gradio_server_url: The URL of a running bioimage-io-gradio-server instance (default server might not be availability/compatible).
+            server: The URL of a running bioimage-io-gradio-server instance (default server might not be availability/compatible).
         """
         super().__init__(
             model_description,

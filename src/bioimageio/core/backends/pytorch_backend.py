@@ -49,7 +49,10 @@ class TorchNNModuleLike(Protocol):
 
 class PytorchModelAdapter(LocalModelAdapter[torch.device, nn.Module]):
     def __init__(
-        self, model_description: AnyModelDescr, mode: Literal["eval", "train"] = "eval"
+        self,
+        model_description: AnyModelDescr,
+        mode: Literal["eval", "train"] = "eval",
+        devices: Optional[Sequence[str]] = None,
     ):
         weights = model_description.weights.pytorch_state_dict
         if weights is None:
@@ -57,7 +60,7 @@ class PytorchModelAdapter(LocalModelAdapter[torch.device, nn.Module]):
 
         self._weights = weights
         self._mode: Literal["eval", "train"] = mode
-        super().__init__(model_description=model_description)
+        super().__init__(model_description=model_description, devices=devices)
 
     def _parse_devices(
         self, devices: Optional[Sequence[str]]

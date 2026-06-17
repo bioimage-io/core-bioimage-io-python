@@ -16,14 +16,18 @@ from ..utils._type_guards import is_list, is_tuple
 
 
 class ONNXModelAdapter(LocalModelAdapter[Optional[str], rt.InferenceSession]):
-    def __init__(self, model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr]):
+    def __init__(
+        self,
+        model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
+        devices: Optional[Sequence[str]] = None,
+    ):
         onnx_descr = model_description.weights.onnx
         if onnx_descr is None:
             raise ValueError("No ONNX weights specified for {model_description.name}")
 
         self._onnx_descr = onnx_descr
         self._input_names: Optional[List[str]] = None
-        super().__init__(model_description=model_description)
+        super().__init__(model_description=model_description, devices=devices)
 
     def _parse_devices(
         self, devices: Optional[Sequence[str]]

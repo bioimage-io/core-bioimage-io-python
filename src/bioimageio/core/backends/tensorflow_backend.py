@@ -17,7 +17,11 @@ class TensorflowModelAdapter(LocalModelAdapter[None, Any]):
 
     weight_format = "tensorflow_saved_model_bundle"
 
-    def __init__(self, model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr]):
+    def __init__(
+        self,
+        model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
+        devices: Optional[Sequence[str]] = None,
+    ):
 
         if model_description.weights.tensorflow_saved_model_bundle is None:
             raise ValueError("No `tensorflow_saved_model_bundle` weights found")
@@ -31,7 +35,7 @@ class TensorflowModelAdapter(LocalModelAdapter[None, Any]):
 
         self._graph = None
         self._io_names: Optional[Tuple[List[str], List[str]]] = None
-        super().__init__(model_description=model_description)
+        super().__init__(model_description=model_description, devices=devices)
 
     def _parse_devices(self, devices: Optional[Sequence[str]]) -> Tuple[None]:
         if devices is not None:
@@ -105,7 +109,11 @@ class TensorflowModelAdapter(LocalModelAdapter[None, Any]):
 
 
 class KerasModelAdapter(LocalModelAdapter[None, Any]):
-    def __init__(self, model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr]):
+    def __init__(
+        self,
+        model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
+        devices: Optional[Sequence[str]] = None,
+    ):
         if model_description.weights.tensorflow_saved_model_bundle is None:
             raise ValueError("No `tensorflow_saved_model_bundle` weights found")
 
@@ -116,7 +124,7 @@ class KerasModelAdapter(LocalModelAdapter[None, Any]):
         else:
             self._weight_src = model_description.weights.tensorflow_saved_model_bundle
 
-        super().__init__(model_description=model_description)
+        super().__init__(model_description=model_description, devices=devices)
 
     def _parse_devices(self, devices: Optional[Sequence[str]]) -> Tuple[None]:
         if devices is not None:
