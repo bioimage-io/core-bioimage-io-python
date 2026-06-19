@@ -55,7 +55,7 @@ stardist = ["stardist"] # for stardist postprocessing
 gradio-server = ['gradio[mcp];python_version>="3.10"']
 gradio-client = ['gradio_client;python_version>="3.10"']
 dev = [
-    "cellpose",                              # for model testing
+    "cellpose<4.2",                          # for model testing
     "crick",
     'gradio[mcp];python_version>="3.10"',
     'gradio_client;python_version>="3.10"',

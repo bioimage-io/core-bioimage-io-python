@@ -1,7 +1,6 @@
 import socket
 import sys
 from multiprocessing import Process
-from pathlib import Path
 
 import pytest
 from loguru import logger
@@ -21,19 +20,21 @@ def test_gradio_backend():
     server_process = Process(target=gradio_server_main, kwargs={"port": port})
     server_process.start()
 
-    server_url = f"http://localhost:{port}/"
-    model_source = Path(__file__).parent / "affable-shark-local.zip"
-    model = load_model(model_source, format_version="latest")
-    sample = get_test_input_sample(model)
+    try:
+        server_url = f"http://localhost:{port}/"
+        model = load_model(
+            "affable-shark", format_version="latest", perform_io_checks=False
+        )
+        sample = get_test_input_sample(model)
 
-    logger.debug("connecting adapter to {}", server_url)
-    adapter = GradioModelAdapter(model, server=server_url)
+        logger.debug("connecting adapter to {}", server_url)
+        adapter = GradioModelAdapter(model, server=server_url)
 
-    adapter.load()
-    _ = adapter.forward(sample.members)
-    summary = adapter.test()
-    assert summary is not None
-    assert summary.status == "passed", summary.display()
-
-    server_process.terminate()
-    server_process.join()
+        adapter.load()
+        _ = adapter.forward(sample.members)
+        summary = adapter.test()
+        assert summary is not None
+        assert summary.status == "passed", summary.display()
+    finally:
+        server_process.terminate()
+        server_process.join()

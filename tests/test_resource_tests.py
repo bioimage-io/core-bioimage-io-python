@@ -34,7 +34,7 @@ def test_test_model(any_model: str):
     from bioimageio.core._resource_tests import test_model
 
     with ValidationContext(raise_errors=True):
-        summary = test_model(any_model, devices=["cpu"])
+        summary = test_model(any_model)
 
     assert summary.status == "passed", summary.display()
 

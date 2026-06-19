@@ -124,7 +124,7 @@ TORCHSCRIPT_MODELS = (
         "unet2d_nuclei_broad_model",
     ]
 )
-ONNX_MODELS = [] if onnxruntime is None else ["hpa_densenet"]
+ONNX_MODELS = [] if onnxruntime is None else ["unet2d_nuclei_broad_model"]
 TENSORFLOW_MODELS = (
     []
     if tensorflow is None
@@ -146,9 +146,8 @@ KERAS_MODELS = (
 TENSORFLOW_JS_MODELS: List[str] = []  # TODO: add a tensorflow_js example model
 
 ALL_MODELS = sorted(
-    {
-        m
-        for m in chain(
+    set(
+        chain(
             TORCH_MODELS,
             TORCHSCRIPT_MODELS,
             ONNX_MODELS,
@@ -156,7 +155,7 @@ ALL_MODELS = sorted(
             KERAS_MODELS,
             TENSORFLOW_JS_MODELS,
         )
-    }
+    )
 )
 
 

@@ -42,12 +42,12 @@ class GradioModelAdapter(RemoteModelAdapter[SerializedSampleBlock]):
                 "No gradio server specified. Please provide a server URL or set the 'BIOIMAGEIO_GRADIO_SERVER' environment variable."
             )
 
-        super().__init__(
-            model_description, server=server, sample_serializer=GradioSampleSerializer()
-        )
-        self._client = Client(self.server, httpx_kwargs={"timeout": 60})
+        self._client = Client(server, httpx_kwargs={"timeout": 60})
         self._serialized_model, self._sha256 = (
             DescriptionSerializer.serialize_to_string_and_hash(model_description)
+        )
+        super().__init__(
+            model_description, server=server, sample_serializer=GradioSampleSerializer()
         )
 
     def _forward_impl(

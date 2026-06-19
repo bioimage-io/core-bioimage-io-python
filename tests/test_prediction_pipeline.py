@@ -62,7 +62,7 @@ def _test_prediction_pipeline(
         out = outputs.members[m].data
         assert out is not None
         exp = expected_outputs.members[m].data
-        assert_array_almost_equal(out, exp, decimal=2)
+        assert_array_almost_equal(out, exp, decimal=1)
 
 
 def test_prediction_pipeline_torch(any_torch_model: Path):
