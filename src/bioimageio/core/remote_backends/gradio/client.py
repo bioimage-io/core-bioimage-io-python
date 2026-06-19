@@ -36,10 +36,14 @@ class GradioModelAdapter(RemoteModelAdapter[SerializedSampleBlock]):
             model_description: The model to run inference with.
             server: The URL of a running bioimage-io-gradio-server instance (default server might not be availability/compatible).
         """
+        server = server or settings.gradio_server
+        if server is None:
+            raise ValueError(
+                "No gradio server specified. Please provide a server URL or set the 'BIOIMAGEIO_GRADIO_SERVER' environment variable."
+            )
+
         super().__init__(
-            model_description,
-            server=server or settings.default_gradio_server,
-            sample_serializer=GradioSampleSerializer(),
+            model_description, server=server, sample_serializer=GradioSampleSerializer()
         )
         self._client = Client(self.server, httpx_kwargs={"timeout": 60})
         self._serialized_model, self._sha256 = (
@@ -65,7 +69,7 @@ class GradioModelAdapter(RemoteModelAdapter[SerializedSampleBlock]):
     def unload(self):
         return super().unload()
 
-    def load_model(self) -> None:
+    def load(self) -> None:
         for model_data in ("", self._serialized_model):
             try:
                 result = self._client.submit(
@@ -82,7 +86,7 @@ class GradioModelAdapter(RemoteModelAdapter[SerializedSampleBlock]):
                 if result:
                     break
 
-    def test_model(self) -> Optional[ValidationSummary]:
+    def test(self) -> Optional[ValidationSummary]:
         for model_data in ("", self._serialized_model):
             try:
                 result = self._client.submit(
@@ -122,9 +126,15 @@ class GradioPredictionPipeline(RemotePredictionPipeline):
             model_description: The model to run inference with.
             server: The URL or Hugging Face space name of a running bioimageio gradio server instance (Note: default server might not be availabile/compatible!).
         """
+        server = server or settings.gradio_server
+        if server is None:
+            raise ValueError(
+                "No gradio server specified. Please provide a server URL or set the 'BIOIMAGEIO_GRADIO_SERVER' environment variable."
+            )
+
         super().__init__(
             model_description,
-            server=server or settings.default_gradio_server,
+            server=server,
             default_blocksize_parameter=default_blocksize_parameter,
             default_batch_size=default_batch_size,
         )

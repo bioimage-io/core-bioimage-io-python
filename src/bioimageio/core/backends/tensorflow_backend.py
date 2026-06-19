@@ -184,7 +184,9 @@ class KerasModelAdapter(LocalModelAdapter[None, Any]):
         return
 
 
-def create_tf_model_adapter(model_description: AnyModelDescr):
+def create_tf_model_adapter(
+    model_description: AnyModelDescr, devices: Optional[Sequence[str]] = None
+):
     tf_version = v0_5.Version(tf.__version__)  # type: ignore[reportUnknownVariableType]
     weights = model_description.weights.tensorflow_saved_model_bundle
     if weights is None:
@@ -210,6 +212,6 @@ def create_tf_model_adapter(model_description: AnyModelDescr):
         )
 
     if tf_version.major <= 1:
-        return TensorflowModelAdapter(model_description)
+        return TensorflowModelAdapter(model_description, devices=devices)
     else:
-        return KerasModelAdapter(model_description)
+        return KerasModelAdapter(model_description, devices=devices)

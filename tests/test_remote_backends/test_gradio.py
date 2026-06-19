@@ -29,9 +29,9 @@ def test_gradio_backend():
     logger.debug("connecting adapter to {}", server_url)
     adapter = GradioModelAdapter(model, server=server_url)
 
-    adapter.load_model()
+    adapter.load()
     _ = adapter.forward(sample.members)
-    summary = adapter.test_model()
+    summary = adapter.test()
     assert summary is not None
     assert summary.status == "passed", summary.display()
 

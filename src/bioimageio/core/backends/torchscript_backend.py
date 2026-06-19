@@ -24,7 +24,7 @@ class TorchscriptModelAdapter(LocalModelAdapter[torch.device, Any]):
                 f"No torchscript weights found for model {model_description.name}"
             )
 
-        self._weight_reader = model_description.weights.torchscript.get_reader()
+        self._weight_descr = model_description.weights.torchscript
         super().__init__(model_description=model_description, devices=devices)
 
     def _parse_devices(
@@ -33,8 +33,7 @@ class TorchscriptModelAdapter(LocalModelAdapter[torch.device, Any]):
         return get_devices(devices)
 
     def _init_model_on_device(self, device: torch.device) -> Any:
-        model = torch.jit.load(self._weight_reader)
-        model.to(device)
+        model = torch.jit.load(self._weight_descr.get_reader(), map_location=device)
         try:
             model.eval()
         except Exception as e:

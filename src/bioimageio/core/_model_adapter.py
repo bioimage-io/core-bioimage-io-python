@@ -114,10 +114,13 @@ class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
                 self._initialized_devices.insert(0, str(d))
 
         if self._model_queue.empty():
-            raise ExceptionGroup(
-                "Failed to initialize model on any of the requested devices.",
-                list(device_exceptions.values())[::-1],
-            )
+            if len(device_exceptions) == 1:
+                raise next(iter(device_exceptions.values()))
+            else:
+                raise ExceptionGroup(
+                    "Failed to initialize model on any of the requested devices.",
+                    list(device_exceptions.values())[::-1],
+                )
 
         if device_exceptions:
             logger.warning(
@@ -272,5 +275,5 @@ class RemoteModelAdapter(ModelAdapter, ABC, Generic[SerializedSampleBlockType]):
     ) -> Iterable[SerializedSampleBlockType]: ...
 
     @abstractmethod
-    def test_model(self) -> Optional[ValidationSummary]:
+    def test(self) -> Optional[ValidationSummary]:
         """Run the bioimageio model test."""

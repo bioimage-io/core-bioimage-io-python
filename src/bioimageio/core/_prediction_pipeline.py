@@ -776,25 +776,39 @@ def create_prediction_pipeline(
 def create_remote_prediction_pipeline(
     model_description: AnyModelDescr,
     *,
-    backend: Literal["gradio"] = "gradio",
     server: Optional[str] = None,
+    server_type: Optional[Literal["gradio"]] = "gradio",
     precomputed_statistics: Mapping[Measure, MeasureValue] = MappingProxyType({}),
     default_blocksize_parameter: BlocksizeParameter = 10,  # TODO: default to None and find smart blocksize params per axis to reduce overlap of blocks with large halo
     default_batch_size: int = 1,
 ) -> RemotePredictionPipeline:
-    """Create a `RemotePredictionPipeline` for the given `model_description`."""
+    """Create a `RemotePredictionPipeline` for the given `model_description`.
+
+    Args:
+        model_description: The model to run inference with.
+        server: The URL or Hugging Face space name of a running bioimageio server instance
+        server_type: The type of the remote server to connect to. Currently only "gradio" is supported.
+        precomputed_statistics: Precomputed dataset (and optionally sample) statistics.
+            Any included sample statistics will not be calculated on the fly and it is the callers
+            responsibility to use samples with the corresponding statistics availble in `sample.stat`.
+        default_blocksize_parameter: Allows to control the default block size with a single parameter for blockwise predictions. (not all models support this)
+        default_batch_size: Default batch size to use
+    """
+
+    if server_type is None:
+        server_type = "gradio"
 
     try:
-        if backend == "gradio":
+        if server_type == "gradio":
             from .remote_backends.gradio.client import (
                 GradioPredictionPipeline as RemotePredictionPipelineImpl,
             )
         else:
-            assert_never(backend)
+            assert_never(server_type)
     except ImportError as e:
         raise ImportError(
-            f"Failed to import {backend.capitalize()}PredictionPipeline. Make sure to install the '{backend}-client' extra,"
-            + f" e.g. with `pip install bioimageio.core[{backend}-client]`."
+            f"Failed to import {server_type.capitalize()}PredictionPipeline. Make sure to install the '{server_type}-client' extra,"
+            + f" e.g. with `pip install bioimageio.core[{server_type}-client]`."
         ) from e
 
     return RemotePredictionPipelineImpl(

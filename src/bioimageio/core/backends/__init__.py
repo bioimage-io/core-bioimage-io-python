@@ -59,7 +59,7 @@ def create_model_adapter(
             try:
                 from .pytorch_backend import PytorchModelAdapter
 
-                return PytorchModelAdapter(model_description)
+                return PytorchModelAdapter(model_description, devices=devices)
             except Exception as e:
                 errors.append(e)
         elif wf == "tensorflow_saved_model_bundle":
@@ -67,7 +67,7 @@ def create_model_adapter(
             try:
                 from .tensorflow_backend import create_tf_model_adapter
 
-                return create_tf_model_adapter(model_description)
+                return create_tf_model_adapter(model_description, devices=devices)
             except Exception as e:
                 errors.append(e)
         elif wf == "onnx":
@@ -75,7 +75,7 @@ def create_model_adapter(
             try:
                 from .onnx_backend import ONNXModelAdapter
 
-                return ONNXModelAdapter(model_description)
+                return ONNXModelAdapter(model_description, devices=devices)
             except Exception as e:
                 errors.append(e)
         elif wf == "torchscript":
@@ -83,7 +83,7 @@ def create_model_adapter(
             try:
                 from .torchscript_backend import TorchscriptModelAdapter
 
-                return TorchscriptModelAdapter(model_description)
+                return TorchscriptModelAdapter(model_description, devices=devices)
             except Exception as e:
                 errors.append(e)
         elif wf == "keras_hdf5":
@@ -97,7 +97,7 @@ def create_model_adapter(
                 except Exception:
                     from .tensorflow_backend import KerasModelAdapter
 
-                return KerasModelAdapter(model_description)
+                return KerasModelAdapter(model_description, devices=devices)
             except Exception as e:
                 errors.append(e)
         elif wf == "keras_v3":
@@ -108,7 +108,7 @@ def create_model_adapter(
             try:
                 from .keras_backend import KerasModelAdapter
 
-                return KerasModelAdapter(model_description)
+                return KerasModelAdapter(model_description, devices=devices)
             except Exception as e:
                 errors.append(e)
         else:
