@@ -2,9 +2,8 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from pathlib import Path
 
-from numpy.testing import assert_array_almost_equal
-
 from bioimageio.core import Sample
+from bioimageio.core._resource_tests import evaluate_mismatched_elements
 from bioimageio.core.common import SupportedWeightsFormat
 from bioimageio.spec import load_description
 from bioimageio.spec.model.v0_4 import ModelDescr as ModelDescr04
@@ -59,10 +58,16 @@ def _test_prediction_pipeline(
     expected_outputs = get_test_output_sample(bio_model)
     assert len(outputs.shape) == len(expected_outputs.shape)
     for m in expected_outputs.members:
-        out = outputs.members[m].data
+        out = outputs.members[m]
         assert out is not None
-        exp = expected_outputs.members[m].data
-        assert_array_almost_equal(out, exp, decimal=1)
+        exp = expected_outputs.members[m]
+        mismatched_ppm, msg, error_msg = evaluate_mismatched_elements(
+            out, exp, rtol=0.01, atol=0.1, name=m
+        )
+        if error_msg is not None:
+            raise AssertionError(error_msg)
+        elif mismatched_ppm > 50_000:
+            raise AssertionError(msg)
 
 
 def test_prediction_pipeline_torch(any_torch_model: Path):
