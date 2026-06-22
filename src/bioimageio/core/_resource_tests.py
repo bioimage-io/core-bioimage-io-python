@@ -852,12 +852,14 @@ def evaluate_mismatched_elements(
     except Exception as e:
         mismatched_ppm = -1
         msg = ""
-        error_msg = f"Error while checking if '{m}' disagrees with expected values: {e}"
+        error_msg = (
+            f"Error while checking if '{name}' disagrees with expected values: {e}"
+        )
     else:
         error_msg = None
         if mismatched_elements:
             msg = (
-                f"Output '{m}': {mismatched_elements} of "
+                f"Output '{name}': {mismatched_elements} of "
                 + f"{expected_np.size} elements disagree with expected values ("
                 + (
                     f"{mismatched_ppm * 10_000:.1f}%"
@@ -867,7 +869,7 @@ def evaluate_mismatched_elements(
                 + "). "
             )
         else:
-            msg = f"Output `{m}`: all elements agree with expected values. "
+            msg = f"Output `{name}`: all elements agree with expected values. "
 
         msg += (
             f"\nMax relative difference not accounted for by absolute tolerance ({atol:.2e}):\n{r_max:.2e}"

@@ -982,7 +982,7 @@ class ServerCmd(CmdBase):
 
         local_server_url = main(port=self.port)
         logger.info(
-            "{} server started at {}", self.backend.capitalize(), local_server_url
+            "{} server shutdown at {}", self.backend.capitalize(), local_server_url
         )
 
 
