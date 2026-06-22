@@ -13,11 +13,15 @@ def test_gradio_backend():
     from bioimageio.core.remote_backends.gradio.client import GradioModelAdapter
     from bioimageio.core.remote_backends.gradio.server import main as gradio_server_main
 
-    sock = socket.socket()
-    sock.bind(("", 0))
-    _host, port = sock.getsockname()
+    port = 7860
+    try:
+        server_process = Process(target=gradio_server_main, kwargs={"port": port})
+    except OSError:
+        sock = socket.socket()
+        sock.bind(("", 0))
+        _host, port = sock.getsockname()
+        server_process = Process(target=gradio_server_main, kwargs={"port": port})
 
-    server_process = Process(target=gradio_server_main, kwargs={"port": port})
     server_process.start()
 
     try:
