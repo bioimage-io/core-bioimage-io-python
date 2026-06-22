@@ -986,8 +986,13 @@ def _test_recreate_test_outputs(
                     if mismatched_elements:
                         msg = (
                             f"Output '{m}': {mismatched_elements} of "
-                            + f"{expected_np.size} elements disagree with expected values."
-                            + f" ({mismatched_ppm:.1f} ppm). "
+                            + f"{expected_np.size} elements disagree with expected values ("
+                            + (
+                                f"{mismatched_ppm * 10_000:.1f}%"
+                                if mismatched_ppm >= 1_000
+                                else f"{mismatched_ppm:.1f} ppm"
+                            )
+                            + "). "
                         )
                     else:
                         msg = f"Output `{m}`: all elements agree with expected values. "
