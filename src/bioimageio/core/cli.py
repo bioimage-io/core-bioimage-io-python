@@ -91,15 +91,11 @@ from .commands import WeightFormatArgAll, WeightFormatArgAny, package, test
 from .common import MemberId, SampleId, SupportedWeightsFormat
 from .digest_spec import get_member_ids, load_sample_for_model
 from .io import load_stat, save_sample, save_stat
-from .proc_setup import (
-    Measure,
-    MeasureValue,
-    StatsCalculator,
-    get_required_dataset_measures,
-)
+from .proc_setup import get_required_dataset_measures
 from .remote_backends import create_remote_model_adapter
 from .sample import Sample
-from .stat_measures import Stat
+from .stat_calculators import StatsCalculator
+from .stat_measures import Measure, MeasureValue, Stat
 from .utils import compare
 from .weight_converters._add_weights import add_weights
 

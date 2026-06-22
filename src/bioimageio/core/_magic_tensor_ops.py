@@ -38,31 +38,31 @@ class MagicTensorOpsMixin:
         return self._binary_op(other, operator.mul)
 
     def __pow__(self, other: _Compatible) -> Self:
-        return self._binary_op(other, operator.pow)
+        return self._binary_op(other, operator.pow)  # pyright: ignore[reportUnknownArgumentType]
 
     def __truediv__(self, other: _Compatible) -> Self:
-        return self._binary_op(other, operator.truediv)
+        return self._binary_op(other, operator.truediv)  # pyright: ignore[reportUnknownArgumentType]
 
     def __floordiv__(self, other: _Compatible) -> Self:
-        return self._binary_op(other, operator.floordiv)
+        return self._binary_op(other, operator.floordiv)  # pyright: ignore[reportUnknownArgumentType]
 
     def __mod__(self, other: _Compatible) -> Self:
         return self._binary_op(other, operator.mod)
 
     def __and__(self, other: _Compatible) -> Self:
-        return self._binary_op(other, operator.and_)
+        return self._binary_op(other, operator.and_)  # pyright: ignore[reportUnknownArgumentType]
 
     def __xor__(self, other: _Compatible) -> Self:
-        return self._binary_op(other, operator.xor)
+        return self._binary_op(other, operator.xor)  # pyright: ignore[reportUnknownArgumentType]
 
     def __or__(self, other: _Compatible) -> Self:
-        return self._binary_op(other, operator.or_)
+        return self._binary_op(other, operator.or_)  # pyright: ignore[reportUnknownArgumentType]
 
     def __lshift__(self, other: _Compatible) -> Self:
-        return self._binary_op(other, operator.lshift)
+        return self._binary_op(other, operator.lshift)  # pyright: ignore[reportUnknownArgumentType]
 
     def __rshift__(self, other: _Compatible) -> Self:
-        return self._binary_op(other, operator.rshift)
+        return self._binary_op(other, operator.rshift)  # pyright: ignore[reportUnknownArgumentType]
 
     def __lt__(self, other: _Compatible) -> Self:
         return self._binary_op(other, operator.lt)
@@ -102,25 +102,25 @@ class MagicTensorOpsMixin:
         return self._binary_op(other, operator.mul, reflexive=True)
 
     def __rpow__(self, other: _Compatible) -> Self:
-        return self._binary_op(other, operator.pow, reflexive=True)
+        return self._binary_op(other, operator.pow, reflexive=True)  # pyright: ignore[reportUnknownArgumentType]
 
     def __rtruediv__(self, other: _Compatible) -> Self:
-        return self._binary_op(other, operator.truediv, reflexive=True)
+        return self._binary_op(other, operator.truediv, reflexive=True)  # pyright: ignore[reportUnknownArgumentType]
 
     def __rfloordiv__(self, other: _Compatible) -> Self:
-        return self._binary_op(other, operator.floordiv, reflexive=True)
+        return self._binary_op(other, operator.floordiv, reflexive=True)  # pyright: ignore[reportUnknownArgumentType]
 
     def __rmod__(self, other: _Compatible) -> Self:
         return self._binary_op(other, operator.mod, reflexive=True)
 
     def __rand__(self, other: _Compatible) -> Self:
-        return self._binary_op(other, operator.and_, reflexive=True)
+        return self._binary_op(other, operator.and_, reflexive=True)  # pyright: ignore[reportUnknownArgumentType]
 
     def __rxor__(self, other: _Compatible) -> Self:
-        return self._binary_op(other, operator.xor, reflexive=True)
+        return self._binary_op(other, operator.xor, reflexive=True)  # pyright: ignore[reportUnknownArgumentType]
 
     def __ror__(self, other: _Compatible) -> Self:
-        return self._binary_op(other, operator.or_, reflexive=True)
+        return self._binary_op(other, operator.or_, reflexive=True)  # pyright: ignore[reportUnknownArgumentType]
 
     def _inplace_binary_op(
         self, other: _Compatible, f: Callable[[Any, Any], Any]
@@ -128,40 +128,40 @@ class MagicTensorOpsMixin:
         raise NotImplementedError
 
     def __iadd__(self, other: _Compatible) -> Self:
-        return self._inplace_binary_op(other, operator.iadd)
+        return self._inplace_binary_op(other, operator.iadd)  # pyright: ignore[reportUnknownArgumentType]
 
     def __isub__(self, other: _Compatible) -> Self:
-        return self._inplace_binary_op(other, operator.isub)
+        return self._inplace_binary_op(other, operator.isub)  # pyright: ignore[reportUnknownArgumentType]
 
     def __imul__(self, other: _Compatible) -> Self:
-        return self._inplace_binary_op(other, operator.imul)
+        return self._inplace_binary_op(other, operator.imul)  # pyright: ignore[reportUnknownArgumentType]
 
     def __ipow__(self, other: _Compatible) -> Self:
-        return self._inplace_binary_op(other, operator.ipow)
+        return self._inplace_binary_op(other, operator.ipow)  # pyright: ignore[reportUnknownArgumentType]
 
     def __itruediv__(self, other: _Compatible) -> Self:
-        return self._inplace_binary_op(other, operator.itruediv)
+        return self._inplace_binary_op(other, operator.itruediv)  # pyright: ignore[reportUnknownArgumentType]
 
     def __ifloordiv__(self, other: _Compatible) -> Self:
-        return self._inplace_binary_op(other, operator.ifloordiv)
+        return self._inplace_binary_op(other, operator.ifloordiv)  # pyright: ignore[reportUnknownArgumentType]
 
     def __imod__(self, other: _Compatible) -> Self:
-        return self._inplace_binary_op(other, operator.imod)
+        return self._inplace_binary_op(other, operator.imod)  # pyright: ignore[reportUnknownArgumentType]
 
     def __iand__(self, other: _Compatible) -> Self:
-        return self._inplace_binary_op(other, operator.iand)
+        return self._inplace_binary_op(other, operator.iand)  # pyright: ignore[reportUnknownArgumentType]
 
     def __ixor__(self, other: _Compatible) -> Self:
-        return self._inplace_binary_op(other, operator.ixor)
+        return self._inplace_binary_op(other, operator.ixor)  # pyright: ignore[reportUnknownArgumentType]
 
     def __ior__(self, other: _Compatible) -> Self:
-        return self._inplace_binary_op(other, operator.ior)
+        return self._inplace_binary_op(other, operator.ior)  # pyright: ignore[reportUnknownArgumentType]
 
     def __ilshift__(self, other: _Compatible) -> Self:
-        return self._inplace_binary_op(other, operator.ilshift)
+        return self._inplace_binary_op(other, operator.ilshift)  # pyright: ignore[reportUnknownArgumentType]
 
     def __irshift__(self, other: _Compatible) -> Self:
-        return self._inplace_binary_op(other, operator.irshift)
+        return self._inplace_binary_op(other, operator.irshift)  # pyright: ignore[reportUnknownArgumentType]
 
     def _unary_op(self, f: Callable[[Any], Any], *args: Any, **kwargs: Any) -> Self:
         raise NotImplementedError

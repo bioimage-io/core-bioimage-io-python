@@ -41,8 +41,8 @@ from bioimageio.spec.utils import download, load_array, save_array
 
 from .axis import AxisId, AxisLike
 from .common import PerMember
-from .sample import Sample, Stat
-from .stat_measures import DatasetMeasure, MeasureValue, SampleMeasure
+from .sample import Sample
+from .stat_measures import DatasetMeasure, MeasureValue, SampleMeasure, Stat
 from .tensor import Tensor
 
 if TYPE_CHECKING:

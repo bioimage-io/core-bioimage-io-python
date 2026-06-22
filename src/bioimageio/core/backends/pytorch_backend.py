@@ -244,11 +244,23 @@ def get_devices(
 ) -> List[torch.device]:
     if not devices:
         if torch.cuda.is_available():
-            torch_devices = [torch.device("cuda")]
+            torch_devices = [
+                torch.device(f"cuda:{i}") for i in range(torch.cuda.device_count())
+            ]
         elif torch.backends.mps.is_available():
             torch_devices = [torch.device("mps")]
         else:
-            torch_devices = [torch.device("cpu")]
+            try:
+                if (
+                    torch.accelerator.is_available()
+                    and (current_accelerator := torch.accelerator.current_accelerator())
+                    is not None
+                ):
+                    torch_devices = [current_accelerator]
+                else:
+                    torch_devices = [torch.device("cpu")]
+            except Exception:
+                torch_devices = [torch.device("cpu")]
     else:
         torch_devices = [torch.device(d) for d in devices]
 
