@@ -10,14 +10,17 @@ from typing import (
     Dict,
     Generic,
     Iterable,
+    Literal,
     Mapping,
     Optional,
+    Sequence,
     Tuple,
     TypeVar,
     Union,
 )
 
 import numpy as np
+import pandas as pd
 import pydantic
 import xarray as xr
 from numpy.typing import NDArray
@@ -86,6 +89,23 @@ class Sample:
             stat=self.stat,
             id=self.id,
         )
+
+    @property
+    def batch_multi_index(self) -> Optional["pd.MultiIndex"]:
+        """Return the batch multi-index of the sample, if it has one.
+
+        Returns:
+            The batch multi-index of the sample, or `None` if the sample does not have a batch dimension.
+        """
+        if not self.members:
+            return None
+
+        for tensor in self.members.values():
+            idx = tensor.data.indexes.get(AxisId("batch"))
+            if isinstance(idx, pd.MultiIndex):
+                return idx
+
+        return None
 
     def set_block(self, block: SampleBlock) -> None:
         """Set values of `block`.
@@ -259,6 +279,127 @@ class Sample:
                 for m, t in self.members.items()
             },
             stat=self.stat,
+            id=self.id,
+        )
+
+    def transpose(
+        self,
+        axes: PerMember[Sequence[AxisId]],
+        *,
+        extra_dims: Literal["raise", "squeeze", "stack", "squeeze_or_stack"] = "raise",
+        missing_dims: Literal[
+            "raise", "expand", "unstack", "unstack_or_expand"
+        ] = "raise",
+    ) -> Self:
+        """Return a new sample with transposed sample members.
+
+        Raises:
+            ValueError: If not all batch dimensions have the same length after transposition (and possibly stacking/unstacking extra dimensions).
+
+        """
+        if any((unknown := [m not in self.members for m in axes])):
+            raise ValueError(f"Axes specified for unknown members: {unknown}")
+
+        members = {
+            m: t
+            if m not in axes
+            else t.transpose(
+                axes=axes[m],
+                extra_dims=extra_dims,
+                missing_dims=missing_dims,
+            )
+            for m, t in self.members.items()
+        }
+
+        if (
+            len(
+                (
+                    batch_lengths := {
+                        t.sizes[AxisId("batch")]
+                        for m, t in members.items()
+                        if AxisId("batch") in t.dims
+                    }
+                )
+            )
+            > 1
+        ):
+            raise ValueError(
+                f"Transposed sample members have incompatible batch lengths: {batch_lengths}."
+            )
+
+        return self.__class__(members=members, stat=dict(self.stat), id=self.id)
+
+    def assign_batch_multi_index(self, multi_index: "pd.MultiIndex") -> Self:
+        """Return a new sample with the batch multi-index assigned to all sample members.
+
+        Raises:
+            ValueError: If not all sample members have a batch dimension.
+        """
+        if (
+            no_batch := [
+                m for m, t in self.members.items() if AxisId("batch") not in t.dims
+            ]
+        ) == len(self.members):
+            raise ValueError(f"No member has a batch dimension: {no_batch}")
+
+        return self.__class__(
+            members={
+                m: t
+                if AxisId("batch") not in t.dims
+                else t.assign_batch_multi_index(multi_index)
+                for m, t in self.members.items()
+            },
+            stat=dict(self.stat),
+            id=self.id,
+        )
+
+    def unstack_batch_multi_index(
+        self, *, errors: Literal["raise", "ignore"] = "raise"
+    ) -> Self:
+        """Unstack the batch multi-index of all sample members.
+
+        Args:
+            errors: Whether to raise an error if a member does not have a batch multi-index. Default is "raise".
+
+        Returns:
+            A new `Sample` with unstacked batch multi-index for all members.
+        """
+        if (
+            no_batch := [
+                m for m, t in self.members.items() if AxisId("batch") not in t.dims
+            ]
+        ) == len(self.members) and errors == "raise":
+            raise ValueError(f"No member has a batch dimension: {no_batch}")
+
+        members = {
+            m: t
+            if AxisId("batch") not in t.dims
+            else t.unstack_batch_multi_index(errors=errors)
+            for m, t in self.members.items()
+        }
+        if (
+            len(
+                batch_lengths := {
+                    t.sizes.get(AxisId("batch"))
+                    for m, t in members.items()
+                    if AxisId("batch") in t.dims
+                }
+            )
+            > 1
+        ):
+            raise ValueError(
+                f"Different batch lengths after unstacking: {batch_lengths}"
+            )
+
+        stat = {
+            k: v.unstack_batch_multi_index(errors="ignore")
+            if isinstance(v, Tensor)
+            else v
+            for k, v in self.stat.items()
+        }
+        return self.__class__(
+            members=members,
+            stat=stat,
             id=self.id,
         )
 

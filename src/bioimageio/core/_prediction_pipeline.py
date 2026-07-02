@@ -522,7 +522,6 @@ class PredictionPipeline(_PredictionPipelineBase):
             Tuple of number of blocks and an iterable of predicted intermediate samples with the last predicted block,
             All samples, but the last one, are intermediate samples with more and more blocks predicted.
         """
-
         if not skip_preprocessing:
             self._apply_samplewise_preprocessing(sample)
 

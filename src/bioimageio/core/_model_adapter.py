@@ -2,7 +2,17 @@ import gc
 import warnings
 from abc import ABC, abstractmethod
 from queue import LifoQueue
-from typing import Any, Dict, Generic, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import (
+    Any,
+    Dict,
+    Generic,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Union,
+)
 
 from exceptiongroup import ExceptionGroup
 from loguru import logger
@@ -12,6 +22,7 @@ from typing_extensions import TypeVar
 from bioimageio.spec import ValidationSummary
 from bioimageio.spec.model import AnyModelDescr, v0_4
 
+from ._restore_batch_multi_index import restore_batch_multi_index
 from ._sample_serializer import SampleSerializer, SerializedSampleBlockType
 from .common import PerMember
 from .digest_spec import get_axes_infos, get_member_ids
@@ -151,6 +162,9 @@ class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
         Run forward pass of model to get model predictions
 
         Note: sample id and stample stat attributes are passed through
+
+        Args:
+            inputs: input tensors for the model, keyed by member id
         """
         if not self._loaded:
             raise RuntimeError("Model must be `.load()`ed before calling forward()")
@@ -163,10 +177,11 @@ class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
             (
                 None
                 if (a := inputs.get(in_id)) is None
-                else a.transpose(in_order).data.data
+                else a.transpose(in_order).to_numpy()
             )
             for in_id, in_order in zip(self._input_ids, self._input_axes)
         ]
+
         logger.debug(
             "NN input shapes: {}",
             [a.shape if a is not None else None for a in input_arrays],
@@ -191,7 +206,7 @@ class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
             None if a is None else Tensor(a, dims=d)
             for a, d in zip(output_arrays, self._output_axes)
         ]
-        return {
+        outputs = {
             tid: out
             for tid, out in zip(
                 self._output_ids,
@@ -199,6 +214,8 @@ class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
             )
             if out is not None
         }
+        outputs = restore_batch_multi_index(inputs, outputs)
+        return outputs
 
     @abstractmethod
     def _forward_impl(
@@ -267,7 +284,9 @@ class RemoteModelAdapter(ModelAdapter, ABC, Generic[SerializedSampleBlockType]):
             )
         )
         serialized_output = self._forward_impl(serialized_input)
-        return self._serializer.deserialize_sample(serialized_output).members
+        output = self._serializer.deserialize_sample(serialized_output).members
+        output = restore_batch_multi_index(inputs, output)
+        return output
 
     @abstractmethod
     def _forward_impl(

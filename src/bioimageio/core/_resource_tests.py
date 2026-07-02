@@ -862,7 +862,7 @@ def evaluate_mismatched_elements(
                 f"Output '{name}': {mismatched_elements} of "
                 + f"{expected_np.size} elements disagree with expected values ("
                 + (
-                    f"{mismatched_ppm * 10_000:.1f}%"
+                    f"{mismatched_ppm / 10_000:.1f}%"
                     if mismatched_ppm >= 1_000
                     else f"{mismatched_ppm:.1f} ppm"
                 )
