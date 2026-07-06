@@ -315,21 +315,38 @@ def test_description(
 
         # elevate status valid-format to passed and start testing
         descr.validation_summary.status = "passed"
-        _test_in_env(
-            file_source,
-            descr=descr,
-            working_dir=working_dir,
-            weight_format=weight_format,
-            conda_env=conda_env,
-            devices=devices,
-            determinism=determinism,
-            expected_type=expected_type,
-            sha256=sha256,
-            stop_early=stop_early,
-            run_command=run_command,
-            verbose=verbose,
-            **deprecated,
-        )
+        try:
+            _test_in_env(
+                file_source,
+                descr=descr,
+                working_dir=working_dir,
+                weight_format=weight_format,
+                conda_env=conda_env,
+                devices=devices,
+                determinism=determinism,
+                expected_type=expected_type,
+                sha256=sha256,
+                stop_early=stop_early,
+                run_command=run_command,
+                verbose=verbose,
+                **deprecated,
+            )
+        except Exception as e:
+            descr.validation_summary.add_detail(
+                ValidationDetail(
+                    name="Test in dedicated environment",
+                    status="failed",
+                    loc=(),
+                    errors=[
+                        ErrorEntry(
+                            loc=(),
+                            msg=str(e),
+                            type="bioimageio.core",
+                            with_traceback=True,
+                        )
+                    ],
+                )
+            )
 
     return descr.validation_summary
 
@@ -357,7 +374,7 @@ def _test_in_env(
         if weight_format is None:
             # run tests for all present weight formats
             all_present_wfs = [
-                wf for wf in get_args(WeightsFormat) if getattr(descr.weights, wf)
+                wf for wf in get_args(WeightsFormat) if getattr(descr.weights, wf, None)
             ]
             ignore_wfs = [wf for wf in all_present_wfs if wf in ["tensorflow_js"]]
             logger.info(
