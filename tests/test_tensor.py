@@ -82,7 +82,7 @@ def test_transpose_stack_extra_dims_to_batch_creates_multi_index():
     assert transposed.dims == (AxisId("batch"), AxisId("x"))
     assert transposed.sizes[AxisId("batch")] == 6
     assert transposed.sizes[AxisId("x")] == 4
-    batch_index = transposed.data.indexes[AxisId("batch")]
+    batch_index = transposed.data.indexes[AxisId("batch")]  # pyright: ignore[reportUnknownVariableType]
     assert isinstance(batch_index, pd.MultiIndex)
     assert tuple(str(level) for level in batch_index.names) == ("original_batch", "z")
 

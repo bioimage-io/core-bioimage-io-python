@@ -101,7 +101,7 @@ class Sample:
             return None
 
         for tensor in self.members.values():
-            idx = tensor.data.indexes.get(AxisId("batch"))
+            idx = tensor.data.indexes.get(AxisId("batch"))  # pyright: ignore[reportUnknownVariableType]
             if isinstance(idx, pd.MultiIndex):
                 return idx
 
@@ -316,7 +316,7 @@ class Sample:
                 (
                     batch_lengths := {
                         t.sizes[AxisId("batch")]
-                        for m, t in members.items()
+                        for t in members.values()
                         if AxisId("batch") in t.dims
                     }
                 )
@@ -335,7 +335,7 @@ class Sample:
         Raises:
             ValueError: If not all sample members have a batch dimension.
         """
-        if (
+        if len(
             no_batch := [
                 m for m, t in self.members.items() if AxisId("batch") not in t.dims
             ]
@@ -365,10 +365,14 @@ class Sample:
             A new `Sample` with unstacked batch multi-index for all members.
         """
         if (
-            no_batch := [
-                m for m, t in self.members.items() if AxisId("batch") not in t.dims
-            ]
-        ) == len(self.members) and errors == "raise":
+            len(
+                no_batch := [
+                    m for m, t in self.members.items() if AxisId("batch") not in t.dims
+                ]
+            )
+            == len(self.members)
+            and errors == "raise"
+        ):
             raise ValueError(f"No member has a batch dimension: {no_batch}")
 
         members = {
@@ -381,7 +385,7 @@ class Sample:
             len(
                 batch_lengths := {
                     t.sizes.get(AxisId("batch"))
-                    for m, t in members.items()
+                    for t in members.values()
                     if AxisId("batch") in t.dims
                 }
             )
@@ -391,10 +395,10 @@ class Sample:
                 f"Different batch lengths after unstacking: {batch_lengths}"
             )
 
-        stat = {
+        stat: Stat = {
             k: v.unstack_batch_multi_index(errors="ignore")
             if isinstance(v, Tensor)
-            else v
+            else float(v)
             for k, v in self.stat.items()
         }
         return self.__class__(
