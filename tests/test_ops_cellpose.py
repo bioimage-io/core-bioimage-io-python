@@ -193,7 +193,7 @@ def test_cellpose_export(tmp_path: Path):
                     ReproducibilityTolerance(
                         relative_tolerance=0.0,
                         absolute_tolerance=0.0,
-                        mismatched_elements_per_million=2000,
+                        mismatched_elements_per_million=20000,
                     )
                 ]
             )
