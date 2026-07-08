@@ -1,5 +1,6 @@
 import warnings
 from abc import ABC, abstractmethod
+from itertools import chain
 from types import MappingProxyType
 from typing import (
     Any,
@@ -10,6 +11,7 @@ from typing import (
     NamedTuple,
     Optional,
     Sequence,
+    Set,
     Tuple,
     TypeVar,
     Union,
@@ -19,6 +21,7 @@ from loguru import logger
 from tqdm import tqdm
 from typing_extensions import assert_never
 
+from bioimageio.spec import load_model_description
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 
 from ._model_adapter import ModelAdapter
@@ -67,12 +70,16 @@ class _PredictionPipelineBase(ABC):
         *,
         default_blocksize_parameter: BlocksizeParameter,
         default_batch_size: int,
+        preceding_prediction_pipelines: Optional[
+            Sequence[Union["PredictionPipeline", "RemotePredictionPipeline"]]
+        ],
     ) -> None:
         super().__init__()
         self._model_descr = model_descr
         self._default_blocksize_parameter = default_blocksize_parameter
         self._default_batch_size = default_batch_size
-
+        # TODO: Improve parallelization of blockwise predictions with preceding prediction pipelines.
+        self._preceding_prediction_pipelines = preceding_prediction_pipelines
         if isinstance(model_descr, v0_4.ModelDescr):
             self._default_output_halo: PerMember[PerAxis[Halo]] = {}
             self._default_input_halo: PerMember[PerAxis[Halo]] = {}
@@ -100,6 +107,17 @@ class _PredictionPipelineBase(ABC):
             }
         )
 
+        self._input_ids = tuple(get_member_ids(model_descr.inputs))
+        self._output_ids = tuple(get_member_ids(model_descr.outputs))
+
+    @property
+    def input_ids(self) -> Sequence[MemberId]:
+        return self._input_ids
+
+    @property
+    def output_ids(self) -> Sequence[MemberId]:
+        return self._output_ids
+
     @property
     def model_descr(self) -> AnyModelDescr:
         return self._model_descr
@@ -108,8 +126,67 @@ class _PredictionPipelineBase(ABC):
     def model_description(self) -> AnyModelDescr:
         return self._model_descr
 
-    @abstractmethod
+    def _get_preceding_prediction_pipelines_for_sample(
+        self, sample: Sample
+    ) -> Sequence["PredictionPipeline | RemotePredictionPipeline"]:
+        """Get preceding prediction pipelines for a sample based on the sample's input member ids."""
+        if not self._preceding_prediction_pipelines:
+            return ()
+
+        required_inputs = set(self.input_ids)
+        sample_members = set(sample.members.keys())
+        preceding_pipelines: List["PredictionPipeline | RemotePredictionPipeline"] = []
+        for pp in self._preceding_prediction_pipelines[::-1]:
+            preceding_pipelines.insert(0, pp)
+            sample_members.update(pp.output_ids)
+            required_inputs.update(pp.input_ids)
+            required_inputs.difference_update(sample_members)
+
+            if not required_inputs:
+                return preceding_pipelines
+
+        raise KeyError(
+            f"Sample is missing required inputs {required_inputs} for the prediction pipeline or its preceding pipelines."
+        )
+
     def predict_sample_without_blocking(
+        self,
+        sample: Sample,
+        skip_preprocessing: bool = False,
+        skip_postprocessing: bool = False,
+        skip_input_padding: bool = False,
+        skip_output_cropping: bool = False,
+    ) -> Sample:
+        """Predict a whole sample at once.
+
+        Note:
+            The sample's tensor shapes have to match the model's input tensor description.
+            If that is not the case, consider `predict_sample_with_blocking`
+
+        Args:
+            sample: input sample
+            skip_preprocessing: if `True`, skip all preprocessing steps (except for any preceding prediction pipeline).
+            skip_postprocessing: if `True`, skip all postprocessing steps (except for any preceding prediction pipeline).
+            skip_input_padding: if `True`, skip padding the input sample according to the model's (optional) output halos.
+            skip_output_cropping: if `True`, skip cropping any output halos from the model output.
+        """
+        for pp in self._get_preceding_prediction_pipelines_for_sample(sample):
+            sample = pp._predict_sample_without_blocking_impl(
+                sample,
+                skip_input_padding=skip_input_padding,
+                skip_output_cropping=skip_output_cropping,
+            )
+
+        return self._predict_sample_without_blocking_impl(
+            sample,
+            skip_preprocessing=skip_preprocessing,
+            skip_postprocessing=skip_postprocessing,
+            skip_input_padding=skip_input_padding,
+            skip_output_cropping=skip_output_cropping,
+        )
+
+    @abstractmethod
+    def _predict_sample_without_blocking_impl(
         self,
         sample: Sample,
         skip_preprocessing: bool = False,
@@ -157,6 +234,7 @@ class _PredictionPipelineBase(ABC):
               Unapplicable blocksize parameters are ignored.
             batch_size: Batch size to use for prediction.
         """
+
         output = None
         for output in self.predict_sample_with_blocking_yield_intermediates(
             sample,
@@ -192,7 +270,9 @@ class _PredictionPipelineBase(ABC):
             skip_postprocessing: If `True`, skip all postprocessing steps.
         """
         intermediate = None
-        for intermediate in self.predict_sample_with_fixed_blocking_yield_intermediates(
+        for (
+            intermediate
+        ) in self._predict_sample_with_fixed_blocking_yield_intermediates_impl(
             sample,
             input_block_shape=input_block_shape,
             skip_preprocessing=skip_preprocessing,
@@ -219,12 +299,31 @@ class _PredictionPipelineBase(ABC):
         batch_size: Optional[int] = None,
     ) -> Tuple[int, Iterable[IntermediatePrediction]]:
         """Predict `sample` by predicting sample blocks and yield intermediate predictions if no samplewise postprocessing is included.
+        Also yields intermediate predictions if there are preceding prediction pipelines (model inputs depend on another model's outputs).
+        For preceding prediction pipelines `ns` and `batch_size` are shared, but pre- and postprocessing are never skipped in preceding pipelines.
 
         Returns:
-            Tuple of number of blocks and an iterator of predicted intermediate samples with the last predicted block,
+            Tuple of number of prediction steps and an iterator of predicted intermediate samples with the last predicted block,
             All samples, but the last one, are intermediate samples with more and more blocks predicted.
             In case samplewise postprocessing needs to be applied, no intermediate results are yielded, but only the final sample after all blocks are predicted and postprocessed.
+            In case of preceding prediction pipelines (model inputs depend on another model's outputs), intermediate results initially do not include the final output tensors at all.
         """
+
+        total_prediction_steps = 0
+        iterable_intermediates = ()
+        for pp in self._get_preceding_prediction_pipelines_for_sample(sample):
+            pp_steps, pp_intermediates = (
+                pp.predict_sample_with_blocking_yield_intermediates(
+                    sample,
+                    ns=ns,
+                    batch_size=batch_size,
+                    skip_preprocessing=False,
+                    skip_postprocessing=False,
+                )
+            )
+            total_prediction_steps += pp_steps
+            iterable_intermediates = chain(iterable_intermediates, pp_intermediates)
+
         if isinstance(self._model_descr, v0_4.ModelDescr):
             raise NotImplementedError(
                 "`predict_sample_with_blocking` not implemented for v0_4.ModelDescr"
@@ -244,15 +343,67 @@ class _PredictionPipelineBase(ABC):
             ns, batch_size or self._default_batch_size
         ).inputs
 
-        return self.predict_sample_with_fixed_blocking_yield_intermediates(
-            sample,
-            input_block_shape=input_block_shape,
-            skip_preprocessing=skip_preprocessing,
-            skip_postprocessing=skip_postprocessing,
+        steps, intermediates = (
+            self._predict_sample_with_fixed_blocking_yield_intermediates_impl(
+                sample,
+                input_block_shape=input_block_shape,
+                skip_preprocessing=skip_preprocessing,
+                skip_postprocessing=skip_postprocessing,
+            )
         )
+        total_prediction_steps += steps
+        iterable_intermediates = chain(iterable_intermediates, intermediates)
+        return total_prediction_steps, iterable_intermediates
+
+    def predict_sample_with_fixed_blocking_yield_intermediates(
+        self,
+        sample: Sample,
+        input_block_shape: PerMember[PerAxis[int]],
+        *,
+        skip_preprocessing: bool = False,
+        skip_postprocessing: bool = False,
+        fill_value: float = float("nan"),
+    ) -> Tuple[int, Iterable[IntermediatePrediction]]:
+        """Predict `sample` by predicting sample blocks of `input_block_shape` and yield intermediate predictions if no samplewise postprocessing is included.
+        Also yields intermediate predictions if there are preceding prediction pipelines (model inputs depend on another model's outputs).
+        For preceding prediction pipelines `input_block_shape` and `fill_value` are shared, but pre- and postprocessing are never skipped in preceding pipelines.
+
+        Returns:
+            Tuple of number of prediction steps and an iterator of predicted intermediate samples with the last predicted block,
+            All samples, but the last one, are intermediate samples with more and more blocks predicted.
+            In case samplewise postprocessing needs to be applied, no intermediate results are yielded, but only the final sample after all blocks are predicted and postprocessed.
+            In case of preceding prediction pipelines (model inputs depend on another model's outputs), intermediate results initially do not include the final output tensors at all.
+        """
+        total_prediction_steps = 0
+        iterable_intermediates = ()
+        for pp in self._get_preceding_prediction_pipelines_for_sample(sample):
+            pp_steps, pp_intermediates = (
+                pp._predict_sample_with_fixed_blocking_yield_intermediates_impl(
+                    sample,
+                    input_block_shape=input_block_shape,
+                    skip_preprocessing=False,
+                    skip_postprocessing=False,
+                    fill_value=fill_value,
+                )
+            )
+            total_prediction_steps += pp_steps
+            iterable_intermediates = chain(iterable_intermediates, pp_intermediates)
+
+        pp_steps, pp_intermediates = (
+            self._predict_sample_with_fixed_blocking_yield_intermediates_impl(
+                sample,
+                input_block_shape=input_block_shape,
+                skip_preprocessing=skip_preprocessing,
+                skip_postprocessing=skip_postprocessing,
+                fill_value=fill_value,
+            )
+        )
+        total_prediction_steps += pp_steps
+        iterable_intermediates = chain(iterable_intermediates, pp_intermediates)
+        return total_prediction_steps, iterable_intermediates
 
     @abstractmethod
-    def predict_sample_with_fixed_blocking_yield_intermediates(
+    def _predict_sample_with_fixed_blocking_yield_intermediates_impl(
         self,
         sample: Sample,
         input_block_shape: PerMember[PerAxis[int]],
@@ -297,12 +448,16 @@ class PredictionPipeline(_PredictionPipelineBase):
         model_adapter: ModelAdapter,
         default_blocksize_parameter: BlocksizeParameter = 10,
         default_batch_size: int = 1,
+        preceding_prediction_pipelines: Optional[
+            Sequence[Union["PredictionPipeline", "RemotePredictionPipeline"]]
+        ] = None,
     ) -> None:
         """Consider using `create_prediction_pipeline` to create a `PredictionPipeline` with sensible defaults."""
         super().__init__(
             model_descr=model_description,
             default_blocksize_parameter=default_blocksize_parameter,
             default_batch_size=default_batch_size,
+            preceding_prediction_pipelines=preceding_prediction_pipelines,
         )
 
         if model_description.run_mode:
@@ -335,9 +490,6 @@ class PredictionPipeline(_PredictionPipelineBase):
                 self._blockwise_postprocessing.append(op)
             else:
                 self._samplewise_postprocessing.append(op)
-
-        self._input_ids = get_member_ids(model_description.inputs)
-        self._output_ids = get_member_ids(model_description.outputs)
 
         self._adapter = model_adapter
 
@@ -417,7 +569,7 @@ class PredictionPipeline(_PredictionPipelineBase):
 
         return output
 
-    def predict_sample_without_blocking(
+    def _predict_sample_without_blocking_impl(
         self,
         sample: Sample,
         skip_preprocessing: bool = False,
@@ -494,7 +646,7 @@ class PredictionPipeline(_PredictionPipelineBase):
         )
         return output.sample
 
-    def predict_sample_with_fixed_blocking_yield_intermediates(
+    def _predict_sample_with_fixed_blocking_yield_intermediates_impl(
         self,
         sample: Sample,
         input_block_shape: Mapping[MemberId, Mapping[AxisId, int]],
@@ -672,11 +824,15 @@ class RemotePredictionPipeline(_PredictionPipelineBase):
         server: str,
         default_blocksize_parameter: BlocksizeParameter,
         default_batch_size: int,
+        preceding_prediction_pipelines: Optional[
+            Sequence[Union["PredictionPipeline", "RemotePredictionPipeline"]]
+        ] = None,
     ) -> None:
         super().__init__(
             model_descr,
             default_blocksize_parameter=default_blocksize_parameter,
             default_batch_size=default_batch_size,
+            preceding_prediction_pipelines=preceding_prediction_pipelines,
         )
         self._server = server
 
@@ -697,6 +853,9 @@ def create_prediction_pipeline(
     model_adapter: Optional[ModelAdapter] = None,
     ns: Optional[BlocksizeParameter] = None,
     default_blocksize_parameter: BlocksizeParameter = 10,  # TODO: default to None and find smart blocksize params per axis to reduce overlap of blocks with large halo
+    preceding_prediction_pipelines: Optional[
+        Sequence[Union[PredictionPipeline, RemotePredictionPipeline]]
+    ] = None,
     **deprecated_kwargs: Any,
 ) -> PredictionPipeline:
     """
@@ -728,7 +887,12 @@ def create_prediction_pipeline(
         ns: deprecated in favor of **default_blocksize_parameter**
         default_blocksize_parameter: Allows to control the default block size for
             blockwise predictions, see `BlocksizeParameter`.
-
+        preceding_prediction_pipelines: (optional) If the model has inputs that are
+            outputs of other models (input field 'output_of'), you can provide a sequence
+            of preceding prediction pipelines. The prediction pipeline will then automatically
+            use the outputs of those preceding pipelines as inputs for the current model.
+            If no preceding prediction pipelines for a model are provided, prediction pipelines using the
+            same devices and weight format as for the current model will be created for any required preceding models.
     """
     weights_format = weight_format or weights_format
     del weight_format
@@ -762,6 +926,40 @@ def create_prediction_pipeline(
         fixed_dataset_stats=fixed_dataset_statistics,
     )
 
+    def _get_preceding_model_ids(model: AnyModelDescr) -> Set[v0_5.ModelId]:
+        return {
+            input_descr.output_of
+            for input_descr in model.inputs
+            if isinstance(input_descr, v0_5.InputTensorDescr)
+            and input_descr.output_of is not None
+        }
+
+    preceding_model_ids = _get_preceding_model_ids(bioimageio_model)
+    if preceding_prediction_pipelines is None:
+        preceding_prediction_pipelines = []
+    else:
+        preceding_prediction_pipelines = list(preceding_prediction_pipelines)
+
+    for preceding_model_id in preceding_model_ids:
+        if preceding_model_id in {
+            pp.model_description.id for pp in preceding_prediction_pipelines
+        }:
+            continue
+
+        preceding_model = load_model_description(preceding_model_id)
+        preceding_prediction_pipelines.insert(
+            0,
+            create_prediction_pipeline(
+                preceding_model,
+                devices=devices,
+                weights_format=weights_format,
+                default_blocksize_parameter=default_blocksize_parameter,
+                dataset_for_initial_statistics=dataset_for_initial_statistics,
+                keep_updating_initial_dataset_statistics=keep_updating_initial_dataset_statistics,
+                fixed_dataset_statistics=fixed_dataset_statistics,
+            ),
+        )
+
     return PredictionPipeline(
         name=bioimageio_model.name,
         model_description=bioimageio_model,
@@ -769,6 +967,7 @@ def create_prediction_pipeline(
         preprocessing=preprocessing,
         postprocessing=postprocessing,
         default_blocksize_parameter=default_blocksize_parameter,
+        preceding_prediction_pipelines=preceding_prediction_pipelines,
     )
 
 

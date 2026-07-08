@@ -178,7 +178,7 @@ class GradioPredictionPipeline(RemotePredictionPipeline):
         output_meta = sample_block.get_transformed_meta(self._block_transform)
         return output_meta.with_data(output_block.members, stat=sample_block.stat)
 
-    def predict_sample_without_blocking(
+    def _predict_sample_without_blocking_impl(
         self,
         sample: Sample,
         skip_preprocessing: bool = False,
@@ -202,7 +202,7 @@ class GradioPredictionPipeline(RemotePredictionPipeline):
             )
         )
 
-    def predict_sample_with_fixed_blocking_yield_intermediates(
+    def _predict_sample_with_fixed_blocking_yield_intermediates_impl(
         self,
         sample: Sample,
         input_block_shape: PerMember[PerAxis[int]],
