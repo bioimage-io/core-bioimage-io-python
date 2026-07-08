@@ -1,9 +1,10 @@
 ### 0.11.0
 
-- bump spec to 0.5.11.0
+- bump spec to 0.5.12.0
 - support ONNX provider choice (as 'devices')
 - added experimental bioimageio.core.backends.gradio_backend
 - improved prediction pipeline and model adapter interfaces
+- support preceding prediction pipelines (`output_of` model input field)
 
 ### 0.10.4
 
