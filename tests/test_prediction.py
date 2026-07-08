@@ -162,12 +162,12 @@ def test_predict_z_as_batch(unet2d_nuclei_broad_model: str):
     assert "z" in pred.dims
     assert pred.tagged_shape[AxisId("batch")] == 1, "expected 1 batch slice in output"
     assert pred.to_numpy().shape[0] == 1, "expected 1 batch slice in output"
+    assert pred.tagged_shape[AxisId("z")] == 2, "expected 2 z-slices in output"
+    assert pred.to_numpy().shape[1] == 2, "expected 2 z-slices in output"
     assert pred.tagged_shape[AxisId("channel")] == 1, (
         "expected 1 channel slice in output"
     )
-    assert pred.to_numpy().shape[1] == 1, "expected 1 channel slice in output"
-    assert pred.tagged_shape[AxisId("z")] == 2, "expected 2 z-slices in output"
-    assert pred.to_numpy().shape[2] == 2, "expected 2 z-slices in output"
+    assert pred.to_numpy().shape[2] == 1, "expected 1 channel slice in output"
 
 
 def test_transpose_sample_for_model_stacks_extra_z_to_batch(

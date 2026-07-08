@@ -8,6 +8,7 @@ from typing import (
     Callable,
     Dict,
     Iterator,
+    List,
     Literal,
     Mapping,
     Optional,
@@ -531,7 +532,21 @@ class Tensor(MagicTensorOpsMixin):
             else:
                 assert_never(errors)
 
+        old_dims = self.dims
         array = self._data.unstack(AxisId("batch"))
+        added_dims = [AxisId(d) for d in array.dims if d not in self._data.dims]
+
+        # restore expected axis order, replace batch dim with added dims
+        new_dims: List[AxisId] = []
+        for d in old_dims:
+            if d in array.dims:
+                new_dims.append(d)
+            elif d == AxisId("batch"):
+                new_dims.extend(added_dims)
+            else:
+                raise ValueError(f"Expected axis {d} not found in unstacked array.")
+
+        array = array.transpose(*new_dims)
         if AxisId("original_batch") in array.dims:
             array = array.rename({AxisId("original_batch"): AxisId("batch")})
 
