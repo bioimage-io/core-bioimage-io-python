@@ -55,7 +55,7 @@ def load_collection_config() -> CollectionConfig:
 
 
 @cache
-def load_hypened_nouns() -> set[str]:
+def load_hyphened_nouns() -> set[str]:
     """get all nouns with hyphens that could be part of a nickname, e.g. 't-rex'"""
     return {
         noun
@@ -98,7 +98,7 @@ def get_resource_icon(nickname: str, rtype: str) -> str:
         return " "
 
     # remove hyphen from noun part of nickname, e.g. "laid-back-t-rex" -> "laid-back-trex"
-    for hyphened_noun in load_hypened_nouns():
+    for hyphened_noun in load_hyphened_nouns():
         if nickname.endswith(hyphened_noun):
             nickname = nickname[: -len(hyphened_noun)] + hyphened_noun.replace("-", "")
 
