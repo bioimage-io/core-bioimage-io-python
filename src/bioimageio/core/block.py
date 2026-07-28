@@ -87,6 +87,15 @@ class Block(BlockMeta):
             data=data,
         )
 
+    def get_meta(self) -> BlockMeta:
+        return BlockMeta(
+            sample_shape=self.sample_shape,
+            inner_slice=self.inner_slice,
+            halo=self.halo,
+            block_index=self.block_index,
+            blocks_in_sample=self.blocks_in_sample,
+        )
+
 
 def split_tensor_into_blocks(
     tensor: Tensor,

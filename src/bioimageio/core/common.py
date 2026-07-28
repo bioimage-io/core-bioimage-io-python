@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from types import MappingProxyType
 from typing import (
     Hashable,
     Literal,
@@ -11,11 +10,9 @@ from typing import (
     Union,
 )
 
-from typing_extensions import Self, assert_never
+from typing_extensions import Self, TypeAlias, assert_never
 
 from bioimageio.spec.model import v0_5
-
-from .axis import AxisId
 
 SupportedWeightsFormat = Literal[
     "keras_hdf5",
@@ -112,10 +109,10 @@ class PadWidth(_LeftRight):
     pass
 
 
-PadWidthLike = _LeftRightLike[PadWidth]
-Padding = v0_5.Padding
-PadMode = Union[Literal["constant", "edge", "reflect", "symmetric"], Padding]
-PadWhere = _Where
+PadWidthLike: TypeAlias = _LeftRightLike[PadWidth]
+Padding: TypeAlias = v0_5.Padding
+PadMode: TypeAlias = Union[Literal["constant", "edge", "reflect", "symmetric"], Padding]
+PadWhere: TypeAlias = _Where
 
 
 class SliceInfo(NamedTuple):
@@ -128,49 +125,17 @@ SampleId = Hashable
 MemberId = v0_5.TensorId
 """ID of a `Sample` member, see `bioimageio.core.sample.Sample`"""
 
-BlocksizeParameter = Union[
+BlocksizeParameter: TypeAlias = Union[
     v0_5.ParameterizedSize_N,
-    Mapping[Tuple[MemberId, AxisId], v0_5.ParameterizedSize_N],
+    Mapping[Tuple[MemberId, v0_5.AxisId], v0_5.ParameterizedSize_N],
 ]
 """
 Parameter to determine a concrete size for paramtrized axis sizes defined by
 `bioimageio.spec.model.v0_5.ParameterizedSize`.
 """
 
-T = TypeVar("T")
-PerMember = Mapping[MemberId, T]
+_T = TypeVar("_T")
+PerMember = Mapping[MemberId, _T]
 
 BlockIndex = int
 TotalNumberOfBlocks = int
-
-
-K = TypeVar("K", bound=Hashable)
-V = TypeVar("V")
-
-Frozen = MappingProxyType
-# class Frozen(Mapping[K, V]):  # adapted from xarray.core.utils.Frozen
-#     """Wrapper around an object implementing the mapping interface to make it
-#     immutable."""
-
-#     __slots__ = ("mapping",)
-
-#     def __init__(self, mapping: Mapping[K, V]):
-#         super().__init__()
-#         self.mapping = deepcopy(
-#             mapping
-#         )  # added deepcopy (compared to xarray.core.utils.Frozen)
-
-#     def __getitem__(self, key: K) -> V:
-#         return self.mapping[key]
-
-#     def __iter__(self) -> Iterator[K]:
-#         return iter(self.mapping)
-
-#     def __len__(self) -> int:
-#         return len(self.mapping)
-
-#     def __contains__(self, key: object) -> bool:
-#         return key in self.mapping
-
-#     def __repr__(self) -> str:
-#         return f"{type(self).__name__}({self.mapping!r})"

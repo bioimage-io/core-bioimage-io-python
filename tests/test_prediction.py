@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Literal, Mapping, NamedTuple
 
 import numpy as np
+import pandas as pd
 import pytest
 import xarray as xr
 from typing_extensions import assert_never
@@ -11,11 +12,16 @@ from bioimageio.core import (
     MemberId,
     PredictionPipeline,
     Sample,
+    Tensor,
     create_prediction_pipeline,
     load_model,
     predict,
 )
-from bioimageio.core.digest_spec import get_test_input_sample, get_test_output_sample
+from bioimageio.core.digest_spec import (
+    get_test_input_sample,
+    get_test_output_sample,
+    transpose_sample_for_model,
+)
 from bioimageio.spec import AnyModelDescr
 
 
@@ -125,3 +131,65 @@ def test_predict_save_output(prep: Prep, tmp_path: Path):
     )
     _assert_equal_samples(out, prep.output_sample)
     assert save_path.parent.exists()
+
+
+def test_predict_z_as_batch(unet2d_nuclei_broad_model: str):
+    model = load_model(
+        unet2d_nuclei_broad_model, perform_io_checks=False, format_version="latest"
+    )
+    assert [a.type for a in model.inputs[0].axes] == [
+        "batch",
+        "channel",
+        "space",
+        "space",
+    ], "expected 2d model"
+
+    input_sample = get_test_input_sample(model)
+
+    data = input_sample.members[MemberId("raw")].to_numpy()[:, :, None]
+    data = np.concatenate([data, data], axis=2)  # add a second z-slice
+    input_sample = Sample(
+        id=input_sample.id,
+        members={
+            MemberId("raw"): Tensor(data, dims=["batch", "channel", "z", "y", "x"])
+        },
+        stat=input_sample.stat,
+    )
+    input_sample = transpose_sample_for_model(input_sample, model)
+    out = predict(model=unet2d_nuclei_broad_model, inputs=input_sample)
+    out = out.unstack_batch_multi_index()
+    pred = out.members[MemberId("probability")]
+    assert "z" in pred.dims
+    assert pred.tagged_shape[AxisId("batch")] == 1, "expected 1 batch slice in output"
+    assert pred.to_numpy().shape[0] == 1, "expected 1 batch slice in output"
+    assert pred.tagged_shape[AxisId("z")] == 2, "expected 2 z-slices in output"
+    assert pred.to_numpy().shape[1] == 2, "expected 2 z-slices in output"
+    assert pred.tagged_shape[AxisId("channel")] == 1, (
+        "expected 1 channel slice in output"
+    )
+    assert pred.to_numpy().shape[2] == 1, "expected 1 channel slice in output"
+
+
+def test_transpose_sample_for_model_stacks_extra_z_to_batch(
+    unet2d_nuclei_broad_model: str,
+):
+    model = load_model(
+        unet2d_nuclei_broad_model, perform_io_checks=False, format_version="latest"
+    )
+    input_sample = get_test_input_sample(model)
+
+    data = input_sample.members[MemberId("raw")].to_numpy()[:, :, None]
+    data = np.concatenate([data, data], axis=2)
+    sample_with_z = Sample(
+        id=input_sample.id,
+        members={
+            MemberId("raw"): Tensor(data, dims=["batch", "channel", "z", "y", "x"])
+        },
+        stat=input_sample.stat,
+    )
+
+    transposed = transpose_sample_for_model(sample_with_z, model)
+    raw = transposed.members[MemberId("raw")]
+    assert raw.dims == (AxisId("batch"), AxisId("channel"), AxisId("y"), AxisId("x"))
+    assert raw.sizes[AxisId("batch")] == 2
+    assert isinstance(raw.data.indexes[AxisId("batch")], pd.MultiIndex)

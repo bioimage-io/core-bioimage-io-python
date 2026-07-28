@@ -7,6 +7,7 @@ from io import BytesIO
 from pathlib import Path
 from shutil import copyfileobj
 from typing import (
+    TYPE_CHECKING,
     Any,
     Dict,
     List,
@@ -22,6 +23,8 @@ from imageio.v3 import imread, imwrite  # type: ignore
 from loguru import logger
 from numpy.typing import NDArray
 from pydantic import BaseModel, RootModel
+from typing_extensions import TypeAlias
+from typing_extensions import TypeAliasType as _TypeAliasType
 
 from bioimageio.spec._internal.io import get_reader, interprete_file_source
 from bioimageio.spec._internal.type_guards import is_ndarray
@@ -38,13 +41,23 @@ from bioimageio.spec.utils import download, load_array, save_array
 
 from .axis import AxisId, AxisLike
 from .common import PerMember
-from .sample import Sample, Stat
-from .stat_measures import DatasetMeasure, MeasureValue, SampleMeasure
+from .sample import Sample
+from .stat_measures import DatasetMeasure, MeasureValue, SampleMeasure, Stat
 from .tensor import Tensor
 
-JsonValue = Union[
-    bool, int, float, str, None, List["JsonValue"], Dict[str, "JsonValue"]
-]
+if TYPE_CHECKING:
+    JsonValue: TypeAlias = Union[
+        bool, int, float, str, None, List["JsonValue"], Dict[str, "JsonValue"]
+    ]  # note: order relevant for deserializing
+
+else:
+    # for pydantic validation we need to use `TypeAliasType`,
+    # see https://docs.pydantic.dev/latest/concepts/types/#named-recursive-types
+    # however this results in a partially unknown type with the current pyright 1.1.388
+    JsonValue: TypeAlias = _TypeAliasType(
+        "JsonValue",
+        Union[bool, int, float, str, None, List["JsonValue"], Dict[str, "JsonValue"]],
+    )
 
 
 def load_image(

@@ -8,6 +8,8 @@ from typing import (
     Callable,
     Dict,
     Iterator,
+    List,
+    Literal,
     Mapping,
     Optional,
     Sequence,
@@ -18,6 +20,7 @@ from typing import (
 )
 
 import numpy as np
+import pandas as pd
 import xarray as xr
 from loguru import logger
 from numpy.typing import DTypeLike, NDArray
@@ -72,14 +75,17 @@ class Tensor(MagicTensorOpsMixin):
 
     def __init__(
         self,
-        array: NDArray[Any],
+        array: Union[NDArray[Any], xr.DataArray],
         dims: Sequence[Union[AxisId, AxisLike]],
     ) -> None:
         super().__init__()
         axes = tuple(
             a if isinstance(a, AxisId) else AxisInfo.create(a).id for a in dims
         )
-        self._data = xr.DataArray(array, dims=axes)
+        if isinstance(array, xr.DataArray):
+            self._data = array.transpose(*axes)
+        else:
+            self._data = xr.DataArray(array, dims=axes)
 
     def __repr__(self) -> str:
         return f"<Tensor {repr(self._data)}>"
@@ -184,9 +190,7 @@ class Tensor(MagicTensorOpsMixin):
         note for internal use: this factory method is round-trip save
             for any `Tensor`'s  `data` property (an xarray.DataArray).
         """
-        return cls(
-            array=data_array.data, dims=tuple(AxisId(d) for d in data_array.dims)
-        )
+        return cls(array=data_array, dims=tuple(AxisId(d) for d in data_array.dims))
 
     @classmethod
     def from_numpy(
@@ -485,20 +489,175 @@ class Tensor(MagicTensorOpsMixin):
         """Reduce this Tensor's data by applying sum along some dimension(s)."""
         return self.__class__.from_xarray(self._data.sum(dim=dim))
 
+    def assign_batch_multi_index(self, multi_index: "pd.MultiIndex") -> Self:
+        """Set the batch multi-index for this tensor.
+
+        Args:
+            multi_index: The multi-index to set.
+        """
+        if AxisId("batch") not in self.dims:
+            raise ValueError(
+                "Cannot set batch multi-index on a tensor without a 'batch' axis."
+            )
+
+        return self.__class__.from_xarray(
+            self._data.assign_coords({AxisId("batch"): multi_index})
+        )
+
+    def unstack_batch_multi_index(
+        self, *, errors: Literal["raise", "ignore"] = "raise"
+    ) -> Self:
+        """Unstack the batch multi-index of this tensor.
+
+        Returns:
+            A new tensor with the batch multi-index unstacked into separate axes.
+        """
+        if AxisId("batch") not in self.dims:
+            if errors == "raise":
+                raise ValueError(
+                    "Cannot unstack batch multi-index on a tensor without a 'batch' axis."
+                )
+            elif errors == "ignore":
+                return self
+            else:
+                assert_never(errors)
+
+        if not isinstance(self._data.indexes.get(AxisId("batch")), pd.MultiIndex):
+            if errors == "raise":
+                raise ValueError(
+                    "Cannot unstack batch multi-index on a tensor whose 'batch' axis does not have a MultiIndex."
+                )
+            elif errors == "ignore":
+                return self
+            else:
+                assert_never(errors)
+
+        old_dims = self.dims
+        array = self._data.unstack(AxisId("batch"))
+        added_dims = [AxisId(d) for d in array.dims if d not in self._data.dims]
+
+        # restore expected axis order, replace batch dim with added dims
+        new_dims: List[AxisId] = []
+        for d in old_dims:
+            if d in array.dims:
+                new_dims.append(d)
+            elif d == AxisId("batch"):
+                new_dims.extend(added_dims)
+            else:
+                raise ValueError(f"Expected axis {d} not found in unstacked array.")
+
+        array = array.transpose(*new_dims)
+        if AxisId("original_batch") in array.dims:
+            array = array.rename({AxisId("original_batch"): AxisId("batch")})
+
+        return self.__class__.from_xarray(array)
+
     def transpose(
         self,
         axes: Sequence[AxisId],
+        *,
+        extra_dims: Literal[
+            "raise", "squeeze", "stack", "squeeze_or_stack"
+        ] = "squeeze",
+        missing_dims: Literal[
+            "raise", "expand", "unstack", "unstack_or_expand"
+        ] = "unstack_or_expand",
     ) -> Self:
-        """return a transposed tensor
+        """Return a transposed tensor, missing axes are expanded (if `unstack_missing_dims_from_batch` is False) or unstacked from batch (if `unstack_missing_dims_from_batch` is True), extra axes are stacked to batch (if `stack_extra_dims_to_batch` is True). Additional axes raise (if `stack_extra_dims_to_batch` is True).
 
         Args:
-            axes: the desired tensor axes
+            axes: The desired tensor axes
+            extra_dims:
+                Extra dimensions are any dimensions in the tensor that are not specified in `axes`.
+                If "raise", any extra dimensions will raise an error.
+                If "squeeze", any extra singleton dimensions will be squeezed, non-singleton dimensions will raise an error.
+                If "stack", any extra dimensions will be stacked to the batch dimension. Such a stacked batch dimension then has a multi-index that can be unstacked using `Tensor.unstack_batch_multi_index()`.
+                If "squeeze_or_stack", any extra singleton dimensions will be squeezed, non-singleton dimensions will be stacked to the batch dimension.
+            missing_dims:
+                Missing dimensions are any dimensions specified in `axes` that are not present in the tensor.
+                If "raise", any missing dimensions will raise an error.
+                If "expand", any missing dimensions will be added as singleton dimensions.
+                If "unstack", any missing dimensions will be unstacked from the batch dimension. For this option a batch dimension with a multi-index must be present from previous stacking operations or assigned by `Tensor.assign_batch_multi_index()`.
+                If "unstack_or_expand", any missing dimensions will be unstacked from the batch dimension if it has a multi-index, otherwise they will be added as singleton dimensions.
         """
-        # expand missing tensor axes
-        missing_axes = tuple(a for a in axes if a not in self.dims)
         array = self._data
-        if missing_axes:
-            array = array.expand_dims(missing_axes)
+
+        unhandled_missing_dims = [a for a in axes if a not in array.dims]
+        if unhandled_missing_dims and missing_dims == "raise":
+            raise ValueError(f"Found missing dimensions {unhandled_missing_dims}.")
+
+        unstack_error = None
+        if unhandled_missing_dims and missing_dims in ("unstack", "unstack_or_expand"):
+            lets_unstack = AxisId("batch") in array.dims
+            if not lets_unstack:
+                unstack_error = f"Missing dimensions {unhandled_missing_dims} found, but 'batch' axis is not in the tensor. Cannot unstack missing dimensions from batch."
+                if missing_dims == "unstack":
+                    raise ValueError(unstack_error)
+
+            if lets_unstack and not isinstance(
+                array.indexes.get(AxisId("batch")), pd.MultiIndex
+            ):
+                lets_unstack = False
+                unstack_error = f"Missing dimensions {unhandled_missing_dims} found, but 'batch' axis does not have a MultiIndex. Cannot unstack missing dimensions from non-multi-index batch."
+                if missing_dims == "unstack":
+                    raise ValueError(unstack_error)
+        else:
+            lets_unstack = False
+
+        if lets_unstack:
+            array = array.unstack(AxisId("batch"))
+
+            if AxisId("original_batch") in array.dims:
+                if AxisId("batch") in axes:
+                    array = array.rename({AxisId("original_batch"): AxisId("batch")})
+                else:
+                    array = array.squeeze(AxisId("original_batch"))
+
+            unhandled_missing_dims = [a for a in axes if a not in array.dims]
+
+        if unhandled_missing_dims and missing_dims in ("expand", "unstack_or_expand"):
+            array = array.expand_dims(unhandled_missing_dims)
+            unhandled_missing_dims = []
+
+        if unhandled_missing_dims:
+            if unstack_error is not None:
+                raise ValueError(unstack_error)
+
+            raise ValueError(f"Missing dimensions {unhandled_missing_dims}.")
+
+        unhandled_extra_dims = [a for a in array.dims if a not in axes]
+
+        if unhandled_extra_dims and extra_dims == "raise":
+            raise ValueError(f"Found extra dimensions {unhandled_extra_dims}.")
+
+        if unhandled_extra_dims and extra_dims in ("squeeze", "squeeze_or_stack"):
+            for d in list(unhandled_extra_dims):
+                if array.sizes[d] == 1:
+                    array = array.squeeze(d)
+                    unhandled_extra_dims.remove(d)
+                elif extra_dims == "squeeze":
+                    raise ValueError(
+                        f"Extra dimension {d} found but stack_extra_dims_to_batch is False and the dimension is not a singleton."
+                    )
+
+        if unhandled_extra_dims and extra_dims in ("stack", "squeeze_or_stack"):
+            if AxisId("batch") not in axes:
+                raise ValueError(
+                    f"Extra dimensions {unhandled_extra_dims} found but 'batch' axis is not in the desired axes {axes}."
+                    + " Cannot stack extra dimensions to batch."
+                )
+
+            if AxisId("batch") in array.dims:
+                array = array.rename({AxisId("batch"): AxisId("original_batch")})
+                unhandled_extra_dims.insert(0, AxisId("original_batch"))
+
+            array = array.stack({AxisId("batch"): unhandled_extra_dims})
+            unhandled_extra_dims = []
+
+        if unhandled_extra_dims:
+            raise ValueError(
+                f"Non-singleton extra dimensions {unhandled_extra_dims} found, but `extra_dims` not in ('stack', 'squeeze_or_stack')."
+            )
 
         # transpose to the correct axis order
         return self.__class__.from_xarray(array.transpose(*axes))
@@ -511,8 +670,8 @@ class Tensor(MagicTensorOpsMixin):
         ndim = array.ndim
         if ndim == 2:
             current_axes = (
-                v0_5.SpaceInputAxis(id=AxisId("y"), size=array.shape[0]),
-                v0_5.SpaceInputAxis(id=AxisId("x"), size=array.shape[1]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=array.shape[0]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=array.shape[1]),
             )
         elif ndim == 3 and any(s <= 3 for s in array.shape):
             current_axes = (
@@ -521,14 +680,14 @@ class Tensor(MagicTensorOpsMixin):
                         v0_5.Identifier(f"channel{i}") for i in range(array.shape[0])
                     ]
                 ),
-                v0_5.SpaceInputAxis(id=AxisId("y"), size=array.shape[1]),
-                v0_5.SpaceInputAxis(id=AxisId("x"), size=array.shape[2]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=array.shape[1]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=array.shape[2]),
             )
         elif ndim == 3:
             current_axes = (
-                v0_5.SpaceInputAxis(id=AxisId("z"), size=array.shape[0]),
-                v0_5.SpaceInputAxis(id=AxisId("y"), size=array.shape[1]),
-                v0_5.SpaceInputAxis(id=AxisId("x"), size=array.shape[2]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("z"), size=array.shape[0]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=array.shape[1]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=array.shape[2]),
             )
         elif ndim == 4:
             current_axes = (
@@ -537,9 +696,9 @@ class Tensor(MagicTensorOpsMixin):
                         v0_5.Identifier(f"channel{i}") for i in range(array.shape[0])
                     ]
                 ),
-                v0_5.SpaceInputAxis(id=AxisId("z"), size=array.shape[1]),
-                v0_5.SpaceInputAxis(id=AxisId("y"), size=array.shape[2]),
-                v0_5.SpaceInputAxis(id=AxisId("x"), size=array.shape[3]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("z"), size=array.shape[1]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=array.shape[2]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=array.shape[3]),
             )
         elif ndim == 5:
             current_axes = (
@@ -549,9 +708,9 @@ class Tensor(MagicTensorOpsMixin):
                         v0_5.Identifier(f"channel{i}") for i in range(array.shape[1])
                     ]
                 ),
-                v0_5.SpaceInputAxis(id=AxisId("z"), size=array.shape[2]),
-                v0_5.SpaceInputAxis(id=AxisId("y"), size=array.shape[3]),
-                v0_5.SpaceInputAxis(id=AxisId("x"), size=array.shape[4]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("z"), size=array.shape[2]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=array.shape[3]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=array.shape[4]),
             )
         else:
             raise ValueError(f"Could not guess an axis mapping for {array.shape}")

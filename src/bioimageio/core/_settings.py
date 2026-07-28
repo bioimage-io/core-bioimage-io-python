@@ -45,6 +45,18 @@ class Settings(SpecSettings):
     )
     """URL to the bioimageio collection config"""
 
+    gradio_server: Optional[str] = None
+    """URL or Hugging Face space name to connect to with the remote gradio model adapter or remote gradio prediction pipeline.
+
+    Example: "bioimage-io/bioimage-io-gradio-server"
+    """
+
+    gradio_server_model_cache_max_size: int = 10
+    """Max number of models to cache in the gradio server for prediction pipelines using the gradio backend."""
+
+    gradio_server_model_cache_max_memory: str = "40GB"
+    """Max memory to use for model caching in the gradio server for prediction pipelines using the gradio backend."""
+
 
 settings = Settings()
 """parsed environment variables for bioimageio.spec and bioimageio.core"""

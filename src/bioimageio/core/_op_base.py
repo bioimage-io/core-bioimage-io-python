@@ -4,6 +4,7 @@ from typing import Collection, Generic, Union
 
 from typing_extensions import TypeVar, assert_never
 
+from ._restore_batch_multi_index import restore_batch_multi_index
 from .axis import PerAxis
 from .block import Block
 from .common import MemberId
@@ -55,7 +56,10 @@ class SimpleOperator(BlockwiseOperator):
 
         input_tensor = sample.members[self.input]
         output_tensor = self._apply(input_tensor, sample.stat)
-
+        output_tensor = restore_batch_multi_index(
+            {self.input: input_tensor}, {self.output: output_tensor}
+        )[self.output]
+        assert output_tensor is not None
         if self.output in sample.members:
             assert (
                 sample.members[self.output].tagged_shape == output_tensor.tagged_shape

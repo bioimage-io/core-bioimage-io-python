@@ -65,7 +65,7 @@ def predict(
     """
     if isinstance(model, PredictionPipeline):
         pp = model
-        model = pp.model_description
+        model = pp.model_descr
     else:
         if not isinstance(model, (v0_4.ModelDescr, v0_5.ModelDescr)):
             loaded = load_description(model)
@@ -78,54 +78,56 @@ def predict(
             fixed_dataset_statistics=inputs.stat if isinstance(inputs, Sample) else {},
         )
 
-    if save_output_path is not None:
-        if (
-            "{output_id}" not in str(save_output_path)
-            and "{member_id}" not in str(save_output_path)
-            and len(model.outputs) > 1
-        ):
-            raise ValueError(
-                f"Missing `{{output_id}}` in save_output_path={save_output_path} to "
-                + "distinguish model outputs "
-                + str([get_member_id(d) for d in model.outputs])
+    with pp:
+        model = pp.model_descr
+        if save_output_path is not None:
+            if (
+                "{output_id}" not in str(save_output_path)
+                and "{member_id}" not in str(save_output_path)
+                and len(model.outputs) > 1
+            ):
+                raise ValueError(
+                    f"Missing `{{output_id}}` in save_output_path={save_output_path} to "
+                    + "distinguish model outputs "
+                    + str([get_member_id(d) for d in model.outputs])
+                )
+
+        if isinstance(inputs, Sample):
+            sample = inputs
+        else:
+            sample = create_sample_for_model(
+                pp.model_descr, inputs=inputs, sample_id=sample_id
             )
 
-    if isinstance(inputs, Sample):
-        sample = inputs
-    else:
-        sample = create_sample_for_model(
-            pp.model_description, inputs=inputs, sample_id=sample_id
-        )
+        if input_block_shape is not None:
+            if blocksize_parameter is not None:
+                logger.warning(
+                    "ignoring blocksize_parameter={} in favor of input_block_shape={}",
+                    blocksize_parameter,
+                    input_block_shape,
+                )
 
-    if input_block_shape is not None:
-        if blocksize_parameter is not None:
-            logger.warning(
-                "ignoring blocksize_parameter={} in favor of input_block_shape={}",
-                blocksize_parameter,
-                input_block_shape,
+            output = pp.predict_sample_with_fixed_blocking(
+                sample,
+                input_block_shape=input_block_shape,
+                skip_preprocessing=skip_preprocessing,
+                skip_postprocessing=skip_postprocessing,
             )
-
-        output = pp.predict_sample_with_fixed_blocking(
-            sample,
-            input_block_shape=input_block_shape,
-            skip_preprocessing=skip_preprocessing,
-            skip_postprocessing=skip_postprocessing,
-        )
-    elif blocksize_parameter is not None:
-        output = pp.predict_sample_with_blocking(
-            sample,
-            skip_preprocessing=skip_preprocessing,
-            skip_postprocessing=skip_postprocessing,
-            ns=blocksize_parameter,
-        )
-    else:
-        output = pp.predict_sample_without_blocking(
-            sample,
-            skip_preprocessing=skip_preprocessing,
-            skip_postprocessing=skip_postprocessing,
-        )
-    if save_output_path:
-        save_sample(save_output_path, output)
+        elif blocksize_parameter is not None:
+            output = pp.predict_sample_with_blocking(
+                sample,
+                skip_preprocessing=skip_preprocessing,
+                skip_postprocessing=skip_postprocessing,
+                ns=blocksize_parameter,
+            )
+        else:
+            output = pp.predict_sample_without_blocking(
+                sample,
+                skip_preprocessing=skip_preprocessing,
+                skip_postprocessing=skip_postprocessing,
+            )
+        if save_output_path:
+            save_sample(save_output_path, output)
 
     return output
 

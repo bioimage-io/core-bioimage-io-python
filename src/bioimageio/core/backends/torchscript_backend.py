@@ -3,45 +3,57 @@ import gc
 from typing import Any, List, Optional, Sequence, Union
 
 import torch
+from loguru import logger
 from numpy.typing import NDArray
 
 from bioimageio.spec.model import v0_4, v0_5
 
-from ..model_adapters import ModelAdapter
+from .._model_adapter import LocalModelAdapter
 from ..utils._type_guards import is_list, is_tuple
 from .pytorch_backend import get_devices
 
 
-class TorchscriptModelAdapter(ModelAdapter):
+class TorchscriptModelAdapter(LocalModelAdapter[torch.device, Any]):
     def __init__(
         self,
-        *,
         model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
         devices: Optional[Sequence[str]] = None,
     ):
-        super().__init__(model_description=model_description)
         if model_description.weights.torchscript is None:
             raise ValueError(
                 f"No torchscript weights found for model {model_description.name}"
             )
 
-        self.devices = get_devices(devices)
+        self._weight_descr = model_description.weights.torchscript
+        super().__init__(model_description=model_description, devices=devices)
 
-        weight_reader = model_description.weights.torchscript.get_reader()
-        self._model = torch.jit.load(weight_reader)
+    def _parse_devices(
+        self, devices: Optional[Sequence[str]]
+    ) -> Sequence[torch.device]:
+        return get_devices(devices)
 
-        self._model.to(self.devices[0])
-        self._model = self._model.eval()
+    def _init_model_on_device(self, device: torch.device) -> Any:
+        model = torch.jit.load(self._weight_descr.get_reader(), map_location=device)
+        try:
+            model.eval()
+        except Exception as e:
+            logger.warning(
+                f"Failed to set model to evaluation mode for torchscript model on {device}: {e}"
+            )
+        return model
 
     def _forward_impl(
-        self, input_arrays: Sequence[Optional[NDArray[Any]]]
+        self,
+        device: torch.device,
+        model: Any,
+        input_arrays: Sequence[Optional[NDArray[Any]]],
     ) -> List[Optional[NDArray[Any]]]:
         with torch.no_grad():
             torch_tensor = [
-                None if a is None else torch.from_numpy(a).to(self.devices[0])
+                None if a is None else torch.from_numpy(a).to(device)
                 for a in input_arrays
             ]
-            output: Any = self._model.forward(*torch_tensor)
+            output: Any = model.forward(*torch_tensor)
             if is_list(output) or is_tuple(output):
                 output_seq: Sequence[Any] = output
             else:
@@ -58,8 +70,10 @@ class TorchscriptModelAdapter(ModelAdapter):
                 for r in output_seq
             ]
 
-    def unload(self) -> None:
-        self._devices = None
-        del self._model
+    def _cleanup_pre_model_deletion(self, device: torch.device, model: Any) -> None:
+        return
+
+    def _cleanup_post_model_deletion(self, device: torch.device) -> None:
         _ = gc.collect()  # deallocate memory
-        torch.cuda.empty_cache()  # release reserved memory
+        if device.type == "cuda":
+            torch.cuda.empty_cache()  # release reserved memory

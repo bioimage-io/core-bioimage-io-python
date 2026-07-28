@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from pydantic import FilePath
 
-from bioimageio.spec import load_description, settings
+from bioimageio.spec import settings
 
 
 def run_subprocess(
@@ -72,13 +72,13 @@ def test_cli(
 
 
 def test_empty_cache(tmp_path: Path, unet2d_nuclei_broad_model: str):
-    from bioimageio.spec.utils import empty_cache
+    from bioimageio.spec.utils import empty_cache, get_reader
 
     origingal_cache_path = settings.cache_path
     try:
         settings.cache_path = tmp_path / "cache"
         assert not settings.cache_path.exists()
-        _ = load_description(unet2d_nuclei_broad_model, perform_io_checks=False)
+        _ = get_reader("https://example.com")
         assert (
             len([fn for fn in settings.cache_path.iterdir() if fn.suffix != ".lock"])
             == 1

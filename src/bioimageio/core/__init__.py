@@ -16,12 +16,27 @@ Other notable bioimageio.core functionalities include:
 """
 # ruff: noqa: E402
 
-__version__ = "0.10.4"
+__version__ = "0.11.0"
 from loguru import logger
 
 logger.disable("bioimageio.core")
 
-import bioimageio.spec
+
+from bioimageio.spec import ValidationSummary as ValidationSummary
+from bioimageio.spec import build_description as build_description
+from bioimageio.spec import dump_description as dump_description
+from bioimageio.spec import load_dataset_description as load_dataset_description
+from bioimageio.spec import load_description as load_description
+from bioimageio.spec import (
+    load_description_and_validate_format_only as load_description_and_validate_format_only,
+)
+from bioimageio.spec import load_model_description as load_model_description
+from bioimageio.spec import save_bioimageio_package as save_bioimageio_package
+from bioimageio.spec import (
+    save_bioimageio_package_as_folder as save_bioimageio_package_as_folder,
+)
+from bioimageio.spec import save_bioimageio_yaml_only as save_bioimageio_yaml_only
+from bioimageio.spec import validate_format as validate_format
 
 from . import axis as axis
 from . import backends as backends
@@ -31,7 +46,6 @@ from . import commands as commands
 from . import common as common
 from . import digest_spec as digest_spec
 from . import io as io
-from . import model_adapters as model_adapters
 from . import prediction as prediction
 from . import proc_ops as proc_ops
 from . import proc_setup as proc_setup
@@ -40,46 +54,40 @@ from . import stat_calculators as stat_calculators
 from . import stat_measures as stat_measures
 from . import tensor as tensor
 from . import weight_converters as weight_converters
+from ._prediction_pipeline import IntermediatePrediction as IntermediatePrediction
 from ._prediction_pipeline import PredictionPipeline as PredictionPipeline
+from ._prediction_pipeline import RemotePredictionPipeline as RemotePredictionPipeline
 from ._prediction_pipeline import (
     create_prediction_pipeline as create_prediction_pipeline,
+)
+from ._prediction_pipeline import (
+    create_remote_prediction_pipeline as create_remote_prediction_pipeline,
 )
 from ._resource_tests import enable_determinism as enable_determinism
 from ._resource_tests import load_description_and_test as load_description_and_test
 from ._resource_tests import test_description as test_description
 from ._resource_tests import test_model as test_model
+from ._sample_serializer import SampleSerializer as SampleSerializer
 from ._settings import Settings as Settings
 from ._settings import settings as settings
 
-# reexports from bioimageio.spec
-build_description = bioimageio.spec.build_description
-dump_description = bioimageio.spec.dump_description
-load_dataset_description = bioimageio.spec.load_dataset_description
-load_description = bioimageio.spec.load_description
-load_description_and_validate_format_only = (
-    bioimageio.spec.load_description_and_validate_format_only
-)
-load_model_description = bioimageio.spec.load_model_description
-save_bioimageio_package = bioimageio.spec.save_bioimageio_package
-save_bioimageio_package_as_folder = bioimageio.spec.save_bioimageio_package_as_folder
-save_bioimageio_yaml_only = bioimageio.spec.save_bioimageio_yaml_only
-validate_format = bioimageio.spec.validate_format
-ValidationSummary = bioimageio.spec.ValidationSummary
-
-
 # reexports from bioimageio.core submodules
-add_weights = weight_converters.add_weights
-Axis = axis.Axis
-AxisId = axis.AxisId
-BlockMeta = block_meta.BlockMeta
-compute_dataset_measures = stat_calculators.compute_dataset_measures
-create_model_adapter = backends.create_model_adapter
-MemberId = common.MemberId
-predict = prediction.predict
-predict_many = prediction.predict_many
-Sample = sample.Sample
-Stat = stat_measures.Stat
-Tensor = tensor.Tensor
+from .axis import Axis as Axis
+from .axis import AxisId as AxisId
+from .backends import create_model_adapter as create_model_adapter
+from .block_meta import BlockMeta as BlockMeta
+from .common import MemberId as MemberId
+from .prediction import predict as predict
+from .prediction import predict_many as predict_many
+from .sample import Sample as Sample
+from .sample import SampleBlock as SampleBlock
+from .sample import SampleBlockMeta as SampleBlockMeta
+from .stat_calculators import compute_dataset_measures as compute_dataset_measures
+from .stat_calculators import compute_measures as compute_measures
+from .stat_calculators import compute_sample_measures as compute_sample_measures
+from .stat_measures import Stat as Stat
+from .tensor import Tensor as Tensor
+from .weight_converters import add_weights as add_weights
 
 # aliases
 test_resource = test_description

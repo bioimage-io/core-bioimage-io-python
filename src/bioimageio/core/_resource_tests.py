@@ -315,21 +315,38 @@ def test_description(
 
         # elevate status valid-format to passed and start testing
         descr.validation_summary.status = "passed"
-        _test_in_env(
-            file_source,
-            descr=descr,
-            working_dir=working_dir,
-            weight_format=weight_format,
-            conda_env=conda_env,
-            devices=devices,
-            determinism=determinism,
-            expected_type=expected_type,
-            sha256=sha256,
-            stop_early=stop_early,
-            run_command=run_command,
-            verbose=verbose,
-            **deprecated,
-        )
+        try:
+            _test_in_env(
+                file_source,
+                descr=descr,
+                working_dir=working_dir,
+                weight_format=weight_format,
+                conda_env=conda_env,
+                devices=devices,
+                determinism=determinism,
+                expected_type=expected_type,
+                sha256=sha256,
+                stop_early=stop_early,
+                run_command=run_command,
+                verbose=verbose,
+                **deprecated,
+            )
+        except Exception as e:
+            descr.validation_summary.add_detail(
+                ValidationDetail(
+                    name="Test in dedicated environment",
+                    status="failed",
+                    loc=(),
+                    errors=[
+                        ErrorEntry(
+                            loc=(),
+                            msg=str(e),
+                            type="bioimageio.core",
+                            with_traceback=True,
+                        )
+                    ],
+                )
+            )
 
     return descr.validation_summary
 
@@ -357,7 +374,7 @@ def _test_in_env(
         if weight_format is None:
             # run tests for all present weight formats
             all_present_wfs = [
-                wf for wf in get_args(WeightsFormat) if getattr(descr.weights, wf)
+                wf for wf in get_args(WeightsFormat) if getattr(descr.weights, wf, None)
             ]
             ignore_wfs = [wf for wf in all_present_wfs if wf in ["tensorflow_js"]]
             logger.info(
@@ -818,6 +835,70 @@ def _get_tolerance(
     return rtol, atol, mismatched_tol
 
 
+def evaluate_mismatched_elements(
+    actual: Tensor, expected: Tensor, rtol: float, atol: float, name: str
+) -> Tuple[float, str, Optional[str]]:
+    try:
+        expected_np = expected.data.to_numpy().astype(np.float32)
+        dims = expected.dims
+        del expected
+        actual_np: NDArray[Any] = actual.data.to_numpy().astype(np.float32)
+        del actual
+
+        rtol_value = rtol * abs(expected_np)
+        abs_diff = abs(actual_np - expected_np)
+        mismatched = abs_diff > atol + rtol_value
+        mismatched_elements = mismatched.sum().item()
+
+        mismatched_ppm = mismatched_elements / expected_np.size * 1e6
+        abs_diff[~mismatched] = 0  # ignore non-mismatched elements
+
+        r_max_idx_flat = (r_diff := (abs_diff / (abs(expected_np) + 1e-6))).argmax()
+        r_max_idx = np.unravel_index(r_max_idx_flat, r_diff.shape)
+        r_max = r_diff[r_max_idx].item()
+        r_actual = actual_np[r_max_idx].item()
+        r_expected = expected_np[r_max_idx].item()
+
+        # Calculate the max absolute difference with the relative tolerance subtracted
+        abs_diff_wo_rtol: NDArray[np.float32] = abs_diff - rtol_value
+        a_max_idx = np.unravel_index(abs_diff_wo_rtol.argmax(), abs_diff_wo_rtol.shape)
+
+        a_max = abs_diff[a_max_idx].item()
+        a_actual = actual_np[a_max_idx].item()
+        a_expected = expected_np[a_max_idx].item()
+    except Exception as e:
+        mismatched_ppm = -1
+        msg = ""
+        error_msg = (
+            f"Error while checking if '{name}' disagrees with expected values: {e}"
+        )
+    else:
+        error_msg = None
+        if mismatched_elements:
+            msg = (
+                f"Output '{name}': {mismatched_elements} of "
+                + f"{expected_np.size} elements disagree with expected values ("
+                + (
+                    f"{mismatched_ppm / 10_000:.1f}%"
+                    if mismatched_ppm >= 1_000
+                    else f"{mismatched_ppm:.1f} ppm"
+                )
+                + "). "
+            )
+        else:
+            msg = f"Output `{name}`: all elements agree with expected values. "
+
+        msg += (
+            f"\nMax relative difference not accounted for by absolute tolerance ({atol:.2e}):\n{r_max:.2e}"
+            + rf" (= \|{r_actual:.2e} - {r_expected:.2e}\|/\|{r_expected:.2e} + 1e-6\|)"
+            + f" at {dict(zip(dims, r_max_idx))} "
+            + f"\nMax absolute difference not accounted for by relative tolerance ({rtol:.2e}):\n{a_max:.2e}"
+            + rf" (= \|{a_actual:.7e} - {a_expected:.7e}\|) at {dict(zip(dims, a_max_idx))}"
+        )
+
+    return mismatched_ppm, msg, error_msg
+
+
 def _test_recreate_test_outputs(
     model: Union[v0_4.ModelDescr, v0_5.ModelDescr],
     weight_format: SupportedWeightsFormat,
@@ -917,7 +998,7 @@ def _test_recreate_test_outputs(
                     else:
                         continue
 
-                if actual.dims != (dims := expected.dims):
+                if actual.dims != expected.dims:
                     add_error_entry(
                         f"Output '{m}' has dims {actual.dims}, but expected {expected.dims}"
                     )
@@ -944,72 +1025,32 @@ def _test_recreate_test_outputs(
                                 results_not_postprocessed.members[m],
                             )
                         )
-
-                    expected_np = expected.data.to_numpy().astype(np.float32)
-                    del expected
-                    actual_np: NDArray[Any] = actual.data.to_numpy().astype(np.float32)
-
-                    rtol, atol, mismatched_tol = _get_tolerance(
-                        model, wf=weight_format, m=m, **deprecated
-                    )
-                    rtol_value = rtol * abs(expected_np)
-                    abs_diff = abs(actual_np - expected_np)
-                    mismatched = abs_diff > atol + rtol_value
-                    mismatched_elements = mismatched.sum().item()
-
-                    mismatched_ppm = mismatched_elements / expected_np.size * 1e6
-                    abs_diff[~mismatched] = 0  # ignore non-mismatched elements
-
-                    r_max_idx_flat = (
-                        r_diff := (abs_diff / (abs(expected_np) + 1e-6))
-                    ).argmax()
-                    r_max_idx = np.unravel_index(r_max_idx_flat, r_diff.shape)
-                    r_max = r_diff[r_max_idx].item()
-                    r_actual = actual_np[r_max_idx].item()
-                    r_expected = expected_np[r_max_idx].item()
-
-                    # Calculate the max absolute difference with the relative tolerance subtracted
-                    abs_diff_wo_rtol: NDArray[np.float32] = abs_diff - rtol_value
-                    a_max_idx = np.unravel_index(
-                        abs_diff_wo_rtol.argmax(), abs_diff_wo_rtol.shape
-                    )
-
-                    a_max = abs_diff[a_max_idx].item()
-                    a_actual = actual_np[a_max_idx].item()
-                    a_expected = expected_np[a_max_idx].item()
                 except Exception as e:
-                    msg = f"Error while checking if '{m}' disagrees with expected values: {e}"
+                    logger.error(f"Failed to save actual output tensor for '{m}': {e}")
+                    output_paths = None
+
+                rtol, atol, mismatched_tol = _get_tolerance(
+                    model, wf=weight_format, m=m, **deprecated
+                )
+                mismatched_ppm, msg, error_msg = evaluate_mismatched_elements(
+                    actual, expected, rtol, atol, m
+                )
+                if error_msg is not None:
+                    add_error_entry(error_msg)
+                    if stop_early:
+                        break
+
+                if output_paths:
+                    msg += f"\n Saved (intermediate) outputs to {output_paths}."
+
+                if mismatched_ppm > mismatched_tol:
                     add_error_entry(msg)
                     if stop_early:
                         break
                 else:
-                    if mismatched_elements:
-                        msg = (
-                            f"Output '{m}': {mismatched_elements} of "
-                            + f"{expected_np.size} elements disagree with expected values."
-                            + f" ({mismatched_ppm:.1f} ppm). "
-                        )
-                    else:
-                        msg = f"Output `{m}`: all elements agree with expected values. "
-
-                    msg += (
-                        f"\nMax relative difference not accounted for by absolute tolerance ({atol:.2e}):\n{r_max:.2e}"
-                        + rf" (= \|{r_actual:.2e} - {r_expected:.2e}\|/\|{r_expected:.2e} + 1e-6\|)"
-                        + f" at {dict(zip(dims, r_max_idx))} "
-                        + f"\nMax absolute difference not accounted for by relative tolerance ({rtol:.2e}):\n{a_max:.2e}"
-                        + rf" (= \|{a_actual:.7e} - {a_expected:.7e}\|) at {dict(zip(dims, a_max_idx))}"
+                    add_warning_entry(
+                        msg, severity=WARNING if mismatched_ppm != 0 else INFO
                     )
-                    if output_paths:
-                        msg += f"\n Saved (intermediate) outputs to {output_paths}."
-
-                    if mismatched_ppm > mismatched_tol:
-                        add_error_entry(msg)
-                        if stop_early:
-                            break
-                    else:
-                        add_warning_entry(
-                            msg, severity=WARNING if mismatched_elements else INFO
-                        )
 
     except Exception as e:
         if get_validation_context().raise_errors:

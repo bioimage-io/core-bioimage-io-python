@@ -1,4 +1,6 @@
-"""Run original cellpose model and save an analog input and output for bioimageio tests"""
+"""Run original cellpose model and save an analog input and output for bioimageio tests
+Works on cellpose 4.1, but not since cellpose 4.2
+"""
 
 import os
 from pathlib import Path

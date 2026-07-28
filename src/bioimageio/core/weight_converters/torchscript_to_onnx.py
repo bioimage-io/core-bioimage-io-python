@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Optional, Sequence, Union
 
 import torch.jit
+from loguru import logger
 from torch._export.converter import TS2EPConverter
 
 from bioimageio.spec.model.v0_5 import ModelDescr, OnnxWeightsDescr
@@ -57,10 +58,16 @@ def convert(
         model,  # pyright: ignore[reportUnknownArgumentType]
         torch_sample_inputs,
     ).convert()
+    exported_module = exported_program.module()
+
+    try:
+        exported_module = exported_module.eval()
+    except Exception as e:
+        logger.warning("Failed to set TS2EPConverter program to evaluation mode: {}", e)
 
     return export_to_onnx(
         model_descr,
-        exported_program.module(),
+        exported_module,
         output_path,
         verbose,
         opset_version,

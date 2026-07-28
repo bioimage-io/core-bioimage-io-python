@@ -12,6 +12,7 @@ from typing import (
     Dict,
     Iterable,
     List,
+    Literal,
     Mapping,
     NamedTuple,
     Optional,
@@ -25,7 +26,7 @@ import numpy as np
 import xarray as xr
 from loguru import logger
 from numpy.typing import NDArray
-from typing_extensions import Unpack, assert_never
+from typing_extensions import TypeAlias, Unpack, assert_never
 
 from bioimageio.spec._internal.io import HashKwargs, PermissiveFileSource
 from bioimageio.spec.common import FileDescr, FileSource
@@ -46,12 +47,15 @@ from .sample import (
     LinearSampleAxisTransform,
     Sample,
     SampleBlockMeta,
+    SampleBlockWithOrigin,
     sample_block_meta_generator,
 )
 from .stat_measures import Stat
 from .tensor import Tensor
 
-TensorSource = Union[Tensor, xr.DataArray, NDArray[Any], PermissiveFileSource]
+TensorSource: TypeAlias = Union[
+    Tensor, xr.DataArray, NDArray[Any], PermissiveFileSource
+]
 
 
 def import_callable(
@@ -291,12 +295,23 @@ class IO_SampleBlockMeta(NamedTuple):
     output: SampleBlockMeta
 
 
-def get_input_halo(model: v0_5.ModelDescr, output_halo: PerMember[PerAxis[Halo]]):
+def get_input_halo(
+    model: v0_5.ModelDescr, output_halo: Optional[PerMember[PerAxis[Halo]]] = None
+):
     """returns which halo input tensors need to be divided into blocks with, such that
     `output_halo` can be cropped from their outputs without introducing gaps."""
     input_halo: Dict[MemberId, Dict[AxisId, Halo]] = {}
     outputs = {t.id: t for t in model.outputs}
     all_tensors = {**{t.id: t for t in model.inputs}, **outputs}
+    if output_halo is None:
+        output_halo = {
+            t.id: {
+                a.id: Halo(a.halo, a.halo)
+                for a in t.axes
+                if isinstance(a, v0_5.WithHalo)
+            }
+            for t in model.outputs
+        }
 
     for t, th in output_halo.items():
         axes = {a.id: a for a in outputs[t].axes}
@@ -433,8 +448,22 @@ def get_tensor(
         v0_5.OutputTensorDescr,
         Sequence[AxisInfo],
     ],
+    *,
+    extra_dims: Literal["raise", "squeeze", "stack", "squeeze_or_stack"] = "squeeze",
+    missing_dims: Literal["raise", "expand", "unstack", "unstack_or_expand"] = "raise",
 ):
-    """helper to cast/load various tensor sources"""
+    """helper to cast/load various tensor sources
+
+    Args:
+        src: the tensor source to load/cast
+        descr: the tensor description or a sequence of axis infos
+        extra_dims:
+            How to handle extra dimensions in the input tensors.
+            If "raise", any extra dimensions will raise an error.
+            If "squeeze", any extra singleton dimensions will be squeezed, non-singleton dimensions will raise an error.
+            If "stack", any extra dimensions will be stacked to the batch dimension. Such a stacked batch dimension then has a multi-index that can be unstacked using `Tensor.unstack_batch_multi_index()`.
+            If "squeeze_or_stack", any extra singleton dimensions will be squeezed, non-singleton dimensions will be stacked to the batch dimension.
+    """
 
     if isinstance(
         descr,
@@ -450,9 +479,16 @@ def get_tensor(
         axes = descr
 
     if isinstance(src, Tensor):
-        return src.transpose(axes=[a.id for a in axes])
+        output_dims = [a.id for a in axes]
+        return src.transpose(
+            output_dims, extra_dims=extra_dims, missing_dims=missing_dims
+        )
     elif isinstance(src, xr.DataArray):
-        return Tensor.from_xarray(src).transpose(axes=[a.id for a in axes])
+        output_dims = [a.id for a in axes]
+
+        return Tensor.from_xarray(src).transpose(
+            axes=output_dims, extra_dims=extra_dims, missing_dims=missing_dims
+        )
     elif isinstance(src, np.ndarray):
         return Tensor.from_numpy(src, dims=axes)
     else:
@@ -465,6 +501,7 @@ def create_sample_for_model(
     stat: Optional[Stat] = None,
     sample_id: SampleId = None,
     inputs: Union[PerMember[TensorSource], TensorSource],
+    extra_dims: Literal["raise", "squeeze", "stack", "squeeze_or_stack"] = "stack",
 ) -> Sample:
     """Create a sample from a single set of input(s) for a specific bioimage.io model
 
@@ -472,6 +509,11 @@ def create_sample_for_model(
         model: a bioimage.io model description
         stat: dictionary with sample and dataset statistics (may be updated in-place!)
         inputs: the input(s) constituting a single sample.
+        extra_dims: How to handle extra dimensions in the input tensors.
+            If "raise", any extra dimensions will raise an error.
+            If "squeeze", any extra singleton dimensions will be squeezed, non-singleton dimensions will raise an error.
+            If "stack", any extra dimensions will be stacked to the batch dimension. Such a stacked batch dimension then has a multi-index that can be unstacked using `Tensor.unstack_batch_multi_index()`.
+            If "squeeze_or_stack", any extra singleton dimensions will be squeezed, non-singleton dimensions will be stacked to the batch dimension.
     """
 
     model_inputs = {get_member_id(d): d for d in model.inputs}
@@ -496,7 +538,7 @@ def create_sample_for_model(
 
     return Sample(
         members={
-            m: get_tensor(inputs[m], ipt)
+            m: get_tensor(inputs[m], ipt, extra_dims=extra_dims)
             for m, ipt in model_inputs.items()
             if m in inputs
         },
@@ -546,4 +588,62 @@ def load_sample_for_model(
         members=members,
         stat={} if stat is None else stat,
         id=sample_id or tuple(sorted(paths.values())),
+    )
+
+
+def split_sample_into_blocks_for_model(
+    sample: Sample,
+    model: v0_5.ModelDescr,
+    blocksize_parameter: int,
+    batch_size: int = 1,
+) -> Tuple[TotalNumberOfBlocks, Iterable[SampleBlockWithOrigin]]:
+    if isinstance(model, v0_4.ModelDescr):
+        raise NotImplementedError(
+            "`predict_sample_with_blocking` not implemented for v0_4.ModelDescr"
+            + f" {model.name}."
+            + " Consider using `predict_sample_with_fixed_blocking` or update the model description to format version 0.5."
+        )
+
+    ns = {
+        (ipt.id, a.id): blocksize_parameter
+        for ipt in model.inputs
+        for a in ipt.axes
+        if isinstance(a.size, v0_5.ParameterizedSize)
+    }
+    halo = get_input_halo(model)
+
+    input_block_shape = model.get_tensor_sizes(ns, batch_size=batch_size).inputs
+
+    return sample.split_into_blocks(
+        block_shapes=input_block_shape,
+        halo=halo,
+        pad_mode={ipt.id: ipt.pad or "symmetric" for ipt in model.inputs},
+    )
+
+
+def transpose_sample_for_model(
+    sample: Sample,
+    model: AnyModelDescr,
+    extra_dims: Literal["raise", "squeeze", "stack", "squeeze_or_stack"] = "stack",
+    missing_dims: Literal["raise", "expand", "unstack", "unstack_or_expand"] = "raise",
+) -> Sample:
+    """Transpose sample members to the order expected as inputs by the model.
+
+    Unexpected dimensions are stacked to the batch dimension, missing dimensions are added as singletons.
+    """
+
+    axes = {get_member_id(d): [a.id for a in get_axes_infos(d)] for d in model.inputs}
+    for m in axes:
+        if m not in sample.members and not (
+            isinstance(model, v0_5.ModelDescr)
+            and [d for d in model.inputs if get_member_id(d) == m][0].optional
+        ):
+            raise ValueError(
+                f"Sample is missing non-optional member {m} required by model"
+            )
+
+    return sample.transpose(
+        axes=axes,
+        extra_dims=extra_dims,
+        missing_dims=missing_dims,
     )

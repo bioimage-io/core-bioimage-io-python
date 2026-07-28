@@ -83,19 +83,19 @@ from bioimageio.spec.utils import (
     write_yaml,
 )
 
+from ._prediction_pipeline import (
+    create_prediction_pipeline,
+    create_remote_prediction_pipeline,
+)
 from .commands import WeightFormatArgAll, WeightFormatArgAny, package, test
 from .common import MemberId, SampleId, SupportedWeightsFormat
 from .digest_spec import get_member_ids, load_sample_for_model
 from .io import load_stat, save_sample, save_stat
-from .prediction import create_prediction_pipeline
-from .proc_setup import (
-    Measure,
-    MeasureValue,
-    StatsCalculator,
-    get_required_dataset_measures,
-)
+from .proc_setup import get_required_dataset_measures
+from .remote_backends import create_remote_model_adapter
 from .sample import Sample
-from .stat_measures import Stat
+from .stat_calculators import StatsCalculator
+from .stat_measures import Measure, MeasureValue, Stat
 from .utils import compare
 from .weight_converters._add_weights import add_weights
 
@@ -520,6 +520,20 @@ class PredictCmd(CmdBase, WithSource):
     )
     """Device(s) to use"""
 
+    server: Optional[str] = None
+    """The URL or Hugging Face space name of a running bioimageio (gradio) server instance to use as a remote backend for prediction."""
+
+    pre_post_processing_location: Literal["local", "remote"] = Field(
+        "local", alias="pre-post-processing-location"
+    )
+    """Where to run preprocessing/postprocessing operations when using `--server`.
+
+    - `local`: Run preprocessing/postprocessing locally and only model inference on the server.
+    - `remote`: Run preprocessing/postprocessing on the server as well.
+
+     
+    """
+
     example: bool = False
     """generate and run an example
 
@@ -794,11 +808,25 @@ class PredictCmd(CmdBase, WithSource):
             ).items()
         )
 
-        pp = create_prediction_pipeline(
-            model_descr,
-            weight_format=None if self.weight_format == "any" else self.weight_format,
-            devices=self.devices,
-        )
+        if self.server is not None and self.pre_post_processing_location == "remote":
+            pp = create_remote_prediction_pipeline(model_descr, server=self.server)
+        else:
+            if self.server is None:
+                model_adapter = None
+            else:
+                assert self.pre_post_processing_location == "local"
+                model_adapter = create_remote_model_adapter(
+                    model_descr, server=self.server
+                )
+
+            pp = create_prediction_pipeline(
+                model_descr,
+                weight_format=None
+                if self.weight_format == "any"
+                else self.weight_format,
+                devices=self.devices,
+                model_adapter=model_adapter,
+            )
 
         if blockwise:
             predict_method = partial(
@@ -920,11 +948,38 @@ class AddWeightsCmd(CmdBase, WithSource, WithSummaryLogging):
         self.log(updated_model_descr)
 
 
-class EmptyCache(CmdBase):
+class EmptyCacheCmd(CmdBase):
     """Empty the bioimageio cache directory."""
 
     def cli_cmd(self):
         empty_cache()
+
+
+class ServerCmd(CmdBase):
+    """Start a server to connect to with remote model adapters or remote prediction pipelines."""
+
+    backend: Literal["gradio"] = "gradio"
+    """The remote backend to use."""
+
+    port: Optional[int] = None
+    """The port to start the server on. If not given, a free port will be used."""
+
+    def cli_cmd(self) -> None:
+        try:
+            if self.backend == "gradio":
+                from .remote_backends.gradio.server import main
+            else:
+                assert_never(self.backend)
+        except ImportError as e:
+            raise ImportError(
+                f"{self.backend.capitalize()} is not installed. Please install the '{self.backend}-server' extra to use this command,"
+                + f" e.g. with `pip install bioimageio.core[{self.backend}-server]`."
+            ) from e
+
+        local_server_url = main(port=self.port)
+        logger.info(
+            "{} server shutdown at {}", self.backend.capitalize(), local_server_url
+        )
 
 
 JSON_FILE = "bioimageio-cli.json"
@@ -972,8 +1027,11 @@ class Bioimageio(
     add_weights: CliSubCommand[AddWeightsCmd] = Field(alias="add-weights")
     """Add additional weights to a model description by converting from available formats."""
 
-    empty_cache: CliSubCommand[EmptyCache] = Field(alias="empty-cache")
+    empty_cache: CliSubCommand[EmptyCacheCmd] = Field(alias="empty-cache")
     """Empty the bioimageio cache directory."""
+
+    server: CliSubCommand[ServerCmd]
+    """Start a server to connect to with remote model adapters or remote prediction pipelines."""
 
     @classmethod
     def settings_customise_sources(

@@ -2,6 +2,7 @@ import itertools
 from dataclasses import dataclass
 from functools import cached_property
 from math import floor, prod
+from types import MappingProxyType
 from typing import (
     Any,
     Callable,
@@ -15,13 +16,14 @@ from typing import (
     Union,
 )
 
+import pydantic
 from loguru import logger
 from typing_extensions import Self
 
+from ._axis_annotations import PerAxisAnno
 from .axis import AxisId, PerAxis
 from .common import (
     BlockIndex,
-    Frozen,
     Halo,
     HaloLike,
     MemberId,
@@ -42,7 +44,7 @@ class LinearAxisTransform:
         return round(s * self.scale) + self.offset
 
 
-@dataclass(frozen=True)
+@pydantic.dataclasses.dataclass(frozen=True)
 class BlockMeta:
     """Block meta data of a sample member (a tensor in a sample)
 
@@ -76,13 +78,13 @@ class BlockMeta:
 
     """
 
-    sample_shape: PerAxis[int]
+    sample_shape: PerAxisAnno[int]
     """the axis sizes of the whole (unblocked) sample"""
 
-    inner_slice: PerAxis[SliceInfo]
+    inner_slice: PerAxisAnno[SliceInfo]
     """inner region (without halo) wrt the sample"""
 
-    halo: PerAxis[Halo]
+    halo: PerAxisAnno[Halo]
     """halo enlarging the inner region to the block's sizes"""
 
     block_index: BlockIndex
@@ -94,7 +96,7 @@ class BlockMeta:
     @cached_property
     def shape(self) -> PerAxis[int]:
         """axis lengths of the block"""
-        return Frozen(
+        return MappingProxyType(
             {
                 a: s.stop - s.start + (sum(self.halo[a]) if a in self.halo else 0)
                 for a, s in self.inner_slice.items()
@@ -105,7 +107,7 @@ class BlockMeta:
     def padding(self) -> PerAxis[PadWidth]:
         """padding to realize the halo at the sample edge
         where we cannot simply enlarge the inner slice"""
-        return Frozen(
+        return MappingProxyType(
             {
                 a: PadWidth(
                     (
@@ -128,7 +130,7 @@ class BlockMeta:
     @cached_property
     def outer_slice(self) -> PerAxis[SliceInfo]:
         """slice of the outer block (without padding) wrt the sample"""
-        return Frozen(
+        return MappingProxyType(
             {
                 a: SliceInfo(
                     max(
@@ -154,16 +156,22 @@ class BlockMeta:
     @cached_property
     def inner_shape(self) -> PerAxis[int]:
         """axis lengths of the inner region (without halo)"""
-        return Frozen({a: s.stop - s.start for a, s in self.inner_slice.items()})
+        return MappingProxyType(
+            {a: s.stop - s.start for a, s in self.inner_slice.items()}
+        )
 
     @cached_property
     def local_slice(self) -> PerAxis[SliceInfo]:
         """inner slice wrt the block, **not** the sample"""
-        return Frozen(
+        return MappingProxyType(
             {
-                a: SliceInfo(
-                    self.halo[a].left,
-                    self.halo[a].left + self.inner_shape[a],
+                a: (
+                    SliceInfo(
+                        h.left,
+                        h.left + self.inner_shape[a],
+                    )
+                    if (h := self.halo.get(a)) is not None
+                    else SliceInfo(0, self.inner_shape[a])
                 )
                 for a in self.inner_slice
             }
@@ -189,16 +197,6 @@ class BlockMeta:
         return self.inner_slice
 
     def __post_init__(self):
-        # freeze mutable inputs
-        if not isinstance(self.sample_shape, Frozen):
-            object.__setattr__(self, "sample_shape", Frozen(self.sample_shape))
-
-        if not isinstance(self.inner_slice, Frozen):
-            object.__setattr__(self, "inner_slice", Frozen(self.inner_slice))
-
-        if not isinstance(self.halo, Frozen):
-            object.__setattr__(self, "halo", Frozen(self.halo))
-
         assert all(a in self.sample_shape for a in self.inner_slice), (
             "block has axes not present in sample"
         )
@@ -254,10 +252,12 @@ def split_shape_into_blocks(
     halo: PerAxis[HaloLike],
     stride: Optional[PerAxis[int]] = None,
 ) -> Tuple[TotalNumberOfBlocks, Generator[BlockMeta, Any, None]]:
-    assert all(a in shape for a in block_shape), (
-        tuple(shape),
-        set(block_shape),
-    )
+    unknown_axes = [a for a in block_shape if a not in shape]
+    if unknown_axes:
+        raise ValueError(
+            f"unknown axes in block_shape: {unknown_axes} for shape {shape}"
+        )
+
     if any(shape[a] < block_shape[a] for a in block_shape):
         # TODO: allow larger blockshape
         raise ValueError(f"shape {shape} is smaller than block shape {block_shape}")
