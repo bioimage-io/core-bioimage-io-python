@@ -1,3 +1,10 @@
+### 0.12.0 (not yet released)
+
+- bump spec to 0.5.12.1 (wip)
+  - supports loading zarr images
+- dropped `is_volume` flag from `load_image()`
+
+
 ### 0.11.0
 
 - bump spec to 0.5.12.0

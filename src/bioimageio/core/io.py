@@ -64,7 +64,7 @@ def load_tensor(
     # TODO: load axis meta data
     array = load_image(source)
 
-    return Tensor.from_numpy(array, dims=axes)
+    return Tensor.from_array(array, dims=axes)
 
 
 _SourceT = TypeVar("_SourceT", Path, HttpUrl, ZipPath)
