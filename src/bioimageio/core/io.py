@@ -8,7 +8,6 @@ from pathlib import Path
 from shutil import copyfileobj
 from typing import (
     TYPE_CHECKING,
-    Any,
     Dict,
     List,
     Mapping,
@@ -19,25 +18,22 @@ from typing import (
 )
 
 import xarray as xr
-from imageio.v3 import imread, imwrite  # type: ignore
+from imageio.v3 import imwrite  # type: ignore
 from loguru import logger
-from numpy.typing import NDArray
 from pydantic import BaseModel, RootModel
 from typing_extensions import TypeAlias
 from typing_extensions import TypeAliasType as _TypeAliasType
 
-from bioimageio.spec._internal.io import get_reader, interprete_file_source
-from bioimageio.spec._internal.type_guards import is_ndarray
+from bioimageio.spec._internal.io import get_reader
 from bioimageio.spec.common import (
     BytesReader,
-    FileDescr,
     FileSource,
     HttpUrl,
     PermissiveFileSource,
-    RelativeFilePath,
     ZipPath,
 )
-from bioimageio.spec.utils import download, load_array, save_array
+from bioimageio.spec.utils import load_image as load_image
+from bioimageio.spec.utils import save_array
 
 from .axis import AxisId, AxisLike
 from .common import PerMember
@@ -58,38 +54,6 @@ else:
         "JsonValue",
         Union[bool, int, float, str, None, List["JsonValue"], Dict[str, "JsonValue"]],
     )
-
-
-def load_image(
-    source: Union[PermissiveFileSource, ZipPath], is_volume: Optional[bool] = None
-) -> NDArray[Any]:
-    """load a single image as numpy array
-
-    Args:
-        source: image source
-        is_volume: deprecated
-    """
-    if is_volume is not None:
-        warnings.warn("**is_volume** is deprecated and will be removed soon.")
-
-    if isinstance(source, (FileDescr, ZipPath)):
-        parsed_source = source
-    else:
-        parsed_source = interprete_file_source(source)
-
-    if isinstance(parsed_source, RelativeFilePath):
-        parsed_source = parsed_source.absolute()
-
-    if parsed_source.suffix == ".npy":
-        image = load_array(parsed_source)
-    else:
-        reader = download(parsed_source)
-        image = imread(  # pyright: ignore[reportUnknownVariableType]
-            reader.read(), extension=parsed_source.suffix
-        )
-
-    assert is_ndarray(image)
-    return image
 
 
 def load_tensor(
