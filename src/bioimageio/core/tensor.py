@@ -42,12 +42,17 @@ from .common import (
     SliceInfo,
 )
 
-if TYPE_CHECKING:
+try:
     import dask.array as da
+except ImportError:
+    da = None
+
+if TYPE_CHECKING:
+    import dask.array
     from numpy.typing import NDArray
     from xarray.core.types import DaCompatible
 
-Array: TypeAlias = "NDArray[Any] | da.Array"
+Array: TypeAlias = "NDArray[Any] | dask.array.Array"
 
 
 def _resolve_pad_mode(mode: PadMode):
@@ -73,7 +78,7 @@ class Tensor(MagicTensorOpsMixin):
     """A wrapper around an xr.DataArray for better integration with bioimageio.spec
     and improved type annotations."""
 
-    _Compatible: TypeAlias = Union["Tensor", xr.DataArray, DaCompatible]
+    _Compatible: TypeAlias = Union["Tensor", xr.DataArray, "DaCompatible"]
 
     def __init__(
         self,
@@ -735,7 +740,7 @@ class Tensor(MagicTensorOpsMixin):
             raise ValueError(f"Could not guess an axis mapping for {shape}")
 
         dims = tuple(a.id for a in current_axes)
-        if isinstance(array, da.Array):
+        if da is not None and isinstance(array, da.Array):
             return cls.from_xarray(xr.DataArray(array, dims=dims))
         else:
             return cls(array, dims=dims)
