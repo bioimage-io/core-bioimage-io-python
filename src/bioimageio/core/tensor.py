@@ -258,7 +258,7 @@ class Tensor(MagicTensorOpsMixin):
 
     @property
     def dtype(self) -> DTypeStr:
-        dt = str(self.data.dtype)
+        dt = str(self.data.dtype)  # pyright: ignore[reportUnknownArgumentType]
         assert dt in get_args(DTypeStr)
         return dt  # pyright: ignore[reportReturnType]
 
@@ -297,7 +297,7 @@ class Tensor(MagicTensorOpsMixin):
 
     def to_numpy(self) -> NDArray[Any]:
         """Return the data of this tensor as a numpy array."""
-        return self.data.to_numpy()
+        return self.data.to_numpy()  # pyright: ignore[reportUnknownVariableType]
 
     def argmax(self) -> Mapping[AxisId, int]:
         ret = self._data.argmax(...)
