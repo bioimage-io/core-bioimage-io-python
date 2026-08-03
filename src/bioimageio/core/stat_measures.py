@@ -84,14 +84,14 @@ class SampleMean(_Mean, SampleMeasureBase, frozen=True):
         tensor = sample.members[self.member_id]
         return tensor.mean(dim=self.axes)
 
-    def model_post_init(self, __context: Any):
+    def model_post_init(self, __context: Any, /):
         assert self.axes is None or AxisId("batch") not in self.axes
 
 
 class DatasetMean(_Mean, DatasetMeasureBase, frozen=True):
     """The mean value across multiple samples"""
 
-    def model_post_init(self, __context: Any):
+    def model_post_init(self, __context: Any, /):
         assert self.axes is None or AxisId("batch") in self.axes
 
 
@@ -108,14 +108,14 @@ class SampleStd(_Std, SampleMeasureBase, frozen=True):
         tensor = sample.members[self.member_id]
         return tensor.std(dim=self.axes)
 
-    def model_post_init(self, __context: Any):
+    def model_post_init(self, __context: Any, /):
         assert self.axes is None or AxisId("batch") not in self.axes
 
 
 class DatasetStd(_Std, DatasetMeasureBase, frozen=True):
     """The standard deviation across multiple samples"""
 
-    def model_post_init(self, __context: Any):
+    def model_post_init(self, __context: Any, /):
         assert self.axes is None or AxisId("batch") in self.axes
 
 
@@ -132,14 +132,14 @@ class SampleVar(_Var, SampleMeasureBase, frozen=True):
         tensor = sample.members[self.member_id]
         return tensor.var(dim=self.axes)
 
-    def model_post_init(self, __context: Any):
+    def model_post_init(self, __context: Any, /):
         assert self.axes is None or AxisId("batch") not in self.axes
 
 
 class DatasetVar(_Var, DatasetMeasureBase, frozen=True):
     """The variance across multiple samples"""
 
-    def model_post_init(self, __context: Any):  # TODO: turn into @model_validator
+    def model_post_init(self, __context: Any, /):  # TODO: turn into @model_validator
         assert self.axes is None or AxisId("batch") in self.axes
 
 
@@ -149,7 +149,7 @@ class _Quantile(BaseModel, frozen=True):
     axes: tuple[AxisId, ...] | None = None
     """`axes` to reduce"""
 
-    def model_post_init(self, __context: Any):
+    def model_post_init(self, __context: Any, /):
         assert self.q >= 0.0
         assert self.q <= 1.0
 
@@ -165,7 +165,7 @@ class SampleQuantile(_Quantile, SampleMeasureBase, frozen=True):
         tensor = sample.members[self.member_id]
         return tensor.quantile(self.q, dim=self.axes, method=self.method)
 
-    def model_post_init(self, __context: Any):
+    def model_post_init(self, __context: Any, /):
         super().model_post_init(__context)
         assert self.axes is None or AxisId("batch") not in self.axes
 
@@ -173,7 +173,7 @@ class SampleQuantile(_Quantile, SampleMeasureBase, frozen=True):
 class DatasetQuantile(_Quantile, DatasetMeasureBase, frozen=True):
     """The `q`th quantile across multiple samples"""
 
-    def model_post_init(self, __context: Any):
+    def model_post_init(self, __context: Any, /):
         super().model_post_init(__context)
         assert self.axes is None or AxisId("batch") in self.axes
 

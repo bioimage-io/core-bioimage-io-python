@@ -164,6 +164,7 @@ exclude = [
 
 [tool.ruff.lint]
 extend-select = ["NPY201"]
+ignore = ["BLE001"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["bioimageio"]

@@ -18,6 +18,7 @@ def run_subprocess(
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         encoding="utf-8",
+        check=False,
         **kwargs,
     )
 

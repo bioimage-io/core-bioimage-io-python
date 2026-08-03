@@ -51,7 +51,7 @@ class DescriptionSerializer:
     def deserialize(serialized: bytes) -> ResourceDescr:
         descr = load_description(ZipFile(BytesIO(serialized)), perform_io_checks=False)
         if isinstance(descr, InvalidDescr):
-            raise ValueError(f"invalid serialized model package: {descr.get_reason()}")
+            raise TypeError(f"invalid serialized model package: {descr.get_reason()}")
 
         return descr
 

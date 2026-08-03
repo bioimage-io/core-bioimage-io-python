@@ -53,7 +53,11 @@ TensorSource: TypeAlias = Union[
 
 
 def import_callable(
-    node: ArchitectureFromFileDescr | ArchitectureFromLibraryDescr | CallableFromDepencency | CallableFromFile | v0_5.CustomProcessingDescr,
+    node: ArchitectureFromFileDescr
+    | ArchitectureFromLibraryDescr
+    | CallableFromDepencency
+    | CallableFromFile
+    | v0_5.CustomProcessingDescr,
     /,
     **kwargs: Unpack[HashKwargs],
 ) -> Callable[..., Any]:
@@ -72,7 +76,7 @@ def import_callable(
         assert_never(node)
 
     if not callable(c):
-        raise ValueError(f"{node} (imported: {c}) is not callable")
+        raise TypeError(f"{node} (imported: {c}) is not callable")
 
     return c
 
@@ -160,14 +164,20 @@ def _import_from_file_impl(
 
 
 def get_axes_infos(
-    io_descr: v0_4.InputTensorDescr | v0_4.OutputTensorDescr | v0_5.InputTensorDescr | v0_5.OutputTensorDescr,
+    io_descr: v0_4.InputTensorDescr
+    | v0_4.OutputTensorDescr
+    | v0_5.InputTensorDescr
+    | v0_5.OutputTensorDescr,
 ) -> list[AxisInfo]:
     """get a unified, simplified axis representation from spec axes"""
     return [AxisInfo.create(a) for a in io_descr.axes]
 
 
 def get_member_id(
-    tensor_description: v0_4.InputTensorDescr | v0_4.OutputTensorDescr | v0_5.InputTensorDescr | v0_5.OutputTensorDescr,
+    tensor_description: v0_4.InputTensorDescr
+    | v0_4.OutputTensorDescr
+    | v0_5.InputTensorDescr
+    | v0_5.OutputTensorDescr,
 ) -> MemberId:
     """get the normalized tensor ID, usable as a sample member ID"""
 
@@ -183,7 +193,10 @@ def get_member_id(
 
 def get_member_ids(
     tensor_descriptions: Iterable[
-        v0_4.InputTensorDescr | v0_4.OutputTensorDescr | v0_5.InputTensorDescr | v0_5.OutputTensorDescr
+        v0_4.InputTensorDescr
+        | v0_4.OutputTensorDescr
+        | v0_5.InputTensorDescr
+        | v0_5.OutputTensorDescr
     ],
 ) -> list[MemberId]:
     """get normalized tensor IDs to be used as sample member IDs"""
@@ -222,7 +235,9 @@ get_test_outputs = get_test_output_sample
 
 
 def _get_test_sample(
-    info: Mapping[MemberId, v0_5.InputTensorDescr | v0_5.OutputTensorDescr] | Mapping[MemberId, tuple[v0_4.InputTensorDescr, FileSource]] | Mapping[MemberId, tuple[v0_4.OutputTensorDescr, FileSource]],
+    info: Mapping[MemberId, v0_5.InputTensorDescr | v0_5.OutputTensorDescr]
+    | Mapping[MemberId, tuple[v0_4.InputTensorDescr, FileSource]]
+    | Mapping[MemberId, tuple[v0_4.OutputTensorDescr, FileSource]],
 ) -> Sample:
     arrays: dict[MemberId, NDArray[Any]] = {}
     for m, src in info.items():
@@ -276,7 +291,7 @@ def get_input_halo(
         for a, ah in th.items():
             s = axes[a].size
             if not isinstance(s, v0_5.SizeReference):
-                raise ValueError(
+                raise TypeError(
                     f"Unable to map output halo for {t}.{a} to an input axis"
                 )
 
@@ -398,7 +413,11 @@ def get_io_sample_block_metas(
 
 def get_tensor(
     src: TensorSource,
-    descr: v0_4.InputTensorDescr | v0_5.InputTensorDescr | v0_4.OutputTensorDescr | v0_5.OutputTensorDescr | Sequence[AxisInfo],
+    descr: v0_4.InputTensorDescr
+    | v0_5.InputTensorDescr
+    | v0_4.OutputTensorDescr
+    | v0_5.OutputTensorDescr
+    | Sequence[AxisInfo],
     *,
     extra_dims: Literal["raise", "squeeze", "stack", "squeeze_or_stack"] = "squeeze",
     missing_dims: Literal["raise", "expand", "unstack", "unstack_or_expand"] = "raise",

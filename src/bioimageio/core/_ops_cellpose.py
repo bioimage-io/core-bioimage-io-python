@@ -15,6 +15,8 @@ from .sample import Sample
 from .stat_measures import Measure
 from .tensor import Tensor
 
+DEFAULT_LABELS_ID = MemberId("labels")
+
 
 @dataclass
 class CellposeFlowDynamics(SamplewiseOperator):
@@ -30,7 +32,7 @@ class CellposeFlowDynamics(SamplewiseOperator):
     do_3D: bool = False
     min_size: int = 15
     """Minimum size of objects to keep, in pixels. Default is 15, which is the default in Cellpose. Set to 0 to disable filtering by size."""
-    labels_id: MemberId = MemberId("labels")
+    labels_id: MemberId = DEFAULT_LABELS_ID
     output_dtype: Literal["uint16", "uint32"] = "uint16"
 
     @classmethod

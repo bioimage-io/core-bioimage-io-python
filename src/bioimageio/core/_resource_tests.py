@@ -208,7 +208,9 @@ def test_description(
     expected_type: str | None = None,
     sha256: Sha256 | None = None,
     stop_early: bool = False,
-    runtime_env: Literal["currently-active", "as-described"] | Path | BioimageioCondaEnv = ("currently-active"),
+    runtime_env: Literal["currently-active", "as-described"]
+    | Path
+    | BioimageioCondaEnv = ("currently-active"),
     run_command: Callable[[Sequence[str]], None] = default_run_command,
     working_dir: os.PathLike[str] | str | None = None,
     **deprecated: Unpack[DeprecatedKwargs],
@@ -267,8 +269,8 @@ def test_description(
     if run_command is not default_run_command:
         try:
             run_command(["thiscommandshouldalwaysfail", "please"])
-        except Exception:
-            pass
+        except Exception as e:
+            logger.trace("run_command failed successfully :) {}", e)
         else:
             raise RuntimeError(
                 "given run_command does not raise an exception for a failing command"
@@ -949,7 +951,7 @@ def _test_recreate_test_outputs(
 
     try:
         test_input = get_test_input_sample(model)
-        expected = get_test_output_sample(model)
+        expected_sample = get_test_output_sample(model)
 
         with create_prediction_pipeline(
             bioimageio_model=model, devices=devices, weight_format=weight_format
@@ -968,21 +970,21 @@ def _test_recreate_test_outputs(
             results = deepcopy(results_not_postprocessed)
             prediction_pipeline.apply_postprocessing(results)
 
-        if len(results.members) != len(expected.members):
+        if len(results.members) != len(expected_sample.members):
             add_error_entry(
-                f"Expected {len(expected.members)} outputs, but got {len(results.members)}"
+                f"Expected {len(expected_sample.members)} outputs, but got {len(results.members)}"
             )
 
         else:
             intermediate_paths: list[Path] = []
-            for m, t in test_input_preprocessed.members.items():
+            for m, expected in test_input_preprocessed.members.items():
                 intermediate_paths.extend(
-                    save_to_working_dir(f"test_input_preprocessed_{m}", t)
+                    save_to_working_dir(f"test_input_preprocessed_{m}", expected)
                 )
             if intermediate_paths:
                 logger.debug("Saved preprocessed test inputs to {}", intermediate_paths)
 
-            for m, expected in expected.members.items():
+            for m, expected in expected_sample.members.items():
                 actual = results.members.get(m)
                 if actual is None:
                     add_error_entry("Output tensors for test case may not be None")
@@ -1243,9 +1245,7 @@ def _test_parametrized_inference(
         )
 
 
-def _test_expected_resource_type(
-    rd: InvalidDescr | ResourceDescr, expected_type: str
-):
+def _test_expected_resource_type(rd: InvalidDescr | ResourceDescr, expected_type: str):
     has_expected_type = rd.type is expected_type
     rd.validation_summary.details.append(
         ValidationDetail(

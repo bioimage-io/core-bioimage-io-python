@@ -1,12 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import (
-    List,
-    Optional,
-    Tuple,
-    Union,
-)
 
 from exceptiongroup import ExceptionGroup
 from typing_extensions import assert_never

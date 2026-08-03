@@ -21,7 +21,10 @@ from .sample import Sample
 
 def predict(
     *,
-    model: PermissiveFileSource | v0_4.ModelDescr | v0_5.ModelDescr | PredictionPipeline,
+    model: PermissiveFileSource
+    | v0_4.ModelDescr
+    | v0_5.ModelDescr
+    | PredictionPipeline,
     inputs: Sample | PerMember[TensorSource] | TensorSource,
     sample_id: Hashable = "sample",
     blocksize_parameter: BlocksizeParameter | None = None,
@@ -62,7 +65,7 @@ def predict(
         if not isinstance(model, (v0_4.ModelDescr, v0_5.ModelDescr)):
             loaded = load_description(model)
             if not isinstance(loaded, (v0_4.ModelDescr, v0_5.ModelDescr)):
-                raise ValueError(f"expected model description, but got {loaded}")
+                raise TypeError(f"expected model description, but got {loaded}")
             model = loaded
 
         pp = create_prediction_pipeline(
@@ -125,10 +128,15 @@ def predict(
 
 def predict_many(
     *,
-    model: PermissiveFileSource | v0_4.ModelDescr | v0_5.ModelDescr | PredictionPipeline,
+    model: PermissiveFileSource
+    | v0_4.ModelDescr
+    | v0_5.ModelDescr
+    | PredictionPipeline,
     inputs: Iterable[PerMember[TensorSource]] | Iterable[TensorSource],
     sample_id: str = "sample{i:03}",
-    blocksize_parameter: v0_5.ParameterizedSize_N | Mapping[tuple[MemberId, AxisId], v0_5.ParameterizedSize_N] | None = None,
+    blocksize_parameter: v0_5.ParameterizedSize_N
+    | Mapping[tuple[MemberId, AxisId], v0_5.ParameterizedSize_N]
+    | None = None,
     skip_preprocessing: bool = False,
     skip_postprocessing: bool = False,
     save_output_path: Path | str | None = None,
@@ -164,7 +172,7 @@ def predict_many(
         if not isinstance(model, (v0_4.ModelDescr, v0_5.ModelDescr)):
             loaded = load_description(model)
             if not isinstance(loaded, (v0_4.ModelDescr, v0_5.ModelDescr)):
-                raise ValueError(f"expected model description, but got {loaded}")
+                raise TypeError(f"expected model description, but got {loaded}")
             model = loaded
 
         pp = create_prediction_pipeline(model)

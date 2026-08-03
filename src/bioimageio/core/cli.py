@@ -3,6 +3,7 @@
 Note: Some docstrings use a hair space ' '
       to place the added '(default: ...)' on a new line.
 """
+
 from __future__ import annotations
 
 import json
@@ -259,7 +260,7 @@ class PackageCmd(CmdBase, WithSource, WithSummaryLogging):
     def cli_cmd(self):
         if isinstance(self.descr, InvalidDescr):
             self.log(self.descr)
-            raise ValueError(f"Invalid {self.descr.type} description.")
+            raise TypeError(f"Invalid {self.descr.type} description.")
 
         sys.exit(
             package(

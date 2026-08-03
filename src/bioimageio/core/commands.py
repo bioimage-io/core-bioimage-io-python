@@ -1,5 +1,6 @@
 """These functions are used in the bioimageio command line interface
 defined in `bioimageio.core.cli`."""
+
 from __future__ import annotations
 
 from collections.abc import Sequence
@@ -45,8 +46,11 @@ def test(
     *,
     weight_format: WeightFormatArgAll = "all",
     devices: str | Sequence[str] | None = None,
-    summary: Literal["display"] | Path | Sequence[Literal["display"] | Path] = "display",
-    runtime_env: Literal["currently-active", "as-described"] | Path = "currently-active",
+    summary: Literal["display"]
+    | Path
+    | Sequence[Literal["display"] | Path] = "display",
+    runtime_env: Literal["currently-active", "as-described"]
+    | Path = "currently-active",
     determinism: Literal["seed_only", "full"] = "seed_only",
     format_version: FormatVersionPlaceholder | str = "discover",
     working_dir: Path | None = None,
@@ -109,7 +113,7 @@ def package(
         if logged:
             msg += f" Details saved to {logged}."
 
-        raise ValueError(msg)
+        raise TypeError(msg)
 
     if weight_format == "all":
         weights_priority_order = None

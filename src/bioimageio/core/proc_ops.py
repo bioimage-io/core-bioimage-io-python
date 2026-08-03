@@ -454,7 +454,13 @@ class ScaleMeanVariance(SimpleOperator):
 
 
 def _get_axes(
-    kwargs: v0_4.ZeroMeanUnitVarianceKwargs | v0_5.ZeroMeanUnitVarianceKwargs | v0_4.ScaleRangeKwargs | v0_5.ScaleRangeKwargs | v0_4.ScaleMeanVarianceKwargs | v0_5.ScaleMeanVarianceKwargs | v0_5.ClipKwargs,
+    kwargs: v0_4.ZeroMeanUnitVarianceKwargs
+    | v0_5.ZeroMeanUnitVarianceKwargs
+    | v0_4.ScaleRangeKwargs
+    | v0_5.ScaleRangeKwargs
+    | v0_4.ScaleMeanVarianceKwargs
+    | v0_5.ScaleMeanVarianceKwargs
+    | v0_5.ClipKwargs,
 ) -> tuple[bool, tuple[AxisId, ...] | None]:
     if kwargs.axes is None:
         return True, None
@@ -588,11 +594,13 @@ class Sigmoid(SimpleOperator):
         return v0_5.SigmoidDescr()
 
 
+CHANNEL_AXIS_ID = AxisId("channel")
+
 @dataclass
 class Softmax(SimpleOperator):
     """Softmax activation function."""
 
-    axis: AxisId = AxisId("channel")
+    axis: AxisId = CHANNEL_AXIS_ID
 
     def _apply(self, x: Tensor, stat: Stat) -> Tensor:
         axis_idx = x.dims.index(self.axis)
@@ -830,7 +838,10 @@ Processing = Union[
 
 def get_proc(
     proc_descr: ProcDescr,
-    tensor_descr: v0_4.InputTensorDescr | v0_4.OutputTensorDescr | v0_5.InputTensorDescr | v0_5.OutputTensorDescr,
+    tensor_descr: v0_4.InputTensorDescr
+    | v0_4.OutputTensorDescr
+    | v0_5.InputTensorDescr
+    | v0_5.OutputTensorDescr,
 ) -> Processing:
     member_id = get_member_id(tensor_descr)
 
@@ -873,14 +884,12 @@ def get_proc(
     elif isinstance(proc_descr, v0_5.SoftmaxDescr):
         return Softmax.from_proc_descr(proc_descr, member_id)
     elif isinstance(proc_descr, v0_5.StardistPostprocessingDescr):
-        if isinstance(proc_descr.kwargs, v0_5.StardistPostprocessingKwargs2D):
+        if len(proc_descr.kwargs.grid) == 2:
             return StardistPostprocessing2D.from_proc_descr(proc_descr, member_id)
-        elif isinstance(proc_descr.kwargs, v0_5.StardistPostprocessingKwargs3D):
+        elif len(proc_descr.kwargs.grid) == 3:
             return StardistPostprocessing3D.from_proc_descr(proc_descr, member_id)
         else:
-            raise ValueError(
-                f"expected ndim 2 or 3 for stardist postprocessing, but got {proc_descr.kwargs.ndim}"
-            )
+            assert_never(proc_descr.kwargs.grid)
     elif isinstance(
         proc_descr,
         (v0_4.ZeroMeanUnitVarianceDescr, v0_5.ZeroMeanUnitVarianceDescr),

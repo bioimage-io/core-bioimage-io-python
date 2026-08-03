@@ -65,9 +65,7 @@ class PytorchModelAdapter(LocalModelAdapter[torch.device, nn.Module]):
         self._mode: Literal["eval", "train"] = mode
         super().__init__(model_description=model_description, devices=devices)
 
-    def _parse_devices(
-        self, devices: Sequence[str] | None
-    ) -> Sequence[torch.device]:
+    def _parse_devices(self, devices: Sequence[str] | None) -> Sequence[torch.device]:
         return get_devices(devices)
 
     def _init_model_on_device(self, device: torch.device) -> nn.Module:
@@ -164,7 +162,7 @@ def load_torch_model(
         else:
             callable_name = weight_spec.architecture.callable
 
-        raise ValueError(f"Calling {callable_name} did not return a torch.nn.Module.")
+        raise TypeError(f"Calling {callable_name} did not return a torch.nn.Module.")
 
     if load_state or devices:
         use_devices = get_devices(devices)
