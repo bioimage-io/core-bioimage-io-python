@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import gc
 import warnings
 from abc import ABC, abstractmethod
@@ -5,12 +7,7 @@ from collections.abc import Iterable, Sequence
 from queue import LifoQueue
 from typing import (
     Any,
-    Dict,
     Generic,
-    List,
-    Optional,
-    Tuple,
-    Union,
 )
 
 from exceptiongroup import ExceptionGroup
@@ -50,7 +47,7 @@ class ModelAdapter(ABC):
     """
 
     def __init__(
-        self, model_description: AnyModelDescr, devices: Optional[Sequence[str]]
+        self, model_description: AnyModelDescr, devices: Sequence[str] | None
     ):
         super().__init__()
         self._model_descr = model_description
@@ -80,8 +77,8 @@ class ModelAdapter(ABC):
 
     @abstractmethod
     def forward(
-        self, inputs: PerMember[Optional[Tensor]]
-    ) -> PerMember[Optional[Tensor]]: ...
+        self, inputs: PerMember[Tensor | None]
+    ) -> PerMember[Tensor | None]: ...
 
     @abstractmethod
     def unload(self):
@@ -108,12 +105,12 @@ ModelType = TypeVar("ModelType")
 class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
     def load(self) -> None:
         devices = self._devices
-        self._model_queue: LifoQueue[Tuple[DeviceType, ModelType]] = LifoQueue()
+        self._model_queue: LifoQueue[tuple[DeviceType, ModelType]] = LifoQueue()
         parsed_devices = self._parse_devices(devices)
         assert parsed_devices
         # prioritize devices by order specified by user
-        device_exceptions: Dict[str, Exception] = {}
-        self._initialized_devices: List[str] = []
+        device_exceptions: dict[str, Exception] = {}
+        self._initialized_devices: list[str] = []
         for d in parsed_devices[::-1]:
             try:
                 model = self._init_model_on_device(d)
@@ -142,7 +139,7 @@ class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
         super().load()
 
     @abstractmethod
-    def _parse_devices(self, devices: Optional[Sequence[str]]) -> Sequence[DeviceType]:
+    def _parse_devices(self, devices: Sequence[str] | None) -> Sequence[DeviceType]:
         """Parse devices
 
         Note:
@@ -155,8 +152,8 @@ class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
     def _init_model_on_device(self, device: DeviceType) -> ModelType: ...
 
     def forward(
-        self, inputs: PerMember[Optional[Tensor]]
-    ) -> PerMember[Optional[Tensor]]:
+        self, inputs: PerMember[Tensor | None]
+    ) -> PerMember[Tensor | None]:
         """
         Run forward pass of model to get model predictions
 
@@ -221,8 +218,8 @@ class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
         self,
         device: DeviceType,
         model: ModelType,
-        input_arrays: Sequence[Optional[NDArray[Any]]],
-    ) -> Union[List[Optional[NDArray[Any]]], Tuple[Optional[NDArray[Any]], ...]]:
+        input_arrays: Sequence[NDArray[Any] | None],
+    ) -> list[NDArray[Any] | None] | tuple[NDArray[Any] | None, ...]:
         """framework specific forward implementation"""
 
     def unload(self):
@@ -273,8 +270,8 @@ class RemoteModelAdapter(ModelAdapter, ABC, Generic[SerializedSampleBlockType]):
         return self._server
 
     def forward(
-        self, inputs: PerMember[Optional[Tensor]]
-    ) -> PerMember[Optional[Tensor]]:
+        self, inputs: PerMember[Tensor | None]
+    ) -> PerMember[Tensor | None]:
         serialized_input = self._serializer.serialize_sample(
             Sample(
                 members={k: v for k, v in inputs.items() if v is not None},
@@ -293,5 +290,5 @@ class RemoteModelAdapter(ModelAdapter, ABC, Generic[SerializedSampleBlockType]):
     ) -> Iterable[SerializedSampleBlockType]: ...
 
     @abstractmethod
-    def test(self) -> Optional[ValidationSummary]:
+    def test(self) -> ValidationSummary | None:
         """Run the bioimageio model test."""

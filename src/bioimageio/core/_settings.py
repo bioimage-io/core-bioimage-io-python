@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import os
 import platform
-from typing import Annotated, Literal, Optional
+from typing import Annotated, Literal
 
 from loguru import logger
 from pydantic import Field, field_validator
@@ -16,12 +18,12 @@ class Settings(SpecSettings):
     ] = "torch"
 
     pytorch_enable_mps_fallback: Annotated[
-        Optional[bool], Field(alias="PYTORCH_ENABLE_MPS_FALLBACK")
+        bool | None, Field(alias="PYTORCH_ENABLE_MPS_FALLBACK")
     ] = None
 
     @field_validator("pytorch_enable_mps_fallback", mode="after")
     @classmethod
-    def _set_default_mps_fallback(cls, value: Optional[bool]):
+    def _set_default_mps_fallback(cls, value: bool | None):
         # pytorch versions up to the 2.6 don't support all operations (esp 3d) on MPS
         # this env variable allows falling back to CPU for those networks instead of failing
         # see for current status https://github.com/pytorch/pytorch/issues/141287
@@ -44,7 +46,7 @@ class Settings(SpecSettings):
     )
     """URL to the bioimageio collection config"""
 
-    gradio_server: Optional[str] = None
+    gradio_server: str | None = None
     """URL or Hugging Face space name to connect to with the remote gradio model adapter or remote gradio prediction pipeline.
 
     Example: "bioimage-io/bioimage-io-gradio-server"

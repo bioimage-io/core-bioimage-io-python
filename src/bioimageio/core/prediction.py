@@ -1,11 +1,8 @@
+from __future__ import annotations
+
 import collections.abc
 from collections.abc import Hashable, Iterable, Iterator, Mapping
 from pathlib import Path
-from typing import (
-    Optional,
-    Tuple,
-    Union,
-)
 
 from loguru import logger
 from tqdm import tqdm
@@ -24,16 +21,14 @@ from .sample import Sample
 
 def predict(
     *,
-    model: Union[
-        PermissiveFileSource, v0_4.ModelDescr, v0_5.ModelDescr, PredictionPipeline
-    ],
-    inputs: Union[Sample, PerMember[TensorSource], TensorSource],
+    model: PermissiveFileSource | v0_4.ModelDescr | v0_5.ModelDescr | PredictionPipeline,
+    inputs: Sample | PerMember[TensorSource] | TensorSource,
     sample_id: Hashable = "sample",
-    blocksize_parameter: Optional[BlocksizeParameter] = None,
-    input_block_shape: Optional[Mapping[MemberId, Mapping[AxisId, int]]] = None,
+    blocksize_parameter: BlocksizeParameter | None = None,
+    input_block_shape: Mapping[MemberId, Mapping[AxisId, int]] | None = None,
     skip_preprocessing: bool = False,
     skip_postprocessing: bool = False,
-    save_output_path: Optional[Union[Path, str]] = None,
+    save_output_path: Path | str | None = None,
 ) -> Sample:
     """Run prediction for a single set of input(s) with a bioimage.io model
 
@@ -77,17 +72,16 @@ def predict(
 
     with pp:
         model = pp.model_descr
-        if save_output_path is not None:
-            if (
-                "{output_id}" not in str(save_output_path)
-                and "{member_id}" not in str(save_output_path)
-                and len(model.outputs) > 1
-            ):
-                raise ValueError(
-                    f"Missing `{{output_id}}` in save_output_path={save_output_path} to "
-                    + "distinguish model outputs "
-                    + str([get_member_id(d) for d in model.outputs])
-                )
+        if save_output_path is not None and (
+            "{output_id}" not in str(save_output_path)
+            and "{member_id}" not in str(save_output_path)
+            and len(model.outputs) > 1
+        ):
+            raise ValueError(
+                f"Missing `{{output_id}}` in save_output_path={save_output_path} to "
+                + "distinguish model outputs "
+                + str([get_member_id(d) for d in model.outputs])
+            )
 
         if isinstance(inputs, Sample):
             sample = inputs
@@ -131,20 +125,13 @@ def predict(
 
 def predict_many(
     *,
-    model: Union[
-        PermissiveFileSource, v0_4.ModelDescr, v0_5.ModelDescr, PredictionPipeline
-    ],
-    inputs: Union[Iterable[PerMember[TensorSource]], Iterable[TensorSource]],
+    model: PermissiveFileSource | v0_4.ModelDescr | v0_5.ModelDescr | PredictionPipeline,
+    inputs: Iterable[PerMember[TensorSource]] | Iterable[TensorSource],
     sample_id: str = "sample{i:03}",
-    blocksize_parameter: Optional[
-        Union[
-            v0_5.ParameterizedSize_N,
-            Mapping[Tuple[MemberId, AxisId], v0_5.ParameterizedSize_N],
-        ]
-    ] = None,
+    blocksize_parameter: v0_5.ParameterizedSize_N | Mapping[tuple[MemberId, AxisId], v0_5.ParameterizedSize_N] | None = None,
     skip_preprocessing: bool = False,
     skip_postprocessing: bool = False,
-    save_output_path: Optional[Union[Path, str]] = None,
+    save_output_path: Path | str | None = None,
 ) -> Iterator[Sample]:
     """Run prediction for a multiple sets of inputs with a bioimage.io model
 

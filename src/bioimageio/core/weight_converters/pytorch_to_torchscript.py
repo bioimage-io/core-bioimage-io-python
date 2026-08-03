@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Optional, Tuple, Union
+from typing import Any
 
 import torch
 from torch.jit import ScriptModule
@@ -17,7 +19,7 @@ def convert(
     output_path: Path,
     *,
     use_tracing: bool = True,
-    devices: Optional[Sequence[Union[str, torch.device]]] = None,
+    devices: Sequence[str | torch.device] | None = None,
 ) -> TorchscriptWeightsDescr:
     """
     Convert model weights from the PyTorch `state_dict` format to TorchScript.
@@ -53,9 +55,7 @@ def convert(
         model = load_torch_model(
             state_dict_weights_descr, load_state=True, devices=devices
         )
-        scripted_model: Union[  # pyright: ignore[reportUnknownVariableType]
-            ScriptModule, Tuple[Any, ...]
-        ] = (
+        scripted_model: ScriptModule | tuple[Any, ...] = (
             torch.jit.trace(model, input_data)
             if use_tracing
             else torch.jit.script(model)

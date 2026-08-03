@@ -4,7 +4,6 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import (
     Literal,
-    Optional,
     TypeVar,
     Union,
 )
@@ -29,9 +28,7 @@ def _guess_axis_type(a: str):
         raise ValueError(
             f"Failed to infer axis type for axis id '{a}'."
             + " Consider using one of: '"
-            + "', '".join(
-                ["b", "batch", "t", "time", "i", "index", "c", "channel", "x", "y", "z"]
-            )
+            + "b', 'batch', 't', 'time', 'i', 'index', 'c', 'channel', 'x', 'y', 'z"
             + "'. Or creating an `Axis` object instead."
         )
 
@@ -97,8 +94,8 @@ class Axis:
 @dataclass
 class AxisSize:
     min: int
-    max: Optional[int] = None
-    step: Optional[int] = None
+    max: int | None = None
+    step: int | None = None
 
 
 @dataclass
@@ -107,7 +104,7 @@ class AxisInfo(Axis):
 
     @classmethod
     def create(
-        cls, axis: AxisLike, size: Optional[Union[int, AxisSize]] = None
+        cls, axis: AxisLike, size: int | AxisSize | None = None
     ) -> AxisInfo:
         if isinstance(axis, AxisInfo):
             return axis

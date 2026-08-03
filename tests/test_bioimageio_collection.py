@@ -2,7 +2,6 @@ import os
 from collections.abc import Iterable, Mapping
 from itertools import chain
 from pathlib import Path
-from typing import Tuple
 
 import pytest
 from pydantic import HttpUrl
@@ -11,7 +10,7 @@ from bioimageio.spec import InvalidDescr, settings
 from bioimageio.spec.common import Sha256
 from tests.utils import ParameterSet, expensive_test
 
-TEST_RDF_SOURCES: Mapping[str, Tuple[HttpUrl, Sha256]] = {
+TEST_RDF_SOURCES: Mapping[str, tuple[HttpUrl, Sha256]] = {
     # "affable-shark": (  # TODO: enable when updated with fixed torchscript and onnx weights
     #     HttpUrl(
     #         "https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml?version=v0"

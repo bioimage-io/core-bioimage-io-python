@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from collections.abc import Collection
 from dataclasses import dataclass
@@ -20,7 +22,7 @@ SampleT = TypeVar("SampleT", bound=Union[Sample, SampleBlock, SampleBlockWithOri
 
 
 @dataclass
-class Operator(Generic[SampleT], ABC):
+class Operator(ABC, Generic[SampleT]):
     """Base class for all operators."""
 
     @abstractmethod
@@ -51,7 +53,7 @@ class SimpleOperator(BlockwiseOperator):
     @abstractmethod
     def get_output_shape(self, input_shape: PerAxis[int]) -> PerAxis[int]: ...
 
-    def __call__(self, sample: Union[Sample, SampleBlock]) -> None:
+    def __call__(self, sample: Sample | SampleBlock) -> None:
         if self.input not in sample.members:
             return  # TODO: raise?
 

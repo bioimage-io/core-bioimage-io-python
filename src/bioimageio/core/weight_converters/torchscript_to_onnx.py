@@ -1,6 +1,7 @@
+from __future__ import annotations
+
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Optional, Union
 
 import torch.jit
 from loguru import logger
@@ -18,7 +19,7 @@ def convert(
     *,
     verbose: bool = False,
     opset_version: int = 18,
-    devices: Optional[Sequence[Union[str, torch.device]]] = None,
+    devices: Sequence[str | torch.device] | None = None,
 ) -> OnnxWeightsDescr:
     """
     Convert model weights from the PyTorch state_dict format to the ONNX format.

@@ -7,11 +7,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
-    List,
     Literal,
-    Optional,
-    Tuple,
     Union,
     cast,
     get_args,
@@ -80,8 +76,8 @@ class Tensor(MagicTensorOpsMixin):
 
     def __init__(
         self,
-        array: Union[Array, xr.DataArray],
-        dims: Sequence[Union[AxisId, AxisLike]],
+        array: Array | xr.DataArray,
+        dims: Sequence[AxisId | AxisLike],
     ) -> None:
         super().__init__()
         axes = tuple(
@@ -96,19 +92,12 @@ class Tensor(MagicTensorOpsMixin):
     def __repr__(self) -> str:
         return f"<Tensor {self._data!r}>"
 
-    def __array__(self, dtype: Optional[DTypeLike] = None):
+    def __array__(self, dtype: DTypeLike | None = None):
         return np.asarray(self._data, dtype=dtype)
 
     def __getitem__(
         self,
-        key: Union[
-            SliceInfo,
-            slice,
-            int,
-            PerAxis[Union[SliceInfo, slice, int]],
-            Tensor,
-            xr.DataArray,
-        ],
+        key: SliceInfo | slice | int | PerAxis[SliceInfo | slice | int] | Tensor | xr.DataArray,
     ) -> Self:
         if isinstance(key, SliceInfo):
             key = slice(*key)
@@ -124,8 +113,8 @@ class Tensor(MagicTensorOpsMixin):
 
     def __setitem__(
         self,
-        key: Union[PerAxis[Union[SliceInfo, slice]], Tensor, xr.DataArray],
-        value: Union[Tensor, xr.DataArray, float],
+        key: PerAxis[SliceInfo | slice] | Tensor | xr.DataArray,
+        value: Tensor | xr.DataArray | float,
     ) -> None:
         if isinstance(key, Tensor):
             key = key._data
@@ -205,7 +194,7 @@ class Tensor(MagicTensorOpsMixin):
         cls,
         array: NDArray[Any],
         *,
-        dims: Optional[Union[AxisLike, Sequence[AxisLike]]],
+        dims: AxisLike | Sequence[AxisLike] | None,
     ) -> Tensor:
         return cls.from_array(array, dims=dims)
 
@@ -214,7 +203,7 @@ class Tensor(MagicTensorOpsMixin):
         cls,
         array: Array,
         *,
-        dims: Optional[Union[AxisLike, Sequence[AxisLike]]],
+        dims: AxisLike | Sequence[AxisLike] | None,
     ) -> Tensor:
         """create a `Tensor` from a numpy array
 
@@ -253,7 +242,7 @@ class Tensor(MagicTensorOpsMixin):
     @property
     def dims(self):  # TODO: rename to `axes`?
         """Tuple of dimension names associated with this tensor."""
-        return cast(Tuple[AxisId, ...], self._data.dims)
+        return cast(tuple[AxisId, ...], self._data.dims)
 
     @property
     def dtype(self) -> DTypeStr:
@@ -309,7 +298,7 @@ class Tensor(MagicTensorOpsMixin):
         note: if dtype is already satisfied copy if `copy`"""
         return self.__class__.from_xarray(self._data.astype(dtype, copy=copy))
 
-    def clip(self, min: Optional[float] = None, max: Optional[float] = None):
+    def clip(self, min: float | None = None, max: float | None = None):
         """Return a tensor whose values are limited to [min, max].
         At least one of max or min must be given."""
         return self.__class__.from_xarray(self._data.clip(min, max))
@@ -317,10 +306,7 @@ class Tensor(MagicTensorOpsMixin):
     def crop_to(
         self,
         sizes: PerAxis[int],
-        crop_where: Union[
-            CropWhere,
-            PerAxis[CropWhere],
-        ] = "left_and_right",
+        crop_where: CropWhere | PerAxis[CropWhere] = "left_and_right",
     ) -> Self:
         """crop to match `sizes`"""
         if isinstance(crop_where, str):
@@ -328,7 +314,7 @@ class Tensor(MagicTensorOpsMixin):
         else:
             crop_axis_where = crop_where
 
-        slices: Dict[AxisId, SliceInfo] = {}
+        slices: dict[AxisId, SliceInfo] = {}
 
         for a, s_is in self.sizes.items():
             if a not in sizes or sizes[a] == s_is:
@@ -359,14 +345,12 @@ class Tensor(MagicTensorOpsMixin):
 
         return self[slices]
 
-    def expand_dims(self, dims: Union[Sequence[AxisId], PerAxis[int]]) -> Self:
+    def expand_dims(self, dims: Sequence[AxisId] | PerAxis[int]) -> Self:
         return self.__class__.from_xarray(self._data.expand_dims(dims=dims))
 
     def item(
         self,
-        key: Union[
-            None, SliceInfo, slice, int, PerAxis[Union[SliceInfo, slice, int]]
-        ] = None,
+        key: None | SliceInfo | slice | int | PerAxis[SliceInfo | slice | int] = None,
     ):
         """Copy a tensor element to a standard Python scalar and return it."""
         if key is None:
@@ -377,7 +361,7 @@ class Tensor(MagicTensorOpsMixin):
         assert isinstance(ret, (bool, float, int))
         return ret
 
-    def mean(self, dim: Optional[Union[AxisId, Sequence[AxisId]]] = None) -> Self:
+    def mean(self, dim: AxisId | Sequence[AxisId] | None = None) -> Self:
         return self.__class__.from_xarray(self._data.mean(dim=dim))
 
     def pad(
@@ -396,7 +380,7 @@ class Tensor(MagicTensorOpsMixin):
     def pad_to(
         self,
         sizes: PerAxis[int],
-        pad_where: Union[PadWhere, PerAxis[PadWhere]] = "left_and_right",
+        pad_where: PadWhere | PerAxis[PadWhere] = "left_and_right",
         mode: PadMode = "symmetric",
     ) -> Self:
         """pad `tensor` to match `sizes`"""
@@ -405,7 +389,7 @@ class Tensor(MagicTensorOpsMixin):
         else:
             pad_axis_where = pad_where
 
-        pad_width: Dict[AxisId, PadWidth] = {}
+        pad_width: dict[AxisId, PadWidth] = {}
         for a, s_is in self.sizes.items():
             if a not in sizes or sizes[a] == s_is:
                 pad_width[a] = PadWidth(0, 0)
@@ -437,8 +421,8 @@ class Tensor(MagicTensorOpsMixin):
 
     def quantile(
         self,
-        q: Union[float, Sequence[float]],
-        dim: Optional[Union[AxisId, Sequence[AxisId]]] = None,
+        q: float | Sequence[float],
+        dim: AxisId | Sequence[AxisId] | None = None,
         method: QuantileMethod = "linear",
     ) -> Self:
         assert (
@@ -464,19 +448,13 @@ class Tensor(MagicTensorOpsMixin):
         self,
         sizes: PerAxis[int],
         *,
-        pad_where: Union[
-            PadWhere,
-            PerAxis[PadWhere],
-        ] = "left_and_right",
-        crop_where: Union[
-            CropWhere,
-            PerAxis[CropWhere],
-        ] = "left_and_right",
+        pad_where: PadWhere | PerAxis[PadWhere] = "left_and_right",
+        crop_where: CropWhere | PerAxis[CropWhere] = "left_and_right",
         pad_mode: PadMode = "symmetric",
     ):
         """return cropped/padded tensor with `sizes`"""
-        crop_to_sizes: Dict[AxisId, int] = {}
-        pad_to_sizes: Dict[AxisId, int] = {}
+        crop_to_sizes: dict[AxisId, int] = {}
+        pad_to_sizes: dict[AxisId, int] = {}
         new_axes = dict(sizes)
         for a, s_is in self.sizes.items():
             a = AxisId(str(a))
@@ -500,10 +478,10 @@ class Tensor(MagicTensorOpsMixin):
 
         return tensor
 
-    def std(self, dim: Optional[Union[AxisId, Sequence[AxisId]]] = None) -> Self:
+    def std(self, dim: AxisId | Sequence[AxisId] | None = None) -> Self:
         return self.__class__.from_xarray(self._data.std(dim=dim))
 
-    def sum(self, dim: Optional[Union[AxisId, Sequence[AxisId]]] = None) -> Self:
+    def sum(self, dim: AxisId | Sequence[AxisId] | None = None) -> Self:
         """Reduce this Tensor's data by applying sum along some dimension(s)."""
         return self.__class__.from_xarray(self._data.sum(dim=dim))
 
@@ -556,7 +534,7 @@ class Tensor(MagicTensorOpsMixin):
         added_dims = [AxisId(d) for d in array.dims if d not in self._data.dims]
 
         # restore expected axis order, replace batch dim with added dims
-        new_dims: List[AxisId] = []
+        new_dims: list[AxisId] = []
         for d in old_dims:
             if d in array.dims:
                 new_dims.append(d)
@@ -683,7 +661,7 @@ class Tensor(MagicTensorOpsMixin):
         # transpose to the correct axis order
         return self.__class__.from_xarray(array.transpose(*axes))
 
-    def var(self, dim: Optional[Union[AxisId, Sequence[AxisId]]] = None) -> Self:
+    def var(self, dim: AxisId | Sequence[AxisId] | None = None) -> Self:
         return self.__class__.from_xarray(self._data.var(dim=dim))
 
     @classmethod
@@ -767,7 +745,7 @@ def _add_singletons(arr: NDArray[Any], axis_infos: Sequence[AxisInfo]):
 
 def _get_array_view(
     original_array: Array, axis_infos: Sequence[AxisInfo]
-) -> Optional[Array]:
+) -> Array | None:
     perms = list(permutations(range(len(original_array.shape))))
 
     for perm in perms:

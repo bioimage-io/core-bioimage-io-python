@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import itertools
 from collections.abc import Collection, Generator, Iterable
 from dataclasses import dataclass
@@ -7,11 +9,6 @@ from types import MappingProxyType
 from typing import (
     Any,
     Callable,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Union,
 )
 
 import pydantic
@@ -209,7 +206,7 @@ class BlockMeta:
             )
 
     def get_transformed(
-        self, new_axes: PerAxis[Union[LinearAxisTransform, int]]
+        self, new_axes: PerAxis[LinearAxisTransform | int]
     ) -> Self:
         return self.__class__(
             sample_shape={
@@ -248,8 +245,8 @@ def split_shape_into_blocks(
     shape: PerAxis[int],
     block_shape: PerAxis[int],
     halo: PerAxis[HaloLike],
-    stride: Optional[PerAxis[int]] = None,
-) -> Tuple[TotalNumberOfBlocks, Generator[BlockMeta, Any, None]]:
+    stride: PerAxis[int] | None = None,
+) -> tuple[TotalNumberOfBlocks, Generator[BlockMeta, Any, None]]:
     unknown_axes = [a for a in block_shape if a not in shape]
     if unknown_axes:
         raise ValueError(
@@ -268,7 +265,7 @@ def split_shape_into_blocks(
     if stride is None:
         stride = {}
 
-    inner_1d_slices: Dict[AxisId, List[SliceInfo]] = {}
+    inner_1d_slices: dict[AxisId, list[SliceInfo]] = {}
     for a, s in shape.items():
         inner_size = block_shape[a] - sum(halo[a])
         stride_1d = stride.get(a, inner_size)
@@ -291,7 +288,7 @@ def _block_meta_generator(
     sample_shape: PerAxis[int],
     *,
     blocks_in_sample: int,
-    inner_1d_slices: Dict[AxisId, List[SliceInfo]],
+    inner_1d_slices: dict[AxisId, list[SliceInfo]],
     halo: PerAxis[HaloLike],
 ):
     assert all(a in sample_shape for a in halo)
@@ -314,9 +311,9 @@ def split_multiple_shapes_into_blocks(
     block_shapes: PerMember[PerAxis[int]],
     *,
     halo: PerMember[PerAxis[HaloLike]],
-    strides: Optional[PerMember[PerAxis[int]]] = None,
+    strides: PerMember[PerAxis[int]] | None = None,
     broadcast: bool = False,
-) -> Tuple[TotalNumberOfBlocks, Iterable[PerMember[BlockMeta]]]:
+) -> tuple[TotalNumberOfBlocks, Iterable[PerMember[BlockMeta]]]:
     if unknown_blocks := [t for t in block_shapes if t not in shapes]:
         raise ValueError(
             f"block shape specified for unknown tensors: {unknown_blocks}."
@@ -346,8 +343,8 @@ def split_multiple_shapes_into_blocks(
         f"`stride` specified for tensors without block shape: {unknown_block}"
     )
 
-    blocks: Dict[MemberId, Iterable[BlockMeta]] = {}
-    n_blocks: Dict[MemberId, TotalNumberOfBlocks] = {}
+    blocks: dict[MemberId, Iterable[BlockMeta]] = {}
+    n_blocks: dict[MemberId, TotalNumberOfBlocks] = {}
     for t in block_shapes:
         n_blocks[t], blocks[t] = split_shape_into_blocks(
             shape=shapes[t],
@@ -380,7 +377,7 @@ def split_multiple_shapes_into_blocks(
 
 
 def _aligned_blocks_generator(
-    n: TotalNumberOfBlocks, blocks: Dict[MemberId, Iterable[BlockMeta]]
+    n: TotalNumberOfBlocks, blocks: dict[MemberId, Iterable[BlockMeta]]
 ):
     iterators = {t: iter(gen) for t, gen in blocks.items()}
     for _ in range(n):

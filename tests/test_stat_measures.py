@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from itertools import product
-from typing import Literal, Optional, Tuple
+from typing import Literal
 
 import numpy as np
 import pytest
@@ -28,7 +30,7 @@ from bioimageio.core.tensor import Tensor
 )
 def test_individual_normal_measure(
     name: str,
-    axes: Optional[Tuple[AxisId, AxisId]],
+    axes: tuple[AxisId, AxisId] | None,
 ):
     data_id = MemberId("test_data")
     measure = getattr(stat_measures, "Sample" + name.title())(
@@ -47,7 +49,7 @@ def test_individual_normal_measure(
 @pytest.mark.parametrize("method", ["inverted_cdf", "linear"])
 @pytest.mark.parametrize("axes", [None, (AxisId("x"), AxisId("y"))])
 def test_individual_percentile_measure(
-    axes: Optional[Tuple[AxisId, ...]], method: Literal["inverted_cdf", "linear"]
+    axes: tuple[AxisId, ...] | None, method: Literal["inverted_cdf", "linear"]
 ):
     qs = [0, 0.1, 0.5, 1.0]
     tid = MemberId("tensor")

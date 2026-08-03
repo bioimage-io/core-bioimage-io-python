@@ -93,7 +93,7 @@ def test_keras_to_tensorflow(any_keras_model: Path, tmp_path: Path):
 
     expected_names = {"saved_model.pb", "variables/variables.index"}
     with zipfile.ZipFile(out_path, "r") as f:
-        names = set([name for name in f.namelist()])
+        names = {name for name in f.namelist()}
     assert len(expected_names - names) == 0
 
     model_descr.weights.keras = ret_val

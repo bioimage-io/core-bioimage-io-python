@@ -7,12 +7,6 @@ from collections.abc import Collection, Iterable, Iterator, Mapping, Sequence
 from itertools import product
 from typing import (
     Any,
-    Dict,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    Type,
     Union,
 )
 
@@ -64,16 +58,16 @@ else:
 class MeanCalculator:
     """to calculate sample and dataset mean for in-memory samples"""
 
-    def __init__(self, member_id: MemberId, axes: Optional[Sequence[AxisId]]):
+    def __init__(self, member_id: MemberId, axes: Sequence[AxisId] | None):
         super().__init__()
         self._n: int = 0
-        self._mean: Optional[Tensor] = None
+        self._mean: Tensor | None = None
         self._axes = None if axes is None else tuple(axes)
         self._member_id = member_id
         self._sample_mean = SampleMean(member_id=self._member_id, axes=self._axes)
         self._dataset_mean = DatasetMean(member_id=self._member_id, axes=self._axes)
 
-    def compute(self, sample: Sample) -> Dict[SampleMean, MeasureValue]:
+    def compute(self, sample: Sample) -> dict[SampleMean, MeasureValue]:
         return {self._sample_mean: self._compute_impl(sample)}
 
     def _compute_impl(self, sample: Sample) -> Tensor:
@@ -84,7 +78,7 @@ class MeanCalculator:
         mean = self._compute_impl(sample)
         self._update_impl(sample.members[self._member_id], mean)
 
-    def compute_and_update(self, sample: Sample) -> Dict[SampleMean, MeasureValue]:
+    def compute_and_update(self, sample: Sample) -> dict[SampleMean, MeasureValue]:
         mean = self._compute_impl(sample)
         self._update_impl(sample.members[self._member_id], mean)
         return {self._sample_mean: mean}
@@ -106,7 +100,7 @@ class MeanCalculator:
             self._mean = (n_a * mean_old + n_b * tensor_mean) / self._n
             assert self._mean.dtype == "float64"
 
-    def finalize(self) -> Dict[DatasetMean, MeasureValue]:
+    def finalize(self) -> dict[DatasetMean, MeasureValue]:
         if self._mean is None:
             return {}
         else:
@@ -116,17 +110,17 @@ class MeanCalculator:
 class MeanVarStdCalculator:
     """to calculate sample and dataset mean, variance or standard deviation"""
 
-    def __init__(self, member_id: MemberId, axes: Optional[Sequence[AxisId]]):
+    def __init__(self, member_id: MemberId, axes: Sequence[AxisId] | None):
         super().__init__()
         self._axes = None if axes is None else tuple(map(AxisId, axes))
         self._member_id = member_id
         self._n: int = 0
-        self._mean: Optional[Tensor] = None
-        self._m2: Optional[Tensor] = None
+        self._mean: Tensor | None = None
+        self._m2: Tensor | None = None
 
     def compute(
         self, sample: Sample
-    ) -> Dict[Union[SampleMean, SampleVar, SampleStd], MeasureValue]:
+    ) -> dict[SampleMean | SampleVar | SampleStd, MeasureValue]:
         tensor = sample.members[self._member_id]
         mean = tensor.mean(dim=self._axes)
         c = (tensor - mean).data
@@ -182,7 +176,7 @@ class MeanVarStdCalculator:
 
     def finalize(
         self,
-    ) -> Dict[Union[DatasetMean, DatasetVar, DatasetStd], MeasureValue]:
+    ) -> dict[DatasetMean | DatasetVar | DatasetStd, MeasureValue]:
         if (
             self._axes is not None
             and BATCH_AXIS_ID not in self._axes
@@ -211,7 +205,7 @@ class SampleQuantilesCalculator:
     def __init__(
         self,
         member_id: MemberId,
-        axes: Optional[Sequence[AxisId]],
+        axes: Sequence[AxisId] | None,
         qs: Collection[float],
         method: QuantileMethod = "linear",
     ):
@@ -222,7 +216,7 @@ class SampleQuantilesCalculator:
         self._member_id = member_id
         self._method: QuantileMethod = method
 
-    def compute(self, sample: Sample) -> Dict[SampleQuantile, MeasureValue]:
+    def compute(self, sample: Sample) -> dict[SampleQuantile, MeasureValue]:
         tensor = sample.members[self._member_id]
         ps = tensor.quantile(self._qs, dim=self._axes, method=self._method)
         return {
@@ -243,7 +237,7 @@ class MeanQuantilesCalculator:
     def __init__(
         self,
         member_id: MemberId,
-        axes: Optional[Sequence[AxisId]],
+        axes: Sequence[AxisId] | None,
         qs: Collection[float],
     ):
         super().__init__()
@@ -252,7 +246,7 @@ class MeanQuantilesCalculator:
         self._axes = None if axes is None else tuple(axes)
         self._member_id = member_id
         self._n: int = 0
-        self._estimates: Optional[Tensor] = None
+        self._estimates: Tensor | None = None
 
     def update(self, sample: Sample):
         tensor = sample.members[self._member_id]
@@ -274,7 +268,7 @@ class MeanQuantilesCalculator:
 
         self._n += n
 
-    def finalize(self) -> Dict[DatasetQuantile, MeasureValue]:
+    def finalize(self) -> dict[DatasetQuantile, MeasureValue]:
         if self._estimates is None:
             return {}
         else:
@@ -293,7 +287,7 @@ class CrickQuantilesCalculator:
     def __init__(
         self,
         member_id: MemberId,
-        axes: Optional[Sequence[AxisId]],
+        axes: Sequence[AxisId] | None,
         qs: Collection[float],
     ):
         warnings.warn("Computing dataset quantiles with experimental 'crick' library.")
@@ -303,10 +297,10 @@ class CrickQuantilesCalculator:
         self._qs = sorted(set(qs))
         self._axes = None if axes is None else tuple(axes)
         self._member_id = member_id
-        self._digest: Optional[List[TDigest]] = None
-        self._dims: Optional[Tuple[AxisId, ...]] = None
-        self._indices: Optional[Iterator[Tuple[int, ...]]] = None
-        self._shape: Optional[Tuple[int, ...]] = None
+        self._digest: list[TDigest] | None = None
+        self._dims: tuple[AxisId, ...] | None = None
+        self._indices: Iterator[tuple[int, ...]] | None = None
+        self._shape: tuple[int, ...] | None = None
 
     def _initialize(self, tensor_sizes: PerAxis[int]):
         assert crick is not None
@@ -340,7 +334,7 @@ class CrickQuantilesCalculator:
         for i, idx in enumerate(self._indices):
             self._digest[i].update(tensor[dict(zip(self._dims[1:], idx))])
 
-    def finalize(self) -> Dict[DatasetQuantile, MeasureValue]:
+    def finalize(self) -> dict[DatasetQuantile, MeasureValue]:
         if self._digest is None:
             return {}
         else:
@@ -359,8 +353,8 @@ class CrickQuantilesCalculator:
 
 
 if crick is None:
-    DatasetQuantilesCalculator: Type[
-        Union[MeanQuantilesCalculator, CrickQuantilesCalculator]
+    DatasetQuantilesCalculator: type[
+        MeanQuantilesCalculator | CrickQuantilesCalculator
     ] = MeanQuantilesCalculator
 else:
     DatasetQuantilesCalculator = CrickQuantilesCalculator
@@ -374,7 +368,7 @@ class NaiveSampleMeasureCalculator:
         self.tensor_name = member_id
         self.measure = measure
 
-    def compute(self, sample: Sample) -> Dict[SampleMeasure, MeasureValue]:
+    def compute(self, sample: Sample) -> dict[SampleMeasure, MeasureValue]:
         return {self.measure: self.measure.compute(sample)}
 
 
@@ -395,9 +389,7 @@ class StatsCalculator:
     def __init__(
         self,
         measures: Collection[Measure],
-        initial_dataset_measures: Optional[
-            Mapping[DatasetMeasure, MeasureValue]
-        ] = None,
+        initial_dataset_measures: Mapping[DatasetMeasure, MeasureValue] | None = None,
     ):
         super().__init__()
         self.sample_count = 0
@@ -405,9 +397,7 @@ class StatsCalculator:
             measures
         )
         if not initial_dataset_measures:
-            self._current_dataset_measures: Optional[
-                Dict[DatasetMeasure, MeasureValue]
-            ] = None
+            self._current_dataset_measures: dict[DatasetMeasure, MeasureValue] | None = None
         else:
             missing_dataset_meas = {
                 m
@@ -429,11 +419,11 @@ class StatsCalculator:
 
     def update(
         self,
-        sample: Union[Sample, Iterable[Sample]],
+        sample: Sample | Iterable[Sample],
     ) -> None:
         _ = self._update(sample)
 
-    def finalize(self) -> Dict[DatasetMeasure, MeasureValue]:
+    def finalize(self) -> dict[DatasetMeasure, MeasureValue]:
         """returns aggregated dataset statistics"""
         if self._current_dataset_measures is None:
             self._current_dataset_measures = {}
@@ -445,8 +435,8 @@ class StatsCalculator:
 
     def update_and_get_all(
         self,
-        sample: Union[Sample, Iterable[Sample]],
-    ) -> Dict[Measure, MeasureValue]:
+        sample: Sample | Iterable[Sample],
+    ) -> dict[Measure, MeasureValue]:
         """Returns sample as well as updated dataset statistics"""
         last_sample = self._update(sample)
         if last_sample is None:
@@ -454,19 +444,19 @@ class StatsCalculator:
 
         return {**self._compute(last_sample), **self.finalize()}
 
-    def skip_update_and_get_all(self, sample: Sample) -> Dict[Measure, MeasureValue]:
+    def skip_update_and_get_all(self, sample: Sample) -> dict[Measure, MeasureValue]:
         """Returns sample as well as previously computed dataset statistics"""
         return {**self._compute(sample), **self.finalize()}
 
-    def _compute(self, sample: Sample) -> Dict[SampleMeasure, MeasureValue]:
-        ret: Dict[SampleMeasure, MeasureValue] = {}
+    def _compute(self, sample: Sample) -> dict[SampleMeasure, MeasureValue]:
+        ret: dict[SampleMeasure, MeasureValue] = {}
         for calc in self.sample_calculators:
             values = calc.compute(sample)
             ret.update(values.items())
 
         return ret
 
-    def _update(self, sample: Union[Sample, Iterable[Sample]]) -> Optional[Sample]:
+    def _update(self, sample: Sample | Iterable[Sample]) -> Sample | None:
         self.sample_count += 1
         samples = [sample] if isinstance(sample, Sample) else sample
         last_sample = None
@@ -481,24 +471,24 @@ class StatsCalculator:
 
 def get_measure_calculators(
     required_measures: Iterable[Measure],
-) -> Tuple[List[SampleMeasureCalculator], List[DatasetMeasureCalculator]]:
+) -> tuple[list[SampleMeasureCalculator], list[DatasetMeasureCalculator]]:
     """determines which calculators are needed to compute the required measures efficiently"""
 
-    sample_calculators: List[SampleMeasureCalculator] = []
-    dataset_calculators: List[DatasetMeasureCalculator] = []
+    sample_calculators: list[SampleMeasureCalculator] = []
+    dataset_calculators: list[DatasetMeasureCalculator] = []
 
     # split required measures into groups
-    required_sample_means: Set[SampleMean] = set()
-    required_dataset_means: Set[DatasetMean] = set()
-    required_sample_mean_var_std: Set[Union[SampleMean, SampleVar, SampleStd]] = set()
-    required_dataset_mean_var_std: Set[Union[DatasetMean, DatasetVar, DatasetStd]] = (
+    required_sample_means: set[SampleMean] = set()
+    required_dataset_means: set[DatasetMean] = set()
+    required_sample_mean_var_std: set[SampleMean | SampleVar | SampleStd] = set()
+    required_dataset_mean_var_std: set[DatasetMean | DatasetVar | DatasetStd] = (
         set()
     )
-    required_sample_quantiles: Dict[
-        Tuple[MemberId, Optional[Tuple[AxisId, ...]], QuantileMethod], Set[float]
+    required_sample_quantiles: dict[
+        tuple[MemberId, tuple[AxisId, ...] | None, QuantileMethod], set[float]
     ] = {}
-    required_dataset_quantiles: Dict[
-        Tuple[MemberId, Optional[Tuple[AxisId, ...]]], Set[float]
+    required_dataset_quantiles: dict[
+        tuple[MemberId, tuple[AxisId, ...] | None], set[float]
     ] = {}
 
     for rm in required_measures:
@@ -572,12 +562,12 @@ def get_measure_calculators(
 
 def compute_dataset_measures(
     measures: Iterable[DatasetMeasure], dataset: Iterable[Sample]
-) -> Dict[DatasetMeasure, MeasureValue]:
+) -> dict[DatasetMeasure, MeasureValue]:
     """compute all dataset `measures` for the given `dataset`"""
     sample_calculators, calculators = get_measure_calculators(measures)
     assert not sample_calculators
 
-    ret: Dict[DatasetMeasure, MeasureValue] = {}
+    ret: dict[DatasetMeasure, MeasureValue] = {}
 
     for sample in dataset:
         for calc in calculators:
@@ -591,11 +581,11 @@ def compute_dataset_measures(
 
 def compute_sample_measures(
     measures: Iterable[SampleMeasure], sample: Sample
-) -> Dict[SampleMeasure, MeasureValue]:
+) -> dict[SampleMeasure, MeasureValue]:
     """compute all sample `measures` for the given `sample`"""
     calculators, dataset_calculators = get_measure_calculators(measures)
     assert not dataset_calculators
-    ret: Dict[SampleMeasure, MeasureValue] = {}
+    ret: dict[SampleMeasure, MeasureValue] = {}
 
     for calc in calculators:
         ret.update(calc.compute(sample).items())
@@ -605,11 +595,11 @@ def compute_sample_measures(
 
 def compute_measures(
     measures: Iterable[Measure], dataset: Iterable[Sample]
-) -> Dict[Measure, MeasureValue]:
+) -> dict[Measure, MeasureValue]:
     """compute all `measures` for the given `dataset`
     sample measures are computed for the last sample in `dataset`"""
     sample_calculators, dataset_calculators = get_measure_calculators(measures)
-    ret: Dict[Measure, MeasureValue] = {}
+    ret: dict[Measure, MeasureValue] = {}
     sample = None
     for sample in dataset:
         for calc in dataset_calculators:

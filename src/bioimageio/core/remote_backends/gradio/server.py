@@ -1,11 +1,10 @@
+from __future__ import annotations
+
 from collections.abc import Iterable
 from itertools import chain
 from typing import (
     Any,
-    Dict,
     Literal,
-    Optional,
-    Union,
 )
 
 import gradio as gr
@@ -47,14 +46,12 @@ def predict(
     model: str,
     sha256: str,
     input_sample: Iterable[SerializedSampleBlock],
-    blocksize: Optional[
-        Union[int, Literal["blockwise_as_serialized"], PerMember[PerAxis[int]]]
-    ] = None,
+    blocksize: int | Literal["blockwise_as_serialized"] | PerMember[PerAxis[int]] | None = None,
     skip_preprocessing: bool = False,
     skip_postprocessing: bool = False,
     skip_input_padding: bool = False,
     skip_output_cropping: bool = False,
-    batch_size: Optional[int] = None,
+    batch_size: int | None = None,
 ) -> Iterable[SerializedSampleBlock]:
     """Run prediction on a sample
 
@@ -187,7 +184,7 @@ def test_model(
     return summary.model_dump_json()
 
 
-def _cache_key(kwargs: Dict[str, Any]) -> str:
+def _cache_key(kwargs: dict[str, Any]) -> str:
     return kwargs["sha256"]
 
 
@@ -238,7 +235,7 @@ def root():
     }
 
 
-def main(port: Optional[int] = None) -> str:
+def main(port: int | None = None) -> str:
     _app, local_url, _share_url = app.launch(
         mcp_server=True, show_error=True, server_port=port
     )

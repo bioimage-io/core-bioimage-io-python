@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import os
 import shutil
 from collections.abc import Sequence
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Optional, Tuple
+from typing import Any
 
 from keras.src.legacy.saving import (  # pyright: ignore[reportMissingTypeStubs]
     legacy_h5_format,
@@ -36,7 +38,7 @@ except Exception:
 
 
 class KerasModelAdapter(LocalModelAdapter[None, Any]):
-    def _parse_devices(self, devices: Optional[Sequence[str]]) -> Tuple[None]:
+    def _parse_devices(self, devices: Sequence[str] | None) -> tuple[None]:
         # TODO keras device management
         if devices is not None:
             logger.warning(
@@ -100,7 +102,7 @@ class KerasModelAdapter(LocalModelAdapter[None, Any]):
         self,
         device: None,
         model: Any,
-        input_arrays: Sequence[Optional[NDArray[Any]]],
+        input_arrays: Sequence[NDArray[Any] | None],
     ):
         network_output = model.predict(*input_arrays)
         if is_list(network_output) or is_tuple(network_output):

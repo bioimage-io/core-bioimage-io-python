@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import collections.abc
 from collections.abc import Collection, Mapping, Sequence
 from dataclasses import InitVar, dataclass, field
@@ -6,9 +8,6 @@ from typing import (
     Any,
     Callable,
     Literal,
-    Optional,
-    Set,
-    Tuple,
     Union,
 )
 
@@ -25,8 +24,7 @@ from bioimageio.spec.model.v0_5 import (
 
 from ._op_base import BlockwiseOperator, SamplewiseOperator, SimpleOperator
 from ._ops_cellpose import CellposeFlowDynamics
-from ._ops_stardist import StardistPostprocessing2D as StardistPostprocessing2D
-from ._ops_stardist import StardistPostprocessing3D as StardistPostprocessing3D
+from ._ops_stardist import StardistPostprocessing2D, StardistPostprocessing3D
 from .axis import AxisId
 from .common import DTypeStr, MemberId
 from .digest_spec import get_member_id, import_callable
@@ -51,7 +49,7 @@ from .tensor import Tensor
 def _convert_axis_ids(
     axes: v0_4.AxesInCZYX,
     mode: Literal["per_sample", "per_dataset"],
-) -> Tuple[AxisId, ...]:
+) -> tuple[AxisId, ...]:
     if not isinstance(axes, str):
         return tuple(axes)
 
@@ -80,7 +78,7 @@ class AddKnownDatasetStats(BlockwiseOperator):
     def required_measures(self) -> Collection[Measure]:
         return set()
 
-    def __call__(self, sample: Union[Sample, SampleBlock]) -> None:
+    def __call__(self, sample: Sample | SampleBlock) -> None:
         sample.stat.update(self.dataset_stats)
 
 
@@ -154,8 +152,8 @@ class UpdateStats(SamplewiseOperator):
 class Binarize(SimpleOperator):
     """'output = tensor > threshold'."""
 
-    threshold: Union[float, Sequence[float]]
-    axis: Optional[AxisId] = None
+    threshold: float | Sequence[float]
+    axis: AxisId | None = None
 
     def _apply(self, x: Tensor, stat: Stat) -> Tensor:
         return x > self.threshold
@@ -171,7 +169,7 @@ class Binarize(SimpleOperator):
 
     @classmethod
     def from_proc_descr(
-        cls, descr: Union[v0_4.BinarizeDescr, v0_5.BinarizeDescr], member_id: MemberId
+        cls, descr: v0_4.BinarizeDescr | v0_5.BinarizeDescr, member_id: MemberId
     ) -> Self:
         if isinstance(descr.kwargs, (v0_4.BinarizeKwargs, v0_5.BinarizeKwargs)):
             return cls(
@@ -190,9 +188,9 @@ class Binarize(SimpleOperator):
 
 @dataclass
 class Clip(SimpleOperator):
-    min: Optional[Union[float, SampleQuantile, DatasetQuantile]] = None
+    min: float | SampleQuantile | DatasetQuantile | None = None
     """minimum value for clipping"""
-    max: Optional[Union[float, SampleQuantile, DatasetQuantile]] = None
+    max: float | SampleQuantile | DatasetQuantile | None = None
     """maximum value for clipping"""
 
     def __post_init__(self):
@@ -267,7 +265,7 @@ class Clip(SimpleOperator):
 
     @classmethod
     def from_proc_descr(
-        cls, descr: Union[v0_4.ClipDescr, v0_5.ClipDescr], member_id: MemberId
+        cls, descr: v0_4.ClipDescr | v0_5.ClipDescr, member_id: MemberId
     ) -> Self:
         if isinstance(descr, v0_5.ClipDescr):
             dataset_mode, axes = _get_axes(descr.kwargs)
@@ -338,10 +336,10 @@ class EnsureDtype(SimpleOperator):
 
 @dataclass
 class ScaleLinear(SimpleOperator):
-    gain: Union[float, xr.DataArray] = 1.0
+    gain: float | xr.DataArray = 1.0
     """multiplicative factor"""
 
-    offset: Union[float, xr.DataArray] = 0.0
+    offset: float | xr.DataArray = 0.0
     """additive term"""
 
     def _apply(self, x: Tensor, stat: Stat) -> Tensor:
@@ -359,7 +357,7 @@ class ScaleLinear(SimpleOperator):
     @classmethod
     def from_proc_descr(
         cls,
-        descr: Union[v0_4.ScaleLinearDescr, v0_5.ScaleLinearDescr],
+        descr: v0_4.ScaleLinearDescr | v0_5.ScaleLinearDescr,
         member_id: MemberId,
     ) -> Self:
         kwargs = descr.kwargs
@@ -398,13 +396,13 @@ class ScaleLinear(SimpleOperator):
 
 @dataclass
 class ScaleMeanVariance(SimpleOperator):
-    axes: Optional[Sequence[AxisId]] = None
-    reference_tensor: Optional[MemberId] = None
+    axes: Sequence[AxisId] | None = None
+    reference_tensor: MemberId | None = None
     eps: float = 1e-6
-    mean: Union[SampleMean, DatasetMean] = field(init=False)
-    std: Union[SampleStd, DatasetStd] = field(init=False)
-    ref_mean: Union[SampleMean, DatasetMean] = field(init=False)
-    ref_std: Union[SampleStd, DatasetStd] = field(init=False)
+    mean: SampleMean | DatasetMean = field(init=False)
+    std: SampleStd | DatasetStd = field(init=False)
+    ref_mean: SampleMean | DatasetMean = field(init=False)
+    ref_std: SampleStd | DatasetStd = field(init=False)
 
     @property
     def required_measures(self):
@@ -440,7 +438,7 @@ class ScaleMeanVariance(SimpleOperator):
     @classmethod
     def from_proc_descr(
         cls,
-        descr: Union[v0_4.ScaleMeanVarianceDescr, v0_5.ScaleMeanVarianceDescr],
+        descr: v0_4.ScaleMeanVarianceDescr | v0_5.ScaleMeanVarianceDescr,
         member_id: MemberId,
     ) -> Self:
         kwargs = descr.kwargs
@@ -456,16 +454,8 @@ class ScaleMeanVariance(SimpleOperator):
 
 
 def _get_axes(
-    kwargs: Union[
-        v0_4.ZeroMeanUnitVarianceKwargs,
-        v0_5.ZeroMeanUnitVarianceKwargs,
-        v0_4.ScaleRangeKwargs,
-        v0_5.ScaleRangeKwargs,
-        v0_4.ScaleMeanVarianceKwargs,
-        v0_5.ScaleMeanVarianceKwargs,
-        v0_5.ClipKwargs,
-    ],
-) -> Tuple[bool, Optional[Tuple[AxisId, ...]]]:
+    kwargs: v0_4.ZeroMeanUnitVarianceKwargs | v0_5.ZeroMeanUnitVarianceKwargs | v0_4.ScaleRangeKwargs | v0_5.ScaleRangeKwargs | v0_4.ScaleMeanVarianceKwargs | v0_5.ScaleMeanVarianceKwargs | v0_5.ClipKwargs,
+) -> tuple[bool, tuple[AxisId, ...] | None]:
     if kwargs.axes is None:
         return True, None
     elif isinstance(kwargs.axes, str):
@@ -480,17 +470,17 @@ def _get_axes(
 
 @dataclass
 class ScaleRange(SimpleOperator):
-    lower_quantile: InitVar[Optional[Union[SampleQuantile, DatasetQuantile]]] = None
-    upper_quantile: InitVar[Optional[Union[SampleQuantile, DatasetQuantile]]] = None
-    lower: Union[SampleQuantile, DatasetQuantile] = field(init=False)
-    upper: Union[SampleQuantile, DatasetQuantile] = field(init=False)
+    lower_quantile: InitVar[SampleQuantile | DatasetQuantile | None] = None
+    upper_quantile: InitVar[SampleQuantile | DatasetQuantile | None] = None
+    lower: SampleQuantile | DatasetQuantile = field(init=False)
+    upper: SampleQuantile | DatasetQuantile = field(init=False)
 
     eps: float = 1e-6
 
     def __post_init__(
         self,
-        lower_quantile: Optional[Union[SampleQuantile, DatasetQuantile]],
-        upper_quantile: Optional[Union[SampleQuantile, DatasetQuantile]],
+        lower_quantile: SampleQuantile | DatasetQuantile | None,
+        upper_quantile: SampleQuantile | DatasetQuantile | None,
     ):
         if lower_quantile is None:
             tid = self.input if upper_quantile is None else upper_quantile.member_id
@@ -519,7 +509,7 @@ class ScaleRange(SimpleOperator):
     @classmethod
     def from_proc_descr(
         cls,
-        descr: Union[v0_4.ScaleRangeDescr, v0_5.ScaleRangeDescr],
+        descr: v0_4.ScaleRangeDescr | v0_5.ScaleRangeDescr,
         member_id: MemberId,
     ):
         kwargs = descr.kwargs
@@ -589,7 +579,7 @@ class Sigmoid(SimpleOperator):
 
     @classmethod
     def from_proc_descr(
-        cls, descr: Union[v0_4.SigmoidDescr, v0_5.SigmoidDescr], member_id: MemberId
+        cls, descr: v0_4.SigmoidDescr | v0_5.SigmoidDescr, member_id: MemberId
     ) -> Self:
         assert isinstance(descr, (v0_4.SigmoidDescr, v0_5.SigmoidDescr))
         return cls(input=member_id, output=member_id)
@@ -641,7 +631,7 @@ class ZeroMeanUnitVariance(SimpleOperator):
         assert self.mean.axes == self.std.axes
 
     @property
-    def required_measures(self) -> Set[Union[MeanMeasure, StdMeasure]]:
+    def required_measures(self) -> set[MeanMeasure | StdMeasure]:
         return {self.mean, self.std}
 
     def get_output_shape(
@@ -652,7 +642,7 @@ class ZeroMeanUnitVariance(SimpleOperator):
     @classmethod
     def from_proc_descr(
         cls,
-        descr: Union[v0_4.ZeroMeanUnitVarianceDescr, v0_5.ZeroMeanUnitVarianceDescr],
+        descr: v0_4.ZeroMeanUnitVarianceDescr | v0_5.ZeroMeanUnitVarianceDescr,
         member_id: MemberId,
     ):
         dataset_mode, axes = _get_axes(descr.kwargs)
@@ -686,8 +676,8 @@ class ZeroMeanUnitVariance(SimpleOperator):
 class FixedZeroMeanUnitVariance(SimpleOperator):
     """normalize to zero mean, unit variance with precomputed values."""
 
-    mean: Union[float, xr.DataArray]
-    std: Union[float, xr.DataArray]
+    mean: float | xr.DataArray
+    std: float | xr.DataArray
 
     eps: float = 1e-6
 
@@ -840,12 +830,7 @@ Processing = Union[
 
 def get_proc(
     proc_descr: ProcDescr,
-    tensor_descr: Union[
-        v0_4.InputTensorDescr,
-        v0_4.OutputTensorDescr,
-        v0_5.InputTensorDescr,
-        v0_5.OutputTensorDescr,
-    ],
+    tensor_descr: v0_4.InputTensorDescr | v0_4.OutputTensorDescr | v0_5.InputTensorDescr | v0_5.OutputTensorDescr,
 ) -> Processing:
     member_id = get_member_id(tensor_descr)
 

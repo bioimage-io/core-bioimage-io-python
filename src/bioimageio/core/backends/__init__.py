@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Sequence
 from typing import (
     List,
@@ -15,7 +17,7 @@ from ..common import SupportedWeightsFormat
 
 # Known weight formats in order of priority
 # First match wins
-DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER: Tuple[SupportedWeightsFormat, ...] = (
+DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER: tuple[SupportedWeightsFormat, ...] = (
     "pytorch_state_dict",
     "tensorflow_saved_model_bundle",
     "torchscript",
@@ -26,10 +28,10 @@ DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER: Tuple[SupportedWeightsFormat, ...] = (
 
 
 def create_model_adapter(
-    model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
+    model_description: v0_4.ModelDescr | v0_5.ModelDescr,
     *,
-    devices: Optional[Sequence[str]] = None,
-    weight_format_priority_order: Optional[Sequence[SupportedWeightsFormat]] = None,
+    devices: Sequence[str] | None = None,
+    weight_format_priority_order: Sequence[SupportedWeightsFormat] | None = None,
 ):
     """Creates model adapter for `model_descritption`"""
     if not isinstance(model_description, (v0_4.ModelDescr, v0_5.ModelDescr)):
@@ -38,7 +40,7 @@ def create_model_adapter(
         )
 
     weights = model_description.weights
-    errors: List[Exception] = []
+    errors: list[Exception] = []
     weight_format_priority_order = (
         DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER
         if weight_format_priority_order is None

@@ -3,6 +3,7 @@
 Note: Some docstrings use a hair space ' '
       to place the added '(default: ...)' on a new line.
 """
+from __future__ import annotations
 
 import json
 import shutil
@@ -19,14 +20,7 @@ from pprint import pformat, pprint
 from typing import (
     Annotated,
     Any,
-    Dict,
-    List,
     Literal,
-    Optional,
-    Set,
-    Tuple,
-    Type,
-    Union,
 )
 
 import numpy as np
@@ -115,7 +109,7 @@ class ArgMixin(BaseModel, use_attribute_docstrings=True, cli_implicit_flags=True
 
 
 class WithSummaryLogging(ArgMixin):
-    summary: List[Union[Literal["display"], Path]] = Field(
+    summary: list[Literal["display"] | Path] = Field(
         default_factory=lambda: ["display"],
         examples=[
             Path("summary.md"),
@@ -129,7 +123,7 @@ class WithSummaryLogging(ArgMixin):
     Choose/add `"display"` to render the validation summary to the terminal.
     """
 
-    def log(self, descr: Union[ResourceDescr, InvalidDescr]):
+    def log(self, descr: ResourceDescr | InvalidDescr):
         _ = descr.validation_summary.log(self.summary)
 
 
@@ -196,12 +190,12 @@ class TestCmd(CmdBase, WithSource, WithSummaryLogging):
 
     (only relevant for model resources)"""
 
-    devices: Optional[List[str]] = Field(
+    devices: list[str] | None = Field(
         None, validation_alias=AliasChoices("devices", "device")
     )
     """Device(s) to use"""
 
-    runtime_env: Union[Literal["currently-active", "as-described"], Path] = Field(
+    runtime_env: Literal["currently-active", "as-described"] | Path = Field(
         "currently-active", alias="runtime-env"
     )
     """The python environment to run the tests in
@@ -212,7 +206,7 @@ class TestCmd(CmdBase, WithSource, WithSummaryLogging):
           Note: The `bioimageio.core` dependency will be added automatically if not present.
     """
 
-    working_dir: Optional[Path] = Field(None, alias="working-dir")
+    working_dir: Path | None = Field(None, alias="working-dir")
     """(for debugging) Directory to save any temporary files."""
 
     determinism: Literal["seed_only", "full"] = "seed_only"
@@ -223,7 +217,7 @@ class TestCmd(CmdBase, WithSource, WithSummaryLogging):
     )
     """Do not run further subtests after a failed one."""
 
-    format_version: Union[FormatVersionPlaceholder, str] = Field(
+    format_version: FormatVersionPlaceholder | str = Field(
         "discover", alias="format-version"
     )
     """The format version to use for testing.
@@ -304,13 +298,13 @@ def _get_stat(
     ):
         stats_calc.update(sample)
 
-    stat: Dict[Measure, MeasureValue] = {k: v for k, v in stats_calc.finalize().items()}
+    stat: dict[Measure, MeasureValue] = {k: v for k, v in stats_calc.finalize().items()}
     save_stat(stat, stats_path)
     return stat
 
 
 class UpdateCmdBase(CmdBase, WithSource, ABC):
-    output: Union[Literal["display", "stdout"], Path] = "display"
+    output: Literal["display", "stdout"] | Path = "display"
     """Output updated bioimageio.yaml to the terminal or write to a file.
     Notes:
     - `"display"`: Render to the terminal with syntax highlighting.
@@ -318,7 +312,7 @@ class UpdateCmdBase(CmdBase, WithSource, ABC):
       (More convenient for copying the updated bioimageio.yaml from the terminal.)
     """
 
-    diff: Union[bool, Path] = Field(True, alias="diff")
+    diff: bool | Path = Field(True, alias="diff")
     """Output a diff of original and updated bioimageio.yaml.
     If a given path has an `.html` extension, a standalone HTML file is written,
     otherwise the diff is saved in unified diff format (pure text).
@@ -331,7 +325,7 @@ class UpdateCmdBase(CmdBase, WithSource, ABC):
     """Exclude fields that have the default value (even if set explicitly)."""
 
     @cached_property
-    def updated(self) -> Union[ResourceDescr, InvalidDescr]:
+    def updated(self) -> ResourceDescr | InvalidDescr:
         raise NotImplementedError
 
     def cli_cmd(self):
@@ -434,7 +428,7 @@ class PredictCmd(CmdBase, WithSource):
     def descr(self):
         return load_description(self.source, perform_io_checks=False)
 
-    inputs: NotEmpty[List[Union[str, NotEmpty[List[str]]]]] = Field(
+    inputs: NotEmpty[list[str | NotEmpty[list[str]]]] = Field(
         default_factory=lambda: ["{input_id}/001.tif"],
         validation_alias=AliasChoices("inputs", "input"),
     )
@@ -470,7 +464,7 @@ class PredictCmd(CmdBase, WithSource):
      
     """
 
-    outputs: Union[str, NotEmpty[Tuple[str, ...]]] = Field(
+    outputs: str | NotEmpty[tuple[str, ...]] = Field(
         "outputs_{model_id}/{output_id}/{sample_id}.tif",
         validation_alias=AliasChoices("outputs", "output"),
     )
@@ -486,7 +480,7 @@ class PredictCmd(CmdBase, WithSource):
     overwrite: bool = False
     """allow overwriting existing output files"""
 
-    blockwise: Union[bool, int] = False
+    blockwise: bool | int = False
     """Process inputs blockwise
 
     - If an integer is given, it is used as the blocksize parameter 'n' for blockwise processing.
@@ -518,12 +512,12 @@ class PredictCmd(CmdBase, WithSource):
     )
     """The weight format to use."""
 
-    devices: Optional[List[str]] = Field(
+    devices: list[str] | None = Field(
         None, validation_alias=AliasChoices("devices", "device")
     )
     """Device(s) to use"""
 
-    server: Optional[str] = None
+    server: str | None = None
     """The URL or Hugging Face space name of a running bioimageio (gradio) server instance to use as a remote backend for prediction."""
 
     pre_post_processing_location: Literal["local", "remote"] = Field(
@@ -564,7 +558,7 @@ class PredictCmd(CmdBase, WithSource):
         if not example_inputs:
             raise ValueError(f"{self.descr_id} does not specify any example inputs.")
 
-        inputs001: List[str] = []
+        inputs001: list[str] = []
         example_path = Path(f"{self.descr_id}_example")
         example_path.mkdir(exist_ok=True)
 
@@ -582,12 +576,12 @@ class PredictCmd(CmdBase, WithSource):
         bioimageio_cli_path = example_path / YAML_FILE
         stats_file = "precomputed_statistics.json"
         stats = (example_path / stats_file).as_posix()
-        cli_example_args = dict(
-            inputs=inputs,
-            outputs=output_pattern,
-            stats=stats_file,
-            blockwise=self.blockwise,
-        )
+        cli_example_args = {
+            "inputs": inputs,
+            "outputs": output_pattern,
+            "stats": stats_file,
+            "blockwise": self.blockwise,
+        }
         assert is_yaml_value(cli_example_args), cli_example_args
         write_yaml(
             cli_example_args,
@@ -654,9 +648,9 @@ class PredictCmd(CmdBase, WithSource):
                     f"Prediction failed ({e}).\nConsider using blockwise processing, "
                     + "e.g. with `--blockwise=10` to process inputs in blocks."
                 ) from e
-            raise e
+            raise
 
-    def _yield_predictions(self, blockwise: Union[bool, int]):
+    def _yield_predictions(self, blockwise: bool | int):
         if self.example:
             return self._example()
 
@@ -675,7 +669,7 @@ class PredictCmd(CmdBase, WithSource):
             for ipt in model_descr.inputs
         )
 
-        def expand_inputs(i: int, ipt: Union[str, Sequence[str]]) -> Tuple[str, ...]:
+        def expand_inputs(i: int, ipt: str | Sequence[str]) -> tuple[str, ...]:
             if isinstance(ipt, str):
                 ipts = tuple(
                     ipt.format(model_id=self.descr_id, input_id=t) for t in input_ids
@@ -810,7 +804,7 @@ class PredictCmd(CmdBase, WithSource):
                     sample_id=s,
                 )
 
-        stat: Dict[Measure, MeasureValue] = dict(
+        stat: dict[Measure, MeasureValue] = dict(
             _get_stat(
                 model_descr, input_dataset({}), len(sample_ids), self.stats
             ).items()
@@ -878,7 +872,7 @@ class PredictBlockArtifactsCmd(PredictCmd):
             - Normalization layers inside the network cannot aggregate statistics over the whole sample.
     """
 
-    blockwise: Union[Literal[True], int] = 1
+    blockwise: Literal[True] | int = 1
     """Process inputs blockwise
 
     - If an integer is given, it is used as the blocksize parameter 'n' for blockwise processing.
@@ -925,10 +919,10 @@ class AddWeightsCmd(CmdBase, WithSource, WithSummaryLogging):
     output: CliPositionalArg[Path]
     """The path to write the updated model package to."""
 
-    source_format: Optional[SupportedWeightsFormat] = Field(None, alias="source-format")
+    source_format: SupportedWeightsFormat | None = Field(None, alias="source-format")
     """Exclusively use these weights to convert to other formats."""
 
-    target_format: Optional[SupportedWeightsFormat] = Field(None, alias="target-format")
+    target_format: SupportedWeightsFormat | None = Field(None, alias="target-format")
     """Exclusively add this weight format."""
 
     verbose: bool = False
@@ -969,7 +963,7 @@ class ServerCmd(CmdBase):
     backend: Literal["gradio"] = "gradio"
     """The remote backend to use."""
 
-    port: Optional[int] = None
+    port: int | None = None
     """The port to start the server on. If not given, a free port will be used."""
 
     def cli_cmd(self) -> None:
@@ -1044,12 +1038,12 @@ class Bioimageio(
     @classmethod
     def settings_customise_sources(
         cls,
-        settings_cls: Type[BaseSettings],
+        settings_cls: type[BaseSettings],
         init_settings: PydanticBaseSettingsSource,
         env_settings: PydanticBaseSettingsSource,
         dotenv_settings: PydanticBaseSettingsSource,
         file_secret_settings: PydanticBaseSettingsSource,
-    ) -> Tuple[PydanticBaseSettingsSource, ...]:
+    ) -> tuple[PydanticBaseSettingsSource, ...]:
         cli: CliSettingsSource[BaseSettings] = CliSettingsSource(
             settings_cls,
             cli_parse_args=True,
@@ -1128,7 +1122,7 @@ def _get_sample_ids(
 
         return common
 
-    def get_shorter_diff(seqs: Sequence[Sequence[str]]) -> List[Sequence[str]]:
+    def get_shorter_diff(seqs: Sequence[Sequence[str]]) -> list[Sequence[str]]:
         """get a shorter sequence whose entries are still unique
         (order sensitive, not minimal sequence)
         """
@@ -1140,7 +1134,7 @@ def _get_sample_ids(
                 min_seq_len -= start
                 break
         else:
-            seen: Set[Sequence[str]] = set()
+            seen: set[Sequence[str]] = set()
             dupes = [s for s in seqs if s in seen or seen.add(s)]
             raise ValueError(f"Found duplicate entries {dupes}")
 

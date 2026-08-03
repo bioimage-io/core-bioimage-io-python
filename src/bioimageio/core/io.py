@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import collections.abc
 import json
 import warnings
@@ -9,10 +11,6 @@ from pathlib import Path
 from shutil import copyfileobj
 from typing import (
     TYPE_CHECKING,
-    Dict,
-    List,
-    Optional,
-    TypeVar,
     Union,
 )
 
@@ -27,12 +25,10 @@ from bioimageio.spec._internal.io import get_reader
 from bioimageio.spec.common import (
     BytesReader,
     FileSource,
-    HttpUrl,
     PermissiveFileSource,
     ZipPath,
 )
-from bioimageio.spec.utils import load_image as load_image
-from bioimageio.spec.utils import save_array
+from bioimageio.spec.utils import load_image, save_array
 
 from .axis import AxisId, AxisLike
 from .common import PerMember
@@ -42,7 +38,7 @@ from .tensor import Tensor
 
 if TYPE_CHECKING:
     JsonValue: TypeAlias = Union[
-        bool, int, float, str, None, List["JsonValue"], Dict[str, "JsonValue"]
+        bool, int, float, str, None, list["JsonValue"], dict[str, "JsonValue"]
     ]  # note: order relevant for deserializing
 
 else:
@@ -51,14 +47,14 @@ else:
     # however this results in a partially unknown type with the current pyright 1.1.388
     JsonValue: TypeAlias = _TypeAliasType(
         "JsonValue",
-        Union[bool, int, float, str, None, List["JsonValue"], Dict[str, "JsonValue"]],
+        Union[bool, int, float, str, None, list["JsonValue"], dict[str, "JsonValue"]],
     )
 
 
 def load_tensor(
-    source: Union[PermissiveFileSource, ZipPath],
+    source: PermissiveFileSource | ZipPath,
     /,
-    axes: Optional[Sequence[AxisLike]] = None,
+    axes: Sequence[AxisLike] | None = None,
 ) -> Tensor:
     # TODO: load axis meta data
     array = load_image(source)
@@ -66,12 +62,11 @@ def load_tensor(
     return Tensor.from_array(array, dims=axes)
 
 
-_SourceT = TypeVar("_SourceT", Path, HttpUrl, ZipPath)
 
 Suffix = str
 
 
-def save_tensor(path: Union[Path, str], tensor: Tensor) -> None:
+def save_tensor(path: Path | str, tensor: Tensor) -> None:
     # TODO: save axis meta data
 
     path = Path(path)
@@ -85,7 +80,7 @@ def save_tensor(path: Union[Path, str], tensor: Tensor) -> None:
     elif extension in (".h5", ".hdf", ".hdf5"):
         raise NotImplementedError("Saving to h5 with dataset path is not implemented.")
     else:
-        removed_singleton_axes: List[AxisId] = []
+        removed_singleton_axes: list[AxisId] = []
         remove_singletons = {
             AxisId("batch"): [
                 ".tif",
@@ -130,7 +125,7 @@ def save_tensor(path: Union[Path, str], tensor: Tensor) -> None:
 
 
 def save_sample(
-    path: Union[Path, str, PerMember[Union[Path, str]]], sample: Sample
+    path: Path | str | PerMember[Path | str], sample: Sample
 ) -> None:
     """Save a **sample** to a **path** pattern
     or all sample members in the **path** mapping.
@@ -161,26 +156,26 @@ def save_sample(
 class _StatEntry(BaseModel, frozen=True, arbitrary_types_allowed=True):
     """Serializable stat entry"""
 
-    measure: Union[DatasetMeasure, SampleMeasure]
+    measure: DatasetMeasure | SampleMeasure
     value: MeasureValue
 
 
-class _StatList(RootModel[List[_StatEntry]]):
+class _StatList(RootModel[list[_StatEntry]]):
     """Serializable stat mapping"""
 
 
 
 def serialize_stat(
-    stat: Mapping[Union[DatasetMeasure, SampleMeasure], MeasureValue],
-) -> List[JsonValue]:
+    stat: Mapping[DatasetMeasure | SampleMeasure, MeasureValue],
+) -> list[JsonValue]:
     """Serialize a stat mapping to a JSON string"""
     stat_list = _StatList([_StatEntry(measure=k, value=v) for k, v in stat.items()])
     return stat_list.model_dump(mode="json")
 
 
 def save_stat(
-    stat: Mapping[Union[DatasetMeasure, SampleMeasure], MeasureValue],
-    output: Union[Path, BytesIO],
+    stat: Mapping[DatasetMeasure | SampleMeasure, MeasureValue],
+    output: Path | BytesIO,
 ) -> None:
     """Save sample and dataset statistics as a JSON file"""
 
@@ -193,7 +188,7 @@ def save_stat(
         _ = out.write(json.dumps(serialize_stat(stat), indent=2).encode("utf-8"))
 
 
-def load_stat(source: Union[Path, str, Sequence[JsonValue]]) -> Stat:
+def load_stat(source: Path | str | Sequence[JsonValue]) -> Stat:
     """Load sample and dataset statistics from JSON"""
     if isinstance(source, Path):
         source = source.read_text(encoding="utf-8")
@@ -219,7 +214,7 @@ def load_dataset_stat(path: Path) -> Stat:
 
 
 def ensure_unzipped(
-    source: Union[PermissiveFileSource, ZipPath, BytesReader], folder: Path
+    source: PermissiveFileSource | ZipPath | BytesReader, folder: Path
 ):
     """unzip a (downloaded) **source** to a file in **folder** if source is a zip archive
     otherwise copy **source** to a file in **folder**."""
@@ -247,6 +242,6 @@ def ensure_unzipped(
     return out_path
 
 
-def get_suffix(source: Union[ZipPath, FileSource]) -> Suffix:
+def get_suffix(source: ZipPath | FileSource) -> Suffix:
     """DEPRECATED: use source.suffix instead."""
     return source.suffix

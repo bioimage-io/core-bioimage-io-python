@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, List, Optional, Tuple, Union
+from typing import Any
 
 import numpy as np
 import tensorflow as tf
@@ -20,8 +22,8 @@ class TensorflowModelAdapter(LocalModelAdapter[None, Any]):
 
     def __init__(
         self,
-        model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
-        devices: Optional[Sequence[str]] = None,
+        model_description: v0_4.ModelDescr | v0_5.ModelDescr,
+        devices: Sequence[str] | None = None,
     ):
 
         if model_description.weights.tensorflow_saved_model_bundle is None:
@@ -35,17 +37,17 @@ class TensorflowModelAdapter(LocalModelAdapter[None, Any]):
             self._weight_src = model_description.weights.tensorflow_saved_model_bundle
 
         self._graph = None
-        self._io_names: Optional[Tuple[List[str], List[str]]] = None
+        self._io_names: tuple[list[str], list[str]] | None = None
         super().__init__(model_description=model_description, devices=devices)
 
-    def _parse_devices(self, devices: Optional[Sequence[str]]) -> Tuple[None]:
+    def _parse_devices(self, devices: Sequence[str] | None) -> tuple[None]:
         if devices is not None:
             logger.warning(
                 f"Device management is not implemented for tensorflow yet, ignoring the devices {devices}"
             )
         return (None,)
 
-    def _init_model_on_device(self, device: Optional[str]) -> Any:
+    def _init_model_on_device(self, device: str | None) -> Any:
 
         # TODO: check how to load tf weights without unzipping
         weight_file = ensure_unzipped(
@@ -83,7 +85,7 @@ class TensorflowModelAdapter(LocalModelAdapter[None, Any]):
         return sess  # pyright: ignore[reportUnknownVariableType]
 
     def _forward_impl(
-        self, device: None, model: Any, input_arrays: Sequence[Optional[NDArray[Any]]]
+        self, device: None, model: Any, input_arrays: Sequence[NDArray[Any] | None]
     ):
         assert self._io_names is not None
         assert self._graph is not None
@@ -102,18 +104,18 @@ class TensorflowModelAdapter(LocalModelAdapter[None, Any]):
 
         return res
 
-    def _cleanup_pre_model_deletion(self, device: Optional[str], model: Any) -> None:
+    def _cleanup_pre_model_deletion(self, device: str | None, model: Any) -> None:
         return
 
-    def _cleanup_post_model_deletion(self, device: Optional[str]) -> None:
+    def _cleanup_post_model_deletion(self, device: str | None) -> None:
         return
 
 
 class KerasModelAdapter(LocalModelAdapter[None, Any]):
     def __init__(
         self,
-        model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
-        devices: Optional[Sequence[str]] = None,
+        model_description: v0_4.ModelDescr | v0_5.ModelDescr,
+        devices: Sequence[str] | None = None,
     ):
         if model_description.weights.tensorflow_saved_model_bundle is None:
             raise ValueError("No `tensorflow_saved_model_bundle` weights found")
@@ -127,7 +129,7 @@ class KerasModelAdapter(LocalModelAdapter[None, Any]):
 
         super().__init__(model_description=model_description, devices=devices)
 
-    def _parse_devices(self, devices: Optional[Sequence[str]]) -> Tuple[None]:
+    def _parse_devices(self, devices: Sequence[str] | None) -> tuple[None]:
         if devices is not None:
             logger.warning(
                 f"Device management is not implemented for tensorflow yet, ignoring the devices {devices}"
@@ -159,7 +161,7 @@ class KerasModelAdapter(LocalModelAdapter[None, Any]):
         return tfsm_layer  # pyright: ignore[reportUnknownVariableType]
 
     def _forward_impl(  # pyright: ignore[reportUnknownParameterType]
-        self, device: None, model: Any, input_arrays: Sequence[Optional[NDArray[Any]]]
+        self, device: None, model: Any, input_arrays: Sequence[NDArray[Any] | None]
     ):
         assert tf is not None
         tf_tensor = [
@@ -178,15 +180,15 @@ class KerasModelAdapter(LocalModelAdapter[None, Any]):
             for r in result  # pyright: ignore[reportUnknownVariableType]
         ]
 
-    def _cleanup_pre_model_deletion(self, device: Optional[str], model: Any) -> None:
+    def _cleanup_pre_model_deletion(self, device: str | None, model: Any) -> None:
         return
 
-    def _cleanup_post_model_deletion(self, device: Optional[str]) -> None:
+    def _cleanup_post_model_deletion(self, device: str | None) -> None:
         return
 
 
 def create_tf_model_adapter(
-    model_description: AnyModelDescr, devices: Optional[Sequence[str]] = None
+    model_description: AnyModelDescr, devices: Sequence[str] | None = None
 ):
     tf_version = v0_5.Version(tf.__version__)  # type: ignore[reportUnknownVariableType]
     weights = model_description.weights.tensorflow_saved_model_bundle

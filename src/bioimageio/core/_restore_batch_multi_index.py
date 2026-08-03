@@ -1,4 +1,4 @@
-from typing import Optional
+from __future__ import annotations
 
 import pandas as pd
 
@@ -8,8 +8,8 @@ from .tensor import Tensor
 
 
 def restore_batch_multi_index(
-    inputs: PerMember[Optional[Tensor]], outputs: PerMember[Optional[Tensor]]
-) -> PerMember[Optional[Tensor]]:
+    inputs: PerMember[Tensor | None], outputs: PerMember[Tensor | None]
+) -> PerMember[Tensor | None]:
     """Restore the first batch multi-index found in the inputs to all outputs with batch dimension."""
     for tensor in inputs.values():
         if tensor is None:

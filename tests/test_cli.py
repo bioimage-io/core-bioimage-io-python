@@ -1,7 +1,7 @@
 import subprocess
 from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, List
+from typing import Any
 
 import numpy as np
 import pytest
@@ -49,7 +49,7 @@ def run_subprocess(
     ],
 )
 def test_cli(
-    args: List[str],
+    args: list[str],
     unet2d_nuclei_broad_model: str,
     unet2d_nuclei_broad_model_old: str,
     tmp_path: Path,
@@ -94,7 +94,7 @@ def test_empty_cache(tmp_path: Path, unet2d_nuclei_broad_model: str):
 
 
 @pytest.mark.parametrize("args", [["test", "stardist_wrong_shape"]])
-def test_cli_fails(args: List[str], stardist_wrong_shape: FilePath):
+def test_cli_fails(args: list[str], stardist_wrong_shape: FilePath):
     resolved_args = [
         str(stardist_wrong_shape) if arg == "stardist_wrong_shape" else arg
         for arg in args
@@ -157,8 +157,8 @@ def _test_cli_predict_multiple(
     out_folder = tmp_path / "outputs"
     out_folder.mkdir()
     out_file_pattern = "im-{sample_id}.npy"
-    inputs: List[str] = []
-    expected_outputs: List[Path] = []
+    inputs: list[str] = []
+    expected_outputs: list[Path] = []
     for i in range(n_images):
         input_path = in_folder / f"im-{i}.npy"
         im = np.random.randint(0, 255, size=shape).astype("uint8")

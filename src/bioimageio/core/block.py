@@ -1,10 +1,9 @@
+from __future__ import annotations
+
 from collections.abc import Generator, Iterable
 from dataclasses import dataclass
 from typing import (
     Any,
-    Optional,
-    Tuple,
-    Union,
 )
 
 from typing_extensions import Self
@@ -61,7 +60,7 @@ class Block(BlockMeta):
         )
 
     def get_transformed(
-        self, new_axes: PerAxis[Union[LinearAxisTransform, int]]
+        self, new_axes: PerAxis[LinearAxisTransform | int]
     ) -> Self:
         raise NotImplementedError
 
@@ -101,9 +100,9 @@ def split_tensor_into_blocks(
     block_shape: PerAxis[int],
     *,
     halo: PerAxis[HaloLike],
-    stride: Optional[PerAxis[int]] = None,
+    stride: PerAxis[int] | None = None,
     pad_mode: PadMode,
-) -> Tuple[TotalNumberOfBlocks, Generator[Block, Any, None]]:
+) -> tuple[TotalNumberOfBlocks, Generator[Block, Any, None]]:
     """divide a sample tensor into tensor blocks."""
     n_blocks, block_gen = split_shape_into_blocks(
         tensor.tagged_shape, block_shape=block_shape, halo=halo, stride=stride

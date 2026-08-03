@@ -1,10 +1,10 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from collections.abc import Iterable
 from typing import (
     Generic,
-    Tuple,
     TypeVar,
-    Union,
 )
 
 from bioimageio.spec.model import v0_5
@@ -22,7 +22,7 @@ class SampleSerializer(ABC, Generic[SerializedSampleBlockType]):
     def serialize_sample(
         cls,
         sample: Sample,
-    ) -> Tuple[SerializedSampleBlockType]:
+    ) -> tuple[SerializedSampleBlockType]:
         """Serialize a sample as a single block"""
         return (cls.serialize_sample_block(sample.as_single_block()),)
 
@@ -62,7 +62,7 @@ class SampleSerializer(ABC, Generic[SerializedSampleBlockType]):
         *,
         block_shapes: PerMember[PerAxis[int]],
         halo: PerMember[PerAxis[HaloLike]],
-        pad_mode: Union[PadMode, PerMember[PadMode]] = "symmetric",
+        pad_mode: PadMode | PerMember[PadMode] = "symmetric",
     ) -> Iterable[SerializedSampleBlockType]:
 
         _n_blocks, input_blocks = sample.split_into_blocks(

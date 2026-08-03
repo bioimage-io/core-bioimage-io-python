@@ -1,10 +1,12 @@
 # pyright: reportUnknownVariableType=false
+from __future__ import annotations
+
 import shutil
 import tempfile
 from collections.abc import Sequence
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
-from typing import Any, List, Optional, Union, cast
+from typing import Any, Optional, cast
 
 import onnxruntime as rt  # pyright: ignore[reportMissingTypeStubs]
 from loguru import logger
@@ -19,20 +21,20 @@ from ..utils._type_guards import is_list, is_tuple
 class ONNXModelAdapter(LocalModelAdapter[Optional[str], rt.InferenceSession]):
     def __init__(
         self,
-        model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
-        devices: Optional[Sequence[str]] = None,
+        model_description: v0_4.ModelDescr | v0_5.ModelDescr,
+        devices: Sequence[str] | None = None,
     ):
         onnx_descr = model_description.weights.onnx
         if onnx_descr is None:
             raise ValueError("No ONNX weights specified for {model_description.name}")
 
         self._onnx_descr = onnx_descr
-        self._input_names: Optional[List[str]] = None
+        self._input_names: list[str] | None = None
         super().__init__(model_description=model_description, devices=devices)
 
     def _parse_devices(
-        self, devices: Optional[Sequence[str]]
-    ) -> Sequence[Optional[str]]:
+        self, devices: Sequence[str] | None
+    ) -> Sequence[str | None]:
         available_providers: Any = None
         if hasattr(rt, "get_available_providers"):
             available_providers = cast(Any, rt.get_available_providers())
@@ -70,7 +72,7 @@ class ONNXModelAdapter(LocalModelAdapter[Optional[str], rt.InferenceSession]):
                 )
         return providers
 
-    def _init_model_on_device(self, device: Optional[str]) -> rt.InferenceSession:
+    def _init_model_on_device(self, device: str | None) -> rt.InferenceSession:
         onnx_descr = self._onnx_descr
         if (
             isinstance(onnx_descr, v0_5.OnnxWeightsDescr)
@@ -136,10 +138,10 @@ class ONNXModelAdapter(LocalModelAdapter[Optional[str], rt.InferenceSession]):
 
     def _forward_impl(
         self,
-        device: Optional[str],
+        device: str | None,
         model: rt.InferenceSession,
-        input_arrays: Sequence[Optional[NDArray[Any]]],
-    ) -> List[Optional[NDArray[Any]]]:
+        input_arrays: Sequence[NDArray[Any] | None],
+    ) -> list[NDArray[Any] | None]:
         assert self._input_names is not None, "set during model initialization"
         result: Any = model.run(None, dict(zip(self._input_names, input_arrays)))
         if is_list(result) or is_tuple(result):
@@ -150,9 +152,9 @@ class ONNXModelAdapter(LocalModelAdapter[Optional[str], rt.InferenceSession]):
         return result_seq
 
     def _cleanup_pre_model_deletion(
-        self, device: Optional[str], model: rt.InferenceSession
+        self, device: str | None, model: rt.InferenceSession
     ) -> None:
         return
 
-    def _cleanup_post_model_deletion(self, device: Optional[str]) -> None:
+    def _cleanup_post_model_deletion(self, device: str | None) -> None:
         return
