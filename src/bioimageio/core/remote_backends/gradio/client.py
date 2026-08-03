@@ -1,5 +1,6 @@
+from collections.abc import Iterable, Mapping
 from types import MappingProxyType
-from typing import Dict, Iterable, Literal, Mapping, Optional, Tuple, Union
+from typing import Dict, Literal, Optional, Tuple, Union
 
 from gradio_client import Client
 from loguru import logger

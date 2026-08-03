@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
+from collections.abc import Collection
 from dataclasses import dataclass
-from typing import Collection, Generic, Union
+from typing import Generic, Union
 
 from typing_extensions import TypeVar, assert_never
 

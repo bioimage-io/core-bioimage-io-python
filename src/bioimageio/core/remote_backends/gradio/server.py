@@ -1,8 +1,8 @@
+from collections.abc import Iterable
 from itertools import chain
 from typing import (
     Any,
     Dict,
-    Iterable,
     Literal,
     Optional,
     Union,

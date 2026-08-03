@@ -1,5 +1,6 @@
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable, Optional, Tuple, Type, TypeVar
+from typing import Any, Optional, Tuple, Type, TypeVar
 
 import numpy as np
 import pytest

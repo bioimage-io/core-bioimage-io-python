@@ -14,7 +14,7 @@ _ = logger.add(
     + "<cyan>{module}</cyan> - <level>{message}</level>",
 )
 
-from .cli import Bioimageio  # noqa: E402
+from .cli import Bioimageio
 
 
 def main():

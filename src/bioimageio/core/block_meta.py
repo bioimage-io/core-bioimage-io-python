@@ -1,4 +1,5 @@
 import itertools
+from collections.abc import Collection, Generator, Iterable
 from dataclasses import dataclass
 from functools import cached_property
 from math import floor, prod
@@ -6,10 +7,7 @@ from types import MappingProxyType
 from typing import (
     Any,
     Callable,
-    Collection,
     Dict,
-    Generator,
-    Iterable,
     List,
     Optional,
     Tuple,

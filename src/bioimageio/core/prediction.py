@@ -1,10 +1,7 @@
 import collections.abc
+from collections.abc import Hashable, Iterable, Iterator, Mapping
 from pathlib import Path
 from typing import (
-    Hashable,
-    Iterable,
-    Iterator,
-    Mapping,
     Optional,
     Tuple,
     Union,

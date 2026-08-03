@@ -1,5 +1,5 @@
+from collections.abc import Sequence
 from difflib import HtmlDiff, unified_diff
-from typing import Sequence
 
 from loguru import logger
 from ruyaml import Optional

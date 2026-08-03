@@ -1,7 +1,7 @@
+from collections.abc import Sequence
 from typing import (
     List,
     Optional,
-    Sequence,
     Tuple,
     Union,
 )

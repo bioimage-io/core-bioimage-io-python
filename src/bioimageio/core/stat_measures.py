@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from collections.abc import Mapping
 from typing import (
+    Annotated,
     Any,
     Dict,
     Literal,
-    Mapping,
     Optional,
     Protocol,
     Tuple,
@@ -20,7 +21,7 @@ from pydantic import (
     Discriminator,
     PlainSerializer,
 )
-from typing_extensions import Annotated, TypeAlias
+from typing_extensions import TypeAlias
 
 from .axis import AxisId
 from .common import MemberId, PerMember, QuantileMethod

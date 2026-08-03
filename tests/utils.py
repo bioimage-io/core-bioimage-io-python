@@ -1,7 +1,8 @@
 """utils to test bioimageio.core"""
 
 import os
-from typing import Any, Protocol, Sequence
+from collections.abc import Sequence
+from typing import Any, Protocol
 
 import pytest
 

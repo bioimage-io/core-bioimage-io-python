@@ -1,13 +1,14 @@
 import os
+from collections.abc import Iterable, Mapping
 from itertools import chain
 from pathlib import Path
-from typing import Iterable, Mapping, Tuple
+from typing import Tuple
 
 import pytest
-from bioimageio.spec import InvalidDescr, settings
-from bioimageio.spec.common import Sha256
 from pydantic import HttpUrl
 
+from bioimageio.spec import InvalidDescr, settings
+from bioimageio.spec.common import Sha256
 from tests.utils import ParameterSet, expensive_test
 
 TEST_RDF_SOURCES: Mapping[str, Tuple[HttpUrl, Sha256]] = {
@@ -72,10 +73,9 @@ def test_rdf(
     sha: Sha256,
     key: str,
 ):
+    from bioimageio.core import load_description, load_description_and_test
     from bioimageio.spec import get_conda_env
     from bioimageio.spec.model import ModelDescr
-
-    from bioimageio.core import load_description, load_description_and_test
 
     descr = load_description(
         descr_url, sha256=sha, format_version="latest", perform_io_checks=True

@@ -1,6 +1,7 @@
 """helper to export both TorchScript or PytorchStateDict to ONNX"""
 
 from collections import defaultdict
+from collections.abc import Sequence
 from itertools import chain
 from pathlib import Path
 from typing import (
@@ -10,7 +11,6 @@ from typing import (
     List,
     Literal,
     Optional,
-    Sequence,
     Tuple,
     Union,
 )
@@ -56,7 +56,7 @@ def get_torch_sample_inputs(model_descr: ModelDescr) -> Tuple[torch.Tensor, ...]
 def _get_dynamic_axes_noop(model_descr: ModelDescr):
     """noop for dynamo=True which uses `get_dynamic_shapes` instead"""
 
-    return None
+    return
 
 
 def _get_dynamic_axes_impl(model_descr: ModelDescr):
@@ -83,7 +83,7 @@ except Exception as e:
     def _get_dynamic_shapes_noop(model_descr: ModelDescr):
         """noop for dynamo=False which uses `get_dynamic_axes` instead"""
 
-        return None
+        return
 
     get_dynamic_shapes = _get_dynamic_shapes_noop
     get_dynamic_axes = _get_dynamic_axes_impl

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
+from collections.abc import Hashable, Mapping
 from types import MappingProxyType
 from typing import (
     Annotated,
     Any,
-    Hashable,
-    Mapping,
     TypeVar,
 )
 

@@ -1,9 +1,10 @@
 # pyright: reportUnknownVariableType=false
 import shutil
 import tempfile
+from collections.abc import Sequence
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
-from typing import Any, List, Optional, Sequence, Union, cast
+from typing import Any, List, Optional, Union, cast
 
 import onnxruntime as rt  # pyright: ignore[reportMissingTypeStubs]
 from loguru import logger

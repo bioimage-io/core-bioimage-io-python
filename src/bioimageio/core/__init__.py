@@ -14,7 +14,6 @@ Other notable bioimageio.core functionalities include:
 - Creating and manipulating `Sample`s consisting of tensors with associated statistics.
 - Computing statistics on datasets (represented as sequences of samples), see `compute_dataset_measures`.
 """
-# ruff: noqa: E402
 
 __version__ = "0.11.0"
 from loguru import logger

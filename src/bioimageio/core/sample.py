@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import collections.abc
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from math import ceil, floor
 from types import MappingProxyType
@@ -9,11 +10,8 @@ from typing import (
     Callable,
     Dict,
     Generic,
-    Iterable,
     Literal,
-    Mapping,
     Optional,
-    Sequence,
     Tuple,
     TypeVar,
     Union,
@@ -91,7 +89,7 @@ class Sample:
         )
 
     @property
-    def batch_multi_index(self) -> Optional["pd.MultiIndex"]:
+    def batch_multi_index(self) -> Optional[pd.MultiIndex]:
         """Return the batch multi-index of the sample, if it has one.
 
         Returns:
@@ -297,7 +295,7 @@ class Sample:
             ValueError: If not all batch dimensions have the same length after transposition (and possibly stacking/unstacking extra dimensions).
 
         """
-        if any((unknown := [m not in self.members for m in axes])):
+        if any(unknown := [m not in self.members for m in axes]):
             raise ValueError(f"Axes specified for unknown members: {unknown}")
 
         members = {
@@ -313,13 +311,13 @@ class Sample:
 
         if (
             len(
-                (
+                
                     batch_lengths := {
                         t.sizes[AxisId("batch")]
                         for t in members.values()
                         if AxisId("batch") in t.dims
                     }
-                )
+                
             )
             > 1
         ):
@@ -329,7 +327,7 @@ class Sample:
 
         return self.__class__(members=members, stat=dict(self.stat), id=self.id)
 
-    def assign_batch_multi_index(self, multi_index: "pd.MultiIndex") -> Self:
+    def assign_batch_multi_index(self, multi_index: pd.MultiIndex) -> Self:
         """Return a new sample with the batch multi-index assigned to all sample members.
 
         Raises:

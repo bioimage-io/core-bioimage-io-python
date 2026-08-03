@@ -1,14 +1,12 @@
 import collections.abc
+from collections.abc import Collection, Mapping, Sequence
 from dataclasses import InitVar, dataclass, field
 from functools import partial
 from typing import (
     Any,
     Callable,
-    Collection,
     Literal,
-    Mapping,
     Optional,
-    Sequence,
     Set,
     Tuple,
     Union,

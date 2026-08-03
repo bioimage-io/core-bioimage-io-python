@@ -3,8 +3,9 @@ import subprocess
 from typing import Optional
 
 import pytest
-from bioimageio.spec._internal.gh_utils import set_github_warning
 from packaging.version import Version
+
+from bioimageio.spec._internal.gh_utils import set_github_warning
 
 
 def test_bioimageio_spec_version(conda_cmd: Optional[str]):

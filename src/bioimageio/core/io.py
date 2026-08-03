@@ -2,6 +2,7 @@ import collections.abc
 import json
 import warnings
 import zipfile
+from collections.abc import Mapping, Sequence
 from contextlib import nullcontext
 from io import BytesIO
 from pathlib import Path
@@ -10,9 +11,7 @@ from typing import (
     TYPE_CHECKING,
     Dict,
     List,
-    Mapping,
     Optional,
-    Sequence,
     TypeVar,
     Union,
 )
@@ -169,7 +168,6 @@ class _StatEntry(BaseModel, frozen=True, arbitrary_types_allowed=True):
 class _StatList(RootModel[List[_StatEntry]]):
     """Serializable stat mapping"""
 
-    pass
 
 
 def serialize_stat(

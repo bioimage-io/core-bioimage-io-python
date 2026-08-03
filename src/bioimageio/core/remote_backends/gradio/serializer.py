@@ -1,6 +1,7 @@
 import tempfile
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Dict, List, Mapping, Union
+from typing import Dict, List, Union
 
 import numpy as np
 from gradio_client import handle_file

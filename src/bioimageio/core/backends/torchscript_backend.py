@@ -1,6 +1,7 @@
 # pyright: reportUnknownVariableType=false
 import gc
-from typing import Any, List, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Any, List, Optional, Union
 
 import torch
 from loguru import logger

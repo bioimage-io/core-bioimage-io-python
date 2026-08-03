@@ -1,16 +1,14 @@
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Iterable, Mapping, Sequence
 from itertools import chain
 from types import MappingProxyType
 from typing import (
     Any,
-    Iterable,
     List,
     Literal,
-    Mapping,
     NamedTuple,
     Optional,
-    Sequence,
     Set,
     Tuple,
     TypeVar,
@@ -135,7 +133,7 @@ class _PredictionPipelineBase(ABC):
 
         required_inputs = set(self.input_ids)
         sample_members = set(sample.members.keys())
-        preceding_pipelines: List["PredictionPipeline | RemotePredictionPipeline"] = []
+        preceding_pipelines: List[PredictionPipeline | RemotePredictionPipeline] = []
         for pp in self._preceding_prediction_pipelines[::-1]:
             preceding_pipelines.insert(0, pp)
             sample_members.update(pp.output_ids)

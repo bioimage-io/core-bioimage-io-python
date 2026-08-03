@@ -1,9 +1,10 @@
+from collections.abc import Collection
 from dataclasses import dataclass
-from typing import Any, Collection
+from typing import Any, cast
 
 import numpy as np
 from numpy.typing import NDArray
-from typing_extensions import Literal, cast
+from typing_extensions import Literal
 
 from bioimageio.spec.model.v0_5 import CellposeFlowDynamicsDescr
 

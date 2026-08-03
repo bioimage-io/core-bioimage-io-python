@@ -1,18 +1,19 @@
 from abc import ABC, abstractmethod
+from collections.abc import Collection
 from dataclasses import dataclass
 from typing import (
     Any,
-    Collection,
     Generic,
     List,
     Optional,
     Tuple,
     Union,
+    cast,
 )
 
 import numpy as np
 from numpy.typing import NDArray
-from typing_extensions import Self, TypeVar, cast
+from typing_extensions import Self, TypeVar
 
 from bioimageio.spec.model import v0_5
 

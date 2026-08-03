@@ -3,6 +3,7 @@ from __future__ import annotations
 import collections.abc
 import importlib.util
 import sys
+from collections.abc import Iterable, Mapping, Sequence
 from itertools import chain
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -10,13 +11,10 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Iterable,
     List,
     Literal,
-    Mapping,
     NamedTuple,
     Optional,
-    Sequence,
     Tuple,
     Union,
 )

@@ -1,10 +1,9 @@
 import os
 import platform
-from typing import Literal, Optional
+from typing import Annotated, Literal, Optional
 
 from loguru import logger
 from pydantic import Field, field_validator
-from typing_extensions import Annotated
 
 from bioimageio.spec._internal._settings import Settings as SpecSettings
 

@@ -2,18 +2,14 @@ from __future__ import annotations
 
 import collections
 import warnings
+from collections import OrderedDict
+from collections.abc import Collection, Iterable, Iterator, Mapping, Sequence
 from itertools import product
 from typing import (
     Any,
-    Collection,
     Dict,
-    Iterable,
-    Iterator,
     List,
-    Mapping,
     Optional,
-    OrderedDict,
-    Sequence,
     Set,
     Tuple,
     Type,

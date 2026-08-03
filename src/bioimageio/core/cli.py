@@ -10,6 +10,7 @@ import subprocess
 import sys
 from abc import ABC
 from argparse import RawTextHelpFormatter
+from collections.abc import Iterable, Mapping, Sequence
 from difflib import SequenceMatcher
 from functools import cached_property, partial
 from io import StringIO
@@ -19,12 +20,9 @@ from typing import (
     Annotated,
     Any,
     Dict,
-    Iterable,
     List,
     Literal,
-    Mapping,
     Optional,
-    Sequence,
     Set,
     Tuple,
     Type,
@@ -150,7 +148,7 @@ class WithSource(ArgMixin):
         (replacing legacy ids with their nicknames)
         """
         if isinstance(self.descr, InvalidDescr):
-            return str(getattr(self.descr, "id", getattr(self.descr, "name")))
+            return str(getattr(self.descr, "id", self.descr.name))
 
         nickname = None
         if (
@@ -638,7 +636,7 @@ class PredictCmd(CmdBase, WithSource):
             "🎉 Sucessfully ran example prediction!\n"
             + "To predict the example input using the CLI example config file"
             + f" {example_path / YAML_FILE}, execute `bioimageio predict` from {example_path}:\n"
-            + f"$ cd {str(example_path)}\n"
+            + f"$ cd {example_path!s}\n"
             + f'$ bioimageio predict "{source_escaped}"\n\n'
             + "Alternatively run the following command"
             + " in the current workind directory, not the example folder:\n$ "

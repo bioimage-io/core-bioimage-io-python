@@ -1,9 +1,10 @@
 import gc
 from abc import abstractmethod
+from collections.abc import Mapping, Sequence
 from contextlib import nullcontext
 from io import BytesIO, TextIOWrapper
 from pathlib import Path
-from typing import Any, List, Literal, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, List, Literal, Optional, Tuple, Union
 
 import torch
 from loguru import logger

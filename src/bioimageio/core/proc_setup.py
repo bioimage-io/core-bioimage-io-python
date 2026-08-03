@@ -1,12 +1,10 @@
+from collections.abc import Iterable, Mapping, Sequence
 from itertools import chain
 from typing import (
     Callable,
-    Iterable,
     List,
-    Mapping,
     NamedTuple,
     Optional,
-    Sequence,
     Set,
     Union,
 )

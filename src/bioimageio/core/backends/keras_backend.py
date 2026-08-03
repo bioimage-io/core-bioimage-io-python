@@ -1,8 +1,9 @@
 import os
 import shutil
+from collections.abc import Sequence
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Optional, Sequence, Tuple
+from typing import Any, Optional, Tuple
 
 from keras.src.legacy.saving import (  # pyright: ignore[reportMissingTypeStubs]
     legacy_h5_format,

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
+from collections.abc import Iterable
 from typing import (
     Generic,
-    Iterable,
     Tuple,
     TypeVar,
     Union,

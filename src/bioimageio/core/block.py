@@ -1,8 +1,7 @@
+from collections.abc import Generator, Iterable
 from dataclasses import dataclass
 from typing import (
     Any,
-    Generator,
-    Iterable,
     Optional,
     Tuple,
     Union,

@@ -4,6 +4,7 @@ import platform
 import subprocess
 import sys
 import warnings
+from collections.abc import Hashable, Sequence
 from contextlib import nullcontext
 from copy import deepcopy
 from io import StringIO
@@ -14,11 +15,9 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Hashable,
     List,
     Literal,
     Optional,
-    Sequence,
     Set,
     Tuple,
     Union,

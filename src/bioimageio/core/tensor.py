@@ -1,18 +1,16 @@
 from __future__ import annotations
 
 import collections.abc
+from collections.abc import Iterator, Mapping, Sequence
 from itertools import permutations
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     Dict,
-    Iterator,
     List,
     Literal,
-    Mapping,
     Optional,
-    Sequence,
     Tuple,
     Union,
     cast,
@@ -96,7 +94,7 @@ class Tensor(MagicTensorOpsMixin):
             self._data = xr.DataArray(array, dims=axes)
 
     def __repr__(self) -> str:
-        return f"<Tensor {repr(self._data)}>"
+        return f"<Tensor {self._data!r}>"
 
     def __array__(self, dtype: Optional[DTypeLike] = None):
         return np.asarray(self._data, dtype=dtype)
@@ -127,7 +125,7 @@ class Tensor(MagicTensorOpsMixin):
     def __setitem__(
         self,
         key: Union[PerAxis[Union[SliceInfo, slice]], Tensor, xr.DataArray],
-        value: Union[Tensor, xr.DataArray, float, int],
+        value: Union[Tensor, xr.DataArray, float],
     ) -> None:
         if isinstance(key, Tensor):
             key = key._data
@@ -175,7 +173,7 @@ class Tensor(MagicTensorOpsMixin):
         _ = self._data._inplace_binary_op(  # pyright: ignore[reportPrivateUsage]
             (
                 other_d
-                if (other_d := getattr(other, "data")) is not None
+                if (other_d := other.data) is not None
                 and isinstance(
                     other_d,
                     xr.DataArray,
@@ -509,7 +507,7 @@ class Tensor(MagicTensorOpsMixin):
         """Reduce this Tensor's data by applying sum along some dimension(s)."""
         return self.__class__.from_xarray(self._data.sum(dim=dim))
 
-    def assign_batch_multi_index(self, multi_index: "pd.MultiIndex") -> Self:
+    def assign_batch_multi_index(self, multi_index: pd.MultiIndex) -> Self:
         """Set the batch multi-index for this tensor.
 
         Args:

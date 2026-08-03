@@ -1,15 +1,14 @@
 import gc
 import warnings
 from abc import ABC, abstractmethod
+from collections.abc import Iterable, Sequence
 from queue import LifoQueue
 from typing import (
     Any,
     Dict,
     Generic,
-    Iterable,
     List,
     Optional,
-    Sequence,
     Tuple,
     Union,
 )

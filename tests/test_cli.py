@@ -1,6 +1,7 @@
 import subprocess
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, List, Sequence
+from typing import Any, List
 
 import numpy as np
 import pytest
