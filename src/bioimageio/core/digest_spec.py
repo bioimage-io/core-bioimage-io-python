@@ -550,7 +550,7 @@ def create_sample_for_model(
 def load_sample_for_model(
     *,
     model: AnyModelDescr,
-    paths: PerMember[Path],
+    paths: PerMember[PermissiveFileSource],
     axes: Optional[PerMember[Sequence[AxisLike]]] = None,
     stat: Optional[Stat] = None,
     sample_id: Optional[SampleId] = None,
@@ -587,7 +587,7 @@ def load_sample_for_model(
     return Sample(
         members=members,
         stat={} if stat is None else stat,
-        id=sample_id or tuple(sorted(paths.values())),
+        id=sample_id or tuple(sorted(str(p) for p in paths.values())),
     )
 
 

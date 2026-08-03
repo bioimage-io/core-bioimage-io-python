@@ -73,6 +73,7 @@ from bioimageio.spec import (
 from bioimageio.spec._internal.io import is_yaml_value
 from bioimageio.spec._internal.io_utils import open_bioimageio_yaml
 from bioimageio.spec._internal.types import FormatVersionPlaceholder, NotEmpty
+from bioimageio.spec.common import PermissiveFileSource
 from bioimageio.spec.dataset import DatasetDescr
 from bioimageio.spec.model import ModelDescr, v0_4, v0_5
 from bioimageio.spec.notebook import NotebookDescr
@@ -431,6 +432,10 @@ class UpdateHashesCmd(UpdateCmdBase):
 class PredictCmd(CmdBase, WithSource):
     """Run inference on your data with a bioimage.io model."""
 
+    @cached_property
+    def descr(self):
+        return load_description(self.source, perform_io_checks=False)
+
     inputs: NotEmpty[List[Union[str, NotEmpty[List[str]]]]] = Field(
         default_factory=lambda: ["{input_id}/001.tif"],
         validation_alias=AliasChoices("inputs", "input"),
@@ -708,7 +713,11 @@ class PredictCmd(CmdBase, WithSource):
         inputs = [expand_inputs(i, ipt) for i, ipt in enumerate(self.inputs, start=1)]
 
         sample_paths_in = [
-            {t: Path(p) for t, p in zip(input_ids, ipts)} for ipts in inputs
+            {
+                t: Path(p) if isinstance(p, str) and Path(p).exists() else p
+                for t, p in zip(input_ids, ipts)
+            }
+            for ipts in inputs
         ]
 
         sample_ids = _get_sample_ids(sample_paths_in)
@@ -759,7 +768,11 @@ class PredictCmd(CmdBase, WithSource):
         outputs = expand_outputs()
 
         sample_paths_out = [
-            {MemberId(t): Path(p) for t, p in zip(output_ids, out)} for out in outputs
+            {
+                MemberId(t): Path(p) if isinstance(p, str) and Path(p).exists() else p
+                for t, p in zip(output_ids, out)
+            }
+            for out in outputs
         ]
 
         if not self.overwrite:
@@ -773,19 +786,16 @@ class PredictCmd(CmdBase, WithSource):
             print("🛈 bioimageio prediction preview structure:")
             pprint(
                 {
-                    "{sample_id}": dict(
-                        inputs={"{input_id}": "<input path>"},
-                        outputs={"{output_id}": "<output path>"},
-                    )
+                    "{sample_id}": {
+                        "inputs": {"{input_id}": "<input path>"},
+                        "outputs": {"{output_id}": "<output path>"},
+                    }
                 }
             )
             print("🔎 bioimageio prediction preview output:")
             pprint(
                 {
-                    s: dict(
-                        inputs={t: p.as_posix() for t, p in sp_in.items()},
-                        outputs={t: p.as_posix() for t, p in sp_out.items()},
-                    )
+                    s: {"inputs": sp_in, "outputs": sp_out}
                     for s, sp_in, sp_out in zip(
                         sample_ids, sample_paths_in, sample_paths_out
                     )
@@ -1089,7 +1099,7 @@ spec format versions:
 
 
 def _get_sample_ids(
-    input_paths: Sequence[Mapping[MemberId, Path]],
+    input_paths: Sequence[Mapping[MemberId, PermissiveFileSource]],
 ) -> Sequence[SampleId]:
     """Get sample ids for given input paths, based on the common path per sample.
 
@@ -1146,7 +1156,8 @@ def _get_sample_ids(
 
     full_tensor_ids = [
         sorted(
-            p.resolve().with_suffix("").as_posix() for p in input_sample_paths.values()
+            p.resolve().with_suffix("").as_posix() if isinstance(p, Path) else str(p)
+            for p in input_sample_paths.values()
         )
         for input_sample_paths in input_paths
     ]

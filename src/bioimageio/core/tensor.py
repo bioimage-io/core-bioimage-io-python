@@ -241,8 +241,9 @@ class Tensor(MagicTensorOpsMixin):
 
         successful_view = _get_array_view(array, axis_infos)
         if successful_view is None:
+            dims_formatted = "".join(f"\n{d}" for d in dim_seq)
             raise ValueError(
-                f"Array shape {original_shape} does not map to axes {dims}"
+                f"Array shape {original_shape} does not map to axes: {dims_formatted}"
             )
 
         return Tensor(successful_view, dims=tuple(a.id for a in axis_infos))
