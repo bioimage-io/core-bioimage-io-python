@@ -65,7 +65,10 @@ class _PredictionPipelineBase(ABC):
         *,
         default_blocksize_parameter: BlocksizeParameter,
         default_batch_size: int,
-        preceding_prediction_pipelines: Sequence[PredictionPipeline | RemotePredictionPipeline] | None,
+        preceding_prediction_pipelines: Sequence[
+            PredictionPipeline | RemotePredictionPipeline
+        ]
+        | None,
     ) -> None:
         super().__init__()
         self._model_descr = model_descr
@@ -206,7 +209,9 @@ class _PredictionPipelineBase(ABC):
         sample: Sample,
         skip_preprocessing: bool = False,
         skip_postprocessing: bool = False,
-        ns: v0_5.ParameterizedSize_N | Mapping[tuple[MemberId, AxisId], v0_5.ParameterizedSize_N] | None = None,
+        ns: v0_5.ParameterizedSize_N
+        | Mapping[tuple[MemberId, AxisId], v0_5.ParameterizedSize_N]
+        | None = None,
         batch_size: int | None = None,
     ) -> Sample:
         """Predict a sample by predicting sample blocks.
@@ -278,7 +283,9 @@ class _PredictionPipelineBase(ABC):
         sample: Sample,
         skip_preprocessing: bool = False,
         skip_postprocessing: bool = False,
-        ns: v0_5.ParameterizedSize_N | Mapping[tuple[MemberId, AxisId], v0_5.ParameterizedSize_N] | None = None,
+        ns: v0_5.ParameterizedSize_N
+        | Mapping[tuple[MemberId, AxisId], v0_5.ParameterizedSize_N]
+        | None = None,
         batch_size: int | None = None,
     ) -> tuple[int, Iterable[IntermediatePrediction]]:
         """Predict `sample` by predicting sample blocks and yield intermediate predictions if no samplewise postprocessing is included.
@@ -323,7 +330,7 @@ class _PredictionPipelineBase(ABC):
                 if isinstance(a.size, v0_5.ParameterizedSize)
             }
         input_block_shape = self._model_descr.get_tensor_sizes(
-            ns, batch_size or self._default_batch_size
+            ns, batch_size or self._default_batch_size, sample.shape
         ).inputs
 
         steps, intermediates = (
@@ -431,7 +438,10 @@ class PredictionPipeline(_PredictionPipelineBase):
         model_adapter: ModelAdapter,
         default_blocksize_parameter: BlocksizeParameter = 10,
         default_batch_size: int = 1,
-        preceding_prediction_pipelines: Sequence[PredictionPipeline | RemotePredictionPipeline] | None = None,
+        preceding_prediction_pipelines: Sequence[
+            PredictionPipeline | RemotePredictionPipeline
+        ]
+        | None = None,
     ) -> None:
         """Consider using `create_prediction_pipeline` to create a `PredictionPipeline` with sensible defaults."""
         super().__init__(
@@ -604,7 +614,9 @@ class PredictionPipeline(_PredictionPipelineBase):
         sample: Sample,
         skip_preprocessing: bool = False,
         skip_postprocessing: bool = False,
-        ns: v0_5.ParameterizedSize_N | Mapping[tuple[MemberId, AxisId], v0_5.ParameterizedSize_N] | None = None,
+        ns: v0_5.ParameterizedSize_N
+        | Mapping[tuple[MemberId, AxisId], v0_5.ParameterizedSize_N]
+        | None = None,
         batch_size: int | None = None,
     ) -> Sample:
         output = None
@@ -800,7 +812,10 @@ class RemotePredictionPipeline(_PredictionPipelineBase):
         server: str,
         default_blocksize_parameter: BlocksizeParameter,
         default_batch_size: int,
-        preceding_prediction_pipelines: Sequence[PredictionPipeline | RemotePredictionPipeline] | None = None,
+        preceding_prediction_pipelines: Sequence[
+            PredictionPipeline | RemotePredictionPipeline
+        ]
+        | None = None,
     ) -> None:
         super().__init__(
             model_descr,
@@ -827,7 +842,10 @@ def create_prediction_pipeline(
     model_adapter: ModelAdapter | None = None,
     ns: BlocksizeParameter | None = None,
     default_blocksize_parameter: BlocksizeParameter = 10,  # TODO: default to None and find smart blocksize params per axis to reduce overlap of blocks with large halo
-    preceding_prediction_pipelines: Sequence[PredictionPipeline | RemotePredictionPipeline] | None = None,
+    preceding_prediction_pipelines: Sequence[
+        PredictionPipeline | RemotePredictionPipeline
+    ]
+    | None = None,
     **deprecated_kwargs: Any,
 ) -> PredictionPipeline:
     """
@@ -932,7 +950,7 @@ def create_prediction_pipeline(
             ),
         )
 
-    return PredictionPipeline(
+    pp = PredictionPipeline(
         name=bioimageio_model.name,
         model_description=bioimageio_model,
         model_adapter=model_adapter,
@@ -941,6 +959,12 @@ def create_prediction_pipeline(
         default_blocksize_parameter=default_blocksize_parameter,
         preceding_prediction_pipelines=preceding_prediction_pipelines,
     )
+    logger.info(
+        "Created prediction pipeline for '{}' with {} adapter",
+        bioimageio_model.name,
+        model_adapter.__class__.__name__,
+    )
+    return pp
 
 
 def create_remote_prediction_pipeline(

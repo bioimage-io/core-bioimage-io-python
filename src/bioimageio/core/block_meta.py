@@ -205,9 +205,7 @@ class BlockMeta:
                 "block {} larger than sample {}", self.shape, self.sample_shape
             )
 
-    def get_transformed(
-        self, new_axes: PerAxis[LinearAxisTransform | int]
-    ) -> Self:
+    def get_transformed(self, new_axes: PerAxis[LinearAxisTransform | int]) -> Self:
         return self.__class__(
             sample_shape={
                 a: (
@@ -247,13 +245,13 @@ def split_shape_into_blocks(
     halo: PerAxis[HaloLike],
     stride: PerAxis[int] | None = None,
 ) -> tuple[TotalNumberOfBlocks, Generator[BlockMeta, Any, None]]:
-    unknown_axes = [a for a in block_shape if a not in shape]
+    unknown_axes = [a for a in block_shape if a not in shape and block_shape[a] != 1]
     if unknown_axes:
         raise ValueError(
             f"unknown axes in block_shape: {unknown_axes} for shape {shape}"
         )
 
-    if any(shape[a] < block_shape[a] for a in block_shape):
+    if any(shape.get(a, 1) < block_shape[a] for a in block_shape):
         # TODO: allow larger blockshape
         raise ValueError(f"shape {shape} is smaller than block shape {block_shape}")
 
