@@ -20,8 +20,8 @@ from loguru import logger
 from numpy.typing import DTypeLike, NDArray
 from typing_extensions import Self, TypeAlias, assert_never
 
-from bioimageio.spec._internal.type_guards import is_dict
 from bioimageio.spec.model import v0_5
+from bioimageio.spec.model.v0_5 import SpaceUnit, TimeUnit
 
 from ._magic_tensor_ops import MagicTensorOpsMixin
 from .axis import AxisId, AxisInfo, AxisLike, PerAxis
@@ -35,6 +35,7 @@ from .common import (
     QuantileMethod,
     SliceInfo,
 )
+from .utils._type_guards import is_dict, is_mapping, is_sequence
 
 try:
     import dask.array as da
@@ -97,7 +98,12 @@ class Tensor(MagicTensorOpsMixin):
 
     def __getitem__(
         self,
-        key: SliceInfo | slice | int | PerAxis[SliceInfo | slice | int] | Tensor | xr.DataArray,
+        key: SliceInfo
+        | slice
+        | int
+        | PerAxis[SliceInfo | slice | int]
+        | Tensor
+        | xr.DataArray,
     ) -> Self:
         if isinstance(key, SliceInfo):
             key = slice(*key)
@@ -154,6 +160,112 @@ class Tensor(MagicTensorOpsMixin):
         assert isinstance(data, xr.DataArray)
         return self.__class__.from_xarray(data)
 
+    def get_physical_scale(self) -> PerAxis[float]:
+        """Return the physical scale of each axis in units (see `get_physical_scale_unit`)."""
+        _scale = self._data.attrs.get("physical_scale", None)
+        scale: Mapping[Any, Any] = _scale if is_mapping(_scale) else {}
+        del _scale
+        return {
+            a if isinstance(a, AxisId) else AxisId(a): float(s)
+            for a, s in scale.items()
+            if s is not None
+        }
+
+    def set_physical_scale(self, scale: PerAxis[float | None]) -> None:
+        """Set the physical scale of each axis in units (see `set_physical_scale_unit`)."""
+        self._data.attrs["physical_scale"] = {
+            a if isinstance(a, AxisId) else AxisId(a): float(s)
+            for a, s in scale.items()
+            if s is not None
+        }
+
+    def get_physical_scale_unit(self) -> PerAxis[SpaceUnit | TimeUnit | str]:
+        """Return the physical unit of each axis."""
+        _unit = self._data.attrs.get("physical_scale_unit", None)
+        unit: Mapping[Any, Any] = _unit if is_mapping(_unit) else {}
+        del _unit
+        return {
+            a if isinstance(a, AxisId) else AxisId(a): str(u)
+            for a, u in unit.items()
+            if u is not None
+        }
+
+    def set_physical_scale_unit(
+        self, unit: PerAxis[SpaceUnit | TimeUnit | str | None]
+    ) -> None:
+        """Set the physical unit of each axis."""
+        self._data.attrs["physical_scale_unit"] = {
+            a if isinstance(a, AxisId) else AxisId(a): str(u)
+            for a, u in unit.items()
+            if u is not None
+        }
+
+    @property
+    def channel_names(self) -> list[str] | None:
+        """Return the channel names if available, otherwise None."""
+
+        names = self._data.attrs.get("channel_names", None)
+        if not is_sequence(names):
+            return None
+
+        if len(names) != self.sizes.get(AxisId("channel"), 0):
+            logger.warning(
+                "Number of channel names ({}) does not match number of channels ({})",
+                len(names),
+                self.sizes.get(AxisId("channel"), 0),
+            )
+            return None
+
+        return [str(name) for name in names]
+
+    @channel_names.setter
+    def channel_names(self, names: list[str] | None) -> None:
+        """Set the channel names."""
+        if names is not None and len(names) != self.sizes.get(AxisId("channel"), 0):
+            logger.warning(
+                "Number of channel names ({}) does not match number of channels ({})",
+                len(names),
+                self.sizes.get(AxisId("c"), 0),
+            )
+        self._data.attrs["channel_names"] = names
+
+    @property
+    def channel_colors(self) -> list[str] | None:
+        """Return the channel colors if available, otherwise None."""
+
+        colors = self._data.attrs.get("channel_colors", None)
+        if not is_sequence(colors):
+            return None
+
+        n_channels = self.sizes.get(AxisId("channel"), 0)
+        if len(colors) < n_channels:
+            logger.warning(
+                "Number of channel colors ({}) lower than number of channels ({})",
+                len(colors),
+                n_channels,
+            )
+            return None
+
+        return [str(name) for name in colors[:n_channels]]
+
+    @channel_colors.setter
+    def channel_colors(self, colors: list[str] | None) -> None:
+        """Set the channel colors."""
+        n_channels = self.sizes.get(AxisId("channel"), 0)
+        if colors is not None and len(colors) < n_channels:
+            logger.warning(
+                "Number of channel colors ({}) lower than number of channels ({})",
+                len(colors),
+                n_channels,
+            )
+        self._data.attrs["channel_colors"] = colors
+
+    def squeeze(self, dim: AxisId | Sequence[AxisId] | None = None) -> Self:
+        """Return a tensor with all the singleton dimensions removed."""
+        squeezed = self._data.squeeze(dim=dim)  # pyright: ignore[reportUnknownVariableType]
+        assert isinstance(squeezed, xr.DataArray)
+        return self.__class__.from_xarray(squeezed)
+
     def _inplace_binary_op(
         self,
         other: _Compatible,
@@ -187,7 +299,13 @@ class Tensor(MagicTensorOpsMixin):
         note for internal use: this factory method is round-trip save
             for any `Tensor`'s  `data` property (an xarray.DataArray).
         """
-        return cls(array=data_array, dims=tuple(AxisId(d) for d in data_array.dims))
+        dims = [AxisId(d) for d in data_array.dims]
+        dim_map = {d: a for d, a in zip(data_array.dims, dims) if d != a}
+        if dim_map:
+            data_array = data_array.rename(dim_map)  # pyright: ignore[reportUnknownVariableType]
+            assert isinstance(data_array, xr.DataArray)
+
+        return cls(array=data_array, dims=dims)
 
     @classmethod
     def from_numpy(
@@ -552,7 +670,7 @@ class Tensor(MagicTensorOpsMixin):
 
     def transpose(
         self,
-        axes: Sequence[AxisId],
+        axes: Sequence[AxisLike],
         *,
         extra_dims: Literal[
             "raise", "squeeze", "stack", "squeeze_or_stack"
@@ -578,6 +696,7 @@ class Tensor(MagicTensorOpsMixin):
                 If "unstack", any missing dimensions will be unstacked from the batch dimension. For this option a batch dimension with a multi-index must be present from previous stacking operations or assigned by `Tensor.assign_batch_multi_index()`.
                 If "unstack_or_expand", any missing dimensions will be unstacked from the batch dimension if it has a multi-index, otherwise they will be added as singleton dimensions.
         """
+        axes = [AxisInfo.create(a).id for a in axes]
         array = self._data
 
         unhandled_missing_dims = [a for a in axes if a not in array.dims]
@@ -669,41 +788,48 @@ class Tensor(MagicTensorOpsMixin):
         ndim = array.ndim
         shape = [s if isinstance(s, int) else -1 for s in array.shape]
 
+        current_axes: list[v0_5.InputAxis]
         if ndim == 2:
-            current_axes = (
+            current_axes = [
                 v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=shape[0]),
                 v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=shape[1]),
-            )
-        elif ndim == 3 and any(s <= 3 for s in shape):
-            current_axes = (
-                v0_5.ChannelAxis(
-                    channel_names=[
-                        v0_5.Identifier(f"channel{i}") for i in range(shape[0])
-                    ]
-                ),
+            ]
+        elif ndim == 3 and any(s <= 10 for s in shape):
+            current_axes = [
                 v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=shape[1]),
                 v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=shape[2]),
+            ]
+            current_axes.insert(
+                np.argmin(shape),
+                v0_5.ChannelAxis(
+                    channel_names=[
+                        v0_5.Identifier(f"channel{i}") for i in range(min(shape))
+                    ]
+                ),
             )
         elif ndim == 3:
-            current_axes = (
+            current_axes = [
                 v0_5.SpaceInputAxis(id=v0_5.AxisId("z"), size=shape[0]),
                 v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=shape[1]),
                 v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=shape[2]),
-            )
+            ]
         elif ndim == 4:
-            current_axes = (
-                v0_5.ChannelAxis(
-                    channel_names=[
-                        v0_5.Identifier(f"channel{i}") for i in range(shape[0])
-                    ]
-                ),
+            current_axes = [
                 v0_5.SpaceInputAxis(id=v0_5.AxisId("z"), size=shape[1]),
                 v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=shape[2]),
                 v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=shape[3]),
+            ]
+            current_axes.insert(
+                np.argmin(shape),
+                v0_5.ChannelAxis(
+                    channel_names=[
+                        v0_5.Identifier(f"channel{i}") for i in range(min(shape))
+                    ]
+                ),
             )
         elif ndim == 5:
-            current_axes = (
-                v0_5.BatchAxis(),
+            current_axes = [
+                v0_5.TimeInputAxis(size=shape[1]),
                 v0_5.ChannelAxis(
                     channel_names=[
                         v0_5.Identifier(f"channel{i}") for i in range(shape[1])
@@ -712,7 +838,7 @@ class Tensor(MagicTensorOpsMixin):
                 v0_5.SpaceInputAxis(id=v0_5.AxisId("z"), size=shape[2]),
                 v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=shape[3]),
                 v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=shape[4]),
-            )
+            ]
         else:
             raise ValueError(f"Could not guess an axis mapping for {shape}")
 

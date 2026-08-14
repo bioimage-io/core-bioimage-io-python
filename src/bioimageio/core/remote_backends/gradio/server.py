@@ -12,11 +12,11 @@ from loguru import logger
 
 import bioimageio.core
 from bioimageio.core import AxisId, Stat
+from bioimageio.core._description_serializer import DescriptionSerializer
 from bioimageio.core.axis import PerAxis
 from bioimageio.core.backends import create_model_adapter
 from bioimageio.core.common import PerMember
 from bioimageio.core.remote_backends.gradio.serializer import (
-    DescriptionSerializer,
     GradioSampleSerializer,
     SerializedSampleBlock,
 )
@@ -46,7 +46,10 @@ def predict(
     model: str,
     sha256: str,
     input_sample: Iterable[SerializedSampleBlock],
-    blocksize: int | Literal["blockwise_as_serialized"] | PerMember[PerAxis[int]] | None = None,
+    blocksize: int
+    | Literal["blockwise_as_serialized"]
+    | PerMember[PerAxis[int]]
+    | None = None,
     skip_preprocessing: bool = False,
     skip_postprocessing: bool = False,
     skip_input_padding: bool = False,

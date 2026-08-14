@@ -6,7 +6,7 @@ requires-python = ">=3.9"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [
-    "bioimageio.spec ==0.5.12.0",
+    "bioimageio.spec ==0.5.13.0",
     "imagecodecs",
     "imageio>=2.10",
     "loguru",
@@ -54,7 +54,19 @@ partners = [
 stardist = ["stardist"] # for stardist postprocessing
 gradio-server = ['gradio[mcp];python_version>="3.10"']
 gradio-client = ['gradio_client;python_version>="3.10"']
+bioio = [
+    "bioio-bioformats",
+    "bioio-imageio",
+    "bioio-ome-tiff",
+    "bioio-ome-zarr",
+    "dask[array]",
+]
+# clearscale = ["clearscale", "dask[array]", "zarr"]  # TODO: add clearscale extra deps once clearscale is available on pypi
 dev = [
+    "bioio-bioformats",
+    "bioio-imageio",
+    "bioio-ome-tiff",
+    "bioio-ome-zarr",
     "cellpose<4.2",                             # for model testing
     "crick",
     "dask[array]",

@@ -14,22 +14,24 @@ from bioimageio.spec.model import v0_5
 
 
 def _guess_axis_type(a: str):
+    a = a.lower()
     if a in ("b", "batch"):
         return "batch"
     elif a in ("t", "time"):
         return "time"
-    elif a in ("i", "index"):
+    elif a in ("s", "sample", "i", "index"):
         return "index"
     elif a in ("c", "channel"):
         return "channel"
-    elif a in ("x", "y", "z"):
+    elif a in ("x", "y", "z") or a.startswith("space"):
         return "space"
     else:
         raise ValueError(
             f"Failed to infer axis type for axis id '{a}'."
-            + " Consider using one of: '"
-            + "b', 'batch', 't', 'time', 'i', 'index', 'c', 'channel', 'x', 'y', 'z"
-            + "'. Or creating an `Axis` object instead."
+            + " Consider using one of:"
+            + " 'b', 'batch', 't', 'time', 's', 'sample', 'i',"
+            + " 'index', 'c', 'channel', 'x', 'y', 'z',"
+            + " 'space*'. Or create an `Axis` object instead.",
         )
 
 
@@ -103,9 +105,7 @@ class AxisInfo(Axis):
     size: AxisSize
 
     @classmethod
-    def create(
-        cls, axis: AxisLike, size: int | AxisSize | None = None
-    ) -> AxisInfo:
+    def create(cls, axis: AxisLike, size: int | AxisSize | None = None) -> AxisInfo:
         if isinstance(axis, AxisInfo):
             return axis
 
@@ -139,3 +139,36 @@ class AxisInfo(Axis):
             size = AxisSize(min=size, max=size)
 
         return AxisInfo(id=axis_base.id, type=axis_base.type, size=size)
+
+
+def single_letter_dims_if_possible(
+    dims: tuple[AxisId, ...],
+) -> tuple[str, ...]:
+    """Return a tuple of single-letter dimension names if possible, otherwise return the original dimension names."""
+    single_letter_dims: list[str] = []
+
+    def add_letter(d: str):
+        assert len(d) == 1
+        not_unique = d in single_letter_dims
+        single_letter_dims.append(d)
+        return not_unique
+
+    for d in dims:
+        d = str(d).lower()
+        if d in ("batch", "b"):
+            not_unique = add_letter("b")
+        elif d in ("time", "t"):
+            not_unique = add_letter("t")
+        elif d in ("index", "i"):
+            not_unique = add_letter("i")
+        elif d in ("channel", "c"):
+            not_unique = add_letter("c")
+        elif d in "zyx":
+            not_unique = add_letter(d)
+        else:
+            return dims  # Return original dims if any dim cannot be converted to a single letter
+
+        if not_unique:
+            return dims  # Return original dims if any single letter dim is not unique
+
+    return tuple(single_letter_dims)
