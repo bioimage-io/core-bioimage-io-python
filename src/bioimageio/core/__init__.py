@@ -55,6 +55,7 @@ from . import stat_measures as stat_measures
 from . import tensor as tensor
 from . import weight_converters as weight_converters
 from ._prediction_pipeline import IntermediatePrediction as IntermediatePrediction
+from ._ops_microsam import microsam_watershed as microsam_watershed
 from ._prediction_pipeline import PredictionPipeline as PredictionPipeline
 from ._prediction_pipeline import RemotePredictionPipeline as RemotePredictionPipeline
 from ._prediction_pipeline import (

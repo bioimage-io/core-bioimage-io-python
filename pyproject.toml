@@ -52,6 +52,7 @@ partners = [
     # "stardist",         # for model testing and stardist postprocessing  # TODO: add updated stardist to partners env
 ]
 stardist = ["stardist"] # for stardist postprocessing
+microsam = ["scikit-image"] # for micro-sam (μSAM) watershed postprocessing
 gradio-server = ['gradio[mcp];python_version>="3.10"']
 gradio-client = ['gradio_client;python_version>="3.10"']
 dev = [
