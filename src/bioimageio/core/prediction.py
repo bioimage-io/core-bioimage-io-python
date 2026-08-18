@@ -32,6 +32,7 @@ def predict(
     skip_preprocessing: bool = False,
     skip_postprocessing: bool = False,
     save_output_path: Path | str | None = None,
+    devices: Sequence[str] | None = None,
 ) -> Sample:
     """Run prediction for a single set of input(s) with a bioimage.io model
 
@@ -71,6 +72,7 @@ def predict(
         pp = create_prediction_pipeline(
             model,
             fixed_dataset_statistics=inputs.stat if isinstance(inputs, Sample) else {},
+            devices=devices,
         )
 
     with pp:
