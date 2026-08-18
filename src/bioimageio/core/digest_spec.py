@@ -433,6 +433,12 @@ def get_tensor(
             If "squeeze", any extra singleton dimensions will be squeezed, non-singleton dimensions will raise an error.
             If "stack", any extra dimensions will be stacked to the batch dimension. Such a stacked batch dimension then has a multi-index that can be unstacked using `Tensor.unstack_batch_multi_index()`.
             If "squeeze_or_stack", any extra singleton dimensions will be squeezed, non-singleton dimensions will be stacked to the batch dimension.
+        missing_dims:
+            Missing dimensions are any dimensions specified in `axes` that are not present in the tensor.
+            If "raise", any missing dimensions will raise an error.
+            If "expand", any missing dimensions will be added as singleton dimensions.
+            If "unstack", any missing dimensions will be unstacked from the batch dimension. For this option a batch dimension with a multi-index must be present from previous stacking operations or assigned by `Tensor.assign_batch_multi_index()`.
+            If "unstack_or_expand", any missing dimensions will be unstacked from the batch dimension if it has a multi-index, otherwise they will be added as singleton dimensions.
     """
 
     if isinstance(
@@ -472,6 +478,9 @@ def create_sample_for_model(
     sample_id: SampleId = None,
     inputs: PerMember[TensorSource] | TensorSource,
     extra_dims: Literal["raise", "squeeze", "stack", "squeeze_or_stack"] = "stack",
+    missing_dims: Literal[
+        "raise", "expand", "unstack", "unstack_or_expand"
+    ] = "unstack_or_expand",
 ) -> Sample:
     """Create a sample from a single set of input(s) for a specific bioimage.io model
 
@@ -484,6 +493,13 @@ def create_sample_for_model(
             If "squeeze", any extra singleton dimensions will be squeezed, non-singleton dimensions will raise an error.
             If "stack", any extra dimensions will be stacked to the batch dimension. Such a stacked batch dimension then has a multi-index that can be unstacked using `Tensor.unstack_batch_multi_index()`.
             If "squeeze_or_stack", any extra singleton dimensions will be squeezed, non-singleton dimensions will be stacked to the batch dimension.
+        missing_dims:
+            Missing dimensions are any dimensions specified in `axes` that are not present in the tensor.
+            If "raise", any missing dimensions will raise an error.
+            If "expand", any missing dimensions will be added as singleton dimensions.
+            If "unstack", any missing dimensions will be unstacked from the batch dimension. For this option a batch dimension with a multi-index must be present from previous stacking operations or assigned by `Tensor.assign_batch_multi_index()`.
+            If "unstack_or_expand", any missing dimensions will be unstacked from the batch dimension if it has a multi-index, otherwise they will be added as singleton dimensions.
+
     """
 
     model_inputs = {get_member_id(d): d for d in model.inputs}
@@ -508,7 +524,9 @@ def create_sample_for_model(
 
     return Sample(
         members={
-            m: get_tensor(inputs[m], ipt, extra_dims=extra_dims)
+            m: get_tensor(
+                inputs[m], ipt, extra_dims=extra_dims, missing_dims=missing_dims
+            )
             for m, ipt in model_inputs.items()
             if m in inputs
         },
