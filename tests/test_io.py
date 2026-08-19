@@ -112,7 +112,7 @@ def test_tensor_io(
 
 
 def test_load_tensor_zarr():
-    source = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr/0"
+    source = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr/2"
     from bioimageio.core.io import load_tensor
 
     img = load_tensor(source)
@@ -125,4 +125,4 @@ def test_load_tensor_zarr_group():
     from bioimageio.core.io import load_tensor
 
     tensor = load_tensor(source)
-    assert tensor.dims == ("T", "C", "Z", "Y", "X")
+    assert tensor.dims == ("channel", "z", "y", "x")

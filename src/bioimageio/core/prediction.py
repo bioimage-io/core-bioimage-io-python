@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import collections.abc
-from collections.abc import Hashable, Iterable, Iterator, Mapping
+from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence
 from pathlib import Path
 
 from loguru import logger
@@ -103,18 +103,22 @@ def predict(
                     input_block_shape,
                 )
 
-            output = pp.predict_sample_with_fixed_blocking(
-                sample,
-                input_block_shape=input_block_shape,
-                skip_preprocessing=skip_preprocessing,
-                skip_postprocessing=skip_postprocessing,
+            _n_intermediates, output = (
+                pp.predict_sample_with_fixed_blocking_yield_intermediates(
+                    sample,
+                    input_block_shape=input_block_shape,
+                    skip_preprocessing=skip_preprocessing,
+                    skip_postprocessing=skip_postprocessing,
+                )
             )
         elif blocksize_parameter is not None:
-            output = pp.predict_sample_with_blocking(
-                sample,
-                skip_preprocessing=skip_preprocessing,
-                skip_postprocessing=skip_postprocessing,
-                ns=blocksize_parameter,
+            _n_intermediates, output = (
+                pp.predict_sample_with_blocking_yield_intermediates(
+                    sample,
+                    skip_preprocessing=skip_preprocessing,
+                    skip_postprocessing=skip_postprocessing,
+                    ns=blocksize_parameter,
+                )
             )
         else:
             output = pp.predict_sample_without_blocking(
@@ -122,10 +126,51 @@ def predict(
                 skip_preprocessing=skip_preprocessing,
                 skip_postprocessing=skip_postprocessing,
             )
-        if save_output_path:
-            save_sample(save_output_path, output)
 
-    return output
+        if save_output_path:
+            output_ref: list[Sample | None] = [
+                None
+            ]  # to store final output when saving blockwise
+            if isinstance(output, Sample):
+                save_output = output
+                return_output = output
+            else:
+                if pp.has_non_blockwise_postprocessing:
+                    final_output = None
+                    for out in output:
+                        final_output = out
+
+                    assert final_output is not None
+                    save_output = final_output.sample
+                    return_output = final_output.sample
+                else:
+                    iterable_output = output
+
+                    def blockwise_output():
+                        for out in iterable_output:
+                            output_ref[0] = out.sample
+                            yield out.last_block
+
+                    save_output = blockwise_output()
+                    return_output = None
+
+            save_sample(save_output_path, save_output)
+            if return_output is None:
+                return_output = output_ref[0]
+                assert return_output is not None, (
+                    "saving output blockwise failed to produce a final output sample"
+                )
+        else:
+            if isinstance(output, Sample):
+                return_output = output
+            else:
+                return_output = None
+                for out in output:
+                    return_output = out.sample
+
+                assert return_output is not None
+
+    return return_output
 
 
 def predict_many(

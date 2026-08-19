@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import collections.abc
 import json
 import os
 import warnings
 import zipfile
-from collections.abc import Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from contextlib import nullcontext
 from io import BytesIO
 from itertools import chain
@@ -14,6 +13,7 @@ from shutil import copyfileobj
 from typing import TYPE_CHECKING, TypedDict, Union
 
 import numpy as np
+import pydantic
 import xarray as xr
 from exceptiongroup import ExceptionGroup
 from imageio.v3 import (
@@ -21,12 +21,16 @@ from imageio.v3 import (
     imwrite,  # type: ignore
 )
 from loguru import logger
-from pydantic import BaseModel, FilePath, RootModel
+from pydantic import BaseModel, RootModel
 from typing_extensions import Literal, TypeAlias, assert_never
 from typing_extensions import TypeAliasType as _TypeAliasType
 
 from bioimageio.spec import get_validation_context
-from bioimageio.spec._internal.io import get_reader, interprete_file_source
+from bioimageio.spec._internal.io import (
+    RelativeDirectory,
+    get_reader,
+    interprete_file_source,
+)
 from bioimageio.spec.common import (
     BytesReader,
     FileDescr,
@@ -40,9 +44,9 @@ from bioimageio.spec.common import (
 from bioimageio.spec.model import v0_5
 from bioimageio.spec.utils import load_array, save_array
 
-from .axis import AxisId, AxisLike, single_letter_dims_if_possible
-from .common import PerMember
-from .sample import Sample
+from .axis import AxisId, AxisLike, PerAxis, single_letter_dims_if_possible
+from .common import PerMember, SliceInfo
+from .sample import Sample, SampleBlock
 from .stat_measures import DatasetMeasure, MeasureValue, SampleMeasure, Stat
 from .tensor import Tensor
 from .utils._io_zarr import open_zarr_multiscale_array
@@ -137,11 +141,11 @@ def _select_io_libs_based_on_extension(extension: str | None) -> tuple[IO_Lib, .
     elif extension == ".zarr":
         return ("bioio", "clearscale")
     else:
-        return ("bioio", "imageio", "clearscale")
+        return ("bioio", "imageio")
 
 
 def _load_tensor_bioio(
-    source: HttpUrl | FilePath | ZipPath,
+    source: FileSource | ZipPath,
     subdir: str | None,
 ) -> Tensor:
     """Load an image tensor using bioio"""
@@ -153,7 +157,7 @@ def _load_tensor_bioio(
     else:
         src = source
 
-    if isinstance(src, RelativeFilePath):
+    if isinstance(src, (RelativeFilePath, RelativeDirectory)):
         src = src.absolute()
 
     del source
@@ -217,6 +221,7 @@ def _load_tensor_clearscale(source: FileDescr | PermissiveFileSource) -> Tensor:
             "clearscale: Loading from zip files is not implemented."
         )
 
+    logger.debug("loading tensor from {} with clearscale", source)
     array, ms = open_zarr_multiscale_array(
         source.as_posix() if isinstance(source, Path) else str(source)
     )
@@ -232,7 +237,9 @@ Suffix = str
 def save_tensor(
     path: Path | str,
     tensor: Tensor,
+    *,
     io_lib: IO_Lib | None = None,
+    roi_and_tensor_shape: tuple[PerAxis[SliceInfo], PerAxis[int]] | None = None,
 ) -> None:
     output_path, extension, subdir = _interprete_tensor_source(path)
     if isinstance(output_path, RootHttpUrl):
@@ -245,7 +252,12 @@ def save_tensor(
         exceptions: list[Exception] = []
         for try_io_lib in try_io_libs:
             try:
-                return save_tensor(path, tensor, io_lib=try_io_lib)
+                return save_tensor(
+                    path,
+                    tensor,
+                    io_lib=try_io_lib,
+                    roi_and_tensor_shape=roi_and_tensor_shape,
+                )
             except Exception as e:
                 exceptions.append(e)
                 logger.opt(exception=e).warning(
@@ -256,19 +268,40 @@ def save_tensor(
             "Failed to save tensor with any available io_lib", exceptions
         )
     elif io_lib == "bioio":
-        return _save_tensor_bioio(output_path, tensor, subdir=subdir)
+        return _save_tensor_bioio(
+            output_path,
+            tensor,
+            subdir=subdir,
+            roi_and_tensor_shape=roi_and_tensor_shape,
+        )
     elif io_lib == "imageio":
+        if roi_and_tensor_shape is not None:
+            raise NotImplementedError(
+                "Saving a region of interest (roi) is not implemented for imageio."
+            )
         return _save_tensor_imageio(output_path, tensor)
     elif io_lib == "clearscale":
-        return _save_tensor_clearscale(output_path, tensor, subdir=subdir)
+        return _save_tensor_clearscale(
+            output_path,
+            tensor,
+            subdir=subdir,
+            roi_and_tensor_shape=roi_and_tensor_shape,
+        )
     elif io_lib == "numpy":
+        if roi_and_tensor_shape is not None:
+            raise NotImplementedError(
+                "Saving a region of interest (roi) is not implemented for numpy."
+            )
         return _save_tensor_numpy(output_path, tensor)
     else:
         assert_never(io_lib)
 
 
 def _save_tensor_bioio(
-    path: Path | ZipPath, tensor: Tensor, subdir: PurePath | None
+    path: Path | ZipPath,
+    tensor: Tensor,
+    subdir: PurePath | None,
+    roi_and_tensor_shape: tuple[PerAxis[SliceInfo], PerAxis[int]] | None,
 ) -> None:
     """Save an image tensor using bioio"""
 
@@ -279,12 +312,24 @@ def _save_tensor_bioio(
         "time": "T",
     }
     if path.suffix.lower() in (".tif", ".tiff"):
+        if roi_and_tensor_shape is not None:
+            raise NotImplementedError(
+                "Saving a region of interest (roi) is not implemented for saving tiff files with io_lib='bioio'."
+            )
+
         from bioio_ome_tiff.writers import OmeTiffWriter
 
         save = OmeTiffWriter.save  # pyright: ignore[reportUnknownVariableType]
         write = None
         bioio_axis_letters = "TCZYX"
     elif path.suffix.lower() == ".zarr":
+        if roi_and_tensor_shape is None:
+            tensor_shape = tensor.tagged_shape
+        else:
+            raise NotImplementedError(
+                "Saving a region of interest (roi) is not implemented for saving zarr files with io_lib='bioio'."
+            )
+
         import bioio_ome_zarr.writers
 
         axes_names = single_letter_dims_if_possible(tensor.dims)
@@ -314,7 +359,7 @@ def _save_tensor_bioio(
                 label=f"channel{i}" if channel_names is None else channel_names[i],
                 color="#FF0000" if channel_colors is None else channel_colors[i],
             )
-            for i in range(tensor.tagged_shape.get(AxisId("channel"), 0))
+            for i in range(tensor_shape.get(AxisId("channel"), 0))
         ]
         zf = int(os.getenv("ZARR_FORMAT", "3"))
         if zf not in (2, 3):
@@ -325,18 +370,27 @@ def _save_tensor_bioio(
         save = None
         write = bioio_ome_zarr.writers.OMEZarrWriter(
             store=path,
-            level_shapes=[tensor.shape],
+            level_shapes=[[tensor_shape[d] for d in tensor.dims]],
             dtype=tensor.dtype,
             zarr_format=zf,
             image_name="Image" if subdir is None else str(subdir),
-            axes_names=axes_names,
+            axes_names=list(axes_names),
             axes_types=axes_types,
             axes_units=axes_units,
             physical_pixel_size=physical_pixel_size,
             channels=channels,
         ).write_full_volume
-        bioio_axis_letters = "TCZYX"
+        bioio_axis_letters = None
+        bioio_axes_map = None
+        # bioio_axis_letters = "TCZYX"
+        # bioio_axes_map["batch"] = "T"
+        # bioio_axes_map["index"] = "T"
     elif path.suffix.lower() in (".gif", ".mp4", ".mkv"):
+        if roi_and_tensor_shape is not None:
+            raise NotImplementedError(
+                "Saving a region of interest (roi) is not implemented for saving video files with io_lib='bioio'."
+            )
+
         from bioio_imageio.writers import TimeseriesWriter
 
         tensor = tensor.squeeze()
@@ -357,6 +411,11 @@ def _save_tensor_bioio(
         ".wmv",
         ".ogg",
     ):
+        if roi_and_tensor_shape is not None:
+            raise NotImplementedError(
+                "Saving a region of interest (roi) is not implemented for saving 2d images with io_lib='bioio'."
+            )
+
         from bioio_imageio.writers import TwoDWriter
 
         tensor = tensor.squeeze()
@@ -372,15 +431,19 @@ def _save_tensor_bioio(
 
     if save is not None:
         assert write is None
-        bioio_data = tensor.data.rename(  # pyright: ignore[reportUnknownVariableType]
-            {
-                a: bioio_axes_map.get(str(a).lower(), str(a)[:1].upper())
-                for a in tensor.dims
-            }
-        )
-        assert isinstance(bioio_data, xr.DataArray)
+        bioio_data = tensor.data
+        if bioio_axes_map is not None:
+            bioio_data = bioio_data.rename(  # pyright: ignore[reportUnknownVariableType]
+                {
+                    a: bioio_axes_map.get(str(a).lower(), str(a)[:1].upper())
+                    for a in tensor.dims
+                }
+            )
+            assert isinstance(bioio_data, xr.DataArray)
 
-        if not all(str(d) in bioio_axis_letters for d in bioio_data.dims):
+        if bioio_axis_letters is not None and not all(
+            str(d) in bioio_axis_letters for d in bioio_data.dims
+        ):
             raise ValueError(
                 f"Failed to save tensor with bioio: dimensions {bioio_data.dims} not in '{bioio_axis_letters}'."
             )
@@ -474,18 +537,31 @@ class CreateArrayKwargs(TypedDict):
 
 
 def _save_tensor_clearscale(
-    path: Path | ZipPath, tensor: Tensor, subdir: PurePath | None
+    path: Path | ZipPath,
+    tensor: Tensor,
+    subdir: PurePath | None,
+    roi_and_tensor_shape: tuple[PerAxis[SliceInfo], PerAxis[int]] | None,
 ) -> None:
     import clearscale
     import dask.array
     import zarr
+
+    if roi_and_tensor_shape is None:
+        roi = slice(None)
+        tensor_shape = tensor.tagged_shape
+    else:
+        roi_map, tensor_shape = roi_and_tensor_shape
+        roi = tuple(
+            slice(None) if (s := roi_map.get(d)) is None else slice(s.start, s.stop)
+            for d in tensor.dims
+        )
 
     ZARR_FORMAT: int = int(os.getenv("ZARR_FORMAT", "3"))
     SCALE_KEY = "s0" if subdir is None else str(subdir)
     multiscale = clearscale.Multiscale(
         {
             SCALE_KEY: clearscale.Scale(
-                clearscale.Shape(**{str(k): v for k, v in tensor.tagged_shape.items()})
+                clearscale.Shape(**{str(k): v for k, v in tensor_shape.items()})
             )
         }
     )
@@ -517,14 +593,17 @@ def _save_tensor_clearscale(
         else single_letter_dims_if_possible(tensor.dims),
         shards=None if ZARR_FORMAT == 2 else "auto",
     )
+    zarr_array = zarr_group.create_array(
+        **create_array_kwargs,
+        shape=[tensor_shape[d] for d in tensor.dims],
+        dtype=tensor.dtype,
+        write_data=True,
+    )
+
     if isinstance(tensor.data.data, np.ndarray):
-        _ = zarr_group.create_array(
-            **create_array_kwargs, data=tensor.to_numpy(), write_data=True
-        )
+        zarr_array[roi] = tensor.data.data
     elif isinstance(tensor.data.data, dask.array.Array):
-        dask.array.to_zarr(
-            tensor.data.data, zarr_group, compute=True, **create_array_kwargs
-        )
+        dask.array.to_zarr(tensor.data.data, zarr_array, compute=True, region=roi)
     else:
         assert_never(tensor.data.data)
 
@@ -533,10 +612,10 @@ def _interprete_tensor_source(source: PermissiveFileSource | ZipPath | FileDescr
     if isinstance(source, FileDescr):
         source = source.source
 
-    if not isinstance(source, ZipPath):
+    if isinstance(source, (str, pydantic.AnyUrl)):
         source = interprete_file_source(source)
 
-    if isinstance(source, RelativeFilePath):
+    if isinstance(source, (RelativeFilePath, RelativeDirectory)):
         source = source.absolute()
 
     subdir = None
@@ -571,7 +650,9 @@ def _interprete_tensor_source(source: PermissiveFileSource | ZipPath | FileDescr
     return file_source, extension, subdir
 
 
-def save_sample(path: Path | str | PerMember[Path | str], sample: Sample) -> None:
+def save_sample(
+    path: Path | str | PerMember[Path | str], sample: Sample | Iterable[SampleBlock]
+) -> None:
     """Save a **sample** to a **path** pattern
     or all sample members in the **path** mapping.
 
@@ -580,22 +661,42 @@ def save_sample(path: Path | str | PerMember[Path | str], sample: Sample) -> Non
 
     (Each) **path** may contain `{sample_id}` to be formatted with the **sample** object.
     """
-    if not isinstance(path, collections.abc.Mapping):
-        if len(sample.members) < 2 or any(
+
+    if isinstance(sample, Sample):
+        first_block = sample
+        remaining_blocks = ()
+    else:
+        remaining_blocks = iter(sample)
+        first_block = next(remaining_blocks)
+
+    if not isinstance(path, Mapping):
+        if len(first_block.members) < 2 or any(
             m in str(path) for m in ("{member_id}", "{input_id}", "{output_id}")
         ):
-            path = {m: path for m in sample.members}
+            path = {m: path for m in first_block.members}
         else:
             raise ValueError(
-                f"path {path} must contain '{{member_id}}' for sample with multiple members {list(sample.members)}."
+                f"path {path} must contain '{{member_id}}' for sample with multiple members {list(first_block.members)}."
             )
 
-    for m, p in path.items():
-        t = sample.members[m]
-        p_formatted = Path(
-            str(p).format(sample_id=sample.id, member_id=m, input_id=m, output_id=m)
-        )
-        save_tensor(p_formatted, t)
+    for sample_block in chain([first_block], remaining_blocks):
+        for m, p in path.items():
+            if isinstance(sample_block, Sample):
+                sample_id = sample_block.id
+                t = sample_block.members[m]
+                roi_and_tensor_shape = None
+            else:
+                sample_id = sample_block.sample_id
+                roi_and_tensor_shape = (
+                    sample_block.blocks[m].inner_slice,
+                    sample_block.sample_shape[m],
+                )
+                t = sample_block.blocks[m].inner_data
+
+            p_formatted = Path(
+                str(p).format(sample_id=sample_id, member_id=m, input_id=m, output_id=m)
+            )
+            save_tensor(p_formatted, t, roi_and_tensor_shape=roi_and_tensor_shape)
 
 
 class _StatEntry(BaseModel, frozen=True, arbitrary_types_allowed=True):

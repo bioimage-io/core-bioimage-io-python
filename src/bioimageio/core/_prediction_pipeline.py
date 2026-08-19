@@ -682,7 +682,7 @@ class PredictionPipeline(_PredictionPipelineBase):
             for i, b in enumerate(
                 tqdm(
                     input_blocks,
-                    desc=f"predict sample {sample.id or ''} with {self._model_descr.id or self._model_descr.name}",
+                    desc=f"predict sample '{sample.id or ''}' with {self._model_descr.id or self._model_descr.name}",
                     unit="block",
                     unit_divisor=1,
                     total=n_blocks,
