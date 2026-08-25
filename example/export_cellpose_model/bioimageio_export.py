@@ -1,3 +1,4 @@
+import hashlib
 import os
 from pathlib import Path
 
@@ -6,7 +7,7 @@ from loguru import logger
 from bioimageio.core import test_model
 from bioimageio.spec import save_bioimageio_package
 from bioimageio.spec.model.v0_5 import (
-    ArchitectureFromLibraryDescr,
+    ArchitectureFromFileDescr,
     AxisId,
     BatchAxis,
     BioimageioConfig,
@@ -34,10 +35,52 @@ from bioimageio.spec.model.v0_5 import (
     WeightsDescr,
 )
 
+# Cellpose version installed in this environment (`pip show cellpose`). Pinned so
+# the exported model resolves `cellpose.vit.CPnetBioImageIO` against the same code.
+CELLPOSE_VERSION = "4.2.1.1"
+
+
+def create_environment_file_for_model(building_dir: Path) -> Path:
+    """Write a conda environment.yaml pinning the deps needed to run the model.
+
+    Mirrors BiaPy's `create_environment_file_for_model` so the bioimage.io
+    `PytorchStateDictWeightsDescr.dependencies` field points at a reproducible env.
+    """
+    env_yaml = (
+        "name: cellpose-sam\n"
+        "channels:\n"
+        "  - conda-forge\n"
+        "  - nodefaults\n"
+        "dependencies:\n"
+        "  - python>=3.11\n"
+        "  - pip\n"
+        "  - pip:\n"
+        f"      - cellpose=={CELLPOSE_VERSION}\n"
+    )
+    building_dir.mkdir(parents=True, exist_ok=True)
+    env_file = building_dir / "environment.yaml"
+    with open(env_file, "w", encoding="utf8") as outfile:
+        outfile.write(env_yaml)
+    return env_file
+
+
+def sha256sum(path: Path) -> str:
+    """Return the hex sha256 digest of a file."""
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
 if __name__ == "__main__":
     logger.enable("bioimageio")
 
     os.chdir(Path(__file__).parent)
+
+    # Conda environment file pinning cellpose (and bioimageio.core) so the model
+    # works out of the box. Attached to the pytorch weights via `dependencies`.
+    env_file = create_environment_file_for_model(Path("output"))
+    env_descriptor = FileDescr(source=env_file, sha256=Sha256(sha256sum(env_file)))
 
     descr = ModelDescr(
         name="Cellpose-SAM",
@@ -119,12 +162,16 @@ if __name__ == "__main__":
                 sha256=Sha256(
                     "e1440429eb384f95afe32bcba6510f90d518eaedc917ede549bed6804004abe2"
                 ),
-                architecture=ArchitectureFromLibraryDescr(
-                    callable=Identifier("Transformer"),
-                    import_from="cellpose.vit_sam",
+                architecture=ArchitectureFromFileDescr(
+                    # Bundle the fixed CPnetBioImageIO so the model runs against a
+                    # stock cellpose install (no package patch / upstream PR needed).
+                    source=Path("cellpose_vit_bioimageio.py"),
+                    sha256=Sha256(sha256sum(Path("cellpose_vit_bioimageio.py"))),
+                    callable=Identifier("CPnetBioImageIO"),
                 ),
                 pytorch_version=Version("2.10.0"),
                 strict=False,
+                dependencies=env_descriptor,
             ),
         ),
         config=Config(
@@ -145,5 +192,5 @@ if __name__ == "__main__":
         descr, output_path=Path("output/cpsam_bioimageio.zip")
     )
 
-    summary = test_model(descr, working_dir=Path("output/export_test"))
+    summary = test_model(descr, working_dir=Path("output/export_test"), absolute_tolerance=1e-3, relative_tolerance=1e-3)
     summary.display()

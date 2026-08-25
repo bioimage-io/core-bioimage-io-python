@@ -10,7 +10,12 @@ import imageio
 import numpy as np
 
 if __name__ == "__main__":
-    cellpose_original = cellpose.models.CellposeModel(gpu=False)
+    # Pin the exact same checkpoint the bioimageio export uses (HuggingFace `cpsam`,
+    # sha256 e1440429...). CellposeModel() otherwise defaults to `cpsam_v2`, whose
+    # weights differ (347/348 tensors), producing a non-reproducible reference.
+    cellpose_original = cellpose.models.CellposeModel(
+        gpu=False, pretrained_model="/home/dfranco/.cellpose/models/cpsam"
+    )
 
     os.chdir(Path(__file__).parent)
     input_array = imageio.imread("sample_input.png").transpose(2, 0, 1)
