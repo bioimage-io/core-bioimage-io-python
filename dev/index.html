@@ -23,7 +23,7 @@
       
       
       <link rel="icon" href="images/favicon.ico">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
     
     
       
@@ -31,7 +31,7 @@
       
     
     
-      <link rel="stylesheet" href="assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="assets/stylesheets/palette.ab4e12ef.min.css">
@@ -882,7 +882,7 @@ and compute selected dataset statistics used for preprocessing.</p>
 <h2 id="documentation">Documentation<a class="headerlink" href="#documentation" title="Anchor link to this section for reference">¤</a></h2>
 <p><a href="https://bioimage-io.github.io/core-bioimage-io-python">Here you find the bioimageio.core documentation.</a></p>
 <h4 id="examples">Examples<a class="headerlink" href="#examples" title="Anchor link to this section for reference">¤</a></h4>
-<p>Notebooks that save and load resource descriptions and validate their format (using <a href="https://bioimage-io.github.io/core-bioimage-io-python/bioimageio/spec.html">bioimageio.spec</a>, a dependency of bioimageio.core)</p>
+<p>Notebooks that save and load resource descriptions and validate their format (using <a href="https://bioimage-io.github.io/spec-bioimage-io/">bioimageio.spec</a>, a dependency of bioimageio.core)</p>
 <ul>
 <li><a href="https://github.com/bioimage-io/spec-bioimage-io/blob/main/example/load_model_and_create_your_own.ipynb">load_model_and_create_your_own.ipynb</a> <a target="_blank" href="https://colab.research.google.com/github/bioimage-io/spec-bioimage-io/blob/main/example/load_model_and_create_your_own.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
@@ -892,7 +892,7 @@ and compute selected dataset statistics used for preprocessing.</p>
 </a></li>
 </ul>
 
-<p>Use the described resources in Python with <a href="https://bioimage-io.github.io/core-bioimage-io-python/bioimageio/core.html">bioimageio.core</a></p>
+<p>Use the described resources in Python with <a href="https://bioimage-io.github.io/core-bioimage-io-python/">bioimageio.core</a></p>
 <ul>
 <li><a href="https://github.com/bioimage-io/core-bioimage-io-python/blob/main/example/model_usage.ipynb">model_usage.ipynb</a><a target="_blank" href="https://colab.research.google.com/github/bioimage-io/core-bioimage-io-python/blob/main/example/model_usage.ipynb">
   <img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/>
@@ -905,14 +905,14 @@ and compute selected dataset statistics used for preprocessing.</p>
 </ul>
 <h2 id="set-up-development-environment">Set up Development Environment<a class="headerlink" href="#set-up-development-environment" title="Anchor link to this section for reference">¤</a></h2>
 <p>To set up a development environment run the following commands:</p>
-<div class="language-console highlight"><pre><span></span><code><span class="go">conda create -n core python=$(grep -E &#39;^requires-python&#39; pyproject.toml | grep -oE &#39;[0-9]+\.[0-9]+&#39;)</span>
+<div class="language-console highlight"><pre><span></span><code><span class="go">conda create -n core python=$(grep -E '^requires-python' pyproject.toml | grep -oE '[0-9]+\.[0-9]+')</span>
 <span class="go">conda activate core</span>
 <span class="go">pip install -e .[dev,partners]</span>
 </code></pre></div>
 <h3 id="joint-development-of-bioimageiospec-and-bioimageiocore">Joint development of bioimageio.spec and bioimageio.core<a class="headerlink" href="#joint-development-of-bioimageiospec-and-bioimageiocore" title="Anchor link to this section for reference">¤</a></h3>
 <p>Assuming <a href="https://github.com/bioimage-io/spec-bioimage-io">spec-bioimage-io</a> is cloned to the parent folder
 a joint development environment can be created with the following commands:</p>
-<div class="language-console highlight"><pre><span></span><code><span class="go">conda create -n core python=$(grep -E &#39;^requires-python&#39; pyproject.toml | grep -oE &#39;[0-9]+\.[0-9]+&#39;)</span>
+<div class="language-console highlight"><pre><span></span><code><span class="go">conda create -n core python=$(grep -E '^requires-python' pyproject.toml | grep -oE '[0-9]+\.[0-9]+')</span>
 <span class="go">conda activate core</span>
 <span class="go">pip install -e .[dev,partners] -e ../spec-bioimage-io[dev]</span>
 </code></pre></div>
@@ -923,7 +923,7 @@ The <code>bioimageio</code> CLI has logging enabled by default.
 To activate logging when using bioimageio.spec/bioimageio.core as a library, add</p>
 <div class="language-python highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">loguru</span><span class="w"> </span><span class="kn">import</span> <span class="n">logger</span>
 
-<span class="n">logger</span><span class="o">.</span><span class="n">enable</span><span class="p">(</span><span class="s2">&quot;bioimageio&quot;</span><span class="p">)</span>
+<span class="n">logger</span><span class="o">.</span><span class="n">enable</span><span class="p">(</span><span class="s2">"bioimageio"</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="changelog">Changelog<a class="headerlink" href="#changelog" title="Anchor link to this section for reference">¤</a></h2>
 <p>See <a href="changelog/">changelog.md</a></p>
@@ -1029,7 +1029,7 @@ To activate logging when using bioimageio.spec/bioimageio.core as a library, add
       <script id="__config" type="application/json">{"annotate": null, "base": ".", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.expand", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.prune", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
     
     
-      <script src="assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="assets/_markdown_exec_pyodide.js"></script>
       

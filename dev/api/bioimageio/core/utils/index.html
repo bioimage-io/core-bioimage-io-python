@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../../../images/favicon.ico">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -845,34 +845,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../model_adapters/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    bioimageio.core.model_adapters
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../prediction/" class="md-nav__link">
         
   
@@ -937,6 +909,34 @@
     
   
     bioimageio.core.proc_setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remote_backends/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    bioimageio.core.remote_backends
   
 
     
@@ -1380,7 +1380,7 @@
 
 
 <a href="#bioimageio.core.utils.compare" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">compare</span><span class="p">(</span><span class="n"><span title="bioimageio.core.utils.compare(a)">a</span></span><span class="p">:</span> <span class="n"><span title="typing.Sequence">Sequence</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.utils.compare(b)">b</span></span><span class="p">:</span> <span class="n"><span title="typing.Sequence">Sequence</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.utils.compare(name_a)">name_a</span></span><span class="p">:</span> <span class="n"><span title="str">str</span></span> <span class="o">=</span> <span class="s1">&#39;source&#39;</span><span class="p">,</span> <span class="n"><span title="bioimageio.core.utils.compare(name_b)">name_b</span></span><span class="p">:</span> <span class="n"><span title="str">str</span></span> <span class="o">=</span> <span class="s1">&#39;updated&#39;</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n"><span title="bioimageio.core.utils.compare(diff_format)">diff_format</span></span><span class="p">:</span> <span class="n"><span title="typing_extensions.Literal">Literal</span></span><span class="p">[</span><span class="s1">&#39;unified&#39;</span><span class="p">,</span> <span class="s1">&#39;html&#39;</span><span class="p">])</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">compare</span><span class="p">(</span><span class="n"><span title="bioimageio.core.utils.compare(a)">a</span></span><span class="p">:</span> <span class="n"><span title="typing.Sequence">Sequence</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.utils.compare(b)">b</span></span><span class="p">:</span> <span class="n"><span title="typing.Sequence">Sequence</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.utils.compare(name_a)">name_a</span></span><span class="p">:</span> <span class="n"><span title="str">str</span></span> <span class="o">=</span> <span class="s1">'source'</span><span class="p">,</span> <span class="n"><span title="bioimageio.core.utils.compare(name_b)">name_b</span></span><span class="p">:</span> <span class="n"><span title="str">str</span></span> <span class="o">=</span> <span class="s1">'updated'</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n"><span title="bioimageio.core.utils.compare(diff_format)">diff_format</span></span><span class="p">:</span> <span class="n"><span title="typing_extensions.Literal">Literal</span></span><span class="p">[</span><span class="s1">'unified'</span><span class="p">,</span> <span class="s1">'html'</span><span class="p">])</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1415,21 +1415,21 @@
 <span class="normal">34</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">compare</span><span class="p">(</span>
     <span class="n">a</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
     <span class="n">b</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span>
-    <span class="n">name_a</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;source&quot;</span><span class="p">,</span>
-    <span class="n">name_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;updated&quot;</span><span class="p">,</span>
+    <span class="n">name_a</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"source"</span><span class="p">,</span>
+    <span class="n">name_b</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"updated"</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">diff_format</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;unified&quot;</span><span class="p">,</span> <span class="s2">&quot;html&quot;</span><span class="p">],</span>
+    <span class="n">diff_format</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"unified"</span><span class="p">,</span> <span class="s2">"html"</span><span class="p">],</span>
 <span class="p">):</span>
-    <span class="k">if</span> <span class="n">diff_format</span> <span class="o">==</span> <span class="s2">&quot;html&quot;</span><span class="p">:</span>
-        <span class="n">diff</span> <span class="o">=</span> <span class="n">HtmlDiff</span><span class="p">()</span><span class="o">.</span><span class="n">make_file</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">name_a</span><span class="p">,</span> <span class="n">name_b</span><span class="p">,</span> <span class="n">charset</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">diff_format</span> <span class="o">==</span> <span class="s2">&quot;unified&quot;</span><span class="p">:</span>
-        <span class="n">diff</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+    <span class="k">if</span> <span class="n">diff_format</span> <span class="o">==</span> <span class="s2">"html"</span><span class="p">:</span>
+        <span class="n">diff</span> <span class="o">=</span> <span class="n">HtmlDiff</span><span class="p">()</span><span class="o">.</span><span class="n">make_file</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">name_a</span><span class="p">,</span> <span class="n">name_b</span><span class="p">,</span> <span class="n">charset</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">diff_format</span> <span class="o">==</span> <span class="s2">"unified"</span><span class="p">:</span>
+        <span class="n">diff</span> <span class="o">=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
             <span class="n">unified_diff</span><span class="p">(</span>
                 <span class="n">a</span><span class="p">,</span>
                 <span class="n">b</span><span class="p">,</span>
                 <span class="n">name_a</span><span class="p">,</span>
                 <span class="n">name_b</span><span class="p">,</span>
-                <span class="n">lineterm</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span>
+                <span class="n">lineterm</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
@@ -1567,7 +1567,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.expand", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.prune", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
     
     
-      <script src="../../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../../../assets/_markdown_exec_pyodide.js"></script>
       

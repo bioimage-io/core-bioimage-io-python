@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../../../images/favicon.ico">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -936,34 +936,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../model_adapters/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    bioimageio.core.model_adapters
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../prediction/" class="md-nav__link">
         
   
@@ -1028,6 +1000,34 @@
     
   
     bioimageio.core.proc_setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remote_backends/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    bioimageio.core.remote_backends
   
 
     
@@ -1394,29 +1394,6 @@
           
 
 
-  <div class="doc doc-backlinks">
-        <b class="doc doc-backlink-type">Used by:</b>
-          <ul class="doc doc-backlink-list">
-      <li class="doc doc-backlink">
-            <span class="doc doc-backlink-crumb">
-      <span>API Reference</span>
-  </span>
-
-            <span class="doc doc-backlink-crumb">
-      <a href="../../../#bioimageio.core"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;core</a>
-  </span>
-
-            <span class="doc doc-backlink-crumb last">
-      <a href="../../../#bioimageio.core.BlockMeta"><code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;BlockMeta</a>
-  </span>
-
-      </li>
-  </ul>
-
-  </div>
-
-
-
 
 
 
@@ -1505,13 +1482,8 @@
 <code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">BlockMeta</span>
 
 
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
-  </span>
-
 <a href="#bioimageio.core.block_meta.BlockMeta" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">BlockMeta</span><span class="p">(</span><span class="n"><span title="bioimageio.core.block_meta.BlockMeta(sample_shape)">sample_shape</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.block_meta.BlockMeta(inner_slice)">inner_slice</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.SliceInfo">SliceInfo</a></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.block_meta.BlockMeta(halo)">halo</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.Halo">Halo</a></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.block_meta.BlockMeta(block_index)">block_index</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.BlockIndex">BlockIndex</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.block_meta.BlockMeta(blocks_in_sample)">blocks_in_sample</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.TotalNumberOfBlocks">TotalNumberOfBlocks</a></span><span class="p">)</span>
-</code></pre></div>
+
 
     <div class="doc doc-contents ">
 
@@ -1596,6 +1568,16 @@ The outer slice reaches from the sample member origin (0, 0) to the right halo p
       </li>
       <li class="doc doc-backlink">
             <span class="doc doc-backlink-crumb">
+      <a href="../../../#bioimageio.core"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;core</a>
+  </span>
+
+            <span class="doc doc-backlink-crumb last">
+      <a href="../../../#bioimageio.core.SampleBlockMeta"><code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;SampleBlockMeta</a>
+  </span>
+
+      </li>
+      <li class="doc doc-backlink">
+            <span class="doc doc-backlink-crumb">
       <a href="../sample/#bioimageio.core.sample"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;sample</a>
   </span>
 
@@ -1616,18 +1598,6 @@ The outer slice reaches from the sample member origin (0, 0) to the right halo p
       <span>API Reference</span>
   </span>
 
-            <ul class="doc doc-backlink-list">
-      <li class="doc doc-backlink">
-            <span class="doc doc-backlink-crumb">
-      <a href="../../../#bioimageio.core"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;core</a>
-  </span>
-
-            <span class="doc doc-backlink-crumb last">
-      <a href="../../../#bioimageio.core.BlockMeta"><code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;BlockMeta</a>
-  </span>
-
-      </li>
-      <li class="doc doc-backlink">
             <span class="doc doc-backlink-crumb">
       <a href="../sample/#bioimageio.core.sample"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;sample</a>
   </span>
@@ -1649,9 +1619,6 @@ The outer slice reaches from the sample member origin (0, 0) to the right halo p
             <span class="doc doc-backlink-crumb last">
       <a href="../sample/#bioimageio.core.sample.sample_block_meta_generator"><code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;sample_block_meta_generator</a>
   </span>
-
-      </li>
-  </ul>
 
       </li>
   </ul>
@@ -1749,7 +1716,7 @@ The outer slice reaches from the sample member origin (0, 0) to the right halo p
           <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.block_meta.BlockMeta.halo">halo</a></code></td>
             <td>
-                  <code><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a>[<a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.Halo">Halo</a>]</code>
+                  <code><span title="bioimageio.core._axis_annotations.PerAxisAnno">PerAxisAnno</span>[<a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.Halo">Halo</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1771,7 +1738,7 @@ The outer slice reaches from the sample member origin (0, 0) to the right halo p
           <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.block_meta.BlockMeta.inner_slice">inner_slice</a></code></td>
             <td>
-                  <code><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a>[<a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.SliceInfo">SliceInfo</a>]</code>
+                  <code><span title="bioimageio.core._axis_annotations.PerAxisAnno">PerAxisAnno</span>[<a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.SliceInfo">SliceInfo</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1826,7 +1793,7 @@ The outer slice reaches from the sample member origin (0, 0) to the right halo p
           <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.block_meta.BlockMeta.sample_shape">sample_shape</a></code></td>
             <td>
-                  <code><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a>[<span title="int">int</span>]</code>
+                  <code><span title="bioimageio.core._axis_annotations.PerAxisAnno">PerAxisAnno</span>[<span title="int">int</span>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1956,7 +1923,7 @@ The outer slice reaches from the sample member origin (0, 0) to the right halo p
   </span>
 
 <a href="#bioimageio.core.block_meta.BlockMeta.halo" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">halo</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.Halo">Halo</a></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">halo</span><span class="p">:</span> <span class="n"><span title="bioimageio.core._axis_annotations.PerAxisAnno">PerAxisAnno</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.Halo">Halo</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2007,7 +1974,7 @@ The outer slice reaches from the sample member origin (0, 0) to the right halo p
   </span>
 
 <a href="#bioimageio.core.block_meta.BlockMeta.inner_slice" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">inner_slice</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.SliceInfo">SliceInfo</a></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">inner_slice</span><span class="p">:</span> <span class="n"><span title="bioimageio.core._axis_annotations.PerAxisAnno">PerAxisAnno</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.SliceInfo">SliceInfo</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2139,7 +2106,7 @@ where we cannot simply enlarge the inner slice</p>
   </span>
 
 <a href="#bioimageio.core.block_meta.BlockMeta.sample_shape" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">sample_shape</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">sample_shape</span><span class="p">:</span> <span class="n"><span title="bioimageio.core._axis_annotations.PerAxisAnno">PerAxisAnno</span></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2222,15 +2189,7 @@ where we cannot simply enlarge the inner slice</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/block_meta.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">191</span>
-<span class="normal">192</span>
-<span class="normal">193</span>
-<span class="normal">194</span>
-<span class="normal">195</span>
-<span class="normal">196</span>
-<span class="normal">197</span>
-<span class="normal">198</span>
-<span class="normal">199</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">199</span>
 <span class="normal">200</span>
 <span class="normal">201</span>
 <span class="normal">202</span>
@@ -2242,30 +2201,18 @@ where we cannot simply enlarge the inner slice</p>
 <span class="normal">208</span>
 <span class="normal">209</span>
 <span class="normal">210</span>
-<span class="normal">211</span>
-<span class="normal">212</span>
-<span class="normal">213</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-    <span class="c1"># freeze mutable inputs</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_shape</span><span class="p">,</span> <span class="n">Frozen</span><span class="p">):</span>
-        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;sample_shape&quot;</span><span class="p">,</span> <span class="n">Frozen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_shape</span><span class="p">))</span>
-
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inner_slice</span><span class="p">,</span> <span class="n">Frozen</span><span class="p">):</span>
-        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;inner_slice&quot;</span><span class="p">,</span> <span class="n">Frozen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inner_slice</span><span class="p">))</span>
-
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">halo</span><span class="p">,</span> <span class="n">Frozen</span><span class="p">):</span>
-        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;halo&quot;</span><span class="p">,</span> <span class="n">Frozen</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">halo</span><span class="p">))</span>
-
+<span class="normal">211</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_shape</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_slice</span><span class="p">),</span> <span class="p">(</span>
-        <span class="s2">&quot;block has axes not present in sample&quot;</span>
+        <span class="s2">"block has axes not present in sample"</span>
     <span class="p">)</span>
 
     <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner_slice</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">halo</span><span class="p">),</span> <span class="p">(</span>
-        <span class="s2">&quot;halo has axes not present in block&quot;</span>
+        <span class="s2">"halo has axes not present in block"</span>
     <span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">s</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_shape</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="s2">&quot;block </span><span class="si">{}</span><span class="s2"> larger than sample </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_shape</span>
+            <span class="s2">"block </span><span class="si">{}</span><span class="s2"> larger than sample </span><span class="si">{}</span><span class="s2">"</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_shape</span>
         <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2290,7 +2237,9 @@ where we cannot simply enlarge the inner slice</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/block_meta.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">215</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
 <span class="normal">216</span>
 <span class="normal">217</span>
 <span class="normal">218</span>
@@ -2321,9 +2270,7 @@ where we cannot simply enlarge the inner slice</p>
 <span class="normal">243</span>
 <span class="normal">244</span>
 <span class="normal">245</span>
-<span class="normal">246</span>
-<span class="normal">247</span>
-<span class="normal">248</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_transformed</span><span class="p">(</span>
+<span class="normal">246</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_transformed</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">new_axes</span><span class="p">:</span> <span class="n">PerAxis</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">LinearAxisTransform</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span>
@@ -2595,8 +2542,8 @@ where we cannot simply enlarge the inner slice</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/block_meta.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">41</span>
-<span class="normal">42</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">round</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">floor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">43</span>
+<span class="normal">44</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">round</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">floor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
     <span class="k">return</span> <span class="nb">round</span><span class="p">(</span><span class="n">s</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2707,7 +2654,7 @@ where we cannot simply enlarge the inner slice</p>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">TotalNumberOfBlocks</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">PerMember</span><span class="p">[</span><span class="n">BlockMeta</span><span class="p">]]]:</span>
     <span class="k">if</span> <span class="n">unknown_blocks</span> <span class="o">:=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">block_shapes</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">shapes</span><span class="p">]:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;block shape specified for unknown tensors: </span><span class="si">{</span><span class="n">unknown_blocks</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="sa">f</span><span class="s2">"block shape specified for unknown tensors: </span><span class="si">{</span><span class="n">unknown_blocks</span><span class="si">}</span><span class="s2">."</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">block_shapes</span><span class="p">:</span>
@@ -2717,21 +2664,21 @@ where we cannot simply enlarge the inner slice</p>
         <span class="n">missing_blocks</span> <span class="o">:=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">shapes</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">block_shapes</span><span class="p">]</span>
     <span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;no block shape specified for </span><span class="si">{</span><span class="n">missing_blocks</span><span class="si">}</span><span class="s2">.&quot;</span>
-            <span class="o">+</span> <span class="s2">&quot; Set `broadcast` to True if these tensors should be repeated&quot;</span>
-            <span class="o">+</span> <span class="s2">&quot; as a whole for each block.&quot;</span>
+            <span class="sa">f</span><span class="s2">"no block shape specified for </span><span class="si">{</span><span class="n">missing_blocks</span><span class="si">}</span><span class="s2">."</span>
+            <span class="o">+</span> <span class="s2">" Set `broadcast` to True if these tensors should be repeated"</span>
+            <span class="o">+</span> <span class="s2">" as a whole for each block."</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">extra_halo</span> <span class="o">:=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">halo</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">block_shapes</span><span class="p">]:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;`halo` specified for tensors without block shape: </span><span class="si">{</span><span class="n">extra_halo</span><span class="si">}</span><span class="s2">.&quot;</span>
+            <span class="sa">f</span><span class="s2">"`halo` specified for tensors without block shape: </span><span class="si">{</span><span class="n">extra_halo</span><span class="si">}</span><span class="s2">."</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">strides</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">strides</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">assert</span> <span class="ow">not</span> <span class="p">(</span><span class="n">unknown_block</span> <span class="o">:=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">strides</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">block_shapes</span><span class="p">]),</span> <span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;`stride` specified for tensors without block shape: </span><span class="si">{</span><span class="n">unknown_block</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">"`stride` specified for tensors without block shape: </span><span class="si">{</span><span class="n">unknown_block</span><span class="si">}</span><span class="s2">"</span>
     <span class="p">)</span>
 
     <span class="n">blocks</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">MemberId</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">BlockMeta</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
@@ -2752,9 +2699,9 @@ where we cannot simply enlarge the inner slice</p>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_n_blocks</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span> <span class="ow">and</span> <span class="mi">1</span> <span class="ow">in</span> <span class="n">unique_n_blocks</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">broadcast</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Mismatch for total number of blocks due to unsplit (single block)&quot;</span>
-                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; tensors: </span><span class="si">{</span><span class="n">n_blocks</span><span class="si">}</span><span class="s2">. Set `broadcast` to True if you want to&quot;</span>
-                <span class="o">+</span> <span class="s2">&quot; repeat unsplit (single block) tensors.&quot;</span>
+                <span class="s2">"Mismatch for total number of blocks due to unsplit (single block)"</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">" tensors: </span><span class="si">{</span><span class="n">n_blocks</span><span class="si">}</span><span class="s2">. Set `broadcast` to True if you want to"</span>
+                <span class="o">+</span> <span class="s2">" repeat unsplit (single block) tensors."</span>
             <span class="p">)</span>
 
         <span class="n">blocks</span> <span class="o">=</span> <span class="p">{</span>
@@ -2762,7 +2709,7 @@ where we cannot simply enlarge the inner slice</p>
             <span class="k">for</span> <span class="n">t</span><span class="p">,</span> <span class="n">block_gen</span> <span class="ow">in</span> <span class="n">blocks</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
         <span class="p">}</span>
     <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">unique_n_blocks</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Mismatch for total number of blocks: </span><span class="si">{</span><span class="n">n_blocks</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Mismatch for total number of blocks: </span><span class="si">{</span><span class="n">n_blocks</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">n</span><span class="p">,</span> <span class="n">_aligned_blocks_generator</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">blocks</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -2788,7 +2735,9 @@ where we cannot simply enlarge the inner slice</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/block_meta.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">251</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
 <span class="normal">252</span>
 <span class="normal">253</span>
 <span class="normal">254</span>
@@ -2832,13 +2781,15 @@ where we cannot simply enlarge the inner slice</p>
     <span class="n">halo</span><span class="p">:</span> <span class="n">PerAxis</span><span class="p">[</span><span class="n">HaloLike</span><span class="p">],</span>
     <span class="n">stride</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PerAxis</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">TotalNumberOfBlocks</span><span class="p">,</span> <span class="n">Generator</span><span class="p">[</span><span class="n">BlockMeta</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="kc">None</span><span class="p">]]:</span>
-    <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">a</span> <span class="ow">in</span> <span class="n">shape</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">block_shape</span><span class="p">),</span> <span class="p">(</span>
-        <span class="nb">tuple</span><span class="p">(</span><span class="n">shape</span><span class="p">),</span>
-        <span class="nb">set</span><span class="p">(</span><span class="n">block_shape</span><span class="p">),</span>
-    <span class="p">)</span>
+    <span class="n">unknown_axes</span> <span class="o">=</span> <span class="p">[</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">block_shape</span> <span class="k">if</span> <span class="n">a</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">shape</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">unknown_axes</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"unknown axes in block_shape: </span><span class="si">{</span><span class="n">unknown_axes</span><span class="si">}</span><span class="s2"> for shape </span><span class="si">{</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+
     <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">shape</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">block_shape</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">block_shape</span><span class="p">):</span>
         <span class="c1"># TODO: allow larger blockshape</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;shape </span><span class="si">{</span><span class="n">shape</span><span class="si">}</span><span class="s2"> is smaller than block shape </span><span class="si">{</span><span class="n">block_shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"shape </span><span class="si">{</span><span class="n">shape</span><span class="si">}</span><span class="s2"> is smaller than block shape </span><span class="si">{</span><span class="n">block_shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="n">a</span> <span class="ow">in</span> <span class="n">shape</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">halo</span><span class="p">),</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">shape</span><span class="p">),</span> <span class="nb">set</span><span class="p">(</span><span class="n">halo</span><span class="p">))</span>
 
@@ -2996,7 +2947,7 @@ where we cannot simply enlarge the inner slice</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.expand", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.prune", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
     
     
-      <script src="../../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../../../assets/_markdown_exec_pyodide.js"></script>
       

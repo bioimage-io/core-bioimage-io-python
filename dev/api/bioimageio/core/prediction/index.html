@@ -15,7 +15,7 @@
         <link rel="canonical" href="https://bioimage-io.github.io/core-bioimage-io-python/latest/api/bioimageio/core/prediction/">
       
       
-        <link rel="prev" href="../model_adapters/">
+        <link rel="prev" href="../io/">
       
       
         <link rel="next" href="../proc_ops/">
@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../../../images/favicon.ico">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -842,34 +842,6 @@
                 
   
   
-  
-  
-    <li class="md-nav__item">
-      <a href="../model_adapters/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    bioimageio.core.model_adapters
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
     
   
   
@@ -1006,6 +978,34 @@
     
   
     bioimageio.core.proc_setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remote_backends/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    bioimageio.core.remote_backends
   
 
     
@@ -1350,40 +1350,6 @@
           
 
 
-  <div class="doc doc-backlinks">
-        <b class="doc doc-backlink-type">Used by:</b>
-          <ul class="doc doc-backlink-list">
-      <li class="doc doc-backlink">
-            <span class="doc doc-backlink-crumb">
-      <span>API Reference</span>
-  </span>
-
-            <span class="doc doc-backlink-crumb">
-      <a href="../../../#bioimageio.core"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;core</a>
-  </span>
-
-            <ul class="doc doc-backlink-list">
-      <li class="doc doc-backlink">
-            <span class="doc doc-backlink-crumb last">
-      <a href="../../../#bioimageio.core.predict"><code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;predict</a>
-  </span>
-
-      </li>
-      <li class="doc doc-backlink">
-            <span class="doc doc-backlink-crumb last">
-      <a href="../../../#bioimageio.core.predict_many"><code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;predict_many</a>
-  </span>
-
-      </li>
-  </ul>
-
-      </li>
-  </ul>
-
-  </div>
-
-
-
 
 
 
@@ -1444,7 +1410,7 @@
 
 
 <a href="#bioimageio.core.prediction.predict" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">predict</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict(model)">model</a></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.PermissiveFileSource&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/common/#bioimageio.spec.common.PermissiveFileSource">PermissiveFileSource</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4">v0_4</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.ModelDescr">ModelDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ModelDescr">ModelDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../../../#bioimageio.core.PredictionPipeline">PredictionPipeline</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict(inputs)">inputs</a></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../sample/#bioimageio.core.sample.Sample">Sample</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../digest_spec/#bioimageio.core.digest_spec.TensorSource">TensorSource</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-internal" href="../digest_spec/#bioimageio.core.digest_spec.TensorSource">TensorSource</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict(sample_id)">sample_id</a></span><span class="p">:</span> <span class="n"><span title="typing.Hashable">Hashable</span></span> <span class="o">=</span> <span class="s1">&#39;sample&#39;</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict(blocksize_parameter)">blocksize_parameter</a></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.BlocksizeParameter">BlocksizeParameter</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict(input_block_shape)">input_block_shape</a></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Mapping">Mapping</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a></span><span class="p">,</span> <span class="n"><span title="typing.Mapping">Mapping</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.AxisId">AxisId</a></span><span class="p">,</span> <span class="n"><span title="int">int</span></span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict(skip_preprocessing)">skip_preprocessing</a></span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict(skip_postprocessing)">skip_postprocessing</a></span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict(save_output_path)">save_output_path</a></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="pathlib.Path">Path</span></span><span class="p">,</span> <span class="n"><span title="str">str</span></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="../sample/#bioimageio.core.sample.Sample">Sample</a></span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">predict</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict(model)">model</a></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.PermissiveFileSource&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/common/#bioimageio.spec.common.PermissiveFileSource">PermissiveFileSource</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4">v0_4</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.ModelDescr">ModelDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ModelDescr">ModelDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../../../#bioimageio.core.PredictionPipeline">PredictionPipeline</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict(inputs)">inputs</a></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../sample/#bioimageio.core.sample.Sample">Sample</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../digest_spec/#bioimageio.core.digest_spec.TensorSource">TensorSource</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-internal" href="../digest_spec/#bioimageio.core.digest_spec.TensorSource">TensorSource</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict(sample_id)">sample_id</a></span><span class="p">:</span> <span class="n"><span title="typing.Hashable">Hashable</span></span> <span class="o">=</span> <span class="s1">'sample'</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict(blocksize_parameter)">blocksize_parameter</a></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.BlocksizeParameter">BlocksizeParameter</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict(input_block_shape)">input_block_shape</a></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Mapping">Mapping</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a></span><span class="p">,</span> <span class="n"><span title="typing.Mapping">Mapping</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.AxisId">AxisId</a></span><span class="p">,</span> <span class="n"><span title="int">int</span></span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict(skip_preprocessing)">skip_preprocessing</a></span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict(skip_postprocessing)">skip_postprocessing</a></span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict(save_output_path)">save_output_path</a></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="pathlib.Path">Path</span></span><span class="p">,</span> <span class="n"><span title="str">str</span></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="../sample/#bioimageio.core.sample.Sample">Sample</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1468,7 +1434,7 @@
 <h3 id="bioimageio.core.prediction.predict(model)" class="doc doc-heading doc-heading-parameter">                  <code>model</code>
 <a href="#bioimageio.core.prediction.predict(model)" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>            </td>
             <td>
-                  <code><span title="typing.Union">Union</span>[<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.PermissiveFileSource&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/common/#bioimageio.spec.common.PermissiveFileSource">PermissiveFileSource</a>, <a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4">v0_4</a>.<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.ModelDescr">ModelDescr</a>, <a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a>.<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ModelDescr">ModelDescr</a>, <a class="autorefs autorefs-internal" href="../../../#bioimageio.core.PredictionPipeline">PredictionPipeline</a>]</code>
+                  <code><span title="typing.Union">Union</span>[<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.PermissiveFileSource&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/common/#bioimageio.spec.common.PermissiveFileSource">PermissiveFileSource</a>, <a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4">v0_4</a>.<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.ModelDescr">ModelDescr</a>, <a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a>.<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ModelDescr">ModelDescr</a>, <a class="autorefs autorefs-internal" href="../../../#bioimageio.core.PredictionPipeline">PredictionPipeline</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1611,19 +1577,19 @@ May contain:
 
 
   <div class="doc doc-backlinks">
-        <b class="doc doc-backlink-type">Used by:</b>
+        <b class="doc doc-backlink-type">Referenced by:</b>
           <ul class="doc doc-backlink-list">
       <li class="doc doc-backlink">
             <span class="doc doc-backlink-crumb">
-      <span>API Reference</span>
+      <span>Home</span>
   </span>
 
             <span class="doc doc-backlink-crumb">
-      <a href="../../../#bioimageio.core"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;core</a>
+      <a href="../../../../use_in_python/#">Use in Python</a>
   </span>
 
             <span class="doc doc-backlink-crumb last">
-      <a href="../../../#bioimageio.core.predict"><code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;predict</a>
+      <a href="../../../../use_in_python/#run-inference">Run inference</a>
   </span>
 
       </li>
@@ -1736,20 +1702,22 @@ May contain:
 <span class="normal">127</span>
 <span class="normal">128</span>
 <span class="normal">129</span>
-<span class="normal">130</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">model</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
         <span class="n">PermissiveFileSource</span><span class="p">,</span> <span class="n">v0_4</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">,</span> <span class="n">v0_5</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">,</span> <span class="n">PredictionPipeline</span>
     <span class="p">],</span>
     <span class="n">inputs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Sample</span><span class="p">,</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">TensorSource</span><span class="p">],</span> <span class="n">TensorSource</span><span class="p">],</span>
-    <span class="n">sample_id</span><span class="p">:</span> <span class="n">Hashable</span> <span class="o">=</span> <span class="s2">&quot;sample&quot;</span><span class="p">,</span>
+    <span class="n">sample_id</span><span class="p">:</span> <span class="n">Hashable</span> <span class="o">=</span> <span class="s2">"sample"</span><span class="p">,</span>
     <span class="n">blocksize_parameter</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">BlocksizeParameter</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">input_block_shape</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Mapping</span><span class="p">[</span><span class="n">MemberId</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">AxisId</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">skip_preprocessing</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">skip_postprocessing</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">save_output_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sample</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run prediction for a single set of input(s) with a bioimage.io model</span>
+<span class="w">    </span><span class="sd">"""Run prediction for a single set of input(s) with a bioimage.io model</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        model: Model to predict with.</span>
@@ -1766,22 +1734,22 @@ May contain:
 <span class="sd">        input_block_shape: (optional) Tile the input sample tensors into blocks.</span>
 <span class="sd">            Note: Use **blocksize_parameter** for a parameterized block shape to</span>
 <span class="sd">                run prediction independent of the exact block shape.</span>
-<span class="sd">        skip_preprocessing: Flag to skip the model&#39;s preprocessing.</span>
-<span class="sd">        skip_postprocessing: Flag to skip the model&#39;s postprocessing.</span>
+<span class="sd">        skip_preprocessing: Flag to skip the model's preprocessing.</span>
+<span class="sd">        skip_postprocessing: Flag to skip the model's postprocessing.</span>
 <span class="sd">        save_output_path: A path with to save the output to. M</span>
 <span class="sd">            Must contain:</span>
 <span class="sd">            - `{output_id}` (or `{member_id}`) if the model has multiple output tensors</span>
 <span class="sd">            May contain:</span>
 <span class="sd">            - `{sample_id}` to avoid overwriting recurrent calls</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">PredictionPipeline</span><span class="p">):</span>
         <span class="n">pp</span> <span class="o">=</span> <span class="n">model</span>
-        <span class="n">model</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">model_description</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">model_descr</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="p">(</span><span class="n">v0_4</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">,</span> <span class="n">v0_5</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">)):</span>
             <span class="n">loaded</span> <span class="o">=</span> <span class="n">load_description</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">loaded</span><span class="p">,</span> <span class="p">(</span><span class="n">v0_4</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">,</span> <span class="n">v0_5</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">)):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;expected model description, but got </span><span class="si">{</span><span class="n">loaded</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"expected model description, but got </span><span class="si">{</span><span class="n">loaded</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="n">model</span> <span class="o">=</span> <span class="n">loaded</span>
 
         <span class="n">pp</span> <span class="o">=</span> <span class="n">create_prediction_pipeline</span><span class="p">(</span>
@@ -1789,54 +1757,56 @@ May contain:
             <span class="n">fixed_dataset_statistics</span><span class="o">=</span><span class="n">inputs</span><span class="o">.</span><span class="n">stat</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">Sample</span><span class="p">)</span> <span class="k">else</span> <span class="p">{},</span>
         <span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">save_output_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="p">(</span>
-            <span class="s2">&quot;</span><span class="si">{output_id}</span><span class="s2">&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">save_output_path</span><span class="p">)</span>
-            <span class="ow">and</span> <span class="s2">&quot;</span><span class="si">{member_id}</span><span class="s2">&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">save_output_path</span><span class="p">)</span>
-            <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">outputs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span>
-        <span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Missing `</span><span class="se">{{</span><span class="s2">output_id</span><span class="se">}}</span><span class="s2">` in save_output_path=</span><span class="si">{</span><span class="n">save_output_path</span><span class="si">}</span><span class="s2"> to &quot;</span>
-                <span class="o">+</span> <span class="s2">&quot;distinguish model outputs &quot;</span>
-                <span class="o">+</span> <span class="nb">str</span><span class="p">([</span><span class="n">get_member_id</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">outputs</span><span class="p">])</span>
+    <span class="k">with</span> <span class="n">pp</span><span class="p">:</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">model_descr</span>
+        <span class="k">if</span> <span class="n">save_output_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="s2">"</span><span class="si">{output_id}</span><span class="s2">"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">save_output_path</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="s2">"</span><span class="si">{member_id}</span><span class="s2">"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">save_output_path</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">outputs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span>
+            <span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">"Missing `</span><span class="se">{{</span><span class="s2">output_id</span><span class="se">}}</span><span class="s2">` in save_output_path=</span><span class="si">{</span><span class="n">save_output_path</span><span class="si">}</span><span class="s2"> to "</span>
+                    <span class="o">+</span> <span class="s2">"distinguish model outputs "</span>
+                    <span class="o">+</span> <span class="nb">str</span><span class="p">([</span><span class="n">get_member_id</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">outputs</span><span class="p">])</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">Sample</span><span class="p">):</span>
+            <span class="n">sample</span> <span class="o">=</span> <span class="n">inputs</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sample</span> <span class="o">=</span> <span class="n">create_sample_for_model</span><span class="p">(</span>
+                <span class="n">pp</span><span class="o">.</span><span class="n">model_descr</span><span class="p">,</span> <span class="n">inputs</span><span class="o">=</span><span class="n">inputs</span><span class="p">,</span> <span class="n">sample_id</span><span class="o">=</span><span class="n">sample_id</span>
             <span class="p">)</span>
 
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">Sample</span><span class="p">):</span>
-        <span class="n">sample</span> <span class="o">=</span> <span class="n">inputs</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">sample</span> <span class="o">=</span> <span class="n">create_sample_for_model</span><span class="p">(</span>
-            <span class="n">pp</span><span class="o">.</span><span class="n">model_description</span><span class="p">,</span> <span class="n">inputs</span><span class="o">=</span><span class="n">inputs</span><span class="p">,</span> <span class="n">sample_id</span><span class="o">=</span><span class="n">sample_id</span>
-        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">input_block_shape</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">blocksize_parameter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="s2">"ignoring blocksize_parameter=</span><span class="si">{}</span><span class="s2"> in favor of input_block_shape=</span><span class="si">{}</span><span class="s2">"</span><span class="p">,</span>
+                    <span class="n">blocksize_parameter</span><span class="p">,</span>
+                    <span class="n">input_block_shape</span><span class="p">,</span>
+                <span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">input_block_shape</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">blocksize_parameter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s2">&quot;ignoring blocksize_parameter=</span><span class="si">{}</span><span class="s2"> in favor of input_block_shape=</span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
-                <span class="n">blocksize_parameter</span><span class="p">,</span>
-                <span class="n">input_block_shape</span><span class="p">,</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">predict_sample_with_fixed_blocking</span><span class="p">(</span>
+                <span class="n">sample</span><span class="p">,</span>
+                <span class="n">input_block_shape</span><span class="o">=</span><span class="n">input_block_shape</span><span class="p">,</span>
+                <span class="n">skip_preprocessing</span><span class="o">=</span><span class="n">skip_preprocessing</span><span class="p">,</span>
+                <span class="n">skip_postprocessing</span><span class="o">=</span><span class="n">skip_postprocessing</span><span class="p">,</span>
             <span class="p">)</span>
-
-        <span class="n">output</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">predict_sample_with_fixed_blocking</span><span class="p">(</span>
-            <span class="n">sample</span><span class="p">,</span>
-            <span class="n">input_block_shape</span><span class="o">=</span><span class="n">input_block_shape</span><span class="p">,</span>
-            <span class="n">skip_preprocessing</span><span class="o">=</span><span class="n">skip_preprocessing</span><span class="p">,</span>
-            <span class="n">skip_postprocessing</span><span class="o">=</span><span class="n">skip_postprocessing</span><span class="p">,</span>
-        <span class="p">)</span>
-    <span class="k">elif</span> <span class="n">blocksize_parameter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">output</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">predict_sample_with_blocking</span><span class="p">(</span>
-            <span class="n">sample</span><span class="p">,</span>
-            <span class="n">skip_preprocessing</span><span class="o">=</span><span class="n">skip_preprocessing</span><span class="p">,</span>
-            <span class="n">skip_postprocessing</span><span class="o">=</span><span class="n">skip_postprocessing</span><span class="p">,</span>
-            <span class="n">ns</span><span class="o">=</span><span class="n">blocksize_parameter</span><span class="p">,</span>
-        <span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">output</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">predict_sample_without_blocking</span><span class="p">(</span>
-            <span class="n">sample</span><span class="p">,</span>
-            <span class="n">skip_preprocessing</span><span class="o">=</span><span class="n">skip_preprocessing</span><span class="p">,</span>
-            <span class="n">skip_postprocessing</span><span class="o">=</span><span class="n">skip_postprocessing</span><span class="p">,</span>
-        <span class="p">)</span>
-    <span class="k">if</span> <span class="n">save_output_path</span><span class="p">:</span>
-        <span class="n">save_sample</span><span class="p">(</span><span class="n">save_output_path</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">blocksize_parameter</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">predict_sample_with_blocking</span><span class="p">(</span>
+                <span class="n">sample</span><span class="p">,</span>
+                <span class="n">skip_preprocessing</span><span class="o">=</span><span class="n">skip_preprocessing</span><span class="p">,</span>
+                <span class="n">skip_postprocessing</span><span class="o">=</span><span class="n">skip_postprocessing</span><span class="p">,</span>
+                <span class="n">ns</span><span class="o">=</span><span class="n">blocksize_parameter</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">output</span> <span class="o">=</span> <span class="n">pp</span><span class="o">.</span><span class="n">predict_sample_without_blocking</span><span class="p">(</span>
+                <span class="n">sample</span><span class="p">,</span>
+                <span class="n">skip_preprocessing</span><span class="o">=</span><span class="n">skip_preprocessing</span><span class="p">,</span>
+                <span class="n">skip_postprocessing</span><span class="o">=</span><span class="n">skip_postprocessing</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">save_output_path</span><span class="p">:</span>
+            <span class="n">save_sample</span><span class="p">(</span><span class="n">save_output_path</span><span class="p">,</span> <span class="n">output</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">output</span>
 </code></pre></div></td></tr></table></div>
@@ -1853,7 +1823,7 @@ May contain:
 
 
 <a href="#bioimageio.core.prediction.predict_many" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">predict_many</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict_many(model)">model</a></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.PermissiveFileSource&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/common/#bioimageio.spec.common.PermissiveFileSource">PermissiveFileSource</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4">v0_4</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.ModelDescr">ModelDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ModelDescr">ModelDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../../../#bioimageio.core.PredictionPipeline">PredictionPipeline</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict_many(inputs)">inputs</a></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="typing.Iterable">Iterable</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../digest_spec/#bioimageio.core.digest_spec.TensorSource">TensorSource</a></span><span class="p">]],</span> <span class="n"><span title="typing.Iterable">Iterable</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../digest_spec/#bioimageio.core.digest_spec.TensorSource">TensorSource</a></span><span class="p">]],</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict_many(sample_id)">sample_id</a></span><span class="p">:</span> <span class="n"><span title="str">str</span></span> <span class="o">=</span> <span class="s1">&#39;sample</span><span class="si">{i:03}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict_many(blocksize_parameter)">blocksize_parameter</a></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ParameterizedSize_N&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ParameterizedSize_N">ParameterizedSize_N</a></span><span class="p">,</span> <span class="n"><span title="typing.Mapping">Mapping</span></span><span class="p">[</span><span class="n"><span title="typing.Tuple">Tuple</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.AxisId">AxisId</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ParameterizedSize_N&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ParameterizedSize_N">ParameterizedSize_N</a></span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict_many(skip_preprocessing)">skip_preprocessing</a></span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict_many(skip_postprocessing)">skip_postprocessing</a></span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict_many(save_output_path)">save_output_path</a></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="pathlib.Path">Path</span></span><span class="p">,</span> <span class="n"><span title="str">str</span></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.Iterator">Iterator</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../sample/#bioimageio.core.sample.Sample">Sample</a></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">predict_many</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict_many(model)">model</a></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.PermissiveFileSource&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/common/#bioimageio.spec.common.PermissiveFileSource">PermissiveFileSource</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4">v0_4</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.ModelDescr">ModelDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ModelDescr">ModelDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../../../#bioimageio.core.PredictionPipeline">PredictionPipeline</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict_many(inputs)">inputs</a></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="typing.Iterable">Iterable</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../digest_spec/#bioimageio.core.digest_spec.TensorSource">TensorSource</a></span><span class="p">]],</span> <span class="n"><span title="typing.Iterable">Iterable</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../digest_spec/#bioimageio.core.digest_spec.TensorSource">TensorSource</a></span><span class="p">]],</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict_many(sample_id)">sample_id</a></span><span class="p">:</span> <span class="n"><span title="str">str</span></span> <span class="o">=</span> <span class="s1">'sample</span><span class="si">{i:03}</span><span class="s1">'</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict_many(blocksize_parameter)">blocksize_parameter</a></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ParameterizedSize_N&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ParameterizedSize_N">ParameterizedSize_N</a></span><span class="p">,</span> <span class="n"><span title="typing.Mapping">Mapping</span></span><span class="p">[</span><span class="n"><span title="typing.Tuple">Tuple</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.AxisId">AxisId</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ParameterizedSize_N&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ParameterizedSize_N">ParameterizedSize_N</a></span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict_many(skip_preprocessing)">skip_preprocessing</a></span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict_many(skip_postprocessing)">skip_postprocessing</a></span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.prediction.predict_many(save_output_path)">save_output_path</a></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="pathlib.Path">Path</span></span><span class="p">,</span> <span class="n"><span title="str">str</span></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.Iterator">Iterator</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../sample/#bioimageio.core.sample.Sample">Sample</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1877,7 +1847,7 @@ May contain:
 <h3 id="bioimageio.core.prediction.predict_many(model)" class="doc doc-heading doc-heading-parameter">                  <code>model</code>
 <a href="#bioimageio.core.prediction.predict_many(model)" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>            </td>
             <td>
-                  <code><span title="typing.Union">Union</span>[<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.PermissiveFileSource&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/common/#bioimageio.spec.common.PermissiveFileSource">PermissiveFileSource</a>, <a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4">v0_4</a>.<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.ModelDescr">ModelDescr</a>, <a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a>.<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ModelDescr">ModelDescr</a>, <a class="autorefs autorefs-internal" href="../../../#bioimageio.core.PredictionPipeline">PredictionPipeline</a>]</code>
+                  <code><span title="typing.Union">Union</span>[<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.PermissiveFileSource&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/common/#bioimageio.spec.common.PermissiveFileSource">PermissiveFileSource</a>, <a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4">v0_4</a>.<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.ModelDescr">ModelDescr</a>, <a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a>.<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ModelDescr">ModelDescr</a>, <a class="autorefs autorefs-internal" href="../../../#bioimageio.core.PredictionPipeline">PredictionPipeline</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1929,7 +1899,7 @@ is appended.</p>
 <h3 id="bioimageio.core.prediction.predict_many(blocksize_parameter)" class="doc doc-heading doc-heading-parameter">                  <code>blocksize_parameter</code>
 <a href="#bioimageio.core.prediction.predict_many(blocksize_parameter)" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>            </td>
             <td>
-                  <code><span title="typing.Optional">Optional</span>[<span title="typing.Union">Union</span>[<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a>.<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ParameterizedSize_N&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ParameterizedSize_N">ParameterizedSize_N</a>, <span title="typing.Mapping">Mapping</span>[<span title="typing.Tuple">Tuple</span>[<a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a>, <a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.AxisId">AxisId</a>], <a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a>.<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ParameterizedSize_N&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ParameterizedSize_N">ParameterizedSize_N</a>]]]</code>
+                  <code><span title="typing.Optional">Optional</span>[<span title="typing.Union">Union</span>[<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a>.<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ParameterizedSize_N&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ParameterizedSize_N">ParameterizedSize_N</a>, <span title="typing.Mapping">Mapping</span>[<span title="typing.Tuple">Tuple</span>[<a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a>, <a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.AxisId">AxisId</a>], <a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a>.<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ParameterizedSize_N&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ParameterizedSize_N">ParameterizedSize_N</a>]]]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1999,19 +1969,19 @@ Must contain:
 
 
   <div class="doc doc-backlinks">
-        <b class="doc doc-backlink-type">Used by:</b>
+        <b class="doc doc-backlink-type">Referenced by:</b>
           <ul class="doc doc-backlink-list">
       <li class="doc doc-backlink">
             <span class="doc doc-backlink-crumb">
-      <span>API Reference</span>
+      <span>Home</span>
   </span>
 
             <span class="doc doc-backlink-crumb">
-      <a href="../../../#bioimageio.core"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;core</a>
+      <a href="../../../../use_in_python/#">Use in Python</a>
   </span>
 
             <span class="doc doc-backlink-crumb last">
-      <a href="../../../#bioimageio.core.predict_many"><code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;predict_many</a>
+      <a href="../../../../use_in_python/#run-inference">Run inference</a>
   </span>
 
       </li>
@@ -2022,9 +1992,7 @@ Must contain:
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/prediction.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">133</span>
-<span class="normal">134</span>
-<span class="normal">135</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">135</span>
 <span class="normal">136</span>
 <span class="normal">137</span>
 <span class="normal">138</span>
@@ -2090,13 +2058,15 @@ Must contain:
 <span class="normal">198</span>
 <span class="normal">199</span>
 <span class="normal">200</span>
-<span class="normal">201</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">predict_many</span><span class="p">(</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">predict_many</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">model</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span>
         <span class="n">PermissiveFileSource</span><span class="p">,</span> <span class="n">v0_4</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">,</span> <span class="n">v0_5</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">,</span> <span class="n">PredictionPipeline</span>
     <span class="p">],</span>
     <span class="n">inputs</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Iterable</span><span class="p">[</span><span class="n">PerMember</span><span class="p">[</span><span class="n">TensorSource</span><span class="p">]],</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">TensorSource</span><span class="p">]],</span>
-    <span class="n">sample_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;sample</span><span class="si">{i:03}</span><span class="s2">&quot;</span><span class="p">,</span>
+    <span class="n">sample_id</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"sample</span><span class="si">{i:03}</span><span class="s2">"</span><span class="p">,</span>
     <span class="n">blocksize_parameter</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
         <span class="n">Union</span><span class="p">[</span>
             <span class="n">v0_5</span><span class="o">.</span><span class="n">ParameterizedSize_N</span><span class="p">,</span>
@@ -2107,7 +2077,7 @@ Must contain:
     <span class="n">skip_postprocessing</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">save_output_path</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">Sample</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Run prediction for a multiple sets of inputs with a bioimage.io model</span>
+<span class="w">    </span><span class="sd">"""Run prediction for a multiple sets of inputs with a bioimage.io model</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        model: Model to predict with.</span>
@@ -2119,17 +2089,17 @@ Must contain:
 <span class="sd">            is appended.</span>
 <span class="sd">        blocksize_parameter: (optional) Tile the input into blocks parametrized by</span>
 <span class="sd">            blocksize according to any parametrized axis sizes defined in the model RDF.</span>
-<span class="sd">        skip_preprocessing: Flag to skip the model&#39;s preprocessing.</span>
-<span class="sd">        skip_postprocessing: Flag to skip the model&#39;s postprocessing.</span>
+<span class="sd">        skip_preprocessing: Flag to skip the model's preprocessing.</span>
+<span class="sd">        skip_postprocessing: Flag to skip the model's postprocessing.</span>
 <span class="sd">        save_output_path: A path to save the output to.</span>
 <span class="sd">            Must contain:</span>
 <span class="sd">            - `{sample_id}` to differentiate predicted samples</span>
 <span class="sd">            - `{output_id}` (or `{member_id}`) if the model has multiple outputs</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">save_output_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s2">&quot;</span><span class="si">{sample_id}</span><span class="s2">&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">save_output_path</span><span class="p">):</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">save_output_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="s2">"</span><span class="si">{sample_id}</span><span class="s2">"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">save_output_path</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Missing `</span><span class="se">{{</span><span class="s2">sample_id</span><span class="se">}}</span><span class="s2">` in save_output_path=</span><span class="si">{</span><span class="n">save_output_path</span><span class="si">}</span><span class="s2">&quot;</span>
-            <span class="o">+</span> <span class="s2">&quot; to differentiate predicted samples.&quot;</span>
+            <span class="sa">f</span><span class="s2">"Missing `</span><span class="se">{{</span><span class="s2">sample_id</span><span class="se">}}</span><span class="s2">` in save_output_path=</span><span class="si">{</span><span class="n">save_output_path</span><span class="si">}</span><span class="s2">"</span>
+            <span class="o">+</span> <span class="s2">" to differentiate predicted samples."</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">PredictionPipeline</span><span class="p">):</span>
@@ -2138,14 +2108,14 @@ Must contain:
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="p">(</span><span class="n">v0_4</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">,</span> <span class="n">v0_5</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">)):</span>
             <span class="n">loaded</span> <span class="o">=</span> <span class="n">load_description</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">loaded</span><span class="p">,</span> <span class="p">(</span><span class="n">v0_4</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">,</span> <span class="n">v0_5</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">)):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;expected model description, but got </span><span class="si">{</span><span class="n">loaded</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"expected model description, but got </span><span class="si">{</span><span class="n">loaded</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
             <span class="n">model</span> <span class="o">=</span> <span class="n">loaded</span>
 
         <span class="n">pp</span> <span class="o">=</span> <span class="n">create_prediction_pipeline</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">):</span>
-        <span class="k">if</span> <span class="s2">&quot;</span><span class="si">{i}</span><span class="s2">&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sample_id</span> <span class="ow">and</span> <span class="s2">&quot;{i:&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sample_id</span><span class="p">:</span>
-            <span class="n">sample_id</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="si">{i:03}</span><span class="s2">&quot;</span>
+        <span class="k">if</span> <span class="s2">"</span><span class="si">{i}</span><span class="s2">"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sample_id</span> <span class="ow">and</span> <span class="s2">"{i:"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sample_id</span><span class="p">:</span>
+            <span class="n">sample_id</span> <span class="o">+=</span> <span class="s2">"</span><span class="si">{i:03}</span><span class="s2">"</span>
 
         <span class="n">total</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Sized</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
 
@@ -2209,7 +2179,7 @@ Must contain:
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../model_adapters/" class="md-footer__link md-footer__link--prev" aria-label="Previous: bioimageio.core.model_adapters">
+          <a href="../io/" class="md-footer__link md-footer__link--prev" aria-label="Previous: bioimageio.core.io">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2219,7 +2189,7 @@ Must contain:
                 Previous
               </span>
               <div class="md-ellipsis">
-                bioimageio.core.model_adapters
+                bioimageio.core.io
               </div>
             </div>
           </a>
@@ -2290,7 +2260,7 @@ Must contain:
       <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.expand", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.prune", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
     
     
-      <script src="../../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../../../assets/_markdown_exec_pyodide.js"></script>
       

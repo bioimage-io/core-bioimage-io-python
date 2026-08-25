@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../../../images/favicon.ico">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -914,34 +914,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../model_adapters/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    bioimageio.core.model_adapters
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../prediction/" class="md-nav__link">
         
   
@@ -1006,6 +978,34 @@
     
   
     bioimageio.core.proc_setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remote_backends/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    bioimageio.core.remote_backends
   
 
     
@@ -1427,7 +1427,7 @@
   </span>
 
 <a href="#bioimageio.core.block.Block" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">Block</span><span class="p">(</span><span class="n"><span title="bioimageio.core.block.Block(sample_shape)">sample_shape</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.block.Block(inner_slice)">inner_slice</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.SliceInfo">SliceInfo</a></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.block.Block(halo)">halo</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.Halo">Halo</a></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.block.Block(block_index)">block_index</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.BlockIndex">BlockIndex</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.block.Block(blocks_in_sample)">blocks_in_sample</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.TotalNumberOfBlocks">TotalNumberOfBlocks</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.block.Block(data)">data</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../tensor/#bioimageio.core.tensor.Tensor">Tensor</a></span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">Block</span><span class="p">(</span><span class="n"><span title="bioimageio.core.block.Block(data)">data</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../tensor/#bioimageio.core.tensor.Tensor">Tensor</a></span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1494,6 +1494,18 @@
       <span>API Reference</span>
   </span>
 
+            <ul class="doc doc-backlink-list">
+      <li class="doc doc-backlink">
+            <span class="doc doc-backlink-crumb">
+      <a href="../../../#bioimageio.core"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;core</a>
+  </span>
+
+            <span class="doc doc-backlink-crumb last">
+      <a href="../../../#bioimageio.core.SampleBlock"><code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;SampleBlock</a>
+  </span>
+
+      </li>
+      <li class="doc doc-backlink">
             <span class="doc doc-backlink-crumb">
       <a href="../sample/#bioimageio.core.sample"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;sample</a>
   </span>
@@ -1505,6 +1517,9 @@
       </li>
   </ul>
 
+      </li>
+  </ul>
+
         <b class="doc doc-backlink-type">Used by:</b>
           <ul class="doc doc-backlink-list">
       <li class="doc doc-backlink">
@@ -1512,13 +1527,39 @@
       <span>API Reference</span>
   </span>
 
+            <ul class="doc doc-backlink-list">
+      <li class="doc doc-backlink">
+            <span class="doc doc-backlink-crumb">
+      <a href="../../../#bioimageio.core"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;core</a>
+  </span>
+
+            <span class="doc doc-backlink-crumb last">
+      <a href="../../../#bioimageio.core.SampleBlock"><code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;SampleBlock</a>
+  </span>
+
+      </li>
+      <li class="doc doc-backlink">
             <span class="doc doc-backlink-crumb">
       <a href="../sample/#bioimageio.core.sample"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;sample</a>
   </span>
 
+            <ul class="doc doc-backlink-list">
+      <li class="doc doc-backlink">
             <span class="doc doc-backlink-crumb last">
-      <a href="../sample/#bioimageio.core.sample.BlockT"><code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;BlockT</a>
+      <a href="../sample/#bioimageio.core.sample.SampleBlock"><code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;SampleBlock</a>
   </span>
+
+      </li>
+      <li class="doc doc-backlink">
+            <span class="doc doc-backlink-crumb last">
+      <a href="../sample/#bioimageio.core.sample.SampleBlockWithOrigin"><code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;SampleBlockWithOrigin</a>
+  </span>
+
+      </li>
+  </ul>
+
+      </li>
+  </ul>
 
       </li>
   </ul>
@@ -1563,6 +1604,14 @@
             </tr>
             <tr class="doc-section-item">
               <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.block.Block.from_sample_member">from_sample_member</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.block.Block.get_meta">get_meta</a></code></td>
               <td>
                 <div class="doc-md-description">
                   
@@ -1640,7 +1689,7 @@
           <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.block.Block.halo">halo</a></code></td>
             <td>
-                  <code><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a>[<a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.Halo">Halo</a>]</code>
+                  <code><span title="bioimageio.core._axis_annotations.PerAxisAnno">PerAxisAnno</span>[<a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.Halo">Halo</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1672,7 +1721,7 @@
           <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.block.Block.inner_slice">inner_slice</a></code></td>
             <td>
-                  <code><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a>[<a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.SliceInfo">SliceInfo</a>]</code>
+                  <code><span title="bioimageio.core._axis_annotations.PerAxisAnno">PerAxisAnno</span>[<a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.SliceInfo">SliceInfo</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1727,7 +1776,7 @@
           <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.block.Block.sample_shape">sample_shape</a></code></td>
             <td>
-                  <code><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a>[<span title="int">int</span>]</code>
+                  <code><span title="bioimageio.core._axis_annotations.PerAxisAnno">PerAxisAnno</span>[<span title="int">int</span>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1882,7 +1931,7 @@
   </span>
 
 <a href="#bioimageio.core.block.Block.halo" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">halo</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.Halo">Halo</a></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">halo</span><span class="p">:</span> <span class="n"><span title="bioimageio.core._axis_annotations.PerAxisAnno">PerAxisAnno</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.Halo">Halo</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1956,7 +2005,7 @@
   </span>
 
 <a href="#bioimageio.core.block.Block.inner_slice" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">inner_slice</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.SliceInfo">SliceInfo</a></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">inner_slice</span><span class="p">:</span> <span class="n"><span title="bioimageio.core._axis_annotations.PerAxisAnno">PerAxisAnno</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.SliceInfo">SliceInfo</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2088,7 +2137,7 @@ where we cannot simply enlarge the inner slice</p>
   </span>
 
 <a href="#bioimageio.core.block.Block.sample_shape" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">sample_shape</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">sample_shape</span><span class="p">:</span> <span class="n"><span title="bioimageio.core._axis_annotations.PerAxisAnno">PerAxisAnno</span></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2188,7 +2237,7 @@ where we cannot simply enlarge the inner slice</p>
         <span class="n">halo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">halo</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">Halo</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">s</span> <span class="o">!=</span> <span class="p">(</span><span class="n">s_exp</span> <span class="o">:=</span> <span class="n">halo</span><span class="o">.</span><span class="n">left</span> <span class="o">+</span> <span class="p">(</span><span class="n">slice_</span><span class="o">.</span><span class="n">stop</span> <span class="o">-</span> <span class="n">slice_</span><span class="o">.</span><span class="n">start</span><span class="p">)</span> <span class="o">+</span> <span class="n">halo</span><span class="o">.</span><span class="n">right</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Block data shape does not match block meta information for axis </span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s2">: data size is </span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2"> but expected </span><span class="si">{</span><span class="n">s_exp</span><span class="si">}</span><span class="s2"> (halo: </span><span class="si">{</span><span class="n">halo</span><span class="si">}</span><span class="s2">, slice: </span><span class="si">{</span><span class="n">slice_</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span>
+                <span class="sa">f</span><span class="s2">"Block data shape does not match block meta information for axis </span><span class="si">{</span><span class="n">a</span><span class="si">}</span><span class="s2">: data size is </span><span class="si">{</span><span class="n">s</span><span class="si">}</span><span class="s2"> but expected </span><span class="si">{</span><span class="n">s_exp</span><span class="si">}</span><span class="s2"> (halo: </span><span class="si">{</span><span class="n">halo</span><span class="si">}</span><span class="s2">, slice: </span><span class="si">{</span><span class="n">slice_</span><span class="si">}</span><span class="s2">)"</span><span class="p">,</span>
             <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2323,6 +2372,44 @@ where we cannot simply enlarge the inner slice</p>
 <div class="doc doc-object doc-function">
 
 
+<h3 id="bioimageio.core.block.Block.get_meta" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_meta</span>
+
+
+<a href="#bioimageio.core.block.Block.get_meta" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_meta</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="../block_meta/#bioimageio.core.block_meta.BlockMeta">BlockMeta</a></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+          
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/bioimageio/core/block.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">90</span>
+<span class="normal">91</span>
+<span class="normal">92</span>
+<span class="normal">93</span>
+<span class="normal">94</span>
+<span class="normal">95</span>
+<span class="normal">96</span>
+<span class="normal">97</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_meta</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">BlockMeta</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">BlockMeta</span><span class="p">(</span>
+        <span class="n">sample_shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_shape</span><span class="p">,</span>
+        <span class="n">inner_slice</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">inner_slice</span><span class="p">,</span>
+        <span class="n">halo</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">halo</span><span class="p">,</span>
+        <span class="n">block_index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">block_index</span><span class="p">,</span>
+        <span class="n">blocks_in_sample</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">blocks_in_sample</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h3 id="bioimageio.core.block.Block.get_transformed" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_transformed</span>
 
@@ -2378,19 +2465,19 @@ where we cannot simply enlarge the inner slice</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/block.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 91</span>
-<span class="normal"> 92</span>
-<span class="normal"> 93</span>
-<span class="normal"> 94</span>
-<span class="normal"> 95</span>
-<span class="normal"> 96</span>
-<span class="normal"> 97</span>
-<span class="normal"> 98</span>
-<span class="normal"> 99</span>
-<span class="normal">100</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">100</span>
 <span class="normal">101</span>
 <span class="normal">102</span>
-<span class="normal">103</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">split_tensor_into_blocks</span><span class="p">(</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">split_tensor_into_blocks</span><span class="p">(</span>
     <span class="n">tensor</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
     <span class="n">block_shape</span><span class="p">:</span> <span class="n">PerAxis</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
@@ -2398,7 +2485,7 @@ where we cannot simply enlarge the inner slice</p>
     <span class="n">stride</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PerAxis</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">pad_mode</span><span class="p">:</span> <span class="n">PadMode</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">TotalNumberOfBlocks</span><span class="p">,</span> <span class="n">Generator</span><span class="p">[</span><span class="n">Block</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="kc">None</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;divide a sample tensor into tensor blocks.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""divide a sample tensor into tensor blocks."""</span>
     <span class="n">n_blocks</span><span class="p">,</span> <span class="n">block_gen</span> <span class="o">=</span> <span class="n">split_shape_into_blocks</span><span class="p">(</span>
         <span class="n">tensor</span><span class="o">.</span><span class="n">tagged_shape</span><span class="p">,</span> <span class="n">block_shape</span><span class="o">=</span><span class="n">block_shape</span><span class="p">,</span> <span class="n">halo</span><span class="o">=</span><span class="n">halo</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="n">stride</span>
     <span class="p">)</span>
@@ -2534,7 +2621,7 @@ where we cannot simply enlarge the inner slice</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.expand", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.prune", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
     
     
-      <script src="../../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../../../assets/_markdown_exec_pyodide.js"></script>
       

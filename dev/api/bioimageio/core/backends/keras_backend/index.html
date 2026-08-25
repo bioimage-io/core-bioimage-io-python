@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="../../../../../images/favicon.ico">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
     
     
       
@@ -29,7 +29,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -771,7 +771,7 @@
   </span>
 
 <a href="#bioimageio.core.backends.keras_backend.tf_version" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">tf_version</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.version_type.Version&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/application/v0_2/#bioimageio.spec.application.v0_2.Version">Version</a></span><span class="p">(</span><span class="n"><span title="tensorflow">tf</span></span><span class="o">.</span><span class="n"><span title="tensorflow.__version__">__version__</span></span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">tf_version</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec._internal.version_type.Version&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/application/v0_2/#bioimageio.spec.application.v0_2.Version">Version</a></span><span class="p">(</span><span class="n"><span title="tensorflow">tf</span></span><span class="o">.</span><span class="n"><span title="tensorflow.__version__">__version__</span></span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -792,28 +792,33 @@
 
 
 <a href="#bioimageio.core.backends.keras_backend.KerasModelAdapter" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">KerasModelAdapter</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n"><span title="bioimageio.core.backends.keras_backend.KerasModelAdapter(model_description)">model_description</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4">v0_4</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.ModelDescr">ModelDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ModelDescr">ModelDescr</a></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.backends.keras_backend.KerasModelAdapter(devices)">devices</span></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Sequence">Sequence</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">KerasModelAdapter</span><span class="p">(</span><span class="n"><span title="bioimageio.core.backends.keras_backend.KerasModelAdapter(model_description)">model_description</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.AnyModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/#bioimageio.spec.model.AnyModelDescr">AnyModelDescr</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.backends.keras_backend.KerasModelAdapter(devices)">devices</span></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Sequence">Sequence</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">]])</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
-              Bases: <code><a class="autorefs autorefs-internal" href="../../model_adapters/#bioimageio.core.model_adapters.ModelAdapter">ModelAdapter</a></code></p>
+              Bases: <code><span title="bioimageio.core._model_adapter.LocalModelAdapter">LocalModelAdapter</span>[None, <span title="typing.Any">Any</span>]</code></p>
 
             <div style="display: none">
               <a class="autorefs autorefs-internal" href="#bioimageio.core.backends.keras_backend.KerasModelAdapter" id="mermaid-link-bioimageio.core.backends.keras_backend.KerasModelAdapter"></a>
-                  <a class="autorefs autorefs-internal" href="../../model_adapters/#bioimageio.core.model_adapters.ModelAdapter" id="mermaid-link-bioimageio.core.backends._model_adapter.ModelAdapter"></a>
+                  <span title="bioimageio.core._model_adapter.LocalModelAdapter"></span>
+                  <span title="bioimageio.core._model_adapter.ModelAdapter"></span>
             </div>
             <pre class="mermaid"><code id="mermaid-diagram-bioimageio.core.backends.keras_backend.KerasModelAdapter">
               flowchart TD
               bioimageio.core.backends.keras_backend.KerasModelAdapter[KerasModelAdapter]
-              bioimageio.core.backends._model_adapter.ModelAdapter[ModelAdapter]
+              bioimageio.core._model_adapter.LocalModelAdapter[LocalModelAdapter]
+              bioimageio.core._model_adapter.ModelAdapter[ModelAdapter]
 
-                              bioimageio.core.backends._model_adapter.ModelAdapter --> bioimageio.core.backends.keras_backend.KerasModelAdapter
+                              bioimageio.core._model_adapter.LocalModelAdapter --> bioimageio.core.backends.keras_backend.KerasModelAdapter
+                                bioimageio.core._model_adapter.ModelAdapter --> bioimageio.core._model_adapter.LocalModelAdapter
                 
 
 
+
               click bioimageio.core.backends.keras_backend.KerasModelAdapter href "" "bioimageio.core.backends.keras_backend.KerasModelAdapter"
-              click bioimageio.core.backends._model_adapter.ModelAdapter href "" "bioimageio.core.backends._model_adapter.ModelAdapter"
+              click bioimageio.core._model_adapter.LocalModelAdapter href "" "bioimageio.core._model_adapter.LocalModelAdapter"
+              click bioimageio.core._model_adapter.ModelAdapter href "" "bioimageio.core._model_adapter.ModelAdapter"
             </code></pre>
             <script>
               var diagram = document.getElementById('mermaid-diagram-bioimageio.core.backends.keras_backend.KerasModelAdapter');
@@ -850,10 +855,10 @@
       </thead>
       <tbody>
             <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.backends.keras_backend.KerasModelAdapter.create">create</a></code></td>
+              <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.backends.keras_backend.KerasModelAdapter.close">close</a></code></td>
               <td>
                 <div class="doc-md-description">
-                  <p>Creates model adapter based on the passed spec</p>
+                  <p>Close the model adapter, freeing any resources.</p>
                 </div>
               </td>
             </tr>
@@ -886,145 +891,72 @@
 
 
 
+
+<p><span class="doc-section-title">Attributes:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.backends.keras_backend.KerasModelAdapter.model_descr">model_descr</a></code></td>
+            <td>
+                  <code><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.AnyModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/#bioimageio.spec.model.AnyModelDescr">AnyModelDescr</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
                   <details class="mkdocstrings-source">
-                    <summary>Source code in <code>src/bioimageio/core/backends/keras_backend.py</code></summary>
-                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 39</span>
-<span class="normal"> 40</span>
-<span class="normal"> 41</span>
-<span class="normal"> 42</span>
-<span class="normal"> 43</span>
-<span class="normal"> 44</span>
-<span class="normal"> 45</span>
-<span class="normal"> 46</span>
-<span class="normal"> 47</span>
-<span class="normal"> 48</span>
-<span class="normal"> 49</span>
-<span class="normal"> 50</span>
-<span class="normal"> 51</span>
-<span class="normal"> 52</span>
-<span class="normal"> 53</span>
-<span class="normal"> 54</span>
-<span class="normal"> 55</span>
-<span class="normal"> 56</span>
-<span class="normal"> 57</span>
-<span class="normal"> 58</span>
-<span class="normal"> 59</span>
-<span class="normal"> 60</span>
-<span class="normal"> 61</span>
-<span class="normal"> 62</span>
-<span class="normal"> 63</span>
-<span class="normal"> 64</span>
-<span class="normal"> 65</span>
-<span class="normal"> 66</span>
-<span class="normal"> 67</span>
-<span class="normal"> 68</span>
-<span class="normal"> 69</span>
-<span class="normal"> 70</span>
-<span class="normal"> 71</span>
-<span class="normal"> 72</span>
-<span class="normal"> 73</span>
-<span class="normal"> 74</span>
-<span class="normal"> 75</span>
-<span class="normal"> 76</span>
-<span class="normal"> 77</span>
-<span class="normal"> 78</span>
-<span class="normal"> 79</span>
-<span class="normal"> 80</span>
-<span class="normal"> 81</span>
-<span class="normal"> 82</span>
-<span class="normal"> 83</span>
-<span class="normal"> 84</span>
-<span class="normal"> 85</span>
-<span class="normal"> 86</span>
-<span class="normal"> 87</span>
-<span class="normal"> 88</span>
-<span class="normal"> 89</span>
-<span class="normal"> 90</span>
-<span class="normal"> 91</span>
-<span class="normal"> 92</span>
-<span class="normal"> 93</span>
-<span class="normal"> 94</span>
-<span class="normal"> 95</span>
-<span class="normal"> 96</span>
-<span class="normal"> 97</span>
-<span class="normal"> 98</span>
-<span class="normal"> 99</span>
-<span class="normal">100</span>
-<span class="normal">101</span>
-<span class="normal">102</span>
-<span class="normal">103</span>
-<span class="normal">104</span>
-<span class="normal">105</span>
-<span class="normal">106</span>
-<span class="normal">107</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
-    <span class="bp">self</span><span class="p">,</span>
-    <span class="o">*</span><span class="p">,</span>
-    <span class="n">model_description</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">v0_4</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">,</span> <span class="n">v0_5</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">],</span>
-    <span class="n">devices</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">model_description</span><span class="o">=</span><span class="n">model_description</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="p">(</span>
-        <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_description</span><span class="p">,</span> <span class="n">v0_4</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">)</span>
-        <span class="ow">and</span> <span class="n">model_description</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">keras_v3</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-    <span class="p">):</span>
-        <span class="n">weight_reader</span> <span class="o">=</span> <span class="n">model_description</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">keras_v3</span><span class="o">.</span><span class="n">get_reader</span><span class="p">()</span>
-        <span class="n">backend</span><span class="p">,</span> <span class="n">backend_version</span> <span class="o">=</span> <span class="n">model_description</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">keras_v3</span><span class="o">.</span><span class="n">backend</span>
-    <span class="k">elif</span> <span class="n">model_description</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">keras_hdf5</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">backend</span> <span class="o">=</span> <span class="s2">&quot;legacy_tensorflow&quot;</span>
-        <span class="n">backend_version</span> <span class="o">=</span> <span class="n">model_description</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">keras_hdf5</span><span class="o">.</span><span class="n">tensorflow_version</span>
-        <span class="n">weight_reader</span> <span class="o">=</span> <span class="n">model_description</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">keras_hdf5</span><span class="o">.</span><span class="n">get_reader</span><span class="p">()</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;model has no Keras weights&quot;</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">backend</span> <span class="o">!=</span> <span class="s2">&quot;legacy_tensorflow&quot;</span> <span class="ow">and</span> <span class="n">backend</span> <span class="o">!=</span> <span class="n">settings</span><span class="o">.</span><span class="n">keras_backend</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="s2">&quot;Model specifies Keras backend &#39;</span><span class="si">{}</span><span class="s2">&#39;, but environment variable KERAS_BACKEND is set to &#39;</span><span class="si">{}</span><span class="s2">&#39;.&quot;</span>
-            <span class="o">+</span> <span class="s2">&quot; Attempting to load model with KERAS_BACKEND=&#39;</span><span class="si">{}</span><span class="s2">&#39; (this may fail if the model is not compatible with this backend).&quot;</span><span class="p">,</span>
-            <span class="n">backend</span><span class="p">,</span>
-            <span class="n">settings</span><span class="o">.</span><span class="n">keras_backend</span><span class="p">,</span>
-            <span class="n">settings</span><span class="o">.</span><span class="n">keras_backend</span><span class="p">,</span>
-        <span class="p">)</span>
-
-    <span class="k">if</span> <span class="p">(</span><span class="n">backend</span> <span class="o">==</span> <span class="s2">&quot;legacy_tensorflow&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span>
-        <span class="n">backend</span> <span class="o">==</span> <span class="n">settings</span><span class="o">.</span><span class="n">keras_backend</span> <span class="o">==</span> <span class="s2">&quot;tensorflow&quot;</span>
-    <span class="p">):</span>
-        <span class="n">warn_about_version</span><span class="p">(</span><span class="s2">&quot;tensorflow&quot;</span><span class="p">,</span> <span class="n">backend_version</span><span class="p">,</span> <span class="n">tf_version</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">backend</span> <span class="o">==</span> <span class="n">settings</span><span class="o">.</span><span class="n">keras_backend</span> <span class="o">==</span> <span class="s2">&quot;torch&quot;</span><span class="p">:</span>
-        <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
-
-        <span class="n">torch_version</span> <span class="o">=</span> <span class="n">Version</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
-        <span class="n">warn_about_version</span><span class="p">(</span><span class="s2">&quot;torch&quot;</span><span class="p">,</span> <span class="n">backend_version</span><span class="p">,</span> <span class="n">torch_version</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">backend</span> <span class="o">==</span> <span class="n">settings</span><span class="o">.</span><span class="n">keras_backend</span> <span class="o">==</span> <span class="s2">&quot;jax&quot;</span><span class="p">:</span>
-        <span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
-
-        <span class="n">jax_version</span> <span class="o">=</span> <span class="n">Version</span><span class="p">(</span><span class="n">jax</span><span class="o">.</span><span class="n">__version__</span><span class="p">)</span>
-        <span class="n">warn_about_version</span><span class="p">(</span><span class="s2">&quot;jax&quot;</span><span class="p">,</span> <span class="n">backend_version</span><span class="p">,</span> <span class="n">jax_version</span><span class="p">)</span>
-
-    <span class="c1"># TODO keras device management</span>
-    <span class="k">if</span> <span class="n">devices</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="s2">&quot;Device management is not implemented for keras yet, ignoring the devices </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
-            <span class="n">devices</span><span class="p">,</span>
-        <span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">weight_reader</span><span class="o">.</span><span class="n">suffix</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;.h5&quot;</span><span class="p">,</span> <span class="s2">&quot;hdf5&quot;</span><span class="p">):</span>
-        <span class="kn">import</span><span class="w"> </span><span class="nn">h5py</span>  <span class="c1"># pyright: ignore[reportMissingTypeStubs]</span>
-
-        <span class="n">h5_file</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">weight_reader</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_network</span> <span class="o">=</span> <span class="n">legacy_h5_format</span><span class="o">.</span><span class="n">load_model_from_hdf5</span><span class="p">(</span><span class="n">h5_file</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">with</span> <span class="n">TemporaryDirectory</span><span class="p">()</span> <span class="k">as</span> <span class="n">temp_dir</span><span class="p">:</span>
-            <span class="n">temp_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">temp_dir</span><span class="p">)</span> <span class="o">/</span> <span class="n">weight_reader</span><span class="o">.</span><span class="n">original_file_name</span>
-            <span class="k">with</span> <span class="n">temp_path</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-                <span class="n">shutil</span><span class="o">.</span><span class="n">copyfileobj</span><span class="p">(</span><span class="n">weight_reader</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
-
-            <span class="bp">self</span><span class="o">.</span><span class="n">_network</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="n">temp_path</span><span class="p">)</span>
-
-    <span class="bp">self</span><span class="o">.</span><span class="n">_output_axes</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="nb">tuple</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">get_axes_infos</span><span class="p">(</span><span class="n">out</span><span class="p">))</span>
-        <span class="k">for</span> <span class="n">out</span> <span class="ow">in</span> <span class="n">model_description</span><span class="o">.</span><span class="n">outputs</span>
+                    <summary>Source code in <code>src/bioimageio/core/_model_adapter.py</code></summary>
+                    <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span>
+<span class="normal">72</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span> <span class="n">model_description</span><span class="p">:</span> <span class="n">AnyModelDescr</span><span class="p">,</span> <span class="n">devices</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span>
+<span class="p">):</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_model_descr</span> <span class="o">=</span> <span class="n">model_description</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_input_ids</span> <span class="o">=</span> <span class="n">get_member_ids</span><span class="p">(</span><span class="n">model_description</span><span class="o">.</span><span class="n">inputs</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_output_ids</span> <span class="o">=</span> <span class="n">get_member_ids</span><span class="p">(</span><span class="n">model_description</span><span class="o">.</span><span class="n">outputs</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_input_axes</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="nb">tuple</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">get_axes_infos</span><span class="p">(</span><span class="n">t</span><span class="p">))</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">model_description</span><span class="o">.</span><span class="n">inputs</span>
     <span class="p">]</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_output_axes</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="nb">tuple</span><span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">id</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">get_axes_infos</span><span class="p">(</span><span class="n">t</span><span class="p">))</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">model_description</span><span class="o">.</span><span class="n">outputs</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_description</span><span class="p">,</span> <span class="n">v0_4</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_input_is_optional</span> <span class="o">=</span> <span class="p">[</span><span class="kc">False</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">model_description</span><span class="o">.</span><span class="n">inputs</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_input_is_optional</span> <span class="o">=</span> <span class="p">[</span><span class="n">ipt</span><span class="o">.</span><span class="n">optional</span> <span class="k">for</span> <span class="n">ipt</span> <span class="ow">in</span> <span class="n">model_description</span><span class="o">.</span><span class="n">inputs</span><span class="p">]</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">_devices</span> <span class="o">=</span> <span class="n">devices</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
 </code></pre></div></td></tr></table></div>
                   </details>
 
@@ -1038,158 +970,127 @@
 
 
 
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="bioimageio.core.backends.keras_backend.KerasModelAdapter.model_descr" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">model_descr</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#bioimageio.core.backends.keras_backend.KerasModelAdapter.model_descr" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">model_descr</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.AnyModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/#bioimageio.spec.model.AnyModelDescr">AnyModelDescr</a></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+          
+    </div>
+
+</div>
+
 
 
 
 <div class="doc doc-object doc-function">
 
 
-<h3 id="bioimageio.core.backends.keras_backend.KerasModelAdapter.create" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">create</span>
+<h3 id="bioimageio.core.backends.keras_backend.KerasModelAdapter.close" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">close</span>
 
 
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
-  </span>
-
-<a href="#bioimageio.core.backends.keras_backend.KerasModelAdapter.create" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">create</span><span class="p">(</span><span class="n"><span title="bioimageio.core.backends.keras_backend.KerasModelAdapter.create(model_description)">model_description</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4">v0_4</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.ModelDescr">ModelDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ModelDescr">ModelDescr</a></span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n"><span title="bioimageio.core.backends.keras_backend.KerasModelAdapter.create(devices)">devices</span></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Sequence">Sequence</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n"><span title="bioimageio.core.backends.keras_backend.KerasModelAdapter.create(weight_format_priority_order)">weight_format_priority_order</span></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Sequence">Sequence</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../../common/#bioimageio.core.common.SupportedWeightsFormat">SupportedWeightsFormat</a></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+<a href="#bioimageio.core.backends.keras_backend.KerasModelAdapter.close" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">close</span><span class="p">()</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Creates model adapter based on the passed spec
-Note: All specific adapters should happen inside this function to prevent different framework
-initializations interfering with each other</p>
+        <p>Close the model adapter, freeing any resources.</p>
 
+
+<details class="note" open>
+  <summary>Note</summary>
+  <p>The moder adapter should be considered unusable afterwards.</p>
+</details>
           
 
-
-  <div class="doc doc-backlinks">
-        <b class="doc doc-backlink-type">Used by:</b>
-          <ul class="doc doc-backlink-list">
-      <li class="doc doc-backlink">
-            <span class="doc doc-backlink-crumb">
-      <span>API Reference</span>
-  </span>
-
-            <ul class="doc doc-backlink-list">
-      <li class="doc doc-backlink">
-            <span class="doc doc-backlink-crumb">
-      <a href="../#bioimageio.core.backends"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;backends</a>
-  </span>
-
-            <span class="doc doc-backlink-crumb last">
-      <a href="../#bioimageio.core.backends.create_model_adapter"><code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;create_model_adapter</a>
-  </span>
-
-      </li>
-      <li class="doc doc-backlink">
-            <span class="doc doc-backlink-crumb">
-      <a href="../../model_adapters/#bioimageio.core.model_adapters"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;model_adapters</a>
-  </span>
-
-            <span class="doc doc-backlink-crumb last">
-      <a href="../../model_adapters/#bioimageio.core.model_adapters.create_model_adapter"><code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;create_model_adapter</a>
-  </span>
-
-      </li>
-  </ul>
-
-      </li>
-  </ul>
-
-  </div>
-
-
             <details class="mkdocstrings-source">
-              <summary>Source code in <code>src/bioimageio/core/backends/_model_adapter.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 73</span>
-<span class="normal"> 74</span>
-<span class="normal"> 75</span>
-<span class="normal"> 76</span>
-<span class="normal"> 77</span>
-<span class="normal"> 78</span>
-<span class="normal"> 79</span>
-<span class="normal"> 80</span>
-<span class="normal"> 81</span>
-<span class="normal"> 82</span>
-<span class="normal"> 83</span>
-<span class="normal"> 84</span>
-<span class="normal"> 85</span>
-<span class="normal"> 86</span>
-<span class="normal"> 87</span>
-<span class="normal"> 88</span>
-<span class="normal"> 89</span>
-<span class="normal"> 90</span>
-<span class="normal"> 91</span>
-<span class="normal"> 92</span>
-<span class="normal"> 93</span>
-<span class="normal"> 94</span>
-<span class="normal"> 95</span>
-<span class="normal"> 96</span>
+              <summary>Source code in <code>src/bioimageio/core/_model_adapter.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 96</span>
 <span class="normal"> 97</span>
 <span class="normal"> 98</span>
 <span class="normal"> 99</span>
 <span class="normal">100</span>
 <span class="normal">101</span>
-<span class="normal">102</span>
-<span class="normal">103</span>
-<span class="normal">104</span>
-<span class="normal">105</span>
-<span class="normal">106</span>
-<span class="normal">107</span>
-<span class="normal">108</span>
-<span class="normal">109</span>
-<span class="normal">110</span>
-<span class="normal">111</span>
-<span class="normal">112</span>
-<span class="normal">113</span>
-<span class="normal">114</span>
-<span class="normal">115</span>
-<span class="normal">116</span>
-<span class="normal">117</span>
-<span class="normal">118</span>
-<span class="normal">119</span>
-<span class="normal">120</span>
-<span class="normal">121</span>
-<span class="normal">122</span>
-<span class="normal">123</span>
-<span class="normal">124</span>
-<span class="normal">125</span>
-<span class="normal">126</span>
-<span class="normal">127</span>
-<span class="normal">128</span>
-<span class="normal">129</span>
-<span class="normal">130</span>
-<span class="normal">131</span>
-<span class="normal">132</span>
-<span class="normal">133</span>
-<span class="normal">134</span>
-<span class="normal">135</span>
-<span class="normal">136</span>
-<span class="normal">137</span>
-<span class="normal">138</span>
-<span class="normal">139</span>
-<span class="normal">140</span>
-<span class="normal">141</span>
-<span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span>
-<span class="normal">145</span>
-<span class="normal">146</span>
-<span class="normal">147</span>
-<span class="normal">148</span>
-<span class="normal">149</span>
-<span class="normal">150</span>
-<span class="normal">151</span>
-<span class="normal">152</span>
-<span class="normal">153</span>
-<span class="normal">154</span>
-<span class="normal">155</span>
-<span class="normal">156</span>
-<span class="normal">157</span>
-<span class="normal">158</span>
+<span class="normal">102</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Close the model adapter, freeing any resources.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        The moder adapter should be considered unusable afterwards.</span>
+<span class="sd">    """</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">unload</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="bioimageio.core.backends.keras_backend.KerasModelAdapter.forward" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">forward</span>
+
+
+<a href="#bioimageio.core.backends.keras_backend.KerasModelAdapter.forward" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">forward</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.backends.keras_backend.KerasModelAdapter.forward(inputs)">inputs</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../../tensor/#bioimageio.core.tensor.Tensor">Tensor</a></span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="../../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../../tensor/#bioimageio.core.tensor.Tensor">Tensor</a></span><span class="p">]]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Run forward pass of model to get model predictions</p>
+<p>Note: sample id and stample stat attributes are passed through</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+<h4 id="bioimageio.core.backends.keras_backend.KerasModelAdapter.forward(inputs)" class="doc doc-heading doc-heading-parameter">                  <code>inputs</code>
+<a href="#bioimageio.core.backends.keras_backend.KerasModelAdapter.forward(inputs)" class="headerlink" title="Anchor link to this section for reference">¤</a></h4>            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" href="../../common/#bioimageio.core.common.PerMember">PerMember</a>[<span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-internal" href="../../tensor/#bioimageio.core.tensor.Tensor">Tensor</a>]]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>input tensors for the model, keyed by member id</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+          
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/bioimageio/core/_model_adapter.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">158</span>
 <span class="normal">159</span>
 <span class="normal">160</span>
 <span class="normal">161</span>
@@ -1224,154 +1125,13 @@ initializations interfering with each other</p>
 <span class="normal">190</span>
 <span class="normal">191</span>
 <span class="normal">192</span>
-<span class="normal">193</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@final</span>
-<span class="nd">@classmethod</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">create</span><span class="p">(</span>
-    <span class="bp">cls</span><span class="p">,</span>
-    <span class="n">model_description</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">v0_4</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">,</span> <span class="n">v0_5</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">],</span>
-    <span class="o">*</span><span class="p">,</span>
-    <span class="n">devices</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">weight_format_priority_order</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">SupportedWeightsFormat</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Creates model adapter based on the passed spec</span>
-<span class="sd">    Note: All specific adapters should happen inside this function to prevent different framework</span>
-<span class="sd">    initializations interfering with each other</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_description</span><span class="p">,</span> <span class="p">(</span><span class="n">v0_4</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">,</span> <span class="n">v0_5</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">)):</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;expected v0_4.ModelDescr or v0_5.ModelDescr, but got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">model_description</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="p">)</span>
-
-    <span class="n">weights</span> <span class="o">=</span> <span class="n">model_description</span><span class="o">.</span><span class="n">weights</span>
-    <span class="n">errors</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="ne">Exception</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">weight_format_priority_order</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="n">DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER</span>
-        <span class="k">if</span> <span class="n">weight_format_priority_order</span> <span class="ow">is</span> <span class="kc">None</span>
-        <span class="k">else</span> <span class="n">weight_format_priority_order</span>
-    <span class="p">)</span>
-    <span class="c1"># limit weight formats to the ones present</span>
-    <span class="n">weight_format_priority_order_present</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">SupportedWeightsFormat</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="n">w</span>
-        <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">weight_format_priority_order</span>
-        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-    <span class="p">]</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">weight_format_priority_order_present</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;None of the specified weight formats (</span><span class="si">{</span><span class="n">weight_format_priority_order</span><span class="si">}</span><span class="s2">) is present (</span><span class="si">{</span><span class="n">weight_format_priority_order_present</span><span class="si">}</span><span class="s2">)&quot;</span>
-        <span class="p">)</span>
-
-    <span class="k">for</span> <span class="n">wf</span> <span class="ow">in</span> <span class="n">weight_format_priority_order_present</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">wf</span> <span class="o">==</span> <span class="s2">&quot;pytorch_state_dict&quot;</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="n">weights</span><span class="o">.</span><span class="n">pytorch_state_dict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="kn">from</span><span class="w"> </span><span class="nn">.pytorch_backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">PytorchModelAdapter</span>
-
-                <span class="k">return</span> <span class="n">PytorchModelAdapter</span><span class="p">(</span>
-                    <span class="n">model_description</span><span class="o">=</span><span class="n">model_description</span><span class="p">,</span> <span class="n">devices</span><span class="o">=</span><span class="n">devices</span>
-                <span class="p">)</span>
-            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">wf</span> <span class="o">==</span> <span class="s2">&quot;tensorflow_saved_model_bundle&quot;</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="n">weights</span><span class="o">.</span><span class="n">tensorflow_saved_model_bundle</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="kn">from</span><span class="w"> </span><span class="nn">.tensorflow_backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_tf_model_adapter</span>
-
-                <span class="k">return</span> <span class="n">create_tf_model_adapter</span><span class="p">(</span>
-                    <span class="n">model_description</span><span class="o">=</span><span class="n">model_description</span><span class="p">,</span> <span class="n">devices</span><span class="o">=</span><span class="n">devices</span>
-                <span class="p">)</span>
-            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">wf</span> <span class="o">==</span> <span class="s2">&quot;onnx&quot;</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="n">weights</span><span class="o">.</span><span class="n">onnx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="kn">from</span><span class="w"> </span><span class="nn">.onnx_backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">ONNXModelAdapter</span>
-
-                <span class="k">return</span> <span class="n">ONNXModelAdapter</span><span class="p">(</span>
-                    <span class="n">model_description</span><span class="o">=</span><span class="n">model_description</span><span class="p">,</span> <span class="n">devices</span><span class="o">=</span><span class="n">devices</span>
-                <span class="p">)</span>
-            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">wf</span> <span class="o">==</span> <span class="s2">&quot;torchscript&quot;</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="n">weights</span><span class="o">.</span><span class="n">torchscript</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="kn">from</span><span class="w"> </span><span class="nn">.torchscript_backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">TorchscriptModelAdapter</span>
-
-                <span class="k">return</span> <span class="n">TorchscriptModelAdapter</span><span class="p">(</span>
-                    <span class="n">model_description</span><span class="o">=</span><span class="n">model_description</span><span class="p">,</span> <span class="n">devices</span><span class="o">=</span><span class="n">devices</span>
-                <span class="p">)</span>
-            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">wf</span> <span class="o">==</span> <span class="s2">&quot;keras_hdf5&quot;</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="n">weights</span><span class="o">.</span><span class="n">keras_hdf5</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-            <span class="c1"># keras can either be installed as a separate package or used as part of tensorflow</span>
-            <span class="c1"># we try to first import the keras model adapter using the separate package and,</span>
-            <span class="c1"># if it is not available, try to load the one using tf</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="k">try</span><span class="p">:</span>
-                    <span class="kn">from</span><span class="w"> </span><span class="nn">.keras_backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">KerasModelAdapter</span>
-                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
-                    <span class="kn">from</span><span class="w"> </span><span class="nn">.tensorflow_backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">KerasModelAdapter</span>
-
-                <span class="k">return</span> <span class="n">KerasModelAdapter</span><span class="p">(</span>
-                    <span class="n">model_description</span><span class="o">=</span><span class="n">model_description</span><span class="p">,</span> <span class="n">devices</span><span class="o">=</span><span class="n">devices</span>
-                <span class="p">)</span>
-            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">wf</span> <span class="o">==</span> <span class="s2">&quot;keras_v3&quot;</span><span class="p">:</span>
-            <span class="k">assert</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">v0_4</span><span class="o">.</span><span class="n">WeightsDescr</span><span class="p">),</span> <span class="p">(</span>
-                <span class="s2">&quot;keras_v3 weights not supported for v0.4 specs&quot;</span>
-            <span class="p">)</span>
-            <span class="k">assert</span> <span class="n">weights</span><span class="o">.</span><span class="n">keras_v3</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-            <span class="k">try</span><span class="p">:</span>
-                <span class="kn">from</span><span class="w"> </span><span class="nn">.keras_backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">KerasModelAdapter</span>
-
-                <span class="k">return</span> <span class="n">KerasModelAdapter</span><span class="p">(</span>
-                    <span class="n">model_description</span><span class="o">=</span><span class="n">model_description</span><span class="p">,</span> <span class="n">devices</span><span class="o">=</span><span class="n">devices</span>
-                <span class="p">)</span>
-            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">assert_never</span><span class="p">(</span><span class="n">wf</span><span class="p">)</span>
-
-    <span class="k">assert</span> <span class="n">errors</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">weight_format_priority_order</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">errors</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
-        <span class="k">raise</span> <span class="n">errors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">&quot;None of the weight format specific model adapters could be created&quot;</span>
-            <span class="o">+</span> <span class="s2">&quot; in this environment.&quot;</span>
-        <span class="p">)</span>
-        <span class="k">raise</span> <span class="n">ExceptionGroup</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">errors</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="bioimageio.core.backends.keras_backend.KerasModelAdapter.forward" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">forward</span>
-
-
-<a href="#bioimageio.core.backends.keras_backend.KerasModelAdapter.forward" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">forward</span><span class="p">(</span><span class="n"><span title="bioimageio.core.backends.keras_backend.KerasModelAdapter.forward(input_sample)">input_sample</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../../sample/#bioimageio.core.sample.Sample">Sample</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../../sample/#bioimageio.core.sample.SampleBlock">SampleBlock</a></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="../../sample/#bioimageio.core.sample.Sample">Sample</a></span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Run forward pass of model to get model predictions</p>
-<p>Note: sample id and stample stat attributes are passed through</p>
-
-          
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>src/bioimageio/core/backends/_model_adapter.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">199</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
 <span class="normal">200</span>
 <span class="normal">201</span>
 <span class="normal">202</span>
@@ -1390,18 +1150,188 @@ initializations interfering with each other</p>
 <span class="normal">215</span>
 <span class="normal">216</span>
 <span class="normal">217</span>
-<span class="normal">218</span>
-<span class="normal">219</span>
-<span class="normal">220</span>
-<span class="normal">221</span>
-<span class="normal">222</span>
-<span class="normal">223</span>
-<span class="normal">224</span>
-<span class="normal">225</span>
-<span class="normal">226</span>
-<span class="normal">227</span>
-<span class="normal">228</span>
-<span class="normal">229</span>
+<span class="normal">218</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Run forward pass of model to get model predictions</span>
+
+<span class="sd">    Note: sample id and stample stat attributes are passed through</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        inputs: input tensors for the model, keyed by member id</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_loaded</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Model must be `.load()`ed before calling forward()"</span><span class="p">)</span>
+
+    <span class="n">unexpected</span> <span class="o">=</span> <span class="p">[</span><span class="n">mid</span> <span class="k">for</span> <span class="n">mid</span> <span class="ow">in</span> <span class="n">inputs</span> <span class="k">if</span> <span class="n">mid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_ids</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">unexpected</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Got unexpected input tensor IDs: </span><span class="si">{</span><span class="n">unexpected</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+    <span class="n">input_arrays</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">(</span>
+            <span class="kc">None</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">a</span> <span class="o">:=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">in_id</span><span class="p">))</span> <span class="ow">is</span> <span class="kc">None</span>
+            <span class="k">else</span> <span class="n">a</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">in_order</span><span class="p">)</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">in_id</span><span class="p">,</span> <span class="n">in_order</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_ids</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_axes</span><span class="p">)</span>
+    <span class="p">]</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+        <span class="s2">"NN input shapes: </span><span class="si">{}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span> <span class="k">if</span> <span class="n">a</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">input_arrays</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="n">device</span><span class="p">,</span> <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">output_arrays</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_forward_impl</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">input_arrays</span><span class="p">)</span>
+    <span class="k">finally</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model_queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="n">device</span><span class="p">,</span> <span class="n">model</span><span class="p">))</span>
+
+    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+        <span class="s2">"NN output shapes: </span><span class="si">{}</span><span class="s2">"</span><span class="p">,</span>
+        <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span> <span class="k">if</span> <span class="n">a</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">output_arrays</span><span class="p">],</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">output_arrays</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_ids</span><span class="p">):</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"Model produced more outputs (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">output_arrays</span><span class="p">)</span><span class="si">}</span><span class="s2">) than specified in the model description (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_ids</span><span class="p">)</span><span class="si">}</span><span class="s2">). Extra outputs will be ignored."</span>
+        <span class="p">)</span>
+        <span class="n">output_arrays</span> <span class="o">=</span> <span class="n">output_arrays</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_ids</span><span class="p">)]</span>
+
+    <span class="n">output_tensors</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="kc">None</span> <span class="k">if</span> <span class="n">a</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">dims</span><span class="o">=</span><span class="n">d</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">output_arrays</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output_axes</span><span class="p">)</span>
+    <span class="p">]</span>
+    <span class="n">outputs</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">tid</span><span class="p">:</span> <span class="n">out</span>
+        <span class="k">for</span> <span class="n">tid</span><span class="p">,</span> <span class="n">out</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_output_ids</span><span class="p">,</span>
+            <span class="n">output_tensors</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="p">}</span>
+    <span class="n">outputs</span> <span class="o">=</span> <span class="n">restore_batch_multi_index</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">outputs</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="bioimageio.core.backends.keras_backend.KerasModelAdapter.load" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">load</span>
+
+
+<a href="#bioimageio.core.backends.keras_backend.KerasModelAdapter.load" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">load</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+          
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/bioimageio/core/_model_adapter.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="n">devices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_devices</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_model_queue</span><span class="p">:</span> <span class="n">LifoQueue</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">DeviceType</span><span class="p">,</span> <span class="n">ModelType</span><span class="p">]]</span> <span class="o">=</span> <span class="n">LifoQueue</span><span class="p">()</span>
+    <span class="n">parsed_devices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_parse_devices</span><span class="p">(</span><span class="n">devices</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">parsed_devices</span>
+    <span class="c1"># prioritize devices by order specified by user</span>
+    <span class="n">device_exceptions</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="ne">Exception</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_initialized_devices</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">parsed_devices</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_init_model_on_device</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">device_exceptions</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">d</span><span class="p">)]</span> <span class="o">=</span> <span class="n">e</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_model_queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="n">d</span><span class="p">,</span> <span class="n">model</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_initialized_devices</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">d</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model_queue</span><span class="o">.</span><span class="n">empty</span><span class="p">():</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">device_exceptions</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">device_exceptions</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">ExceptionGroup</span><span class="p">(</span>
+                <span class="s2">"Failed to initialize model on any of the requested devices."</span><span class="p">,</span>
+                <span class="nb">list</span><span class="p">(</span><span class="n">device_exceptions</span><span class="o">.</span><span class="n">values</span><span class="p">())[::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+            <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">device_exceptions</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+            <span class="s2">"Failed to initialize model on some of the requested devices. Successfully initialized on </span><span class="si">{}</span><span class="s2">, but got the following errors for other devices: </span><span class="si">{}</span><span class="s2">"</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_initialized_devices</span><span class="p">,</span>
+            <span class="n">device_exceptions</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="bioimageio.core.backends.keras_backend.KerasModelAdapter.unload" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">unload</span>
+
+
+<a href="#bioimageio.core.backends.keras_backend.KerasModelAdapter.unload" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">unload</span><span class="p">()</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Unload model from any devices, freeing their memory.</p>
+
+
+<details class="note" open>
+  <summary>Note</summary>
+  <p>The moder adapter should be considered unusable afterwards.</p>
+</details>
+          
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/bioimageio/core/_model_adapter.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">229</span>
 <span class="normal">230</span>
 <span class="normal">231</span>
 <span class="normal">232</span>
@@ -1420,123 +1350,26 @@ initializations interfering with each other</p>
 <span class="normal">245</span>
 <span class="normal">246</span>
 <span class="normal">247</span>
-<span class="normal">248</span>
-<span class="normal">249</span>
-<span class="normal">250</span>
-<span class="normal">251</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_sample</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Sample</span><span class="p">,</span> <span class="n">SampleBlock</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Sample</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Run forward pass of model to get model predictions</span>
-
-<span class="sd">    Note: sample id and stample stat attributes are passed through</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">unexpected</span> <span class="o">=</span> <span class="p">[</span><span class="n">mid</span> <span class="k">for</span> <span class="n">mid</span> <span class="ow">in</span> <span class="n">input_sample</span><span class="o">.</span><span class="n">members</span> <span class="k">if</span> <span class="n">mid</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_ids</span><span class="p">]</span>
-    <span class="k">if</span> <span class="n">unexpected</span><span class="p">:</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Got unexpected input tensor IDs: </span><span class="si">{</span><span class="n">unexpected</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-
-    <span class="n">input_arrays</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="p">(</span>
-            <span class="kc">None</span>
-            <span class="k">if</span> <span class="p">(</span><span class="n">a</span> <span class="o">:=</span> <span class="n">input_sample</span><span class="o">.</span><span class="n">members</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">in_id</span><span class="p">))</span> <span class="ow">is</span> <span class="kc">None</span>
-            <span class="k">else</span> <span class="n">a</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">in_order</span><span class="p">)</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span>
-        <span class="p">)</span>
-        <span class="k">for</span> <span class="n">in_id</span><span class="p">,</span> <span class="n">in_order</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_input_ids</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_axes</span><span class="p">)</span>
-    <span class="p">]</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-        <span class="s2">&quot;NN input shapes: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
-        <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span> <span class="k">if</span> <span class="n">a</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">input_arrays</span><span class="p">],</span>
-    <span class="p">)</span>
-    <span class="n">output_arrays</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_forward_impl</span><span class="p">(</span><span class="n">input_arrays</span><span class="p">)</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-        <span class="s2">&quot;NN output shapes: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
-        <span class="p">[</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span> <span class="k">if</span> <span class="n">a</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">output_arrays</span><span class="p">],</span>
-    <span class="p">)</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">output_arrays</span><span class="p">)</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_ids</span><span class="p">):</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Model produced more outputs (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">output_arrays</span><span class="p">)</span><span class="si">}</span><span class="s2">) than specified in the model description (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_ids</span><span class="p">)</span><span class="si">}</span><span class="s2">). Extra outputs will be ignored.&quot;</span>
-        <span class="p">)</span>
-        <span class="n">output_arrays</span> <span class="o">=</span> <span class="n">output_arrays</span><span class="p">[:</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_output_ids</span><span class="p">)]</span>
-
-    <span class="n">output_tensors</span> <span class="o">=</span> <span class="p">[</span>
-        <span class="kc">None</span> <span class="k">if</span> <span class="n">a</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">Tensor</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">dims</span><span class="o">=</span><span class="n">d</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">output_arrays</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_output_axes</span><span class="p">)</span>
-    <span class="p">]</span>
-    <span class="k">return</span> <span class="n">Sample</span><span class="p">(</span>
-        <span class="n">members</span><span class="o">=</span><span class="p">{</span>
-            <span class="n">tid</span><span class="p">:</span> <span class="n">out</span>
-            <span class="k">for</span> <span class="n">tid</span><span class="p">,</span> <span class="n">out</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_output_ids</span><span class="p">,</span>
-                <span class="n">output_tensors</span><span class="p">,</span>
+<span class="normal">248</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">unload</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_initialized_devices</span><span class="p">)):</span>
+        <span class="n">device</span><span class="p">,</span> <span class="n">model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model_queue</span><span class="o">.</span><span class="n">get</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup_pre_model_deletion</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="n">model</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">"Got error during pre-deletion cleanup on device </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2">"</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">e</span>
             <span class="p">)</span>
-            <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-        <span class="p">},</span>
-        <span class="n">stat</span><span class="o">=</span><span class="n">input_sample</span><span class="o">.</span><span class="n">stat</span><span class="p">,</span>
-        <span class="nb">id</span><span class="o">=</span><span class="p">(</span>
-            <span class="n">input_sample</span><span class="o">.</span><span class="n">id</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_sample</span><span class="p">,</span> <span class="n">Sample</span><span class="p">)</span>
-            <span class="k">else</span> <span class="n">input_sample</span><span class="o">.</span><span class="n">sample_id</span>
-        <span class="p">),</span>
-    <span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
+        <span class="k">finally</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">model</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_cleanup_post_model_deletion</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+            <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s2">"Got error during post-deletion cleanup on device </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2">"</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">e</span>
+            <span class="p">)</span>
 
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="bioimageio.core.backends.keras_backend.KerasModelAdapter.load" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">load</span>
-
-
-<a href="#bioimageio.core.backends.keras_backend.KerasModelAdapter.load" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">load</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n"><span title="bioimageio.core.backends.keras_backend.KerasModelAdapter.load(devices)">devices</span></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Sequence">Sequence</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-          
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>src/bioimageio/core/backends/_model_adapter.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">195</span>
-<span class="normal">196</span>
-<span class="normal">197</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@final</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">devices</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Deprecated. ModelAdapter is loaded on initialization&quot;</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="bioimageio.core.backends.keras_backend.KerasModelAdapter.unload" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">unload</span>
-
-
-<a href="#bioimageio.core.backends.keras_backend.KerasModelAdapter.unload" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">unload</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="kc">None</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-        <p>Unload model from any devices, freeing their memory.
-The moder adapter should be considered unusable afterwards.</p>
-
-          
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>src/bioimageio/core/backends/keras_backend.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">118</span>
-<span class="normal">119</span>
-<span class="normal">120</span>
-<span class="normal">121</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">unload</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-    <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-        <span class="s2">&quot;Device management is not implemented for keras yet, cannot unload model&quot;</span>
-    <span class="p">)</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>  <span class="c1"># deallocate memory</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">unload</span><span class="p">()</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -1639,7 +1472,7 @@ The moder adapter should be considered unusable afterwards.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "../../../../..", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.expand", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.prune", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
     
     
-      <script src="../../../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../../../../assets/_markdown_exec_pyodide.js"></script>
       

@@ -15,7 +15,7 @@
         <link rel="canonical" href="https://bioimage-io.github.io/core-bioimage-io-python/latest/api/bioimageio/core/sample/">
       
       
-        <link rel="prev" href="../proc_setup/">
+        <link rel="prev" href="../remote_backends/">
       
       
         <link rel="next" href="../stat_calculators/">
@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../../../images/favicon.ico">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -845,34 +845,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../model_adapters/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    bioimageio.core.model_adapters
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../prediction/" class="md-nav__link">
         
   
@@ -937,6 +909,34 @@
     
   
     bioimageio.core.proc_setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remote_backends/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    bioimageio.core.remote_backends
   
 
     
@@ -1504,29 +1504,6 @@
           
 
 
-  <div class="doc doc-backlinks">
-        <b class="doc doc-backlink-type">Used by:</b>
-          <ul class="doc doc-backlink-list">
-      <li class="doc doc-backlink">
-            <span class="doc doc-backlink-crumb">
-      <span>API Reference</span>
-  </span>
-
-            <span class="doc doc-backlink-crumb">
-      <a href="../../../#bioimageio.core"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;core</a>
-  </span>
-
-            <span class="doc doc-backlink-crumb last">
-      <a href="../../../#bioimageio.core.Sample"><code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;Sample</a>
-  </span>
-
-      </li>
-  </ul>
-
-  </div>
-
-
-
 
 
 
@@ -1674,7 +1651,7 @@
   </span>
 
 <a href="#bioimageio.core.sample.BlockT" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">BlockT</span> <span class="o">=</span> <span class="n"><span title="typing.TypeVar">TypeVar</span></span><span class="p">(</span><span class="s1">&#39;BlockT&#39;</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../block/#bioimageio.core.block.Block">Block</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../block_meta/#bioimageio.core.block_meta.BlockMeta">BlockMeta</a></span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">BlockT</span> <span class="o">=</span> <span class="n"><span title="typing.TypeVar">TypeVar</span></span><span class="p">(</span><span class="s1">'BlockT'</span><span class="p">,</span> <span class="n"><span title="typing.TypeVar(bound)">bound</span></span><span class="o">=</span><span class="n"><a class="autorefs autorefs-internal" href="../block_meta/#bioimageio.core.block_meta.BlockMeta">BlockMeta</a></span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1697,47 +1674,6 @@
             <span class="doc doc-backlink-crumb last">
       <a href="#bioimageio.core.sample.SampleBlockBase"><code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;SampleBlockBase</a>
   </span>
-
-      </li>
-  </ul>
-
-        <b class="doc doc-backlink-type">Used by:</b>
-          <ul class="doc doc-backlink-list">
-      <li class="doc doc-backlink">
-            <span class="doc doc-backlink-crumb">
-      <span>API Reference</span>
-  </span>
-
-            <span class="doc doc-backlink-crumb">
-      <a href="#bioimageio.core.sample"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;sample</a>
-  </span>
-
-            <ul class="doc doc-backlink-list">
-      <li class="doc doc-backlink">
-            <span class="doc doc-backlink-crumb last">
-      <a href="#bioimageio.core.sample.SampleBlock"><code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;SampleBlock</a>
-  </span>
-
-      </li>
-      <li class="doc doc-backlink">
-            <span class="doc doc-backlink-crumb last">
-      <a href="#bioimageio.core.sample.SampleBlockBase"><code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;SampleBlockBase</a>
-  </span>
-
-      </li>
-      <li class="doc doc-backlink">
-            <span class="doc doc-backlink-crumb last">
-      <a href="#bioimageio.core.sample.SampleBlockMeta"><code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;SampleBlockMeta</a>
-  </span>
-
-      </li>
-      <li class="doc doc-backlink">
-            <span class="doc doc-backlink-crumb last">
-      <a href="#bioimageio.core.sample.SampleBlockWithOrigin"><code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;SampleBlockWithOrigin</a>
-  </span>
-
-      </li>
-  </ul>
 
       </li>
   </ul>
@@ -2037,8 +1973,8 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/block_meta.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">41</span>
-<span class="normal">42</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">round</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">floor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">43</span>
+<span class="normal">44</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">round</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">float</span><span class="p">],</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="n">floor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
     <span class="k">return</span> <span class="nb">round</span><span class="p">(</span><span class="n">s</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">offset</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2094,6 +2030,27 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
             <ul class="doc doc-backlink-list">
       <li class="doc doc-backlink">
             <span class="doc doc-backlink-crumb">
+      <a href="../../../#bioimageio.core"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;core</a>
+  </span>
+
+            <ul class="doc doc-backlink-list">
+      <li class="doc doc-backlink">
+            <span class="doc doc-backlink-crumb last">
+      <a href="../../../#bioimageio.core.predict"><code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;predict</a>
+  </span>
+
+      </li>
+      <li class="doc doc-backlink">
+            <span class="doc doc-backlink-crumb last">
+      <a href="../../../#bioimageio.core.predict_many"><code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;predict_many</a>
+  </span>
+
+      </li>
+  </ul>
+
+      </li>
+      <li class="doc doc-backlink">
+            <span class="doc doc-backlink-crumb">
       <a href="../digest_spec/#bioimageio.core.digest_spec"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;digest_spec</a>
   </span>
 
@@ -2113,6 +2070,12 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
       <li class="doc doc-backlink">
             <span class="doc doc-backlink-crumb last">
       <a href="../digest_spec/#bioimageio.core.digest_spec.get_test_output_sample"><code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;get_test_output_sample</a>
+  </span>
+
+      </li>
+      <li class="doc doc-backlink">
+            <span class="doc doc-backlink-crumb last">
+      <a href="../digest_spec/#bioimageio.core.digest_spec.transpose_sample_for_model"><code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;transpose_sample_for_model</a>
   </span>
 
       </li>
@@ -2161,13 +2124,31 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
             <ul class="doc doc-backlink-list">
       <li class="doc doc-backlink">
             <span class="doc doc-backlink-crumb last">
-      <a href="../../../#bioimageio.core.Sample"><code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;Sample</a>
+      <a href="../../../#bioimageio.core.compute_dataset_measures"><code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;compute_dataset_measures</a>
+  </span>
+
+      </li>
+      <li class="doc doc-backlink">
+            <span class="doc doc-backlink-crumb last">
+      <a href="../../../#bioimageio.core.compute_measures"><code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;compute_measures</a>
+  </span>
+
+      </li>
+      <li class="doc doc-backlink">
+            <span class="doc doc-backlink-crumb last">
+      <a href="../../../#bioimageio.core.compute_sample_measures"><code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;compute_sample_measures</a>
   </span>
 
       </li>
       <li class="doc doc-backlink">
             <span class="doc doc-backlink-crumb last">
       <a href="../../../#bioimageio.core.create_prediction_pipeline"><code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;create_prediction_pipeline</a>
+  </span>
+
+      </li>
+      <li class="doc doc-backlink">
+            <span class="doc doc-backlink-crumb last">
+      <a href="../../../#bioimageio.core.predict"><code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;predict</a>
   </span>
 
       </li>
@@ -2182,6 +2163,27 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
             <span class="doc doc-backlink-crumb last">
       <a href="../dataset/#bioimageio.core.dataset.Dataset"><code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;Dataset</a>
   </span>
+
+      </li>
+      <li class="doc doc-backlink">
+            <span class="doc doc-backlink-crumb">
+      <a href="../digest_spec/#bioimageio.core.digest_spec"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;digest_spec</a>
+  </span>
+
+            <ul class="doc doc-backlink-list">
+      <li class="doc doc-backlink">
+            <span class="doc doc-backlink-crumb last">
+      <a href="../digest_spec/#bioimageio.core.digest_spec.split_sample_into_blocks_for_model"><code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;split_sample_into_blocks_for_model</a>
+  </span>
+
+      </li>
+      <li class="doc doc-backlink">
+            <span class="doc doc-backlink-crumb last">
+      <a href="../digest_spec/#bioimageio.core.digest_spec.transpose_sample_for_model"><code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;transpose_sample_for_model</a>
+  </span>
+
+      </li>
+  </ul>
 
       </li>
       <li class="doc doc-backlink">
@@ -2325,10 +2327,26 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
               </td>
             </tr>
             <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.Sample.assign_batch_multi_index">assign_batch_multi_index</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Return a new sample with the batch multi-index assigned to all sample members.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
               <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.Sample.from_blocks">from_blocks</a></code></td>
               <td>
                 <div class="doc-md-description">
-                  
+                  <p>Create a <code>Sample</code> from an iterable of <code>SampleBlock</code>s.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.Sample.from_blocks_yield_intermediates">from_blocks_yield_intermediates</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Create a <code>Sample</code> from an iterable of <code>SampleBlock</code>s, yielding the intermediate sample after each block.</p>
                 </div>
               </td>
             </tr>
@@ -2341,10 +2359,34 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
               </td>
             </tr>
             <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.Sample.set_block">set_block</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Set values of <code>block</code>.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
               <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.Sample.split_into_blocks">split_into_blocks</a></code></td>
               <td>
                 <div class="doc-md-description">
                   
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.Sample.transpose">transpose</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Return a new sample with transposed sample members.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.Sample.unstack_batch_multi_index">unstack_batch_multi_index</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Unstack the batch multi-index of all sample members.</p>
                 </div>
               </td>
             </tr>
@@ -2364,6 +2406,17 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
         </tr>
       </thead>
       <tbody>
+          <tr class="doc-section-item">
+            <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.Sample.batch_multi_index">batch_multi_index</a></code></td>
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[&#39;pd.MultiIndex&#39;]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Return the batch multi-index of the sample, if it has one.</p>
+              </div>
+            </td>
+          </tr>
           <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.Sample.id">id</a></code></td>
             <td>
@@ -2421,6 +2474,54 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
 
 
 
+
+<div class="doc doc-object doc-attribute">
+
+
+
+<h3 id="bioimageio.core.sample.Sample.batch_multi_index" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">batch_multi_index</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-property"><code>property</code></small>
+  </span>
+
+<a href="#bioimageio.core.sample.Sample.batch_multi_index" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">batch_multi_index</span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="s1">'pd.MultiIndex'</span><span class="p">]</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return the batch multi-index of the sample, if it has one.</p>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing.Optional">Optional</span>[&#39;pd.MultiIndex&#39;]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The batch multi-index of the sample, or <code>None</code> if the sample does not have a batch dimension.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+          
+    </div>
+
+</div>
 
 <div class="doc doc-object doc-attribute">
 
@@ -2540,13 +2641,7 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/sample.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">68</span>
-<span class="normal">69</span>
-<span class="normal">70</span>
-<span class="normal">71</span>
-<span class="normal">72</span>
-<span class="normal">73</span>
-<span class="normal">74</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">74</span>
 <span class="normal">75</span>
 <span class="normal">76</span>
 <span class="normal">77</span>
@@ -2557,7 +2652,13 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
 <span class="normal">82</span>
 <span class="normal">83</span>
 <span class="normal">84</span>
-<span class="normal">85</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span>
+<span class="normal">85</span>
+<span class="normal">86</span>
+<span class="normal">87</span>
+<span class="normal">88</span>
+<span class="normal">89</span>
+<span class="normal">90</span>
+<span class="normal">91</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">key</span><span class="p">:</span> <span class="n">PerMember</span><span class="p">[</span>
         <span class="n">Union</span><span class="p">[</span>
@@ -2600,10 +2701,10 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/sample.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">91</span>
-<span class="normal">92</span>
-<span class="normal">93</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">as_arrays</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="n">MemberId</span><span class="p">,</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">Any</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return sample as dictionary of arrays.&quot;&quot;&quot;</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">as_arrays</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="n">MemberId</span><span class="p">,</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">Any</span><span class="p">]]:</span>
+<span class="w">    </span><span class="sd">"""Return sample as dictionary of arrays."""</span>
     <span class="k">return</span> <span class="p">{</span><span class="n">m</span><span class="p">:</span> <span class="n">t</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">()</span> <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">members</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2628,30 +2729,30 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/sample.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">117</span>
-<span class="normal">118</span>
-<span class="normal">119</span>
-<span class="normal">120</span>
-<span class="normal">121</span>
-<span class="normal">122</span>
-<span class="normal">123</span>
-<span class="normal">124</span>
-<span class="normal">125</span>
-<span class="normal">126</span>
-<span class="normal">127</span>
-<span class="normal">128</span>
-<span class="normal">129</span>
-<span class="normal">130</span>
-<span class="normal">131</span>
-<span class="normal">132</span>
-<span class="normal">133</span>
-<span class="normal">134</span>
-<span class="normal">135</span>
-<span class="normal">136</span>
-<span class="normal">137</span>
-<span class="normal">138</span>
-<span class="normal">139</span>
-<span class="normal">140</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">as_single_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">halo</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PerMember</span><span class="p">[</span><span class="n">PerAxis</span><span class="p">[</span><span class="n">Halo</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">as_single_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">halo</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">PerMember</span><span class="p">[</span><span class="n">PerAxis</span><span class="p">[</span><span class="n">Halo</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">halo</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">halo</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">return</span> <span class="n">SampleBlockWithOrigin</span><span class="p">(</span>
@@ -2684,6 +2785,99 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
 <div class="doc doc-object doc-function">
 
 
+<h3 id="bioimageio.core.sample.Sample.assign_batch_multi_index" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">assign_batch_multi_index</span>
+
+
+<a href="#bioimageio.core.sample.Sample.assign_batch_multi_index" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">assign_batch_multi_index</span><span class="p">(</span><span class="n"><span title="bioimageio.core.sample.Sample.assign_batch_multi_index(multi_index)">multi_index</span></span><span class="p">:</span> <span class="s1">'pd.MultiIndex'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing_extensions.Self">Self</span></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return a new sample with the batch multi-index assigned to all sample members.</p>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="ValueError">ValueError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If not all sample members have a batch dimension.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+          
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/bioimageio/core/sample.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span>
+<span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span>
+<span class="normal">348</span>
+<span class="normal">349</span>
+<span class="normal">350</span>
+<span class="normal">351</span>
+<span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">assign_batch_multi_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">multi_index</span><span class="p">:</span> <span class="s2">"pd.MultiIndex"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return a new sample with the batch multi-index assigned to all sample members.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If not all sample members have a batch dimension.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span>
+        <span class="n">no_batch</span> <span class="o">:=</span> <span class="p">[</span>
+            <span class="n">m</span> <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">members</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">AxisId</span><span class="p">(</span><span class="s2">"batch"</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">t</span><span class="o">.</span><span class="n">dims</span>
+        <span class="p">]</span>
+    <span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">members</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No member has a batch dimension: </span><span class="si">{</span><span class="n">no_batch</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span>
+        <span class="n">members</span><span class="o">=</span><span class="p">{</span>
+            <span class="n">m</span><span class="p">:</span> <span class="n">t</span>
+            <span class="k">if</span> <span class="n">AxisId</span><span class="p">(</span><span class="s2">"batch"</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">t</span><span class="o">.</span><span class="n">dims</span>
+            <span class="k">else</span> <span class="n">t</span><span class="o">.</span><span class="n">assign_batch_multi_index</span><span class="p">(</span><span class="n">multi_index</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">members</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">},</span>
+        <span class="n">stat</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">),</span>
+        <span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h3 id="bioimageio.core.sample.Sample.from_blocks" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">from_blocks</span>
 
@@ -2693,69 +2887,271 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
   </span>
 
 <a href="#bioimageio.core.sample.Sample.from_blocks" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">from_blocks</span><span class="p">(</span><span class="n"><span title="bioimageio.core.sample.Sample.from_blocks(sample_blocks)">sample_blocks</span></span><span class="p">:</span> <span class="n"><span title="typing.Iterable">Iterable</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.SampleBlock">SampleBlock</a></span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n"><span title="bioimageio.core.sample.Sample.from_blocks(fill_value)">fill_value</span></span><span class="p">:</span> <span class="n"><span title="float">float</span></span> <span class="o">=</span> <span class="n"><span title="float">float</span></span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">))</span> <span class="o">-&gt;</span> <span class="n"><span title="typing_extensions.Self">Self</span></span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">from_blocks</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.Sample.from_blocks(sample_blocks)">sample_blocks</a></span><span class="p">:</span> <span class="n"><span title="typing.Iterable">Iterable</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.SampleBlock">SampleBlock</a></span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.Sample.from_blocks(fill_value)">fill_value</a></span><span class="p">:</span> <span class="n"><span title="float">float</span></span> <span class="o">=</span> <span class="n"><span title="float">float</span></span><span class="p">(</span><span class="s1">'nan'</span><span class="p">))</span> <span class="o">-&gt;</span> <span class="n"><span title="typing_extensions.Self">Self</span></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
+
+        <p>Create a <code>Sample</code> from an iterable of <code>SampleBlock</code>s.</p>
+
+
+<details class="note" open>
+  <summary>Note</summary>
+  <p>All sample blocks must have the same <code>sample_id</code>.</p>
+</details>
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+<h4 id="bioimageio.core.sample.Sample.from_blocks(sample_blocks)" class="doc doc-heading doc-heading-parameter">                  <code>sample_blocks</code>
+<a href="#bioimageio.core.sample.Sample.from_blocks(sample_blocks)" class="headerlink" title="Anchor link to this section for reference">¤</a></h4>            </td>
+            <td>
+                  <code><span title="typing.Iterable">Iterable</span>[<a class="autorefs autorefs-internal" href="#bioimageio.core.sample.SampleBlock">SampleBlock</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The blocks to create the sample from.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+<h4 id="bioimageio.core.sample.Sample.from_blocks(fill_value)" class="doc doc-heading doc-heading-parameter">                  <code>fill_value</code>
+<a href="#bioimageio.core.sample.Sample.from_blocks(fill_value)" class="headerlink" title="Anchor link to this section for reference">¤</a></h4>            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The value to fill missing values with (default: <code>nan</code>).</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="float">float</span>(&#39;nan&#39;)</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
 
           
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/sample.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span>
-<span class="normal">145</span>
-<span class="normal">146</span>
-<span class="normal">147</span>
-<span class="normal">148</span>
-<span class="normal">149</span>
-<span class="normal">150</span>
-<span class="normal">151</span>
-<span class="normal">152</span>
-<span class="normal">153</span>
-<span class="normal">154</span>
-<span class="normal">155</span>
-<span class="normal">156</span>
-<span class="normal">157</span>
-<span class="normal">158</span>
-<span class="normal">159</span>
-<span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span>
-<span class="normal">174</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">from_blocks</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="n">sample_blocks</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">SampleBlock</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">fill_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;nan&quot;</span><span class="p">),</span>
+    <span class="n">fill_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"nan"</span><span class="p">),</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
-    <span class="n">members</span><span class="p">:</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">stat</span><span class="p">:</span> <span class="n">Stat</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="n">sample_id</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="w">    </span><span class="sd">"""Create a `Sample` from an iterable of `SampleBlock`s.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        All sample blocks must have the same `sample_id`.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sample_blocks: The blocks to create the sample from.</span>
+<span class="sd">        fill_value: The value to fill missing values with (default: `nan`).</span>
+<span class="sd">    """</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">for</span> <span class="n">output</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">from_blocks_yield_intermediates</span><span class="p">(</span>
+        <span class="n">sample_blocks</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">fill_value</span>
+    <span class="p">):</span>
+        <span class="k">pass</span>
+
+    <span class="k">if</span> <span class="n">output</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"no sample blocks provided"</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">output</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="bioimageio.core.sample.Sample.from_blocks_yield_intermediates" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">from_blocks_yield_intermediates</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#bioimageio.core.sample.Sample.from_blocks_yield_intermediates" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">from_blocks_yield_intermediates</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.Sample.from_blocks_yield_intermediates(sample_blocks)">sample_blocks</a></span><span class="p">:</span> <span class="n"><span title="typing.Iterable">Iterable</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.SampleBlock">SampleBlock</a></span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.Sample.from_blocks_yield_intermediates(fill_value)">fill_value</a></span><span class="p">:</span> <span class="n"><span title="float">float</span></span> <span class="o">=</span> <span class="n"><span title="float">float</span></span><span class="p">(</span><span class="s1">'nan'</span><span class="p">))</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Create a <code>Sample</code> from an iterable of <code>SampleBlock</code>s, yielding the intermediate sample after each block.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+<h4 id="bioimageio.core.sample.Sample.from_blocks_yield_intermediates(sample_blocks)" class="doc doc-heading doc-heading-parameter">                  <code>sample_blocks</code>
+<a href="#bioimageio.core.sample.Sample.from_blocks_yield_intermediates(sample_blocks)" class="headerlink" title="Anchor link to this section for reference">¤</a></h4>            </td>
+            <td>
+                  <code><span title="typing.Iterable">Iterable</span>[<a class="autorefs autorefs-internal" href="#bioimageio.core.sample.SampleBlock">SampleBlock</a>]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The blocks to create the sample from.</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+<h4 id="bioimageio.core.sample.Sample.from_blocks_yield_intermediates(fill_value)" class="doc doc-heading doc-heading-parameter">                  <code>fill_value</code>
+<a href="#bioimageio.core.sample.Sample.from_blocks_yield_intermediates(fill_value)" class="headerlink" title="Anchor link to this section for reference">¤</a></h4>            </td>
+            <td>
+                  <code><span title="float">float</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>The value to fill missing values with (default: <code>nan</code>).</p>
+              </div>
+            </td>
+            <td>
+                  <code><span title="float">float</span>(&#39;nan&#39;)</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+          
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/bioimageio/core/sample.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">from_blocks_yield_intermediates</span><span class="p">(</span>
+    <span class="bp">cls</span><span class="p">,</span>
+    <span class="n">sample_blocks</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">SampleBlock</span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">fill_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"nan"</span><span class="p">),</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Create a `Sample` from an iterable of `SampleBlock`s, yielding the intermediate sample after each block.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sample_blocks: The blocks to create the sample from.</span>
+<span class="sd">        fill_value: The value to fill missing values with (default: `nan`).</span>
+<span class="sd">    """</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">members</span><span class="o">=</span><span class="p">{},</span> <span class="n">stat</span><span class="o">=</span><span class="p">{},</span> <span class="nb">id</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">sample_block</span> <span class="ow">in</span> <span class="n">sample_blocks</span><span class="p">:</span>
-        <span class="k">assert</span> <span class="n">sample_id</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">sample_id</span> <span class="o">==</span> <span class="n">sample_block</span><span class="o">.</span><span class="n">sample_id</span>
-        <span class="n">sample_id</span> <span class="o">=</span> <span class="n">sample_block</span><span class="o">.</span><span class="n">sample_id</span>
-        <span class="n">stat</span> <span class="o">=</span> <span class="n">sample_block</span><span class="o">.</span><span class="n">stat</span>
+        <span class="k">if</span> <span class="n">output</span><span class="o">.</span><span class="n">id</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">output</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="n">sample_block</span><span class="o">.</span><span class="n">sample_id</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">output</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="n">sample_block</span><span class="o">.</span><span class="n">sample_id</span><span class="p">,</span> <span class="p">(</span>
+                <span class="s2">"sample id changed between sample blocks"</span>
+            <span class="p">)</span>
+
+        <span class="n">output</span><span class="o">.</span><span class="n">stat</span> <span class="o">=</span> <span class="n">sample_block</span><span class="o">.</span><span class="n">stat</span>
+
         <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">block</span> <span class="ow">in</span> <span class="n">sample_block</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">m</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">members</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">m</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">output</span><span class="o">.</span><span class="n">members</span><span class="p">:</span>
                 <span class="k">if</span> <span class="o">-</span><span class="mi">1</span> <span class="ow">in</span> <span class="n">block</span><span class="o">.</span><span class="n">sample_shape</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
                     <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-                        <span class="s2">&quot;merging blocks with data dependent axis not yet implemented&quot;</span>
+                        <span class="s2">"merging blocks with data dependent axis not yet implemented"</span>
                     <span class="p">)</span>
 
-                <span class="n">members</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span>
+                <span class="n">output</span><span class="o">.</span><span class="n">members</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span>
                     <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span>
                         <span class="nb">tuple</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">sample_shape</span><span class="p">[</span><span class="n">a</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">block</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">dims</span><span class="p">),</span>
                         <span class="n">fill_value</span><span class="p">,</span>
@@ -2764,9 +3160,10 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
                     <span class="n">dims</span><span class="o">=</span><span class="n">block</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">dims</span><span class="p">,</span>
                 <span class="p">)</span>
 
-            <span class="n">members</span><span class="p">[</span><span class="n">m</span><span class="p">][</span><span class="n">block</span><span class="o">.</span><span class="n">inner_slice</span><span class="p">]</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">inner_data</span>
+            <span class="n">output</span><span class="o">.</span><span class="n">members</span><span class="p">[</span><span class="n">m</span><span class="p">][</span><span class="n">block</span><span class="o">.</span><span class="n">inner_slice</span><span class="p">]</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">inner_data</span>
+        <span class="k">yield</span> <span class="n">output</span>
 
-    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">members</span><span class="o">=</span><span class="n">members</span><span class="p">,</span> <span class="n">stat</span><span class="o">=</span><span class="n">stat</span><span class="p">,</span> <span class="nb">id</span><span class="o">=</span><span class="n">sample_id</span><span class="p">)</span>
+    <span class="k">yield</span> <span class="n">output</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2792,36 +3189,36 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/sample.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">176</span>
-<span class="normal">177</span>
-<span class="normal">178</span>
-<span class="normal">179</span>
-<span class="normal">180</span>
-<span class="normal">181</span>
-<span class="normal">182</span>
-<span class="normal">183</span>
-<span class="normal">184</span>
-<span class="normal">185</span>
-<span class="normal">186</span>
-<span class="normal">187</span>
-<span class="normal">188</span>
-<span class="normal">189</span>
-<span class="normal">190</span>
-<span class="normal">191</span>
-<span class="normal">192</span>
-<span class="normal">193</span>
-<span class="normal">194</span>
-<span class="normal">195</span>
-<span class="normal">196</span>
-<span class="normal">197</span>
-<span class="normal">198</span>
-<span class="normal">199</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">pad</span><span class="p">(</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">pad</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">pad_width</span><span class="p">:</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">PerAxis</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">PadWidthLike</span><span class="p">]]],</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">PerMember</span><span class="p">[</span><span class="n">PadMode</span><span class="p">],</span> <span class="n">PadMode</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convenience method to pad sample members.&quot;&quot;&quot;</span>
-    <span class="n">default_mode</span> <span class="o">=</span> <span class="s2">&quot;symmetric&quot;</span>
+<span class="w">    </span><span class="sd">"""Convenience method to pad sample members."""</span>
+    <span class="n">default_mode</span> <span class="o">=</span> <span class="s2">"symmetric"</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mode</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">):</span>
         <span class="n">mode_per_member</span> <span class="o">=</span> <span class="n">mode</span>
     <span class="k">else</span><span class="p">:</span>
@@ -2848,6 +3245,82 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
 <div class="doc doc-object doc-function">
 
 
+<h3 id="bioimageio.core.sample.Sample.set_block" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">set_block</span>
+
+
+<a href="#bioimageio.core.sample.Sample.set_block" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">set_block</span><span class="p">(</span><span class="n"><span title="bioimageio.core.sample.Sample.set_block(block)">block</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.SampleBlock">SampleBlock</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Set values of <code>block</code>.</p>
+
+
+<details class="note" open>
+  <summary>Note</summary>
+  <ul>
+<li>Updates only existing sample members (extra block members are ignored)</li>
+<li>Ignores missing block members (i.e. members in the sample but not in the block are not modified)</li>
+</ul>
+</details>
+          
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/bioimageio/core/sample.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">set_block</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">block</span><span class="p">:</span> <span class="n">SampleBlock</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Set values of `block`.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        - Updates only existing sample members (extra block members are ignored)</span>
+<span class="sd">        - Ignores missing block members (i.e. members in the sample but not in the block are not modified)</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError if block and sample members do not overlap at all.</span>
+<span class="sd">    """</span>
+    <span class="n">no_overlap</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">members</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">m</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">block</span><span class="o">.</span><span class="n">blocks</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">blocks</span><span class="p">[</span><span class="n">m</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">members</span><span class="p">[</span><span class="n">m</span><span class="p">][</span><span class="n">b</span><span class="o">.</span><span class="n">inner_slice</span><span class="p">]</span> <span class="o">=</span> <span class="n">b</span><span class="o">.</span><span class="n">inner_data</span>
+        <span class="n">no_overlap</span> <span class="o">=</span> <span class="kc">False</span>
+
+    <span class="k">if</span> <span class="n">no_overlap</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"block with members </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">blocks</span><span class="p">)</span><span class="si">}</span><span class="s2"> does not overlap with sample members </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">members</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h3 id="bioimageio.core.sample.Sample.split_into_blocks" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">split_into_blocks</span>
 
@@ -2862,27 +3335,27 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/sample.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 95</span>
-<span class="normal"> 96</span>
-<span class="normal"> 97</span>
-<span class="normal"> 98</span>
-<span class="normal"> 99</span>
-<span class="normal">100</span>
-<span class="normal">101</span>
-<span class="normal">102</span>
-<span class="normal">103</span>
-<span class="normal">104</span>
-<span class="normal">105</span>
-<span class="normal">106</span>
-<span class="normal">107</span>
-<span class="normal">108</span>
-<span class="normal">109</span>
-<span class="normal">110</span>
-<span class="normal">111</span>
-<span class="normal">112</span>
-<span class="normal">113</span>
-<span class="normal">114</span>
-<span class="normal">115</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">split_into_blocks</span><span class="p">(</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">split_into_blocks</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">block_shapes</span><span class="p">:</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">PerAxis</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
     <span class="n">halo</span><span class="p">:</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">PerAxis</span><span class="p">[</span><span class="n">HaloLike</span><span class="p">]],</span>
@@ -2890,10 +3363,10 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
     <span class="n">broadcast</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">TotalNumberOfBlocks</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">SampleBlockWithOrigin</span><span class="p">]]:</span>
     <span class="k">assert</span> <span class="ow">not</span> <span class="p">(</span><span class="n">missing</span> <span class="o">:=</span> <span class="p">[</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">block_shapes</span> <span class="k">if</span> <span class="n">m</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">members</span><span class="p">]),</span> <span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;`block_shapes` specified for unknown members: </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">"`block_shapes` specified for unknown members: </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2">"</span>
     <span class="p">)</span>
     <span class="k">assert</span> <span class="ow">not</span> <span class="p">(</span><span class="n">missing</span> <span class="o">:=</span> <span class="p">[</span><span class="n">m</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">halo</span> <span class="k">if</span> <span class="n">m</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">block_shapes</span><span class="p">]),</span> <span class="p">(</span>
-        <span class="sa">f</span><span class="s2">&quot;`halo` specified for members without `block_shape`: </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="sa">f</span><span class="s2">"`halo` specified for members without `block_shape`: </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2">"</span>
     <span class="p">)</span>
 
     <span class="n">n_blocks</span><span class="p">,</span> <span class="n">blocks</span> <span class="o">=</span> <span class="n">split_multiple_shapes_into_blocks</span><span class="p">(</span>
@@ -2903,6 +3376,329 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
         <span class="n">broadcast</span><span class="o">=</span><span class="n">broadcast</span><span class="p">,</span>
     <span class="p">)</span>
     <span class="k">return</span> <span class="n">n_blocks</span><span class="p">,</span> <span class="n">sample_block_generator</span><span class="p">(</span><span class="n">blocks</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">pad_mode</span><span class="o">=</span><span class="n">pad_mode</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="bioimageio.core.sample.Sample.transpose" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">transpose</span>
+
+
+<a href="#bioimageio.core.sample.Sample.transpose" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">transpose</span><span class="p">(</span><span class="n"><span title="bioimageio.core.sample.Sample.transpose(axes)">axes</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><span title="typing.Sequence">Sequence</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.AxisId">AxisId</a></span><span class="p">]],</span> <span class="o">*</span><span class="p">,</span> <span class="n"><span title="bioimageio.core.sample.Sample.transpose(extra_dims)">extra_dims</span></span><span class="p">:</span> <span class="n"><span title="typing.Literal">Literal</span></span><span class="p">[</span><span class="s1">'raise'</span><span class="p">,</span> <span class="s1">'squeeze'</span><span class="p">,</span> <span class="s1">'stack'</span><span class="p">,</span> <span class="s1">'squeeze_or_stack'</span><span class="p">]</span> <span class="o">=</span> <span class="s1">'raise'</span><span class="p">,</span> <span class="n"><span title="bioimageio.core.sample.Sample.transpose(missing_dims)">missing_dims</span></span><span class="p">:</span> <span class="n"><span title="typing.Literal">Literal</span></span><span class="p">[</span><span class="s1">'raise'</span><span class="p">,</span> <span class="s1">'expand'</span><span class="p">,</span> <span class="s1">'unstack'</span><span class="p">,</span> <span class="s1">'unstack_or_expand'</span><span class="p">]</span> <span class="o">=</span> <span class="s1">'raise'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing_extensions.Self">Self</span></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Return a new sample with transposed sample members.</p>
+
+
+<p><span class="doc-section-title">Raises:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="ValueError">ValueError</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>If not all batch dimensions have the same length after transposition (and possibly stacking/unstacking extra dimensions).</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+          
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/bioimageio/core/sample.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">transpose</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span>
+    <span class="n">axes</span><span class="p">:</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">AxisId</span><span class="p">]],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">extra_dims</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"raise"</span><span class="p">,</span> <span class="s2">"squeeze"</span><span class="p">,</span> <span class="s2">"stack"</span><span class="p">,</span> <span class="s2">"squeeze_or_stack"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"raise"</span><span class="p">,</span>
+    <span class="n">missing_dims</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span>
+        <span class="s2">"raise"</span><span class="p">,</span> <span class="s2">"expand"</span><span class="p">,</span> <span class="s2">"unstack"</span><span class="p">,</span> <span class="s2">"unstack_or_expand"</span>
+    <span class="p">]</span> <span class="o">=</span> <span class="s2">"raise"</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Return a new sample with transposed sample members.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        ValueError: If not all batch dimensions have the same length after transposition (and possibly stacking/unstacking extra dimensions).</span>
+
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">((</span><span class="n">unknown</span> <span class="o">:=</span> <span class="p">[</span><span class="n">m</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">members</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">axes</span><span class="p">])):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Axes specified for unknown members: </span><span class="si">{</span><span class="n">unknown</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+    <span class="n">members</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">m</span><span class="p">:</span> <span class="n">t</span>
+        <span class="k">if</span> <span class="n">m</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">axes</span>
+        <span class="k">else</span> <span class="n">t</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span>
+            <span class="n">axes</span><span class="o">=</span><span class="n">axes</span><span class="p">[</span><span class="n">m</span><span class="p">],</span>
+            <span class="n">extra_dims</span><span class="o">=</span><span class="n">extra_dims</span><span class="p">,</span>
+            <span class="n">missing_dims</span><span class="o">=</span><span class="n">missing_dims</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">members</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="p">}</span>
+
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="nb">len</span><span class="p">(</span>
+            <span class="p">(</span>
+                <span class="n">batch_lengths</span> <span class="o">:=</span> <span class="p">{</span>
+                    <span class="n">t</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="n">AxisId</span><span class="p">(</span><span class="s2">"batch"</span><span class="p">)]</span>
+                    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">members</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">AxisId</span><span class="p">(</span><span class="s2">"batch"</span><span class="p">)</span> <span class="ow">in</span> <span class="n">t</span><span class="o">.</span><span class="n">dims</span>
+                <span class="p">}</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+        <span class="o">&gt;</span> <span class="mi">1</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"Transposed sample members have incompatible batch lengths: </span><span class="si">{</span><span class="n">batch_lengths</span><span class="si">}</span><span class="s2">."</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span><span class="n">members</span><span class="o">=</span><span class="n">members</span><span class="p">,</span> <span class="n">stat</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">),</span> <span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="bioimageio.core.sample.Sample.unstack_batch_multi_index" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">unstack_batch_multi_index</span>
+
+
+<a href="#bioimageio.core.sample.Sample.unstack_batch_multi_index" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">unstack_batch_multi_index</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.Sample.unstack_batch_multi_index(errors)">errors</a></span><span class="p">:</span> <span class="n"><span title="typing.Literal">Literal</span></span><span class="p">[</span><span class="s1">'raise'</span><span class="p">,</span> <span class="s1">'ignore'</span><span class="p">]</span> <span class="o">=</span> <span class="s1">'raise'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing_extensions.Self">Self</span></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Unstack the batch multi-index of all sample members.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+<h4 id="bioimageio.core.sample.Sample.unstack_batch_multi_index(errors)" class="doc doc-heading doc-heading-parameter">                  <code>errors</code>
+<a href="#bioimageio.core.sample.Sample.unstack_batch_multi_index(errors)" class="headerlink" title="Anchor link to this section for reference">¤</a></h4>            </td>
+            <td>
+                  <code><span title="typing.Literal">Literal</span>[&#39;raise&#39;, &#39;ignore&#39;]</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Whether to raise an error if a member does not have a batch multi-index. Default is "raise".</p>
+              </div>
+            </td>
+            <td>
+                  <code>&#39;raise&#39;</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><span title="typing_extensions.Self">Self</span></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>A new <code>Sample</code> with unstacked batch multi-index for all members.</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+          
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/bioimageio/core/sample.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">356</span>
+<span class="normal">357</span>
+<span class="normal">358</span>
+<span class="normal">359</span>
+<span class="normal">360</span>
+<span class="normal">361</span>
+<span class="normal">362</span>
+<span class="normal">363</span>
+<span class="normal">364</span>
+<span class="normal">365</span>
+<span class="normal">366</span>
+<span class="normal">367</span>
+<span class="normal">368</span>
+<span class="normal">369</span>
+<span class="normal">370</span>
+<span class="normal">371</span>
+<span class="normal">372</span>
+<span class="normal">373</span>
+<span class="normal">374</span>
+<span class="normal">375</span>
+<span class="normal">376</span>
+<span class="normal">377</span>
+<span class="normal">378</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span>
+<span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span>
+<span class="normal">386</span>
+<span class="normal">387</span>
+<span class="normal">388</span>
+<span class="normal">389</span>
+<span class="normal">390</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">unstack_batch_multi_index</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">errors</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"raise"</span><span class="p">,</span> <span class="s2">"ignore"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"raise"</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Unstack the batch multi-index of all sample members.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        errors: Whether to raise an error if a member does not have a batch multi-index. Default is "raise".</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A new `Sample` with unstacked batch multi-index for all members.</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="nb">len</span><span class="p">(</span>
+            <span class="n">no_batch</span> <span class="o">:=</span> <span class="p">[</span>
+                <span class="n">m</span> <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">members</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">AxisId</span><span class="p">(</span><span class="s2">"batch"</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">t</span><span class="o">.</span><span class="n">dims</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+        <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">members</span><span class="p">)</span>
+        <span class="ow">and</span> <span class="n">errors</span> <span class="o">==</span> <span class="s2">"raise"</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No member has a batch dimension: </span><span class="si">{</span><span class="n">no_batch</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+    <span class="n">members</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">m</span><span class="p">:</span> <span class="n">t</span>
+        <span class="k">if</span> <span class="n">AxisId</span><span class="p">(</span><span class="s2">"batch"</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">t</span><span class="o">.</span><span class="n">dims</span>
+        <span class="k">else</span> <span class="n">t</span><span class="o">.</span><span class="n">unstack_batch_multi_index</span><span class="p">(</span><span class="n">errors</span><span class="o">=</span><span class="n">errors</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">members</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="p">}</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="nb">len</span><span class="p">(</span>
+            <span class="n">batch_lengths</span> <span class="o">:=</span> <span class="p">{</span>
+                <span class="n">t</span><span class="o">.</span><span class="n">sizes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">AxisId</span><span class="p">(</span><span class="s2">"batch"</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">members</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">AxisId</span><span class="p">(</span><span class="s2">"batch"</span><span class="p">)</span> <span class="ow">in</span> <span class="n">t</span><span class="o">.</span><span class="n">dims</span>
+            <span class="p">}</span>
+        <span class="p">)</span>
+        <span class="o">&gt;</span> <span class="mi">1</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"Different batch lengths after unstacking: </span><span class="si">{</span><span class="n">batch_lengths</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+
+    <span class="n">stat</span><span class="p">:</span> <span class="n">Stat</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">unstack_batch_multi_index</span><span class="p">(</span><span class="n">errors</span><span class="o">=</span><span class="s2">"ignore"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">)</span>
+        <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">(</span>
+        <span class="n">members</span><span class="o">=</span><span class="n">members</span><span class="p">,</span>
+        <span class="n">stat</span><span class="o">=</span><span class="n">stat</span><span class="p">,</span>
+        <span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2930,7 +3726,7 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
   </span>
 
 <a href="#bioimageio.core.sample.SampleBlock" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">SampleBlock</span><span class="p">(</span><span class="n"><span title="bioimageio.core.sample.SampleBlock(sample_shape)">sample_shape</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">]],</span> <span class="n"><span title="bioimageio.core.sample.SampleBlock(sample_id)">sample_id</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.SampleId">SampleId</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.sample.SampleBlock(blocks)">blocks</span></span><span class="p">:</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.BlockT">BlockT</a></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.sample.SampleBlock(block_index)">block_index</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.BlockIndex">BlockIndex</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.sample.SampleBlock(blocks_in_sample)">blocks_in_sample</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.TotalNumberOfBlocks">TotalNumberOfBlocks</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.sample.SampleBlock(stat)">stat</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../stat_measures/#bioimageio.core.stat_measures.Stat">Stat</a></span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">SampleBlock</span><span class="p">(</span><span class="n"><span title="bioimageio.core.sample.SampleBlock(blocks)">blocks</span></span><span class="p">:</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../block/#bioimageio.core.block.Block">Block</a></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.sample.SampleBlock(stat)">stat</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../stat_measures/#bioimageio.core.stat_measures.Stat">Stat</a></span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3013,6 +3809,30 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
       </thead>
       <tbody>
             <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.SampleBlock.as_sample">as_sample</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Convert this sample block to a <code>Sample</code> with the shape of this block.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.SampleBlock.from_meta">from_meta</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.SampleBlock.get_meta">get_meta</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
               <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.SampleBlock.get_transformed_meta">get_transformed_meta</a></code></td>
               <td>
                 <div class="doc-md-description">
@@ -3050,7 +3870,7 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
           <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.SampleBlock.blocks">blocks</a></code></td>
             <td>
-                  <code><span title="typing.Dict">Dict</span>[<a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a>, <a class="autorefs autorefs-internal" href="#bioimageio.core.sample.BlockT">BlockT</a>]</code>
+                  <code><span title="typing.Dict">Dict</span>[<a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a>, <a class="autorefs autorefs-internal" href="../block/#bioimageio.core.block.Block">Block</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3105,7 +3925,7 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
           <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.SampleBlock.sample_shape">sample_shape</a></code></td>
             <td>
-                  <code><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a>[<a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a>[<span title="int">int</span>]]</code>
+                  <code><span title="bioimageio.core._common_annotations.PerMemberAnno">PerMemberAnno</span>[<a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a>[<span title="int">int</span>]]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3187,7 +4007,7 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
   </span>
 
 <a href="#bioimageio.core.sample.SampleBlock.blocks" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">blocks</span><span class="p">:</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.BlockT">BlockT</a></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">blocks</span><span class="p">:</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../block/#bioimageio.core.block.Block">Block</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3310,7 +4130,7 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
   </span>
 
 <a href="#bioimageio.core.sample.SampleBlock.sample_shape" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">sample_shape</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">]]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">sample_shape</span><span class="p">:</span> <span class="n"><span title="bioimageio.core._common_annotations.PerMemberAnno">PerMemberAnno</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">]]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3376,6 +4196,152 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
 <div class="doc doc-object doc-function">
 
 
+<h3 id="bioimageio.core.sample.SampleBlock.as_sample" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">as_sample</span>
+
+
+<a href="#bioimageio.core.sample.SampleBlock.as_sample" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">as_sample</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.Sample">Sample</a></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Convert this sample block to a <code>Sample</code> with the shape of this block.</p>
+
+
+<details class="note" open>
+  <summary>Note</summary>
+  <p>If you want to convert one or more sample block to a sample with the shape of the original, whole sample,
+use <code>Sample.from_blocks()</code> instead.</p>
+</details>
+          
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/bioimageio/core/sample.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">591</span>
+<span class="normal">592</span>
+<span class="normal">593</span>
+<span class="normal">594</span>
+<span class="normal">595</span>
+<span class="normal">596</span>
+<span class="normal">597</span>
+<span class="normal">598</span>
+<span class="normal">599</span>
+<span class="normal">600</span>
+<span class="normal">601</span>
+<span class="normal">602</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">as_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sample</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Convert this sample block to a `Sample` with the shape of this block.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        If you want to convert one or more sample block to a sample with the shape of the original, whole sample,</span>
+<span class="sd">        use `Sample.from_blocks()` instead.</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">Sample</span><span class="p">(</span>
+        <span class="n">members</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">members</span><span class="p">),</span>
+        <span class="n">stat</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">),</span>
+        <span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_id</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="bioimageio.core.sample.SampleBlock.from_meta" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">from_meta</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#bioimageio.core.sample.SampleBlock.from_meta" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">from_meta</span><span class="p">(</span><span class="n"><span title="bioimageio.core.sample.SampleBlock.from_meta(meta)">meta</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.SampleBlockMeta">SampleBlockMeta</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.sample.SampleBlock.from_meta(data)">data</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../tensor/#bioimageio.core.tensor.Tensor">Tensor</a></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.sample.SampleBlock.from_meta(stat)">stat</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../stat_measures/#bioimageio.core.stat_measures.Stat">Stat</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing_extensions.Self">Self</span></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+          
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/bioimageio/core/sample.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">567</span>
+<span class="normal">568</span>
+<span class="normal">569</span>
+<span class="normal">570</span>
+<span class="normal">571</span>
+<span class="normal">572</span>
+<span class="normal">573</span>
+<span class="normal">574</span>
+<span class="normal">575</span>
+<span class="normal">576</span>
+<span class="normal">577</span>
+<span class="normal">578</span>
+<span class="normal">579</span>
+<span class="normal">580</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">from_meta</span><span class="p">(</span>
+    <span class="bp">cls</span><span class="p">,</span> <span class="n">meta</span><span class="p">:</span> <span class="n">SampleBlockMeta</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">stat</span><span class="p">:</span> <span class="n">Stat</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+        <span class="n">sample_shape</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">sample_shape</span><span class="p">,</span>
+        <span class="n">sample_id</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">sample_id</span><span class="p">,</span>
+        <span class="n">blocks</span><span class="o">=</span><span class="p">{</span>
+            <span class="n">m</span><span class="p">:</span> <span class="n">Block</span><span class="o">.</span><span class="n">from_meta</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="n">m</span><span class="p">])</span> <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">meta</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">},</span>
+        <span class="n">stat</span><span class="o">=</span><span class="n">stat</span><span class="p">,</span>
+        <span class="n">block_index</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">block_index</span><span class="p">,</span>
+        <span class="n">blocks_in_sample</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">blocks_in_sample</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="bioimageio.core.sample.SampleBlock.get_meta" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_meta</span>
+
+
+<a href="#bioimageio.core.sample.SampleBlock.get_meta" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_meta</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.SampleBlockMeta">SampleBlockMeta</a></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+          
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/bioimageio/core/sample.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">582</span>
+<span class="normal">583</span>
+<span class="normal">584</span>
+<span class="normal">585</span>
+<span class="normal">586</span>
+<span class="normal">587</span>
+<span class="normal">588</span>
+<span class="normal">589</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_meta</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SampleBlockMeta</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">SampleBlockMeta</span><span class="p">(</span>
+        <span class="n">sample_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_id</span><span class="p">,</span>
+        <span class="n">blocks</span><span class="o">=</span><span class="p">{</span><span class="n">m</span><span class="p">:</span> <span class="n">b</span><span class="o">.</span><span class="n">get_meta</span><span class="p">()</span> <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>
+        <span class="n">sample_shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_shape</span><span class="p">,</span>
+        <span class="n">block_index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">block_index</span><span class="p">,</span>
+        <span class="n">blocks_in_sample</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">blocks_in_sample</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h3 id="bioimageio.core.sample.SampleBlock.get_transformed_meta" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_transformed_meta</span>
 
@@ -3390,16 +4356,16 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/sample.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">344</span>
-<span class="normal">345</span>
-<span class="normal">346</span>
-<span class="normal">347</span>
-<span class="normal">348</span>
-<span class="normal">349</span>
-<span class="normal">350</span>
-<span class="normal">351</span>
-<span class="normal">352</span>
-<span class="normal">353</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_transformed_meta</span><span class="p">(</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">556</span>
+<span class="normal">557</span>
+<span class="normal">558</span>
+<span class="normal">559</span>
+<span class="normal">560</span>
+<span class="normal">561</span>
+<span class="normal">562</span>
+<span class="normal">563</span>
+<span class="normal">564</span>
+<span class="normal">565</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_transformed_meta</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">new_axes</span><span class="p">:</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">PerAxis</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">LinearSampleAxisTransform</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SampleBlockMeta</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">SampleBlockMeta</span><span class="p">(</span>
@@ -3431,13 +4397,8 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
 <code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">SampleBlockBase</span>
 
 
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
-  </span>
-
 <a href="#bioimageio.core.sample.SampleBlockBase" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">SampleBlockBase</span><span class="p">(</span><span class="n"><span title="bioimageio.core.sample.SampleBlockBase(sample_shape)">sample_shape</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">]],</span> <span class="n"><span title="bioimageio.core.sample.SampleBlockBase(sample_id)">sample_id</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.SampleId">SampleId</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.sample.SampleBlockBase(blocks)">blocks</span></span><span class="p">:</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.BlockT">BlockT</a></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.sample.SampleBlockBase(block_index)">block_index</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.BlockIndex">BlockIndex</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.sample.SampleBlockBase(blocks_in_sample)">blocks_in_sample</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.TotalNumberOfBlocks">TotalNumberOfBlocks</a></span><span class="p">)</span>
-</code></pre></div>
+
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
@@ -3480,6 +4441,29 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
       <span>API Reference</span>
   </span>
 
+            <ul class="doc doc-backlink-list">
+      <li class="doc doc-backlink">
+            <span class="doc doc-backlink-crumb">
+      <a href="../../../#bioimageio.core"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;core</a>
+  </span>
+
+            <ul class="doc doc-backlink-list">
+      <li class="doc doc-backlink">
+            <span class="doc doc-backlink-crumb last">
+      <a href="../../../#bioimageio.core.SampleBlock"><code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;SampleBlock</a>
+  </span>
+
+      </li>
+      <li class="doc doc-backlink">
+            <span class="doc doc-backlink-crumb last">
+      <a href="../../../#bioimageio.core.SampleBlockMeta"><code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;SampleBlockMeta</a>
+  </span>
+
+      </li>
+  </ul>
+
+      </li>
+      <li class="doc doc-backlink">
             <span class="doc doc-backlink-crumb">
       <a href="#bioimageio.core.sample"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;sample</a>
   </span>
@@ -3495,6 +4479,9 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
             <span class="doc doc-backlink-crumb last">
       <a href="#bioimageio.core.sample.SampleBlockMeta"><code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;SampleBlockMeta</a>
   </span>
+
+      </li>
+  </ul>
 
       </li>
   </ul>
@@ -3541,7 +4528,7 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
           <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.SampleBlockBase.blocks">blocks</a></code></td>
             <td>
-                  <code><span title="typing.Dict">Dict</span>[<a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a>, <a class="autorefs autorefs-internal" href="#bioimageio.core.sample.BlockT">BlockT</a>]</code>
+                  <code><span title="bioimageio.core._common_annotations.PerMemberAnno">PerMemberAnno</span>[<a class="autorefs autorefs-internal" href="#bioimageio.core.sample.BlockT">BlockT</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3585,7 +4572,7 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
           <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.SampleBlockBase.sample_shape">sample_shape</a></code></td>
             <td>
-                  <code><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a>[<a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a>[<span title="int">int</span>]]</code>
+                  <code><span title="bioimageio.core._common_annotations.PerMemberAnno">PerMemberAnno</span>[<a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a>[<span title="int">int</span>]]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3656,7 +4643,7 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
   </span>
 
 <a href="#bioimageio.core.sample.SampleBlockBase.blocks" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">blocks</span><span class="p">:</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.BlockT">BlockT</a></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">blocks</span><span class="p">:</span> <span class="n"><span title="bioimageio.core._common_annotations.PerMemberAnno">PerMemberAnno</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.BlockT">BlockT</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3754,7 +4741,7 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
   </span>
 
 <a href="#bioimageio.core.sample.SampleBlockBase.sample_shape" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">sample_shape</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">]]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">sample_shape</span><span class="p">:</span> <span class="n"><span title="bioimageio.core._common_annotations.PerMemberAnno">PerMemberAnno</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">]]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3808,13 +4795,8 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
 <code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">SampleBlockMeta</span>
 
 
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-dataclass"><code>dataclass</code></small>
-  </span>
-
 <a href="#bioimageio.core.sample.SampleBlockMeta" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">SampleBlockMeta</span><span class="p">(</span><span class="n"><span title="bioimageio.core.sample.SampleBlockMeta(sample_shape)">sample_shape</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">]],</span> <span class="n"><span title="bioimageio.core.sample.SampleBlockMeta(sample_id)">sample_id</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.SampleId">SampleId</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.sample.SampleBlockMeta(blocks)">blocks</span></span><span class="p">:</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.BlockT">BlockT</a></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.sample.SampleBlockMeta(block_index)">block_index</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.BlockIndex">BlockIndex</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.sample.SampleBlockMeta(blocks_in_sample)">blocks_in_sample</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.TotalNumberOfBlocks">TotalNumberOfBlocks</a></span><span class="p">)</span>
-</code></pre></div>
+
 
     <div class="doc doc-contents ">
             <p class="doc doc-class-bases">
@@ -3918,7 +4900,7 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
           <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.SampleBlockMeta.blocks">blocks</a></code></td>
             <td>
-                  <code><span title="typing.Dict">Dict</span>[<a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a>, <a class="autorefs autorefs-internal" href="#bioimageio.core.sample.BlockT">BlockT</a>]</code>
+                  <code><span title="bioimageio.core._common_annotations.PerMemberAnno">PerMemberAnno</span>[<a class="autorefs autorefs-internal" href="#bioimageio.core.sample.BlockT">BlockT</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -3962,7 +4944,7 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
           <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.SampleBlockMeta.sample_shape">sample_shape</a></code></td>
             <td>
-                  <code><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a>[<a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a>[<span title="int">int</span>]]</code>
+                  <code><span title="bioimageio.core._common_annotations.PerMemberAnno">PerMemberAnno</span>[<a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a>[<span title="int">int</span>]]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4033,7 +5015,7 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
   </span>
 
 <a href="#bioimageio.core.sample.SampleBlockMeta.blocks" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">blocks</span><span class="p">:</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.BlockT">BlockT</a></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">blocks</span><span class="p">:</span> <span class="n"><span title="bioimageio.core._common_annotations.PerMemberAnno">PerMemberAnno</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.BlockT">BlockT</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4131,7 +5113,7 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
   </span>
 
 <a href="#bioimageio.core.sample.SampleBlockMeta.sample_shape" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">sample_shape</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">]]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">sample_shape</span><span class="p">:</span> <span class="n"><span title="bioimageio.core._common_annotations.PerMemberAnno">PerMemberAnno</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">]]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4186,76 +5168,76 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/sample.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">242</span>
-<span class="normal">243</span>
-<span class="normal">244</span>
-<span class="normal">245</span>
-<span class="normal">246</span>
-<span class="normal">247</span>
-<span class="normal">248</span>
-<span class="normal">249</span>
-<span class="normal">250</span>
-<span class="normal">251</span>
-<span class="normal">252</span>
-<span class="normal">253</span>
-<span class="normal">254</span>
-<span class="normal">255</span>
-<span class="normal">256</span>
-<span class="normal">257</span>
-<span class="normal">258</span>
-<span class="normal">259</span>
-<span class="normal">260</span>
-<span class="normal">261</span>
-<span class="normal">262</span>
-<span class="normal">263</span>
-<span class="normal">264</span>
-<span class="normal">265</span>
-<span class="normal">266</span>
-<span class="normal">267</span>
-<span class="normal">268</span>
-<span class="normal">269</span>
-<span class="normal">270</span>
-<span class="normal">271</span>
-<span class="normal">272</span>
-<span class="normal">273</span>
-<span class="normal">274</span>
-<span class="normal">275</span>
-<span class="normal">276</span>
-<span class="normal">277</span>
-<span class="normal">278</span>
-<span class="normal">279</span>
-<span class="normal">280</span>
-<span class="normal">281</span>
-<span class="normal">282</span>
-<span class="normal">283</span>
-<span class="normal">284</span>
-<span class="normal">285</span>
-<span class="normal">286</span>
-<span class="normal">287</span>
-<span class="normal">288</span>
-<span class="normal">289</span>
-<span class="normal">290</span>
-<span class="normal">291</span>
-<span class="normal">292</span>
-<span class="normal">293</span>
-<span class="normal">294</span>
-<span class="normal">295</span>
-<span class="normal">296</span>
-<span class="normal">297</span>
-<span class="normal">298</span>
-<span class="normal">299</span>
-<span class="normal">300</span>
-<span class="normal">301</span>
-<span class="normal">302</span>
-<span class="normal">303</span>
-<span class="normal">304</span>
-<span class="normal">305</span>
-<span class="normal">306</span>
-<span class="normal">307</span>
-<span class="normal">308</span>
-<span class="normal">309</span>
-<span class="normal">310</span>
-<span class="normal">311</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_transformed</span><span class="p">(</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">451</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span>
+<span class="normal">455</span>
+<span class="normal">456</span>
+<span class="normal">457</span>
+<span class="normal">458</span>
+<span class="normal">459</span>
+<span class="normal">460</span>
+<span class="normal">461</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span>
+<span class="normal">467</span>
+<span class="normal">468</span>
+<span class="normal">469</span>
+<span class="normal">470</span>
+<span class="normal">471</span>
+<span class="normal">472</span>
+<span class="normal">473</span>
+<span class="normal">474</span>
+<span class="normal">475</span>
+<span class="normal">476</span>
+<span class="normal">477</span>
+<span class="normal">478</span>
+<span class="normal">479</span>
+<span class="normal">480</span>
+<span class="normal">481</span>
+<span class="normal">482</span>
+<span class="normal">483</span>
+<span class="normal">484</span>
+<span class="normal">485</span>
+<span class="normal">486</span>
+<span class="normal">487</span>
+<span class="normal">488</span>
+<span class="normal">489</span>
+<span class="normal">490</span>
+<span class="normal">491</span>
+<span class="normal">492</span>
+<span class="normal">493</span>
+<span class="normal">494</span>
+<span class="normal">495</span>
+<span class="normal">496</span>
+<span class="normal">497</span>
+<span class="normal">498</span>
+<span class="normal">499</span>
+<span class="normal">500</span>
+<span class="normal">501</span>
+<span class="normal">502</span>
+<span class="normal">503</span>
+<span class="normal">504</span>
+<span class="normal">505</span>
+<span class="normal">506</span>
+<span class="normal">507</span>
+<span class="normal">508</span>
+<span class="normal">509</span>
+<span class="normal">510</span>
+<span class="normal">511</span>
+<span class="normal">512</span>
+<span class="normal">513</span>
+<span class="normal">514</span>
+<span class="normal">515</span>
+<span class="normal">516</span>
+<span class="normal">517</span>
+<span class="normal">518</span>
+<span class="normal">519</span>
+<span class="normal">520</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_transformed</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">new_axes</span><span class="p">:</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">PerAxis</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">LinearSampleAxisTransform</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
     <span class="n">sample_shape</span> <span class="o">=</span> <span class="p">{</span>
@@ -4289,8 +5271,8 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
         <span class="n">halo</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">get_member_halo</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">floor</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">halo</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">!=</span> <span class="n">get_member_halo</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">ceil</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;failed to unambiguously scale halo </span><span class="si">{</span><span class="n">halo</span><span class="p">[</span><span class="n">m</span><span class="p">]</span><span class="si">}</span><span class="s2"> with </span><span class="si">{</span><span class="n">new_axes</span><span class="p">[</span><span class="n">m</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
-                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; for </span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="sa">f</span><span class="s2">"failed to unambiguously scale halo </span><span class="si">{</span><span class="n">halo</span><span class="p">[</span><span class="n">m</span><span class="p">]</span><span class="si">}</span><span class="s2"> with </span><span class="si">{</span><span class="n">new_axes</span><span class="p">[</span><span class="n">m</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">" for </span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">."</span>
             <span class="p">)</span>
 
     <span class="n">inner_slice</span> <span class="o">=</span> <span class="p">{</span>
@@ -4348,23 +5330,23 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/sample.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">313</span>
-<span class="normal">314</span>
-<span class="normal">315</span>
-<span class="normal">316</span>
-<span class="normal">317</span>
-<span class="normal">318</span>
-<span class="normal">319</span>
-<span class="normal">320</span>
-<span class="normal">321</span>
-<span class="normal">322</span>
-<span class="normal">323</span>
-<span class="normal">324</span>
-<span class="normal">325</span>
-<span class="normal">326</span>
-<span class="normal">327</span>
-<span class="normal">328</span>
-<span class="normal">329</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">with_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">stat</span><span class="p">:</span> <span class="n">Stat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SampleBlock</span><span class="p">:</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">522</span>
+<span class="normal">523</span>
+<span class="normal">524</span>
+<span class="normal">525</span>
+<span class="normal">526</span>
+<span class="normal">527</span>
+<span class="normal">528</span>
+<span class="normal">529</span>
+<span class="normal">530</span>
+<span class="normal">531</span>
+<span class="normal">532</span>
+<span class="normal">533</span>
+<span class="normal">534</span>
+<span class="normal">535</span>
+<span class="normal">536</span>
+<span class="normal">537</span>
+<span class="normal">538</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">with_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n">stat</span><span class="p">:</span> <span class="n">Stat</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SampleBlock</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">SampleBlock</span><span class="p">(</span>
         <span class="n">sample_shape</span><span class="o">=</span><span class="p">{</span>
             <span class="n">m</span><span class="p">:</span> <span class="p">{</span>
@@ -4408,7 +5390,7 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
   </span>
 
 <a href="#bioimageio.core.sample.SampleBlockWithOrigin" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">SampleBlockWithOrigin</span><span class="p">(</span><span class="n"><span title="bioimageio.core.sample.SampleBlockWithOrigin(sample_shape)">sample_shape</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">]],</span> <span class="n"><span title="bioimageio.core.sample.SampleBlockWithOrigin(sample_id)">sample_id</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.SampleId">SampleId</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.sample.SampleBlockWithOrigin(blocks)">blocks</span></span><span class="p">:</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.BlockT">BlockT</a></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.sample.SampleBlockWithOrigin(block_index)">block_index</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.BlockIndex">BlockIndex</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.sample.SampleBlockWithOrigin(blocks_in_sample)">blocks_in_sample</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.TotalNumberOfBlocks">TotalNumberOfBlocks</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.sample.SampleBlockWithOrigin(stat)">stat</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../stat_measures/#bioimageio.core.stat_measures.Stat">Stat</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.sample.SampleBlockWithOrigin(origin)">origin</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.Sample">Sample</a></span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">SampleBlockWithOrigin</span><span class="p">(</span><span class="n"><span title="bioimageio.core.sample.SampleBlockWithOrigin(blocks)">blocks</span></span><span class="p">:</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../block/#bioimageio.core.block.Block">Block</a></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.sample.SampleBlockWithOrigin(stat)">stat</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../stat_measures/#bioimageio.core.stat_measures.Stat">Stat</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.sample.SampleBlockWithOrigin(origin)">origin</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.Sample">Sample</a></span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4462,6 +5444,18 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
       <span>API Reference</span>
   </span>
 
+            <ul class="doc doc-backlink-list">
+      <li class="doc doc-backlink">
+            <span class="doc doc-backlink-crumb">
+      <a href="../digest_spec/#bioimageio.core.digest_spec"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;digest_spec</a>
+  </span>
+
+            <span class="doc doc-backlink-crumb last">
+      <a href="../digest_spec/#bioimageio.core.digest_spec.split_sample_into_blocks_for_model"><code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;split_sample_into_blocks_for_model</a>
+  </span>
+
+      </li>
+      <li class="doc doc-backlink">
             <span class="doc doc-backlink-crumb">
       <a href="#bioimageio.core.sample"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;sample</a>
   </span>
@@ -4469,6 +5463,9 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
             <span class="doc doc-backlink-crumb last">
       <a href="#bioimageio.core.sample.sample_block_generator"><code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;sample_block_generator</a>
   </span>
+
+      </li>
+  </ul>
 
       </li>
   </ul>
@@ -4495,6 +5492,30 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
         </tr>
       </thead>
       <tbody>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.SampleBlockWithOrigin.as_sample">as_sample</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Convert this sample block to a <code>Sample</code> with the shape of this block.</p>
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.SampleBlockWithOrigin.from_meta">from_meta</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  
+                </div>
+              </td>
+            </tr>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.SampleBlockWithOrigin.get_meta">get_meta</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  
+                </div>
+              </td>
+            </tr>
             <tr class="doc-section-item">
               <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.SampleBlockWithOrigin.get_transformed_meta">get_transformed_meta</a></code></td>
               <td>
@@ -4533,7 +5554,7 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
           <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.SampleBlockWithOrigin.blocks">blocks</a></code></td>
             <td>
-                  <code><span title="typing.Dict">Dict</span>[<a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a>, <a class="autorefs autorefs-internal" href="#bioimageio.core.sample.BlockT">BlockT</a>]</code>
+                  <code><span title="typing.Dict">Dict</span>[<a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a>, <a class="autorefs autorefs-internal" href="../block/#bioimageio.core.block.Block">Block</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4599,7 +5620,7 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
           <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.SampleBlockWithOrigin.sample_shape">sample_shape</a></code></td>
             <td>
-                  <code><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a>[<a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a>[<span title="int">int</span>]]</code>
+                  <code><span title="bioimageio.core._common_annotations.PerMemberAnno">PerMemberAnno</span>[<a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a>[<span title="int">int</span>]]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -4681,7 +5702,7 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
   </span>
 
 <a href="#bioimageio.core.sample.SampleBlockWithOrigin.blocks" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">blocks</span><span class="p">:</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.BlockT">BlockT</a></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">blocks</span><span class="p">:</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../block/#bioimageio.core.block.Block">Block</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4829,7 +5850,7 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
   </span>
 
 <a href="#bioimageio.core.sample.SampleBlockWithOrigin.sample_shape" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">sample_shape</span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">]]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">sample_shape</span><span class="p">:</span> <span class="n"><span title="bioimageio.core._common_annotations.PerMemberAnno">PerMemberAnno</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">]]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -4895,6 +5916,152 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
 <div class="doc doc-object doc-function">
 
 
+<h3 id="bioimageio.core.sample.SampleBlockWithOrigin.as_sample" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">as_sample</span>
+
+
+<a href="#bioimageio.core.sample.SampleBlockWithOrigin.as_sample" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">as_sample</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.Sample">Sample</a></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Convert this sample block to a <code>Sample</code> with the shape of this block.</p>
+
+
+<details class="note" open>
+  <summary>Note</summary>
+  <p>If you want to convert one or more sample block to a sample with the shape of the original, whole sample,
+use <code>Sample.from_blocks()</code> instead.</p>
+</details>
+          
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/bioimageio/core/sample.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">591</span>
+<span class="normal">592</span>
+<span class="normal">593</span>
+<span class="normal">594</span>
+<span class="normal">595</span>
+<span class="normal">596</span>
+<span class="normal">597</span>
+<span class="normal">598</span>
+<span class="normal">599</span>
+<span class="normal">600</span>
+<span class="normal">601</span>
+<span class="normal">602</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">as_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sample</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Convert this sample block to a `Sample` with the shape of this block.</span>
+
+<span class="sd">    Note:</span>
+<span class="sd">        If you want to convert one or more sample block to a sample with the shape of the original, whole sample,</span>
+<span class="sd">        use `Sample.from_blocks()` instead.</span>
+<span class="sd">    """</span>
+    <span class="k">return</span> <span class="n">Sample</span><span class="p">(</span>
+        <span class="n">members</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">members</span><span class="p">),</span>
+        <span class="n">stat</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stat</span><span class="p">),</span>
+        <span class="nb">id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_id</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="bioimageio.core.sample.SampleBlockWithOrigin.from_meta" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">from_meta</span>
+
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
+<a href="#bioimageio.core.sample.SampleBlockWithOrigin.from_meta" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">from_meta</span><span class="p">(</span><span class="n"><span title="bioimageio.core.sample.SampleBlockWithOrigin.from_meta(meta)">meta</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.SampleBlockMeta">SampleBlockMeta</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.sample.SampleBlockWithOrigin.from_meta(data)">data</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../tensor/#bioimageio.core.tensor.Tensor">Tensor</a></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.sample.SampleBlockWithOrigin.from_meta(stat)">stat</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../stat_measures/#bioimageio.core.stat_measures.Stat">Stat</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing_extensions.Self">Self</span></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+          
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/bioimageio/core/sample.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">567</span>
+<span class="normal">568</span>
+<span class="normal">569</span>
+<span class="normal">570</span>
+<span class="normal">571</span>
+<span class="normal">572</span>
+<span class="normal">573</span>
+<span class="normal">574</span>
+<span class="normal">575</span>
+<span class="normal">576</span>
+<span class="normal">577</span>
+<span class="normal">578</span>
+<span class="normal">579</span>
+<span class="normal">580</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">from_meta</span><span class="p">(</span>
+    <span class="bp">cls</span><span class="p">,</span> <span class="n">meta</span><span class="p">:</span> <span class="n">SampleBlockMeta</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">stat</span><span class="p">:</span> <span class="n">Stat</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
+    <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
+        <span class="n">sample_shape</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">sample_shape</span><span class="p">,</span>
+        <span class="n">sample_id</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">sample_id</span><span class="p">,</span>
+        <span class="n">blocks</span><span class="o">=</span><span class="p">{</span>
+            <span class="n">m</span><span class="p">:</span> <span class="n">Block</span><span class="o">.</span><span class="n">from_meta</span><span class="p">(</span><span class="n">b</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="n">m</span><span class="p">])</span> <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">meta</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">},</span>
+        <span class="n">stat</span><span class="o">=</span><span class="n">stat</span><span class="p">,</span>
+        <span class="n">block_index</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">block_index</span><span class="p">,</span>
+        <span class="n">blocks_in_sample</span><span class="o">=</span><span class="n">meta</span><span class="o">.</span><span class="n">blocks_in_sample</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="bioimageio.core.sample.SampleBlockWithOrigin.get_meta" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_meta</span>
+
+
+<a href="#bioimageio.core.sample.SampleBlockWithOrigin.get_meta" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_meta</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.sample.SampleBlockMeta">SampleBlockMeta</a></span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+          
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/bioimageio/core/sample.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">582</span>
+<span class="normal">583</span>
+<span class="normal">584</span>
+<span class="normal">585</span>
+<span class="normal">586</span>
+<span class="normal">587</span>
+<span class="normal">588</span>
+<span class="normal">589</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_meta</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SampleBlockMeta</span><span class="p">:</span>
+    <span class="k">return</span> <span class="n">SampleBlockMeta</span><span class="p">(</span>
+        <span class="n">sample_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_id</span><span class="p">,</span>
+        <span class="n">blocks</span><span class="o">=</span><span class="p">{</span><span class="n">m</span><span class="p">:</span> <span class="n">b</span><span class="o">.</span><span class="n">get_meta</span><span class="p">()</span> <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocks</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>
+        <span class="n">sample_shape</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_shape</span><span class="p">,</span>
+        <span class="n">block_index</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">block_index</span><span class="p">,</span>
+        <span class="n">blocks_in_sample</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">blocks_in_sample</span><span class="p">,</span>
+    <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
 <h3 id="bioimageio.core.sample.SampleBlockWithOrigin.get_transformed_meta" class="doc doc-heading">
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">get_transformed_meta</span>
 
@@ -4909,16 +6076,16 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/sample.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">344</span>
-<span class="normal">345</span>
-<span class="normal">346</span>
-<span class="normal">347</span>
-<span class="normal">348</span>
-<span class="normal">349</span>
-<span class="normal">350</span>
-<span class="normal">351</span>
-<span class="normal">352</span>
-<span class="normal">353</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_transformed_meta</span><span class="p">(</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">556</span>
+<span class="normal">557</span>
+<span class="normal">558</span>
+<span class="normal">559</span>
+<span class="normal">560</span>
+<span class="normal">561</span>
+<span class="normal">562</span>
+<span class="normal">563</span>
+<span class="normal">564</span>
+<span class="normal">565</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_transformed_meta</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">new_axes</span><span class="p">:</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">PerAxis</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">LinearSampleAxisTransform</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SampleBlockMeta</span><span class="p">:</span>
     <span class="k">return</span> <span class="n">SampleBlockMeta</span><span class="p">(</span>
@@ -4960,32 +6127,32 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/sample.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">392</span>
-<span class="normal">393</span>
-<span class="normal">394</span>
-<span class="normal">395</span>
-<span class="normal">396</span>
-<span class="normal">397</span>
-<span class="normal">398</span>
-<span class="normal">399</span>
-<span class="normal">400</span>
-<span class="normal">401</span>
-<span class="normal">402</span>
-<span class="normal">403</span>
-<span class="normal">404</span>
-<span class="normal">405</span>
-<span class="normal">406</span>
-<span class="normal">407</span>
-<span class="normal">408</span>
-<span class="normal">409</span>
-<span class="normal">410</span>
-<span class="normal">411</span>
-<span class="normal">412</span>
-<span class="normal">413</span>
-<span class="normal">414</span>
-<span class="normal">415</span>
-<span class="normal">416</span>
-<span class="normal">417</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">sample_block_generator</span><span class="p">(</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">641</span>
+<span class="normal">642</span>
+<span class="normal">643</span>
+<span class="normal">644</span>
+<span class="normal">645</span>
+<span class="normal">646</span>
+<span class="normal">647</span>
+<span class="normal">648</span>
+<span class="normal">649</span>
+<span class="normal">650</span>
+<span class="normal">651</span>
+<span class="normal">652</span>
+<span class="normal">653</span>
+<span class="normal">654</span>
+<span class="normal">655</span>
+<span class="normal">656</span>
+<span class="normal">657</span>
+<span class="normal">658</span>
+<span class="normal">659</span>
+<span class="normal">660</span>
+<span class="normal">661</span>
+<span class="normal">662</span>
+<span class="normal">663</span>
+<span class="normal">664</span>
+<span class="normal">665</span>
+<span class="normal">666</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">sample_block_generator</span><span class="p">(</span>
     <span class="n">blocks</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">PerMember</span><span class="p">[</span><span class="n">BlockMeta</span><span class="p">]],</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">origin</span><span class="p">:</span> <span class="n">Sample</span><span class="p">,</span>
@@ -4998,7 +6165,7 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
                 <span class="n">m</span><span class="p">:</span> <span class="n">Block</span><span class="o">.</span><span class="n">from_sample_member</span><span class="p">(</span>
                     <span class="n">origin</span><span class="o">.</span><span class="n">members</span><span class="p">[</span><span class="n">m</span><span class="p">],</span>
                     <span class="n">block</span><span class="o">=</span><span class="n">member_blocks</span><span class="p">[</span><span class="n">m</span><span class="p">],</span>
-                    <span class="n">pad_mode</span><span class="o">=</span><span class="n">pad_mode</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s2">&quot;symmetric&quot;</span><span class="p">)</span>
+                    <span class="n">pad_mode</span><span class="o">=</span><span class="n">pad_mode</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="s2">"symmetric"</span><span class="p">)</span>
                     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pad_mode</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">)</span>
                     <span class="k">else</span> <span class="n">pad_mode</span><span class="p">,</span>
                 <span class="p">)</span>
@@ -5034,21 +6201,21 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/sample.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">375</span>
-<span class="normal">376</span>
-<span class="normal">377</span>
-<span class="normal">378</span>
-<span class="normal">379</span>
-<span class="normal">380</span>
-<span class="normal">381</span>
-<span class="normal">382</span>
-<span class="normal">383</span>
-<span class="normal">384</span>
-<span class="normal">385</span>
-<span class="normal">386</span>
-<span class="normal">387</span>
-<span class="normal">388</span>
-<span class="normal">389</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">sample_block_meta_generator</span><span class="p">(</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">624</span>
+<span class="normal">625</span>
+<span class="normal">626</span>
+<span class="normal">627</span>
+<span class="normal">628</span>
+<span class="normal">629</span>
+<span class="normal">630</span>
+<span class="normal">631</span>
+<span class="normal">632</span>
+<span class="normal">633</span>
+<span class="normal">634</span>
+<span class="normal">635</span>
+<span class="normal">636</span>
+<span class="normal">637</span>
+<span class="normal">638</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">sample_block_meta_generator</span><span class="p">(</span>
     <span class="n">blocks</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">PerMember</span><span class="p">[</span><span class="n">BlockMeta</span><span class="p">]],</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">sample_shape</span><span class="p">:</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">PerAxis</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
@@ -5113,7 +6280,7 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../proc_setup/" class="md-footer__link md-footer__link--prev" aria-label="Previous: bioimageio.core.proc_setup">
+          <a href="../remote_backends/" class="md-footer__link md-footer__link--prev" aria-label="Previous: bioimageio.core.remote_backends">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -5123,7 +6290,7 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
                 Previous
               </span>
               <div class="md-ellipsis">
-                bioimageio.core.proc_setup
+                bioimageio.core.remote_backends
               </div>
             </div>
           </a>
@@ -5194,7 +6361,7 @@ For example a <code>Sample</code> from a dataset with masked images may contain 
       <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.expand", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.prune", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
     
     
-      <script src="../../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../../../assets/_markdown_exec_pyodide.js"></script>
       

@@ -18,14 +18,14 @@
         <link rel="prev" href="../digest_spec/">
       
       
-        <link rel="next" href="../model_adapters/">
+        <link rel="next" href="../prediction/">
       
       
         
       
       
       <link rel="icon" href="../../../../images/favicon.ico">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -1035,34 +1035,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../model_adapters/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    bioimageio.core.model_adapters
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../prediction/" class="md-nav__link">
         
   
@@ -1127,6 +1099,34 @@
     
   
     bioimageio.core.proc_setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remote_backends/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    bioimageio.core.remote_backends
   
 
     
@@ -1720,6 +1720,7 @@
           <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.io.JsonValue">JsonValue</a></code></td>
             <td>
+                  <code><span title="typing_extensions.TypeAlias">TypeAlias</span></code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1763,7 +1764,7 @@
   </span>
 
 <a href="#bioimageio.core.io.JsonValue" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">JsonValue</span> <span class="o">=</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="bool">bool</span></span><span class="p">,</span> <span class="n"><span title="int">int</span></span><span class="p">,</span> <span class="n"><span title="float">float</span></span><span class="p">,</span> <span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="s1">&#39;JsonValue&#39;</span><span class="p">],</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="s1">&#39;JsonValue&#39;</span><span class="p">]]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">JsonValue</span><span class="p">:</span> <span class="n"><span title="typing_extensions.TypeAlias">TypeAlias</span></span> <span class="o">=</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="bool">bool</span></span><span class="p">,</span> <span class="n"><span title="int">int</span></span><span class="p">,</span> <span class="n"><span title="float">float</span></span><span class="p">,</span> <span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n"><span title="typing.List">List</span></span><span class="p">[</span><span class="s1">'JsonValue'</span><span class="p">],</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="s1">'JsonValue'</span><span class="p">]]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1792,6 +1793,26 @@
 
         <b class="doc doc-backlink-type">Used by:</b>
           <ul class="doc doc-backlink-list">
+      <li class="doc doc-backlink">
+            <span class="doc doc-backlink-crumb">
+      <a href="../remote_backends/gradio/client/#bioimageio.core.remote_backends.gradio.client"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;client</a>
+  </span>
+
+            <span class="doc doc-backlink-crumb last">
+      <a href="../remote_backends/gradio/client/#bioimageio.core.remote_backends.gradio.client.SerializedSampleBlock"><code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;SerializedSampleBlock</a>
+  </span>
+
+      </li>
+      <li class="doc doc-backlink">
+            <span class="doc doc-backlink-crumb">
+      <a href="../remote_backends/gradio/serializer/#bioimageio.core.remote_backends.gradio.serializer"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;serializer</a>
+  </span>
+
+            <span class="doc doc-backlink-crumb last">
+      <a href="../remote_backends/gradio/serializer/#bioimageio.core.remote_backends.gradio.serializer.SerializedSampleBlock"><code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;SerializedSampleBlock</a>
+  </span>
+
+      </li>
       <li class="doc doc-backlink">
             <span class="doc doc-backlink-crumb">
       <span>API Reference</span>
@@ -1871,7 +1892,7 @@
 
 
 <a href="#bioimageio.core.io.ensure_unzipped" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">ensure_unzipped</span><span class="p">(</span><span class="n"><span title="bioimageio.core.io.ensure_unzipped(source)">source</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.PermissiveFileSource&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/common/#bioimageio.spec.common.PermissiveFileSource">PermissiveFileSource</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.ZipPath&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/common/#bioimageio.spec.common.ZipPath">ZipPath</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.BytesReader&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/common/#bioimageio.spec.common.BytesReader">BytesReader</a></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.io.ensure_unzipped(folder)">folder</span></span><span class="p">:</span> <span class="n"><span title="pathlib.Path">Path</span></span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">ensure_unzipped</span><span class="p">(</span><span class="n"><span title="bioimageio.core.io.ensure_unzipped(source)">source</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.PermissiveFileSource&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/common/#bioimageio.spec.common.PermissiveFileSource">PermissiveFileSource</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.ZipPath&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/common/#bioimageio.spec.common.ZipPath">ZipPath</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.BytesReader&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/common/#bioimageio.spec.common.BytesReader">BytesReader</a></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.io.ensure_unzipped(folder)">folder</span></span><span class="p">:</span> <span class="n"><span title="pathlib.Path">Path</span></span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1883,20 +1904,7 @@ otherwise copy <strong>source</strong> to a file in <strong>folder</strong>.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/io.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">246</span>
-<span class="normal">247</span>
-<span class="normal">248</span>
-<span class="normal">249</span>
-<span class="normal">250</span>
-<span class="normal">251</span>
-<span class="normal">252</span>
-<span class="normal">253</span>
-<span class="normal">254</span>
-<span class="normal">255</span>
-<span class="normal">256</span>
-<span class="normal">257</span>
-<span class="normal">258</span>
-<span class="normal">259</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">259</span>
 <span class="normal">260</span>
 <span class="normal">261</span>
 <span class="normal">262</span>
@@ -1909,30 +1917,43 @@ otherwise copy <strong>source</strong> to a file in <strong>folder</strong>.</p>
 <span class="normal">269</span>
 <span class="normal">270</span>
 <span class="normal">271</span>
-<span class="normal">272</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">ensure_unzipped</span><span class="p">(</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">ensure_unzipped</span><span class="p">(</span>
     <span class="n">source</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">PermissiveFileSource</span><span class="p">,</span> <span class="n">ZipPath</span><span class="p">,</span> <span class="n">BytesReader</span><span class="p">],</span> <span class="n">folder</span><span class="p">:</span> <span class="n">Path</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;unzip a (downloaded) **source** to a file in **folder** if source is a zip archive</span>
-<span class="sd">    otherwise copy **source** to a file in **folder**.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""unzip a (downloaded) **source** to a file in **folder** if source is a zip archive</span>
+<span class="sd">    otherwise copy **source** to a file in **folder**."""</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">BytesReader</span><span class="p">):</span>
         <span class="n">weights_reader</span> <span class="o">=</span> <span class="n">source</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">weights_reader</span> <span class="o">=</span> <span class="n">get_reader</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
 
     <span class="n">out_path</span> <span class="o">=</span> <span class="n">folder</span> <span class="o">/</span> <span class="p">(</span>
-        <span class="n">weights_reader</span><span class="o">.</span><span class="n">original_file_name</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">&quot;file</span><span class="si">{</span><span class="n">weights_reader</span><span class="o">.</span><span class="n">suffix</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">weights_reader</span><span class="o">.</span><span class="n">original_file_name</span> <span class="ow">or</span> <span class="sa">f</span><span class="s2">"file</span><span class="si">{</span><span class="n">weights_reader</span><span class="o">.</span><span class="n">suffix</span><span class="si">}</span><span class="s2">"</span>
     <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">is_zipfile</span><span class="p">(</span><span class="n">weights_reader</span><span class="p">):</span>
-        <span class="n">out_path</span> <span class="o">=</span> <span class="n">out_path</span><span class="o">.</span><span class="n">with_name</span><span class="p">(</span><span class="n">out_path</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">&quot;.unzipped&quot;</span><span class="p">)</span>
+        <span class="n">out_path</span> <span class="o">=</span> <span class="n">out_path</span><span class="o">.</span><span class="n">with_name</span><span class="p">(</span><span class="n">out_path</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s2">".unzipped"</span><span class="p">)</span>
         <span class="n">out_path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
         <span class="c1"># source itself is a zipfile</span>
-        <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">weights_reader</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">weights_reader</span><span class="p">,</span> <span class="s2">"r"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">f</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="n">out_path</span><span class="p">)</span>
 
     <span class="k">else</span><span class="p">:</span>
         <span class="n">out_path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">with</span> <span class="n">out_path</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">with</span> <span class="n">out_path</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"wb"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
             <span class="n">copyfileobj</span><span class="p">(</span><span class="n">weights_reader</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">out_path</span>
@@ -1950,7 +1971,7 @@ otherwise copy <strong>source</strong> to a file in <strong>folder</strong>.</p>
 
 
 <a href="#bioimageio.core.io.get_suffix" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_suffix</span><span class="p">(</span><span class="n"><span title="bioimageio.core.io.get_suffix(source)">source</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.ZipPath&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/common/#bioimageio.spec.common.ZipPath">ZipPath</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.FileSource&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/common/#bioimageio.spec.common.FileSource">FileSource</a></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.io.Suffix">Suffix</a></span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">get_suffix</span><span class="p">(</span><span class="n"><span title="bioimageio.core.io.get_suffix(source)">source</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.ZipPath&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/common/#bioimageio.spec.common.ZipPath">ZipPath</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.FileSource&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/common/#bioimageio.spec.common.FileSource">FileSource</a></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.io.Suffix">Suffix</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1964,10 +1985,10 @@ otherwise copy <strong>source</strong> to a file in <strong>folder</strong>.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/io.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">275</span>
-<span class="normal">276</span>
-<span class="normal">277</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_suffix</span><span class="p">(</span><span class="n">source</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ZipPath</span><span class="p">,</span> <span class="n">FileSource</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Suffix</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;DEPRECATED: use source.suffix instead.&quot;&quot;&quot;</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_suffix</span><span class="p">(</span><span class="n">source</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ZipPath</span><span class="p">,</span> <span class="n">FileSource</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Suffix</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""DEPRECATED: use source.suffix instead."""</span>
     <span class="k">return</span> <span class="n">source</span><span class="o">.</span><span class="n">suffix</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -1994,12 +2015,12 @@ otherwise copy <strong>source</strong> to a file in <strong>folder</strong>.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/io.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">240</span>
-<span class="normal">241</span>
-<span class="normal">242</span>
-<span class="normal">243</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">load_dataset_stat</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Stat</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;DEPRECATED alias for `load_stat()`: use `load_stat()` instead.&quot;&quot;&quot;</span>
-    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;`load_dataset_stat()` is deprecated, use `load_stats()` instead.&quot;</span><span class="p">)</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">load_dataset_stat</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Stat</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""DEPRECATED alias for `load_stat()`: use `load_stat()` instead."""</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">"`load_dataset_stat()` is deprecated, use `load_stats()` instead."</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">load_stat</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2015,7 +2036,7 @@ otherwise copy <strong>source</strong> to a file in <strong>folder</strong>.</p>
 
 
 <a href="#bioimageio.core.io.load_image" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">load_image</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.io.load_image(source)">source</a></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.PermissiveFileSource&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/common/#bioimageio.spec.common.PermissiveFileSource">PermissiveFileSource</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.ZipPath&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/common/#bioimageio.spec.common.ZipPath">ZipPath</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.io.load_image(is_volume)">is_volume</a></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="bool">bool</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="numpy.typing.NDArray">NDArray</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">load_image</span><span class="p">(</span><span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.io.load_image(source)">source</a></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.PermissiveFileSource&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/common/#bioimageio.spec.common.PermissiveFileSource">PermissiveFileSource</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.ZipPath&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/common/#bioimageio.spec.common.ZipPath">ZipPath</a></span><span class="p">],</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.io.load_image(is_volume)">is_volume</a></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="bool">bool</span></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="numpy.typing.NDArray">NDArray</span></span><span class="p">[</span><span class="n"><span title="typing.Any">Any</span></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2039,7 +2060,7 @@ otherwise copy <strong>source</strong> to a file in <strong>folder</strong>.</p>
 <h3 id="bioimageio.core.io.load_image(source)" class="doc doc-heading doc-heading-parameter">                  <code>source</code>
 <a href="#bioimageio.core.io.load_image(source)" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>            </td>
             <td>
-                  <code><span title="typing.Union">Union</span>[<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.PermissiveFileSource&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/common/#bioimageio.spec.common.PermissiveFileSource">PermissiveFileSource</a>, <a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.ZipPath&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/common/#bioimageio.spec.common.ZipPath">ZipPath</a>]</code>
+                  <code><span title="typing.Union">Union</span>[<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.PermissiveFileSource&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/common/#bioimageio.spec.common.PermissiveFileSource">PermissiveFileSource</a>, <a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.ZipPath&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/common/#bioimageio.spec.common.ZipPath">ZipPath</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -2073,20 +2094,7 @@ otherwise copy <strong>source</strong> to a file in <strong>folder</strong>.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/io.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">50</span>
-<span class="normal">51</span>
-<span class="normal">52</span>
-<span class="normal">53</span>
-<span class="normal">54</span>
-<span class="normal">55</span>
-<span class="normal">56</span>
-<span class="normal">57</span>
-<span class="normal">58</span>
-<span class="normal">59</span>
-<span class="normal">60</span>
-<span class="normal">61</span>
-<span class="normal">62</span>
-<span class="normal">63</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">63</span>
 <span class="normal">64</span>
 <span class="normal">65</span>
 <span class="normal">66</span>
@@ -2102,17 +2110,30 @@ otherwise copy <strong>source</strong> to a file in <strong>folder</strong>.</p>
 <span class="normal">76</span>
 <span class="normal">77</span>
 <span class="normal">78</span>
-<span class="normal">79</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">load_image</span><span class="p">(</span>
+<span class="normal">79</span>
+<span class="normal">80</span>
+<span class="normal">81</span>
+<span class="normal">82</span>
+<span class="normal">83</span>
+<span class="normal">84</span>
+<span class="normal">85</span>
+<span class="normal">86</span>
+<span class="normal">87</span>
+<span class="normal">88</span>
+<span class="normal">89</span>
+<span class="normal">90</span>
+<span class="normal">91</span>
+<span class="normal">92</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">load_image</span><span class="p">(</span>
     <span class="n">source</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">PermissiveFileSource</span><span class="p">,</span> <span class="n">ZipPath</span><span class="p">],</span> <span class="n">is_volume</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NDArray</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;load a single image as numpy array</span>
+<span class="w">    </span><span class="sd">"""load a single image as numpy array</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        source: image source</span>
 <span class="sd">        is_volume: deprecated</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">is_volume</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;**is_volume** is deprecated and will be removed soon.&quot;</span><span class="p">)</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">"**is_volume** is deprecated and will be removed soon."</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="p">(</span><span class="n">FileDescr</span><span class="p">,</span> <span class="n">ZipPath</span><span class="p">)):</span>
         <span class="n">parsed_source</span> <span class="o">=</span> <span class="n">source</span>
@@ -2122,7 +2143,7 @@ otherwise copy <strong>source</strong> to a file in <strong>folder</strong>.</p>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parsed_source</span><span class="p">,</span> <span class="n">RelativeFilePath</span><span class="p">):</span>
         <span class="n">parsed_source</span> <span class="o">=</span> <span class="n">parsed_source</span><span class="o">.</span><span class="n">absolute</span><span class="p">()</span>
 
-    <span class="k">if</span> <span class="n">parsed_source</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">&quot;.npy&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">parsed_source</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">".npy"</span><span class="p">:</span>
         <span class="n">image</span> <span class="o">=</span> <span class="n">load_array</span><span class="p">(</span><span class="n">parsed_source</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">reader</span> <span class="o">=</span> <span class="n">download</span><span class="p">(</span><span class="n">parsed_source</span><span class="p">)</span>
@@ -2157,20 +2178,20 @@ otherwise copy <strong>source</strong> to a file in <strong>folder</strong>.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/io.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">221</span>
-<span class="normal">222</span>
-<span class="normal">223</span>
-<span class="normal">224</span>
-<span class="normal">225</span>
-<span class="normal">226</span>
-<span class="normal">227</span>
-<span class="normal">228</span>
-<span class="normal">229</span>
-<span class="normal">230</span>
-<span class="normal">231</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">load_stat</span><span class="p">(</span><span class="n">source</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">JsonValue</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Stat</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load sample and dataset statistics from JSON&quot;&quot;&quot;</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">load_stat</span><span class="p">(</span><span class="n">source</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">JsonValue</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Stat</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Load sample and dataset statistics from JSON"""</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">Path</span><span class="p">):</span>
-        <span class="n">source</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+        <span class="n">source</span> <span class="o">=</span> <span class="n">source</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="o">=</span><span class="s2">"utf-8"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">seq</span> <span class="o">=</span> <span class="n">_StatList</span><span class="o">.</span><span class="n">model_validate_json</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
@@ -2192,7 +2213,7 @@ otherwise copy <strong>source</strong> to a file in <strong>folder</strong>.</p>
 
 
 <a href="#bioimageio.core.io.load_tensor" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">load_tensor</span><span class="p">(</span><span class="n"><span title="bioimageio.core.io.load_tensor(source)">source</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.PermissiveFileSource&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/common/#bioimageio.spec.common.PermissiveFileSource">PermissiveFileSource</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.ZipPath&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/common/#bioimageio.spec.common.ZipPath">ZipPath</a></span><span class="p">],</span> <span class="o">/</span><span class="p">,</span> <span class="n"><span title="bioimageio.core.io.load_tensor(axes)">axes</span></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Sequence">Sequence</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.AxisLike">AxisLike</a></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="../tensor/#bioimageio.core.tensor.Tensor">Tensor</a></span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">load_tensor</span><span class="p">(</span><span class="n"><span title="bioimageio.core.io.load_tensor(source)">source</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.PermissiveFileSource&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/common/#bioimageio.spec.common.PermissiveFileSource">PermissiveFileSource</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.ZipPath&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/common/#bioimageio.spec.common.ZipPath">ZipPath</a></span><span class="p">],</span> <span class="o">/</span><span class="p">,</span> <span class="n"><span title="bioimageio.core.io.load_tensor(axes)">axes</span></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Sequence">Sequence</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.AxisLike">AxisLike</a></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="../tensor/#bioimageio.core.tensor.Tensor">Tensor</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2201,15 +2222,15 @@ otherwise copy <strong>source</strong> to a file in <strong>folder</strong>.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/io.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">82</span>
-<span class="normal">83</span>
-<span class="normal">84</span>
-<span class="normal">85</span>
-<span class="normal">86</span>
-<span class="normal">87</span>
-<span class="normal">88</span>
-<span class="normal">89</span>
-<span class="normal">90</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">load_tensor</span><span class="p">(</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">load_tensor</span><span class="p">(</span>
     <span class="n">source</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">PermissiveFileSource</span><span class="p">,</span> <span class="n">ZipPath</span><span class="p">],</span>
     <span class="o">/</span><span class="p">,</span>
     <span class="n">axes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">AxisLike</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -2243,12 +2264,12 @@ otherwise copy <strong>source</strong> to a file in <strong>folder</strong>.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/io.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">234</span>
-<span class="normal">235</span>
-<span class="normal">236</span>
-<span class="normal">237</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">save_dataset_stat</span><span class="p">(</span><span class="n">stat</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">DatasetMeasure</span><span class="p">,</span> <span class="n">MeasureValue</span><span class="p">],</span> <span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;DEPRECATED alias for save_stat(): use `save_stats()` instead.&quot;&quot;&quot;</span>
-    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;`save_dataset_stat()` is deprecated, use `save_stats()` instead.&quot;</span><span class="p">)</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">save_dataset_stat</span><span class="p">(</span><span class="n">stat</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">DatasetMeasure</span><span class="p">,</span> <span class="n">MeasureValue</span><span class="p">],</span> <span class="n">path</span><span class="p">:</span> <span class="n">Path</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""DEPRECATED alias for save_stat(): use `save_stats()` instead."""</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">"`save_dataset_stat()` is deprecated, use `save_stats()` instead."</span><span class="p">)</span>
     <span class="n">save_stat</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">stat</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span> <span class="n">path</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -2279,20 +2300,7 @@ or all sample members in the <strong>path</strong> mapping.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/io.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">156</span>
-<span class="normal">157</span>
-<span class="normal">158</span>
-<span class="normal">159</span>
-<span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">169</span>
 <span class="normal">170</span>
 <span class="normal">171</span>
 <span class="normal">172</span>
@@ -2305,25 +2313,38 @@ or all sample members in the <strong>path</strong> mapping.</p>
 <span class="normal">179</span>
 <span class="normal">180</span>
 <span class="normal">181</span>
-<span class="normal">182</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">save_sample</span><span class="p">(</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">save_sample</span><span class="p">(</span>
     <span class="n">path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]],</span> <span class="n">sample</span><span class="p">:</span> <span class="n">Sample</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save a **sample** to a **path** pattern</span>
+<span class="w">    </span><span class="sd">"""Save a **sample** to a **path** pattern</span>
 <span class="sd">    or all sample members in the **path** mapping.</span>
 
 <span class="sd">    If **path** is a pathlib.Path or a string and the **sample** has multiple members,</span>
 <span class="sd">    **path** it must contain `{member_id}` (or `{input_id}` or `{output_id}`).</span>
 
 <span class="sd">    (Each) **path** may contain `{sample_id}` to be formatted with the **sample** object.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">abc</span><span class="o">.</span><span class="n">Mapping</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">members</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span> <span class="ow">or</span> <span class="nb">any</span><span class="p">(</span>
-            <span class="n">m</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;</span><span class="si">{member_id}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{input_id}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="si">{output_id}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">m</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"</span><span class="si">{member_id}</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"</span><span class="si">{input_id}</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"</span><span class="si">{output_id}</span><span class="s2">"</span><span class="p">)</span>
         <span class="p">):</span>
             <span class="n">path</span> <span class="o">=</span> <span class="p">{</span><span class="n">m</span><span class="p">:</span> <span class="n">path</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="n">sample</span><span class="o">.</span><span class="n">members</span><span class="p">}</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;path </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2"> must contain &#39;</span><span class="se">{{</span><span class="s2">member_id</span><span class="se">}}</span><span class="s2">&#39; for sample with multiple members </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">members</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="sa">f</span><span class="s2">"path </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2"> must contain '</span><span class="se">{{</span><span class="s2">member_id</span><span class="se">}}</span><span class="s2">' for sample with multiple members </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">members</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span>
             <span class="p">)</span>
 
     <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">path</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -2357,31 +2378,31 @@ or all sample members in the <strong>path</strong> mapping.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/io.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">206</span>
-<span class="normal">207</span>
-<span class="normal">208</span>
-<span class="normal">209</span>
-<span class="normal">210</span>
-<span class="normal">211</span>
-<span class="normal">212</span>
-<span class="normal">213</span>
-<span class="normal">214</span>
-<span class="normal">215</span>
-<span class="normal">216</span>
-<span class="normal">217</span>
-<span class="normal">218</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">save_stat</span><span class="p">(</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">save_stat</span><span class="p">(</span>
     <span class="n">stat</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">DatasetMeasure</span><span class="p">,</span> <span class="n">SampleMeasure</span><span class="p">],</span> <span class="n">MeasureValue</span><span class="p">],</span>
     <span class="n">output</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="n">BytesIO</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save sample and dataset statistics as a JSON file&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Save sample and dataset statistics as a JSON file"""</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">output</span><span class="p">,</span> <span class="n">Path</span><span class="p">):</span>
-        <span class="n">ctxt</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">&quot;wb&quot;</span><span class="p">)</span>
+        <span class="n">ctxt</span> <span class="o">=</span> <span class="n">output</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="s2">"wb"</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">ctxt</span> <span class="o">=</span> <span class="n">nullcontext</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
 
     <span class="k">with</span> <span class="n">ctxt</span> <span class="k">as</span> <span class="n">out</span><span class="p">:</span>
-        <span class="n">_</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">serialize_stat</span><span class="p">(</span><span class="n">stat</span><span class="p">),</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">serialize_stat</span><span class="p">(</span><span class="n">stat</span><span class="p">),</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">"utf-8"</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2405,20 +2426,7 @@ or all sample members in the <strong>path</strong> mapping.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/io.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 98</span>
-<span class="normal"> 99</span>
-<span class="normal">100</span>
-<span class="normal">101</span>
-<span class="normal">102</span>
-<span class="normal">103</span>
-<span class="normal">104</span>
-<span class="normal">105</span>
-<span class="normal">106</span>
-<span class="normal">107</span>
-<span class="normal">108</span>
-<span class="normal">109</span>
-<span class="normal">110</span>
-<span class="normal">111</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">111</span>
 <span class="normal">112</span>
 <span class="normal">113</span>
 <span class="normal">114</span>
@@ -2460,28 +2468,41 @@ or all sample members in the <strong>path</strong> mapping.</p>
 <span class="normal">150</span>
 <span class="normal">151</span>
 <span class="normal">152</span>
-<span class="normal">153</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">save_tensor</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">save_tensor</span><span class="p">(</span><span class="n">path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Path</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="c1"># TODO: save axis meta data</span>
 
     <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">path</span><span class="o">.</span><span class="n">suffix</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No suffix (needed to decide file format) found in </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No suffix (needed to decide file format) found in </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="n">extension</span> <span class="o">=</span> <span class="n">path</span><span class="o">.</span><span class="n">suffix</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
     <span class="n">path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">extension</span> <span class="o">==</span> <span class="s2">&quot;.npy&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">extension</span> <span class="o">==</span> <span class="s2">".npy"</span><span class="p">:</span>
         <span class="n">save_array</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">tensor</span><span class="o">.</span><span class="n">to_numpy</span><span class="p">())</span>
-    <span class="k">elif</span> <span class="n">extension</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;.h5&quot;</span><span class="p">,</span> <span class="s2">&quot;.hdf&quot;</span><span class="p">,</span> <span class="s2">&quot;.hdf5&quot;</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Saving to h5 with dataset path is not implemented.&quot;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">extension</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">".h5"</span><span class="p">,</span> <span class="s2">".hdf"</span><span class="p">,</span> <span class="s2">".hdf5"</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"Saving to h5 with dataset path is not implemented."</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">removed_singleton_axes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">AxisId</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">remove_singletons</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">AxisId</span><span class="p">(</span><span class="s2">&quot;batch&quot;</span><span class="p">):</span> <span class="p">[</span>
-                <span class="s2">&quot;.tif&quot;</span><span class="p">,</span>
-                <span class="s2">&quot;.tiff&quot;</span><span class="p">,</span>
+            <span class="n">AxisId</span><span class="p">(</span><span class="s2">"batch"</span><span class="p">):</span> <span class="p">[</span>
+                <span class="s2">".tif"</span><span class="p">,</span>
+                <span class="s2">".tiff"</span><span class="p">,</span>
             <span class="p">],</span>  <span class="c1"># remove singleton batch dim for tiff files</span>
             <span class="o">**</span><span class="p">{</span>
-                <span class="n">a</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;.png&quot;</span><span class="p">,</span> <span class="s2">&quot;.jpg&quot;</span><span class="p">,</span> <span class="s2">&quot;.jpeg&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">tensor</span><span class="o">.</span><span class="n">dims</span>
+                <span class="n">a</span><span class="p">:</span> <span class="p">[</span><span class="s2">".png"</span><span class="p">,</span> <span class="s2">".jpg"</span><span class="p">,</span> <span class="s2">".jpeg"</span><span class="p">]</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">tensor</span><span class="o">.</span><span class="n">dims</span>
             <span class="p">},</span>  <span class="c1"># remove any singleton axis for png and jpg files</span>
         <span class="p">}</span>
         <span class="k">for</span> <span class="n">rm_a</span><span class="p">,</span> <span class="n">rm_ext</span> <span class="ow">in</span> <span class="n">remove_singletons</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -2490,22 +2511,22 @@ or all sample members in the <strong>path</strong> mapping.</p>
                 <span class="n">removed_singleton_axes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rm_a</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">removed_singleton_axes</span><span class="p">:</span>
-            <span class="n">singleton_axes_msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;(with removed singleton axes </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span><span class="w"> </span><span class="n">removed_singleton_axes</span><span class="p">))</span><span class="si">}</span><span class="s2">) &quot;</span>
+            <span class="n">singleton_axes_msg</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"(with removed singleton axes </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span><span class="w"> </span><span class="n">removed_singleton_axes</span><span class="p">))</span><span class="si">}</span><span class="s2">) "</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">singleton_axes_msg</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+            <span class="n">singleton_axes_msg</span> <span class="o">=</span> <span class="s2">""</span>
 
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="s2">&quot;writing tensor </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2">to </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+            <span class="s2">"writing tensor </span><span class="si">{}</span><span class="s2"> </span><span class="si">{}</span><span class="s2">to </span><span class="si">{}</span><span class="s2">"</span><span class="p">,</span>
             <span class="nb">dict</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">tagged_shape</span><span class="p">),</span>
             <span class="n">singleton_axes_msg</span><span class="p">,</span>
             <span class="n">path</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="k">if</span> <span class="n">extension</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;.png&quot;</span><span class="p">,</span> <span class="s2">&quot;.jpg&quot;</span><span class="p">,</span> <span class="s2">&quot;.jpeg&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">tensor</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="p">(</span>
-            <span class="s2">&quot;float32&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;float64&quot;</span><span class="p">,</span>
+        <span class="k">if</span> <span class="n">extension</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">".png"</span><span class="p">,</span> <span class="s2">".jpg"</span><span class="p">,</span> <span class="s2">".jpeg"</span><span class="p">)</span> <span class="ow">and</span> <span class="n">tensor</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="p">(</span>
+            <span class="s2">"float32"</span><span class="p">,</span>
+            <span class="s2">"float64"</span><span class="p">,</span>
         <span class="p">):</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="s2">&quot;converting tensor of dtype </span><span class="si">{}</span><span class="s2"> to uint8 for saving as </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span>
+                <span class="s2">"converting tensor of dtype </span><span class="si">{}</span><span class="s2"> to uint8 for saving as </span><span class="si">{}</span><span class="s2">"</span><span class="p">,</span>
                 <span class="n">tensor</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span>
                 <span class="n">extension</span><span class="p">,</span>
             <span class="p">)</span>
@@ -2513,7 +2534,7 @@ or all sample members in the <strong>path</strong> mapping.</p>
                 <span class="p">(</span><span class="n">tensor</span> <span class="o">-</span> <span class="p">(</span><span class="n">t_min</span> <span class="o">:=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">min</span><span class="p">()))</span>
                 <span class="o">/</span> <span class="n">xr</span><span class="o">.</span><span class="n">ufuncs</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="n">t_min</span><span class="p">,</span> <span class="mf">1e-8</span><span class="p">)</span>
                 <span class="o">*</span> <span class="mi">255</span>
-            <span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;uint8&quot;</span><span class="p">)</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"uint8"</span><span class="p">)</span>
 
         <span class="n">imwrite</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">extension</span><span class="o">=</span><span class="n">extension</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -2541,17 +2562,17 @@ or all sample members in the <strong>path</strong> mapping.</p>
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/io.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">198</span>
-<span class="normal">199</span>
-<span class="normal">200</span>
-<span class="normal">201</span>
-<span class="normal">202</span>
-<span class="normal">203</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">serialize_stat</span><span class="p">(</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">serialize_stat</span><span class="p">(</span>
     <span class="n">stat</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">DatasetMeasure</span><span class="p">,</span> <span class="n">SampleMeasure</span><span class="p">],</span> <span class="n">MeasureValue</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">JsonValue</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Serialize a stat mapping to a JSON string&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Serialize a stat mapping to a JSON string"""</span>
     <span class="n">stat_list</span> <span class="o">=</span> <span class="n">_StatList</span><span class="p">([</span><span class="n">_StatEntry</span><span class="p">(</span><span class="n">measure</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">stat</span><span class="o">.</span><span class="n">items</span><span class="p">()])</span>
-    <span class="k">return</span> <span class="n">stat_list</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">&quot;json&quot;</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">stat_list</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">"json"</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -2619,13 +2640,13 @@ or all sample members in the <strong>path</strong> mapping.</p>
         
         
           
-          <a href="../model_adapters/" class="md-footer__link md-footer__link--next" aria-label="Next: bioimageio.core.model_adapters">
+          <a href="../prediction/" class="md-footer__link md-footer__link--next" aria-label="Next: bioimageio.core.prediction">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                bioimageio.core.model_adapters
+                bioimageio.core.prediction
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -2683,7 +2704,7 @@ or all sample members in the <strong>path</strong> mapping.</p>
       <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.expand", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.prune", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
     
     
-      <script src="../../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../../../assets/_markdown_exec_pyodide.js"></script>
       

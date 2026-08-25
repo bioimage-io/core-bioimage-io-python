@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../../../images/favicon.ico">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -845,34 +845,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../model_adapters/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    bioimageio.core.model_adapters
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../prediction/" class="md-nav__link">
         
   
@@ -937,6 +909,34 @@
     
   
     bioimageio.core.proc_setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remote_backends/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    bioimageio.core.remote_backends
   
 
     
@@ -1636,29 +1636,6 @@
           
 
 
-  <div class="doc doc-backlinks">
-        <b class="doc doc-backlink-type">Used by:</b>
-          <ul class="doc doc-backlink-list">
-      <li class="doc doc-backlink">
-            <span class="doc doc-backlink-crumb">
-      <span>API Reference</span>
-  </span>
-
-            <span class="doc doc-backlink-crumb">
-      <a href="../../../#bioimageio.core"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;core</a>
-  </span>
-
-            <span class="doc doc-backlink-crumb last">
-      <a href="../../../#bioimageio.core.compute_dataset_measures"><code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;compute_dataset_measures</a>
-  </span>
-
-      </li>
-  </ul>
-
-  </div>
-
-
-
 
 
 
@@ -2118,10 +2095,10 @@
     <span class="n">axes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">AxisId</span><span class="p">]],</span>
     <span class="n">qs</span><span class="p">:</span> <span class="n">Collection</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
 <span class="p">):</span>
-    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Computing dataset quantiles with experimental &#39;crick&#39; library.&quot;</span><span class="p">)</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">"Computing dataset quantiles with experimental 'crick' library."</span><span class="p">)</span>
     <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
     <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">q</span> <span class="o">&lt;=</span> <span class="mf">1.0</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">qs</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="n">axes</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="s2">&quot;_quantiles&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">axes</span>
+    <span class="k">assert</span> <span class="n">axes</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="s2">"_quantiles"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">axes</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_qs</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">qs</span><span class="p">))</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_axes</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">axes</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">axes</span><span class="p">)</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">_member_id</span> <span class="o">=</span> <span class="n">member_id</span>
@@ -2236,7 +2213,7 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">part</span><span class="p">,</span> <span class="n">Sample</span><span class="p">)</span>
         <span class="k">else</span> <span class="n">part</span><span class="o">.</span><span class="n">members</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_member_id</span><span class="p">]</span><span class="o">.</span><span class="n">data</span>
     <span class="p">)</span>
-    <span class="k">assert</span> <span class="s2">&quot;_quantiles&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tensor</span><span class="o">.</span><span class="n">dims</span>
+    <span class="k">assert</span> <span class="s2">"_quantiles"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tensor</span><span class="o">.</span><span class="n">dims</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_digest</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_initialize</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">tagged_shape</span><span class="p">)</span>
 
@@ -2707,7 +2684,7 @@
         <span class="k">return</span> <span class="p">{}</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="s2">&quot;Computed dataset percentiles naively by averaging percentiles of samples.&quot;</span>
+            <span class="s2">"Computed dataset percentiles naively by averaging percentiles of samples."</span>
         <span class="p">)</span>
         <span class="k">return</span> <span class="p">{</span>
             <span class="n">DatasetQuantile</span><span class="p">(</span><span class="n">q</span><span class="o">=</span><span class="n">q</span><span class="p">,</span> <span class="n">axes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_axes</span><span class="p">,</span> <span class="n">member_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_member_id</span><span class="p">):</span> <span class="n">e</span>
@@ -2757,8 +2734,8 @@
 <span class="normal">279</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">:</span> <span class="n">Sample</span><span class="p">):</span>
     <span class="n">tensor</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">members</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_member_id</span><span class="p">]</span>
     <span class="n">sample_estimates</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_qs</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_axes</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;linear&quot;</span>
-    <span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_qs</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_axes</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">"linear"</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"float64"</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
     <span class="c1"># reduced voxel count</span>
     <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">size</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="n">sample_estimates</span><span class="o">.</span><span class="n">shape_tuple</span><span class="p">[</span><span class="mi">1</span><span class="p">:]))</span>
@@ -2770,7 +2747,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_estimates</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_estimates</span> <span class="o">+</span> <span class="n">n</span> <span class="o">*</span> <span class="n">sample_estimates</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_n</span> <span class="o">+</span> <span class="n">n</span>
         <span class="p">)</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_estimates</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="s2">&quot;float64&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_estimates</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="s2">"float64"</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">_n</span> <span class="o">+=</span> <span class="n">n</span>
 </code></pre></div></td></tr></table></div>
@@ -2975,7 +2952,7 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">prod</span><span class="p">([</span><span class="n">tensor</span><span class="o">.</span><span class="n">sizes</span><span class="p">[</span><span class="n">d</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_axes</span><span class="p">]))</span>
 
-    <span class="k">if</span> <span class="n">xr</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;2023&quot;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">xr</span><span class="o">.</span><span class="n">__version__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"2023"</span><span class="p">):</span>
         <span class="n">var</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">dims</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_axes</span><span class="p">)</span> <span class="o">/</span> <span class="n">n</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">var</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_axes</span><span class="p">)</span> <span class="o">/</span> <span class="n">n</span>
@@ -3051,7 +3028,7 @@
         <span class="n">var</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_m2</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n</span>
         <span class="n">sqrt</span> <span class="o">=</span> <span class="n">var</span><span class="o">**</span><span class="mf">0.5</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sqrt</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
-            <span class="c1"># var and mean are scalar tensors, let&#39;s keep it consistent</span>
+            <span class="c1"># var and mean are scalar tensors, let's keep it consistent</span>
             <span class="n">sqrt</span> <span class="o">=</span> <span class="n">Tensor</span><span class="o">.</span><span class="n">from_xarray</span><span class="p">(</span><span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span><span class="n">sqrt</span><span class="p">))</span>
 
         <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sqrt</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">),</span> <span class="nb">type</span><span class="p">(</span><span class="n">sqrt</span><span class="p">)</span>
@@ -3112,13 +3089,13 @@
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_axes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">BATCH_AXIS_ID</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_axes</span><span class="p">:</span>
         <span class="k">return</span>
 
-    <span class="n">tensor</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">members</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_member_id</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">tensor</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">members</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_member_id</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"float64"</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">mean_b</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_axes</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="n">mean_b</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="s2">&quot;float64&quot;</span>
+    <span class="k">assert</span> <span class="n">mean_b</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="s2">"float64"</span>
     <span class="c1"># reduced voxel count</span>
     <span class="n">n_b</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">size</span> <span class="o">/</span> <span class="n">mean_b</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
     <span class="n">m2_b</span> <span class="o">=</span> <span class="p">((</span><span class="n">tensor</span> <span class="o">-</span> <span class="n">mean_b</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_axes</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="n">m2_b</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="s2">&quot;float64&quot;</span>
+    <span class="k">assert</span> <span class="n">m2_b</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="s2">"float64"</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mean</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_m2</span> <span class="ow">is</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_n</span> <span class="o">=</span> <span class="n">n_b</span>
@@ -3130,10 +3107,10 @@
         <span class="n">m2_a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_m2</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_n</span> <span class="o">=</span> <span class="n">n</span> <span class="o">=</span> <span class="n">n_a</span> <span class="o">+</span> <span class="n">n_b</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_mean</span> <span class="o">=</span> <span class="p">(</span><span class="n">n_a</span> <span class="o">*</span> <span class="n">mean_a</span> <span class="o">+</span> <span class="n">n_b</span> <span class="o">*</span> <span class="n">mean_b</span><span class="p">)</span> <span class="o">/</span> <span class="n">n</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mean</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="s2">&quot;float64&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mean</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="s2">"float64"</span>
         <span class="n">d</span> <span class="o">=</span> <span class="n">mean_b</span> <span class="o">-</span> <span class="n">mean_a</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_m2</span> <span class="o">=</span> <span class="n">m2_a</span> <span class="o">+</span> <span class="n">m2_b</span> <span class="o">+</span> <span class="n">d</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">n_a</span> <span class="o">*</span> <span class="n">n_b</span> <span class="o">/</span> <span class="n">n</span>
-        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_m2</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="s2">&quot;float64&quot;</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">_m2</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="s2">"float64"</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -3371,7 +3348,7 @@
 
 
 <a href="#bioimageio.core.stat_calculators.SampleQuantilesCalculator" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">SampleQuantilesCalculator</span><span class="p">(</span><span class="n"><span title="bioimageio.core.stat_calculators.SampleQuantilesCalculator(member_id)">member_id</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.stat_calculators.SampleQuantilesCalculator(axes)">axes</span></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Sequence">Sequence</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.AxisId">AxisId</a></span><span class="p">]],</span> <span class="n"><span title="bioimageio.core.stat_calculators.SampleQuantilesCalculator(qs)">qs</span></span><span class="p">:</span> <span class="n"><span title="typing.Collection">Collection</span></span><span class="p">[</span><span class="n"><span title="float">float</span></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.stat_calculators.SampleQuantilesCalculator(method)">method</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.QuantileMethod">QuantileMethod</a></span> <span class="o">=</span> <span class="s1">&#39;linear&#39;</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">SampleQuantilesCalculator</span><span class="p">(</span><span class="n"><span title="bioimageio.core.stat_calculators.SampleQuantilesCalculator(member_id)">member_id</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.MemberId">MemberId</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.stat_calculators.SampleQuantilesCalculator(axes)">axes</span></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Sequence">Sequence</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../axis/#bioimageio.core.axis.AxisId">AxisId</a></span><span class="p">]],</span> <span class="n"><span title="bioimageio.core.stat_calculators.SampleQuantilesCalculator(qs)">qs</span></span><span class="p">:</span> <span class="n"><span title="typing.Collection">Collection</span></span><span class="p">[</span><span class="n"><span title="float">float</span></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.stat_calculators.SampleQuantilesCalculator(method)">method</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.QuantileMethod">QuantileMethod</a></span> <span class="o">=</span> <span class="s1">'linear'</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3456,7 +3433,7 @@
     <span class="n">member_id</span><span class="p">:</span> <span class="n">MemberId</span><span class="p">,</span>
     <span class="n">axes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">AxisId</span><span class="p">]],</span>
     <span class="n">qs</span><span class="p">:</span> <span class="n">Collection</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
-    <span class="n">method</span><span class="p">:</span> <span class="n">QuantileMethod</span> <span class="o">=</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">:</span> <span class="n">QuantileMethod</span> <span class="o">=</span> <span class="s2">"linear"</span><span class="p">,</span>
 <span class="p">):</span>
     <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
     <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">q</span> <span class="o">&lt;=</span> <span class="mf">1.0</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">qs</span><span class="p">)</span>
@@ -3717,7 +3694,7 @@
         <span class="p">}</span>
         <span class="k">if</span> <span class="n">missing_dataset_meas</span><span class="p">:</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;ignoring `initial_dataset_measure` as it is missing </span><span class="si">{</span><span class="n">missing_dataset_meas</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"ignoring `initial_dataset_measure` as it is missing </span><span class="si">{</span><span class="n">missing_dataset_meas</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_current_dataset_measures</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
@@ -3812,7 +3789,7 @@
 <span class="normal">446</span>
 <span class="normal">447</span>
 <span class="normal">448</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">finalize</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="n">DatasetMeasure</span><span class="p">,</span> <span class="n">MeasureValue</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;returns aggregated dataset statistics&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""returns aggregated dataset statistics"""</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_dataset_measures</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_current_dataset_measures</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">calc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset_calculators</span><span class="p">:</span>
@@ -3848,7 +3825,7 @@
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">461</span>
 <span class="normal">462</span>
 <span class="normal">463</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">skip_update_and_get_all</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">:</span> <span class="n">Sample</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Measure</span><span class="p">,</span> <span class="n">MeasureValue</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns sample as well as previously computed dataset statistics&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Returns sample as well as previously computed dataset statistics"""</span>
     <span class="k">return</span> <span class="p">{</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_compute</span><span class="p">(</span><span class="n">sample</span><span class="p">),</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">finalize</span><span class="p">()}</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -3920,10 +3897,10 @@
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">sample</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Sample</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Sample</span><span class="p">]],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Measure</span><span class="p">,</span> <span class="n">MeasureValue</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns sample as well as updated dataset statistics&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Returns sample as well as updated dataset statistics"""</span>
     <span class="n">last_sample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_update</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">last_sample</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`sample` was not a `Sample`, nor did it yield any.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"`sample` was not a `Sample`, nor did it yield any."</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="p">{</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_compute</span><span class="p">(</span><span class="n">last_sample</span><span class="p">),</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">finalize</span><span class="p">()}</span>
 </code></pre></div></td></tr></table></div>
@@ -3958,29 +3935,6 @@
 
           
 
-
-  <div class="doc doc-backlinks">
-        <b class="doc doc-backlink-type">Used by:</b>
-          <ul class="doc doc-backlink-list">
-      <li class="doc doc-backlink">
-            <span class="doc doc-backlink-crumb">
-      <span>API Reference</span>
-  </span>
-
-            <span class="doc doc-backlink-crumb">
-      <a href="../../../#bioimageio.core"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;core</a>
-  </span>
-
-            <span class="doc doc-backlink-crumb last">
-      <a href="../../../#bioimageio.core.compute_dataset_measures"><code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;compute_dataset_measures</a>
-  </span>
-
-      </li>
-  </ul>
-
-  </div>
-
-
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/stat_calculators.py</code></summary>
               <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">577</span>
@@ -4002,7 +3956,7 @@
 <span class="normal">593</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">compute_dataset_measures</span><span class="p">(</span>
     <span class="n">measures</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">DatasetMeasure</span><span class="p">],</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Sample</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="n">DatasetMeasure</span><span class="p">,</span> <span class="n">MeasureValue</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;compute all dataset `measures` for the given `dataset`&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""compute all dataset `measures` for the given `dataset`"""</span>
     <span class="n">sample_calculators</span><span class="p">,</span> <span class="n">calculators</span> <span class="o">=</span> <span class="n">get_measure_calculators</span><span class="p">(</span><span class="n">measures</span><span class="p">)</span>
     <span class="k">assert</span> <span class="ow">not</span> <span class="n">sample_calculators</span>
 
@@ -4065,8 +4019,8 @@ sample measures are computed for the last sample in <code>dataset</code></p>
 <span class="normal">630</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">compute_measures</span><span class="p">(</span>
     <span class="n">measures</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Measure</span><span class="p">],</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Sample</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Measure</span><span class="p">,</span> <span class="n">MeasureValue</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;compute all `measures` for the given `dataset`</span>
-<span class="sd">    sample measures are computed for the last sample in `dataset`&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""compute all `measures` for the given `dataset`</span>
+<span class="sd">    sample measures are computed for the last sample in `dataset`"""</span>
     <span class="n">sample_calculators</span><span class="p">,</span> <span class="n">dataset_calculators</span> <span class="o">=</span> <span class="n">get_measure_calculators</span><span class="p">(</span><span class="n">measures</span><span class="p">)</span>
     <span class="n">ret</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">Measure</span><span class="p">,</span> <span class="n">MeasureValue</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">sample</span> <span class="o">=</span> <span class="kc">None</span>
@@ -4074,7 +4028,7 @@ sample measures are computed for the last sample in <code>dataset</code></p>
         <span class="k">for</span> <span class="n">calc</span> <span class="ow">in</span> <span class="n">dataset_calculators</span><span class="p">:</span>
             <span class="n">calc</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">sample</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;empty dataset&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"empty dataset"</span><span class="p">)</span>
 
     <span class="k">for</span> <span class="n">calc</span> <span class="ow">in</span> <span class="n">dataset_calculators</span><span class="p">:</span>
         <span class="n">ret</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">calc</span><span class="o">.</span><span class="n">finalize</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
@@ -4122,7 +4076,7 @@ sample measures are computed for the last sample in <code>dataset</code></p>
 <span class="normal">607</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">compute_sample_measures</span><span class="p">(</span>
     <span class="n">measures</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">SampleMeasure</span><span class="p">],</span> <span class="n">sample</span><span class="p">:</span> <span class="n">Sample</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="n">SampleMeasure</span><span class="p">,</span> <span class="n">MeasureValue</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;compute all sample `measures` for the given `sample`&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""compute all sample `measures` for the given `sample`"""</span>
     <span class="n">calculators</span><span class="p">,</span> <span class="n">dataset_calculators</span> <span class="o">=</span> <span class="n">get_measure_calculators</span><span class="p">(</span><span class="n">measures</span><span class="p">)</span>
     <span class="k">assert</span> <span class="ow">not</span> <span class="n">dataset_calculators</span>
     <span class="n">ret</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">SampleMeasure</span><span class="p">,</span> <span class="n">MeasureValue</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
@@ -4247,7 +4201,7 @@ sample measures are computed for the last sample in <code>dataset</code></p>
 <span class="normal">574</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">get_measure_calculators</span><span class="p">(</span>
     <span class="n">required_measures</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">Measure</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">SampleMeasureCalculator</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="n">DatasetMeasureCalculator</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;determines which calculators are needed to compute the required measures efficiently&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""determines which calculators are needed to compute the required measures efficiently"""</span>
 
     <span class="n">sample_calculators</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">SampleMeasureCalculator</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">dataset_calculators</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">DatasetMeasureCalculator</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
@@ -4464,7 +4418,7 @@ sample measures are computed for the last sample in <code>dataset</code></p>
       <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.expand", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.prune", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
     
     
-      <script src="../../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../../../assets/_markdown_exec_pyodide.js"></script>
       

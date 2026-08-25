@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../../../images/favicon.ico">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -653,10 +653,21 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#bioimageio.core.backends.DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#bioimageio.core.backends.create_model_adapter" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;create_model_adapter
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;create_model_adapter
       
     </span>
   </a>
@@ -903,34 +914,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../model_adapters/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    bioimageio.core.model_adapters
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../prediction/" class="md-nav__link">
         
   
@@ -995,6 +978,34 @@
     
   
     bioimageio.core.proc_setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remote_backends/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    bioimageio.core.remote_backends
   
 
     
@@ -1264,10 +1275,21 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#bioimageio.core.backends.DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#bioimageio.core.backends.create_model_adapter" class="md-nav__link">
     <span class="md-ellipsis">
       
-        <code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;create_model_adapter
+        <code class="doc-symbol doc-symbol-toc doc-symbol-function"></code>&nbsp;create_model_adapter
       
     </span>
   </a>
@@ -1326,29 +1348,6 @@
     <div class="doc doc-contents first">
 
           
-
-
-  <div class="doc doc-backlinks">
-        <b class="doc doc-backlink-type">Used by:</b>
-          <ul class="doc doc-backlink-list">
-      <li class="doc doc-backlink">
-            <span class="doc doc-backlink-crumb">
-      <span>API Reference</span>
-  </span>
-
-            <span class="doc doc-backlink-crumb">
-      <a href="../../../#bioimageio.core"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;core</a>
-  </span>
-
-            <span class="doc doc-backlink-crumb last">
-      <a href="../../../#bioimageio.core.create_model_adapter"><code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;create_model_adapter</a>
-  </span>
-
-      </li>
-  </ul>
-
-  </div>
-
 
 
 
@@ -1413,6 +1412,27 @@
 
 
 
+<p><span class="doc-section-title">Functions:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+            <tr class="doc-section-item">
+              <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.backends.create_model_adapter">create_model_adapter</a></code></td>
+              <td>
+                <div class="doc-md-description">
+                  <p>Creates model adapter for <code>model_descritption</code></p>
+                </div>
+              </td>
+            </tr>
+      </tbody>
+    </table>
+
+
 
 
 <p><span class="doc-section-title">Attributes:</span></p>
@@ -1426,8 +1446,9 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.backends.create_model_adapter">create_model_adapter</a></code></td>
+            <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.backends.DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER">DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER</a></code></td>
             <td>
+                  <code><span title="typing.Tuple">Tuple</span>[<a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.SupportedWeightsFormat">SupportedWeightsFormat</a>, ...]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1452,50 +1473,251 @@
 
 
 
-<h2 id="bioimageio.core.backends.create_model_adapter" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">create_model_adapter</span>
+<h2 id="bioimageio.core.backends.DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER</span>
 
 
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-module-attribute"><code>module-attribute</code></small>
   </span>
 
-<a href="#bioimageio.core.backends.create_model_adapter" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">create_model_adapter</span> <span class="o">=</span> <span class="n"><a class="autorefs autorefs-internal" href="../model_adapters/#bioimageio.core.model_adapters.ModelAdapter">ModelAdapter</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-internal" href="keras_backend/#bioimageio.core.backends.keras_backend.KerasModelAdapter.create">create</a></span>
+<a href="#bioimageio.core.backends.DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER</span><span class="p">:</span> <span class="n"><span title="typing.Tuple">Tuple</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.SupportedWeightsFormat">SupportedWeightsFormat</a></span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="s1">'pytorch_state_dict'</span><span class="p">,</span> <span class="s1">'tensorflow_saved_model_bundle'</span><span class="p">,</span> <span class="s1">'torchscript'</span><span class="p">,</span> <span class="s1">'onnx'</span><span class="p">,</span> <span class="s1">'keras_v3'</span><span class="p">,</span> <span class="s1">'keras_hdf5'</span><span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
           
-
-
-  <div class="doc doc-backlinks">
-        <b class="doc doc-backlink-type">Used by:</b>
-          <ul class="doc doc-backlink-list">
-      <li class="doc doc-backlink">
-            <span class="doc doc-backlink-crumb">
-      <span>API Reference</span>
-  </span>
-
-            <span class="doc doc-backlink-crumb">
-      <a href="../../../#bioimageio.core"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;core</a>
-  </span>
-
-            <span class="doc doc-backlink-crumb last">
-      <a href="../../../#bioimageio.core.create_model_adapter"><code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;create_model_adapter</a>
-  </span>
-
-      </li>
-  </ul>
-
-  </div>
-
     </div>
 
 </div>
 
 
 
+
+<div class="doc doc-object doc-function">
+
+
+<h2 id="bioimageio.core.backends.create_model_adapter" class="doc doc-heading">
+<code class="doc-symbol doc-symbol-heading doc-symbol-function"></code>            <span class="doc doc-object-name doc-function-name">create_model_adapter</span>
+
+
+<a href="#bioimageio.core.backends.create_model_adapter" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">create_model_adapter</span><span class="p">(</span><span class="n"><span title="bioimageio.core.backends.create_model_adapter(model_description)">model_description</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4">v0_4</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_4.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_4/#bioimageio.spec.model.v0_4.ModelDescr">ModelDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ModelDescr">ModelDescr</a></span><span class="p">],</span> <span class="o">*</span><span class="p">,</span> <span class="n"><span title="bioimageio.core.backends.create_model_adapter(devices)">devices</span></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Sequence">Sequence</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n"><span title="bioimageio.core.backends.create_model_adapter(weight_format_priority_order)">weight_format_priority_order</span></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><span title="typing.Sequence">Sequence</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../common/#bioimageio.core.common.SupportedWeightsFormat">SupportedWeightsFormat</a></span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
+
+    <div class="doc doc-contents ">
+
+        <p>Creates model adapter for <code>model_descritption</code></p>
+
+          
+
+            <details class="mkdocstrings-source">
+              <summary>Source code in <code>src/bioimageio/core/backends/__init__.py</code></summary>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">create_model_adapter</span><span class="p">(</span>
+    <span class="n">model_description</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">v0_4</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">,</span> <span class="n">v0_5</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">],</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">devices</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">weight_format_priority_order</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="n">SupportedWeightsFormat</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Creates model adapter for `model_descritption`"""</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_description</span><span class="p">,</span> <span class="p">(</span><span class="n">v0_4</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">,</span> <span class="n">v0_5</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"expected v0_4.ModelDescr or v0_5.ModelDescr, but got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">model_description</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
+        <span class="p">)</span>
+
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">model_description</span><span class="o">.</span><span class="n">weights</span>
+    <span class="n">errors</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="ne">Exception</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">weight_format_priority_order</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">DEFAULT_WEIGHT_FORMAT_PRIORITY_ORDER</span>
+        <span class="k">if</span> <span class="n">weight_format_priority_order</span> <span class="ow">is</span> <span class="kc">None</span>
+        <span class="k">else</span> <span class="n">weight_format_priority_order</span>
+    <span class="p">)</span>
+    <span class="c1"># limit weight formats to the ones present</span>
+    <span class="n">weight_format_priority_order_present</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">SupportedWeightsFormat</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">w</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="n">weight_format_priority_order</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">weight_format_priority_order_present</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">"None of the specified weight formats (</span><span class="si">{</span><span class="n">weight_format_priority_order</span><span class="si">}</span><span class="s2">) is present (</span><span class="si">{</span><span class="n">weight_format_priority_order_present</span><span class="si">}</span><span class="s2">)"</span>
+        <span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">wf</span> <span class="ow">in</span> <span class="n">weight_format_priority_order_present</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">wf</span> <span class="o">==</span> <span class="s2">"pytorch_state_dict"</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">weights</span><span class="o">.</span><span class="n">pytorch_state_dict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">.pytorch_backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">PytorchModelAdapter</span>
+
+                <span class="k">return</span> <span class="n">PytorchModelAdapter</span><span class="p">(</span><span class="n">model_description</span><span class="p">,</span> <span class="n">devices</span><span class="o">=</span><span class="n">devices</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">wf</span> <span class="o">==</span> <span class="s2">"tensorflow_saved_model_bundle"</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">weights</span><span class="o">.</span><span class="n">tensorflow_saved_model_bundle</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">.tensorflow_backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">create_tf_model_adapter</span>
+
+                <span class="k">return</span> <span class="n">create_tf_model_adapter</span><span class="p">(</span><span class="n">model_description</span><span class="p">,</span> <span class="n">devices</span><span class="o">=</span><span class="n">devices</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">wf</span> <span class="o">==</span> <span class="s2">"onnx"</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">weights</span><span class="o">.</span><span class="n">onnx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">.onnx_backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">ONNXModelAdapter</span>
+
+                <span class="k">return</span> <span class="n">ONNXModelAdapter</span><span class="p">(</span><span class="n">model_description</span><span class="p">,</span> <span class="n">devices</span><span class="o">=</span><span class="n">devices</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">wf</span> <span class="o">==</span> <span class="s2">"torchscript"</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">weights</span><span class="o">.</span><span class="n">torchscript</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">.torchscript_backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">TorchscriptModelAdapter</span>
+
+                <span class="k">return</span> <span class="n">TorchscriptModelAdapter</span><span class="p">(</span><span class="n">model_description</span><span class="p">,</span> <span class="n">devices</span><span class="o">=</span><span class="n">devices</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">wf</span> <span class="o">==</span> <span class="s2">"keras_hdf5"</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="n">weights</span><span class="o">.</span><span class="n">keras_hdf5</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="c1"># keras can either be installed as a separate package or used as part of tensorflow</span>
+            <span class="c1"># we try to first import the keras model adapter using the separate package and,</span>
+            <span class="c1"># if it is not available, try to load the one using tf</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="kn">from</span><span class="w"> </span><span class="nn">.keras_backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">KerasModelAdapter</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="kn">from</span><span class="w"> </span><span class="nn">.tensorflow_backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">KerasModelAdapter</span>
+
+                <span class="k">return</span> <span class="n">KerasModelAdapter</span><span class="p">(</span><span class="n">model_description</span><span class="p">,</span> <span class="n">devices</span><span class="o">=</span><span class="n">devices</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">wf</span> <span class="o">==</span> <span class="s2">"keras_v3"</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="n">v0_4</span><span class="o">.</span><span class="n">WeightsDescr</span><span class="p">),</span> <span class="p">(</span>
+                <span class="s2">"keras_v3 weights not supported for v0.4 specs"</span>
+            <span class="p">)</span>
+            <span class="k">assert</span> <span class="n">weights</span><span class="o">.</span><span class="n">keras_v3</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="kn">from</span><span class="w"> </span><span class="nn">.keras_backend</span><span class="w"> </span><span class="kn">import</span> <span class="n">KerasModelAdapter</span>
+
+                <span class="k">return</span> <span class="n">KerasModelAdapter</span><span class="p">(</span><span class="n">model_description</span><span class="p">,</span> <span class="n">devices</span><span class="o">=</span><span class="n">devices</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">assert_never</span><span class="p">(</span><span class="n">wf</span><span class="p">)</span>
+
+    <span class="k">assert</span> <span class="n">errors</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">weight_format_priority_order</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">errors</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="k">raise</span> <span class="n">errors</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s2">"None of the weight format specific model adapters could be created"</span>
+            <span class="o">+</span> <span class="s2">" in this environment."</span>
+        <span class="p">)</span>
+        <span class="k">raise</span> <span class="n">ExceptionGroup</span><span class="p">(</span><span class="n">msg</span><span class="p">,</span> <span class="n">errors</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
 
 
 
@@ -1622,7 +1844,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.expand", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.prune", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
     
     
-      <script src="../../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../../../assets/_markdown_exec_pyodide.js"></script>
       

@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../../../images/favicon.ico">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.6">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
     
     
       
@@ -33,7 +33,7 @@
       
     
     
-      <link rel="stylesheet" href="../../../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.ec1eaa64.min.css">
       
         
         <link rel="stylesheet" href="../../../../assets/stylesheets/palette.ab4e12ef.min.css">
@@ -845,34 +845,6 @@
   
   
     <li class="md-nav__item">
-      <a href="../model_adapters/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    bioimageio.core.model_adapters
-  
-
-    
-  </span>
-  
-  
-
-      </a>
-    </li>
-  
-
-              
-            
-              
-                
-  
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../prediction/" class="md-nav__link">
         
   
@@ -937,6 +909,34 @@
     
   
     bioimageio.core.proc_setup
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../remote_backends/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    bioimageio.core.remote_backends
   
 
     
@@ -1328,29 +1328,6 @@
           
 
 
-  <div class="doc doc-backlinks">
-        <b class="doc doc-backlink-type">Used by:</b>
-          <ul class="doc doc-backlink-list">
-      <li class="doc doc-backlink">
-            <span class="doc doc-backlink-crumb">
-      <span>API Reference</span>
-  </span>
-
-            <span class="doc doc-backlink-crumb">
-      <a href="../../../#bioimageio.core"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;core</a>
-  </span>
-
-            <span class="doc doc-backlink-crumb last">
-      <a href="../../../#bioimageio.core.add_weights"><code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;add_weights</a>
-  </span>
-
-      </li>
-  </ul>
-
-  </div>
-
-
-
 
 
 
@@ -1448,7 +1425,7 @@
 
 
 <a href="#bioimageio.core.weight_converters.add_weights" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">add_weights</span><span class="p">(</span><span class="n"><span title="bioimageio.core.weight_converters.add_weights(model_descr)">model_descr</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ModelDescr">ModelDescr</a></span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.weight_converters.add_weights(output_path)">output_path</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pydantic.DirectoryPath&lt;/code&gt;" href="https://docs.pydantic.dev/latest/api/pydantic/types/#pydantic.types.DirectoryPath">DirectoryPath</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.weight_converters.add_weights(source_format)">source_format</a></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.WeightsFormat&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.WeightsFormat">WeightsFormat</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.weight_converters.add_weights(target_format)">target_format</a></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.WeightsFormat&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.WeightsFormat">WeightsFormat</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.weight_converters.add_weights(verbose)">verbose</a></span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.weight_converters.add_weights(allow_tracing)">allow_tracing</a></span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ModelDescr">ModelDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.InvalidDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/#bioimageio.spec.InvalidDescr">InvalidDescr</a></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">add_weights</span><span class="p">(</span><span class="n"><span title="bioimageio.core.weight_converters.add_weights(model_descr)">model_descr</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ModelDescr">ModelDescr</a></span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.weight_converters.add_weights(output_path)">output_path</a></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;pydantic.DirectoryPath&lt;/code&gt;" href="https://docs.pydantic.dev/latest/api/pydantic/types/#pydantic.types.DirectoryPath">DirectoryPath</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.weight_converters.add_weights(source_format)">source_format</a></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.WeightsFormat&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.WeightsFormat">WeightsFormat</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.weight_converters.add_weights(target_format)">target_format</a></span><span class="p">:</span> <span class="n"><span title="typing.Optional">Optional</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.WeightsFormat&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.WeightsFormat">WeightsFormat</a></span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.weight_converters.add_weights(verbose)">verbose</a></span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.weight_converters.add_weights(allow_tracing)">allow_tracing</a></span><span class="p">:</span> <span class="n"><span title="bool">bool</span></span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ModelDescr">ModelDescr</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.InvalidDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/#bioimageio.spec.InvalidDescr">InvalidDescr</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1488,7 +1465,7 @@
 <h3 id="bioimageio.core.weight_converters.add_weights(source_format)" class="doc doc-heading doc-heading-parameter">                  <code>source_format</code>
 <a href="#bioimageio.core.weight_converters.add_weights(source_format)" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>            </td>
             <td>
-                  <code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.WeightsFormat&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.WeightsFormat">WeightsFormat</a>]</code>
+                  <code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.WeightsFormat&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.WeightsFormat">WeightsFormat</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1505,7 +1482,7 @@
 <h3 id="bioimageio.core.weight_converters.add_weights(target_format)" class="doc doc-heading doc-heading-parameter">                  <code>target_format</code>
 <a href="#bioimageio.core.weight_converters.add_weights(target_format)" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>            </td>
             <td>
-                  <code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.WeightsFormat&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.WeightsFormat">WeightsFormat</a>]</code>
+                  <code><span title="typing.Optional">Optional</span>[<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.WeightsFormat&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.WeightsFormat">WeightsFormat</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1564,7 +1541,7 @@
       <tbody>
           <tr class="doc-section-item">
             <td>
-                  <code><span title="typing.Union">Union</span>[<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ModelDescr">ModelDescr</a>, <a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.InvalidDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.10.2/api/#bioimageio.spec.InvalidDescr">InvalidDescr</a>]</code>
+                  <code><span title="typing.Union">Union</span>[<a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ModelDescr">ModelDescr</a>, <a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.InvalidDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/#bioimageio.spec.InvalidDescr">InvalidDescr</a>]</code>
             </td>
             <td>
               <div class="doc-md-description">
@@ -1576,29 +1553,6 @@
     </table>
 
           
-
-
-  <div class="doc doc-backlinks">
-        <b class="doc doc-backlink-type">Used by:</b>
-          <ul class="doc doc-backlink-list">
-      <li class="doc doc-backlink">
-            <span class="doc doc-backlink-crumb">
-      <span>API Reference</span>
-  </span>
-
-            <span class="doc doc-backlink-crumb">
-      <a href="../../../#bioimageio.core"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;core</a>
-  </span>
-
-            <span class="doc doc-backlink-crumb last">
-      <a href="../../../#bioimageio.core.add_weights"><code class="doc-symbol doc-symbol-toc doc-symbol-attribute"></code>&nbsp;add_weights</a>
-  </span>
-
-      </li>
-  </ul>
-
-  </div>
-
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/weight_converters/_add_weights.py</code></summary>
@@ -1774,7 +1728,7 @@
     <span class="n">verbose</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">allow_tracing</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">ModelDescr</span><span class="p">,</span> <span class="n">InvalidDescr</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert model weights to other formats and add them to the model description</span>
+<span class="w">    </span><span class="sd">"""Convert model weights to other formats and add them to the model description</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        output_path: Path to save updated model package to.</span>
@@ -1788,12 +1742,12 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        A (potentially invalid) model copy stored at `output_path` with added weights if any conversion was possible.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_descr</span><span class="p">,</span> <span class="n">ModelDescr</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">model_descr</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;model&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_descr</span><span class="p">,</span> <span class="n">InvalidDescr</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">model_descr</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">"model"</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_descr</span><span class="p">,</span> <span class="n">InvalidDescr</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Model format </span><span class="si">{</span><span class="n">model_descr</span><span class="o">.</span><span class="n">format</span><span class="si">}</span><span class="s2"> is not supported, please update&quot;</span>
-                <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; model to format </span><span class="si">{</span><span class="n">ModelDescr</span><span class="o">.</span><span class="n">implemented_format_version</span><span class="si">}</span><span class="s2"> first.&quot;</span>
+                <span class="sa">f</span><span class="s2">"Model format </span><span class="si">{</span><span class="n">model_descr</span><span class="o">.</span><span class="n">format</span><span class="si">}</span><span class="s2"> is not supported, please update"</span>
+                <span class="o">+</span> <span class="sa">f</span><span class="s2">" model to format </span><span class="si">{</span><span class="n">ModelDescr</span><span class="o">.</span><span class="n">implemented_format_version</span><span class="si">}</span><span class="s2"> first."</span>
             <span class="p">)</span>
 
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">model_descr</span><span class="p">))</span>
@@ -1804,7 +1758,7 @@
     <span class="p">)</span>
     <span class="c1"># reload from local folder to make sure we do not edit the given model</span>
     <span class="n">model_descr</span> <span class="o">=</span> <span class="n">load_model_description</span><span class="p">(</span>
-        <span class="n">output_path</span><span class="p">,</span> <span class="n">perform_io_checks</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">format_version</span><span class="o">=</span><span class="s2">&quot;latest&quot;</span>
+        <span class="n">output_path</span><span class="p">,</span> <span class="n">perform_io_checks</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">format_version</span><span class="o">=</span><span class="s2">"latest"</span>
     <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">source_format</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1819,14 +1773,14 @@
 
     <span class="n">originally_missing</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">missing</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="s2">&quot;pytorch_state_dict&quot;</span> <span class="ow">in</span> <span class="n">available</span> <span class="ow">and</span> <span class="s2">&quot;torchscript&quot;</span> <span class="ow">in</span> <span class="n">missing</span><span class="p">:</span>
+    <span class="k">if</span> <span class="s2">"pytorch_state_dict"</span> <span class="ow">in</span> <span class="n">available</span> <span class="ow">and</span> <span class="s2">"torchscript"</span> <span class="ow">in</span> <span class="n">missing</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="s2">&quot;Attempting to convert &#39;pytorch_state_dict&#39; weights to &#39;torchscript&#39;.&quot;</span>
+            <span class="s2">"Attempting to convert 'pytorch_state_dict' weights to 'torchscript'."</span>
         <span class="p">)</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">.pytorch_to_torchscript</span><span class="w"> </span><span class="kn">import</span> <span class="n">convert</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">torchscript_weights_path</span> <span class="o">=</span> <span class="n">output_path</span> <span class="o">/</span> <span class="s2">&quot;weights_torchscript.pt&quot;</span>
+            <span class="n">torchscript_weights_path</span> <span class="o">=</span> <span class="n">output_path</span> <span class="o">/</span> <span class="s2">"weights_torchscript.pt"</span>
             <span class="n">model_descr</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">torchscript</span> <span class="o">=</span> <span class="n">convert</span><span class="p">(</span>
                 <span class="n">model_descr</span><span class="p">,</span>
                 <span class="n">output_path</span><span class="o">=</span><span class="n">torchscript_weights_path</span><span class="p">,</span>
@@ -1838,17 +1792,17 @@
 
             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">available</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;torchscript&quot;</span><span class="p">)</span>
-            <span class="n">missing</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="s2">&quot;torchscript&quot;</span><span class="p">)</span>
+            <span class="n">available</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">"torchscript"</span><span class="p">)</span>
+            <span class="n">missing</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="s2">"torchscript"</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">allow_tracing</span> <span class="ow">and</span> <span class="s2">&quot;pytorch_state_dict&quot;</span> <span class="ow">in</span> <span class="n">available</span> <span class="ow">and</span> <span class="s2">&quot;torchscript&quot;</span> <span class="ow">in</span> <span class="n">missing</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">allow_tracing</span> <span class="ow">and</span> <span class="s2">"pytorch_state_dict"</span> <span class="ow">in</span> <span class="n">available</span> <span class="ow">and</span> <span class="s2">"torchscript"</span> <span class="ow">in</span> <span class="n">missing</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="s2">&quot;Attempting to convert &#39;pytorch_state_dict&#39; weights to &#39;torchscript&#39; by tracing.&quot;</span>
+            <span class="s2">"Attempting to convert 'pytorch_state_dict' weights to 'torchscript' by tracing."</span>
         <span class="p">)</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">.pytorch_to_torchscript</span><span class="w"> </span><span class="kn">import</span> <span class="n">convert</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">torchscript_weights_path</span> <span class="o">=</span> <span class="n">output_path</span> <span class="o">/</span> <span class="s2">&quot;weights_torchscript_traced.pt&quot;</span>
+            <span class="n">torchscript_weights_path</span> <span class="o">=</span> <span class="n">output_path</span> <span class="o">/</span> <span class="s2">"weights_torchscript_traced.pt"</span>
 
             <span class="n">model_descr</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">torchscript</span> <span class="o">=</span> <span class="n">convert</span><span class="p">(</span>
                 <span class="n">model_descr</span><span class="p">,</span>
@@ -1861,15 +1815,15 @@
 
             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">available</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;torchscript&quot;</span><span class="p">)</span>
-            <span class="n">missing</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="s2">&quot;torchscript&quot;</span><span class="p">)</span>
+            <span class="n">available</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">"torchscript"</span><span class="p">)</span>
+            <span class="n">missing</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="s2">"torchscript"</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="s2">&quot;pytorch_state_dict&quot;</span> <span class="ow">in</span> <span class="n">available</span> <span class="ow">and</span> <span class="s2">&quot;onnx&quot;</span> <span class="ow">in</span> <span class="n">missing</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Attempting to convert &#39;pytorch_state_dict&#39; weights to &#39;onnx&#39;.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">"pytorch_state_dict"</span> <span class="ow">in</span> <span class="n">available</span> <span class="ow">and</span> <span class="s2">"onnx"</span> <span class="ow">in</span> <span class="n">missing</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Attempting to convert 'pytorch_state_dict' weights to 'onnx'."</span><span class="p">)</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">.pytorch_to_onnx</span><span class="w"> </span><span class="kn">import</span> <span class="n">convert</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">onnx_weights_path</span> <span class="o">=</span> <span class="n">output_path</span> <span class="o">/</span> <span class="s2">&quot;weights.onnx&quot;</span>
+            <span class="n">onnx_weights_path</span> <span class="o">=</span> <span class="n">output_path</span> <span class="o">/</span> <span class="s2">"weights.onnx"</span>
 
             <span class="n">model_descr</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">onnx</span> <span class="o">=</span> <span class="n">convert</span><span class="p">(</span>
                 <span class="n">model_descr</span><span class="p">,</span>
@@ -1882,15 +1836,15 @@
 
             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">available</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;onnx&quot;</span><span class="p">)</span>
-            <span class="n">missing</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="s2">&quot;onnx&quot;</span><span class="p">)</span>
+            <span class="n">available</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">"onnx"</span><span class="p">)</span>
+            <span class="n">missing</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="s2">"onnx"</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="s2">&quot;torchscript&quot;</span> <span class="ow">in</span> <span class="n">available</span> <span class="ow">and</span> <span class="s2">&quot;onnx&quot;</span> <span class="ow">in</span> <span class="n">missing</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Attempting to convert &#39;torchscript&#39; weights to &#39;onnx&#39;.&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="s2">"torchscript"</span> <span class="ow">in</span> <span class="n">available</span> <span class="ow">and</span> <span class="s2">"onnx"</span> <span class="ow">in</span> <span class="n">missing</span><span class="p">:</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Attempting to convert 'torchscript' weights to 'onnx'."</span><span class="p">)</span>
         <span class="kn">from</span><span class="w"> </span><span class="nn">.torchscript_to_onnx</span><span class="w"> </span><span class="kn">import</span> <span class="n">convert</span>
 
         <span class="k">try</span><span class="p">:</span>
-            <span class="n">onnx_weights_path</span> <span class="o">=</span> <span class="n">output_path</span> <span class="o">/</span> <span class="s2">&quot;weights.onnx&quot;</span>
+            <span class="n">onnx_weights_path</span> <span class="o">=</span> <span class="n">output_path</span> <span class="o">/</span> <span class="s2">"weights.onnx"</span>
             <span class="n">model_descr</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">onnx</span> <span class="o">=</span> <span class="n">convert</span><span class="p">(</span>
                 <span class="n">model_descr</span><span class="p">,</span>
                 <span class="n">output_path</span><span class="o">=</span><span class="n">onnx_weights_path</span><span class="p">,</span>
@@ -1902,30 +1856,30 @@
 
             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">available</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">&quot;onnx&quot;</span><span class="p">)</span>
-            <span class="n">missing</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="s2">&quot;onnx&quot;</span><span class="p">)</span>
+            <span class="n">available</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="s2">"onnx"</span><span class="p">)</span>
+            <span class="n">missing</span><span class="o">.</span><span class="n">discard</span><span class="p">(</span><span class="s2">"onnx"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">missing</span><span class="p">:</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;Converting from any of the available weights formats </span><span class="si">{</span><span class="n">available</span><span class="si">}</span><span class="s2"> to any&quot;</span>
-            <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot; of </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2"> failed or is not yet implemented. Please create an issue&quot;</span>
-            <span class="o">+</span> <span class="s2">&quot; at https://github.com/bioimage-io/core-bioimage-io-python/issues/new/choose&quot;</span>
-            <span class="o">+</span> <span class="s2">&quot; if you would like bioimageio.core to support a particular conversion.&quot;</span>
+            <span class="sa">f</span><span class="s2">"Converting from any of the available weights formats </span><span class="si">{</span><span class="n">available</span><span class="si">}</span><span class="s2"> to any"</span>
+            <span class="o">+</span> <span class="sa">f</span><span class="s2">" of </span><span class="si">{</span><span class="n">missing</span><span class="si">}</span><span class="s2"> failed or is not yet implemented. Please create an issue"</span>
+            <span class="o">+</span> <span class="s2">" at https://github.com/bioimage-io/core-bioimage-io-python/issues/new/choose"</span>
+            <span class="o">+</span> <span class="s2">" if you would like bioimageio.core to support a particular conversion."</span>
         <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">originally_missing</span> <span class="o">==</span> <span class="n">missing</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;failed to add any converted weights&quot;</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"failed to add any converted weights"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">model_descr</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;added weights formats </span><span class="si">{}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">originally_missing</span> <span class="o">-</span> <span class="n">missing</span><span class="p">)</span>
+        <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"added weights formats </span><span class="si">{}</span><span class="s2">"</span><span class="p">,</span> <span class="n">originally_missing</span> <span class="o">-</span> <span class="n">missing</span><span class="p">)</span>
         <span class="c1"># resave model with updated rdf.yaml</span>
         <span class="n">_</span> <span class="o">=</span> <span class="n">save_bioimageio_package_as_folder</span><span class="p">(</span><span class="n">model_descr</span><span class="p">,</span> <span class="n">output_path</span><span class="o">=</span><span class="n">output_path</span><span class="p">)</span>
         <span class="n">tested_model_descr</span> <span class="o">=</span> <span class="n">load_description_and_test</span><span class="p">(</span>
-            <span class="n">model_descr</span><span class="p">,</span> <span class="n">format_version</span><span class="o">=</span><span class="s2">&quot;latest&quot;</span><span class="p">,</span> <span class="n">expected_type</span><span class="o">=</span><span class="s2">&quot;model&quot;</span>
+            <span class="n">model_descr</span><span class="p">,</span> <span class="n">format_version</span><span class="o">=</span><span class="s2">"latest"</span><span class="p">,</span> <span class="n">expected_type</span><span class="o">=</span><span class="s2">"model"</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tested_model_descr</span><span class="p">,</span> <span class="n">ModelDescr</span><span class="p">):</span>
             <span class="n">logger</span><span class="o">.</span><span class="n">error</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;The updated model description at </span><span class="si">{</span><span class="n">output_path</span><span class="si">}</span><span class="s2"> did not pass testing.&quot;</span>
+                <span class="sa">f</span><span class="s2">"The updated model description at </span><span class="si">{</span><span class="n">output_path</span><span class="si">}</span><span class="s2"> did not pass testing."</span>
             <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">tested_model_descr</span>
@@ -2060,7 +2014,7 @@
       <script id="__config" type="application/json">{"annotate": null, "base": "../../../..", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.expand", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.prune", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
     
     
-      <script src="../../../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../../assets/javascripts/bundle.d7400e89.min.js"></script>
       
         <script src="../../../../assets/_markdown_exec_pyodide.js"></script>
       
