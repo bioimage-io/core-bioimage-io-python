@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import (
     Literal,
@@ -142,33 +142,29 @@ class AxisInfo(Axis):
 
 
 def single_letter_dims_if_possible(
-    dims: tuple[AxisId, ...],
+    dims: Sequence[AxisId],
 ) -> tuple[str, ...]:
     """Return a tuple of single-letter dimension names if possible, otherwise return the original dimension names."""
     single_letter_dims: list[str] = []
 
-    def add_letter(d: str):
-        assert len(d) == 1
-        not_unique = d in single_letter_dims
-        single_letter_dims.append(d)
-        return not_unique
-
     for d in dims:
         d = str(d).lower()
         if d in ("batch", "b"):
-            not_unique = add_letter("b")
+            single_letter_dims.append("b")
         elif d in ("time", "t"):
-            not_unique = add_letter("t")
+            single_letter_dims.append("t")
         elif d in ("index", "i"):
-            not_unique = add_letter("i")
+            single_letter_dims.append("i")
         elif d in ("channel", "c"):
-            not_unique = add_letter("c")
+            single_letter_dims.append("c")
         elif d in "zyx":
-            not_unique = add_letter(d)
+            single_letter_dims.append(d)
         else:
-            return dims  # Return original dims if any dim cannot be converted to a single letter
+            # Return original dims if any dim cannot be converted to a single letter
+            return tuple(dims)
 
-        if not_unique:
-            return dims  # Return original dims if any single letter dim is not unique
+    if len(set(single_letter_dims)) != len(single_letter_dims):
+        # Return original dims if any single letter dim is not unique
+        return tuple(dims)
 
     return tuple(single_letter_dims)

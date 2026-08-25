@@ -35,6 +35,7 @@ from .common import (
     QuantileMethod,
     SliceInfo,
 )
+from .utils._color import get_default_channel_colors
 from .utils._type_guards import is_dict, is_mapping, is_sequence
 
 try:
@@ -166,17 +167,19 @@ class Tensor(MagicTensorOpsMixin):
         scale: Mapping[Any, Any] = _scale if is_mapping(_scale) else {}
         del _scale
         return {
-            a if isinstance(a, AxisId) else AxisId(a): float(s)
+            a if isinstance(a, AxisId) else AxisId(a): 1.0 if s is None else float(s)
             for a, s in scale.items()
-            if s is not None
         }
 
     def set_physical_scale(self, scale: PerAxis[float | None]) -> None:
         """Set the physical scale of each axis in units (see `set_physical_scale_unit`)."""
+        if unknown_axes := [d for d in scale if d not in self.dims]:
+            raise ValueError(
+                f"Cannot set physical scale for axes {unknown_axes} not in tensor axes {self.dims}"
+            )
+
         self._data.attrs["physical_scale"] = {
-            a if isinstance(a, AxisId) else AxisId(a): float(s)
-            for a, s in scale.items()
-            if s is not None
+            d: 1.0 if (s := scale.get(d)) is None else float(s) for d in self.dims
         }
 
     def get_physical_scale_unit(self) -> PerAxis[SpaceUnit | TimeUnit | str]:
@@ -184,20 +187,18 @@ class Tensor(MagicTensorOpsMixin):
         _unit = self._data.attrs.get("physical_scale_unit", None)
         unit: Mapping[Any, Any] = _unit if is_mapping(_unit) else {}
         del _unit
-        return {
-            a if isinstance(a, AxisId) else AxisId(a): str(u)
-            for a, u in unit.items()
-            if u is not None
-        }
+        return {d: "" if (u := unit.get(d)) is None else str(u) for d in self.dims}
 
     def set_physical_scale_unit(
         self, unit: PerAxis[SpaceUnit | TimeUnit | str | None]
     ) -> None:
         """Set the physical unit of each axis."""
+        if unknown_axes := [d for d in unit if d not in self.dims]:
+            raise ValueError(
+                f"Cannot set physical scale unit for axes {unknown_axes} not in tensor axes {self.dims}"
+            )
         self._data.attrs["physical_scale_unit"] = {
-            a if isinstance(a, AxisId) else AxisId(a): str(u)
-            for a, u in unit.items()
-            if u is not None
+            d: "" if (u := unit.get(d)) is None else str(u) for d in self.dims
         }
 
     @property
@@ -225,28 +226,36 @@ class Tensor(MagicTensorOpsMixin):
             logger.warning(
                 "Number of channel names ({}) does not match number of channels ({})",
                 len(names),
-                self.sizes.get(AxisId("c"), 0),
+                self.sizes.get(AxisId("channel"), 0),
             )
         self._data.attrs["channel_names"] = names
 
     @property
     def channel_colors(self) -> list[str] | None:
-        """Return the channel colors if available, otherwise None."""
+        """Return channel colors ."""
+
+        n_channels = self.sizes.get(AxisId("channel"), 0)
+        if n_channels == 0:
+            return None
 
         colors = self._data.attrs.get("channel_colors", None)
         if not is_sequence(colors):
-            return None
+            colors = None
 
-        n_channels = self.sizes.get(AxisId("channel"), 0)
-        if len(colors) < n_channels:
+        if colors is not None and len(colors) < n_channels:
             logger.warning(
-                "Number of channel colors ({}) lower than number of channels ({})",
+                "Overwriting existing channel colors with default colors due to too few channel colors: {} colors for {} channels",
                 len(colors),
                 n_channels,
             )
-            return None
+            colors = None
 
-        return [str(name) for name in colors[:n_channels]]
+        if colors is None:
+            default_channel_colors = get_default_channel_colors(n_channels)
+            self.channel_colors = default_channel_colors
+            return default_channel_colors
+        else:
+            return [str(c) for c in colors[:n_channels]]
 
     @channel_colors.setter
     def channel_colors(self, colors: list[str] | None) -> None:
@@ -259,6 +268,17 @@ class Tensor(MagicTensorOpsMixin):
                 n_channels,
             )
         self._data.attrs["channel_colors"] = colors
+
+    @property
+    def name(self) -> str | None:
+        """Return the name of the tensor if available, otherwise None."""
+        name = self._data.attrs.get("name")
+        return None if name is None else str(name)
+
+    @name.setter
+    def name(self, name: str | None) -> None:
+        """Set the name of the tensor."""
+        self._data.attrs["name"] = name
 
     def squeeze(self, dim: AxisId | Sequence[AxisId] | None = None) -> Self:
         """Return a tensor with all the singleton dimensions removed."""

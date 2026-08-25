@@ -68,7 +68,12 @@ class Sample:
     def __getitem__(
         self,
         key: PerMember[
-            SliceInfo | slice | int | PerAxis[SliceInfo | slice | int] | Tensor | xr.DataArray
+            SliceInfo
+            | slice
+            | int
+            | PerAxis[SliceInfo | slice | int]
+            | Tensor
+            | xr.DataArray
         ],
     ) -> Self:
         return self.__class__(
@@ -76,6 +81,12 @@ class Sample:
             stat=self.stat,
             id=self.id,
         )
+
+    def __postinit__(self):
+        # default tensor names to member ids
+        for m, t in self.members.items():
+            if t.name is None:
+                t.name = str(m)
 
     @property
     def batch_multi_index(self) -> pd.MultiIndex | None:
@@ -300,13 +311,11 @@ class Sample:
 
         if (
             len(
-                
-                    batch_lengths := {
-                        t.sizes[AxisId("batch")]
-                        for t in members.values()
-                        if AxisId("batch") in t.dims
-                    }
-                
+                batch_lengths := {
+                    t.sizes[AxisId("batch")]
+                    for t in members.values()
+                    if AxisId("batch") in t.dims
+                }
             )
             > 1
         ):

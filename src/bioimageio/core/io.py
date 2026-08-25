@@ -6,9 +6,9 @@ import warnings
 import zipfile
 from collections.abc import Iterable, Mapping, Sequence
 from contextlib import nullcontext
-from io import BytesIO
+from io import BytesIO, TextIOWrapper
 from itertools import chain
-from pathlib import Path, PosixPath, PurePath
+from pathlib import Path, PosixPath, PurePath, PurePosixPath
 from shutil import copyfileobj
 from typing import TYPE_CHECKING, TypedDict, Union
 
@@ -21,13 +21,20 @@ from imageio.v3 import (
     imwrite,  # type: ignore
 )
 from loguru import logger
-from pydantic import BaseModel, RootModel
+from pydantic import BaseModel, RootModel, TypeAdapter
 from typing_extensions import Literal, TypeAlias, assert_never
 from typing_extensions import TypeAliasType as _TypeAliasType
 
-from bioimageio.spec import get_validation_context
+from bioimageio.core.utils._tiff_metadata import (
+    ImageJMetadata,
+    OmeChannelMetadata,
+    OmeMetadata,
+    create_ome_metadata_from_xml_string,
+)
 from bioimageio.spec._internal.io import (
     RelativeDirectory,
+    ZarrSource,
+    ZarrUrl,
     get_reader,
     interprete_file_source,
 )
@@ -35,6 +42,7 @@ from bioimageio.spec.common import (
     BytesReader,
     FileDescr,
     FileSource,
+    FtpUrl,
     HttpUrl,
     PermissiveFileSource,
     RelativeFilePath,
@@ -49,7 +57,9 @@ from .common import PerMember, SliceInfo
 from .sample import Sample, SampleBlock
 from .stat_measures import DatasetMeasure, MeasureValue, SampleMeasure, Stat
 from .tensor import Tensor
+from .utils._color import hex_to_rgb
 from .utils._io_zarr import open_zarr_multiscale_array
+from .utils._type_guards import is_tuple
 
 if TYPE_CHECKING:
     JsonValue: TypeAlias = Union[
@@ -75,7 +85,7 @@ JsonValueReadOnly: TypeAlias = Union[
     Mapping[str, "JsonValueReadOnly"],
 ]
 
-IO_Lib: TypeAlias = Literal["bioio", "imageio", "clearscale", "numpy"]
+IO_Lib: TypeAlias = Literal["bioio", "imageio", "clearscale", "numpy", "tifffile"]
 
 
 def load_tensor(
@@ -91,9 +101,9 @@ def load_tensor(
         Defaults to trying various libraries depending on file extension.
 
     """
-    file_source, extension, subdir = _interprete_tensor_source(source)
+    file_source, extensions, internal_path = _interprete_tensor_source(source)
     if io_lib is None:
-        try_io_libs = _select_io_libs_based_on_extension(extension)
+        try_io_libs = _select_io_libs_based_on_extension(extensions)
 
         exceptions: list[Exception] = []
         for auto_io_lib in try_io_libs:
@@ -110,18 +120,25 @@ def load_tensor(
         )
 
     elif io_lib == "bioio":
-        t = _load_tensor_bioio(file_source, None if subdir is None else str(subdir))
+        t = _load_tensor_bioio(
+            file_source, None if internal_path is None else str(internal_path)
+        )
     elif io_lib == "clearscale":
         t = _load_tensor_clearscale(source)
+    elif io_lib == "imageio":
+        reader = get_reader(source)
+        array = imread(
+            reader.read(),
+            extension=extensions[-1] if extensions else None,  # pyright: ignore[reportArgumentType]
+        )
+        t = Tensor.from_array(array, dims=axes)
+        axes = None
     elif io_lib == "numpy":
         array = load_array(source)
         t = Tensor.from_array(array, dims=axes)
         axes = None
-    elif io_lib == "imageio":
-        reader = get_reader(source)
-        array = imread(reader.read(), extension=extension)  # pyright: ignore[reportArgumentType]
-        t = Tensor.from_array(array, dims=axes)
-        axes = None
+    elif io_lib == "tifffile":
+        t = _load_tensor_tifffile(source)
     else:
         assert_never(io_lib)
 
@@ -131,26 +148,33 @@ def load_tensor(
     return t
 
 
-def _select_io_libs_based_on_extension(extension: str | None) -> tuple[IO_Lib, ...]:
-    if extension is None:
+def _select_io_libs_based_on_extension(
+    extensions: list[str] | None,
+) -> tuple[IO_Lib, ...]:
+    if not extensions:
         return ("bioio", "imageio", "clearscale")
 
-    extension = extension.lower()
-    if extension == ".npy":
+    if extensions[-1] == ".npy":
         return ("numpy",)
-    elif extension == ".zarr":
+    elif extensions[-1] == ".zarr":
         return ("bioio", "clearscale")
+    elif extensions[-2:] in ([".ome", ".tif"], [".ome", ".tiff"]):
+        return ("tifffile", "bioio")
+    elif extensions[-1] in (".tif", ".tiff"):
+        return ("tifffile", "imageio")
     else:
         return ("bioio", "imageio")
 
 
 def _load_tensor_bioio(
-    source: FileSource | ZipPath,
-    subdir: str | None,
+    source: ZarrSource | FileSource | ZipPath,
+    internal_path: str | None,
 ) -> Tensor:
     """Load an image tensor using bioio"""
 
     import bioio
+
+    logger.debug("Loading tensor from {} with bioio", source)
 
     if isinstance(source, FileDescr):
         src = source.source
@@ -163,8 +187,34 @@ def _load_tensor_bioio(
     del source
 
     img = bioio.BioImage(src)
-    if subdir is not None:
-        img.set_scene(subdir)
+    if internal_path is not None:
+        internal_path_found = False
+        try:
+            import bioio_ome_zarr
+
+        except ImportError:
+            pass
+        else:
+            if isinstance(img.reader, bioio_ome_zarr.Reader):
+                multiscale = img.reader._multiscales_metadata[img.current_scene_index]  # pyright: ignore
+                datasets = multiscale.get("datasets", [])  # pyright: ignore
+                data_paths = [datasets[i].get("path") for i in img.resolution_levels]  # pyright: ignore
+                if internal_path not in data_paths:
+                    raise ValueError(
+                        f"Resolution level {internal_path} not found in multiscales datasets: {data_paths}"
+                    )
+                resolution_level = data_paths.index(internal_path)
+                img.set_resolution_level(resolution_level)
+                internal_path_found = True
+            else:
+                raise NotImplementedError(
+                    f"Reading from internal path {internal_path} is not implemented for bioio reader {type(img.reader)}"  # pyright: ignore[reportUnknownArgumentType]
+                )
+
+        if not internal_path_found:
+            raise ValueError(
+                f"Internal path {internal_path} not found with bioio in {src}"
+            )
 
     dataarray_bioio = img.xarray_dask_data.squeeze()  # pyright: ignore[reportUnknownVariableType]
     assert isinstance(dataarray_bioio, xr.DataArray)
@@ -182,32 +232,41 @@ def _load_tensor_bioio(
     # add physical scale
     scale_bioio: dict[str, float | None] = {
         "T": img.scale.T,
-        # "C": img.scale.C,  # should be 'dimensionless'
+        "C": img.scale.C,
         "Z": img.scale.Z,
         "Y": img.scale.Y,
         "X": img.scale.X,
     }
+    if (raw_c_unit := img.dimension_properties.C.unit) is None or str(  # pyright: ignore[reportUnknownVariableType]
+        raw_c_unit  # pyright: ignore[reportUnknownArgumentType]
+    ) == "dimensionless":
+        c_unit = None
+    else:
+        c_unit = str(raw_c_unit)  # pyright: ignore[reportUnknownArgumentType]
     unit_bioio: dict[str, str | None] = {
         "T": img.dimension_properties.T.unit,
-        # "C": img.dimension_properties.C.unit,  # should be 'dimensionless'
+        "C": c_unit,
         "Z": img.dimension_properties.Z.unit,
         "Y": img.dimension_properties.Y.unit,
         "X": img.dimension_properties.X.unit,
     }
-    scale = {axes_map[k]: v for k, v in scale_bioio.items() if v is not None}
-    unit = {axes_map[k]: str(v) for k, v in unit_bioio.items() if v is not None}
+    scale = {
+        axes_map[k]: v
+        for k, v in scale_bioio.items()
+        if k in axes_map and v is not None
+    }
+    unit = {
+        axes_map[k]: str(v)
+        for k, v in unit_bioio.items()
+        if k in axes_map and v is not None
+    }
     t.set_physical_scale(scale)
     t.set_physical_scale_unit(unit)
     return t
 
 
 def _load_tensor_clearscale(source: FileDescr | PermissiveFileSource) -> Tensor:
-    """load a single image as numpy array
-
-    Args:
-        source: image source
-        subdir: image name
-    """
+    """load a single image as numpy array"""
     import dask.array as da
 
     if isinstance(source, FileDescr):
@@ -231,6 +290,145 @@ def _load_tensor_clearscale(source: FileDescr | PermissiveFileSource) -> Tensor:
     return Tensor.from_xarray(xr.DataArray(image, dims=axes))
 
 
+def _load_tensor_tifffile(source: FileDescr | PermissiveFileSource) -> Tensor:
+    import tifffile
+
+    logger.debug("loading tensor from {} with tifffile", source)
+    if isinstance(source, FileDescr):
+        source = source.source.absolute()
+
+    if isinstance(source, RelativeFilePath):
+        source = source.absolute()
+
+    if isinstance(source, ZipPath):
+        ctxt = source.open("rb")
+        name = source.name
+        suffixes = source.suffixes
+    else:
+        if isinstance(source, (RootHttpUrl, pydantic.AnyUrl)):
+            source = str(source)
+
+        if isinstance(source, Path):
+            suffixes = source.suffixes
+        else:
+            suffixes = PurePosixPath(source).suffixes
+
+        ctxt = nullcontext(source)
+        name = None
+
+    with ctxt as f:
+        assert not isinstance(f, TextIOWrapper)
+
+        tif = tifffile.TiffFile(f, name=name)
+        try:
+            xr_data = tif.asxarray()
+            page = tif.pages[0]
+            if isinstance(page, tifffile.TiffFrame):
+                page = None if page.pages is None else page.pages[0]
+                if isinstance(page, tifffile.TiffFrame):
+                    page = None
+
+            if page is None:
+                x_res = None
+                y_res = None
+                unit = None
+            else:
+                x_res = page.tags["XResolution"].value
+                y_res = page.tags["YResolution"].value
+
+                try:
+                    x_res = x_res[0] / x_res[1] if is_tuple(x_res) else x_res
+                    x_res = None if x_res is None else float(x_res)
+                except Exception as e:
+                    logger.opt(exception=e).warning(
+                        "Failed to interprete tiff XResolution tag: {}", x_res
+                    )
+                    x_res = None
+
+                try:
+                    y_res = y_res[0] / y_res[1] if is_tuple(y_res) else y_res
+                    y_res = None if y_res is None else float(y_res)
+                except Exception as e:
+                    logger.opt(exception=e).warning(
+                        "Failed to interprete tiff YResolution tag: {}", y_res
+                    )
+                    y_res = None
+
+                unit_tag = page.tags.get("ResolutionUnit")
+                unit = unit_tag.value if unit_tag else None
+
+            ij_metadata = ImageJMetadata(**(tif.imagej_metadata or {}))
+            ome_metadata = None
+            if (
+                suffixes[-2:] in ([".ome", ".tif"], [".ome", ".tiff"])
+                or not ij_metadata
+            ) and tif.ome_metadata is not None:
+                try:
+                    ome_metadata = create_ome_metadata_from_xml_string(tif.ome_metadata)
+                except Exception as e:
+                    logger.opt(exception=e).warning(
+                        "Failed to parse OME-XML metadata from tif.ome_metadata"
+                    )
+
+            if ome_metadata is None:
+                ome_metadata = OmeMetadata()
+
+        finally:
+            tif.close()
+
+    t = Tensor.from_xarray(xr_data)
+
+    # set physical scale
+    x_scale = ome_metadata.PhysicalSizeX or (
+        1 / x_res if x_res is not None and x_res != 0 else None
+    )
+    y_scale = ome_metadata.PhysicalSizeY or (
+        1 / y_res if y_res is not None and y_res != 0 else x_scale
+    )
+    z_scale = ome_metadata.PhysicalSizeZ or ij_metadata.spacing or x_scale
+    t_scale = (
+        ome_metadata.TimeIncrement or ij_metadata.finterval or None
+        if ij_metadata.fps is None
+        else 1 / ij_metadata.fps
+    )
+    scale = {
+        AxisId("x"): x_scale,
+        AxisId("y"): y_scale,
+        AxisId("z"): z_scale,
+        AxisId("time"): t_scale,
+    }
+    t.set_physical_scale({k: v for k, v in scale.items() if k in t.dims})
+
+    # set physical scale unit
+    x_unit = ome_metadata.PhysicalSizeXUnit or ij_metadata.unit
+    if x_unit is None and unit is not None:
+        try:
+            x_unit = tifffile.RESUNIT(unit).name.lower()
+        except Exception as e:
+            logger.opt(exception=e).warning(
+                "Failed to interprete tiff ResolutionUnit tag: {}", unit
+            )
+            x_unit = None
+
+    y_unit = ome_metadata.PhysicalSizeYUnit or ij_metadata.yunit or x_unit
+    z_unit = ome_metadata.PhysicalSizeZUnit or ij_metadata.zunit or x_unit
+    t_unit = ome_metadata.TimeIncrementUnit or "s"
+
+    scale_unit = {
+        AxisId("x"): x_unit,
+        AxisId("y"): y_unit,
+        AxisId("z"): z_unit,
+        AxisId("time"): t_unit,
+    }
+    t.set_physical_scale_unit({k: v for k, v in scale_unit.items() if k in t.dims})
+
+    # set channel names
+    if ome_metadata.Channel is not None:
+        t.channel_names = ome_metadata.Channel.Name
+
+    return t
+
+
 Suffix = str
 
 
@@ -241,14 +439,26 @@ def save_tensor(
     io_lib: IO_Lib | None = None,
     roi_and_tensor_shape: tuple[PerAxis[SliceInfo], PerAxis[int]] | None = None,
 ) -> None:
-    output_path, extension, subdir = _interprete_tensor_source(path)
+    try:
+        output_path, extensions, internal_path = _interprete_tensor_source(path)
+    except Exception:
+        output_path, extensions, internal_path = _interprete_tensor_target(path)
+
     if isinstance(output_path, RootHttpUrl):
         raise NotImplementedError(
             "Saving tensors to HTTP URLs is not implemented. Please save to a local file path."
         )
 
+    if (
+        (v0_5.BATCH_AXIS_ID in tensor.dims)
+        and tensor.tagged_shape.get(v0_5.BATCH_AXIS_ID, 0) == 1
+        and (extensions is None or extensions[-1] != ".npy")
+    ):
+        # avoid saving tensors with a singleton batch dimension
+        tensor = tensor.squeeze(v0_5.BATCH_AXIS_ID)
+
     if io_lib is None:
-        try_io_libs = _select_io_libs_based_on_extension(extension)
+        try_io_libs = _select_io_libs_based_on_extension(extensions)
         exceptions: list[Exception] = []
         for try_io_lib in try_io_libs:
             try:
@@ -271,7 +481,14 @@ def save_tensor(
         return _save_tensor_bioio(
             output_path,
             tensor,
-            subdir=subdir,
+            internal_path=internal_path,
+            roi_and_tensor_shape=roi_and_tensor_shape,
+        )
+    elif io_lib == "clearscale":
+        return _save_tensor_clearscale(
+            output_path,
+            tensor,
+            internal_path=internal_path,
             roi_and_tensor_shape=roi_and_tensor_shape,
         )
     elif io_lib == "imageio":
@@ -279,50 +496,60 @@ def save_tensor(
             raise NotImplementedError(
                 "Saving a region of interest (roi) is not implemented for imageio."
             )
-        return _save_tensor_imageio(output_path, tensor)
-    elif io_lib == "clearscale":
-        return _save_tensor_clearscale(
-            output_path,
-            tensor,
-            subdir=subdir,
-            roi_and_tensor_shape=roi_and_tensor_shape,
-        )
+        return _save_tensor_imageio(output_path, tensor, internal_path=internal_path)
     elif io_lib == "numpy":
         if roi_and_tensor_shape is not None:
             raise NotImplementedError(
                 "Saving a region of interest (roi) is not implemented for numpy."
             )
+        if internal_path:
+            raise NotImplementedError(
+                "Saving to an internal path is not implemented for numpy."
+            )
         return _save_tensor_numpy(output_path, tensor)
+    elif io_lib == "tifffile":
+        if roi_and_tensor_shape is not None:
+            raise NotImplementedError(
+                "Saving a region of interest (roi) is not implemented for tifffile."
+            )
+        if internal_path is not None:
+            raise NotImplementedError(
+                "Saving to an internal path is not implemented for tifffile."
+            )
+
+        return _save_tensor_tifffile(output_path, extensions, tensor)
     else:
         assert_never(io_lib)
 
 
 def _save_tensor_bioio(
-    path: Path | ZipPath,
+    path: Path | ZipPath | FtpUrl,
     tensor: Tensor,
-    subdir: PurePath | None,
+    internal_path: PurePath | None,
     roi_and_tensor_shape: tuple[PerAxis[SliceInfo], PerAxis[int]] | None,
 ) -> None:
     """Save an image tensor using bioio"""
 
-    bioio_axes_map = {
+    import bioio_base.types
+
+    logger.debug(
+        "Saving tensor to {}{} with bioio",
+        path,
+        f"/{internal_path}" if internal_path else "",
+    )
+    bioio_axis_map = {
         "batch": "S",
         "channel": "C",
         "index": "S",
         "time": "T",
     }
-    if path.suffix.lower() in (".tif", ".tiff"):
-        if roi_and_tensor_shape is not None:
+    scale = tensor.get_physical_scale()
+
+    if path.suffix.lower() == ".zarr":
+        if internal_path and str(internal_path) != "0":
             raise NotImplementedError(
-                "Saving a region of interest (roi) is not implemented for saving tiff files with io_lib='bioio'."
+                "Saving to an internal path that is not '0' is not implemented for zarr files with io_lib='bioio'."
             )
-
-        from bioio_ome_tiff.writers import OmeTiffWriter
-
-        save = OmeTiffWriter.save  # pyright: ignore[reportUnknownVariableType]
-        write = None
-        bioio_axis_letters = "TCZYX"
-    elif path.suffix.lower() == ".zarr":
         if roi_and_tensor_shape is None:
             tensor_shape = tensor.tagged_shape
         else:
@@ -339,20 +566,9 @@ def _save_tensor_bioio(
             )
             for a in tensor.dims
         ]
-        unit = tensor.get_physical_scale_unit()
-        axes_units = [unit.get(a) for a in tensor.dims]
-
-        scale = tensor.get_physical_scale()
-        physical_pixel_size = [scale.get(a, 1.0) for a in tensor.dims]
 
         channel_names = tensor.channel_names
         channel_colors = tensor.channel_colors
-        if channel_colors is None and channel_names is not None:
-            # use spec's default channel colors
-            channel_colors = [
-                c.as_hex(format="long")[:6]
-                for c in v0_5.ChannelAxis(channel_names=channel_names).channel_colors
-            ]
 
         channels = [
             bioio_ome_zarr.writers.Channel(
@@ -367,24 +583,32 @@ def _save_tensor_bioio(
                 f"ZARR_FORMAT={zf} is not supported. (expected 2 or 3)"
             )
 
-        save = None
-        write = bioio_ome_zarr.writers.OMEZarrWriter(
+        unit = tensor.get_physical_scale_unit()
+        writer = bioio_ome_zarr.writers.OMEZarrWriter(
             store=path,
             level_shapes=[[tensor_shape[d] for d in tensor.dims]],
             dtype=tensor.dtype,
             zarr_format=zf,
-            image_name="Image" if subdir is None else str(subdir),
+            image_name=tensor.name or "Image",
             axes_names=list(axes_names),
             axes_types=axes_types,
-            axes_units=axes_units,
-            physical_pixel_size=physical_pixel_size,
+            axes_units=[unit.get(a) for a in tensor.dims],
+            physical_pixel_size=[scale.get(a, 1.0) for a in tensor.dims],
             channels=channels,
-        ).write_full_volume
-        bioio_axis_letters = None
-        bioio_axes_map = None
-        # bioio_axis_letters = "TCZYX"
-        # bioio_axes_map["batch"] = "T"
-        # bioio_axes_map["index"] = "T"
+        )
+        logger.info("OME-Zarr metadata: {}", writer.preview_metadata())
+        writer.write_full_volume(tensor.data.data)
+        return
+    elif path.suffix.lower() in (".tif", ".tiff"):
+        if roi_and_tensor_shape is not None:
+            raise NotImplementedError(
+                "Saving a region of interest (roi) is not implemented for saving tiff files with io_lib='bioio'."
+            )
+
+        from bioio_ome_tiff.writers import OmeTiffWriter
+
+        save = OmeTiffWriter.save  # pyright: ignore[reportUnknownVariableType]
+        bioio_axis_letters = "TCZYX"
     elif path.suffix.lower() in (".gif", ".mp4", ".mkv"):
         if roi_and_tensor_shape is not None:
             raise NotImplementedError(
@@ -395,8 +619,7 @@ def _save_tensor_bioio(
 
         tensor = tensor.squeeze()
         save = TimeseriesWriter.save  # pyright: ignore[reportUnknownVariableType]
-        write = None
-        bioio_axes_map["channel"] = "S"
+        bioio_axis_map["channel"] = "S"
         bioio_axis_letters = "YXS"
     elif path.suffix.lower() in (
         ".png",
@@ -420,67 +643,154 @@ def _save_tensor_bioio(
 
         tensor = tensor.squeeze()
         save = TwoDWriter.save  # pyright: ignore[reportUnknownVariableType]
-        write = None
         # channel dim denoted as 'S'
-        bioio_axes_map["channel"] = "S"
+        bioio_axis_map["channel"] = "S"
         bioio_axis_letters = "YXS"
     else:
         raise RuntimeError(
             f"Failed to identify a suitable writer for {path} with suffix={path.suffix}."
         )
 
-    if save is not None:
-        assert write is None
-        bioio_data = tensor.data
-        if bioio_axes_map is not None:
-            bioio_data = bioio_data.rename(  # pyright: ignore[reportUnknownVariableType]
-                {
-                    a: bioio_axes_map.get(str(a).lower(), str(a)[:1].upper())
-                    for a in tensor.dims
-                }
-            )
-            assert isinstance(bioio_data, xr.DataArray)
+    bioio_data = tensor.data
+    dim_map = {
+        d: bioio_axis_map.get(str(d).lower(), str(d)[:1].upper()) for d in tensor.dims
+    }
 
-        if bioio_axis_letters is not None and not all(
-            str(d) in bioio_axis_letters for d in bioio_data.dims
-        ):
-            raise ValueError(
-                f"Failed to save tensor with bioio: dimensions {bioio_data.dims} not in '{bioio_axis_letters}'."
-            )
+    bioio_data = bioio_data.rename(dim_map)  # pyright: ignore[reportUnknownVariableType]
+    assert isinstance(bioio_data, xr.DataArray)
 
-        dim_order = "".join(str(d) for d in bioio_data.dims)
-
-        image_name = None if subdir is None else str(subdir)
-        save(
-            bioio_data.data,
-            path,
-            dim_order=dim_order,
-            image_name=image_name,
-            channel_names=tensor.channel_names,
+    if not all(str(d) in bioio_axis_letters for d in bioio_data.dims):
+        logger.warning(
+            "Attempting to save tensor with dimensions {} not in '{}' using bioio.",
+            bioio_data.dims,
+            bioio_axis_letters,
         )
 
-    if write is not None:
-        assert save is None
-        write(tensor.data.data)
+    dim_order = "".join(str(d) for d in bioio_data.dims)
+
+    image_name = None if internal_path is None else str(internal_path)
+    physical_scale = tensor.get_physical_scale()
+    save(
+        bioio_data.data,
+        path,
+        dim_order=dim_order,
+        image_name=image_name,
+        channel_names=tensor.channel_names,
+        channel_colors=None
+        if (channel_colors := tensor.channel_colors) is None
+        else [list(hex_to_rgb(c)) for c in channel_colors],
+        physical_pixel_sizes=bioio_base.types.PhysicalPixelSizes(
+            physical_scale.get(AxisId("z")),
+            physical_scale.get(AxisId("y")),
+            physical_scale.get(AxisId("x")),
+        ),
+    )
 
 
-def _save_tensor_numpy(path: Path | ZipPath, tensor: Tensor) -> None:
-    if isinstance(path, ZipPath):
-        folder = path.filename.parent
+def _save_tensor_clearscale(
+    path: Path | ZipPath | FtpUrl,
+    tensor: Tensor,
+    internal_path: PurePath | None,
+    roi_and_tensor_shape: tuple[PerAxis[SliceInfo], PerAxis[int]] | None,
+) -> None:
+    import clearscale
+    import dask.array
+    import zarr
+
+    logger.debug("Saving tensor to {} with clearscale", path)
+
+    if roi_and_tensor_shape is None:
+        roi = (slice(None),) * len(tensor.dims)
+        tensor_shape = tensor.tagged_shape
     else:
-        folder = path.parent
+        roi_map, tensor_shape = roi_and_tensor_shape
+        roi = tuple(
+            slice(None) if (s := roi_map.get(d)) is None else slice(s.start, s.stop)
+            for d in tensor.dims
+        )
 
-    folder.mkdir(exist_ok=True, parents=True)
-    save_array(path, tensor.to_numpy())
+    ZARR_FORMAT: int = int(os.getenv("ZARR_FORMAT", "3"))
+    SCALE_KEY = "s0" if internal_path is None else str(internal_path)
+    # Prefer single dimension names for compatibility with bioio
+    dim_map = dict(zip(tensor.dims, single_letter_dims_if_possible(tensor.dims)))
+
+    multiscale = clearscale.Multiscale(
+        {
+            SCALE_KEY: clearscale.Scale(
+                shape=clearscale.Shape(**dict(zip(dim_map.values(), tensor.shape))),
+                pixel_size={
+                    dim_map[k]: v for k, v in tensor.get_physical_scale().items()
+                }
+                or None,
+                unit={
+                    dim_map[k]: v for k, v in tensor.get_physical_scale_unit().items()
+                }
+                or None,
+            )
+        }
+    )
+    if ZARR_FORMAT == 2:
+        zarr_attrs: dict[str, JsonValueReadOnly] = {
+            "multiscales": [multiscale.to_ome_zarr(version="0.4")]
+        }
+    elif ZARR_FORMAT == 3:
+        zarr_attrs: dict[str, JsonValueReadOnly] = {
+            "ome": {
+                "version": "0.5",
+                "multiscales": [multiscale.to_ome_zarr(version="0.5")],
+            }
+        }
+    else:
+        raise NotImplementedError(f"ZARR_FORMAT={ZARR_FORMAT} is not supported.")
+
+    zarr_group = zarr.open_group(
+        str(path),
+        mode="w",
+        zarr_format=ZARR_FORMAT,
+        attributes=zarr_attrs,
+    )
+
+    create_array_kwargs = _CreateArrayKwargs(
+        name=SCALE_KEY,
+        overwrite=True,
+        dimension_names=None if ZARR_FORMAT == 2 else tuple(dim_map.values()),
+        shards=None if ZARR_FORMAT == 2 else "auto",
+    )
+    zarr_array = zarr_group.create_array(
+        **create_array_kwargs,
+        shape=[tensor_shape[d] for d in tensor.dims],
+        dtype=tensor.dtype,
+        write_data=True,
+    )
+    xr_array = tensor.data
+    if dm := {k: v for k, v in dim_map.items() if k != v}:
+        xr_array = xr_array.rename(dm)  # pyright: ignore[reportUnknownVariableType]
+        assert isinstance(xr_array, xr.DataArray)
+
+    if isinstance(xr_array.data, np.ndarray):
+        zarr_array[roi] = xr_array.data
+    elif isinstance(xr_array.data, dask.array.Array):
+        dask.array.to_zarr(xr_array.data, zarr_array, compute=True, region=roi)
+    else:
+        assert_never(xr_array.data)
 
 
-def _save_tensor_imageio(path: Path | ZipPath, tensor: Tensor) -> None:
+def _save_tensor_imageio(
+    path: Path | ZipPath | FtpUrl, tensor: Tensor, internal_path: PurePath | None
+) -> None:
+    if internal_path is not None:
+        raise NotImplementedError(
+            "Saving tensors to subdirectories is not implemented for imageio. Please save to a file path without internal path."
+        )
+
     if isinstance(path, ZipPath):
         raise NotImplementedError(
             "Saving tensors to zip files is not implemented for imageio. Please save to an unzipped file path."
         )
 
-    path.parent.mkdir(exist_ok=True, parents=True)
+    logger.debug("Saving tensor to {} with imageio", path)
+    if not isinstance(path, FtpUrl):
+        path.parent.mkdir(exist_ok=True, parents=True)
 
     extension = path.suffix.lower()
     removed_singleton_axes: list[AxisId] = []
@@ -529,125 +839,252 @@ def _save_tensor_imageio(path: Path | ZipPath, tensor: Tensor) -> None:
     imwrite(path, tensor, extension=extension)
 
 
-class CreateArrayKwargs(TypedDict):
+def _save_tensor_numpy(path: Path | ZipPath | FtpUrl, tensor: Tensor) -> None:
+    if isinstance(path, FtpUrl):
+        raise NotImplementedError(
+            "Saving numpy arrays to FTP URLs is not implemented. Please save to a local file path instead."
+        )
+
+    logger.debug("Saving tensor to {} with numpy", path)
+
+    if isinstance(path, ZipPath):
+        folder = path.filename.parent
+    else:
+        folder = path.parent
+
+    folder.mkdir(exist_ok=True, parents=True)
+
+    save_array(path, tensor.to_numpy())
+
+
+def _save_tensor_tifffile(
+    path: Path | ZipPath | FtpUrl, extensions: list[str] | None, tensor: Tensor
+) -> None:
+    if isinstance(path, FtpUrl):
+        raise NotImplementedError(
+            "Saving tiff files to FTP URLs is not implemented. Please save to a local file path instead."
+        )
+
+    import tifffile
+
+    logger.trace("tensor dims {}", tensor.dims)
+    tensor = tensor.transpose("TZCYX")  # tifffile expects TZCYX order
+    logger.trace("tensor dims transposed {}", tensor.dims)
+    if len(tensor.dims) > 5:
+        logger.warning(
+            "Saving tensor with more than 5 dimensions ({}) will likely fail."
+        )
+
+    logger.debug("Saving tensor to {} with tifffile", path)
+
+    scale = tensor.get_physical_scale()
+    x_scale = scale.get(AxisId("x"))
+    y_scale = scale.get(AxisId("y"))
+    z_scale = scale.get(AxisId("z"))
+    t_scale = scale.get(AxisId("time"))
+    if x_scale is not None and y_scale is not None:
+        resolution = (1 / x_scale, 1 / y_scale)
+    else:
+        resolution = None
+
+    scale_unit = tensor.get_physical_scale_unit()
+    x_unit = scale_unit.get(AxisId("x"))
+    y_unit = scale_unit.get(AxisId("y"))
+    z_unit = scale_unit.get(AxisId("z"))
+    t_unit = scale_unit.get(AxisId("time"))
+    if x_unit == "inch":
+        resolution_unit = tifffile.RESUNIT.INCH
+    elif x_unit in ("centimeter", "cm"):
+        resolution_unit = tifffile.RESUNIT.CENTIMETER
+    elif x_unit in ("millimeter", "mm"):
+        resolution_unit = tifffile.RESUNIT.MILLIMETER
+    elif x_unit in ("micrometer", "um", "µm"):
+        resolution_unit = tifffile.RESUNIT.MICROMETER
+    else:
+        resolution_unit = None
+
+    if isinstance(path, ZipPath):
+        folder = path.filename.parent
+    else:
+        folder = path.parent
+
+    folder.mkdir(exist_ok=True, parents=True)
+
+    if extensions is not None and extensions[-2:] in (
+        [".ome", ".tif"],
+        [".ome", ".tiff"],
+    ):
+        metadata = OmeMetadata(
+            # "DimensionOrder": "TZCYX",  # [::-1]?? # TODO: check if this is needed
+            TimeIncrement=t_scale,
+            TimeIncrementUnit=t_unit,
+            PhysicalSizeX=x_scale,
+            PhysicalSizeXUnit=x_unit,
+            PhysicalSizeY=y_scale,
+            PhysicalSizeYUnit=y_unit,
+            PhysicalSizeZ=z_scale,
+            PhysicalSizeZUnit=z_unit,
+            Channel=None
+            if tensor.channel_names is None
+            else OmeChannelMetadata(Name=tensor.channel_names),
+        )
+        kind = "ome"
+    else:
+        if not t_unit or t_scale is None:
+            pass
+        elif isinstance(t_scale, (int, float)):
+            if t_unit in ("nanosecond", "nanosecond(s)", "ns"):
+                t_scale /= 1_000_000_000
+            elif t_unit in ("microsecond", "microsecond(s)", "us", "µsec", "µs"):
+                t_scale /= 1_000_000
+            elif t_unit in ("millisecond", "millisecond(s)", "ms"):
+                t_scale /= 1_000
+            elif t_unit in ("minute", "minute(s)", "min"):
+                t_scale *= 60
+            elif t_unit in ("hour", "hour(s)", "h"):
+                t_scale *= 3_600
+            elif t_unit in ("day", "day(s)", "d"):
+                t_scale *= 86_400
+            elif t_unit in ("week", "week(s)", "wk"):
+                t_scale *= 604_800
+            elif t_unit in ("month", "month(s)", "mo"):
+                t_scale *= 2_629_746  # average month length in seconds
+            elif t_unit in ("year", "year(s)", "yr"):
+                t_scale *= 31_556_952  # average year length in seconds
+            elif t_unit not in ("second", "s"):
+                logger.warning(
+                    "Unknown time unit '{}' encountered while saving an imagej tiff with tifffile",
+                    t_unit,
+                )
+        else:
+            logger.warning(
+                "Failed to convert time interval '{}' of type {} (with time unit '{}') to seconds while saving an imagej tiff with tifffile",
+                t_scale,
+                type(t_scale),
+                t_unit,
+            )
+
+        metadata = ImageJMetadata(
+            unit=x_unit,
+            yunit=y_unit,
+            zunit=z_unit,
+            spacing=z_scale,
+            finterval=t_scale,
+            fps=None if not isinstance(t_scale, (int, float)) else 1 / t_scale,
+        )
+        kind = "imagej"
+
+    if isinstance(path, ZipPath):
+        ctxt = path.open("wb")
+    else:
+        ctxt = nullcontext(path)
+
+    with ctxt as f:
+        assert not isinstance(f, TextIOWrapper)
+        _ = tifffile.imwrite(
+            f,
+            tensor.data,
+            kind=kind,
+            software="bioimageio.core",
+            resolution=resolution,
+            metadata={
+                k: v
+                for k, v in metadata.model_dump(mode="json", exclude_none=True).items()
+            },
+            resolutionunit=resolution_unit,
+        )
+
+
+class _CreateArrayKwargs(TypedDict):
     name: str
     overwrite: bool
     dimension_names: tuple[str, ...] | None
     shards: Literal["auto"] | tuple[int, ...] | None
 
 
-def _save_tensor_clearscale(
-    path: Path | ZipPath,
-    tensor: Tensor,
-    subdir: PurePath | None,
-    roi_and_tensor_shape: tuple[PerAxis[SliceInfo], PerAxis[int]] | None,
-) -> None:
-    import clearscale
-    import dask.array
-    import zarr
-
-    if roi_and_tensor_shape is None:
-        roi = slice(None)
-        tensor_shape = tensor.tagged_shape
-    else:
-        roi_map, tensor_shape = roi_and_tensor_shape
-        roi = tuple(
-            slice(None) if (s := roi_map.get(d)) is None else slice(s.start, s.stop)
-            for d in tensor.dims
-        )
-
-    ZARR_FORMAT: int = int(os.getenv("ZARR_FORMAT", "3"))
-    SCALE_KEY = "s0" if subdir is None else str(subdir)
-    multiscale = clearscale.Multiscale(
-        {
-            SCALE_KEY: clearscale.Scale(
-                clearscale.Shape(**{str(k): v for k, v in tensor_shape.items()})
-            )
-        }
-    )
-    if ZARR_FORMAT == 2:
-        zarr_attrs: dict[str, JsonValueReadOnly] = {
-            "multiscales": [multiscale.to_ome_zarr(version="0.4")]
-        }
-    elif ZARR_FORMAT == 3:
-        zarr_attrs: dict[str, JsonValueReadOnly] = {
-            "ome": {
-                "version": "0.5",
-                "multiscales": [multiscale.to_ome_zarr(version="0.5")],
-            }
-        }
-    else:
-        raise NotImplementedError(f"ZARR_FORMAT={ZARR_FORMAT} is not supported.")
-
-    zarr_group = zarr.open_group(
-        str(path),
-        mode="w",
-        zarr_format=ZARR_FORMAT,
-        attributes=zarr_attrs,
-    )
-    create_array_kwargs = CreateArrayKwargs(
-        name=SCALE_KEY,
-        overwrite=True,
-        dimension_names=None
-        if ZARR_FORMAT == 2
-        else single_letter_dims_if_possible(tensor.dims),
-        shards=None if ZARR_FORMAT == 2 else "auto",
-    )
-    zarr_array = zarr_group.create_array(
-        **create_array_kwargs,
-        shape=[tensor_shape[d] for d in tensor.dims],
-        dtype=tensor.dtype,
-        write_data=True,
-    )
-
-    if isinstance(tensor.data.data, np.ndarray):
-        zarr_array[roi] = tensor.data.data
-    elif isinstance(tensor.data.data, dask.array.Array):
-        dask.array.to_zarr(tensor.data.data, zarr_array, compute=True, region=roi)
-    else:
-        assert_never(tensor.data.data)
+_zarr_url_adapter: TypeAdapter[ZarrUrl] = TypeAdapter(ZarrUrl)
 
 
-def _interprete_tensor_source(source: PermissiveFileSource | ZipPath | FileDescr):
+def _interprete_tensor_target(
+    source: PermissiveFileSource | ZarrSource | ZipPath | FileDescr,
+):
     if isinstance(source, FileDescr):
         source = source.source
 
     if isinstance(source, (str, pydantic.AnyUrl)):
-        source = interprete_file_source(source)
+        try:
+            source = _zarr_url_adapter.validate_python(str(source))
+        except Exception:
+            if (
+                str(source).startswith("http://")
+                or str(source).startswith("https://")
+                or str(source).startswith("ftp://")
+            ):
+                raise
+            else:
+                source = Path(str(source))
 
     if isinstance(source, (RelativeFilePath, RelativeDirectory)):
         source = source.absolute()
 
-    subdir = None
-    if isinstance(source, HttpUrl):
+    return _get_file_source_extension_and_internal_path(source)
+
+
+def _interprete_tensor_source(
+    source: PermissiveFileSource | ZarrSource | ZipPath | FileDescr,
+):
+
+    if isinstance(source, FileDescr):
+        source = source.source
+
+    if isinstance(source, (str, pydantic.AnyUrl)):
+        source = interprete_file_source(source, allow_zarr=True)
+
+    if isinstance(source, (RelativeFilePath, RelativeDirectory)):
+        source = source.absolute()
+
+    return _get_file_source_extension_and_internal_path(source)
+
+
+def _get_file_source_extension_and_internal_path(
+    source: Path | ZipPath | RootHttpUrl | FtpUrl,
+):
+    internal_path = None
+    if isinstance(source, (HttpUrl, RootHttpUrl, FtpUrl)):
         original_source_path = PosixPath(source.path or "")
+        parents: Iterable[FtpUrl | RootHttpUrl | Path | ZipPath] = source.parents
     elif isinstance(source, ZipPath):
-        return source, None, None
+        original_source_path = PosixPath(source.filename)
+        parents = []
+        p = source
+        while p != p.parent:
+            parents.append(p.parent)
+            p = p.parent
     else:
         original_source_path = PosixPath(source)
+        parents = source.parents
 
     file_source = source
-    for parent in chain([source], source.parents):
-        extension = parent.suffix.lower()
-        if extension:
-            if isinstance(parent, RootHttpUrl):
-                with get_validation_context().replace(perform_io_checks=False):
-                    file_source = HttpUrl(parent)
-
+    for parent in chain([source], parents):
+        extensions = [s.lower() for s in parent.suffixes]
+        if extensions:
+            file_source = parent
+            if isinstance(parent, (RootHttpUrl, FtpUrl)):
                 parent_path = PosixPath(parent.path or "")
+            elif isinstance(parent, ZipPath):
+                parent_path = PosixPath(parent.filename)
             else:
-                file_source = parent
                 parent_path = PosixPath(parent)
 
-            subdir = original_source_path.relative_to(parent_path)
-            if subdir == PosixPath("."):
-                subdir = None
+            internal_path = original_source_path.relative_to(parent_path)
+            if internal_path == PosixPath("."):
+                internal_path = None
 
             break
     else:
-        extension = None
+        extensions = None
 
-    return file_source, extension, subdir
+    return file_source, extensions, internal_path
 
 
 def save_sample(

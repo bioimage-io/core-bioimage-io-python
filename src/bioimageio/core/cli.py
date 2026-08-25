@@ -143,7 +143,10 @@ class WithSource(ArgMixin):
         (replacing legacy ids with their nicknames)
         """
         if isinstance(self.descr, InvalidDescr):
-            return str(getattr(self.descr, "id", self.descr.name))
+            return str(
+                (self.descr.model_extra or {}).get("id")
+                or (self.descr.model_extra or {}).get("name", "unknown")
+            )
 
         nickname = None
         if (

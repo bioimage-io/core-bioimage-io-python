@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 from typing import Literal
 
@@ -5,6 +6,10 @@ import numpy as np
 import pytest
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 10),
+    reason="various bioio writer modules are only available for py>=3.10.",
+)
 @pytest.mark.parametrize(
     "name",
     [
@@ -99,16 +104,21 @@ def test_tensor_io(
         np.arange(np.prod(shape), dtype=np.uint8).reshape(shape),
         dims=f"{c}YX"[-len(shape) :],
     )
-    # if io_lib == "bioio" and path.suffix == ".zarr":
-    #     # rename axes to enable roundtrip with bioio
-    #     expected._data = expected.data.rename(
-    #         {a: str(a)[0].upper() for a in expected.dims}
-    #     )
 
-    save_tensor(path, expected, io_lib=io_lib)
+    def save():
+        save_tensor(path, expected, io_lib=io_lib)
 
-    actual = load_tensor(path, io_lib=io_lib)
-    assert (actual == expected).to_numpy().all()
+    if io_lib == "bioio" and name.endswith(".zarr/s2"):
+        with pytest.raises(
+            NotImplementedError,
+            match="Saving to an internal path that is not '0' is not implemented for zarr files with io_lib='bioio'.",
+        ):
+            save()
+    else:
+        save()
+
+        actual = load_tensor(path, io_lib=io_lib)
+        assert (actual == expected).to_numpy().all()
 
 
 def test_load_tensor_zarr():
