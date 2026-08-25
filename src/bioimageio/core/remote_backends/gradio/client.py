@@ -1,5 +1,8 @@
+from __future__ import annotations
+
+from collections.abc import Iterable, Mapping
 from types import MappingProxyType
-from typing import Dict, Iterable, Literal, Mapping, Optional, Tuple, Union
+from typing import Literal
 
 from gradio_client import Client
 from loguru import logger
@@ -7,7 +10,7 @@ from loguru import logger
 from bioimageio.spec import AnyModelDescr, ValidationSummary
 from bioimageio.spec.model import v0_4
 
-from ..._description_serializer import DescriptionSerializer as DescriptionSerializer
+from ..._description_serializer import DescriptionSerializer
 from ..._model_adapter import RemoteModelAdapter
 from ..._prediction_pipeline import IntermediatePrediction, RemotePredictionPipeline
 from ..._settings import settings
@@ -18,14 +21,14 @@ from ...sample import Sample, SampleBlock
 from ...stat_measures import Measure, MeasureValue
 from .serializer import GradioSampleSerializer
 
-SerializedSampleBlock = Dict[str, JsonValue]
+SerializedSampleBlock = dict[str, JsonValue]
 
 
 class GradioModelAdapter(RemoteModelAdapter[SerializedSampleBlock]):
     """Model adapter to use the bioimage-io-gradio-runner as a backend for model inference."""
 
     def __init__(
-        self, model_description: AnyModelDescr, *, server: Optional[str] = None
+        self, model_description: AnyModelDescr, *, server: str | None = None
     ):
         """Initialize the GradioModelAdapter.
 
@@ -86,7 +89,7 @@ class GradioModelAdapter(RemoteModelAdapter[SerializedSampleBlock]):
                 if result:
                     break
 
-    def test(self) -> Optional[ValidationSummary]:
+    def test(self) -> ValidationSummary | None:
         for model_data in ("", self._serialized_model):
             try:
                 result = self._client.submit(
@@ -113,7 +116,7 @@ class GradioPredictionPipeline(RemotePredictionPipeline):
         self,
         model_description: AnyModelDescr,
         *,
-        server: Optional[str] = None,
+        server: str | None = None,
         precomputed_statistics: Mapping[Measure, MeasureValue] = MappingProxyType({}),
         default_blocksize_parameter: BlocksizeParameter = 10,
         default_batch_size: int = 1,
@@ -210,7 +213,7 @@ class GradioPredictionPipeline(RemotePredictionPipeline):
         skip_preprocessing: bool = False,
         skip_postprocessing: bool = False,
         fill_value: float = float("nan"),
-    ) -> Tuple[int, Iterable[IntermediatePrediction]]:
+    ) -> tuple[int, Iterable[IntermediatePrediction]]:
         sample.stat.update(self._precomputed_statistics)
 
         # blocking for serialization is not really important, but we might as well block
@@ -263,14 +266,12 @@ def _call_predict_api(
     serialized_model: str,
     sha256: str,
     serialized_input_sample: Iterable[SerializedSampleBlock],
-    blocksize: Optional[
-        Union[int, Literal["blockwise_as_serialized"], PerMember[PerAxis[int]]]
-    ],
+    blocksize: int | Literal["blockwise_as_serialized"] | PerMember[PerAxis[int]] | None,
     skip_preprocessing: bool,
     skip_postprocessing: bool,
     skip_input_padding: bool,
     skip_output_cropping: bool,
-    batch_size: Optional[int],
+    batch_size: int | None,
 ) -> Iterable[SerializedSampleBlock]:
     def submit(model: str):
         return client.submit(
@@ -308,7 +309,7 @@ def _call_predict_api(
                 e,
             )
         else:
-            raise e
+            raise
 
     if try_with_model_upload:
         job = submit(serialized_model)

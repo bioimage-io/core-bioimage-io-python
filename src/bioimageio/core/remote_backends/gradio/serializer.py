@@ -1,6 +1,8 @@
+from __future__ import annotations
+
 import tempfile
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Dict, List, Mapping, Union
 
 import numpy as np
 from gradio_client import handle_file
@@ -8,7 +10,6 @@ from pydantic import BaseModel
 from typing_extensions import Self
 
 from ..._common_annotations import PerMemberAnno
-from ..._description_serializer import DescriptionSerializer as DescriptionSerializer
 from ..._sample_serializer import SampleSerializer
 from ...common import MemberId
 from ...io import JsonValue, load_stat, save_tensor, serialize_stat
@@ -32,17 +33,17 @@ class _SerializableBlock(BaseModel, frozen=True):
 
 class _SerializableSampleBlock(BaseModel, frozen=True):
     meta: SampleBlockMeta
-    data: PerMemberAnno[Union[_SerializableBlock, Path]]
-    serialized_stat: List[JsonValue]
+    data: PerMemberAnno[_SerializableBlock | Path]
+    serialized_stat: list[JsonValue]
 
 
-SerializedSampleBlock = Dict[str, JsonValue]
+SerializedSampleBlock = dict[str, JsonValue]
 
 
 class GradioSampleSerializer(SampleSerializer[SerializedSampleBlock]):
     @staticmethod
     def serialize_sample_block(sample_block: SampleBlock) -> SerializedSampleBlock:
-        handled_members: Dict[MemberId, _SerializableBlock] = {}
+        handled_members: dict[MemberId, _SerializableBlock] = {}
         for m, t in sample_block.members.items():
             handled_members[m] = _SerializableBlock.from_tensor(t)
 

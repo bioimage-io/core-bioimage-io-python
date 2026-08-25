@@ -1,9 +1,12 @@
+from __future__ import annotations
+
 import hashlib
 import os
 import platform
 import subprocess
 import sys
 import warnings
+from collections.abc import Hashable, Sequence
 from contextlib import nullcontext
 from copy import deepcopy
 from io import StringIO
@@ -13,15 +16,7 @@ from tempfile import TemporaryDirectory
 from typing import (
     Any,
     Callable,
-    Dict,
-    Hashable,
-    List,
     Literal,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    Union,
     overload,
 )
 
@@ -85,12 +80,12 @@ CONDA_CMD = "conda.bat" if platform.system() == "Windows" else "conda"
 class DeprecatedKwargs(TypedDict):
     absolute_tolerance: NotRequired[AbsoluteTolerance]
     relative_tolerance: NotRequired[RelativeTolerance]
-    decimal: NotRequired[Optional[int]]
+    decimal: NotRequired[int | None]
 
 
 def enable_determinism(
     mode: Literal["seed_only", "full"] = "full",
-    weight_formats: Optional[Sequence[SupportedWeightsFormat]] = None,
+    weight_formats: Sequence[SupportedWeightsFormat] | None = None,
 ):
     """Seed and configure ML frameworks for maximum reproducibility.
     May degrade performance. Only recommended for testing reproducibility!
@@ -174,14 +169,14 @@ def enable_determinism(
 
 
 def test_model(
-    source: Union[v0_4.ModelDescr, v0_5.ModelDescr, PermissiveFileSource],
-    weight_format: Optional[SupportedWeightsFormat] = None,
-    devices: Optional[List[str]] = None,
+    source: v0_4.ModelDescr | v0_5.ModelDescr | PermissiveFileSource,
+    weight_format: SupportedWeightsFormat | None = None,
+    devices: list[str] | None = None,
     *,
     determinism: Literal["seed_only", "full"] = "seed_only",
-    sha256: Optional[Sha256] = None,
+    sha256: Sha256 | None = None,
     stop_early: bool = False,
-    working_dir: Optional[Union[os.PathLike[str], str]] = None,
+    working_dir: os.PathLike[str] | str | None = None,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> ValidationSummary:
     """Test model inference"""
@@ -204,20 +199,20 @@ def default_run_command(args: Sequence[str]):
 
 
 def test_description(
-    source: Union[ResourceDescr, PermissiveFileSource, BioimageioYamlContent],
+    source: ResourceDescr | PermissiveFileSource | BioimageioYamlContent,
     *,
-    format_version: Union[FormatVersionPlaceholder, str] = "discover",
-    weight_format: Optional[SupportedWeightsFormat] = None,
-    devices: Optional[Sequence[str]] = None,
+    format_version: FormatVersionPlaceholder | str = "discover",
+    weight_format: SupportedWeightsFormat | None = None,
+    devices: Sequence[str] | None = None,
     determinism: Literal["seed_only", "full"] = "seed_only",
-    expected_type: Optional[str] = None,
-    sha256: Optional[Sha256] = None,
+    expected_type: str | None = None,
+    sha256: Sha256 | None = None,
     stop_early: bool = False,
-    runtime_env: Union[
-        Literal["currently-active", "as-described"], Path, BioimageioCondaEnv
-    ] = ("currently-active"),
+    runtime_env: Literal["currently-active", "as-described"]
+    | Path
+    | BioimageioCondaEnv = ("currently-active"),
     run_command: Callable[[Sequence[str]], None] = default_run_command,
-    working_dir: Optional[Union[os.PathLike[str], str]] = None,
+    working_dir: os.PathLike[str] | str | None = None,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> ValidationSummary:
     """Test a bioimage.io resource dynamically,
@@ -274,8 +269,8 @@ def test_description(
     if run_command is not default_run_command:
         try:
             run_command(["thiscommandshouldalwaysfail", "please"])
-        except Exception:
-            pass
+        except Exception as e:
+            logger.trace("run_command failed successfully :) {}", e)
         else:
             raise RuntimeError(
                 "given run_command does not raise an exception for a failing command"
@@ -283,8 +278,8 @@ def test_description(
 
     verbose = working_dir is not None
     if working_dir is None:
-        td_kwargs: Dict[str, Any] = (
-            dict(ignore_cleanup_errors=True) if sys.version_info >= (3, 10) else {}
+        td_kwargs: dict[str, Any] = (
+            {"ignore_cleanup_errors": True} if sys.version_info >= (3, 10) else {}
         )
         working_dir_ctxt = TemporaryDirectory(**td_kwargs)
     else:
@@ -356,14 +351,14 @@ def _test_in_env(
     *,
     descr: ResourceDescr,
     working_dir: Path,
-    weight_format: Optional[SupportedWeightsFormat],
-    conda_env: Optional[BioimageioCondaEnv],
-    devices: Optional[Sequence[str]],
+    weight_format: SupportedWeightsFormat | None,
+    conda_env: BioimageioCondaEnv | None,
+    devices: Sequence[str] | None,
     determinism: Literal["seed_only", "full"],
     run_command: Callable[[Sequence[str]], None],
     stop_early: bool,
-    expected_type: Optional[str],
-    sha256: Optional[Sha256],
+    expected_type: str | None,
+    sha256: Sha256 | None,
     verbose: bool,
     **deprecated: Unpack[DeprecatedKwargs],
 ):
@@ -571,113 +566,113 @@ def _test_in_env(
 
 @overload
 def load_description_and_test(
-    source: Union[ResourceDescr, PermissiveFileSource, BioimageioYamlContent],
+    source: ResourceDescr | PermissiveFileSource | BioimageioYamlContent,
     *,
     format_version: Literal["latest"],
-    weight_format: Optional[SupportedWeightsFormat] = None,
-    devices: Optional[Sequence[str]] = None,
+    weight_format: SupportedWeightsFormat | None = None,
+    devices: Sequence[str] | None = None,
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Literal["model"],
-    sha256: Optional[Sha256] = None,
+    sha256: Sha256 | None = None,
     stop_early: bool = False,
-    working_dir: Optional[Union[os.PathLike[str], str]] = None,
+    working_dir: os.PathLike[str] | str | None = None,
     **deprecated: Unpack[DeprecatedKwargs],
-) -> Union[ModelDescr, InvalidDescr]: ...
+) -> ModelDescr | InvalidDescr: ...
 
 
 @overload
 def load_description_and_test(
-    source: Union[ResourceDescr, PermissiveFileSource, BioimageioYamlContent],
+    source: ResourceDescr | PermissiveFileSource | BioimageioYamlContent,
     *,
     format_version: Literal["latest"],
-    weight_format: Optional[SupportedWeightsFormat] = None,
-    devices: Optional[Sequence[str]] = None,
+    weight_format: SupportedWeightsFormat | None = None,
+    devices: Sequence[str] | None = None,
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Literal["dataset"],
-    sha256: Optional[Sha256] = None,
+    sha256: Sha256 | None = None,
     stop_early: bool = False,
-    working_dir: Optional[Union[os.PathLike[str], str]] = None,
+    working_dir: os.PathLike[str] | str | None = None,
     **deprecated: Unpack[DeprecatedKwargs],
-) -> Union[DatasetDescr, InvalidDescr]: ...
+) -> DatasetDescr | InvalidDescr: ...
 
 
 @overload
 def load_description_and_test(
-    source: Union[ResourceDescr, PermissiveFileSource, BioimageioYamlContent],
+    source: ResourceDescr | PermissiveFileSource | BioimageioYamlContent,
     *,
     format_version: Literal["latest"],
-    weight_format: Optional[SupportedWeightsFormat] = None,
-    devices: Optional[Sequence[str]] = None,
+    weight_format: SupportedWeightsFormat | None = None,
+    devices: Sequence[str] | None = None,
     determinism: Literal["seed_only", "full"] = "seed_only",
-    expected_type: Optional[str] = None,
-    sha256: Optional[Sha256] = None,
+    expected_type: str | None = None,
+    sha256: Sha256 | None = None,
     stop_early: bool = False,
-    working_dir: Optional[Union[os.PathLike[str], str]] = None,
+    working_dir: os.PathLike[str] | str | None = None,
     **deprecated: Unpack[DeprecatedKwargs],
-) -> Union[LatestResourceDescr, InvalidDescr]: ...
+) -> LatestResourceDescr | InvalidDescr: ...
 
 
 @overload
 def load_description_and_test(
-    source: Union[ResourceDescr, PermissiveFileSource, BioimageioYamlContent],
+    source: ResourceDescr | PermissiveFileSource | BioimageioYamlContent,
     *,
-    format_version: Union[FormatVersionPlaceholder, str] = DISCOVER,
-    weight_format: Optional[SupportedWeightsFormat] = None,
-    devices: Optional[Sequence[str]] = None,
+    format_version: FormatVersionPlaceholder | str = DISCOVER,
+    weight_format: SupportedWeightsFormat | None = None,
+    devices: Sequence[str] | None = None,
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Literal["model"],
-    sha256: Optional[Sha256] = None,
+    sha256: Sha256 | None = None,
     stop_early: bool = False,
-    working_dir: Optional[Union[os.PathLike[str], str]] = None,
+    working_dir: os.PathLike[str] | str | None = None,
     **deprecated: Unpack[DeprecatedKwargs],
-) -> Union[AnyModelDescr, InvalidDescr]: ...
+) -> AnyModelDescr | InvalidDescr: ...
 
 
 @overload
 def load_description_and_test(
-    source: Union[ResourceDescr, PermissiveFileSource, BioimageioYamlContent],
+    source: ResourceDescr | PermissiveFileSource | BioimageioYamlContent,
     *,
-    format_version: Union[FormatVersionPlaceholder, str] = DISCOVER,
-    weight_format: Optional[SupportedWeightsFormat] = None,
-    devices: Optional[Sequence[str]] = None,
+    format_version: FormatVersionPlaceholder | str = DISCOVER,
+    weight_format: SupportedWeightsFormat | None = None,
+    devices: Sequence[str] | None = None,
     determinism: Literal["seed_only", "full"] = "seed_only",
     expected_type: Literal["dataset"],
-    sha256: Optional[Sha256] = None,
+    sha256: Sha256 | None = None,
     stop_early: bool = False,
-    working_dir: Optional[Union[os.PathLike[str], str]] = None,
+    working_dir: os.PathLike[str] | str | None = None,
     **deprecated: Unpack[DeprecatedKwargs],
-) -> Union[AnyDatasetDescr, InvalidDescr]: ...
+) -> AnyDatasetDescr | InvalidDescr: ...
 
 
 @overload
 def load_description_and_test(
-    source: Union[ResourceDescr, PermissiveFileSource, BioimageioYamlContent],
+    source: ResourceDescr | PermissiveFileSource | BioimageioYamlContent,
     *,
-    format_version: Union[FormatVersionPlaceholder, str] = DISCOVER,
-    weight_format: Optional[SupportedWeightsFormat] = None,
-    devices: Optional[Sequence[str]] = None,
+    format_version: FormatVersionPlaceholder | str = DISCOVER,
+    weight_format: SupportedWeightsFormat | None = None,
+    devices: Sequence[str] | None = None,
     determinism: Literal["seed_only", "full"] = "seed_only",
-    expected_type: Optional[str] = None,
-    sha256: Optional[Sha256] = None,
+    expected_type: str | None = None,
+    sha256: Sha256 | None = None,
     stop_early: bool = False,
-    working_dir: Optional[Union[os.PathLike[str], str]] = None,
+    working_dir: os.PathLike[str] | str | None = None,
     **deprecated: Unpack[DeprecatedKwargs],
-) -> Union[ResourceDescr, InvalidDescr]: ...
+) -> ResourceDescr | InvalidDescr: ...
 
 
 def load_description_and_test(
-    source: Union[ResourceDescr, PermissiveFileSource, BioimageioYamlContent],
+    source: ResourceDescr | PermissiveFileSource | BioimageioYamlContent,
     *,
-    format_version: Union[FormatVersionPlaceholder, str] = DISCOVER,
-    weight_format: Optional[SupportedWeightsFormat] = None,
-    devices: Optional[Sequence[str]] = None,
+    format_version: FormatVersionPlaceholder | str = DISCOVER,
+    weight_format: SupportedWeightsFormat | None = None,
+    devices: Sequence[str] | None = None,
     determinism: Literal["seed_only", "full"] = "seed_only",
-    expected_type: Optional[str] = None,
-    sha256: Optional[Sha256] = None,
+    expected_type: str | None = None,
+    sha256: Sha256 | None = None,
     stop_early: bool = False,
-    working_dir: Optional[Union[os.PathLike[str], str]] = None,
+    working_dir: os.PathLike[str] | str | None = None,
     **deprecated: Unpack[DeprecatedKwargs],
-) -> Union[ResourceDescr, InvalidDescr]:
+) -> ResourceDescr | InvalidDescr:
     """Test a bioimage.io resource dynamically,
     for example run prediction of test tensors for models.
 
@@ -748,7 +743,7 @@ def load_description_and_test(
 
     if isinstance(rd, (v0_4.ModelDescr, v0_5.ModelDescr)):
         if weight_format is None:
-            weight_formats: List[SupportedWeightsFormat] = [
+            weight_formats: list[SupportedWeightsFormat] = [
                 w for w, we in rd.weights if we is not None
             ]  # pyright: ignore[reportAssignmentType]
         else:
@@ -783,11 +778,11 @@ def load_description_and_test(
 
 
 def _get_tolerance(
-    model: Union[v0_4.ModelDescr, v0_5.ModelDescr],
+    model: v0_4.ModelDescr | v0_5.ModelDescr,
     wf: SupportedWeightsFormat,
     m: MemberId,
     **deprecated: Unpack[DeprecatedKwargs],
-) -> Tuple[RelativeTolerance, AbsoluteTolerance, MismatchedElementsPerMillion]:
+) -> tuple[RelativeTolerance, AbsoluteTolerance, MismatchedElementsPerMillion]:
     if isinstance(model, v0_5.ModelDescr):
         applicable = v0_5.ReproducibilityTolerance()
 
@@ -837,7 +832,7 @@ def _get_tolerance(
 
 def evaluate_mismatched_elements(
     actual: Tensor, expected: Tensor, rtol: float, atol: float, name: str
-) -> Tuple[float, str, Optional[str]]:
+) -> tuple[float, str, str | None]:
     try:
         expected_np = expected.data.to_numpy().astype(np.float32)
         dims = expected.dims
@@ -900,19 +895,19 @@ def evaluate_mismatched_elements(
 
 
 def _test_recreate_test_outputs(
-    model: Union[v0_4.ModelDescr, v0_5.ModelDescr],
+    model: v0_4.ModelDescr | v0_5.ModelDescr,
     weight_format: SupportedWeightsFormat,
-    devices: Optional[Sequence[str]],
+    devices: Sequence[str] | None,
     stop_early: bool,
     *,
-    working_dir: Optional[Union[os.PathLike[str], str]],
+    working_dir: os.PathLike[str] | str | None,
     verbose: bool,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> bool:
     test_name = f"Reproduce test outputs from test inputs ({weight_format})"
     logger.debug("starting '{}'", test_name)
-    error_entries: List[ErrorEntry] = []
-    warning_entries: List[WarningEntry] = []
+    error_entries: list[ErrorEntry] = []
+    warning_entries: list[WarningEntry] = []
 
     def add_error_entry(msg: str, with_traceback: bool = False):
         error_entries.append(
@@ -934,8 +929,8 @@ def _test_recreate_test_outputs(
             )
         )
 
-    def save_to_working_dir(name: str, tensor: Tensor) -> List[Path]:
-        saved_paths: List[Path] = []
+    def save_to_working_dir(name: str, tensor: Tensor) -> list[Path]:
+        saved_paths: list[Path] = []
         if working_dir is not None and verbose:
             for p in [
                 Path(working_dir) / f"{name}_{weight_format}{suffix}"
@@ -956,7 +951,7 @@ def _test_recreate_test_outputs(
 
     try:
         test_input = get_test_input_sample(model)
-        expected = get_test_output_sample(model)
+        expected_sample = get_test_output_sample(model)
 
         with create_prediction_pipeline(
             bioimageio_model=model, devices=devices, weight_format=weight_format
@@ -975,21 +970,21 @@ def _test_recreate_test_outputs(
             results = deepcopy(results_not_postprocessed)
             prediction_pipeline.apply_postprocessing(results)
 
-        if len(results.members) != len(expected.members):
+        if len(results.members) != len(expected_sample.members):
             add_error_entry(
-                f"Expected {len(expected.members)} outputs, but got {len(results.members)}"
+                f"Expected {len(expected_sample.members)} outputs, but got {len(results.members)}"
             )
 
         else:
-            intermediate_paths: List[Path] = []
-            for m, t in test_input_preprocessed.members.items():
+            intermediate_paths: list[Path] = []
+            for m, expected in test_input_preprocessed.members.items():
                 intermediate_paths.extend(
-                    save_to_working_dir(f"test_input_preprocessed_{m}", t)
+                    save_to_working_dir(f"test_input_preprocessed_{m}", expected)
                 )
             if intermediate_paths:
                 logger.debug("Saved preprocessed test inputs to {}", intermediate_paths)
 
-            for m, expected in expected.members.items():
+            for m, expected in expected_sample.members.items():
                 actual = results.members.get(m)
                 if actual is None:
                     add_error_entry("Output tensors for test case may not be None")
@@ -1054,7 +1049,7 @@ def _test_recreate_test_outputs(
 
     except Exception as e:
         if get_validation_context().raise_errors:
-            raise e
+            raise
 
         add_error_entry(str(e), with_traceback=True)
 
@@ -1074,7 +1069,7 @@ def _test_recreate_test_outputs(
 def _test_parametrized_inference(
     model: v0_5.ModelDescr,
     weight_format: SupportedWeightsFormat,
-    devices: Optional[Sequence[str]],
+    devices: Sequence[str] | None,
     *,
     stop_early: bool,
 ) -> None:
@@ -1084,7 +1079,7 @@ def _test_parametrized_inference(
         for a in ipt.axes
     ):
         # no parameterized sizes => set n=0
-        ns: Set[v0_5.ParameterizedSize_N] = {0}
+        ns: set[v0_5.ParameterizedSize_N] = {0}
     else:
         ns = {0, 1, 2}
 
@@ -1103,7 +1098,7 @@ def _test_parametrized_inference(
         # no batch axis
         batch_sizes = {1}
 
-    test_cases: Set[Tuple[BatchSize, v0_5.ParameterizedSize_N]] = {
+    test_cases: set[tuple[BatchSize, v0_5.ParameterizedSize_N]] = {
         (b, n) for b, n in product(sorted(batch_sizes), sorted(ns))
     }
     logger.info(
@@ -1114,7 +1109,7 @@ def _test_parametrized_inference(
     )
 
     def generate_test_cases():
-        tested: Set[Hashable] = set()
+        tested: set[Hashable] = set()
 
         def get_ns(n: int):
             return {
@@ -1169,7 +1164,7 @@ def _test_parametrized_inference(
             bioimageio_model=model, devices=devices, weight_format=weight_format
         ) as prediction_pipeline:
             for n, batch_size, inputs, exptected_output_shape in generate_test_cases():
-                error: Optional[str] = None
+                error: str | None = None
                 try:
                     result = prediction_pipeline.predict_sample_without_blocking(
                         inputs, skip_input_padding=True, skip_output_cropping=True
@@ -1190,7 +1185,7 @@ def _test_parametrized_inference(
                                 error = "Output tensors may not be None for test case"
                                 break
 
-                            diff: Dict[AxisId, int] = {}
+                            diff: dict[AxisId, int] = {}
                             for a, s in res.sizes.items():
                                 if isinstance((e_aid := exp[AxisId(a)]), int):
                                     if s != e_aid:
@@ -1231,7 +1226,7 @@ def _test_parametrized_inference(
                     break
     except Exception as e:
         if get_validation_context().raise_errors:
-            raise e
+            raise
 
         model.validation_summary.add_detail(
             ValidationDetail(
@@ -1250,9 +1245,7 @@ def _test_parametrized_inference(
         )
 
 
-def _test_expected_resource_type(
-    rd: Union[InvalidDescr, ResourceDescr], expected_type: str
-):
+def _test_expected_resource_type(rd: InvalidDescr | ResourceDescr, expected_type: str):
     has_expected_type = rd.type is expected_type
     rd.validation_summary.details.append(
         ValidationDetail(

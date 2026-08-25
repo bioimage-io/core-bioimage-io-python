@@ -3,7 +3,6 @@ from __future__ import annotations
 import subprocess
 from itertools import chain
 from pathlib import Path
-from typing import Dict, List
 
 from dotenv import load_dotenv
 from loguru import logger
@@ -61,7 +60,7 @@ EXAMPLE_DESCRIPTIONS = (
 )
 
 # TODO: use models from new collection on S3
-MODEL_SOURCES: Dict[str, str] = {
+MODEL_SOURCES: dict[str, str] = {
     "hpa_densenet": "polite-pig",
     "stardist": (
         EXAMPLE_DESCRIPTIONS + "models/stardist_example_model/v0_4.bioimageio.yaml"
@@ -143,7 +142,7 @@ KERAS_MODELS = (
     if tf_major_version == 1
     else ["unet2d_keras_tf2"]
 )
-TENSORFLOW_JS_MODELS: List[str] = []  # TODO: add a tensorflow_js example model
+TENSORFLOW_JS_MODELS: list[str] = []  # TODO: add a tensorflow_js example model
 
 ALL_MODELS = sorted(
     set(

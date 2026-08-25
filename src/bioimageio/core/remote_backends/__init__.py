@@ -1,4 +1,6 @@
-from typing import TYPE_CHECKING, Literal, Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Literal
 
 from typing_extensions import assert_never
 
@@ -10,9 +12,9 @@ if TYPE_CHECKING:
 
 def create_remote_model_adapter(
     model_description: AnyModelDescr,
-    server: Optional[str] = None,
-    server_type: Optional[Literal["gradio"]] = None,
-) -> "GradioModelAdapter":
+    server: str | None = None,
+    server_type: Literal["gradio"] | None = None,
+) -> GradioModelAdapter:
     """Create a remote model adapter
 
     Args:

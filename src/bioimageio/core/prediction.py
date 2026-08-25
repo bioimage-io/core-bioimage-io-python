@@ -1,14 +1,8 @@
+from __future__ import annotations
+
 import collections.abc
+from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence
 from pathlib import Path
-from typing import (
-    Hashable,
-    Iterable,
-    Iterator,
-    Mapping,
-    Optional,
-    Tuple,
-    Union,
-)
 
 from loguru import logger
 from tqdm import tqdm
@@ -27,16 +21,18 @@ from .sample import Sample
 
 def predict(
     *,
-    model: Union[
-        PermissiveFileSource, v0_4.ModelDescr, v0_5.ModelDescr, PredictionPipeline
-    ],
-    inputs: Union[Sample, PerMember[TensorSource], TensorSource],
+    model: PermissiveFileSource
+    | v0_4.ModelDescr
+    | v0_5.ModelDescr
+    | PredictionPipeline,
+    inputs: Sample | PerMember[TensorSource] | TensorSource,
     sample_id: Hashable = "sample",
-    blocksize_parameter: Optional[BlocksizeParameter] = None,
-    input_block_shape: Optional[Mapping[MemberId, Mapping[AxisId, int]]] = None,
+    blocksize_parameter: BlocksizeParameter | None = None,
+    input_block_shape: Mapping[MemberId, Mapping[AxisId, int]] | None = None,
     skip_preprocessing: bool = False,
     skip_postprocessing: bool = False,
-    save_output_path: Optional[Union[Path, str]] = None,
+    save_output_path: Path | str | None = None,
+    devices: Sequence[str] | None = None,
 ) -> Sample:
     """Run prediction for a single set of input(s) with a bioimage.io model
 
@@ -70,27 +66,27 @@ def predict(
         if not isinstance(model, (v0_4.ModelDescr, v0_5.ModelDescr)):
             loaded = load_description(model)
             if not isinstance(loaded, (v0_4.ModelDescr, v0_5.ModelDescr)):
-                raise ValueError(f"expected model description, but got {loaded}")
+                raise TypeError(f"expected model description, but got {loaded}")
             model = loaded
 
         pp = create_prediction_pipeline(
             model,
             fixed_dataset_statistics=inputs.stat if isinstance(inputs, Sample) else {},
+            devices=devices,
         )
 
     with pp:
         model = pp.model_descr
-        if save_output_path is not None:
-            if (
-                "{output_id}" not in str(save_output_path)
-                and "{member_id}" not in str(save_output_path)
-                and len(model.outputs) > 1
-            ):
-                raise ValueError(
-                    f"Missing `{{output_id}}` in save_output_path={save_output_path} to "
-                    + "distinguish model outputs "
-                    + str([get_member_id(d) for d in model.outputs])
-                )
+        if save_output_path is not None and (
+            "{output_id}" not in str(save_output_path)
+            and "{member_id}" not in str(save_output_path)
+            and len(model.outputs) > 1
+        ):
+            raise ValueError(
+                f"Missing `{{output_id}}` in save_output_path={save_output_path} to "
+                + "distinguish model outputs "
+                + str([get_member_id(d) for d in model.outputs])
+            )
 
         if isinstance(inputs, Sample):
             sample = inputs
@@ -107,18 +103,22 @@ def predict(
                     input_block_shape,
                 )
 
-            output = pp.predict_sample_with_fixed_blocking(
-                sample,
-                input_block_shape=input_block_shape,
-                skip_preprocessing=skip_preprocessing,
-                skip_postprocessing=skip_postprocessing,
+            _n_intermediates, output = (
+                pp.predict_sample_with_fixed_blocking_yield_intermediates(
+                    sample,
+                    input_block_shape=input_block_shape,
+                    skip_preprocessing=skip_preprocessing,
+                    skip_postprocessing=skip_postprocessing,
+                )
             )
         elif blocksize_parameter is not None:
-            output = pp.predict_sample_with_blocking(
-                sample,
-                skip_preprocessing=skip_preprocessing,
-                skip_postprocessing=skip_postprocessing,
-                ns=blocksize_parameter,
+            _n_intermediates, output = (
+                pp.predict_sample_with_blocking_yield_intermediates(
+                    sample,
+                    skip_preprocessing=skip_preprocessing,
+                    skip_postprocessing=skip_postprocessing,
+                    ns=blocksize_parameter,
+                )
             )
         else:
             output = pp.predict_sample_without_blocking(
@@ -126,28 +126,67 @@ def predict(
                 skip_preprocessing=skip_preprocessing,
                 skip_postprocessing=skip_postprocessing,
             )
-        if save_output_path:
-            save_sample(save_output_path, output)
 
-    return output
+        if save_output_path:
+            output_ref: list[Sample | None] = [
+                None
+            ]  # to store final output when saving blockwise
+            if isinstance(output, Sample):
+                save_output = output
+                return_output = output
+            else:
+                if pp.has_non_blockwise_postprocessing:
+                    final_output = None
+                    for out in output:
+                        final_output = out
+
+                    assert final_output is not None
+                    save_output = final_output.sample
+                    return_output = final_output.sample
+                else:
+                    iterable_output = output
+
+                    def blockwise_output():
+                        for out in iterable_output:
+                            output_ref[0] = out.sample
+                            yield out.last_block
+
+                    save_output = blockwise_output()
+                    return_output = None
+
+            save_sample(save_output_path, save_output)
+            if return_output is None:
+                return_output = output_ref[0]
+                assert return_output is not None, (
+                    "saving output blockwise failed to produce a final output sample"
+                )
+        else:
+            if isinstance(output, Sample):
+                return_output = output
+            else:
+                return_output = None
+                for out in output:
+                    return_output = out.sample
+
+                assert return_output is not None
+
+    return return_output
 
 
 def predict_many(
     *,
-    model: Union[
-        PermissiveFileSource, v0_4.ModelDescr, v0_5.ModelDescr, PredictionPipeline
-    ],
-    inputs: Union[Iterable[PerMember[TensorSource]], Iterable[TensorSource]],
+    model: PermissiveFileSource
+    | v0_4.ModelDescr
+    | v0_5.ModelDescr
+    | PredictionPipeline,
+    inputs: Iterable[PerMember[TensorSource]] | Iterable[TensorSource],
     sample_id: str = "sample{i:03}",
-    blocksize_parameter: Optional[
-        Union[
-            v0_5.ParameterizedSize_N,
-            Mapping[Tuple[MemberId, AxisId], v0_5.ParameterizedSize_N],
-        ]
-    ] = None,
+    blocksize_parameter: v0_5.ParameterizedSize_N
+    | Mapping[tuple[MemberId, AxisId], v0_5.ParameterizedSize_N]
+    | None = None,
     skip_preprocessing: bool = False,
     skip_postprocessing: bool = False,
-    save_output_path: Optional[Union[Path, str]] = None,
+    save_output_path: Path | str | None = None,
 ) -> Iterator[Sample]:
     """Run prediction for a multiple sets of inputs with a bioimage.io model
 
@@ -180,7 +219,7 @@ def predict_many(
         if not isinstance(model, (v0_4.ModelDescr, v0_5.ModelDescr)):
             loaded = load_description(model)
             if not isinstance(loaded, (v0_4.ModelDescr, v0_5.ModelDescr)):
-                raise ValueError(f"expected model description, but got {loaded}")
+                raise TypeError(f"expected model description, but got {loaded}")
             model = loaded
 
         pp = create_prediction_pipeline(model)

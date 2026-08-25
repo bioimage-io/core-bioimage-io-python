@@ -1,10 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import (
     Literal,
-    Mapping,
-    Optional,
     TypeVar,
     Union,
 )
@@ -15,24 +14,24 @@ from bioimageio.spec.model import v0_5
 
 
 def _guess_axis_type(a: str):
+    a = a.lower()
     if a in ("b", "batch"):
         return "batch"
     elif a in ("t", "time"):
         return "time"
-    elif a in ("i", "index"):
+    elif a in ("s", "sample", "i", "index"):
         return "index"
     elif a in ("c", "channel"):
         return "channel"
-    elif a in ("x", "y", "z"):
+    elif a in ("x", "y", "z") or a.startswith("space"):
         return "space"
     else:
         raise ValueError(
             f"Failed to infer axis type for axis id '{a}'."
-            + " Consider using one of: '"
-            + "', '".join(
-                ["b", "batch", "t", "time", "i", "index", "c", "channel", "x", "y", "z"]
-            )
-            + "'. Or creating an `Axis` object instead."
+            + " Consider using one of:"
+            + " 'b', 'batch', 't', 'time', 's', 'sample', 'i',"
+            + " 'index', 'c', 'channel', 'x', 'y', 'z',"
+            + " 'space*'. Or create an `Axis` object instead.",
         )
 
 
@@ -97,8 +96,8 @@ class Axis:
 @dataclass
 class AxisSize:
     min: int
-    max: Optional[int] = None
-    step: Optional[int] = None
+    max: int | None = None
+    step: int | None = None
 
 
 @dataclass
@@ -106,9 +105,7 @@ class AxisInfo(Axis):
     size: AxisSize
 
     @classmethod
-    def create(
-        cls, axis: AxisLike, size: Optional[Union[int, AxisSize]] = None
-    ) -> AxisInfo:
+    def create(cls, axis: AxisLike, size: int | AxisSize | None = None) -> AxisInfo:
         if isinstance(axis, AxisInfo):
             return axis
 
@@ -142,3 +139,32 @@ class AxisInfo(Axis):
             size = AxisSize(min=size, max=size)
 
         return AxisInfo(id=axis_base.id, type=axis_base.type, size=size)
+
+
+def single_letter_dims_if_possible(
+    dims: Sequence[AxisId],
+) -> tuple[str, ...]:
+    """Return a tuple of single-letter dimension names if possible, otherwise return the original dimension names."""
+    single_letter_dims: list[str] = []
+
+    for d in dims:
+        d = str(d).lower()
+        if d in ("batch", "b"):
+            single_letter_dims.append("b")
+        elif d in ("time", "t"):
+            single_letter_dims.append("t")
+        elif d in ("index", "i"):
+            single_letter_dims.append("i")
+        elif d in ("channel", "c"):
+            single_letter_dims.append("c")
+        elif d in "zyx":
+            single_letter_dims.append(d)
+        else:
+            # Return original dims if any dim cannot be converted to a single letter
+            return tuple(dims)
+
+    if len(set(single_letter_dims)) != len(single_letter_dims):
+        # Return original dims if any single letter dim is not unique
+        return tuple(dims)
+
+    return tuple(single_letter_dims)

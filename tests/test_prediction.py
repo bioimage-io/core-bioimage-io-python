@@ -1,5 +1,6 @@
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Literal, Mapping, NamedTuple
+from typing import Literal, NamedTuple
 
 import numpy as np
 import pandas as pd

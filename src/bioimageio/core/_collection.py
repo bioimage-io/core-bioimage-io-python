@@ -2,8 +2,9 @@
 
 import json
 import warnings
+from collections.abc import Mapping, Sequence
 from functools import cache
-from typing import Literal, Mapping, Sequence, TypedDict
+from typing import Literal, TypedDict
 
 from bioimageio.spec.common import Sha256
 from bioimageio.spec.utils import get_reader

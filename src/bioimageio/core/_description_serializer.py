@@ -1,7 +1,6 @@
 import base64
 import hashlib
 from io import BytesIO
-from typing import Tuple
 from zipfile import ZipFile
 
 from bioimageio.spec import (
@@ -52,12 +51,12 @@ class DescriptionSerializer:
     def deserialize(serialized: bytes) -> ResourceDescr:
         descr = load_description(ZipFile(BytesIO(serialized)), perform_io_checks=False)
         if isinstance(descr, InvalidDescr):
-            raise ValueError(f"invalid serialized model package: {descr.get_reason()}")
+            raise TypeError(f"invalid serialized model package: {descr.get_reason()}")
 
         return descr
 
     @classmethod
-    def serialize_to_string_and_hash(cls, rd: ResourceDescr) -> Tuple[str, Sha256]:
+    def serialize_to_string_and_hash(cls, rd: ResourceDescr) -> tuple[str, Sha256]:
         package_bytes = cls.serialize(rd)
         safe_bytes = cls._get_safe_bytes(package_bytes)
         serialized_str = safe_bytes.decode(cls.STRING_ENCODING)

@@ -1,19 +1,13 @@
 from __future__ import annotations
 
 import collections.abc
+from collections.abc import Iterator, Mapping, Sequence
 from itertools import permutations
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
-    Iterator,
-    List,
     Literal,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
     Union,
     cast,
     get_args,
@@ -24,9 +18,10 @@ import pandas as pd
 import xarray as xr
 from loguru import logger
 from numpy.typing import DTypeLike, NDArray
-from typing_extensions import Self, assert_never
+from typing_extensions import Self, TypeAlias, assert_never
 
 from bioimageio.spec.model import v0_5
+from bioimageio.spec.model.v0_5 import SpaceUnit, TimeUnit
 
 from ._magic_tensor_ops import MagicTensorOpsMixin
 from .axis import AxisId, AxisInfo, AxisLike, PerAxis
@@ -40,12 +35,20 @@ from .common import (
     QuantileMethod,
     SliceInfo,
 )
+from .utils._color import get_default_channel_colors
+from .utils._type_guards import is_dict, is_mapping, is_sequence
+
+try:
+    import dask.array as da
+except ImportError:
+    da = None
 
 if TYPE_CHECKING:
-    from numpy.typing import ArrayLike, NDArray
+    import dask.array
+    from numpy.typing import NDArray
+    from xarray.core.types import DaCompatible
 
-
-_ScalarOrArray = Union["ArrayLike", np.generic, "NDArray[Any]"]  # TODO: add "DaskArray"
+Array: TypeAlias = "NDArray[Any] | dask.array.Array"
 
 
 def _resolve_pad_mode(mode: PadMode):
@@ -71,38 +74,37 @@ class Tensor(MagicTensorOpsMixin):
     """A wrapper around an xr.DataArray for better integration with bioimageio.spec
     and improved type annotations."""
 
-    _Compatible = Union["Tensor", xr.DataArray, _ScalarOrArray]
+    _Compatible: TypeAlias = Union["Tensor", xr.DataArray, "DaCompatible"]
 
     def __init__(
         self,
-        array: Union[NDArray[Any], xr.DataArray],
-        dims: Sequence[Union[AxisId, AxisLike]],
+        array: Array | xr.DataArray,
+        dims: Sequence[AxisId | AxisLike],
     ) -> None:
         super().__init__()
         axes = tuple(
             a if isinstance(a, AxisId) else AxisInfo.create(a).id for a in dims
         )
         if isinstance(array, xr.DataArray):
-            self._data = array.transpose(*axes)
+            self._data: xr.DataArray = array.transpose(*axes)
+            assert isinstance(self._data, xr.DataArray)
         else:
             self._data = xr.DataArray(array, dims=axes)
 
     def __repr__(self) -> str:
-        return f"<Tensor {repr(self._data)}>"
+        return f"<Tensor {self._data!r}>"
 
-    def __array__(self, dtype: DTypeLike = None):
+    def __array__(self, dtype: DTypeLike | None = None):
         return np.asarray(self._data, dtype=dtype)
 
     def __getitem__(
         self,
-        key: Union[
-            SliceInfo,
-            slice,
-            int,
-            PerAxis[Union[SliceInfo, slice, int]],
-            Tensor,
-            xr.DataArray,
-        ],
+        key: SliceInfo
+        | slice
+        | int
+        | PerAxis[SliceInfo | slice | int]
+        | Tensor
+        | xr.DataArray,
     ) -> Self:
         if isinstance(key, SliceInfo):
             key = slice(*key)
@@ -118,8 +120,8 @@ class Tensor(MagicTensorOpsMixin):
 
     def __setitem__(
         self,
-        key: Union[PerAxis[Union[SliceInfo, slice]], Tensor, xr.DataArray],
-        value: Union[Tensor, xr.DataArray, float, int],
+        key: PerAxis[SliceInfo | slice] | Tensor | xr.DataArray,
+        value: Tensor | xr.DataArray | float,
     ) -> None:
         if isinstance(key, Tensor):
             key = key._data
@@ -151,12 +153,138 @@ class Tensor(MagicTensorOpsMixin):
         f: Callable[[Any, Any], Any],
         reflexive: bool = False,
     ) -> Self:
-        data = self._data._binary_op(  # pyright: ignore[reportPrivateUsage]
+        data: xr.DataArray = self._data._binary_op(  # pyright: ignore[reportPrivateUsage]
             (other._data if isinstance(other, Tensor) else other),
             f,
             reflexive,
         )
+        assert isinstance(data, xr.DataArray)
         return self.__class__.from_xarray(data)
+
+    def get_physical_scale(self) -> PerAxis[float]:
+        """Return the physical scale of each axis in units (see `get_physical_scale_unit`)."""
+        _scale = self._data.attrs.get("physical_scale", None)
+        scale: Mapping[Any, Any] = _scale if is_mapping(_scale) else {}
+        del _scale
+        return {
+            a if isinstance(a, AxisId) else AxisId(a): 1.0 if s is None else float(s)
+            for a, s in scale.items()
+        }
+
+    def set_physical_scale(self, scale: PerAxis[float | None]) -> None:
+        """Set the physical scale of each axis in units (see `set_physical_scale_unit`)."""
+        if unknown_axes := [d for d in scale if d not in self.dims]:
+            raise ValueError(
+                f"Cannot set physical scale for axes {unknown_axes} not in tensor axes {self.dims}"
+            )
+
+        self._data.attrs["physical_scale"] = {
+            d: 1.0 if (s := scale.get(d)) is None else float(s) for d in self.dims
+        }
+
+    def get_physical_scale_unit(self) -> PerAxis[SpaceUnit | TimeUnit | str]:
+        """Return the physical unit of each axis."""
+        _unit = self._data.attrs.get("physical_scale_unit", None)
+        unit: Mapping[Any, Any] = _unit if is_mapping(_unit) else {}
+        del _unit
+        return {d: "" if (u := unit.get(d)) is None else str(u) for d in self.dims}
+
+    def set_physical_scale_unit(
+        self, unit: PerAxis[SpaceUnit | TimeUnit | str | None]
+    ) -> None:
+        """Set the physical unit of each axis."""
+        if unknown_axes := [d for d in unit if d not in self.dims]:
+            raise ValueError(
+                f"Cannot set physical scale unit for axes {unknown_axes} not in tensor axes {self.dims}"
+            )
+        self._data.attrs["physical_scale_unit"] = {
+            d: "" if (u := unit.get(d)) is None else str(u) for d in self.dims
+        }
+
+    @property
+    def channel_names(self) -> list[str] | None:
+        """Return the channel names if available, otherwise None."""
+
+        names = self._data.attrs.get("channel_names", None)
+        if not is_sequence(names):
+            return None
+
+        if len(names) != self.sizes.get(AxisId("channel"), 0):
+            logger.warning(
+                "Number of channel names ({}) does not match number of channels ({})",
+                len(names),
+                self.sizes.get(AxisId("channel"), 0),
+            )
+            return None
+
+        return [str(name) for name in names]
+
+    @channel_names.setter
+    def channel_names(self, names: list[str] | None) -> None:
+        """Set the channel names."""
+        if names is not None and len(names) != self.sizes.get(AxisId("channel"), 0):
+            logger.warning(
+                "Number of channel names ({}) does not match number of channels ({})",
+                len(names),
+                self.sizes.get(AxisId("channel"), 0),
+            )
+        self._data.attrs["channel_names"] = names
+
+    @property
+    def channel_colors(self) -> list[str] | None:
+        """Return channel colors ."""
+
+        n_channels = self.sizes.get(AxisId("channel"), 0)
+        if n_channels == 0:
+            return None
+
+        colors = self._data.attrs.get("channel_colors", None)
+        if not is_sequence(colors):
+            colors = None
+
+        if colors is not None and len(colors) < n_channels:
+            logger.warning(
+                "Overwriting existing channel colors with default colors due to too few channel colors: {} colors for {} channels",
+                len(colors),
+                n_channels,
+            )
+            colors = None
+
+        if colors is None:
+            default_channel_colors = get_default_channel_colors(n_channels)
+            self.channel_colors = default_channel_colors
+            return default_channel_colors
+        else:
+            return [str(c) for c in colors[:n_channels]]
+
+    @channel_colors.setter
+    def channel_colors(self, colors: list[str] | None) -> None:
+        """Set the channel colors."""
+        n_channels = self.sizes.get(AxisId("channel"), 0)
+        if colors is not None and len(colors) < n_channels:
+            logger.warning(
+                "Number of channel colors ({}) lower than number of channels ({})",
+                len(colors),
+                n_channels,
+            )
+        self._data.attrs["channel_colors"] = colors
+
+    @property
+    def name(self) -> str | None:
+        """Return the name of the tensor if available, otherwise None."""
+        name = self._data.attrs.get("name")
+        return None if name is None else str(name)
+
+    @name.setter
+    def name(self, name: str | None) -> None:
+        """Set the name of the tensor."""
+        self._data.attrs["name"] = name
+
+    def squeeze(self, dim: AxisId | Sequence[AxisId] | None = None) -> Self:
+        """Return a tensor with all the singleton dimensions removed."""
+        squeezed = self._data.squeeze(dim=dim)  # pyright: ignore[reportUnknownVariableType]
+        assert isinstance(squeezed, xr.DataArray)
+        return self.__class__.from_xarray(squeezed)
 
     def _inplace_binary_op(
         self,
@@ -166,7 +294,7 @@ class Tensor(MagicTensorOpsMixin):
         _ = self._data._inplace_binary_op(  # pyright: ignore[reportPrivateUsage]
             (
                 other_d
-                if (other_d := getattr(other, "data")) is not None
+                if (other_d := other.data) is not None
                 and isinstance(
                     other_d,
                     xr.DataArray,
@@ -178,9 +306,10 @@ class Tensor(MagicTensorOpsMixin):
         return self
 
     def _unary_op(self, f: Callable[[Any], Any], *args: Any, **kwargs: Any) -> Self:
-        data = self._data._unary_op(  # pyright: ignore[reportPrivateUsage]
+        data: xr.DataArray = self._data._unary_op(  # pyright: ignore[reportPrivateUsage]
             f, *args, **kwargs
         )
+        assert isinstance(data, xr.DataArray)
         return self.__class__.from_xarray(data)
 
     @classmethod
@@ -190,14 +319,29 @@ class Tensor(MagicTensorOpsMixin):
         note for internal use: this factory method is round-trip save
             for any `Tensor`'s  `data` property (an xarray.DataArray).
         """
-        return cls(array=data_array, dims=tuple(AxisId(d) for d in data_array.dims))
+        dims = [AxisId(d) for d in data_array.dims]
+        dim_map = {d: a for d, a in zip(data_array.dims, dims) if d != a}
+        if dim_map:
+            data_array = data_array.rename(dim_map)  # pyright: ignore[reportUnknownVariableType]
+            assert isinstance(data_array, xr.DataArray)
+
+        return cls(array=data_array, dims=dims)
 
     @classmethod
     def from_numpy(
         cls,
         array: NDArray[Any],
         *,
-        dims: Optional[Union[AxisLike, Sequence[AxisLike]]],
+        dims: AxisLike | Sequence[AxisLike] | None,
+    ) -> Tensor:
+        return cls.from_array(array, dims=dims)
+
+    @classmethod
+    def from_array(
+        cls,
+        array: Array,
+        *,
+        dims: AxisLike | Sequence[AxisLike] | None,
     ) -> Tensor:
         """create a `Tensor` from a numpy array
 
@@ -222,8 +366,9 @@ class Tensor(MagicTensorOpsMixin):
 
         successful_view = _get_array_view(array, axis_infos)
         if successful_view is None:
+            dims_formatted = "".join(f"\n{d}" for d in dim_seq)
             raise ValueError(
-                f"Array shape {original_shape} does not map to axes {dims}"
+                f"Array shape {original_shape} does not map to axes: {dims_formatted}"
             )
 
         return Tensor(successful_view, dims=tuple(a.id for a in axis_infos))
@@ -235,7 +380,7 @@ class Tensor(MagicTensorOpsMixin):
     @property
     def dims(self):  # TODO: rename to `axes`?
         """Tuple of dimension names associated with this tensor."""
-        return cast(Tuple[AxisId, ...], self._data.dims)
+        return cast(tuple[AxisId, ...], self._data.dims)
 
     @property
     def dtype(self) -> DTypeStr:
@@ -282,7 +427,7 @@ class Tensor(MagicTensorOpsMixin):
 
     def argmax(self) -> Mapping[AxisId, int]:
         ret = self._data.argmax(...)
-        assert isinstance(ret, dict)
+        assert is_dict(ret)
         return {cast(AxisId, k): cast(int, v.item()) for k, v in ret.items()}
 
     def astype(self, dtype: DTypeStr, *, copy: bool = False):
@@ -291,7 +436,7 @@ class Tensor(MagicTensorOpsMixin):
         note: if dtype is already satisfied copy if `copy`"""
         return self.__class__.from_xarray(self._data.astype(dtype, copy=copy))
 
-    def clip(self, min: Optional[float] = None, max: Optional[float] = None):
+    def clip(self, min: float | None = None, max: float | None = None):
         """Return a tensor whose values are limited to [min, max].
         At least one of max or min must be given."""
         return self.__class__.from_xarray(self._data.clip(min, max))
@@ -299,10 +444,7 @@ class Tensor(MagicTensorOpsMixin):
     def crop_to(
         self,
         sizes: PerAxis[int],
-        crop_where: Union[
-            CropWhere,
-            PerAxis[CropWhere],
-        ] = "left_and_right",
+        crop_where: CropWhere | PerAxis[CropWhere] = "left_and_right",
     ) -> Self:
         """crop to match `sizes`"""
         if isinstance(crop_where, str):
@@ -310,7 +452,7 @@ class Tensor(MagicTensorOpsMixin):
         else:
             crop_axis_where = crop_where
 
-        slices: Dict[AxisId, SliceInfo] = {}
+        slices: dict[AxisId, SliceInfo] = {}
 
         for a, s_is in self.sizes.items():
             if a not in sizes or sizes[a] == s_is:
@@ -341,14 +483,12 @@ class Tensor(MagicTensorOpsMixin):
 
         return self[slices]
 
-    def expand_dims(self, dims: Union[Sequence[AxisId], PerAxis[int]]) -> Self:
+    def expand_dims(self, dims: Sequence[AxisId] | PerAxis[int]) -> Self:
         return self.__class__.from_xarray(self._data.expand_dims(dims=dims))
 
     def item(
         self,
-        key: Union[
-            None, SliceInfo, slice, int, PerAxis[Union[SliceInfo, slice, int]]
-        ] = None,
+        key: None | SliceInfo | slice | int | PerAxis[SliceInfo | slice | int] = None,
     ):
         """Copy a tensor element to a standard Python scalar and return it."""
         if key is None:
@@ -359,7 +499,7 @@ class Tensor(MagicTensorOpsMixin):
         assert isinstance(ret, (bool, float, int))
         return ret
 
-    def mean(self, dim: Optional[Union[AxisId, Sequence[AxisId]]] = None) -> Self:
+    def mean(self, dim: AxisId | Sequence[AxisId] | None = None) -> Self:
         return self.__class__.from_xarray(self._data.mean(dim=dim))
 
     def pad(
@@ -378,7 +518,7 @@ class Tensor(MagicTensorOpsMixin):
     def pad_to(
         self,
         sizes: PerAxis[int],
-        pad_where: Union[PadWhere, PerAxis[PadWhere]] = "left_and_right",
+        pad_where: PadWhere | PerAxis[PadWhere] = "left_and_right",
         mode: PadMode = "symmetric",
     ) -> Self:
         """pad `tensor` to match `sizes`"""
@@ -387,7 +527,7 @@ class Tensor(MagicTensorOpsMixin):
         else:
             pad_axis_where = pad_where
 
-        pad_width: Dict[AxisId, PadWidth] = {}
+        pad_width: dict[AxisId, PadWidth] = {}
         for a, s_is in self.sizes.items():
             if a not in sizes or sizes[a] == s_is:
                 pad_width[a] = PadWidth(0, 0)
@@ -419,8 +559,8 @@ class Tensor(MagicTensorOpsMixin):
 
     def quantile(
         self,
-        q: Union[float, Sequence[float]],
-        dim: Optional[Union[AxisId, Sequence[AxisId]]] = None,
+        q: float | Sequence[float],
+        dim: AxisId | Sequence[AxisId] | None = None,
         method: QuantileMethod = "linear",
     ) -> Self:
         assert (
@@ -446,19 +586,13 @@ class Tensor(MagicTensorOpsMixin):
         self,
         sizes: PerAxis[int],
         *,
-        pad_where: Union[
-            PadWhere,
-            PerAxis[PadWhere],
-        ] = "left_and_right",
-        crop_where: Union[
-            CropWhere,
-            PerAxis[CropWhere],
-        ] = "left_and_right",
+        pad_where: PadWhere | PerAxis[PadWhere] = "left_and_right",
+        crop_where: CropWhere | PerAxis[CropWhere] = "left_and_right",
         pad_mode: PadMode = "symmetric",
     ):
         """return cropped/padded tensor with `sizes`"""
-        crop_to_sizes: Dict[AxisId, int] = {}
-        pad_to_sizes: Dict[AxisId, int] = {}
+        crop_to_sizes: dict[AxisId, int] = {}
+        pad_to_sizes: dict[AxisId, int] = {}
         new_axes = dict(sizes)
         for a, s_is in self.sizes.items():
             a = AxisId(str(a))
@@ -482,14 +616,14 @@ class Tensor(MagicTensorOpsMixin):
 
         return tensor
 
-    def std(self, dim: Optional[Union[AxisId, Sequence[AxisId]]] = None) -> Self:
+    def std(self, dim: AxisId | Sequence[AxisId] | None = None) -> Self:
         return self.__class__.from_xarray(self._data.std(dim=dim))
 
-    def sum(self, dim: Optional[Union[AxisId, Sequence[AxisId]]] = None) -> Self:
+    def sum(self, dim: AxisId | Sequence[AxisId] | None = None) -> Self:
         """Reduce this Tensor's data by applying sum along some dimension(s)."""
         return self.__class__.from_xarray(self._data.sum(dim=dim))
 
-    def assign_batch_multi_index(self, multi_index: "pd.MultiIndex") -> Self:
+    def assign_batch_multi_index(self, multi_index: pd.MultiIndex) -> Self:
         """Set the batch multi-index for this tensor.
 
         Args:
@@ -534,10 +668,11 @@ class Tensor(MagicTensorOpsMixin):
 
         old_dims = self.dims
         array = self._data.unstack(AxisId("batch"))
+        assert isinstance(array, xr.DataArray)
         added_dims = [AxisId(d) for d in array.dims if d not in self._data.dims]
 
         # restore expected axis order, replace batch dim with added dims
-        new_dims: List[AxisId] = []
+        new_dims: list[AxisId] = []
         for d in old_dims:
             if d in array.dims:
                 new_dims.append(d)
@@ -550,11 +685,12 @@ class Tensor(MagicTensorOpsMixin):
         if AxisId("original_batch") in array.dims:
             array = array.rename({AxisId("original_batch"): AxisId("batch")})
 
+        assert isinstance(array, xr.DataArray)
         return self.__class__.from_xarray(array)
 
     def transpose(
         self,
-        axes: Sequence[AxisId],
+        axes: Sequence[AxisLike],
         *,
         extra_dims: Literal[
             "raise", "squeeze", "stack", "squeeze_or_stack"
@@ -580,6 +716,7 @@ class Tensor(MagicTensorOpsMixin):
                 If "unstack", any missing dimensions will be unstacked from the batch dimension. For this option a batch dimension with a multi-index must be present from previous stacking operations or assigned by `Tensor.assign_batch_multi_index()`.
                 If "unstack_or_expand", any missing dimensions will be unstacked from the batch dimension if it has a multi-index, otherwise they will be added as singleton dimensions.
         """
+        axes = [AxisInfo.create(a).id for a in axes]
         array = self._data
 
         unhandled_missing_dims = [a for a in axes if a not in array.dims]
@@ -605,7 +742,7 @@ class Tensor(MagicTensorOpsMixin):
             lets_unstack = False
 
         if lets_unstack:
-            array = array.unstack(AxisId("batch"))
+            array: xr.DataArray = array.unstack(AxisId("batch"))
 
             if AxisId("original_batch") in array.dims:
                 if AxisId("batch") in axes:
@@ -625,6 +762,7 @@ class Tensor(MagicTensorOpsMixin):
 
             raise ValueError(f"Missing dimensions {unhandled_missing_dims}.")
 
+        assert isinstance(array, xr.DataArray)
         unhandled_extra_dims = [a for a in array.dims if a not in axes]
 
         if unhandled_extra_dims and extra_dims == "raise":
@@ -662,60 +800,73 @@ class Tensor(MagicTensorOpsMixin):
         # transpose to the correct axis order
         return self.__class__.from_xarray(array.transpose(*axes))
 
-    def var(self, dim: Optional[Union[AxisId, Sequence[AxisId]]] = None) -> Self:
+    def var(self, dim: AxisId | Sequence[AxisId] | None = None) -> Self:
         return self.__class__.from_xarray(self._data.var(dim=dim))
 
     @classmethod
-    def _interprete_array_wo_known_axes(cls, array: NDArray[Any]):
+    def _interprete_array_wo_known_axes(cls, array: Array) -> Tensor:
         ndim = array.ndim
+        shape = [s if isinstance(s, int) else -1 for s in array.shape]
+
+        current_axes: list[v0_5.InputAxis]
         if ndim == 2:
-            current_axes = (
-                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=array.shape[0]),
-                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=array.shape[1]),
-            )
-        elif ndim == 3 and any(s <= 3 for s in array.shape):
-            current_axes = (
+            current_axes = [
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=shape[0]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=shape[1]),
+            ]
+        elif ndim == 3 and any(s <= 10 for s in shape):
+            current_axes = [
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=shape[1]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=shape[2]),
+            ]
+            current_axes.insert(
+                np.argmin(shape),
                 v0_5.ChannelAxis(
                     channel_names=[
-                        v0_5.Identifier(f"channel{i}") for i in range(array.shape[0])
+                        v0_5.Identifier(f"channel{i}") for i in range(min(shape))
                     ]
                 ),
-                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=array.shape[1]),
-                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=array.shape[2]),
             )
         elif ndim == 3:
-            current_axes = (
-                v0_5.SpaceInputAxis(id=v0_5.AxisId("z"), size=array.shape[0]),
-                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=array.shape[1]),
-                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=array.shape[2]),
-            )
+            current_axes = [
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("z"), size=shape[0]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=shape[1]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=shape[2]),
+            ]
         elif ndim == 4:
-            current_axes = (
+            current_axes = [
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("z"), size=shape[1]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=shape[2]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=shape[3]),
+            ]
+            current_axes.insert(
+                np.argmin(shape),
                 v0_5.ChannelAxis(
                     channel_names=[
-                        v0_5.Identifier(f"channel{i}") for i in range(array.shape[0])
+                        v0_5.Identifier(f"channel{i}") for i in range(min(shape))
                     ]
                 ),
-                v0_5.SpaceInputAxis(id=v0_5.AxisId("z"), size=array.shape[1]),
-                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=array.shape[2]),
-                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=array.shape[3]),
             )
         elif ndim == 5:
-            current_axes = (
-                v0_5.BatchAxis(),
+            current_axes = [
+                v0_5.TimeInputAxis(size=shape[1]),
                 v0_5.ChannelAxis(
                     channel_names=[
-                        v0_5.Identifier(f"channel{i}") for i in range(array.shape[1])
+                        v0_5.Identifier(f"channel{i}") for i in range(shape[1])
                     ]
                 ),
-                v0_5.SpaceInputAxis(id=v0_5.AxisId("z"), size=array.shape[2]),
-                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=array.shape[3]),
-                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=array.shape[4]),
-            )
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("z"), size=shape[2]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=shape[3]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=shape[4]),
+            ]
         else:
-            raise ValueError(f"Could not guess an axis mapping for {array.shape}")
+            raise ValueError(f"Could not guess an axis mapping for {shape}")
 
-        return cls(array, dims=tuple(a.id for a in current_axes))
+        dims = tuple(a.id for a in current_axes)
+        if da is not None and isinstance(array, da.Array):
+            return cls.from_xarray(xr.DataArray(array, dims=dims))
+        else:
+            return cls(array, dims=dims)
 
 
 def _add_singletons(arr: NDArray[Any], axis_infos: Sequence[AxisInfo]):
@@ -739,13 +890,13 @@ def _add_singletons(arr: NDArray[Any], axis_infos: Sequence[AxisInfo]):
 
 
 def _get_array_view(
-    original_array: NDArray[Any], axis_infos: Sequence[AxisInfo]
-) -> Optional[NDArray[Any]]:
+    original_array: Array, axis_infos: Sequence[AxisInfo]
+) -> Array | None:
     perms = list(permutations(range(len(original_array.shape))))
 
     for perm in perms:
-        view = original_array.transpose(perm)
-        view = _add_singletons(view, axis_infos)
+        view: Array = original_array.transpose(perm)  # pyright: ignore
+        view = _add_singletons(view, axis_infos)  # pyright: ignore
         if len(view.shape) != len(axis_infos):
             return None
 

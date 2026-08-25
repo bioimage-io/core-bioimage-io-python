@@ -3,7 +3,6 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import Process
-from typing import List, Tuple
 
 import pytest
 from loguru import logger
@@ -46,7 +45,7 @@ def test_gradio_backend():
             raise TimeoutError(f"gradio server did not become ready on port {port}")
 
         server_url = f"http://localhost:{port}/"
-        prepared: List[Tuple[str, GradioModelAdapter, PerMember[Tensor]]] = []
+        prepared: list[tuple[str, GradioModelAdapter, PerMember[Tensor]]] = []
         for model_id in ("affable-shark", "ambitious-sloth"):
             model = load_model(
                 model_id, format_version="latest", perform_io_checks=False

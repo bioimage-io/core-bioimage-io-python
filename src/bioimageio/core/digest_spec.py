@@ -3,21 +3,15 @@ from __future__ import annotations
 import collections.abc
 import importlib.util
 import sys
+from collections.abc import Iterable, Mapping, Sequence
 from itertools import chain
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import (
     Any,
     Callable,
-    Dict,
-    Iterable,
-    List,
     Literal,
-    Mapping,
     NamedTuple,
-    Optional,
-    Sequence,
-    Tuple,
     Union,
 )
 from zipfile import ZipFile, is_zipfile
@@ -59,13 +53,11 @@ TensorSource: TypeAlias = Union[
 
 
 def import_callable(
-    node: Union[
-        ArchitectureFromFileDescr,
-        ArchitectureFromLibraryDescr,
-        CallableFromDepencency,
-        CallableFromFile,
-        v0_5.CustomProcessingDescr,
-    ],
+    node: ArchitectureFromFileDescr
+    | ArchitectureFromLibraryDescr
+    | CallableFromDepencency
+    | CallableFromFile
+    | v0_5.CustomProcessingDescr,
     /,
     **kwargs: Unpack[HashKwargs],
 ) -> Callable[..., Any]:
@@ -84,12 +76,12 @@ def import_callable(
         assert_never(node)
 
     if not callable(c):
-        raise ValueError(f"{node} (imported: {c}) is not callable")
+        raise TypeError(f"{node} (imported: {c}) is not callable")
 
     return c
 
 
-tmp_dirs_in_use: List[TemporaryDirectory[str]] = []
+tmp_dirs_in_use: list[TemporaryDirectory[str]] = []
 """keep global reference to temporary directories created during import to delay cleanup"""
 
 
@@ -117,8 +109,8 @@ def _import_from_file_impl(
     module = sys.modules.get(module_name)
     if module is None:
         try:
-            td_kwargs: Dict[str, Any] = (
-                dict(ignore_cleanup_errors=True) if sys.version_info >= (3, 10) else {}
+            td_kwargs: dict[str, Any] = (
+                {"ignore_cleanup_errors": True} if sys.version_info >= (3, 10) else {}
             )
             if sys.version_info >= (3, 12):
                 td_kwargs["delete"] = False
@@ -172,24 +164,20 @@ def _import_from_file_impl(
 
 
 def get_axes_infos(
-    io_descr: Union[
-        v0_4.InputTensorDescr,
-        v0_4.OutputTensorDescr,
-        v0_5.InputTensorDescr,
-        v0_5.OutputTensorDescr,
-    ],
-) -> List[AxisInfo]:
+    io_descr: v0_4.InputTensorDescr
+    | v0_4.OutputTensorDescr
+    | v0_5.InputTensorDescr
+    | v0_5.OutputTensorDescr,
+) -> list[AxisInfo]:
     """get a unified, simplified axis representation from spec axes"""
     return [AxisInfo.create(a) for a in io_descr.axes]
 
 
 def get_member_id(
-    tensor_description: Union[
-        v0_4.InputTensorDescr,
-        v0_4.OutputTensorDescr,
-        v0_5.InputTensorDescr,
-        v0_5.OutputTensorDescr,
-    ],
+    tensor_description: v0_4.InputTensorDescr
+    | v0_4.OutputTensorDescr
+    | v0_5.InputTensorDescr
+    | v0_5.OutputTensorDescr,
 ) -> MemberId:
     """get the normalized tensor ID, usable as a sample member ID"""
 
@@ -205,14 +193,12 @@ def get_member_id(
 
 def get_member_ids(
     tensor_descriptions: Iterable[
-        Union[
-            v0_4.InputTensorDescr,
-            v0_4.OutputTensorDescr,
-            v0_5.InputTensorDescr,
-            v0_5.OutputTensorDescr,
-        ]
+        v0_4.InputTensorDescr
+        | v0_4.OutputTensorDescr
+        | v0_5.InputTensorDescr
+        | v0_5.OutputTensorDescr
     ],
-) -> List[MemberId]:
+) -> list[MemberId]:
     """get normalized tensor IDs to be used as sample member IDs"""
     return [get_member_id(descr) for descr in tensor_descriptions]
 
@@ -249,25 +235,11 @@ get_test_outputs = get_test_output_sample
 
 
 def _get_test_sample(
-    info: Union[
-        Mapping[MemberId, Union[v0_5.InputTensorDescr, v0_5.OutputTensorDescr]],
-        Mapping[
-            MemberId,
-            Tuple[
-                v0_4.InputTensorDescr,
-                FileSource,
-            ],
-        ],
-        Mapping[
-            MemberId,
-            Tuple[
-                v0_4.OutputTensorDescr,
-                FileSource,
-            ],
-        ],
-    ],
+    info: Mapping[MemberId, v0_5.InputTensorDescr | v0_5.OutputTensorDescr]
+    | Mapping[MemberId, tuple[v0_4.InputTensorDescr, FileSource]]
+    | Mapping[MemberId, tuple[v0_4.OutputTensorDescr, FileSource]],
 ) -> Sample:
-    arrays: Dict[MemberId, NDArray[Any]] = {}
+    arrays: dict[MemberId, NDArray[Any]] = {}
     for m, src in info.items():
         if isinstance(src, tuple):
             arrays[m] = load_array(src[1])
@@ -296,11 +268,11 @@ class IO_SampleBlockMeta(NamedTuple):
 
 
 def get_input_halo(
-    model: v0_5.ModelDescr, output_halo: Optional[PerMember[PerAxis[Halo]]] = None
+    model: v0_5.ModelDescr, output_halo: PerMember[PerAxis[Halo]] | None = None
 ):
     """returns which halo input tensors need to be divided into blocks with, such that
     `output_halo` can be cropped from their outputs without introducing gaps."""
-    input_halo: Dict[MemberId, Dict[AxisId, Halo]] = {}
+    input_halo: dict[MemberId, dict[AxisId, Halo]] = {}
     outputs = {t.id: t for t in model.outputs}
     all_tensors = {**{t.id: t for t in model.inputs}, **outputs}
     if output_halo is None:
@@ -319,7 +291,7 @@ def get_input_halo(
         for a, ah in th.items():
             s = axes[a].size
             if not isinstance(s, v0_5.SizeReference):
-                raise ValueError(
+                raise TypeError(
                     f"Unable to map output halo for {t}.{a} to an input axis"
                 )
 
@@ -342,9 +314,9 @@ def get_input_halo(
 
 def get_block_transform(
     model: v0_5.ModelDescr,
-) -> PerMember[PerAxis[Union[LinearSampleAxisTransform, int]]]:
+) -> PerMember[PerAxis[LinearSampleAxisTransform | int]]:
     """returns how a model's output tensor shapes relates to its input shapes"""
-    ret: Dict[MemberId, Dict[AxisId, Union[LinearSampleAxisTransform, int]]] = {}
+    ret: dict[MemberId, dict[AxisId, LinearSampleAxisTransform | int]] = {}
     batch_axis_trf = None
     for ipt in model.inputs:
         for a in ipt.axes:
@@ -360,7 +332,7 @@ def get_block_transform(
         for t in chain(model.inputs, model.outputs)
     }
     for out in model.outputs:
-        new_axes: Dict[AxisId, Union[LinearSampleAxisTransform, int]] = {}
+        new_axes: dict[AxisId, LinearSampleAxisTransform | int] = {}
         for a in out.axes:
             if a.size is None:
                 assert a.type == "batch"
@@ -407,9 +379,9 @@ def get_block_transform(
 def get_io_sample_block_metas(
     model: v0_5.ModelDescr,
     input_sample_shape: PerMember[PerAxis[int]],
-    ns: Mapping[Tuple[MemberId, AxisId], ParameterizedSize_N],
+    ns: Mapping[tuple[MemberId, AxisId], ParameterizedSize_N],
     batch_size: int = 1,
-) -> Tuple[TotalNumberOfBlocks, Iterable[IO_SampleBlockMeta]]:
+) -> tuple[TotalNumberOfBlocks, Iterable[IO_SampleBlockMeta]]:
     """returns an iterable yielding meta data for corresponding input and output samples"""
     if not isinstance(model, v0_5.ModelDescr):
         raise TypeError(f"get_block_meta() not implemented for {type(model)}")
@@ -441,13 +413,11 @@ def get_io_sample_block_metas(
 
 def get_tensor(
     src: TensorSource,
-    descr: Union[
-        v0_4.InputTensorDescr,
-        v0_5.InputTensorDescr,
-        v0_4.OutputTensorDescr,
-        v0_5.OutputTensorDescr,
-        Sequence[AxisInfo],
-    ],
+    descr: v0_4.InputTensorDescr
+    | v0_5.InputTensorDescr
+    | v0_4.OutputTensorDescr
+    | v0_5.OutputTensorDescr
+    | Sequence[AxisInfo],
     *,
     extra_dims: Literal["raise", "squeeze", "stack", "squeeze_or_stack"] = "squeeze",
     missing_dims: Literal["raise", "expand", "unstack", "unstack_or_expand"] = "raise",
@@ -463,6 +433,12 @@ def get_tensor(
             If "squeeze", any extra singleton dimensions will be squeezed, non-singleton dimensions will raise an error.
             If "stack", any extra dimensions will be stacked to the batch dimension. Such a stacked batch dimension then has a multi-index that can be unstacked using `Tensor.unstack_batch_multi_index()`.
             If "squeeze_or_stack", any extra singleton dimensions will be squeezed, non-singleton dimensions will be stacked to the batch dimension.
+        missing_dims:
+            Missing dimensions are any dimensions specified in `axes` that are not present in the tensor.
+            If "raise", any missing dimensions will raise an error.
+            If "expand", any missing dimensions will be added as singleton dimensions.
+            If "unstack", any missing dimensions will be unstacked from the batch dimension. For this option a batch dimension with a multi-index must be present from previous stacking operations or assigned by `Tensor.assign_batch_multi_index()`.
+            If "unstack_or_expand", any missing dimensions will be unstacked from the batch dimension if it has a multi-index, otherwise they will be added as singleton dimensions.
     """
 
     if isinstance(
@@ -498,10 +474,13 @@ def get_tensor(
 def create_sample_for_model(
     model: AnyModelDescr,
     *,
-    stat: Optional[Stat] = None,
+    stat: Stat | None = None,
     sample_id: SampleId = None,
-    inputs: Union[PerMember[TensorSource], TensorSource],
+    inputs: PerMember[TensorSource] | TensorSource,
     extra_dims: Literal["raise", "squeeze", "stack", "squeeze_or_stack"] = "stack",
+    missing_dims: Literal[
+        "raise", "expand", "unstack", "unstack_or_expand"
+    ] = "unstack_or_expand",
 ) -> Sample:
     """Create a sample from a single set of input(s) for a specific bioimage.io model
 
@@ -514,13 +493,20 @@ def create_sample_for_model(
             If "squeeze", any extra singleton dimensions will be squeezed, non-singleton dimensions will raise an error.
             If "stack", any extra dimensions will be stacked to the batch dimension. Such a stacked batch dimension then has a multi-index that can be unstacked using `Tensor.unstack_batch_multi_index()`.
             If "squeeze_or_stack", any extra singleton dimensions will be squeezed, non-singleton dimensions will be stacked to the batch dimension.
+        missing_dims:
+            Missing dimensions are any dimensions specified in `axes` that are not present in the tensor.
+            If "raise", any missing dimensions will raise an error.
+            If "expand", any missing dimensions will be added as singleton dimensions.
+            If "unstack", any missing dimensions will be unstacked from the batch dimension. For this option a batch dimension with a multi-index must be present from previous stacking operations or assigned by `Tensor.assign_batch_multi_index()`.
+            If "unstack_or_expand", any missing dimensions will be unstacked from the batch dimension if it has a multi-index, otherwise they will be added as singleton dimensions.
+
     """
 
     model_inputs = {get_member_id(d): d for d in model.inputs}
     if isinstance(inputs, collections.abc.Mapping):
         inputs = {MemberId(k): v for k, v in inputs.items()}
     elif len(model_inputs) == 1:
-        inputs = {list(model_inputs)[0]: inputs}
+        inputs = {next(iter(model_inputs)): inputs}
     else:
         raise TypeError(
             f"Expected `inputs` to be a mapping with keys {tuple(model_inputs)}"
@@ -538,7 +524,9 @@ def create_sample_for_model(
 
     return Sample(
         members={
-            m: get_tensor(inputs[m], ipt, extra_dims=extra_dims)
+            m: get_tensor(
+                inputs[m], ipt, extra_dims=extra_dims, missing_dims=missing_dims
+            )
             for m, ipt in model_inputs.items()
             if m in inputs
         },
@@ -550,10 +538,10 @@ def create_sample_for_model(
 def load_sample_for_model(
     *,
     model: AnyModelDescr,
-    paths: PerMember[Path],
-    axes: Optional[PerMember[Sequence[AxisLike]]] = None,
-    stat: Optional[Stat] = None,
-    sample_id: Optional[SampleId] = None,
+    paths: PerMember[PermissiveFileSource],
+    axes: PerMember[Sequence[AxisLike]] | None = None,
+    stat: Stat | None = None,
+    sample_id: SampleId | None = None,
 ):
     """load a single sample from `paths` that can be processed by `model`"""
 
@@ -572,7 +560,7 @@ def load_sample_for_model(
     if unknown := {k for k in axes if k not in model_inputs}:
         raise ValueError(f"Got unexpected axes hints for: {unknown}")
 
-    members: Dict[MemberId, Tensor] = {}
+    members: dict[MemberId, Tensor] = {}
     for m, p in paths.items():
         if m not in axes:
             axes[m] = get_axes_infos(model_inputs[m])
@@ -587,7 +575,7 @@ def load_sample_for_model(
     return Sample(
         members=members,
         stat={} if stat is None else stat,
-        id=sample_id or tuple(sorted(paths.values())),
+        id=sample_id or tuple(sorted(str(p) for p in paths.values())),
     )
 
 
@@ -596,7 +584,7 @@ def split_sample_into_blocks_for_model(
     model: v0_5.ModelDescr,
     blocksize_parameter: int,
     batch_size: int = 1,
-) -> Tuple[TotalNumberOfBlocks, Iterable[SampleBlockWithOrigin]]:
+) -> tuple[TotalNumberOfBlocks, Iterable[SampleBlockWithOrigin]]:
     if isinstance(model, v0_4.ModelDescr):
         raise NotImplementedError(
             "`predict_sample_with_blocking` not implemented for v0_4.ModelDescr"
@@ -636,7 +624,7 @@ def transpose_sample_for_model(
     for m in axes:
         if m not in sample.members and not (
             isinstance(model, v0_5.ModelDescr)
-            and [d for d in model.inputs if get_member_id(d) == m][0].optional
+            and next(d for d in model.inputs if get_member_id(d) == m).optional
         ):
             raise ValueError(
                 f"Sample is missing non-optional member {m} required by model"

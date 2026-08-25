@@ -1,4 +1,4 @@
-from typing import Optional, Tuple
+from __future__ import annotations
 
 import numpy as np
 import pytest
@@ -19,7 +19,7 @@ from bioimageio.core.stat_measures import (
 from bioimageio.core.tensor import Tensor
 
 
-def create_random_dataset(tid: MemberId, axes: Tuple[AxisId, ...]):
+def create_random_dataset(tid: MemberId, axes: tuple[AxisId, ...]):
     n = 3
     sizes = list(range(n, len(axes) + n))
     data = np.asarray(np.random.rand(*sizes))
@@ -37,7 +37,7 @@ def create_random_dataset(tid: MemberId, axes: Tuple[AxisId, ...]):
         (AxisId("channel"), AxisId("y")),
     ],
 )
-def test_sample_mean_var_std_calculator(axes: Optional[Tuple[AxisId, ...]]):
+def test_sample_mean_var_std_calculator(axes: tuple[AxisId, ...] | None):
     tid = MemberId("tensor")
     d_axes = tuple(map(AxisId, ("batch", "channel", "x", "y")))
     data, ds = create_random_dataset(tid, d_axes)
@@ -73,7 +73,7 @@ def test_sample_mean_var_std_calculator(axes: Optional[Tuple[AxisId, ...]]):
         (AxisId("batch"), AxisId("channel"), AxisId("x"), AxisId("y")),
     ],
 )
-def test_dataset_mean_var_std_calculator(axes: Optional[Tuple[AxisId, ...]]):
+def test_dataset_mean_var_std_calculator(axes: tuple[AxisId, ...] | None):
     tid = MemberId("tensor")
     d_axes = tuple(map(AxisId, ("batch", "channel", "x", "y")))
     data, ds = create_random_dataset(tid, d_axes)

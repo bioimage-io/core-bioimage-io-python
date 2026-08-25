@@ -1,11 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Hashable, Mapping
 from typing import (
-    Hashable,
     Literal,
-    Mapping,
     NamedTuple,
-    Tuple,
     TypeVar,
     Union,
 )
@@ -64,7 +62,7 @@ DTypeStr = Literal[
 
 
 _LeftRight_T = TypeVar("_LeftRight_T", bound="_LeftRight")
-_LeftRightLike = Union[int, Tuple[int, int], _LeftRight_T]
+_LeftRightLike = Union[int, tuple[int, int], _LeftRight_T]
 
 
 class _LeftRight(NamedTuple):
@@ -127,7 +125,7 @@ MemberId = v0_5.TensorId
 
 BlocksizeParameter: TypeAlias = Union[
     v0_5.ParameterizedSize_N,
-    Mapping[Tuple[MemberId, v0_5.AxisId], v0_5.ParameterizedSize_N],
+    Mapping[tuple[MemberId, v0_5.AxisId], v0_5.ParameterizedSize_N],
 ]
 """
 Parameter to determine a concrete size for paramtrized axis sizes defined by

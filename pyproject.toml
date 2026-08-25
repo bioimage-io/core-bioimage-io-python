@@ -6,7 +6,7 @@ requires-python = ">=3.9"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [
-    "bioimageio.spec ==0.5.12.0",
+    "bioimageio.spec ==0.5.14.1",
     "imagecodecs",
     "imageio>=2.10",
     "loguru",
@@ -54,34 +54,50 @@ partners = [
 stardist = ["stardist"] # for stardist postprocessing
 gradio-server = ['gradio[mcp];python_version>="3.10"']
 gradio-client = ['gradio_client;python_version>="3.10"']
+bioio = [
+    "bioio",
+    "bioio-bioformats",
+    "bioio-imageio",
+    "bioio-ome-tiff",
+    "bioio-ome-zarr",
+    "dask[array]",
+]
+# clearscale = ["clearscale", "dask[array]", "zarr"]  # TODO: add clearscale extra deps once clearscale is available on pypi
 dev = [
-    "cellpose<4.2",                          # for model testing
+    "bioio",
+    "bioio-bioformats",
+    "bioio-imageio",
+    "bioio-ome-tiff",
+    "bioio-ome-zarr",
+    "cellpose<4.2",                             # for model testing
     "crick",
-    'gradio[mcp];python_version>="3.10"',
-    'gradio_client;python_version>="3.10"',
+    "dask[array]",
     "httpx",
     "jax",
     "jupyter",
     "keras>=3.0,<4",
     "matplotlib",
-    "monai",                                 # for model testing
+    "monai",                                    # for model testing
     "numpy",
     "onnx",
     "onnxruntime",
     "onnxscript",
-    'onnx_ir!=0.1.14;python_version<"3.10"', # uses typing.Concatentate which requires py>=3.10
     "packaging>=17.0",
     "pre-commit",
-    "pyright==1.1.410",
-    "pytest-cov",
+    "pyright==1.1.411",
     "pytest",
+    "pytest-cov",
     "python-dotenv",
-    "segment-anything",                      # for model testing
+    "segment-anything",                         # for model testing
     "stardist",
     "tensorflow",
-    "timm",                                  # for model testing
+    "timm",                                     # for model testing
     "torch>=1.6,<3",
     "torchvision>=0.21",
+    'eval-type-backport;python_version<"3.10"', # TODO: remove when py3.10 is lowest supported version
+    'gradio[mcp];python_version>="3.10"',
+    'gradio_client;python_version>="3.10"',
+    'onnx_ir!=0.1.14;python_version<"3.10"',    # uses typing.Concatentate which requires py>=3.10
 ]
 docs = [
     "griffe-pydantic",
@@ -163,6 +179,7 @@ exclude = [
 
 [tool.ruff.lint]
 extend-select = ["NPY201"]
+ignore = ["BLE001"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["bioimageio"]

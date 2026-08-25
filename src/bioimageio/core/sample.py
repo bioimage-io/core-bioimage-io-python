@@ -1,22 +1,16 @@
 from __future__ import annotations
 
 import collections.abc
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from math import ceil, floor
 from types import MappingProxyType
 from typing import (
     Any,
     Callable,
-    Dict,
     Generic,
-    Iterable,
     Literal,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
     TypeVar,
-    Union,
 )
 
 import numpy as np
@@ -62,7 +56,7 @@ class Sample:
     `MemberId("raw")` and `MemberId("mask")` image.
     """
 
-    members: Dict[MemberId, Tensor]
+    members: dict[MemberId, Tensor]
     """The sample's tensors"""
 
     stat: Stat
@@ -74,14 +68,12 @@ class Sample:
     def __getitem__(
         self,
         key: PerMember[
-            Union[
-                SliceInfo,
-                slice,
-                int,
-                PerAxis[Union[SliceInfo, slice, int]],
-                Tensor,
-                xr.DataArray,
-            ]
+            SliceInfo
+            | slice
+            | int
+            | PerAxis[SliceInfo | slice | int]
+            | Tensor
+            | xr.DataArray
         ],
     ) -> Self:
         return self.__class__(
@@ -90,8 +82,14 @@ class Sample:
             id=self.id,
         )
 
+    def __postinit__(self):
+        # default tensor names to member ids
+        for m, t in self.members.items():
+            if t.name is None:
+                t.name = str(m)
+
     @property
-    def batch_multi_index(self) -> Optional["pd.MultiIndex"]:
+    def batch_multi_index(self) -> pd.MultiIndex | None:
         """Return the batch multi-index of the sample, if it has one.
 
         Returns:
@@ -134,7 +132,7 @@ class Sample:
     def shape(self) -> PerMember[PerAxis[int]]:
         return {tid: t.sizes for tid, t in self.members.items()}
 
-    def as_arrays(self) -> Dict[MemberId, NDArray[Any]]:
+    def as_arrays(self) -> dict[MemberId, NDArray[Any]]:
         """Return sample as dictionary of arrays."""
         return {m: t.to_numpy() for m, t in self.members.items()}
 
@@ -142,9 +140,9 @@ class Sample:
         self,
         block_shapes: PerMember[PerAxis[int]],
         halo: PerMember[PerAxis[HaloLike]],
-        pad_mode: Union[PadMode, PerMember[PadMode]],
+        pad_mode: PadMode | PerMember[PadMode],
         broadcast: bool = False,
-    ) -> Tuple[TotalNumberOfBlocks, Iterable[SampleBlockWithOrigin]]:
+    ) -> tuple[TotalNumberOfBlocks, Iterable[SampleBlockWithOrigin]]:
         assert not (missing := [m for m in block_shapes if m not in self.members]), (
             f"`block_shapes` specified for unknown members: {missing}"
         )
@@ -160,7 +158,7 @@ class Sample:
         )
         return n_blocks, sample_block_generator(blocks, origin=self, pad_mode=pad_mode)
 
-    def as_single_block(self, halo: Optional[PerMember[PerAxis[Halo]]] = None):
+    def as_single_block(self, halo: PerMember[PerAxis[Halo]] | None = None):
         if halo is None:
             halo = {}
         return SampleBlockWithOrigin(
@@ -259,8 +257,8 @@ class Sample:
 
     def pad(
         self,
-        pad_width: PerMember[PerAxis[Union[int, PadWidthLike]]],
-        mode: Union[PerMember[PadMode], PadMode],
+        pad_width: PerMember[PerAxis[int | PadWidthLike]],
+        mode: PerMember[PadMode] | PadMode,
     ) -> Self:
         """Convenience method to pad sample members."""
         default_mode = "symmetric"
@@ -297,7 +295,7 @@ class Sample:
             ValueError: If not all batch dimensions have the same length after transposition (and possibly stacking/unstacking extra dimensions).
 
         """
-        if any((unknown := [m not in self.members for m in axes])):
+        if any(unknown := [m not in self.members for m in axes]):
             raise ValueError(f"Axes specified for unknown members: {unknown}")
 
         members = {
@@ -313,13 +311,11 @@ class Sample:
 
         if (
             len(
-                (
-                    batch_lengths := {
-                        t.sizes[AxisId("batch")]
-                        for t in members.values()
-                        if AxisId("batch") in t.dims
-                    }
-                )
+                batch_lengths := {
+                    t.sizes[AxisId("batch")]
+                    for t in members.values()
+                    if AxisId("batch") in t.dims
+                }
             )
             > 1
         ):
@@ -329,7 +325,7 @@ class Sample:
 
         return self.__class__(members=members, stat=dict(self.stat), id=self.id)
 
-    def assign_batch_multi_index(self, multi_index: "pd.MultiIndex") -> Self:
+    def assign_batch_multi_index(self, multi_index: pd.MultiIndex) -> Self:
         """Return a new sample with the batch multi-index assigned to all sample members.
 
         Raises:
@@ -449,7 +445,7 @@ class SampleBlockMeta(SampleBlockBase[BlockMeta]):
     """Meta data of a dataset sample block"""
 
     def get_transformed(
-        self, new_axes: PerMember[PerAxis[Union[LinearSampleAxisTransform, int]]]
+        self, new_axes: PerMember[PerAxis[LinearSampleAxisTransform | int]]
     ) -> Self:
         sample_shape = {
             m: {
@@ -477,7 +473,7 @@ class SampleBlockMeta(SampleBlockBase[BlockMeta]):
                 for a, trf in new_axes[m].items()
             }
 
-        halo: Dict[MemberId, Dict[AxisId, Halo]] = {}
+        halo: dict[MemberId, dict[AxisId, Halo]] = {}
         for m in new_axes:
             halo[m] = get_member_halo(m, floor)
             if halo[m] != get_member_halo(m, ceil):
@@ -542,7 +538,7 @@ class SampleBlockMeta(SampleBlockBase[BlockMeta]):
 class SampleBlock(SampleBlockBase[Block]):
     """A block of a dataset sample"""
 
-    blocks: Dict[MemberId, Block]
+    blocks: dict[MemberId, Block]
     """Individual tensor blocks comprising this sample block"""
 
     stat: Stat
@@ -554,7 +550,7 @@ class SampleBlock(SampleBlockBase[Block]):
         return {m: b.data for m, b in self.blocks.items()}
 
     def get_transformed_meta(
-        self, new_axes: PerMember[PerAxis[Union[LinearSampleAxisTransform, int]]]
+        self, new_axes: PerMember[PerAxis[LinearSampleAxisTransform | int]]
     ) -> SampleBlockMeta:
         return SampleBlockMeta(
             sample_id=self.sample_id,
@@ -642,7 +638,7 @@ def sample_block_generator(
     blocks: Iterable[PerMember[BlockMeta]],
     *,
     origin: Sample,
-    pad_mode: Union[PadMode, PerMember[PadMode]],
+    pad_mode: PadMode | PerMember[PadMode],
 ) -> Iterable[SampleBlockWithOrigin]:
     for member_blocks in blocks:
         cons = _ConsolidatedMemberBlocks(member_blocks)

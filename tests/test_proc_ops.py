@@ -1,5 +1,8 @@
+from __future__ import annotations
+
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable, Optional, Tuple, Type, TypeVar
+from typing import Any, TypeVar
 
 import numpy as np
 import pytest
@@ -53,7 +56,7 @@ def test_scale_linear_no_channel(tid: MemberId):
 T = TypeVar("T")
 
 
-def is_iterable(val: Iterable[T], inner: Type[T]) -> TypeGuard[Iterable[T]]:
+def is_iterable(val: Iterable[T], inner: type[T]) -> TypeGuard[Iterable[T]]:
     """Determines whether all objects in the list are strings"""
     return all(isinstance(x, inner) for x in val)
 
@@ -286,7 +289,7 @@ def test_combination_of_op_steps_with_dims_specified(tid: MemberId):
         tuple(map(AxisId, "x")),
     ],
 )
-def test_scale_mean_variance(tid: MemberId, axes: Optional[Tuple[AxisId, ...]]):
+def test_scale_mean_variance(tid: MemberId, axes: tuple[AxisId, ...] | None):
     from bioimageio.core.proc_ops import ScaleMeanVariance
 
     shape = (3, 32, 46)
@@ -313,7 +316,7 @@ def test_scale_mean_variance(tid: MemberId, axes: Optional[Tuple[AxisId, ...]]):
     "axes_str",
     [None, "cy", "y", "yx"],
 )
-def test_scale_mean_variance_per_channel(tid: MemberId, axes_str: Optional[str]):
+def test_scale_mean_variance_per_channel(tid: MemberId, axes_str: str | None):
     from bioimageio.core.proc_ops import ScaleMeanVariance
 
     axes = None if axes_str is None else tuple(map(AxisId, axes_str))

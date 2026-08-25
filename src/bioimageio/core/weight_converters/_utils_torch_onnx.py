@@ -1,17 +1,13 @@
 """helper to export both TorchScript or PytorchStateDict to ONNX"""
+from __future__ import annotations
 
 from collections import defaultdict
+from collections.abc import Sequence
 from itertools import chain
 from pathlib import Path
 from typing import (
     TYPE_CHECKING,
-    DefaultDict,
-    Dict,
-    List,
     Literal,
-    Optional,
-    Sequence,
-    Tuple,
     Union,
 )
 
@@ -41,7 +37,7 @@ if TYPE_CHECKING:
     )
 
 
-def get_torch_sample_inputs(model_descr: ModelDescr) -> Tuple[torch.Tensor, ...]:
+def get_torch_sample_inputs(model_descr: ModelDescr) -> tuple[torch.Tensor, ...]:
     sample = get_test_input_sample(model_descr)
     procs = get_pre_and_postprocessing(
         model_descr, dataset_for_initial_statistics=[sample]
@@ -56,12 +52,12 @@ def get_torch_sample_inputs(model_descr: ModelDescr) -> Tuple[torch.Tensor, ...]
 def _get_dynamic_axes_noop(model_descr: ModelDescr):
     """noop for dynamo=True which uses `get_dynamic_shapes` instead"""
 
-    return None
+    return
 
 
 def _get_dynamic_axes_impl(model_descr: ModelDescr):
     """dynamic axes for (old) onnx export with dynamo=False"""
-    dynamic_axes: DefaultDict[str, Dict[int, str]] = defaultdict(dict)
+    dynamic_axes: defaultdict[str, dict[int, str]] = defaultdict(dict)
     for d in chain(model_descr.inputs, model_descr.outputs):
         for i, ax in enumerate(d.axes):
             if not isinstance(ax.size, int):
@@ -83,7 +79,7 @@ except Exception as e:
     def _get_dynamic_shapes_noop(model_descr: ModelDescr):
         """noop for dynamo=False which uses `get_dynamic_axes` instead"""
 
-        return None
+        return
 
     get_dynamic_shapes = _get_dynamic_shapes_noop
     get_dynamic_axes = _get_dynamic_axes_impl
@@ -96,11 +92,11 @@ else:
         # dynamic shapes as list to match the source code which may have
         # different arg names than the tensor ids in the model description
 
-        dynamic_shapes: List[Dict[int, Union[int, TensorDim]]] = []
-        potential_ref_axes: Dict[str, Tuple[InputAxis, int]] = {}
+        dynamic_shapes: list[dict[int, int | TensorDim]] = []
+        potential_ref_axes: dict[str, tuple[InputAxis, int]] = {}
         # add dynamic dims from parameterized input sizes (and fixed sizes as None)
         for d in model_descr.inputs:
-            dynamic_tensor_dims: Dict[int, Union[int, TensorDim]] = {}
+            dynamic_tensor_dims: dict[int, int | TensorDim] = {}
             for i, ax in enumerate(d.axes):
                 dim_name = f"{d.id}_{ax.id}"
                 if isinstance(ax.size, int):
@@ -145,12 +141,12 @@ else:
 
 def export_to_onnx(
     model_descr: ModelDescr,
-    model: Union[ExportedProgram, torch.nn.Module],
+    model: ExportedProgram | torch.nn.Module,
     output_path: Path,
     verbose: bool,
     opset_version: int,
     parent: Literal["torchscript", "pytorch_state_dict"],
-    devices: Optional[Sequence[Union[str, torch.device]]] = None,
+    devices: Sequence[str | torch.device] | None = None,
 ) -> OnnxWeightsDescr:
     inputs_torch = get_torch_sample_inputs(
         model_descr
