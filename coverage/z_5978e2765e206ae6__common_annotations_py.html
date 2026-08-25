@@ -64,8 +64,8 @@
             <a id="indexLink" class="nav" href="index.html">&Hat; index</a> &nbsp; &nbsp;
             <a id="nextFileLink" class="nav" href="z_5978e2765e206ae6__description_serializer_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
-            <a class="nav" href="https://coverage.readthedocs.io/en/7.15.2">coverage.py v7.15.2</a>,
-            created at 2026-07-28 12:40 +0000
+            <a class="nav" href="https://coverage.readthedocs.io/en/7.15.4">coverage.py v7.15.4</a>,
+            created at 2026-08-25 18:37 +0000
         </p>
         <aside class="hidden">
             <button type="button" class="button_next_chunk" data-shortcut="j"></button>
@@ -104,11 +104,11 @@
     <p class="pln"><span class="n"><a id="t22" href="#t22">22</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t23" href="#t23">23</a></span><span class="t"><span class="key">from</span> <span class="op">.</span><span class="nam">common</span> <span class="key">import</span> <span class="nam">PerMember</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t24" href="#t24">24</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t25" href="#t25">25</a></span><span class="t"><span class="nam">_K</span> <span class="op">=</span> <span class="nam">TypeVar</span><span class="op">(</span><span class="str">"_K"</span><span class="op">,</span> <span class="nam">bound</span><span class="op">=</span><span class="nam">Hashable</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t26" href="#t26">26</a></span><span class="t"><span class="nam">_V</span> <span class="op">=</span> <span class="nam">TypeVar</span><span class="op">(</span><span class="str">"_V"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t25" href="#t25">25</a></span><span class="t"><span class="nam">_K</span> <span class="op">=</span> <span class="nam">TypeVar</span><span class="op">(</span><span class="str">&quot;_K&quot;</span><span class="op">,</span> <span class="nam">bound</span><span class="op">=</span><span class="nam">Hashable</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t26" href="#t26">26</a></span><span class="t"><span class="nam">_V</span> <span class="op">=</span> <span class="nam">TypeVar</span><span class="op">(</span><span class="str">&quot;_V&quot;</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t27" href="#t27">27</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t28" href="#t28">28</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t29" href="#t29">29</a></span><span class="t"><span class="key">def</span> <span class="nam">_validate_from_mapping</span><span class="op">(</span><span class="nam">d</span><span class="op">:</span> <span class="nam">Mapping</span><span class="op">[</span><span class="nam">_K</span><span class="op">,</span> <span class="nam">_V</span><span class="op">]</span><span class="op">)</span> <span class="op">-></span> <span class="nam">MappingProxyType</span><span class="op">[</span><span class="nam">_K</span><span class="op">,</span> <span class="nam">_V</span><span class="op">]</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t29" href="#t29">29</a></span><span class="t"><span class="key">def</span> <span class="nam">_validate_from_mapping</span><span class="op">(</span><span class="nam">d</span><span class="op">:</span> <span class="nam">Mapping</span><span class="op">[</span><span class="nam">_K</span><span class="op">,</span> <span class="nam">_V</span><span class="op">]</span><span class="op">)</span> <span class="op">-&gt;</span> <span class="nam">MappingProxyType</span><span class="op">[</span><span class="nam">_K</span><span class="op">,</span> <span class="nam">_V</span><span class="op">]</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t30" href="#t30">30</a></span><span class="t">    <span class="key">return</span> <span class="nam">MappingProxyType</span><span class="op">(</span><span class="nam">dict</span><span class="op">(</span><span class="nam">d</span><span class="op">)</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t31" href="#t31">31</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t32" href="#t32">32</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
@@ -116,7 +116,7 @@
     <p class="run"><span class="n"><a id="t34" href="#t34">34</a></span><span class="t">    <span class="op">@</span><span class="nam">classmethod</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t35" href="#t35">35</a></span><span class="t">    <span class="key">def</span> <span class="nam">__get_pydantic_core_schema__</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
     <p class="run run2"><span class="n"><a id="t36" href="#t36">36</a></span><span class="t">        <span class="nam">cls</span><span class="op">,</span> <span class="nam">source_type</span><span class="op">:</span> <span class="nam">Any</span><span class="op">,</span> <span class="nam">handler</span><span class="op">:</span> <span class="nam">pydantic</span><span class="op">.</span><span class="nam">GetCoreSchemaHandler</span>&nbsp;</span><span class="r"></span></p>
-    <p class="run run2"><span class="n"><a id="t37" href="#t37">37</a></span><span class="t">    <span class="op">)</span> <span class="op">-></span> <span class="nam">CoreSchema</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run run2"><span class="n"><a id="t37" href="#t37">37</a></span><span class="t">    <span class="op">)</span> <span class="op">-&gt;</span> <span class="nam">CoreSchema</span><span class="op">:</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t38" href="#t38">38</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t39" href="#t39">39</a></span><span class="t">        <span class="nam">k_type</span><span class="op">,</span> <span class="nam">v_type</span> <span class="op">=</span> <span class="nam">get_args</span><span class="op">(</span><span class="nam">source_type</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t40" href="#t40">40</a></span><span class="t">        <span class="nam">mapping_proxy_schema</span> <span class="op">=</span> <span class="nam">chain_schema</span><span class="op">(</span>&nbsp;</span><span class="r"></span></p>
@@ -133,7 +133,7 @@
     <p class="run run2"><span class="n"><a id="t51" href="#t51">51</a></span><span class="t">        <span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t52" href="#t52">52</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t53" href="#t53">53</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
-    <p class="run"><span class="n"><a id="t54" href="#t54">54</a></span><span class="t"><span class="nam">_T</span> <span class="op">=</span> <span class="nam">TypeVar</span><span class="op">(</span><span class="str">"_T"</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
+    <p class="run"><span class="n"><a id="t54" href="#t54">54</a></span><span class="t"><span class="nam">_T</span> <span class="op">=</span> <span class="nam">TypeVar</span><span class="op">(</span><span class="str">&quot;_T&quot;</span><span class="op">)</span>&nbsp;</span><span class="r"></span></p>
     <p class="pln"><span class="n"><a id="t55" href="#t55">55</a></span><span class="t">&nbsp;</span><span class="r"></span></p>
     <p class="run"><span class="n"><a id="t56" href="#t56">56</a></span><span class="t"><span class="nam">PerMemberAnno</span> <span class="op">=</span> <span class="nam">Annotated</span><span class="op">[</span><span class="nam">PerMember</span><span class="op">[</span><span class="nam">_T</span><span class="op">]</span><span class="op">,</span> <span class="nam">PydanticMappingProxyAnnotation</span><span class="op">]</span>&nbsp;</span><span class="r"></span></p>
 </main>
@@ -144,8 +144,8 @@
             <a class="nav" href="index.html">&Hat; index</a> &nbsp; &nbsp;
             <a class="nav" href="z_5978e2765e206ae6__description_serializer_py.html">&#xbb; next</a>
             &nbsp; &nbsp; &nbsp;
-            <a class="nav" href="https://coverage.readthedocs.io/en/7.15.2">coverage.py v7.15.2</a>,
-            created at 2026-07-28 12:40 +0000
+            <a class="nav" href="https://coverage.readthedocs.io/en/7.15.4">coverage.py v7.15.4</a>,
+            created at 2026-08-25 18:37 +0000
         </p>
     </div>
 </footer>
