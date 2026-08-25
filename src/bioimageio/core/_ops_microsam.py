@@ -1,118 +1,139 @@
-"""micro-sam (μSAM) instance segmentation postprocessing.
-
-μSAM models with an additional instance segmentation (AIS) decoder predict
-three dense maps: foreground probability, center distance and boundary
-distance. Instance labels are obtained from these maps with a seeded
-watershed, as implemented in
-`micro_sam.instance_segmentation.InstanceSegmentationWithDecoder` /
-`torch_em.util.segmentation.watershed_from_center_and_boundary_distances`:
-
-- Anna Archit et al. [*Segment Anything for Microscopy*](https://www.nature.com/articles/s41592-024-02580-4).
-  Nature Methods, 2025.
-
-This module ports that postprocessing so that the packaged, prompt-free
-μSAM AIS models (which output the three maps) can be turned into instance
-segmentations by any tool building on bioimageio.core.
-
-Note: the watershed itself requires the `scikit-image` package
-(`pip install bioimageio.core[microsam]`).
-"""
-
-from typing import Optional
+from dataclasses import dataclass
+from typing import Any, Collection
 
 import numpy as np
 from numpy.typing import NDArray
 from scipy.ndimage import gaussian_filter
 from scipy.ndimage import label as connected_components
+from typing_extensions import Literal
+
+from bioimageio.spec.model.v0_5 import MicroSamWatershedDescr
+
+from ._op_base import SamplewiseOperator
+from .axis import AxisId, PerAxis
+from .common import MemberId
+from .sample import Sample
+from .stat_measures import Measure
+from .tensor import Tensor
 
 
-def microsam_watershed(
-    maps: Optional[NDArray[np.floating]] = None,
-    *,
-    foreground: Optional[NDArray[np.floating]] = None,
-    center_distances: Optional[NDArray[np.floating]] = None,
-    boundary_distances: Optional[NDArray[np.floating]] = None,
-    center_distance_threshold: float = 0.5,
-    boundary_distance_threshold: float = 0.5,
-    foreground_threshold: float = 0.5,
-    foreground_smoothing: float = 1.0,
-    distance_smoothing: float = 1.6,
-    min_size: int = 0,
-) -> NDArray[np.int64]:
-    """Compute an instance segmentation from μSAM AIS decoder predictions.
+@dataclass
+class MicroSamWatershed(SamplewiseOperator):
+    """micro-sam instance segmentation postprocessing operator.
 
-    Seeds are connected components where both (smoothed) distance predictions
-    are below their thresholds, intersected with the foreground mask. The
-    seeded watershed then runs on the smoothed boundary distances, restricted
-    to the foreground mask.
+    Replaces the three dense maps predicted by a micro-sam instance segmentation
+    (AIS) decoder -- foreground probability, center distance and inverted
+    boundary distance -- with instance labels (0 = background).
 
-    Args:
-        maps: The stacked decoder output with a leading channel axis of size 3
-            in the order (foreground, center_distances, boundary_distances),
-            i.e. shape (3, *spatial). Mutually exclusive with passing the
-            three maps individually.
-        foreground: Foreground probability prediction.
-        center_distances: Distance prediction to the object centers.
-        boundary_distances: Inverted distance prediction to object boundaries.
-        center_distance_threshold: Center distance predictions below this
-            value are used to find seeds.
-        boundary_distance_threshold: Boundary distance predictions below this
-            value are used to find seeds.
-        foreground_threshold: Foreground predictions above this value make up
-            the foreground mask.
-        foreground_smoothing: Sigma for gaussian smoothing of the foreground
-            prediction (avoids checkerboard artifacts). Set to 0 to disable.
-        distance_smoothing: Sigma for gaussian smoothing of both distance
-            predictions. Set to 0 to disable.
-        min_size: Minimal object size; smaller instances are removed.
+    Seeds are connected components where both smoothed distance predictions are
+    below their thresholds, intersected with the foreground mask; the seeded
+    watershed then runs on the smoothed boundary distances restricted to that
+    mask. This is a port of
+    `micro_sam.instance_segmentation.InstanceSegmentationWithDecoder` /
+    `torch_em.util.segmentation.watershed_from_center_and_boundary_distances`:
 
-    Returns:
-        The instance segmentation as an integer label image.
+    - Anna Archit et al. [*Segment Anything for Microscopy*](https://www.nature.com/articles/s41592-024-02580-4).
+      Nature Methods, 2025.
     """
-    try:
-        from skimage.segmentation import watershed
-    except ImportError as e:
-        raise ImportError(
-            "microsam_watershed requires the scikit-image package."
-            + " Install it e.g. via `pip install bioimageio.core[microsam]`."
-        ) from e
 
-    if maps is not None:
-        if foreground is not None or center_distances is not None or boundary_distances is not None:
-            raise ValueError(
-                "Pass either the stacked `maps` or the three individual maps, not both."
-            )
-        if maps.shape[0] != 3:
-            raise ValueError(
-                f"Expected a leading channel axis of size 3, got shape {maps.shape}."
-            )
-        foreground, center_distances, boundary_distances = maps
-    elif foreground is None or center_distances is None or boundary_distances is None:
-        raise ValueError(
-            "Pass either the stacked `maps` or all three of `foreground`,"
-            + " `center_distances` and `boundary_distances`."
+    center_distance_threshold: float = 0.5
+    boundary_distance_threshold: float = 0.5
+    foreground_threshold: float = 0.5
+    foreground_smoothing: float = 1.0
+    """Sigma of the gaussian smoothing applied to the foreground prediction. Set to 0 to disable smoothing."""
+    distance_smoothing: float = 1.6
+    """Sigma of the gaussian smoothing applied to both distance predictions. Set to 0 to disable smoothing."""
+    min_size: int = 0
+    """Minimum size of objects to keep, in pixels. Set to 0 to disable filtering by size."""
+    labels_id: MemberId = MemberId("labels")
+    output_dtype: Literal["uint16", "uint32"] = "uint16"
+
+    @classmethod
+    def from_proc_descr(
+        cls, proc_descr: MicroSamWatershedDescr, member_id: MemberId
+    ) -> "MicroSamWatershed":
+        kwargs = proc_descr.kwargs
+        return cls(
+            labels_id=member_id,
+            center_distance_threshold=kwargs.center_distance_threshold,
+            boundary_distance_threshold=kwargs.boundary_distance_threshold,
+            foreground_threshold=kwargs.foreground_threshold,
+            foreground_smoothing=kwargs.foreground_smoothing,
+            distance_smoothing=kwargs.distance_smoothing,
+            min_size=kwargs.min_size,
+            output_dtype=kwargs.output_dtype,
         )
 
-    if foreground_smoothing > 0:
-        foreground = gaussian_filter(foreground, foreground_smoothing)
-    if distance_smoothing > 0:
-        center_distances = gaussian_filter(center_distances, distance_smoothing)
-        boundary_distances = gaussian_filter(boundary_distances, distance_smoothing)
+    @property
+    def required_measures(self) -> Collection[Measure]:
+        return set()
 
-    fg_mask = foreground > foreground_threshold
-    marker_map = np.logical_and(
-        center_distances < center_distance_threshold,
-        boundary_distances < boundary_distance_threshold,
-    )
-    marker_map[~fg_mask] = False
-    markers, _ = connected_components(marker_map)
+    def get_output_shape(self, input_shape: PerAxis[int]) -> PerAxis[int]:
+        output_shape = dict(input_shape)
+        output_shape[AxisId("channel")] = 1
+        return output_shape
 
-    seg = watershed(boundary_distances, markers=markers, mask=fg_mask)
+    def __call__(self, sample: Sample) -> None:
+        input_tensor = sample.members[self.labels_id]
+        output_tensor = self._apply(input_tensor)
+        sample.members[self.labels_id] = output_tensor
 
-    if min_size > 0:
-        ids, sizes = np.unique(seg, return_counts=True)
-        too_small = ids[(sizes < min_size) & (ids != 0)]
-        if too_small.size:
-            seg[np.isin(seg, too_small)] = 0
+    def _apply(self, x: Tensor) -> Tensor:
+        if x.dims[0] != AxisId("batch"):
+            raise ValueError(
+                "Expected first axis to be 'batch' for micro-sam watershed."
+            )
 
-    return seg.astype(np.int64)
+        if x.dims[1] != AxisId("channel"):
+            raise ValueError(
+                "Expected second axis to be 'channel' with 3 channels for micro-sam watershed."
+            )
+        if x.shape[1] != 3:
+            raise ValueError(
+                "Expected 3 stacked tensors along the 'channel' axis: foreground,"
+                + " center_distances, boundary_distances for micro-sam watershed."
+            )
+
+        masks = [self._apply_impl(xx) for xx in x]
+        return Tensor.from_numpy(np.stack(masks, axis=0), dims=x.dims)
+
+    def _apply_impl(self, x: Tensor) -> NDArray[Any]:
+        """apply on a tensor without batch dimension"""
+        try:
+            from skimage.segmentation import (  # pyright: ignore[reportMissingTypeStubs]
+                watershed,  # pyright: ignore[reportUnknownVariableType]
+            )
+        except ImportError as e:
+            raise ImportError(
+                "scikit-image is required for microsam_watershed. Install with: pip install bioimageio.core[microsam]"
+            ) from e
+
+        foreground, center_distances, boundary_distances = x.to_numpy()
+
+        if self.foreground_smoothing > 0:
+            foreground = gaussian_filter(foreground, self.foreground_smoothing)
+        if self.distance_smoothing > 0:
+            center_distances = gaussian_filter(center_distances, self.distance_smoothing)
+            boundary_distances = gaussian_filter(
+                boundary_distances, self.distance_smoothing
+            )
+
+        fg_mask = foreground > self.foreground_threshold
+        marker_map = np.logical_and(
+            center_distances < self.center_distance_threshold,
+            boundary_distances < self.boundary_distance_threshold,
+        )
+        marker_map[~fg_mask] = False
+        markers, _ = connected_components(marker_map)
+
+        mask = np.asarray(watershed(boundary_distances, markers=markers, mask=fg_mask))
+
+        if self.min_size > 0:
+            ids, sizes = np.unique(mask, return_counts=True)
+            too_small = ids[(sizes < self.min_size) & (ids != 0)]
+            if too_small.size:
+                mask[np.isin(mask, too_small)] = 0
+
+        # add singleton channel axis for output to keep dims consistent with postprocessing input
+        mask = mask[None]
+        return mask.astype(np.dtype(self.output_dtype))
