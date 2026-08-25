@@ -17,8 +17,9 @@ import numpy as np
 import pandas as pd
 import pydantic
 import xarray as xr
+from loguru import logger
 from numpy.typing import NDArray
-from typing_extensions import Self
+from typing_extensions import Self, assert_never
 
 from ._common_annotations import PerMemberAnno
 from .axis import AxisId, PerAxis
@@ -350,7 +351,7 @@ class Sample:
         )
 
     def unstack_batch_multi_index(
-        self, *, errors: Literal["raise", "ignore"] = "raise"
+        self, *, errors: Literal["raise", "warn", "ignore"] = "raise"
     ) -> Self:
         """Unstack the batch multi-index of all sample members.
 
@@ -367,9 +368,15 @@ class Sample:
                 ]
             )
             == len(self.members)
-            and errors == "raise"
+            and errors != "ignore"
         ):
-            raise ValueError(f"No member has a batch dimension: {no_batch}")
+            error_msg = f"No member has a batch dimension: {no_batch}"
+            if errors == "raise":
+                raise ValueError(error_msg)
+            elif errors == "warn":
+                logger.warning(error_msg)
+            else:
+                assert_never(errors)
 
         members = {
             m: t

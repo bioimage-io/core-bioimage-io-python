@@ -319,6 +319,7 @@ class _PredictionPipelineBase(ABC):
                 "`predict_sample_with_blocking` not implemented for v0_4.ModelDescr"
                 + f" {self._model_descr.name}."
                 + " Consider using `predict_sample_with_fixed_blocking`"
+                + " or load_model_description(..., format_version='0.5')."
             )
 
         ns = ns or self._default_blocksize_parameter

@@ -131,19 +131,36 @@ def load_tensor(
             reader.read(),
             extension=extensions[-1] if extensions else None,  # pyright: ignore[reportArgumentType]
         )
-        t = Tensor.from_array(array, dims=axes)
-        axes = None
+        try:
+            t = Tensor.from_array(array, dims=axes)
+        except Exception:
+            if axes is None:
+                raise
+
+            t = Tensor.from_array(array, dims=None)
+        else:
+            axes = None
     elif io_lib == "numpy":
         array = load_array(source)
-        t = Tensor.from_array(array, dims=axes)
-        axes = None
+        try:
+            t = Tensor.from_array(array, dims=axes)
+        except Exception:
+            if axes is None:
+                raise
+
+            t = Tensor.from_array(array, dims=None)
+        else:
+            axes = None
+
     elif io_lib == "tifffile":
         t = _load_tensor_tifffile(source)
     else:
         assert_never(io_lib)
 
     if axes is not None:
-        t = t.transpose(axes)
+        t = t.transpose(
+            axes, extra_dims="squeeze_or_stack", missing_dims="unstack_or_expand"
+        )
 
     return t
 
@@ -439,6 +456,18 @@ def save_tensor(
     io_lib: IO_Lib | None = None,
     roi_and_tensor_shape: tuple[PerAxis[SliceInfo], PerAxis[int]] | None = None,
 ) -> None:
+    _ = _save_tensor_impl(
+        path, tensor, io_lib=io_lib, roi_and_tensor_shape=roi_and_tensor_shape
+    )
+
+
+def _save_tensor_impl(
+    path: Path | str,
+    tensor: Tensor,
+    *,
+    io_lib: IO_Lib | None = None,
+    roi_and_tensor_shape: tuple[PerAxis[SliceInfo], PerAxis[int]] | None = None,
+) -> IO_Lib:
     try:
         output_path, extensions, internal_path = _interprete_tensor_source(path)
     except Exception:
@@ -449,20 +478,40 @@ def save_tensor(
             "Saving tensors to HTTP URLs is not implemented. Please save to a local file path."
         )
 
-    if (
-        (v0_5.BATCH_AXIS_ID in tensor.dims)
-        and tensor.tagged_shape.get(v0_5.BATCH_AXIS_ID, 0) == 1
-        and (extensions is None or extensions[-1] != ".npy")
+    if (v0_5.BATCH_AXIS_ID in tensor.dims) and (
+        not extensions or extensions[-1] != ".npy"
     ):
-        # avoid saving tensors with a singleton batch dimension
-        tensor = tensor.squeeze(v0_5.BATCH_AXIS_ID)
+        if roi_and_tensor_shape is None:
+            batch_len = tensor.tagged_shape.get(v0_5.BATCH_AXIS_ID, 0)
+        else:
+            roi, tensor_shape = roi_and_tensor_shape
+            batch_len = tensor_shape.get(v0_5.BATCH_AXIS_ID, 0)
+
+        if batch_len > 1:
+            tensor = tensor.unstack_batch_multi_index(errors="warn")
+            if roi_and_tensor_shape is not None:
+                # TODO: use tensor.data.multi_index to unstack the roi and tensor_shape as well
+                raise NotImplementedError(
+                    "Saving a region of interest (roi) is not implemented for tensors with a batch dimension."
+                )
+
+        if batch_len == 1:
+            # avoid saving tensors with a singleton batch dimension
+            tensor = tensor.squeeze(v0_5.BATCH_AXIS_ID)
+            if roi_and_tensor_shape is not None:
+                roi, tensor_shape = roi_and_tensor_shape
+                roi = {k: v for k, v in roi.items() if k != v0_5.BATCH_AXIS_ID}
+                tensor_shape = {
+                    k: v for k, v in tensor_shape.items() if k != v0_5.BATCH_AXIS_ID
+                }
+                roi_and_tensor_shape = (roi, tensor_shape)
 
     if io_lib is None:
         try_io_libs = _select_io_libs_based_on_extension(extensions)
         exceptions: list[Exception] = []
         for try_io_lib in try_io_libs:
             try:
-                return save_tensor(
+                return _save_tensor_impl(
                     path,
                     tensor,
                     io_lib=try_io_lib,
@@ -478,14 +527,14 @@ def save_tensor(
             "Failed to save tensor with any available io_lib", exceptions
         )
     elif io_lib == "bioio":
-        return _save_tensor_bioio(
+        _save_tensor_bioio(
             output_path,
             tensor,
             internal_path=internal_path,
             roi_and_tensor_shape=roi_and_tensor_shape,
         )
     elif io_lib == "clearscale":
-        return _save_tensor_clearscale(
+        _save_tensor_clearscale(
             output_path,
             tensor,
             internal_path=internal_path,
@@ -496,7 +545,7 @@ def save_tensor(
             raise NotImplementedError(
                 "Saving a region of interest (roi) is not implemented for imageio."
             )
-        return _save_tensor_imageio(output_path, tensor, internal_path=internal_path)
+        _save_tensor_imageio(output_path, tensor, internal_path=internal_path)
     elif io_lib == "numpy":
         if roi_and_tensor_shape is not None:
             raise NotImplementedError(
@@ -506,7 +555,7 @@ def save_tensor(
             raise NotImplementedError(
                 "Saving to an internal path is not implemented for numpy."
             )
-        return _save_tensor_numpy(output_path, tensor)
+        _save_tensor_numpy(output_path, tensor)
     elif io_lib == "tifffile":
         if roi_and_tensor_shape is not None:
             raise NotImplementedError(
@@ -517,9 +566,11 @@ def save_tensor(
                 "Saving to an internal path is not implemented for tifffile."
             )
 
-        return _save_tensor_tifffile(output_path, extensions, tensor)
+        _save_tensor_tifffile(output_path, extensions, tensor)
     else:
         assert_never(io_lib)
+
+    return io_lib
 
 
 def _save_tensor_bioio(
@@ -702,12 +753,14 @@ def _save_tensor_clearscale(
     if roi_and_tensor_shape is None:
         roi = (slice(None),) * len(tensor.dims)
         tensor_shape = tensor.tagged_shape
+        tensor_shape_tuple = tensor.shape
     else:
         roi_map, tensor_shape = roi_and_tensor_shape
         roi = tuple(
             slice(None) if (s := roi_map.get(d)) is None else slice(s.start, s.stop)
             for d in tensor.dims
         )
+        tensor_shape_tuple = tuple(tensor_shape.get(d, 1) for d in tensor.dims)
 
     ZARR_FORMAT: int = int(os.getenv("ZARR_FORMAT", "3"))
     SCALE_KEY = "s0" if internal_path is None else str(internal_path)
@@ -717,7 +770,9 @@ def _save_tensor_clearscale(
     multiscale = clearscale.Multiscale(
         {
             SCALE_KEY: clearscale.Scale(
-                shape=clearscale.Shape(**dict(zip(dim_map.values(), tensor.shape))),
+                shape=clearscale.Shape(
+                    **dict(zip(dim_map.values(), tensor_shape_tuple))
+                ),
                 pixel_size={
                     dim_map[k]: v for k, v in tensor.get_physical_scale().items()
                 }
@@ -1116,6 +1171,7 @@ def save_sample(
                 f"path {path} must contain '{{member_id}}' for sample with multiple members {list(first_block.members)}."
             )
 
+    io_lib = None
     for sample_block in chain([first_block], remaining_blocks):
         for m, p in path.items():
             if isinstance(sample_block, Sample):
@@ -1133,7 +1189,9 @@ def save_sample(
             p_formatted = Path(
                 str(p).format(sample_id=sample_id, member_id=m, input_id=m, output_id=m)
             )
-            save_tensor(p_formatted, t, roi_and_tensor_shape=roi_and_tensor_shape)
+            io_lib = _save_tensor_impl(
+                p_formatted, t, roi_and_tensor_shape=roi_and_tensor_shape, io_lib=io_lib
+            )
 
 
 class _StatEntry(BaseModel, frozen=True, arbitrary_types_allowed=True):

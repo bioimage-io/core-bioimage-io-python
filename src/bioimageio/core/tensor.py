@@ -639,7 +639,7 @@ class Tensor(MagicTensorOpsMixin):
         )
 
     def unstack_batch_multi_index(
-        self, *, errors: Literal["raise", "ignore"] = "raise"
+        self, *, errors: Literal["raise", "warn", "ignore"] = "raise"
     ) -> Self:
         """Unstack the batch multi-index of this tensor.
 
@@ -647,20 +647,26 @@ class Tensor(MagicTensorOpsMixin):
             A new tensor with the batch multi-index unstacked into separate axes.
         """
         if AxisId("batch") not in self.dims:
+            error_msg = (
+                "Cannot unstack batch multi-index on a tensor without a 'batch' axis."
+            )
             if errors == "raise":
-                raise ValueError(
-                    "Cannot unstack batch multi-index on a tensor without a 'batch' axis."
-                )
+                raise ValueError(error_msg)
+            elif errors == "warn":
+                logger.warning(error_msg)
+                return self
             elif errors == "ignore":
                 return self
             else:
                 assert_never(errors)
 
         if not isinstance(self._data.indexes.get(AxisId("batch")), pd.MultiIndex):
+            error_msg = "Cannot unstack batch multi-index on a tensor whose 'batch' axis does not have a MultiIndex."
             if errors == "raise":
-                raise ValueError(
-                    "Cannot unstack batch multi-index on a tensor whose 'batch' axis does not have a MultiIndex."
-                )
+                raise ValueError(error_msg)
+            elif errors == "warn":
+                logger.warning(error_msg)
+                return self
             elif errors == "ignore":
                 return self
             else:
