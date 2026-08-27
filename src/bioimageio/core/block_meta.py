@@ -16,7 +16,7 @@ from loguru import logger
 from typing_extensions import Self
 
 from ._axis_annotations import PerAxisAnno
-from .axis import AxisId, PerAxis
+from .axis import BATCH_AXIS_ID, AxisId, PerAxis
 from .common import (
     BlockIndex,
     Halo,
@@ -76,8 +76,14 @@ class BlockMeta:
     sample_shape: PerAxisAnno[int]
     """the axis sizes of the whole (unblocked) sample"""
 
+    sample_shape_batch_unstacked: PerAxisAnno[int]
+    """the axis sizes of the whole (unblocked) sample, with unstacked batch axes (if any)"""
+
     inner_slice: PerAxisAnno[SliceInfo]
     """inner region (without halo) wrt the sample"""
+
+    inner_slice_batch_unstacked: PerAxisAnno[SliceInfo]
+    """inner slice (without halo) wrt the sample unstacked along the batch axis (if present)"""
 
     halo: PerAxisAnno[Halo]
     """halo enlarging the inner region to the block's sizes"""
@@ -206,25 +212,39 @@ class BlockMeta:
             )
 
     def get_transformed(self, new_axes: PerAxis[LinearAxisTransform | int]) -> Self:
+        assert BATCH_AXIS_ID not in new_axes, "cannot transform the batch axis"
+        unstacked_dims = {
+            k for k in self.inner_slice_batch_unstacked if k not in self.inner_slice
+        }
+
         return self.__class__(
-            sample_shape={
-                a: (
-                    trf
-                    if isinstance(trf, int)
-                    else trf.compute(self.sample_shape[trf.axis])
-                )
-                for a, trf in new_axes.items()
-            },
-            inner_slice={
-                a: (
-                    SliceInfo(0, trf)
-                    if isinstance(trf, int)
-                    else SliceInfo(
-                        trf.compute(self.inner_slice[trf.axis].start),
-                        trf.compute(self.inner_slice[trf.axis].stop),
+            sample_shape=(
+                sample_shape := {
+                    a: (
+                        trf
+                        if isinstance(trf, int)
+                        else trf.compute(self.sample_shape[trf.axis])
                     )
-                )
-                for a, trf in new_axes.items()
+                    for a, trf in new_axes.items()
+                }
+            ),
+            sample_shape_batch_unstacked=sample_shape,
+            inner_slice=(
+                transformed_inner_slice := {
+                    a: (
+                        SliceInfo(0, trf)
+                        if isinstance(trf, int)
+                        else SliceInfo(
+                            trf.compute(self.inner_slice[trf.axis].start),
+                            trf.compute(self.inner_slice[trf.axis].stop),
+                        )
+                    )
+                    for a, trf in new_axes.items()
+                }
+            ),
+            inner_slice_batch_unstacked={
+                **{k: self.inner_slice_batch_unstacked[k] for k in unstacked_dims},
+                **transformed_inner_slice,
             },
             halo={
                 a: (
@@ -241,6 +261,7 @@ class BlockMeta:
 
 def split_shape_into_blocks(
     shape: PerAxis[int],
+    shape_unstacked: PerAxis[int],
     block_shape: PerAxis[int],
     halo: PerAxis[HaloLike],
     stride: PerAxis[int] | None = None,
@@ -276,6 +297,7 @@ def split_shape_into_blocks(
 
     return n_blocks, _block_meta_generator(
         shape,
+        shape_unstacked,
         blocks_in_sample=n_blocks,
         inner_1d_slices=inner_1d_slices,
         halo=halo,
@@ -284,6 +306,7 @@ def split_shape_into_blocks(
 
 def _block_meta_generator(
     sample_shape: PerAxis[int],
+    shape_unstacked: PerAxis[int],
     *,
     blocks_in_sample: int,
     inner_1d_slices: dict[AxisId, list[SliceInfo]],
@@ -297,7 +320,9 @@ def _block_meta_generator(
 
         yield BlockMeta(
             sample_shape=sample_shape,
+            sample_shape_batch_unstacked=shape_unstacked,
             inner_slice=inner_slice,
+            inner_slice_batch_unstacked=inner_slice,
             halo=halo,
             block_index=i,
             blocks_in_sample=blocks_in_sample,
@@ -346,6 +371,7 @@ def split_multiple_shapes_into_blocks(
     for t in block_shapes:
         n_blocks[t], blocks[t] = split_shape_into_blocks(
             shape=shapes[t],
+            shape_unstacked=
             block_shape=block_shapes[t],
             halo=halo.get(t, {}),
             stride=strides.get(t),

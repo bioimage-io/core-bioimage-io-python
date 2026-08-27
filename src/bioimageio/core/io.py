@@ -49,10 +49,15 @@ from bioimageio.spec.common import (
     RootHttpUrl,
     ZipPath,
 )
-from bioimageio.spec.model import v0_5
 from bioimageio.spec.utils import load_array, save_array
 
-from .axis import AxisId, AxisLike, PerAxis, single_letter_dims_if_possible
+from .axis import (
+    BATCH_AXIS_ID,
+    AxisId,
+    AxisLike,
+    PerAxis,
+    single_letter_dims_if_possible,
+)
 from .common import PerMember, SliceInfo
 from .sample import Sample, SampleBlock
 from .stat_measures import DatasetMeasure, MeasureValue, SampleMeasure, Stat
@@ -478,33 +483,19 @@ def _save_tensor_impl(
             "Saving tensors to HTTP URLs is not implemented. Please save to a local file path."
         )
 
-    if (v0_5.BATCH_AXIS_ID in tensor.dims) and (
-        not extensions or extensions[-1] != ".npy"
-    ):
-        if roi_and_tensor_shape is None:
-            batch_len = tensor.tagged_shape.get(v0_5.BATCH_AXIS_ID, 0)
-        else:
+    if (BATCH_AXIS_ID in tensor.dims) and (not extensions or extensions[-1] != ".npy"):
+        if roi_and_tensor_shape is not None:
             roi, tensor_shape = roi_and_tensor_shape
-            batch_len = tensor_shape.get(v0_5.BATCH_AXIS_ID, 0)
-
-        if batch_len > 1:
-            tensor = tensor.unstack_batch_multi_index(errors="warn")
-            if roi_and_tensor_shape is not None:
-                # TODO: use tensor.data.multi_index to unstack the roi and tensor_shape as well
+            if BATCH_AXIS_ID in roi or BATCH_AXIS_ID in tensor_shape:
                 raise NotImplementedError(
-                    "Saving a region of interest (roi) is not implemented for tensors with a batch dimension."
+                    "Saving a region of interest (roi) with a batch dimension to non-NPY formats is not supported."
                 )
 
-        if batch_len == 1:
-            # avoid saving tensors with a singleton batch dimension
-            tensor = tensor.squeeze(v0_5.BATCH_AXIS_ID)
-            if roi_and_tensor_shape is not None:
-                roi, tensor_shape = roi_and_tensor_shape
-                roi = {k: v for k, v in roi.items() if k != v0_5.BATCH_AXIS_ID}
-                tensor_shape = {
-                    k: v for k, v in tensor_shape.items() if k != v0_5.BATCH_AXIS_ID
-                }
-                roi_and_tensor_shape = (roi, tensor_shape)
+        if tensor.batch_multi_index is not None:
+            tensor = tensor.unstack_batch_multi_index(errors="raise")
+
+        if BATCH_AXIS_ID in tensor.dims:
+            tensor = tensor.squeeze(BATCH_AXIS_ID)
 
     if io_lib is None:
         try_io_libs = _select_io_libs_based_on_extension(extensions)
@@ -1181,10 +1172,13 @@ def save_sample(
             else:
                 sample_id = sample_block.sample_id
                 roi_and_tensor_shape = (
-                    sample_block.blocks[m].inner_slice,
+                    sample_block.blocks[m].inner_slice_batch_unstacked
+                    or sample_block.blocks[m].inner_slice,
                     sample_block.sample_shape[m],
                 )
-                t = sample_block.blocks[m].inner_data
+                t = sample_block.blocks[m].inner_data.unstack_batch_multi_index(
+                    errors="ignore"
+                )
 
             p_formatted = Path(
                 str(p).format(sample_id=sample_id, member_id=m, input_id=m, output_id=m)

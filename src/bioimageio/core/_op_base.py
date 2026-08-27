@@ -8,7 +8,7 @@ from typing import Generic, Union
 from typing_extensions import TypeVar, assert_never
 
 from ._restore_batch_multi_index import restore_batch_multi_index
-from .axis import PerAxis
+from .axis import BATCH_AXIS_ID, PerAxis
 from .block import Block
 from .common import MemberId
 from .sample import Sample, SampleBlock, SampleBlockWithOrigin
@@ -72,10 +72,28 @@ class SimpleOperator(BlockwiseOperator):
             sample.members[self.output] = output_tensor
         elif isinstance(sample, SampleBlock):
             b = sample.blocks[self.input]
+            sample_shape_batch_unstacked = {
+                a: s
+                for a, s in sample.sample_shape_batch_unstacked[self.input].items()
+                if a not in sample.sample_shape[self.input]
+            }
+            sample_shape = self.get_output_shape(sample.sample_shape[self.input])
+            for a, s in sample_shape.items():
+                if a == BATCH_AXIS_ID:
+                    continue
+                elif a in sample_shape_batch_unstacked:
+                    raise ValueError(
+                        f"Output axis {a} already exists in sample_shape_batch_unstacked"
+                    )
+
+                sample_shape_batch_unstacked[a] = s
+
             sample.blocks[self.output] = Block(
-                sample_shape=self.get_output_shape(sample.sample_shape[self.input]),
+                sample_shape=sample_shape,
+                sample_shape_batch_unstacked=sample_shape_batch_unstacked,
                 data=output_tensor,
                 inner_slice=b.inner_slice,
+                inner_slice_batch_unstacked=b.inner_slice_batch_unstacked,
                 halo=b.halo,
                 block_index=b.block_index,
                 blocks_in_sample=b.blocks_in_sample,

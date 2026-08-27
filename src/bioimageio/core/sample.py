@@ -22,7 +22,7 @@ from numpy.typing import NDArray
 from typing_extensions import Self, assert_never
 
 from ._common_annotations import PerMemberAnno
-from .axis import AxisId, PerAxis
+from .axis import BATCH_AXIS_ID, AxisId, PerAxis
 from .block import Block
 from .block_meta import (
     BlockMeta,
@@ -100,7 +100,7 @@ class Sample:
             return None
 
         for tensor in self.members.values():
-            idx = tensor.data.indexes.get(AxisId("batch"))  # pyright: ignore[reportUnknownVariableType]
+            idx = tensor.batch_multi_index
             if isinstance(idx, pd.MultiIndex):
                 return idx
 
@@ -133,6 +133,24 @@ class Sample:
     def shape(self) -> PerMember[PerAxis[int]]:
         return {tid: t.sizes for tid, t in self.members.items()}
 
+    @property
+    def shape_batch_unstacked(self) -> PerMember[PerAxis[int]]:
+        """Return the sample shape with unstacked batch axes (if any)."""
+        if (idx := self.batch_multi_index) is None:
+            return self.shape
+
+        ret = {m: dict(s) for m, s in self.shape.items()}
+        unstacked_axes = tuple(
+            BATCH_AXIS_ID if name == "original_batch" else AxisId(name)
+            for name in idx.names
+        )
+        for m in self.members:
+            if BATCH_AXIS_ID in ret[m]:
+                for a, s in zip(unstacked_axes, idx.levshape):
+                    ret[m][a] = s
+
+        return ret
+
     def as_arrays(self) -> dict[MemberId, NDArray[Any]]:
         """Return sample as dictionary of arrays."""
         return {m: t.to_numpy() for m, t in self.members.items()}
@@ -162,16 +180,40 @@ class Sample:
     def as_single_block(self, halo: PerMember[PerAxis[Halo]] | None = None):
         if halo is None:
             halo = {}
+
+        inner_slice = {
+            m: {a: SliceInfo(0, s) for a, s in data.tagged_shape.items()}
+            for m, data in self.members.items()
+        }
+        inner_slice_batch_unstacked = {
+            m: {k: v for k, v in inner_slice[m].items()} for m in self.members
+        }
+
+        for m, t in self.members.items():
+            if isinstance(
+                idx := t.data.indexes.get(BATCH_AXIS_ID),  # pyright: ignore[reportUnknownVariableType]
+                pd.MultiIndex,
+            ):
+                # add slice for each unstacked axis in the multi index
+                b_slice = inner_slice[m][BATCH_AXIS_ID]
+                for a, s, c in zip(idx.names, idx.levshape, idx.codes):
+                    axis = BATCH_AXIS_ID if a == "original_batch" else AxisId(a)
+                    # sample_shape_batch_unstacked[m][axis] = s
+                    codes = c[b_slice.start : b_slice.stop]
+                    s = SliceInfo(int(codes.min()), int(codes.max()) + 1)
+                    inner_slice_batch_unstacked[m][axis] = s
+
         return SampleBlockWithOrigin(
             sample_shape=self.shape,
+            sample_shape_batch_unstacked=self.shape_batch_unstacked,
             sample_id=self.id,
             blocks={
                 m: Block(
                     sample_shape=self.shape[m],
+                    sample_shape_batch_unstacked=self.shape_batch_unstacked[m],
                     data=data,
-                    inner_slice={
-                        a: SliceInfo(0, s) for a, s in data.tagged_shape.items()
-                    },
+                    inner_slice=inner_slice[m],
+                    inner_slice_batch_unstacked=inner_slice_batch_unstacked[m],
                     halo=halo.get(m, {}),
                     block_index=0,
                     blocks_in_sample=1,
@@ -421,6 +463,9 @@ class SampleBlockBase(Generic[BlockT]):
     sample_shape: PerMemberAnno[PerAxis[int]]
     """the sample shape this block represents a part of"""
 
+    sample_shape_batch_unstacked: PerMemberAnno[PerAxis[int]]
+    """the sample shape this block represents a part of, with unstacked batch axes (if any)"""
+
     sample_id: SampleId
     """identifier for the sample within its dataset"""
 
@@ -505,11 +550,47 @@ class SampleBlockMeta(SampleBlockBase[BlockMeta]):
             }
             for m in new_axes
         }
+        # sample_shape_batch_unstacked/inner_slice_batch_unstacked undergoes the same transform as inner_slice, but keeps the unstacked batch slices of the original block
+        sample_shape_batch_unstacked = {m: dict(s) for m, s in sample_shape.items()}
+        inner_slice_batch_unstacked = {m: dict(s) for m, s in inner_slice.items()}
+        for m in list(inner_slice_batch_unstacked):
+            sh = sample_shape_batch_unstacked[m]
+            for a, sh_u in self.sample_shape_batch_unstacked[m].items():
+                if a == BATCH_AXIS_ID or (a not in sh):
+                    sh[a] = sh_u  # keep unstacked axis size sh_u for stacked axis a
+                elif a not in self.sample_shape[m]:
+                    raise ValueError(
+                        f"Stacked axis {a} was overwritten by an axis transform."
+                        + " This happens for example when transforming a tensor byx into zyx,"
+                        + " but actually starting with a tensor bzyx that was stacked to byx"
+                        + " (to apply a yx->zyx model)."
+                        + " The resulting bzyx output tensor cannot be unstacked due to the colliding z dim."
+                    )
+
+            sl = inner_slice_batch_unstacked[m]
+            for a, sl_u in (
+                self.blocks[m].inner_slice_batch_unstacked or {}
+                if m in self.blocks
+                else {}
+            ).items():
+                if a == BATCH_AXIS_ID or (a not in sl):
+                    sl[a] = sl_u  # keep unstacked axis slice sl_u for stacked axis a
+                elif a not in self.blocks[m].inner_slice:
+                    raise ValueError(
+                        f"Stacked axis {a} was overwritten by an axis transform."
+                        + " This happens for example when transforming a tensor byx into zyx,"
+                        + " but actually starting with a tensor bzyx that was stacked to byx"
+                        + " (to apply a yx->zyx model)."
+                        + " The resulting bzyx output tensor cannot be unstacked due to the colliding z dim."
+                    )
+
         return self.__class__(
             blocks={
                 m: BlockMeta(
                     sample_shape=sample_shape[m],
+                    sample_shape_batch_unstacked=sample_shape_batch_unstacked[m],
                     inner_slice=inner_slice[m],
+                    inner_slice_batch_unstacked=inner_slice_batch_unstacked[m],
                     halo=halo[m],
                     block_index=self.block_index,
                     blocks_in_sample=self.blocks_in_sample,
@@ -517,6 +598,7 @@ class SampleBlockMeta(SampleBlockBase[BlockMeta]):
                 for m in new_axes
             },
             sample_shape=sample_shape,
+            sample_shape_batch_unstacked=sample_shape_batch_unstacked,
             sample_id=self.sample_id,
             block_index=self.block_index,
             blocks_in_sample=self.blocks_in_sample,
@@ -530,6 +612,13 @@ class SampleBlockMeta(SampleBlockBase[BlockMeta]):
                     for a, s in member_shape.items()
                 }
                 for m, member_shape in self.sample_shape.items()
+            },
+            sample_shape_batch_unstacked={
+                m: {
+                    a: data[m].tagged_shape[a] if s == -1 else s
+                    for a, s in member_shape.items()
+                }
+                for m, member_shape in self.sample_shape_batch_unstacked.items()
             },
             sample_id=self.sample_id,
             blocks={
@@ -563,6 +652,7 @@ class SampleBlock(SampleBlockBase[Block]):
             sample_id=self.sample_id,
             blocks=dict(self.blocks),
             sample_shape=self.sample_shape,
+            sample_shape_batch_unstacked=self.sample_shape_batch_unstacked,
             block_index=self.block_index,
             blocks_in_sample=self.blocks_in_sample,
         ).get_transformed(new_axes)
@@ -573,6 +663,7 @@ class SampleBlock(SampleBlockBase[Block]):
     ) -> Self:
         return cls(
             sample_shape=meta.sample_shape,
+            sample_shape_batch_unstacked=meta.sample_shape_batch_unstacked,
             sample_id=meta.sample_id,
             blocks={
                 m: Block.from_meta(b, data=data[m]) for m, b in meta.blocks.items()
@@ -587,6 +678,7 @@ class SampleBlock(SampleBlockBase[Block]):
             sample_id=self.sample_id,
             blocks={m: b.get_meta() for m, b in self.blocks.items()},
             sample_shape=self.sample_shape,
+            sample_shape_batch_unstacked=self.sample_shape_batch_unstacked,
             block_index=self.block_index,
             blocks_in_sample=self.blocks_in_sample,
         )
@@ -632,6 +724,9 @@ def sample_block_meta_generator(
 ):
     for member_blocks in blocks:
         cons = _ConsolidatedMemberBlocks(member_blocks)
+        for m, b in member_blocks.items():
+            assert b.sample_shape == sample_shape[m]
+
         yield SampleBlockMeta(
             blocks=dict(member_blocks),
             sample_shape=sample_shape,
@@ -661,6 +756,7 @@ def sample_block_generator(
                 for m in origin.members
             },
             sample_shape=origin.shape,
+            sample_shape_batch_unstacked=origin.shape_batch_unstacked,
             origin=origin,
             stat=origin.stat,
             sample_id=origin.id,

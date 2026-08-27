@@ -24,7 +24,7 @@ from bioimageio.spec.model import v0_5
 from bioimageio.spec.model.v0_5 import SpaceUnit, TimeUnit
 
 from ._magic_tensor_ops import MagicTensorOpsMixin
-from .axis import AxisId, AxisInfo, AxisLike, PerAxis
+from .axis import BATCH_AXIS_ID, AxisId, AxisInfo, AxisLike, PerAxis
 from .common import (
     CropWhere,
     DTypeStr,
@@ -509,11 +509,24 @@ class Tensor(MagicTensorOpsMixin):
     ) -> Self:
         pad_width = {a: PadWidth.create(p) for a, p in pad_width.items()}
         mode_name, constant_value = _resolve_pad_mode(mode)
-        return self.__class__.from_xarray(
+
+        padded_tensor = self.__class__.from_xarray(
             self._data.pad(
                 pad_width=pad_width, mode=mode_name, constant_values=constant_value
             )
         )
+
+        if (
+            BATCH_AXIS_ID in self.dims
+            # maybe future xarray versions will keep a MultiIndex when padding, but currently they don't
+            and padded_tensor.batch_multi_index is not None
+            and pad_width.get(BATCH_AXIS_ID, 0) in (0, (0, 0), PadWidth(0, 0))
+            and (idx := self.batch_multi_index) is not None
+        ):
+            # add multiindex removed by padding when batch axis is not padded
+            padded_tensor = padded_tensor.assign_batch_multi_index(idx)
+
+        return padded_tensor
 
     def pad_to(
         self,
@@ -623,19 +636,31 @@ class Tensor(MagicTensorOpsMixin):
         """Reduce this Tensor's data by applying sum along some dimension(s)."""
         return self.__class__.from_xarray(self._data.sum(dim=dim))
 
+    @property
+    def batch_multi_index(self) -> pd.MultiIndex | None:
+        """Return the batch multi-index if available, otherwise None."""
+        if BATCH_AXIS_ID not in self.dims:
+            return None
+
+        idx = self._data.indexes.get(BATCH_AXIS_ID)  # pyright: ignore[reportUnknownVariableType]
+        if not isinstance(idx, pd.MultiIndex):
+            return None
+
+        return idx
+
     def assign_batch_multi_index(self, multi_index: pd.MultiIndex) -> Self:
         """Set the batch multi-index for this tensor.
 
         Args:
             multi_index: The multi-index to set.
         """
-        if AxisId("batch") not in self.dims:
+        if BATCH_AXIS_ID not in self.dims:
             raise ValueError(
                 "Cannot set batch multi-index on a tensor without a 'batch' axis."
             )
 
         return self.__class__.from_xarray(
-            self._data.assign_coords({AxisId("batch"): multi_index})
+            self._data.assign_coords({BATCH_AXIS_ID: multi_index})
         )
 
     def unstack_batch_multi_index(
@@ -646,7 +671,7 @@ class Tensor(MagicTensorOpsMixin):
         Returns:
             A new tensor with the batch multi-index unstacked into separate axes.
         """
-        if AxisId("batch") not in self.dims:
+        if BATCH_AXIS_ID not in self.dims:
             error_msg = (
                 "Cannot unstack batch multi-index on a tensor without a 'batch' axis."
             )
@@ -660,7 +685,7 @@ class Tensor(MagicTensorOpsMixin):
             else:
                 assert_never(errors)
 
-        if not isinstance(self._data.indexes.get(AxisId("batch")), pd.MultiIndex):
+        if not isinstance(self._data.indexes.get(BATCH_AXIS_ID), pd.MultiIndex):
             error_msg = "Cannot unstack batch multi-index on a tensor whose 'batch' axis does not have a MultiIndex."
             if errors == "raise":
                 raise ValueError(error_msg)
@@ -673,7 +698,7 @@ class Tensor(MagicTensorOpsMixin):
                 assert_never(errors)
 
         old_dims = self.dims
-        array = self._data.unstack(AxisId("batch"))
+        array = self._data.unstack(BATCH_AXIS_ID)
         assert isinstance(array, xr.DataArray)
         added_dims = [AxisId(d) for d in array.dims if d not in self._data.dims]
 
@@ -682,14 +707,14 @@ class Tensor(MagicTensorOpsMixin):
         for d in old_dims:
             if d in array.dims:
                 new_dims.append(d)
-            elif d == AxisId("batch"):
+            elif d == BATCH_AXIS_ID:
                 new_dims.extend(added_dims)
             else:
                 raise ValueError(f"Expected axis {d} not found in unstacked array.")
 
         array = array.transpose(*new_dims)
         if AxisId("original_batch") in array.dims:
-            array = array.rename({AxisId("original_batch"): AxisId("batch")})
+            array = array.rename({AxisId("original_batch"): BATCH_AXIS_ID})
 
         assert isinstance(array, xr.DataArray)
         return self.__class__.from_xarray(array)
@@ -731,14 +756,14 @@ class Tensor(MagicTensorOpsMixin):
 
         unstack_error = None
         if unhandled_missing_dims and missing_dims in ("unstack", "unstack_or_expand"):
-            lets_unstack = AxisId("batch") in array.dims
+            lets_unstack = BATCH_AXIS_ID in array.dims
             if not lets_unstack:
                 unstack_error = f"Missing dimensions {unhandled_missing_dims} found, but 'batch' axis is not in the tensor. Cannot unstack missing dimensions from batch."
                 if missing_dims == "unstack":
                     raise ValueError(unstack_error)
 
             if lets_unstack and not isinstance(
-                array.indexes.get(AxisId("batch")), pd.MultiIndex
+                array.indexes.get(BATCH_AXIS_ID), pd.MultiIndex
             ):
                 lets_unstack = False
                 unstack_error = f"Missing dimensions {unhandled_missing_dims} found, but 'batch' axis does not have a MultiIndex. Cannot unstack missing dimensions from non-multi-index batch."
@@ -748,11 +773,11 @@ class Tensor(MagicTensorOpsMixin):
             lets_unstack = False
 
         if lets_unstack:
-            array: xr.DataArray = array.unstack(AxisId("batch"))
+            array: xr.DataArray = array.unstack(BATCH_AXIS_ID)
 
             if AxisId("original_batch") in array.dims:
-                if AxisId("batch") in axes:
-                    array = array.rename({AxisId("original_batch"): AxisId("batch")})
+                if BATCH_AXIS_ID in axes:
+                    array = array.rename({AxisId("original_batch"): BATCH_AXIS_ID})
                 else:
                     array = array.squeeze(AxisId("original_batch"))
 
@@ -785,17 +810,17 @@ class Tensor(MagicTensorOpsMixin):
                     )
 
         if unhandled_extra_dims and extra_dims in ("stack", "squeeze_or_stack"):
-            if AxisId("batch") not in axes:
+            if BATCH_AXIS_ID not in axes:
                 raise ValueError(
                     f"Extra dimensions {unhandled_extra_dims} found but 'batch' axis is not in the desired axes {axes}."
                     + " Cannot stack extra dimensions to batch."
                 )
 
-            if AxisId("batch") in array.dims:
-                array = array.rename({AxisId("batch"): AxisId("original_batch")})
+            if BATCH_AXIS_ID in array.dims:
+                array = array.rename({BATCH_AXIS_ID: AxisId("original_batch")})
                 unhandled_extra_dims.insert(0, AxisId("original_batch"))
 
-            array = array.stack({AxisId("batch"): unhandled_extra_dims})
+            array = array.stack({BATCH_AXIS_ID: unhandled_extra_dims})
             unhandled_extra_dims = []
 
         if unhandled_extra_dims:

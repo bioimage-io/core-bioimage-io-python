@@ -6,9 +6,10 @@ from typing import (
     Any,
 )
 
+import pandas as pd
 from typing_extensions import Self
 
-from .axis import PerAxis
+from .axis import BATCH_AXIS_ID, AxisId, PerAxis
 from .block_meta import BlockMeta, LinearAxisTransform, split_shape_into_blocks
 from .common import (
     Halo,
@@ -50,27 +51,57 @@ class Block(BlockMeta):
         *,
         pad_mode: PadMode,
     ) -> Self:
+        if (
+            block.inner_slice_batch_unstacked == block.inner_slice
+            and block.sample_shape == block.sample_shape_batch_unstacked
+            and isinstance(
+                idx := sample_member.data.indexes.get(BATCH_AXIS_ID),  # pyright: ignore[reportUnknownVariableType]
+                pd.MultiIndex,
+            )
+            and block.inner_slice[BATCH_AXIS_ID] == block.outer_slice[BATCH_AXIS_ID]
+        ):
+            # if sample_member has a multi index for the batch axis, we keep track of the unstacked axes of this block
+            # start with inner_slice without the batch axis, and add the unstacked slice for each axis in the multi index
+            sample_shape_batch_unstacked = dict(block.sample_shape)
+            inner_slice_batch_unstacked = dict(block.inner_slice)
+            b_slice = block.inner_slice[BATCH_AXIS_ID]
+            for a, s, c in zip(idx.names, idx.levshape, idx.codes):
+                axis = BATCH_AXIS_ID if a == "original_batch" else AxisId(a)
+                sample_shape_batch_unstacked[axis] = s
+                codes = c[b_slice.start : b_slice.stop]
+                si = SliceInfo(int(codes.min()), int(codes.max()) + 1)
+                inner_slice_batch_unstacked[axis] = si
+        else:
+            inner_slice_batch_unstacked = block.inner_slice_batch_unstacked
+            sample_shape_batch_unstacked = block.sample_shape_batch_unstacked
+
         return cls(
             data=sample_member[block.outer_slice].pad(block.padding, pad_mode),
             sample_shape=sample_member.tagged_shape,
+            sample_shape_batch_unstacked=sample_shape_batch_unstacked,
             inner_slice=block.inner_slice,
+            inner_slice_batch_unstacked=inner_slice_batch_unstacked,
             halo=block.halo,
             block_index=block.block_index,
             blocks_in_sample=block.blocks_in_sample,
         )
 
-    def get_transformed(
-        self, new_axes: PerAxis[LinearAxisTransform | int]
-    ) -> Self:
+    def get_transformed(self, new_axes: PerAxis[LinearAxisTransform | int]) -> Self:
         raise NotImplementedError
 
     @classmethod
     def from_meta(cls, meta: BlockMeta, data: Tensor) -> Self:
+        sample_shape = {
+            k: data.tagged_shape[k] if v == -1 else v
+            for k, v in meta.sample_shape.items()
+        }
+        sample_shape_batch_unstacked = {
+            k: data.tagged_shape[k] if v == -1 else v
+            for k, v in meta.sample_shape_batch_unstacked.items()
+        }
         return cls(
-            sample_shape={
-                k: data.tagged_shape[k] if v == -1 else v
-                for k, v in meta.sample_shape.items()
-            },
+            sample_shape=sample_shape,
+            sample_shape_batch_unstacked=sample_shape_batch_unstacked,
             inner_slice={
                 k: (
                     SliceInfo(start=v.start, stop=data.tagged_shape[k])
@@ -79,6 +110,7 @@ class Block(BlockMeta):
                 )
                 for k, v in meta.inner_slice.items()
             },
+            inner_slice_batch_unstacked=meta.inner_slice_batch_unstacked,
             halo=meta.halo,
             block_index=meta.block_index,
             blocks_in_sample=meta.blocks_in_sample,
@@ -88,7 +120,9 @@ class Block(BlockMeta):
     def get_meta(self) -> BlockMeta:
         return BlockMeta(
             sample_shape=self.sample_shape,
+            sample_shape_batch_unstacked=self.sample_shape_batch_unstacked,
             inner_slice=self.inner_slice,
+            inner_slice_batch_unstacked=self.inner_slice_batch_unstacked,
             halo=self.halo,
             block_index=self.block_index,
             blocks_in_sample=self.blocks_in_sample,
