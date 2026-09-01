@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import collections.abc
-from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence
+import itertools
+from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence, Sized
 from pathlib import Path
 
 from loguru import logger
@@ -180,7 +180,7 @@ def predict_many(
     | v0_5.ModelDescr
     | PredictionPipeline,
     inputs: Iterable[PerMember[TensorSource]] | Iterable[TensorSource],
-    sample_id: str = "sample{i:03}",
+    sample_id: str | Iterable[str] = "sample{i:03}",
     blocksize_parameter: v0_5.ParameterizedSize_N
     | Mapping[tuple[MemberId, AxisId], v0_5.ParameterizedSize_N]
     | None = None,
@@ -193,11 +193,10 @@ def predict_many(
     Args:
         model: Model to predict with.
             May be given as RDF source, model description or prediction pipeline.
-        inputs: An iterable of the named input(s) for this model as a dictionary.
-        sample_id: The sample id.
-            note: `{i}` will be formatted as the i-th sample.
-            If `{i}` (or `{i:`) is not present and `inputs` is not an iterable `{i:03}`
-            is appended.
+        inputs: An iterable of the (named) input(s) for this model.
+        sample_id: The sample id pattern or iterable that is not a string (specify samples a,b,c as ['a', 'b', 'c'], not 'abc').
+            Note:  If the `sample_id` (item) contains `{i}`, it will be formatted as the i-th sample starting with i=0.
+            If `{i}` (or `{i:`) is not present and `sample_id` is a single string, `{i:03}` is appended.
         blocksize_parameter: (optional) Tile the input into blocks parametrized by
             blocksize according to any parametrized axis sizes defined in the model RDF.
         skip_preprocessing: Flag to skip the model's preprocessing.
@@ -224,19 +223,29 @@ def predict_many(
 
         pp = create_prediction_pipeline(model)
 
-    if not isinstance(inputs, collections.abc.Mapping):
+    if isinstance(sample_id, str):
         if "{i}" not in sample_id and "{i:" not in sample_id:
             sample_id += "{i:03}"
 
-        total = len(inputs) if isinstance(inputs, collections.abc.Sized) else None
+        sample_ids = itertools.repeat(sample_id)
+    else:
+        sample_ids = sample_id
 
-        for i, ipts in tqdm(enumerate(inputs), total=total):
-            yield predict(
-                model=pp,
-                inputs=ipts,
-                sample_id=sample_id.format(i=i),
-                blocksize_parameter=blocksize_parameter,
-                skip_preprocessing=skip_preprocessing,
-                skip_postprocessing=skip_postprocessing,
-                save_output_path=save_output_path,
-            )
+    total = (
+        len(inputs)
+        if isinstance(inputs, Sized)
+        else len(sample_ids)
+        if not isinstance(sample_ids, str) and isinstance(sample_ids, Sized)
+        else None
+    )
+
+    for i, (s_id, ipts) in tqdm(enumerate(zip(sample_ids, inputs)), total=total):
+        yield predict(
+            model=pp,
+            inputs=ipts,
+            sample_id=s_id.format(i=i),
+            blocksize_parameter=blocksize_parameter,
+            skip_preprocessing=skip_preprocessing,
+            skip_postprocessing=skip_postprocessing,
+            save_output_path=save_output_path,
+        )
