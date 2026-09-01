@@ -42,6 +42,7 @@ AxisId: TypeAlias = v0_5.AxisId
 """An axis identifier, e.g. 'batch', 'channel', 'z', 'y', 'x'"""
 
 BATCH_AXIS_ID = v0_5.BATCH_AXIS_ID
+CHANNEL_AXIS_ID = v0_5.CHANNEL_AXIS_ID
 
 _T = TypeVar("_T")
 PerAxis = Mapping[AxisId, _T]

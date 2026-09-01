@@ -39,7 +39,7 @@ class Block(BlockMeta):
             halo = self.halo.get(a, Halo(0, 0))
             if s != (s_exp := halo.left + (slice_.stop - slice_.start) + halo.right):
                 raise ValueError(
-                    f"Block data shape does not match block meta information for axis {a}: data size is {s} but expected {s_exp} (halo: {halo}, slice: {slice_})",
+                    f"Block data shape does not match block meta information for {a} axis: data size is {s} but expected {s_exp} (halo: {halo}, slice: {slice_})",
                 )
 
     @classmethod

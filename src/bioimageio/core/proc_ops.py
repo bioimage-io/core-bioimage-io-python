@@ -25,7 +25,7 @@ from bioimageio.spec.model.v0_5 import (
 from ._op_base import BlockwiseOperator, SamplewiseOperator, SimpleOperator
 from ._ops_cellpose import CellposeFlowDynamics
 from ._ops_stardist import StardistPostprocessing2D, StardistPostprocessing3D
-from .axis import AxisId
+from .axis import CHANNEL_AXIS_ID, AxisId
 from .common import DTypeStr, MemberId
 from .digest_spec import get_member_id, import_callable
 from .sample import Sample, SampleBlock
@@ -593,8 +593,6 @@ class Sigmoid(SimpleOperator):
     def get_descr(self):
         return v0_5.SigmoidDescr()
 
-
-CHANNEL_AXIS_ID = AxisId("channel")
 
 @dataclass
 class Softmax(SimpleOperator):

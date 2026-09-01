@@ -33,7 +33,7 @@ from bioimageio.spec.model.v0_5 import (
 )
 from bioimageio.spec.utils import load_array
 
-from .axis import AxisId, AxisInfo, AxisLike, PerAxis
+from .axis import CHANNEL_AXIS_ID, AxisId, AxisInfo, AxisLike, PerAxis
 from .block_meta import split_multiple_shapes_into_blocks
 from .common import Halo, MemberId, PerMember, SampleId, TotalNumberOfBlocks
 from .io import load_tensor_and_return_unstacked_dim_order
@@ -365,10 +365,65 @@ def get_block_transform(
         t.id: {a.id: a.scale for a in t.axes}
         for t in chain(model.inputs, model.outputs)
     }
+    # a common inaccuracy in bioimage.io model specs is to define a fixed output size equal to a correspoding fixed input size, while the output size should actually be a size reference to the fixed input size to encode the relationship between input and output sizes. The following dict is used to patch such cases, by replacing the fixed output size with a size reference to the corresponding fixed input size.
+    patched_size_ref_for_fixed_output_size_matching_fixed_input_size: dict[
+        MemberId, dict[AxisId, v0_5.SizeReference]
+    ] = {}
+    inconsistet_outputs: set[MemberId] = set()
+    for out in model.outputs:
+        for a in out.axes:
+            if not isinstance(a.size, int):
+                continue
+
+            for ipt in model.inputs:
+                for ia in ipt.axes:
+                    if (
+                        a.type not in ("space", "time")
+                        or a.type != ia.type
+                        or a.id != ia.id
+                        or a.size != ia.size
+                        or a.scale != ia.scale
+                        or a.unit != ia.unit
+                    ):
+                        continue
+
+                    previous_size_refs = list(
+                        patched_size_ref_for_fixed_output_size_matching_fixed_input_size.get(
+                            out.id, {}
+                        ).values()
+                    )
+                    if previous_size_refs and ipt.id != previous_size_refs[0].tensor_id:
+                        inconsistet_outputs.add(out.id)
+                    else:
+                        patched_size_ref_for_fixed_output_size_matching_fixed_input_size.setdefault(
+                            out.id, {}
+                        )[a.id] = v0_5.SizeReference(tensor_id=ipt.id, axis_id=ia.id)
+
+    # remove inconsistent outputs from the patch dict
+    patched_size_ref_for_fixed_output_size_matching_fixed_input_size = {
+        m: {a: sr for a, sr in srs.items()}
+        for m, srs in patched_size_ref_for_fixed_output_size_matching_fixed_input_size.items()
+        if m not in inconsistet_outputs
+    }
+    if patched_size_ref_for_fixed_output_size_matching_fixed_input_size:
+        logger.warning(
+            "Patched output size references: {}\nThe fixed output sizes were likely intended to be defined as size references to the corresponding fixed input sizes.",
+            {
+                (k, kk): (sr.tensor_id, sr.axis_id)
+                for k, v in patched_size_ref_for_fixed_output_size_matching_fixed_input_size.items()
+                for kk, sr in v.items()
+            },
+        )
+
     for out in model.outputs:
         new_axes: dict[AxisId, LinearSampleAxisTransform | int] = {}
         for a in out.axes:
-            if a.size is None:
+            a_size = (
+                patched_size_ref_for_fixed_output_size_matching_fixed_input_size.get(
+                    out.id, {}
+                ).get(a.id, a.size)
+            )
+            if a_size is None:
                 assert a.type == "batch"
                 if batch_axis_trf is None:
                     raise ValueError(
@@ -376,34 +431,32 @@ def get_block_transform(
                         + f" '{out.id}' has one."
                     )
                 s = batch_axis_trf
-            elif isinstance(a.size, int):
-                s = a.size
-            elif isinstance(a.size, v0_5.DataDependentSize):
+            elif isinstance(a_size, int):
+                s = a_size
+            elif isinstance(a_size, v0_5.DataDependentSize):
                 s = -1
-            elif isinstance(a.size, v0_5.SizeReference):
+            elif isinstance(a_size, v0_5.SizeReference):
                 s = LinearSampleAxisTransform(
-                    axis=a.size.axis_id,
-                    scale=axis_scales[a.size.tensor_id][a.size.axis_id] / a.scale,
-                    offset=a.size.offset,
-                    member=a.size.tensor_id,
+                    axis=a_size.axis_id,
+                    scale=axis_scales[a_size.tensor_id][a_size.axis_id] / a.scale,
+                    offset=a_size.offset,
+                    member=a_size.tensor_id,
                 )
             else:
-                assert_never(a.size)
+                assert_never(a_size)
 
             new_axes[a.id] = s
 
         # account for postprocessing that changes the nubmer of output channels by
         # overwriting described output shape by the intermediate output shape
-        c = AxisId("channel")
-        if c not in new_axes:
-            continue
-        for post in out.postprocessing:
-            if post.id == "cellpose_flow_dynamics":
-                new_axes[c] = 3
-                break
-            elif post.id == "stardist_postprocessing":
-                new_axes[c] = post.kwargs.n_rays + 1
-                break
+        if CHANNEL_AXIS_ID in new_axes:
+            for post in out.postprocessing:
+                if post.id == "cellpose_flow_dynamics":
+                    new_axes[CHANNEL_AXIS_ID] = 3
+                    break
+                elif post.id == "stardist_postprocessing":
+                    new_axes[CHANNEL_AXIS_ID] = post.kwargs.n_rays + 1
+                    break
 
         ret[out.id] = new_axes
 
