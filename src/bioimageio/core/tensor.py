@@ -14,7 +14,6 @@ from typing import (
 )
 
 import numpy as np
-import pandas as pd
 import xarray as xr
 from loguru import logger
 from numpy.typing import DTypeLike, NDArray
@@ -24,6 +23,7 @@ from bioimageio.spec.model import v0_5
 from bioimageio.spec.model.v0_5 import SpaceUnit, TimeUnit
 
 from ._magic_tensor_ops import MagicTensorOpsMixin
+from ._multi_index import MultiIndex
 from .axis import BATCH_AXIS_ID, AxisId, AxisInfo, AxisLike, PerAxis
 from .common import (
     CropWhere,
@@ -637,18 +637,18 @@ class Tensor(MagicTensorOpsMixin):
         return self.__class__.from_xarray(self._data.sum(dim=dim))
 
     @property
-    def batch_multi_index(self) -> pd.MultiIndex | None:
+    def batch_multi_index(self) -> MultiIndex | None:
         """Return the batch multi-index if available, otherwise None."""
         if BATCH_AXIS_ID not in self.dims:
             return None
 
         idx = self._data.indexes.get(BATCH_AXIS_ID)  # pyright: ignore[reportUnknownVariableType]
-        if not isinstance(idx, pd.MultiIndex):
+        if not isinstance(idx, MultiIndex):
             return None
 
         return idx
 
-    def assign_batch_multi_index(self, multi_index: pd.MultiIndex) -> Self:
+    def assign_batch_multi_index(self, multi_index: MultiIndex) -> Self:
         """Set the batch multi-index for this tensor.
 
         Args:
@@ -659,12 +659,26 @@ class Tensor(MagicTensorOpsMixin):
                 "Cannot set batch multi-index on a tensor without a 'batch' axis."
             )
 
-        return self.__class__.from_xarray(
-            self._data.assign_coords({BATCH_AXIS_ID: multi_index})
+        # # TODO: check if we really need to create/assign coordinates object
+        # alternatively create new multi-index: self._data.set_xindex(multi_index.names)
+        data = self._data.drop_vars(  # pyright: ignore[reportUnknownVariableType]
+            list(multi_index.names) + [BATCH_AXIS_ID], errors="ignore"
         )
+        assert isinstance(data, xr.DataArray)
+        mindex_coords = xr.Coordinates.from_pandas_multiindex(  # pyright: ignore[reportUnknownVariableType]
+            multi_index, BATCH_AXIS_ID
+        )
+        assert isinstance(mindex_coords, xr.Coordinates)
+        data = data.assign_coords(mindex_coords)  # pyright: ignore[reportUnknownVariableType]
+        assert isinstance(data, xr.DataArray)
+
+        return self.__class__.from_xarray(data)
 
     def unstack_batch_multi_index(
-        self, *, errors: Literal["raise", "warn", "ignore"] = "raise"
+        self,
+        *,
+        errors: Literal["raise", "warn", "ignore"] = "raise",
+        unstacked_dim_order: Sequence[AxisId] | None = None,
     ) -> Self:
         """Unstack the batch multi-index of this tensor.
 
@@ -685,7 +699,7 @@ class Tensor(MagicTensorOpsMixin):
             else:
                 assert_never(errors)
 
-        if not isinstance(self._data.indexes.get(BATCH_AXIS_ID), pd.MultiIndex):
+        if not isinstance(self._data.indexes.get(BATCH_AXIS_ID), MultiIndex):
             error_msg = "Cannot unstack batch multi-index on a tensor whose 'batch' axis does not have a MultiIndex."
             if errors == "raise":
                 raise ValueError(error_msg)
@@ -700,21 +714,29 @@ class Tensor(MagicTensorOpsMixin):
         old_dims = self.dims
         array = self._data.unstack(BATCH_AXIS_ID)
         assert isinstance(array, xr.DataArray)
-        added_dims = [AxisId(d) for d in array.dims if d not in self._data.dims]
+        added_dims = [
+            BATCH_AXIS_ID if d == "original_batch" else AxisId(d)
+            for d in array.dims
+            if d not in self._data.dims
+        ]
 
-        # restore expected axis order, replace batch dim with added dims
-        new_dims: list[AxisId] = []
-        for d in old_dims:
-            if d in array.dims:
-                new_dims.append(d)
-            elif d == BATCH_AXIS_ID:
-                new_dims.extend(added_dims)
-            else:
-                raise ValueError(f"Expected axis {d} not found in unstacked array.")
+        if unstacked_dim_order is None:
+            # restore expected axis order, replace batch dim with added dims
+            new_dims: Sequence[AxisId] = []
+            for d in old_dims:
+                if d in array.dims:
+                    new_dims.append(d)
+                elif d == BATCH_AXIS_ID:
+                    new_dims.extend(added_dims)
+                else:
+                    raise ValueError(f"Expected axis {d} not found in unstacked array.")
+        else:
+            new_dims = unstacked_dim_order
 
-        array = array.transpose(*new_dims)
         if AxisId("original_batch") in array.dims:
             array = array.rename({AxisId("original_batch"): BATCH_AXIS_ID})
+
+        array = array.transpose(*new_dims)
 
         assert isinstance(array, xr.DataArray)
         return self.__class__.from_xarray(array)
@@ -747,6 +769,22 @@ class Tensor(MagicTensorOpsMixin):
                 If "unstack", any missing dimensions will be unstacked from the batch dimension. For this option a batch dimension with a multi-index must be present from previous stacking operations or assigned by `Tensor.assign_batch_multi_index()`.
                 If "unstack_or_expand", any missing dimensions will be unstacked from the batch dimension if it has a multi-index, otherwise they will be added as singleton dimensions.
         """
+        transposed, _dim_order = self.transpose_and_return_unstacked_dim_order(
+            axes, extra_dims=extra_dims, missing_dims=missing_dims
+        )
+        return transposed
+
+    def transpose_and_return_unstacked_dim_order(
+        self,
+        axes: Sequence[AxisLike],
+        *,
+        extra_dims: Literal[
+            "raise", "squeeze", "stack", "squeeze_or_stack"
+        ] = "squeeze",
+        missing_dims: Literal[
+            "raise", "expand", "unstack", "unstack_or_expand"
+        ] = "unstack_or_expand",
+    ) -> tuple[Self, list[AxisId] | None]:
         axes = [AxisInfo.create(a).id for a in axes]
         array = self._data
 
@@ -763,7 +801,7 @@ class Tensor(MagicTensorOpsMixin):
                     raise ValueError(unstack_error)
 
             if lets_unstack and not isinstance(
-                array.indexes.get(BATCH_AXIS_ID), pd.MultiIndex
+                array.indexes.get(BATCH_AXIS_ID), MultiIndex
             ):
                 lets_unstack = False
                 unstack_error = f"Missing dimensions {unhandled_missing_dims} found, but 'batch' axis does not have a MultiIndex. Cannot unstack missing dimensions from non-multi-index batch."
@@ -794,6 +832,7 @@ class Tensor(MagicTensorOpsMixin):
             raise ValueError(f"Missing dimensions {unhandled_missing_dims}.")
 
         assert isinstance(array, xr.DataArray)
+        unstacked_dim_order = None
         unhandled_extra_dims = [a for a in array.dims if a not in axes]
 
         if unhandled_extra_dims and extra_dims == "raise":
@@ -803,6 +842,7 @@ class Tensor(MagicTensorOpsMixin):
             for d in list(unhandled_extra_dims):
                 if array.sizes[d] == 1:
                     array = array.squeeze(d)
+                    assert isinstance(array, xr.DataArray)
                     unhandled_extra_dims.remove(d)
                 elif extra_dims == "squeeze":
                     raise ValueError(
@@ -816,6 +856,7 @@ class Tensor(MagicTensorOpsMixin):
                     + " Cannot stack extra dimensions to batch."
                 )
 
+            unstacked_dim_order = [AxisId(d) for d in array.dims]
             if BATCH_AXIS_ID in array.dims:
                 array = array.rename({BATCH_AXIS_ID: AxisId("original_batch")})
                 unhandled_extra_dims.insert(0, AxisId("original_batch"))
@@ -829,7 +870,7 @@ class Tensor(MagicTensorOpsMixin):
             )
 
         # transpose to the correct axis order
-        return self.__class__.from_xarray(array.transpose(*axes))
+        return self.__class__.from_xarray(array.transpose(*axes)), unstacked_dim_order
 
     def var(self, dim: AxisId | Sequence[AxisId] | None = None) -> Self:
         return self.__class__.from_xarray(self._data.var(dim=dim))

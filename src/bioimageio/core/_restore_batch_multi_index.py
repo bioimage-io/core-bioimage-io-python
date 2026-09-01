@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import pandas as pd
-
+from ._multi_index import MultiIndex
 from .axis import AxisId
 from .common import PerMember
 from .tensor import Tensor
@@ -16,7 +15,7 @@ def restore_batch_multi_index(
             continue
 
         idx = tensor.data.indexes.get(AxisId("batch"))  # pyright: ignore[reportUnknownVariableType]
-        if isinstance(idx, pd.MultiIndex):
+        if isinstance(idx, MultiIndex):
             outputs = {
                 k: v.assign_batch_multi_index(idx)
                 if v is not None and AxisId("batch") in v.dims

@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Literal, NamedTuple
 
 import numpy as np
-import pandas as pd
 import pytest
 import xarray as xr
 from typing_extensions import assert_never
@@ -174,6 +173,8 @@ def test_predict_z_as_batch(unet2d_nuclei_broad_model: str):
 def test_transpose_sample_for_model_stacks_extra_z_to_batch(
     unet2d_nuclei_broad_model: str,
 ):
+    from bioimageio.core._multi_index import MultiIndex
+
     model = load_model(
         unet2d_nuclei_broad_model, perform_io_checks=False, format_version="latest"
     )
@@ -193,4 +194,4 @@ def test_transpose_sample_for_model_stacks_extra_z_to_batch(
     raw = transposed.members[MemberId("raw")]
     assert raw.dims == (AxisId("batch"), AxisId("channel"), AxisId("y"), AxisId("x"))
     assert raw.sizes[AxisId("batch")] == 2
-    assert isinstance(raw.data.indexes[AxisId("batch")], pd.MultiIndex)
+    assert isinstance(raw.data.indexes[AxisId("batch")], MultiIndex)

@@ -8,7 +8,7 @@ from typing import Generic, Union
 from typing_extensions import TypeVar, assert_never
 
 from ._restore_batch_multi_index import restore_batch_multi_index
-from .axis import BATCH_AXIS_ID, PerAxis
+from .axis import PerAxis
 from .block import Block
 from .common import MemberId
 from .sample import Sample, SampleBlock, SampleBlockWithOrigin
@@ -72,28 +72,28 @@ class SimpleOperator(BlockwiseOperator):
             sample.members[self.output] = output_tensor
         elif isinstance(sample, SampleBlock):
             b = sample.blocks[self.input]
-            sample_shape_batch_unstacked = {
-                a: s
-                for a, s in sample.sample_shape_batch_unstacked[self.input].items()
-                if a not in sample.sample_shape[self.input]
-            }
-            sample_shape = self.get_output_shape(sample.sample_shape[self.input])
-            for a, s in sample_shape.items():
-                if a == BATCH_AXIS_ID:
-                    continue
-                elif a in sample_shape_batch_unstacked:
-                    raise ValueError(
-                        f"Output axis {a} already exists in sample_shape_batch_unstacked"
-                    )
-
-                sample_shape_batch_unstacked[a] = s
+            output_shape = self.get_output_shape(sample.sample_shape[self.input])
+            if (
+                b.unstacked_dim_order is None
+                or b.unstacked_batch_shape is None
+                or any(a not in b.unstacked_dim_order for a in output_shape)
+                or any(a not in b.unstacked_dim_order for a in b.unstacked_batch_shape)
+            ):
+                unstacked_dims = None
+            else:
+                unstacked_dims = [
+                    d
+                    for d in b.unstacked_dim_order
+                    if d in output_shape or d in b.unstacked_batch_shape
+                ]
 
             sample.blocks[self.output] = Block(
-                sample_shape=sample_shape,
-                sample_shape_batch_unstacked=sample_shape_batch_unstacked,
+                sample_shape=output_shape,
+                unstacked_batch_shape=sample.unstacked_batch_shape,
+                unstacked_dim_order=unstacked_dims,
                 data=output_tensor,
                 inner_slice=b.inner_slice,
-                inner_slice_batch_unstacked=b.inner_slice_batch_unstacked,
+                unstacked_batch_slice=b.unstacked_batch_slice,
                 halo=b.halo,
                 block_index=b.block_index,
                 blocks_in_sample=b.blocks_in_sample,

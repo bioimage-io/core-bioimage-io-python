@@ -6,16 +6,15 @@ from typing import (
     Any,
 )
 
-import pandas as pd
 from typing_extensions import Self
 
+from ._multi_index import MultiIndex
 from .axis import BATCH_AXIS_ID, AxisId, PerAxis
 from .block_meta import BlockMeta, LinearAxisTransform, split_shape_into_blocks
 from .common import (
     Halo,
     HaloLike,
     PadMode,
-    SliceInfo,
     TotalNumberOfBlocks,
 )
 from .tensor import Tensor
@@ -51,36 +50,27 @@ class Block(BlockMeta):
         *,
         pad_mode: PadMode,
     ) -> Self:
-        if (
-            block.inner_slice_batch_unstacked == block.inner_slice
-            and block.sample_shape == block.sample_shape_batch_unstacked
-            and isinstance(
-                idx := sample_member.data.indexes.get(BATCH_AXIS_ID),  # pyright: ignore[reportUnknownVariableType]
-                pd.MultiIndex,
-            )
-            and block.inner_slice[BATCH_AXIS_ID] == block.outer_slice[BATCH_AXIS_ID]
-        ):
-            # if sample_member has a multi index for the batch axis, we keep track of the unstacked axes of this block
-            # start with inner_slice without the batch axis, and add the unstacked slice for each axis in the multi index
-            sample_shape_batch_unstacked = dict(block.sample_shape)
-            inner_slice_batch_unstacked = dict(block.inner_slice)
-            b_slice = block.inner_slice[BATCH_AXIS_ID]
-            for a, s, c in zip(idx.names, idx.levshape, idx.codes):
-                axis = BATCH_AXIS_ID if a == "original_batch" else AxisId(a)
-                sample_shape_batch_unstacked[axis] = s
-                codes = c[b_slice.start : b_slice.stop]
-                si = SliceInfo(int(codes.min()), int(codes.max()) + 1)
-                inner_slice_batch_unstacked[axis] = si
-        else:
-            inner_slice_batch_unstacked = block.inner_slice_batch_unstacked
-            sample_shape_batch_unstacked = block.sample_shape_batch_unstacked
+        block_data = sample_member[block.outer_slice]
+        padded_block_data = block_data.pad(block.padding, pad_mode)
+
+        if block.unstacked_batch_slice is not None:
+            if not isinstance(
+                idx := block_data.data.indexes.get(BATCH_AXIS_ID),  # pyright: ignore[reportUnknownVariableType]
+                MultiIndex,
+            ):
+                raise ValueError("Expected a MultiIndex for the batch axis")
+
+            padded_block_data = padded_block_data.assign_batch_multi_index(idx)
+            assert block.unstacked_batch_shape is not None
+            assert block.inner_slice[BATCH_AXIS_ID] == block.outer_slice[BATCH_AXIS_ID]
 
         return cls(
-            data=sample_member[block.outer_slice].pad(block.padding, pad_mode),
+            data=padded_block_data,
             sample_shape=sample_member.tagged_shape,
-            sample_shape_batch_unstacked=sample_shape_batch_unstacked,
+            unstacked_batch_shape=block.unstacked_batch_shape,
+            unstacked_dim_order=block.unstacked_dim_order,
             inner_slice=block.inner_slice,
-            inner_slice_batch_unstacked=inner_slice_batch_unstacked,
+            unstacked_batch_slice=block.unstacked_batch_slice,
             halo=block.halo,
             block_index=block.block_index,
             blocks_in_sample=block.blocks_in_sample,
@@ -91,26 +81,12 @@ class Block(BlockMeta):
 
     @classmethod
     def from_meta(cls, meta: BlockMeta, data: Tensor) -> Self:
-        sample_shape = {
-            k: data.tagged_shape[k] if v == -1 else v
-            for k, v in meta.sample_shape.items()
-        }
-        sample_shape_batch_unstacked = {
-            k: data.tagged_shape[k] if v == -1 else v
-            for k, v in meta.sample_shape_batch_unstacked.items()
-        }
         return cls(
-            sample_shape=sample_shape,
-            sample_shape_batch_unstacked=sample_shape_batch_unstacked,
-            inner_slice={
-                k: (
-                    SliceInfo(start=v.start, stop=data.tagged_shape[k])
-                    if v.stop == -1
-                    else v
-                )
-                for k, v in meta.inner_slice.items()
-            },
-            inner_slice_batch_unstacked=meta.inner_slice_batch_unstacked,
+            sample_shape=meta.sample_shape,
+            unstacked_batch_shape=meta.unstacked_batch_shape,
+            unstacked_dim_order=meta.unstacked_dim_order,
+            inner_slice=meta.inner_slice,
+            unstacked_batch_slice=meta.unstacked_batch_slice,
             halo=meta.halo,
             block_index=meta.block_index,
             blocks_in_sample=meta.blocks_in_sample,
@@ -120,9 +96,10 @@ class Block(BlockMeta):
     def get_meta(self) -> BlockMeta:
         return BlockMeta(
             sample_shape=self.sample_shape,
-            sample_shape_batch_unstacked=self.sample_shape_batch_unstacked,
+            unstacked_batch_shape=self.unstacked_batch_shape,
+            unstacked_dim_order=self.unstacked_dim_order,
             inner_slice=self.inner_slice,
-            inner_slice_batch_unstacked=self.inner_slice_batch_unstacked,
+            unstacked_batch_slice=self.unstacked_batch_slice,
             halo=self.halo,
             block_index=self.block_index,
             blocks_in_sample=self.blocks_in_sample,
@@ -138,8 +115,21 @@ def split_tensor_into_blocks(
     pad_mode: PadMode,
 ) -> tuple[TotalNumberOfBlocks, Generator[Block, Any, None]]:
     """divide a sample tensor into tensor blocks."""
+    if (idx := tensor.batch_multi_index) is None:
+        unstacked_batch_shape = None
+    else:
+        unstacked_batch_shape = {
+            BATCH_AXIS_ID if a == "original_batch" else AxisId(a): s
+            for a, s in zip(idx.names, idx.levshape)
+        }
+
     n_blocks, block_gen = split_shape_into_blocks(
-        tensor.tagged_shape, block_shape=block_shape, halo=halo, stride=stride
+        tensor.tagged_shape,
+        unstacked_dim_order=None,
+        unstacked_batch_shape=unstacked_batch_shape,
+        block_shape=block_shape,
+        halo=halo,
+        stride=stride,
     )
     return n_blocks, _block_generator(tensor, block_gen, pad_mode=pad_mode)
 

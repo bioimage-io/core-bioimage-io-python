@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import itertools
-from collections.abc import Collection, Generator, Iterable
+from collections.abc import Collection, Generator, Iterable, Sequence
 from dataclasses import dataclass
 from functools import cached_property
 from math import floor, prod
@@ -16,6 +16,7 @@ from loguru import logger
 from typing_extensions import Self
 
 from ._axis_annotations import PerAxisAnno
+from ._multi_index import MultiIndex
 from .axis import BATCH_AXIS_ID, AxisId, PerAxis
 from .common import (
     BlockIndex,
@@ -76,14 +77,17 @@ class BlockMeta:
     sample_shape: PerAxisAnno[int]
     """the axis sizes of the whole (unblocked) sample"""
 
-    sample_shape_batch_unstacked: PerAxisAnno[int]
-    """the axis sizes of the whole (unblocked) sample, with unstacked batch axes (if any)"""
+    unstacked_batch_shape: PerAxisAnno[int] | None
+    """the axis sizes of the stacked axis (that make up the batch axis)"""
+
+    unstacked_dim_order: Sequence[AxisId] | None
+    """The order of the fully unstacked tensor, if the sample has a multi-index"""
 
     inner_slice: PerAxisAnno[SliceInfo]
     """inner region (without halo) wrt the sample"""
 
-    inner_slice_batch_unstacked: PerAxisAnno[SliceInfo]
-    """inner slice (without halo) wrt the sample unstacked along the batch axis (if present)"""
+    unstacked_batch_slice: PerAxisAnno[SliceInfo] | None
+    """inner/outer slice along the unstacked batch dimension wrt the (unstacked) sample"""
 
     halo: PerAxisAnno[Halo]
     """halo enlarging the inner region to the block's sizes"""
@@ -213,39 +217,40 @@ class BlockMeta:
 
     def get_transformed(self, new_axes: PerAxis[LinearAxisTransform | int]) -> Self:
         assert BATCH_AXIS_ID not in new_axes, "cannot transform the batch axis"
-        unstacked_dims = {
-            k for k in self.inner_slice_batch_unstacked if k not in self.inner_slice
+
+        sample_shape = {
+            a: (
+                trf
+                if isinstance(trf, int)
+                else trf.compute(self.sample_shape[trf.axis])
+            )
+            for a, trf in new_axes.items()
         }
+        assert sample_shape.get(BATCH_AXIS_ID) == self.sample_shape.get(
+            BATCH_AXIS_ID
+        ), "block transform must not change the batch axis size"
+
+        inner_slice = {
+            a: (
+                SliceInfo(0, trf)
+                if isinstance(trf, int)
+                else SliceInfo(
+                    trf.compute(self.inner_slice[trf.axis].start),
+                    trf.compute(self.inner_slice[trf.axis].stop),
+                )
+            )
+            for a, trf in new_axes.items()
+        }
+        assert inner_slice.get(BATCH_AXIS_ID) == self.inner_slice.get(BATCH_AXIS_ID), (
+            "block transform must not change the batch axis slice"
+        )
 
         return self.__class__(
-            sample_shape=(
-                sample_shape := {
-                    a: (
-                        trf
-                        if isinstance(trf, int)
-                        else trf.compute(self.sample_shape[trf.axis])
-                    )
-                    for a, trf in new_axes.items()
-                }
-            ),
-            sample_shape_batch_unstacked=sample_shape,
-            inner_slice=(
-                transformed_inner_slice := {
-                    a: (
-                        SliceInfo(0, trf)
-                        if isinstance(trf, int)
-                        else SliceInfo(
-                            trf.compute(self.inner_slice[trf.axis].start),
-                            trf.compute(self.inner_slice[trf.axis].stop),
-                        )
-                    )
-                    for a, trf in new_axes.items()
-                }
-            ),
-            inner_slice_batch_unstacked={
-                **{k: self.inner_slice_batch_unstacked[k] for k in unstacked_dims},
-                **transformed_inner_slice,
-            },
+            sample_shape=sample_shape,
+            unstacked_batch_shape=self.unstacked_batch_shape,
+            unstacked_dim_order=self.unstacked_dim_order,
+            inner_slice=inner_slice,
+            unstacked_batch_slice=self.unstacked_batch_slice,
             halo={
                 a: (
                     Halo(0, 0)
@@ -261,10 +266,12 @@ class BlockMeta:
 
 def split_shape_into_blocks(
     shape: PerAxis[int],
-    shape_unstacked: PerAxis[int],
+    *,
+    unstacked_batch_shape: PerAxis[int] | None,
     block_shape: PerAxis[int],
     halo: PerAxis[HaloLike],
     stride: PerAxis[int] | None = None,
+    unstacked_dim_order: Sequence[AxisId] | None,
 ) -> tuple[TotalNumberOfBlocks, Generator[BlockMeta, Any, None]]:
     unknown_axes = [a for a in block_shape if a not in shape and block_shape[a] != 1]
     if unknown_axes:
@@ -297,8 +304,9 @@ def split_shape_into_blocks(
 
     return n_blocks, _block_meta_generator(
         shape,
-        shape_unstacked,
+        unstacked_batch_shape,
         blocks_in_sample=n_blocks,
+        unstacked_dim_order=unstacked_dim_order,
         inner_1d_slices=inner_1d_slices,
         halo=halo,
     )
@@ -306,8 +314,9 @@ def split_shape_into_blocks(
 
 def _block_meta_generator(
     sample_shape: PerAxis[int],
-    shape_unstacked: PerAxis[int],
+    unstacked_batch_shape: PerAxis[int] | None,
     *,
+    unstacked_dim_order: Sequence[AxisId] | None,
     blocks_in_sample: int,
     inner_1d_slices: dict[AxisId, list[SliceInfo]],
     halo: PerAxis[HaloLike],
@@ -315,14 +324,35 @@ def _block_meta_generator(
     assert all(a in sample_shape for a in halo)
 
     halo = {a: Halo.create(halo.get(a, 0)) for a in inner_1d_slices}
+    if unstacked_batch_shape is None:
+        idx: MultiIndex | None = None
+    else:
+        idx = MultiIndex.from_product(  # pyright: ignore[reportUnknownVariableType]
+            [range(unstacked_batch_shape[a]) for a in unstacked_batch_shape],
+            names=list(unstacked_batch_shape),
+        )
+        assert isinstance(idx, MultiIndex)
+
     for i, nd_tile in enumerate(itertools.product(*inner_1d_slices.values())):
-        inner_slice: PerAxis[SliceInfo] = dict(zip(inner_1d_slices, nd_tile))
+        inner_1d_slices[BATCH_AXIS_ID]
+        inner_slice = dict(zip(inner_1d_slices, nd_tile))
+        if idx is None:
+            unstacked_batch_slice = None
+        else:
+            batch_slice = inner_slice[BATCH_AXIS_ID]
+            unstacked_batch_slice: dict[AxisId, SliceInfo] | None = {}
+            for a, c in zip(idx.names, idx.codes):
+                a = BATCH_AXIS_ID if a == "original_batch" else AxisId(a)
+                a_start = int(c[batch_slice.start])
+                a_stop = int(c[batch_slice.stop - 1]) + 1
+                unstacked_batch_slice[a] = SliceInfo(a_start, a_stop)
 
         yield BlockMeta(
             sample_shape=sample_shape,
-            sample_shape_batch_unstacked=shape_unstacked,
+            unstacked_batch_shape=unstacked_batch_shape,
+            unstacked_dim_order=unstacked_dim_order,
             inner_slice=inner_slice,
-            inner_slice_batch_unstacked=inner_slice,
+            unstacked_batch_slice=unstacked_batch_slice,
             halo=halo,
             block_index=i,
             blocks_in_sample=blocks_in_sample,
@@ -333,6 +363,8 @@ def split_multiple_shapes_into_blocks(
     shapes: PerMember[PerAxis[int]],
     block_shapes: PerMember[PerAxis[int]],
     *,
+    unstacked_batch_shape: PerAxis[int] | None,
+    unstacked_dim_order: PerMember[Sequence[AxisId] | None] | None,
     halo: PerMember[PerAxis[HaloLike]],
     strides: PerMember[PerAxis[int]] | None = None,
     broadcast: bool = False,
@@ -371,7 +403,10 @@ def split_multiple_shapes_into_blocks(
     for t in block_shapes:
         n_blocks[t], blocks[t] = split_shape_into_blocks(
             shape=shapes[t],
-            shape_unstacked=
+            unstacked_batch_shape=unstacked_batch_shape,
+            unstacked_dim_order=unstacked_dim_order[t]
+            if unstacked_dim_order is not None
+            else None,
             block_shape=block_shapes[t],
             halo=halo.get(t, {}),
             stride=strides.get(t),

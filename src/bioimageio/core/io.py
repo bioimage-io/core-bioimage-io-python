@@ -5,6 +5,7 @@ import os
 import warnings
 import zipfile
 from collections.abc import Iterable, Mapping, Sequence
+from concurrent.futures import ThreadPoolExecutor
 from contextlib import nullcontext
 from io import BytesIO, TextIOWrapper
 from itertools import chain
@@ -58,7 +59,7 @@ from .axis import (
     PerAxis,
     single_letter_dims_if_possible,
 )
-from .common import PerMember, SliceInfo
+from .common import MemberId, PerMember, SliceInfo
 from .sample import Sample, SampleBlock
 from .stat_measures import DatasetMeasure, MeasureValue, SampleMeasure, Stat
 from .tensor import Tensor
@@ -102,9 +103,37 @@ def load_tensor(
     """Load an image tensor
 
     Args:
+        source: The source of the image data.
+        axes: The (desired) axes of the image data.
         io_lib: library to use for loading the image.
         Defaults to trying various libraries depending on file extension.
 
+    Returns:
+        The loaded tensor.
+    """
+    tensor, _unstacked_dim_order = load_tensor_and_return_unstacked_dim_order(
+        source, axes=axes, io_lib=io_lib
+    )
+    return tensor
+
+
+def load_tensor_and_return_unstacked_dim_order(
+    source: FileDescr | PermissiveFileSource | ZipPath,
+    /,
+    axes: Sequence[AxisLike] | None = None,
+    io_lib: IO_Lib | None = None,
+) -> tuple[Tensor, Sequence[AxisId] | None]:
+    """Load an image tensor
+
+    Args:
+        source: The source of the image data.
+        axes: The (desired) axes of the image data.
+        io_lib: library to use for loading the image.
+        Defaults to trying various libraries depending on file extension.
+
+    Returns:
+        A tuple of the loaded tensor and the unstacked dimension order if the initially loaded
+        tensor had extra dimensions that were stacked to a multi-index batch dimension.
     """
     file_source, extensions, internal_path = _interprete_tensor_source(source)
     if io_lib is None:
@@ -113,7 +142,9 @@ def load_tensor(
         exceptions: list[Exception] = []
         for auto_io_lib in try_io_libs:
             try:
-                return load_tensor(source, axes=axes, io_lib=auto_io_lib)
+                return load_tensor_and_return_unstacked_dim_order(
+                    source, axes=axes, io_lib=auto_io_lib
+                )
             except Exception as e:
                 exceptions.append(e)
                 logger.opt(exception=e).warning(
@@ -162,12 +193,15 @@ def load_tensor(
     else:
         assert_never(io_lib)
 
-    if axes is not None:
-        t = t.transpose(
+    if axes is None:
+        unstacked_dim_order = None
+    else:
+        t, unstacked_dim_order = t.transpose_and_return_unstacked_dim_order(
             axes, extra_dims="squeeze_or_stack", missing_dims="unstack_or_expand"
         )
 
-    return t
+    logger.debug("Loaded tensor {} with {}", t.tagged_shape, io_lib)
+    return t, unstacked_dim_order
 
 
 def _select_io_libs_based_on_extension(
@@ -302,13 +336,12 @@ def _load_tensor_clearscale(source: FileDescr | PermissiveFileSource) -> Tensor:
             "clearscale: Loading from zip files is not implemented."
         )
 
-    logger.debug("loading tensor from {} with clearscale", source)
+    logger.debug("loading tensor from {} with clearscale+zarr-python", source)
     array, ms = open_zarr_multiscale_array(
         source.as_posix() if isinstance(source, Path) else str(source)
     )
     image = da.from_zarr(array)
     axes = tuple(str(a) for a in ms.axes())
-
     return Tensor.from_xarray(xr.DataArray(image, dims=axes))
 
 
@@ -341,8 +374,8 @@ def _load_tensor_tifffile(source: FileDescr | PermissiveFileSource) -> Tensor:
     with ctxt as f:
         assert not isinstance(f, TextIOWrapper)
 
-        tif = tifffile.TiffFile(f, name=name)
-        try:
+        with tifffile.TiffFile(f, name=name) as tif:  # pyright: ignore[reportUnknownVariableType]
+            assert isinstance(tif, tifffile.TiffFile)
             xr_data = tif.asxarray()
             page = tif.pages[0]
             if isinstance(page, tifffile.TiffFrame):
@@ -394,9 +427,6 @@ def _load_tensor_tifffile(source: FileDescr | PermissiveFileSource) -> Tensor:
 
             if ome_metadata is None:
                 ome_metadata = OmeMetadata()
-
-        finally:
-            tif.close()
 
     t = Tensor.from_xarray(xr_data)
 
@@ -486,9 +516,22 @@ def _save_tensor_impl(
     if (BATCH_AXIS_ID in tensor.dims) and (not extensions or extensions[-1] != ".npy"):
         if roi_and_tensor_shape is not None:
             roi, tensor_shape = roi_and_tensor_shape
+            if tensor_shape.get(BATCH_AXIS_ID, 0) == 1:
+                # remove singleton batch dimension from tensor shape, roi and the given tensor if present
+                tensor_shape = {
+                    k: v for k, v in tensor_shape.items() if k != BATCH_AXIS_ID
+                }
+                if BATCH_AXIS_ID in tensor.dims:
+                    tensor = tensor.squeeze(BATCH_AXIS_ID)
+                if BATCH_AXIS_ID in roi:
+                    assert (
+                        roi[BATCH_AXIS_ID].start == 0 and roi[BATCH_AXIS_ID].stop == 1
+                    ), roi[BATCH_AXIS_ID]
+                    roi = {k: v for k, v in roi.items() if k != BATCH_AXIS_ID}
+
             if BATCH_AXIS_ID in roi or BATCH_AXIS_ID in tensor_shape:
                 raise NotImplementedError(
-                    "Saving a region of interest (roi) with a batch dimension to non-NPY formats is not supported."
+                    "Saving a region of interest (roi) with a non-singleton batch dimension to non-NPY formats is not supported."
                 )
 
         if tensor.batch_multi_index is not None:
@@ -739,10 +782,35 @@ def _save_tensor_clearscale(
     import dask.array
     import zarr
 
-    logger.debug("Saving tensor to {} with clearscale", path)
+    # we parallelize at a higher level, so here we write single-threaded.
+    _ = zarr.config.set({"threading.max_workers": 1})
+
+    single_letter_dims = single_letter_dims_if_possible(tensor.dims)
+
+    # prefer canonical order for standard volumes
+    canonical_axes = "tczyx"
+    if all(d in canonical_axes for d in single_letter_dims):
+        canonical_single_letter_dims = tuple(
+            a for a in canonical_axes if a in single_letter_dims
+        )
+        canonical_order = tuple(
+            tensor.dims[single_letter_dims.index(a)]
+            for a in canonical_single_letter_dims
+        )
+        if tensor.dims != canonical_order:
+            logger.debug(
+                "Transposing tensor from {} to canonical order {} for saving with clearscale+zarr-python",
+                tensor.dims,
+                canonical_order,
+            )
+            tensor = tensor.transpose(
+                canonical_order, missing_dims="raise", extra_dims="raise"
+            )
+            single_letter_dims = canonical_single_letter_dims
 
     if roi_and_tensor_shape is None:
         roi = (slice(None),) * len(tensor.dims)
+        roi_map = None
         tensor_shape = tensor.tagged_shape
         tensor_shape_tuple = tensor.shape
     else:
@@ -753,11 +821,23 @@ def _save_tensor_clearscale(
         )
         tensor_shape_tuple = tuple(tensor_shape.get(d, 1) for d in tensor.dims)
 
+    logger.debug(
+        "Saving tensor {} to {} with clearscale+zarr-python",
+        tensor.tagged_shape
+        if roi_map is None
+        else [
+            f"{d}[:{s}]"
+            if (r := roi_map.get(d)) is None
+            else f"{d}[{r.start}:{r.stop}]"
+            for d, s in tensor.tagged_shape.items()
+        ],
+        path,
+    )
+
     ZARR_FORMAT: int = int(os.getenv("ZARR_FORMAT", "3"))
     SCALE_KEY = "s0" if internal_path is None else str(internal_path)
-    # Prefer single dimension names for compatibility with bioio
-    dim_map = dict(zip(tensor.dims, single_letter_dims_if_possible(tensor.dims)))
 
+    dim_map = dict(zip(tensor.dims, single_letter_dims))
     multiscale = clearscale.Multiscale(
         {
             SCALE_KEY: clearscale.Scale(
@@ -791,7 +871,7 @@ def _save_tensor_clearscale(
 
     zarr_group = zarr.open_group(
         str(path),
-        mode="w",
+        mode="a",
         zarr_format=ZARR_FORMAT,
         attributes=zarr_attrs,
     )
@@ -802,11 +882,10 @@ def _save_tensor_clearscale(
         dimension_names=None if ZARR_FORMAT == 2 else tuple(dim_map.values()),
         shards=None if ZARR_FORMAT == 2 else "auto",
     )
-    zarr_array = zarr_group.create_array(
+    zarr_array = zarr_group.require_array(
         **create_array_kwargs,
         shape=[tensor_shape[d] for d in tensor.dims],
         dtype=tensor.dtype,
-        write_data=True,
     )
     xr_array = tensor.data
     if dm := {k: v for k, v in dim_map.items() if k != v}:
@@ -1134,7 +1213,10 @@ def _get_file_source_extension_and_internal_path(
 
 
 def save_sample(
-    path: Path | str | PerMember[Path | str], sample: Sample | Iterable[SampleBlock]
+    path: Path | str | PerMember[Path | str],
+    sample: Sample | Iterable[SampleBlock],
+    *,
+    max_workers: int | None = None,
 ) -> None:
     """Save a **sample** to a **path** pattern
     or all sample members in the **path** mapping.
@@ -1162,30 +1244,73 @@ def save_sample(
                 f"path {path} must contain '{{member_id}}' for sample with multiple members {list(first_block.members)}."
             )
 
-    io_lib = None
-    for sample_block in chain([first_block], remaining_blocks):
-        for m, p in path.items():
-            if isinstance(sample_block, Sample):
-                sample_id = sample_block.id
-                t = sample_block.members[m]
-                roi_and_tensor_shape = None
-            else:
-                sample_id = sample_block.sample_id
-                roi_and_tensor_shape = (
-                    sample_block.blocks[m].inner_slice_batch_unstacked
-                    or sample_block.blocks[m].inner_slice,
-                    sample_block.sample_shape[m],
+    def save_block_member(
+        sample_block: Sample | SampleBlock,
+        m: MemberId,
+        p: Path | str,
+        io_lib: IO_Lib | None = None,
+    ) -> IO_Lib:
+        if isinstance(sample_block, Sample):
+            sample_id = sample_block.id
+            t = sample_block.members[m]
+            roi_and_tensor_shape = None
+        else:
+            sample_id = sample_block.sample_id
+            roi = dict(sample_block.blocks[m].inner_slice)
+            t = sample_block.blocks[m].inner_data
+            if (
+                unstacked_batch_slice := sample_block.blocks[m].unstacked_batch_slice
+            ) is not None:
+                _ = roi.pop(BATCH_AXIS_ID, None)
+                assert not any(d in unstacked_batch_slice for d in roi), (
+                    unstacked_batch_slice,
+                    roi,
                 )
-                t = sample_block.blocks[m].inner_data.unstack_batch_multi_index(
-                    errors="ignore"
+                roi = {**unstacked_batch_slice, **roi}
+                t = t.unstack_batch_multi_index(errors="raise")
+                assert t.dims == tuple(roi.keys()), (t.dims, tuple(roi.keys()))
+                assert t.tagged_shape == {a: s.stop - s.start for a, s in roi.items()}
+
+            tensor_shape = dict(sample_block.sample_shape[m])
+            if (
+                unstacked_batch_shape := sample_block.unstacked_batch_shape
+            ) is not None:
+                _ = tensor_shape.pop(BATCH_AXIS_ID, None)
+                assert not any(d in unstacked_batch_shape for d in tensor_shape), (
+                    unstacked_batch_shape,
+                    tensor_shape,
+                )
+                tensor_shape = {**unstacked_batch_shape, **tensor_shape}
+                assert t.dims == tuple(tensor_shape.keys()), (
+                    t.dims,
+                    tuple(tensor_shape.keys()),
                 )
 
-            p_formatted = Path(
-                str(p).format(sample_id=sample_id, member_id=m, input_id=m, output_id=m)
+            assert (
+                unstacked_batch_shape is None
+                and unstacked_batch_slice is None
+                or (
+                    unstacked_batch_shape is not None
+                    and unstacked_batch_slice is not None
+                )
             )
-            io_lib = _save_tensor_impl(
-                p_formatted, t, roi_and_tensor_shape=roi_and_tensor_shape, io_lib=io_lib
-            )
+            roi_and_tensor_shape = (roi, tensor_shape)
+
+        p_formatted = Path(
+            str(p).format(sample_id=sample_id, member_id=m, input_id=m, output_id=m)
+        )
+        return _save_tensor_impl(
+            p_formatted, t, roi_and_tensor_shape=roi_and_tensor_shape, io_lib=io_lib
+        )
+
+    io_lib = None
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        for sample_block in chain([first_block], remaining_blocks):
+            for m, p in path.items():
+                if io_lib is None:
+                    io_lib = save_block_member(sample_block, m, p, io_lib)
+                else:
+                    _ = executor.submit(save_block_member, sample_block, m, p, io_lib)
 
 
 class _StatEntry(BaseModel, frozen=True, arbitrary_types_allowed=True):

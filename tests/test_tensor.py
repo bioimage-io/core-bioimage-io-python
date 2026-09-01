@@ -1,7 +1,6 @@
 from collections.abc import Sequence
 
 import numpy as np
-import pandas as pd
 import pytest
 import xarray as xr
 from xarray.testing import assert_equal  # pyright: ignore[reportUnknownVariableType]
@@ -68,6 +67,8 @@ def test_shape_attributes():
 
 
 def test_transpose_stack_extra_dims_to_batch_creates_multi_index():
+    from bioimageio.core._multi_index import MultiIndex
+
     tensor = Tensor.from_numpy(
         np.arange(2 * 3 * 4).reshape(2, 3, 4),
         dims=("batch", "z", "x"),
@@ -83,7 +84,7 @@ def test_transpose_stack_extra_dims_to_batch_creates_multi_index():
     assert transposed.sizes[AxisId("batch")] == 6
     assert transposed.sizes[AxisId("x")] == 4
     batch_index = transposed.data.indexes[AxisId("batch")]  # pyright: ignore[reportUnknownVariableType]
-    assert isinstance(batch_index, pd.MultiIndex)
+    assert isinstance(batch_index, MultiIndex)
     assert tuple(str(level) for level in batch_index.names) == ("original_batch", "z")
 
 

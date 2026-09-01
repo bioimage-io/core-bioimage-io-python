@@ -3,7 +3,7 @@ from __future__ import annotations
 import collections.abc
 import importlib.util
 import sys
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Collection, Iterable, Mapping, Sequence
 from itertools import chain
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -36,7 +36,7 @@ from bioimageio.spec.utils import load_array
 from .axis import AxisId, AxisInfo, AxisLike, PerAxis
 from .block_meta import split_multiple_shapes_into_blocks
 from .common import Halo, MemberId, PerMember, SampleId, TotalNumberOfBlocks
-from .io import load_tensor
+from .io import load_tensor_and_return_unstacked_dim_order
 from .sample import (
     LinearSampleAxisTransform,
     Sample,
@@ -259,12 +259,46 @@ def _get_test_sample(
         members={m: Tensor.from_numpy(arrays[m], dims=axes[m]) for m in info},
         stat={},
         id="test-sample",
+        unstacked_dim_order=None,
     )
 
 
 class IO_SampleBlockMeta(NamedTuple):
     input: SampleBlockMeta
     output: SampleBlockMeta
+
+
+def get_output_unstacked_dim_order(
+    model: v0_5.ModelDescr,
+    unstacked_batch_dims: Collection[AxisId] | None,
+    input_unstacked_dim_order: PerMember[Sequence[AxisId]] | None,
+) -> PerMember[Sequence[AxisId]] | None:
+    if input_unstacked_dim_order is None or unstacked_batch_dims is None:
+        return None
+
+    output_dim_order: dict[MemberId, Sequence[AxisId]] = {}
+    for out in model.outputs:
+        out_axes = {ax.id for ax in out.axes}
+        for a in out.axes:
+            if (
+                isinstance(a.size, v0_5.SizeReference)
+                and a.size.tensor_id in input_unstacked_dim_order
+            ):
+                in_order = input_unstacked_dim_order[a.size.tensor_id]
+                if all(
+                    a in out_axes or a in unstacked_batch_dims for a in in_order
+                ) and [a for a in in_order if a in out_axes] == [
+                    a.id for a in out.axes if a.id in in_order
+                ]:
+                    # all input axes (and their order) are preserved in the output (or stacked)
+                    break
+        else:
+            # not all unstacked output axes could be mapped to unstacked input axes
+            return None
+
+        output_dim_order[out.id] = in_order
+
+    return output_dim_order
 
 
 def get_input_halo(
@@ -379,12 +413,28 @@ def get_block_transform(
 def get_io_sample_block_metas(
     model: v0_5.ModelDescr,
     input_sample_shape: PerMember[PerAxis[int]],
+    *,
+    unstacked_batch_shape: PerAxis[int] | None = None,
+    unstacked_dim_order_input: PerMember[Sequence[AxisId]] | None = None,
     ns: Mapping[tuple[MemberId, AxisId], ParameterizedSize_N],
     batch_size: int = 1,
 ) -> tuple[TotalNumberOfBlocks, Iterable[IO_SampleBlockMeta]]:
     """returns an iterable yielding meta data for corresponding input and output samples"""
     if not isinstance(model, v0_5.ModelDescr):
         raise TypeError(f"get_block_meta() not implemented for {type(model)}")
+
+    if (
+        unstacked_batch_shape is not None
+        and batch_size != 1
+        and (
+            not_divisible := {
+                a for a, s in unstacked_batch_shape.items() if s % batch_size != 0
+            }
+        )
+    ):
+        raise ValueError(
+            f"unstacked_batch_shape={unstacked_batch_shape} is not divisible by batch_size={batch_size} for axes {not_divisible}"
+        )
 
     block_axis_sizes = model.get_axis_sizes(ns=ns, batch_size=batch_size)
     input_block_shape = {
@@ -398,9 +448,16 @@ def get_io_sample_block_metas(
         for t in model.outputs
     }
     input_halo = get_input_halo(model, output_halo)
+    unstacked_dim_order = get_output_unstacked_dim_order(
+        model, unstacked_batch_shape, unstacked_dim_order_input
+    )
 
     n_input_blocks, input_blocks = split_multiple_shapes_into_blocks(
-        input_sample_shape, input_block_shape, halo=input_halo
+        input_sample_shape,
+        input_block_shape,
+        unstacked_batch_shape=unstacked_batch_shape,
+        unstacked_dim_order=unstacked_dim_order,
+        halo=input_halo,
     )
     block_transform = get_block_transform(model)
     return n_input_blocks, (
@@ -440,6 +497,31 @@ def get_tensor(
             If "unstack", any missing dimensions will be unstacked from the batch dimension. For this option a batch dimension with a multi-index must be present from previous stacking operations or assigned by `Tensor.assign_batch_multi_index()`.
             If "unstack_or_expand", any missing dimensions will be unstacked from the batch dimension if it has a multi-index, otherwise they will be added as singleton dimensions.
     """
+    tensor, _unstacked_dims = get_tensor_and_unstacked_dims(
+        src,
+        descr,
+        extra_dims=extra_dims,
+        missing_dims=missing_dims,
+    )
+    return tensor
+
+
+def get_tensor_and_unstacked_dims(
+    src: TensorSource,
+    descr: v0_4.InputTensorDescr
+    | v0_5.InputTensorDescr
+    | v0_4.OutputTensorDescr
+    | v0_5.OutputTensorDescr
+    | Sequence[AxisInfo],
+    *,
+    extra_dims: Literal["raise", "squeeze", "stack", "squeeze_or_stack"] = "squeeze",
+    missing_dims: Literal["raise", "expand", "unstack", "unstack_or_expand"] = "raise",
+):
+    """See `get_tensor()` for details. Returns a tuple of (tensor, unstacked_dim_order)
+
+    unstacked_dim_order is None if the tensor has no unstacked batch dimension,
+    otherwise it is a list of axis IDs in the order they appear in the fully unstacked tensor.
+    """
 
     if isinstance(
         descr,
@@ -456,19 +538,19 @@ def get_tensor(
 
     if isinstance(src, Tensor):
         output_dims = [a.id for a in axes]
-        return src.transpose(
+        return src.transpose_and_return_unstacked_dim_order(
             output_dims, extra_dims=extra_dims, missing_dims=missing_dims
         )
     elif isinstance(src, xr.DataArray):
         output_dims = [a.id for a in axes]
 
-        return Tensor.from_xarray(src).transpose(
+        return Tensor.from_xarray(src).transpose_and_return_unstacked_dim_order(
             axes=output_dims, extra_dims=extra_dims, missing_dims=missing_dims
         )
     elif isinstance(src, np.ndarray):
-        return Tensor.from_numpy(src, dims=axes)
+        return Tensor.from_numpy(src, dims=axes), None
     else:
-        return load_tensor(src, axes=axes)
+        return load_tensor_and_return_unstacked_dim_order(src, axes=axes)
 
 
 def create_sample_for_model(
@@ -522,16 +604,25 @@ def create_sample_for_model(
     }:
         raise ValueError(f"Missing non-optional model inputs: {missing}")
 
-    return Sample(
-        members={
-            m: get_tensor(
+    members: dict[MemberId, Tensor] = {}
+    unstacked_dim_order: dict[MemberId, Sequence[AxisId]] | None = {}
+    for m, ipt in model_inputs.items():
+        if m in inputs:
+            tensor, unstacked_dims = get_tensor_and_unstacked_dims(
                 inputs[m], ipt, extra_dims=extra_dims, missing_dims=missing_dims
             )
-            for m, ipt in model_inputs.items()
-            if m in inputs
-        },
+            members[m] = tensor
+            if unstacked_dim_order is not None:
+                if unstacked_dims is None:
+                    unstacked_dim_order = None
+                else:
+                    unstacked_dim_order[m] = unstacked_dims
+
+    return Sample(
+        members=members,
         stat={} if stat is None else stat,
         id=sample_id,
+        unstacked_dim_order=unstacked_dim_order,
     )
 
 
@@ -561,6 +652,7 @@ def load_sample_for_model(
         raise ValueError(f"Got unexpected axes hints for: {unknown}")
 
     members: dict[MemberId, Tensor] = {}
+    unstacked_dim_order: dict[MemberId, Sequence[AxisId]] | None = {}
     for m, p in paths.items():
         if m not in axes:
             axes[m] = get_axes_infos(model_inputs[m])
@@ -570,12 +662,19 @@ def load_sample_for_model(
                 p,
                 axes[m],
             )
-        members[m] = load_tensor(p, axes[m])
+        t, dim_order = load_tensor_and_return_unstacked_dim_order(p, axes[m])
+        members[m] = t
+        if unstacked_dim_order is not None:
+            if dim_order is None:
+                unstacked_dim_order = None
+            else:
+                unstacked_dim_order[m] = dim_order
 
     return Sample(
         members=members,
         stat={} if stat is None else stat,
         id=sample_id or tuple(sorted(str(p) for p in paths.values())),
+        unstacked_dim_order=unstacked_dim_order,
     )
 
 
