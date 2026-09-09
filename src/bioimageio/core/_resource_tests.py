@@ -69,7 +69,7 @@ from ._prediction_pipeline import create_prediction_pipeline
 from ._settings import settings
 from .axis import AxisId, BatchSize
 from .common import MemberId, SupportedWeightsFormat
-from .digest_spec import get_test_input_sample, get_test_output_sample
+from .digest_spec import get_member_id, get_test_input_sample, get_test_output_sample
 from .io import save_tensor
 from .sample import Sample
 from .tensor import Tensor
@@ -783,9 +783,11 @@ def _get_tolerance(
     m: MemberId,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> tuple[RelativeTolerance, AbsoluteTolerance, MismatchedElementsPerMillion]:
+    out_descr = next((out for out in model.outputs if get_member_id(out) == m), None)
+    if out_descr is None:
+        raise ValueError(f"Output '{m}' not found in model outputs")
     if isinstance(model, v0_5.ModelDescr):
-        applicable = v0_5.ReproducibilityTolerance()
-
+        applicable = None
         # check legacy test kwargs for weight format specific tolerance
         if model.config.bioimageio.model_extra is not None:
             for weights_format, test_kwargs in model.config.bioimageio.model_extra.get(
@@ -801,14 +803,51 @@ def _get_tolerance(
         # check for weights format and output tensor specific tolerance
         for a in model.config.bioimageio.reproducibility_tolerance:
             if (not a.weights_formats or wf in a.weights_formats) and (
-                not a.output_ids or m in a.output_ids
+                not a.output_ids
+                or m in a.output_ids
+                or (
+                    a.output_ids == "any_continuous_output"
+                    and next(
+                        (
+                            o.dtype.startswith("float")
+                            for o in model.outputs
+                            if o.id == m
+                        ),
+                        False,
+                    )
+                )
+                or (
+                    a.output_ids == "any_discrete_output"
+                    and next(
+                        (
+                            o.dtype.startswith("int")
+                            or o.dtype.startswith("uint")
+                            or o.dtype.startswith("bool")
+                            for o in model.outputs
+                            if o.id == m
+                        ),
+                        False,
+                    )
+                )
             ):
                 applicable = a
                 break
 
+        if applicable is None:
+            if out_descr.dtype.startswith("float"):
+                applicable = v0_5.ContinuousReproducibilityTolerance.model_construct()
+            else:
+                applicable = v0_5.DiscreteReproducibilityTolerance.model_construct()
+
         rtol = applicable.relative_tolerance
         atol = applicable.absolute_tolerance
         mismatched_tol = applicable.mismatched_elements_per_million
+        logger.debug(
+            "Using reproducibility tolerance: rtol={}, atol={}, mismatched_tol_ppm={}",
+            rtol,
+            atol,
+            mismatched_tol,
+        )
     elif (decimal := deprecated.get("decimal")) is not None:
         warnings.warn(
             "The argument `decimal` has been deprecated in favour of"
@@ -821,17 +860,32 @@ def _get_tolerance(
         atol = 1.5 * 10 ** (-decimal)
         rtol = 0
         mismatched_tol = 0
+        logger.debug(
+            "Using given (deprecated) reproducibility tolerance from 'decimal': atol={}",
+            atol,
+        )
     else:
-        # use given (deprecated) test kwargs
-        atol = deprecated.get("absolute_tolerance", 1e-3)
-        rtol = deprecated.get("relative_tolerance", 1e-3)
-        mismatched_tol = 0
+        is_continuous = out_descr.dtype.startswith("float")
+        rtol = deprecated.get("relative_tolerance", 1e-3 if is_continuous else 0)
+        atol = deprecated.get("absolute_tolerance", 1e-3 if is_continuous else 0)
+        mismatched_tol = 0 if is_continuous else 1000
+        logger.debug(
+            "Using reproducibility tolerance: rtol={}, atol={}, mismatched_tol_ppm={}",
+            rtol,
+            atol,
+            mismatched_tol,
+        )
 
     return rtol, atol, mismatched_tol
 
 
 def evaluate_mismatched_elements(
-    actual: Tensor, expected: Tensor, rtol: float, atol: float, name: str
+    actual: Tensor,
+    expected: Tensor,
+    rtol: float,
+    atol: float,
+    mismatched_tol: float,
+    name: str,
 ) -> tuple[float, str, str | None]:
     try:
         expected_np = expected.data.to_numpy().astype(np.float32)
@@ -872,24 +926,34 @@ def evaluate_mismatched_elements(
         if mismatched_elements:
             msg = (
                 f"Output '{name}': {mismatched_elements} of "
-                + f"{expected_np.size} elements disagree with expected values ("
+                + f"{expected_np.size} elements ("
                 + (
                     f"{mismatched_ppm / 10_000:.1f}%"
                     if mismatched_ppm >= 1_000
                     else f"{mismatched_ppm:.1f} ppm"
                 )
-                + "). "
+                + ") disagree with expected values (tolerance: "
+                + (
+                    f"{mismatched_tol / 10_000:.1f}%"
+                    if mismatched_tol >= 1_000
+                    else f"{mismatched_tol:.1f} ppm"
+                )
+                + ")."
             )
         else:
             msg = f"Output `{name}`: all elements agree with expected values. "
 
-        msg += (
-            f"\nMax relative difference not accounted for by absolute tolerance ({atol:.2e}):\n{r_max:.2e}"
-            + rf" (= \|{r_actual:.2e} - {r_expected:.2e}\|/\|{r_expected:.2e} + 1e-6\|)"
-            + f" at {dict(zip(dims, r_max_idx))} "
-            + f"\nMax absolute difference not accounted for by relative tolerance ({rtol:.2e}):\n{a_max:.2e}"
-            + rf" (= \|{a_actual:.7e} - {a_expected:.7e}\|) at {dict(zip(dims, a_max_idx))}"
-        )
+        if rtol > 0 and r_max != 0:
+            msg += (
+                f"\nMax relative difference not accounted for by absolute tolerance ({atol:.2e}): {r_max:.2e} "
+                + rf"(= \|{r_actual:.2e} - {r_expected:.2e}\|/\|{r_expected:.2e} + 1e-6\|)"
+                + f" at {dict(zip(dims, map(int, r_max_idx)))} "
+            )
+        if atol > 0 and a_max != 0:
+            msg += (
+                f"\nMax absolute difference not accounted for by relative tolerance ({rtol:.2e}): {a_max:.2e}"
+                + rf" (= \|{a_actual:.7e} - {a_expected:.7e}\|) at {dict(zip(dims, map(int, a_max_idx)))}"
+            )
 
     return mismatched_ppm, msg, error_msg
 
@@ -1028,7 +1092,7 @@ def _test_recreate_test_outputs(
                     model, wf=weight_format, m=m, **deprecated
                 )
                 mismatched_ppm, msg, error_msg = evaluate_mismatched_elements(
-                    actual, expected, rtol, atol, m
+                    actual, expected, rtol, atol, mismatched_tol, m
                 )
                 if error_msg is not None:
                     add_error_entry(error_msg)
@@ -1146,6 +1210,7 @@ def _test_parametrized_inference(
                 },
                 stat=test_input.stat,
                 id=test_input.id,
+                unstacked_dim_order=None,
             )
             expected_output_shapes = {
                 t.id: {

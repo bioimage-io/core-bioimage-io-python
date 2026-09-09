@@ -38,7 +38,7 @@ from .digest_spec import (
 )
 from .proc_ops import Processing
 from .proc_setup import setup_pre_and_postprocessing
-from .sample import Sample, SampleBlock
+from .sample import Sample, SampleBlock, get_unstacked_output_dim_order
 from .stat_measures import Measure, MeasureValue, Stat
 from .tensor import Tensor
 
@@ -575,14 +575,37 @@ class PredictionPipeline(_PredictionPipelineBase):
         if not skip_preprocessing:
             self.apply_preprocessing(sample)
 
+        output_members = {
+            k: v
+            for k, v in self._adapter.forward(sample.members).items()
+            if v is not None
+        }
+
+        unstacked_dim_order: PerMember[Sequence[AxisId] | None] | None = {}
+        for m, t in output_members.items():
+            if (udo := sample.unstacked_dim_order) is None:
+                unstacked_in_order = None
+            else:
+                udo_m = udo.get(m)
+                if udo_m is None:
+                    unstacked_in_order = None
+                else:
+                    unstacked_in_order = list(udo_m)
+
+            if (sd := sample.unstacked_batch_shape) is None:
+                stacked_dims = None
+            else:
+                stacked_dims = list(sd)
+
+            unstacked_dim_order[m] = get_unstacked_output_dim_order(
+                t.dims, unstacked_in_order=unstacked_in_order, stacked_dims=stacked_dims
+            )
+
         output = Sample(
-            members={
-                k: v
-                for k, v in self._adapter.forward(sample.members).items()
-                if v is not None
-            },
+            members=output_members,
             stat=sample.stat,
             id=sample.id,
+            unstacked_dim_order=unstacked_dim_order,
         )
         if not skip_postprocessing:
             self.apply_postprocessing(output)

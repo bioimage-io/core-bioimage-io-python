@@ -528,6 +528,7 @@ def test_softmax_from_spec_descr(tid: MemberId, tmp_path: Path):
     out_data = sample.members[tid].data
     assert out_data is not None
     channel_sums = out_data.sum(dim="channel")
+    assert isinstance(channel_sums, xr.DataArray)
     xr.testing.assert_allclose(
         channel_sums, xr.ones_like(channel_sums), atol=1e-6, rtol=0
     )

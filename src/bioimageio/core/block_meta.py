@@ -81,7 +81,7 @@ class BlockMeta:
     """the axis sizes of the stacked axis (that make up the batch axis)"""
 
     unstacked_dim_order: Sequence[AxisId] | None
-    """The order of the fully unstacked tensor, if the sample has a multi-index"""
+    """The order of dimensions of the fully unstacked tensor, if the sample has a multi-index"""
 
     inner_slice: PerAxisAnno[SliceInfo]
     """inner region (without halo) wrt the sample"""

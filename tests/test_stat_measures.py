@@ -65,7 +65,9 @@ def test_individual_percentile_measure(
     data = Tensor(
         np.random.random((5, 6, 3)), dims=(AxisId("x"), AxisId("y"), AxisId("c"))
     )
-    actual = calc.compute(Sample(members={tid: data}, stat={}, id=None))
+    actual = calc.compute(
+        Sample(members={tid: data}, stat={}, id=None, unstacked_dim_order=None)
+    )
     for m in measures:
         expected = data.quantile(q=m.q, dim=m.axes, method=m.method)
         actual_data = actual[m]

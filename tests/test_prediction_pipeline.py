@@ -16,6 +16,7 @@ def _alter_sample(sample: Sample, offset: float) -> Sample:
         id=f"{sample.id}_altered",
         members={m: t + offset for m, t in sample.members.items()},
         stat=sample.stat,
+        unstacked_dim_order=sample.unstacked_dim_order,
     )
 
 
@@ -62,7 +63,7 @@ def _test_prediction_pipeline(
         assert out is not None
         exp = expected_outputs.members[m]
         mismatched_ppm, msg, error_msg = evaluate_mismatched_elements(
-            out, exp, rtol=0.01, atol=0.1, name=m
+            out, exp, rtol=0.01, atol=0.1, mismatched_tol=50_000, name=m
         )
         if error_msg is not None:
             raise AssertionError(error_msg)

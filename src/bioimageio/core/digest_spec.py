@@ -3,7 +3,7 @@ from __future__ import annotations
 import collections.abc
 import importlib.util
 import sys
-from collections.abc import Collection, Iterable, Mapping, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from itertools import chain
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -42,6 +42,7 @@ from .sample import (
     Sample,
     SampleBlockMeta,
     SampleBlockWithOrigin,
+    get_unstacked_output_dim_order,
     sample_block_meta_generator,
 )
 from .stat_measures import Stat
@@ -268,37 +269,42 @@ class IO_SampleBlockMeta(NamedTuple):
     output: SampleBlockMeta
 
 
-def get_output_unstacked_dim_order(
-    model: v0_5.ModelDescr,
-    unstacked_batch_dims: Collection[AxisId] | None,
-    input_unstacked_dim_order: PerMember[Sequence[AxisId]] | None,
-) -> PerMember[Sequence[AxisId]] | None:
-    if input_unstacked_dim_order is None or unstacked_batch_dims is None:
-        return None
-
-    output_dim_order: dict[MemberId, Sequence[AxisId]] = {}
+def get_unstacked_output_dim_orders_for_model(
+    model: v0_4.ModelDescr | v0_5.ModelDescr,
+    unstacked_input_order: PerMember[Sequence[AxisId]] | None,
+    stacked_dims: Sequence[AxisId] | None,
+) -> PerMember[Sequence[AxisId]]:
+    """Returns the unstacked output dim order for each output tensor of a model,
+    given optional unstacked input dim order and optional stacked dims."""
+    output_orders: dict[MemberId, Sequence[AxisId]] = {}
     for out in model.outputs:
-        out_axes = {ax.id for ax in out.axes}
-        for a in out.axes:
-            if (
-                isinstance(a.size, v0_5.SizeReference)
-                and a.size.tensor_id in input_unstacked_dim_order
-            ):
-                in_order = input_unstacked_dim_order[a.size.tensor_id]
-                if all(
-                    a in out_axes or a in unstacked_batch_dims for a in in_order
-                ) and [a for a in in_order if a in out_axes] == [
-                    a.id for a in out.axes if a.id in in_order
-                ]:
-                    # all input axes (and their order) are preserved in the output (or stacked)
-                    break
+        in_order = None
+        if isinstance(out, v0_5.OutputTensorDescr):
+            out_id = out.id
+            stacked_out_order = [ax.id for ax in out.axes]
+            if unstacked_input_order is not None:
+                for ax in out.axes:
+                    if isinstance(ax.size, v0_5.SizeReference):
+                        in_order = unstacked_input_order.get(ax.size.tensor_id)
+                        break
+        elif isinstance(out, v0_4.OutputTensorDescr):
+            out_id = MemberId(out.name)
+            stacked_out_order = [AxisId(ax) for ax in out.axes]
+            if unstacked_input_order is not None:
+                for s in out.shape:
+                    if isinstance(s, v0_4.ImplicitOutputShape):
+                        in_order = unstacked_input_order.get(
+                            MemberId(s.reference_tensor)
+                        )
+                        break
         else:
-            # not all unstacked output axes could be mapped to unstacked input axes
-            return None
+            assert_never(out)
 
-        output_dim_order[out.id] = in_order
+        output_orders[out_id] = get_unstacked_output_dim_order(
+            stacked_out_order, unstacked_in_order=in_order, stacked_dims=stacked_dims
+        )
 
-    return output_dim_order
+    return output_orders
 
 
 def get_input_halo(
@@ -501,15 +507,11 @@ def get_io_sample_block_metas(
         for t in model.outputs
     }
     input_halo = get_input_halo(model, output_halo)
-    unstacked_dim_order = get_output_unstacked_dim_order(
-        model, unstacked_batch_shape, unstacked_dim_order_input
-    )
-
     n_input_blocks, input_blocks = split_multiple_shapes_into_blocks(
         input_sample_shape,
         input_block_shape,
         unstacked_batch_shape=unstacked_batch_shape,
-        unstacked_dim_order=unstacked_dim_order,
+        unstacked_dim_order=unstacked_dim_order_input,
         halo=input_halo,
     )
     block_transform = get_block_transform(model)

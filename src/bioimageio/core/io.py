@@ -26,12 +26,6 @@ from pydantic import BaseModel, RootModel, TypeAdapter
 from typing_extensions import Literal, TypeAlias, assert_never
 from typing_extensions import TypeAliasType as _TypeAliasType
 
-from bioimageio.core.utils._tiff_metadata import (
-    ImageJMetadata,
-    OmeChannelMetadata,
-    OmeMetadata,
-    create_ome_metadata_from_xml_string,
-)
 from bioimageio.spec._internal.io import (
     RelativeDirectory,
     ZarrSource,
@@ -65,6 +59,12 @@ from .stat_measures import DatasetMeasure, MeasureValue, SampleMeasure, Stat
 from .tensor import Tensor
 from .utils._color import hex_to_rgb
 from .utils._io_zarr import open_zarr_multiscale_array
+from .utils._tiff_metadata import (
+    ImageJMetadata,
+    OmeChannelMetadata,
+    OmeMetadata,
+    create_ome_metadata_from_xml_string,
+)
 from .utils._type_guards import is_tuple
 
 if TYPE_CHECKING:
@@ -208,12 +208,12 @@ def _select_io_libs_based_on_extension(
     extensions: list[str] | None,
 ) -> tuple[IO_Lib, ...]:
     if not extensions:
-        return ("bioio", "imageio", "clearscale")
+        return ("clearscale", "bioio", "imageio")
 
     if extensions[-1] == ".npy":
         return ("numpy",)
     elif extensions[-1] == ".zarr":
-        return ("bioio", "clearscale")
+        return ("clearscale", "bioio")
     elif extensions[-2:] in ([".ome", ".tif"], [".ome", ".tiff"]):
         return ("tifffile", "bioio")
     elif extensions[-1] in (".tif", ".tiff"):
@@ -857,13 +857,17 @@ def _save_tensor_clearscale(
     )
     if ZARR_FORMAT == 2:
         zarr_attrs: dict[str, JsonValueReadOnly] = {
-            "multiscales": [multiscale.to_ome_zarr(version="0.4")]
+            "multiscales": [
+                multiscale.to_ome_zarr(version="0.4")
+            ],  # TODO: add axis semantics
         }
     elif ZARR_FORMAT == 3:
         zarr_attrs: dict[str, JsonValueReadOnly] = {
             "ome": {
                 "version": "0.5",
-                "multiscales": [multiscale.to_ome_zarr(version="0.5")],
+                "multiscales": [
+                    multiscale.to_ome_zarr(version="0.5")
+                ],  # TODO: add axis semantics
             }
         }
     else:
@@ -1304,7 +1308,12 @@ def save_sample(
         )
 
     io_lib = None
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+    with (
+        ThreadPoolExecutor(
+            max_workers=1  # TODO: Fix missing blocks when saving blocks with clearscale+zarr-python in parallel
+            # TODO: check if all io_libs (with roi support) can handle parallel writing to the same file
+        ) as executor
+    ):
         for sample_block in chain([first_block], remaining_blocks):
             for m, p in path.items():
                 if io_lib is None:

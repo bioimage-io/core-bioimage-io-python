@@ -914,6 +914,7 @@ class PredictBlockArtifactsCmd(PredictCmd):
             members={t: a.members[t] - b.members[t] for t in a.members},
             id=a.id,
             stat=a.stat,
+            unstacked_dim_order=a.unstacked_dim_order,
         )
 
 

@@ -44,8 +44,6 @@ from .common import (
 from .stat_measures import Stat
 from .tensor import Tensor
 
-# TODO: allow for lazy samples to read/write to disk
-
 
 @dataclass
 class Sample:
@@ -66,7 +64,7 @@ class Sample:
     id: SampleId
     """Identifies the `Sample` within the dataset -- typically a number or a string."""
 
-    unstacked_dim_order: PerMember[Sequence[AxisId] | None] | None
+    unstacked_dim_order: PerMember[Sequence[AxisId] | None] | None = None
     """The order of the fully unstacked tensor"""
 
     def __getitem__(
@@ -252,8 +250,15 @@ class Sample:
             sample_blocks: The blocks to create the sample from.
             fill_value: The value to fill missing values with (default: `nan`).
         """
-        output = cls(members={}, stat={}, id=None, unstacked_dim_order=None)
+        output = None
         for sample_block in sample_blocks:
+            if output is None:
+                output = cls(
+                    members={},
+                    stat={},
+                    id=None,
+                    unstacked_dim_order=sample_block.unstacked_dim_order,
+                )
             if output.id is None:
                 output.id = sample_block.sample_id
             else:
@@ -582,40 +587,26 @@ class SampleBlockMeta(SampleBlockBase[BlockMeta]):
                     "Incompatible unstacked batch slices across sample block members"
                 )
 
-        unstacked_dim_order: dict[MemberId, list[AxisId] | None] = {}
+        unstacked_dim_order: dict[MemberId, list[AxisId]] = {}
         for m, trfs in new_axes.items():
+            stacked_out_order = list(trfs)
+            in_order = None
+            stacked_dims = None
             for trf in trfs.values():
                 if isinstance(trf, LinearSampleAxisTransform):
-                    in_order = self.blocks[trf.member].unstacked_dim_order
-                    if in_order is None or not all(a in in_order for a in trfs):
-                        # transform added new axes, so we cannot preserve the unstacked input order
-                        pass
-                    else:
-                        stacked_dims = (
-                            self.blocks[trf.member].unstacked_batch_shape or ()
-                        )
-                        if [d for d in trfs if d in in_order] != [
-                            d for d in in_order if d in trfs
-                        ]:
-                            # transform changed order of the non-stacking axes, so we cannot preserve the unstacked axis order
-                            pass
-                        else:
-                            transformed_dim_oder = [
-                                d for d in in_order if d in trfs or d in stacked_dims
-                            ]
-                            assert (
-                                m not in unstacked_dim_order
-                                or unstacked_dim_order[m] == transformed_dim_oder
-                            ), (
-                                f"unstacked dim order mismatch for {m}: "
-                                + f"{unstacked_dim_order[m]} != {transformed_dim_oder}"
-                            )
-
-                            unstacked_dim_order[m] = transformed_dim_oder
+                    in_order = list(self.blocks[trf.member].tagged_shape)
+                    stacked_dims = self.blocks[trf.member].unstacked_dim_order
+                    break
                 elif isinstance(trf, int):
                     pass
                 else:
                     assert_never(trf)
+
+            unstacked_dim_order[m] = get_unstacked_output_dim_order(
+                stacked_out_order,
+                unstacked_in_order=in_order,
+                stacked_dims=stacked_dims,
+            )
 
         return self.__class__(
             blocks={
@@ -717,10 +708,12 @@ class SampleBlock(SampleBlockBase[Block]):
             members=dict(self.members),
             stat=dict(self.stat),
             id=self.sample_id,
-            unstacked_dim_order={
-                m: b.unstacked_dim_order for m, b in self.blocks.items()
-            },
+            unstacked_dim_order=self.unstacked_dim_order,
         )
+
+    @property
+    def unstacked_dim_order(self) -> PerMember[Sequence[AxisId] | None]:
+        return {m: b.unstacked_dim_order for m, b in self.blocks.items()}
 
 
 @dataclass(frozen=True)
@@ -797,3 +790,41 @@ def sample_block_generator(
             block_index=cons.block_index,
             blocks_in_sample=cons.blocks_in_sample,
         )
+
+
+def get_unstacked_output_dim_order(
+    stacked_out_order: Sequence[AxisId],
+    *,
+    unstacked_in_order: Sequence[AxisId] | None,
+    stacked_dims: Sequence[AxisId] | None,
+) -> list[AxisId]:
+    if not stacked_dims:
+        return list(stacked_out_order)
+
+    if BATCH_AXIS_ID not in stacked_out_order:
+        raise ValueError(
+            f"stacked_out_order={stacked_out_order} does not contain a batch axis, but stacked_dims={stacked_dims} are provided"
+        )
+
+    if unstacked_in_order is not None and list(stacked_out_order) == [
+        d for d in unstacked_in_order if d in stacked_out_order
+    ]:
+        # no differences in non-stacking axes, so we can preserve the unstacked axis order
+        return [
+            d for d in unstacked_in_order if d in stacked_out_order or d in stacked_dims
+        ]
+    else:
+        # unstack batch axis in its place
+        ret = list(stacked_out_order)
+        b_idx = ret.index(AxisId("batch"))
+        ret[b_idx : b_idx + 1] = (
+            [
+                d for d in unstacked_in_order or () if d in stacked_dims
+            ]  # keep unstacked axis order from input
+            + [
+                d
+                for d in stacked_dims
+                if unstacked_in_order is None or d not in unstacked_in_order
+            ]  # add any remaining stacked dims that are not in the unstacked input order
+        )
+        return ret
