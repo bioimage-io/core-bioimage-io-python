@@ -67,7 +67,7 @@ def test_shape_attributes():
 
 
 def test_transpose_stack_extra_dims_to_batch_creates_multi_index():
-    from bioimageio.core._multi_index import MultiIndex
+    from bioimageio.core.utils._multi_index import MultiIndex
 
     tensor = Tensor.from_numpy(
         np.arange(2 * 3 * 4).reshape(2, 3, 4),

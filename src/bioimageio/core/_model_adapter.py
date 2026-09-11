@@ -18,12 +18,12 @@ from typing_extensions import TypeVar
 from bioimageio.spec import ValidationSummary
 from bioimageio.spec.model import AnyModelDescr, v0_4
 
-from ._restore_batch_multi_index import restore_batch_multi_index
 from ._sample_serializer import SampleSerializer, SerializedSampleBlockType
 from .common import PerMember
 from .digest_spec import get_axes_infos, get_member_ids
 from .sample import Sample
 from .tensor import Tensor
+from .utils._multi_index import restore_batch_multi_index
 
 
 class ModelAdapter(ABC):
@@ -46,9 +46,7 @@ class ModelAdapter(ABC):
     ```
     """
 
-    def __init__(
-        self, model_description: AnyModelDescr, devices: Sequence[str] | None
-    ):
+    def __init__(self, model_description: AnyModelDescr, devices: Sequence[str] | None):
         super().__init__()
         self._model_descr = model_description
         self._input_ids = get_member_ids(model_description.inputs)
@@ -76,9 +74,7 @@ class ModelAdapter(ABC):
         self._loaded = True
 
     @abstractmethod
-    def forward(
-        self, inputs: PerMember[Tensor | None]
-    ) -> PerMember[Tensor | None]: ...
+    def forward(self, inputs: PerMember[Tensor | None]) -> PerMember[Tensor | None]: ...
 
     @abstractmethod
     def unload(self):
@@ -151,9 +147,7 @@ class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
     @abstractmethod
     def _init_model_on_device(self, device: DeviceType) -> ModelType: ...
 
-    def forward(
-        self, inputs: PerMember[Tensor | None]
-    ) -> PerMember[Tensor | None]:
+    def forward(self, inputs: PerMember[Tensor | None]) -> PerMember[Tensor | None]:
         """
         Run forward pass of model to get model predictions
 
@@ -269,9 +263,7 @@ class RemoteModelAdapter(ModelAdapter, ABC, Generic[SerializedSampleBlockType]):
     def server(self) -> str:
         return self._server
 
-    def forward(
-        self, inputs: PerMember[Tensor | None]
-    ) -> PerMember[Tensor | None]:
+    def forward(self, inputs: PerMember[Tensor | None]) -> PerMember[Tensor | None]:
         serialized_input = self._serializer.serialize_sample(
             Sample(
                 members={k: v for k, v in inputs.items() if v is not None},

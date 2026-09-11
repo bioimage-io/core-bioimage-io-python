@@ -2,10 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from itertools import chain
-from typing import (
-    Any,
-    Literal,
-)
+from typing import Any, Literal
 
 import gradio as gr
 from loguru import logger
@@ -77,6 +74,11 @@ def predict(
             Set this flag when predicting an (overlapping) sample block rather than a full sample.
         batch_size: Optional batch size only applicable to predicting input samples with batch dimension.
     """
+
+    logger.info(
+        "Received prediction request for model {}",
+        model[:10] + "..." if len(model) > 10 else model,
+    )
 
     def setup(stat: Stat):
         model_adapter = _get_model_adapter(model, sha256=sha256)
@@ -176,6 +178,13 @@ def load_model(
     return {"message": "Model loaded successfully"}
 
 
+@app.api(name="get_status")  # pyright: ignore[reportUntypedFunctionDecorator]
+def get_status() -> dict[Literal["message"], str]:
+    """Check the status of the server."""
+    logger.info("Received status request")
+    return {"message": "alive"}
+
+
 @app.api(name="test_model")  # pyright: ignore[reportUntypedFunctionDecorator]
 def test_model(
     model: str,
@@ -239,8 +248,13 @@ def root():
 
 
 def main(port: int | None = None) -> str:
+    logger.info("Starting bioimageio.core gradio server on port {}", port)
     _app, local_url, _share_url = app.launch(
-        mcp_server=True, show_error=True, server_port=port
+        mcp_server=False,
+        show_error=True,
+        server_name="localhost",
+        server_port=port,
+        debug=False,
     )
     return local_url
 

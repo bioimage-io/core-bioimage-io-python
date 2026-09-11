@@ -16,7 +16,6 @@ from loguru import logger
 from typing_extensions import Self
 
 from ._axis_annotations import PerAxisAnno
-from ._multi_index import MultiIndex
 from .axis import BATCH_AXIS_ID, AxisId, PerAxis
 from .common import (
     BlockIndex,
@@ -27,6 +26,11 @@ from .common import (
     PerMember,
     SliceInfo,
     TotalNumberOfBlocks,
+)
+from .utils._multi_index import (
+    MultiIndex,
+    get_unstacked_dim_order,
+    get_unstacked_shape,
 )
 
 
@@ -77,11 +81,11 @@ class BlockMeta:
     sample_shape: PerAxisAnno[int]
     """the axis sizes of the whole (unblocked) sample"""
 
-    unstacked_batch_shape: PerAxisAnno[int] | None
-    """the axis sizes of the stacked axis (that make up the batch axis)"""
+    unstacked_sample_batch_shape: PerAxisAnno[int] | None
+    """the axis sizes of the stacked axes (that make up the sample batch axis)"""
 
     unstacked_dim_order: Sequence[AxisId] | None
-    """The order of dimensions of the fully unstacked tensor, if the sample has a multi-index"""
+    """The order of dimensions of the unstacked tensor, if the sample has a multi-index"""
 
     inner_slice: PerAxisAnno[SliceInfo]
     """inner region (without halo) wrt the sample"""
@@ -106,6 +110,15 @@ class BlockMeta:
                 a: s.stop - s.start + (sum(self.halo[a]) if a in self.halo else 0)
                 for a, s in self.inner_slice.items()
             }
+        )
+
+    @property
+    def unstacked_sample_shape(self) -> PerAxis[int]:
+        """combined (stacked) sample shape with the unstacked sample batch shape in order of unstacked_dim_order (if available)"""
+        return get_unstacked_shape(
+            self.sample_shape,
+            unstacked_dim_order=self.unstacked_dim_order,
+            unstacked_batch_shape=self.unstacked_sample_batch_shape,
         )
 
     @cached_property
@@ -247,8 +260,14 @@ class BlockMeta:
 
         return self.__class__(
             sample_shape=sample_shape,
-            unstacked_batch_shape=self.unstacked_batch_shape,
-            unstacked_dim_order=self.unstacked_dim_order,
+            unstacked_sample_batch_shape=self.unstacked_sample_batch_shape,
+            unstacked_dim_order=get_unstacked_dim_order(
+                tuple(sample_shape),
+                unstacked_reference_order=self.unstacked_dim_order,
+                stacked_dims=None
+                if self.unstacked_sample_batch_shape is None
+                else tuple(self.unstacked_sample_batch_shape),
+            ),
             inner_slice=inner_slice,
             unstacked_batch_slice=self.unstacked_batch_slice,
             halo={
@@ -273,8 +292,9 @@ def split_shape_into_blocks(
     stride: PerAxis[int] | None = None,
     unstacked_dim_order: Sequence[AxisId] | None,
 ) -> tuple[TotalNumberOfBlocks, Generator[BlockMeta, Any, None]]:
-    unknown_axes = [a for a in block_shape if a not in shape and block_shape[a] != 1]
-    if unknown_axes:
+    if unknown_axes := [
+        a for a in block_shape if a not in shape and block_shape[a] != 1
+    ]:
         raise ValueError(
             f"unknown axes in block_shape: {unknown_axes} for shape {shape}"
         )
@@ -314,7 +334,7 @@ def split_shape_into_blocks(
 
 def _block_meta_generator(
     sample_shape: PerAxis[int],
-    unstacked_batch_shape: PerAxis[int] | None,
+    unstacked_sample_batch_shape: PerAxis[int] | None,
     *,
     unstacked_dim_order: Sequence[AxisId] | None,
     blocks_in_sample: int,
@@ -324,12 +344,15 @@ def _block_meta_generator(
     assert all(a in sample_shape for a in halo)
 
     halo = {a: Halo.create(halo.get(a, 0)) for a in inner_1d_slices}
-    if unstacked_batch_shape is None:
+    if unstacked_sample_batch_shape is None:
         idx: MultiIndex | None = None
     else:
         idx = MultiIndex.from_product(  # pyright: ignore[reportUnknownVariableType]
-            [range(unstacked_batch_shape[a]) for a in unstacked_batch_shape],
-            names=list(unstacked_batch_shape),
+            [
+                range(unstacked_sample_batch_shape[a])
+                for a in unstacked_sample_batch_shape
+            ],
+            names=list(unstacked_sample_batch_shape),
         )
         assert isinstance(idx, MultiIndex)
 
@@ -349,7 +372,7 @@ def _block_meta_generator(
 
         yield BlockMeta(
             sample_shape=sample_shape,
-            unstacked_batch_shape=unstacked_batch_shape,
+            unstacked_sample_batch_shape=unstacked_sample_batch_shape,
             unstacked_dim_order=unstacked_dim_order,
             inner_slice=inner_slice,
             unstacked_batch_slice=unstacked_batch_slice,

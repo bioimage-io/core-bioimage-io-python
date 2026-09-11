@@ -38,9 +38,10 @@ from .digest_spec import (
 )
 from .proc_ops import Processing
 from .proc_setup import setup_pre_and_postprocessing
-from .sample import Sample, SampleBlock, get_unstacked_output_dim_order
+from .sample import Sample, SampleBlock
 from .stat_measures import Measure, MeasureValue, Stat
 from .tensor import Tensor
+from .utils._multi_index import get_unstacked_dim_order
 
 Predict_IO = TypeVar(
     "Predict_IO",
@@ -597,8 +598,10 @@ class PredictionPipeline(_PredictionPipelineBase):
             else:
                 stacked_dims = list(sd)
 
-            unstacked_dim_order[m] = get_unstacked_output_dim_order(
-                t.dims, unstacked_in_order=unstacked_in_order, stacked_dims=stacked_dims
+            unstacked_dim_order[m] = get_unstacked_dim_order(
+                t.dims,
+                unstacked_reference_order=unstacked_in_order,
+                stacked_dims=stacked_dims,
             )
 
         output = Sample(

@@ -35,7 +35,7 @@ def tensor_custom_before_validator(data: Tensor | Mapping[str, Any]):
 
 def tensor_custom_serializer(t: Tensor) -> dict[str, Any]:
     # custome serialization logic
-    return {"data": t.data.data.tolist(), "dims": list(map(str, t.dims))}
+    return {"data": t.data.to_numpy().tolist(), "dims": list(map(str, t.dims))}
 
 
 MeasureValue: TypeAlias = Union[

@@ -8,6 +8,7 @@ from typing import (
     Union,
 )
 
+from loguru import logger
 from typing_extensions import Protocol, TypeAlias, assert_never, runtime_checkable
 
 from bioimageio.spec.model import v0_5
@@ -26,13 +27,15 @@ def _guess_axis_type(a: str):
     elif a in ("x", "y", "z") or a.startswith("space"):
         return "space"
     else:
-        raise ValueError(
-            f"Failed to infer axis type for axis id '{a}'."
+        logger.warning(
+            "Failed to infer axis type for axis id '{}'."
             + " Consider using one of:"
             + " 'b', 'batch', 't', 'time', 's', 'sample', 'i',"
             + " 'index', 'c', 'channel', 'x', 'y', 'z',"
             + " 'space*'. Or create an `Axis` object instead.",
+            a,
         )
+        return "unknown"
 
 
 S = TypeVar("S", bound=str)
@@ -66,13 +69,17 @@ AxisLike = Union[_AxisLikePlain, AxisDescrLike, v0_5.AnyAxis, "Axis", "AxisInfo"
 @dataclass
 class Axis:
     id: AxisId
-    type: Literal["batch", "channel", "index", "space", "time"]
+    type: Literal["batch", "channel", "index", "space", "time", "unknown"]
 
     def __post_init__(self):
-        if self.type == "batch":
-            self.id = AxisId("batch")
-        elif self.type == "channel":
-            self.id = AxisId("channel")
+        if self.type == "batch" and self.id != BATCH_AXIS_ID:
+            raise ValueError(
+                f"Axis with type 'batch' must have id '{BATCH_AXIS_ID}', but got '{self.id}'"
+            )
+        if self.type == "channel" and self.id != CHANNEL_AXIS_ID:
+            raise ValueError(
+                f"Axis with type 'channel' must have id '{CHANNEL_AXIS_ID}', but got '{self.id}'"
+            )
 
     @classmethod
     def create(cls, axis: AxisLike) -> Axis:

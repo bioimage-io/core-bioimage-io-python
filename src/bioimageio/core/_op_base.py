@@ -7,7 +7,6 @@ from typing import Generic, Union
 
 from typing_extensions import TypeVar, assert_never
 
-from ._restore_batch_multi_index import restore_batch_multi_index
 from .axis import PerAxis
 from .block import Block
 from .common import MemberId
@@ -17,6 +16,7 @@ from .stat_measures import (
     Stat,
 )
 from .tensor import Tensor
+from .utils._multi_index import restore_batch_multi_index
 
 SampleT = TypeVar("SampleT", bound=Union[Sample, SampleBlock, SampleBlockWithOrigin])
 
@@ -75,21 +75,24 @@ class SimpleOperator(BlockwiseOperator):
             output_shape = self.get_output_shape(sample.sample_shape[self.input])
             if (
                 b.unstacked_dim_order is None
-                or b.unstacked_batch_shape is None
+                or b.unstacked_sample_batch_shape is None
                 or any(a not in b.unstacked_dim_order for a in output_shape)
-                or any(a not in b.unstacked_dim_order for a in b.unstacked_batch_shape)
+                or any(
+                    a not in b.unstacked_dim_order
+                    for a in b.unstacked_sample_batch_shape
+                )
             ):
                 unstacked_dims = None
             else:
                 unstacked_dims = [
                     d
                     for d in b.unstacked_dim_order
-                    if d in output_shape or d in b.unstacked_batch_shape
+                    if d in output_shape or d in b.unstacked_sample_batch_shape
                 ]
 
             sample.blocks[self.output] = Block(
                 sample_shape=output_shape,
-                unstacked_batch_shape=sample.unstacked_batch_shape,
+                unstacked_sample_batch_shape=sample.unstacked_sample_batch_shape,
                 unstacked_dim_order=unstacked_dims,
                 data=output_tensor,
                 inner_slice=b.inner_slice,

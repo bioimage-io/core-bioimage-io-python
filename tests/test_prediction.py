@@ -174,7 +174,7 @@ def test_predict_z_as_batch(unet2d_nuclei_broad_model: str):
 def test_transpose_sample_for_model_stacks_extra_z_to_batch(
     unet2d_nuclei_broad_model: str,
 ):
-    from bioimageio.core._multi_index import MultiIndex
+    from bioimageio.core.utils._multi_index import MultiIndex
 
     model = load_model(
         unet2d_nuclei_broad_model, perform_io_checks=False, format_version="latest"

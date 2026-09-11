@@ -27,9 +27,7 @@ SerializedSampleBlock = dict[str, JsonValue]
 class GradioModelAdapter(RemoteModelAdapter[SerializedSampleBlock]):
     """Model adapter to use the bioimage-io-gradio-runner as a backend for model inference."""
 
-    def __init__(
-        self, model_description: AnyModelDescr, *, server: str | None = None
-    ):
+    def __init__(self, model_description: AnyModelDescr, *, server: str | None = None):
         """Initialize the GradioModelAdapter.
 
         Note:
@@ -148,6 +146,13 @@ class GradioPredictionPipeline(RemotePredictionPipeline):
         self._serializer = GradioSampleSerializer
         self._precomputed_statistics = dict(precomputed_statistics)
 
+    def close(self):
+        logger.info(
+            "Closing GradioPredictionPipeline client connection to server {}",
+            self.server,
+        )
+        self._client.close()
+
     def predict_sample_block(
         self,
         sample_block: SampleBlock,
@@ -260,13 +265,23 @@ class GradioPredictionPipeline(RemotePredictionPipeline):
             _intermediate_predictions(),
         )
 
+    def get_status(self) -> dict[Literal["message"], str]:
+        """Check the status of the server."""
+        logger.info(
+            "Checking status of GradioPredictionPipeline server {}", self.server
+        )
+        return self._client.submit(api_name="/get_status").result(timeout=30)
+
 
 def _call_predict_api(
     client: Client,
     serialized_model: str,
     sha256: str,
     serialized_input_sample: Iterable[SerializedSampleBlock],
-    blocksize: int | Literal["blockwise_as_serialized"] | PerMember[PerAxis[int]] | None,
+    blocksize: int
+    | Literal["blockwise_as_serialized"]
+    | PerMember[PerAxis[int]]
+    | None,
     skip_preprocessing: bool,
     skip_postprocessing: bool,
     skip_input_padding: bool,
@@ -293,25 +308,27 @@ def _call_predict_api(
         )
 
     try_with_model_upload = True
-    try:
-        job = submit("")
-        for block in job:  # pyright: ignore[reportUnknownVariableType]
-            yield block  # pyright: ignore[reportReturnType]
-            # we got one response, so the model cache was hit...
-            try_with_model_upload = False
-    except Exception as e:
-        # A raised exception on the server seems to simply return an empty response sequence,
-        # so this except is likely not triggered at all.
-        # Below we retry on empty return value, too.
-        if try_with_model_upload:
-            logger.warning(
-                "Failed to submit job without model upload, trying with model upload, error was: {}",
-                e,
-            )
-        else:
-            raise
+    # try:
+    #     job = submit("")
+    #     return list(job)  # TOOD: reactivate yielding
+    #     # for block in job:  # pyright: ignore[reportUnknownVariableType]
+    #     #     yield block  # pyright: ignore[reportReturnType]
+    #     #     # we got one response, so the model cache was hit...
+    #     #     try_with_model_upload = False
+    # except Exception as e:
+    #     # A raised exception on the server seems to simply return an empty response sequence,
+    #     # so this except is likely not triggered at all.
+    #     # Below we retry on empty return value, too.
+    #     if try_with_model_upload:
+    #         logger.warning(
+    #             "Failed to submit job without model upload, trying with model upload, error was: {}",
+    #             e,
+    #         )
+    #     else:
+    #         raise
 
     if try_with_model_upload:
         job = submit(serialized_model)
-        for block in job:  # pyright: ignore[reportUnknownVariableType]
-            yield block  # pyright: ignore[reportReturnType]
+        return list(job)  # TOOD: reactivate yielding
+        # for block in job:  # pyright: ignore[reportUnknownVariableType]
+        #     yield block  # pyright: ignore[reportReturnType]

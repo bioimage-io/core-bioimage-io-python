@@ -11,6 +11,7 @@ from typing import (
     Generic,
     Literal,
     TypeVar,
+    Union,
 )
 
 import numpy as np
@@ -20,8 +21,9 @@ from loguru import logger
 from numpy.typing import NDArray
 from typing_extensions import Self, assert_never
 
+from bioimageio.core.utils._multi_index import get_unstacked_dim_order
+
 from ._common_annotations import PerMemberAnno
-from ._multi_index import MultiIndex
 from .axis import BATCH_AXIS_ID, AxisId, PerAxis
 from .block import Block
 from .block_meta import (
@@ -43,6 +45,12 @@ from .common import (
 )
 from .stat_measures import Stat
 from .tensor import Tensor
+from .utils._multi_index import (
+    MultiIndex,
+    create_tensor_with_multiindex,
+    get_unstacked_shape,
+)
+from .utils._resolve_per_member_key import resolve_per_member_var
 
 
 @dataclass
@@ -76,11 +84,30 @@ class Sample:
             | PerAxis[SliceInfo | slice | int]
             | Tensor
             | xr.DataArray
-        ],
+        ]
+        | PerAxis[SliceInfo | slice | int],
     ) -> Self:
+        per_member_key = resolve_per_member_var(
+            key,
+            valid_member_index_types=(
+                SliceInfo,
+                slice,
+                int,
+                Tensor,
+                xr.DataArray,
+                Mapping[AxisId, Union[SliceInfo, slice, int]],
+            ),
+            valid_axis_index_types=(SliceInfo, slice, int),
+            members=self.members,
+        )
+
         return self.__class__(
             unstacked_dim_order=self.unstacked_dim_order,
-            members={m: t[key[m]] for m, t in self.members.items() if m in key},
+            members={
+                m: t[per_member_key[m]]
+                for m, t in self.members.items()
+                if m in per_member_key
+            },
             stat=self.stat,
             id=self.id,
         )
@@ -148,6 +175,22 @@ class Sample:
             for a, s in zip(idx.names, idx.levshape)
         }
 
+    @property
+    def unstacked_shape(self) -> PerMember[PerAxis[int]]:
+        """combined (stacked) shape with the unstacked sample batch shape in order of unstacked_dim_order (if available)"""
+        return {
+            m: get_unstacked_shape(
+                sh,
+                unstacked_dim_order=self.unstacked_dim_order[m]
+                if self.unstacked_dim_order is not None
+                else None,
+                unstacked_batch_shape=self.unstacked_batch_shape[m]
+                if self.unstacked_batch_shape is not None
+                else None,
+            )
+            for m, sh in self.shape.items()
+        }
+
     def as_arrays(self) -> dict[MemberId, NDArray[Any]]:
         """Return sample as dictionary of arrays."""
         return {m: t.to_numpy() for m, t in self.members.items()}
@@ -186,7 +229,7 @@ class Sample:
             blocks={
                 m: Block(
                     sample_shape=self.shape[m],
-                    unstacked_batch_shape=self.unstacked_batch_shape,
+                    unstacked_sample_batch_shape=self.unstacked_batch_shape,
                     unstacked_dim_order=self.unstacked_dim_order[m]
                     if self.unstacked_dim_order is not None
                     else None,
@@ -275,14 +318,34 @@ class Sample:
                             "merging blocks with data dependent axis not yet implemented"
                         )
 
-                    output.members[m] = Tensor(
-                        np.full(
-                            tuple(block.sample_shape[a] for a in block.data.dims),
-                            fill_value,
-                            dtype=block.data.dtype,
-                        ),
-                        dims=block.data.dims,
-                    )
+                    if (
+                        block.unstacked_sample_batch_shape is not None
+                        and block.unstacked_dim_order is not None
+                    ):
+                        sizes = {
+                            **block.sample_shape,
+                            **block.unstacked_sample_batch_shape,
+                        }
+                        full_unstacked_shape = {
+                            a: sizes[a] for a in block.unstacked_dim_order
+                        }
+                        t = create_tensor_with_multiindex(
+                            full_unstacked_shape,
+                            fill_value=fill_value,
+                            dtype=np.dtype(block.data.dtype),
+                            transpose_to=tuple(block.sample_shape.keys()),
+                        )
+                    else:
+                        t = Tensor(
+                            np.full(
+                                shape=tuple(block.sample_shape.values()),
+                                fill_value=fill_value,
+                                dtype=block.data.dtype,
+                            ),
+                            dims=tuple(block.sample_shape.keys()),
+                        )
+
+                    output.members[m] = t
 
                 output.members[m][block.inner_slice] = block.inner_data
             yield output
@@ -504,13 +567,31 @@ class SampleBlockBase(Generic[BlockT]):
         return MappingProxyType({mid: b.inner_shape for mid, b in self.blocks.items()})
 
     @property
-    def unstacked_batch_shape(self) -> PerAxis[int] | None:
+    def unstacked_sample_batch_shape(self) -> PerAxis[int] | None:
         """The shape of the unstacked batch axis, if the sample has a multi-index batch axis"""
         for b in self.blocks.values():
-            if b.unstacked_batch_shape is not None:
-                return b.unstacked_batch_shape
+            if b.unstacked_sample_batch_shape is not None:
+                return b.unstacked_sample_batch_shape
 
         return None
+
+    @property
+    def unstacked_dim_order(self) -> PerMemberAnno[Sequence[AxisId] | None] | None:
+        """The dim order of the unstacked tensors, if the sample has a multi-index batch axis"""
+        for b in self.blocks.values():
+            if b.unstacked_dim_order is not None:
+                return MappingProxyType(
+                    {mid: bb.unstacked_dim_order for mid, bb in self.blocks.items()}
+                )
+
+        return None
+
+    @property
+    def unstacked_sample_shape(self) -> PerMemberAnno[PerAxis[int]]:
+        """combined (stacked) sample shape with the unstacked sample batch shape in order of unstacked_dim_order (if available)"""
+        return MappingProxyType(
+            {mid: b.unstacked_sample_shape for mid, b in self.blocks.items()}
+        )
 
 
 @dataclass
@@ -587,32 +668,32 @@ class SampleBlockMeta(SampleBlockBase[BlockMeta]):
                     "Incompatible unstacked batch slices across sample block members"
                 )
 
-        unstacked_dim_order: dict[MemberId, list[AxisId]] = {}
+        unstacked_dim_order: dict[MemberId, list[AxisId] | None] = {}
         for m, trfs in new_axes.items():
-            stacked_out_order = list(trfs)
-            in_order = None
-            stacked_dims = None
             for trf in trfs.values():
                 if isinstance(trf, LinearSampleAxisTransform):
-                    in_order = list(self.blocks[trf.member].tagged_shape)
-                    stacked_dims = self.blocks[trf.member].unstacked_dim_order
+                    unstacked_in_order = self.blocks[trf.member].unstacked_dim_order
+                    stacked_dims = list(
+                        self.blocks[trf.member].unstacked_sample_batch_shape or ()
+                    )
+                    unstacked_dim_order[m] = get_unstacked_dim_order(
+                        list(trfs),
+                        unstacked_reference_order=unstacked_in_order,
+                        stacked_dims=stacked_dims,
+                    )
                     break
                 elif isinstance(trf, int):
                     pass
                 else:
                     assert_never(trf)
-
-            unstacked_dim_order[m] = get_unstacked_output_dim_order(
-                stacked_out_order,
-                unstacked_in_order=in_order,
-                stacked_dims=stacked_dims,
-            )
+            else:
+                unstacked_dim_order[m] = None
 
         return self.__class__(
             blocks={
                 m: BlockMeta(
                     sample_shape=sample_shape[m],
-                    unstacked_batch_shape=self.unstacked_batch_shape,
+                    unstacked_sample_batch_shape=self.unstacked_sample_batch_shape,
                     unstacked_dim_order=unstacked_dim_order[m],
                     inner_slice=inner_slice[m],
                     unstacked_batch_slice=unstacked_batch_slice,
@@ -715,6 +796,20 @@ class SampleBlock(SampleBlockBase[Block]):
     def unstacked_dim_order(self) -> PerMember[Sequence[AxisId] | None]:
         return {m: b.unstacked_dim_order for m, b in self.blocks.items()}
 
+    @property
+    def batch_multi_index(self) -> MultiIndex | None:
+        """Return the batch multi-index of the sample block, if it has one.
+
+        Returns:
+            The batch multi-index of the sample block, or `None` if the sample block does not have a multi-index batch dimension.
+        """
+        for tensor in self.members.values():
+            idx = tensor.batch_multi_index
+            if idx is not None:
+                return idx
+
+        return None
+
 
 @dataclass(frozen=True)
 class SampleBlockWithOrigin(SampleBlock):
@@ -745,12 +840,12 @@ def sample_block_meta_generator(
         cons = _ConsolidatedMemberBlocks(member_blocks)
         unstacked_batch_shape = None
         for m, b in member_blocks.items():
-            if b.unstacked_batch_shape is not None:
+            if b.unstacked_sample_batch_shape is not None:
                 if unstacked_batch_shape is None:
-                    unstacked_batch_shape = b.unstacked_batch_shape
+                    unstacked_batch_shape = b.unstacked_sample_batch_shape
                 else:
-                    assert unstacked_batch_shape == b.unstacked_batch_shape, (
-                        f"unstacked batch shape mismatch for member {m}: {unstacked_batch_shape} != {b.unstacked_batch_shape}"
+                    assert unstacked_batch_shape == b.unstacked_sample_batch_shape, (
+                        f"unstacked batch shape mismatch for member {m}: {unstacked_batch_shape} != {b.unstacked_sample_batch_shape}"
                     )
 
             assert b.sample_shape == sample_shape[m]
@@ -790,41 +885,3 @@ def sample_block_generator(
             block_index=cons.block_index,
             blocks_in_sample=cons.blocks_in_sample,
         )
-
-
-def get_unstacked_output_dim_order(
-    stacked_out_order: Sequence[AxisId],
-    *,
-    unstacked_in_order: Sequence[AxisId] | None,
-    stacked_dims: Sequence[AxisId] | None,
-) -> list[AxisId]:
-    if not stacked_dims:
-        return list(stacked_out_order)
-
-    if BATCH_AXIS_ID not in stacked_out_order:
-        raise ValueError(
-            f"stacked_out_order={stacked_out_order} does not contain a batch axis, but stacked_dims={stacked_dims} are provided"
-        )
-
-    if unstacked_in_order is not None and list(stacked_out_order) == [
-        d for d in unstacked_in_order if d in stacked_out_order
-    ]:
-        # no differences in non-stacking axes, so we can preserve the unstacked axis order
-        return [
-            d for d in unstacked_in_order if d in stacked_out_order or d in stacked_dims
-        ]
-    else:
-        # unstack batch axis in its place
-        ret = list(stacked_out_order)
-        b_idx = ret.index(AxisId("batch"))
-        ret[b_idx : b_idx + 1] = (
-            [
-                d for d in unstacked_in_order or () if d in stacked_dims
-            ]  # keep unstacked axis order from input
-            + [
-                d
-                for d in stacked_dims
-                if unstacked_in_order is None or d not in unstacked_in_order
-            ]  # add any remaining stacked dims that are not in the unstacked input order
-        )
-        return ret

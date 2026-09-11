@@ -1277,24 +1277,27 @@ def save_sample(
 
             tensor_shape = dict(sample_block.sample_shape[m])
             if (
-                unstacked_batch_shape := sample_block.unstacked_batch_shape
+                unstacked_sample_batch_shape
+                := sample_block.unstacked_sample_batch_shape
             ) is not None:
                 _ = tensor_shape.pop(BATCH_AXIS_ID, None)
-                assert not any(d in unstacked_batch_shape for d in tensor_shape), (
-                    unstacked_batch_shape,
+                assert not any(
+                    d in unstacked_sample_batch_shape for d in tensor_shape
+                ), (
+                    unstacked_sample_batch_shape,
                     tensor_shape,
                 )
-                tensor_shape = {**unstacked_batch_shape, **tensor_shape}
+                tensor_shape = {**unstacked_sample_batch_shape, **tensor_shape}
                 assert t.dims == tuple(tensor_shape.keys()), (
                     t.dims,
                     tuple(tensor_shape.keys()),
                 )
 
             assert (
-                unstacked_batch_shape is None
+                unstacked_sample_batch_shape is None
                 and unstacked_batch_slice is None
                 or (
-                    unstacked_batch_shape is not None
+                    unstacked_sample_batch_shape is not None
                     and unstacked_batch_slice is not None
                 )
             )

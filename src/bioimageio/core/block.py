@@ -8,7 +8,6 @@ from typing import (
 
 from typing_extensions import Self
 
-from ._multi_index import MultiIndex
 from .axis import BATCH_AXIS_ID, AxisId, PerAxis
 from .block_meta import BlockMeta, LinearAxisTransform, split_shape_into_blocks
 from .common import (
@@ -18,6 +17,7 @@ from .common import (
     TotalNumberOfBlocks,
 )
 from .tensor import Tensor
+from .utils._multi_index import MultiIndex
 
 
 @dataclass(frozen=True)
@@ -61,13 +61,13 @@ class Block(BlockMeta):
                 raise ValueError("Expected a MultiIndex for the batch axis")
 
             padded_block_data = padded_block_data.assign_batch_multi_index(idx)
-            assert block.unstacked_batch_shape is not None
+            assert block.unstacked_sample_batch_shape is not None
             assert block.inner_slice[BATCH_AXIS_ID] == block.outer_slice[BATCH_AXIS_ID]
 
         return cls(
             data=padded_block_data,
             sample_shape=sample_member.tagged_shape,
-            unstacked_batch_shape=block.unstacked_batch_shape,
+            unstacked_sample_batch_shape=block.unstacked_sample_batch_shape,
             unstacked_dim_order=block.unstacked_dim_order,
             inner_slice=block.inner_slice,
             unstacked_batch_slice=block.unstacked_batch_slice,
@@ -83,7 +83,7 @@ class Block(BlockMeta):
     def from_meta(cls, meta: BlockMeta, data: Tensor) -> Self:
         return cls(
             sample_shape=meta.sample_shape,
-            unstacked_batch_shape=meta.unstacked_batch_shape,
+            unstacked_sample_batch_shape=meta.unstacked_sample_batch_shape,
             unstacked_dim_order=meta.unstacked_dim_order,
             inner_slice=meta.inner_slice,
             unstacked_batch_slice=meta.unstacked_batch_slice,
@@ -96,7 +96,7 @@ class Block(BlockMeta):
     def get_meta(self) -> BlockMeta:
         return BlockMeta(
             sample_shape=self.sample_shape,
-            unstacked_batch_shape=self.unstacked_batch_shape,
+            unstacked_sample_batch_shape=self.unstacked_sample_batch_shape,
             unstacked_dim_order=self.unstacked_dim_order,
             inner_slice=self.inner_slice,
             unstacked_batch_slice=self.unstacked_batch_slice,

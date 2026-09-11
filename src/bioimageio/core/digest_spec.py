@@ -42,11 +42,11 @@ from .sample import (
     Sample,
     SampleBlockMeta,
     SampleBlockWithOrigin,
-    get_unstacked_output_dim_order,
     sample_block_meta_generator,
 )
 from .stat_measures import Stat
 from .tensor import Tensor
+from .utils._multi_index import get_unstacked_dim_order
 
 TensorSource: TypeAlias = Union[
     Tensor, xr.DataArray, NDArray[Any], PermissiveFileSource
@@ -204,7 +204,20 @@ def get_member_ids(
     return [get_member_id(descr) for descr in tensor_descriptions]
 
 
-def get_test_input_sample(model: AnyModelDescr) -> Sample:
+def get_test_input_sample(
+    model: AnyModelDescr,
+    *,
+    repetitions: Sequence[tuple[int, AxisInfo, Sequence[float]]] = (),
+) -> Sample:
+    """returns a model's test input sample
+
+    Args:
+        model: The model for which to create a test input sample.
+        repetitions: A mapping of additional axes (keyed by their index and ID) to sequences of value factors. This adds new dimensions with scaled repetitions of the original test sample that will be stacked into a/the batch dimension.
+
+    Returns:
+        A test input sample for the given model.
+    """
     if isinstance(model, v0_4.ModelDescr):
         info = {
             MemberId(d.name): (d, t) for d, t in zip(model.inputs, model.test_inputs)
@@ -212,14 +225,18 @@ def get_test_input_sample(model: AnyModelDescr) -> Sample:
     else:
         info = {d.id: d for d in model.inputs}
 
-    return _get_test_sample(info)
+    return _get_test_sample(info, repetitions=repetitions)
 
 
 get_test_inputs = get_test_input_sample
 """DEPRECATED: use `get_test_input_sample` instead"""
 
 
-def get_test_output_sample(model: AnyModelDescr) -> Sample:
+def get_test_output_sample(
+    model: AnyModelDescr,
+    *,
+    repetitions: Sequence[tuple[int, AxisInfo, Sequence[float]]] = (),
+) -> Sample:
     """returns a model's test output sample"""
     if isinstance(model, v0_4.ModelDescr):
         info = {
@@ -228,7 +245,7 @@ def get_test_output_sample(model: AnyModelDescr) -> Sample:
     else:
         info = {d.id: d for d in model.outputs}
 
-    return _get_test_sample(info)
+    return _get_test_sample(info, repetitions=repetitions)
 
 
 get_test_outputs = get_test_output_sample
@@ -239,6 +256,8 @@ def _get_test_sample(
     info: Mapping[MemberId, v0_5.InputTensorDescr | v0_5.OutputTensorDescr]
     | Mapping[MemberId, tuple[v0_4.InputTensorDescr, FileSource]]
     | Mapping[MemberId, tuple[v0_4.OutputTensorDescr, FileSource]],
+    *,
+    repetitions: Sequence[tuple[int, AxisInfo, Sequence[float]]] = (),
 ) -> Sample:
     arrays: dict[MemberId, NDArray[Any]] = {}
     for m, src in info.items():
@@ -256,11 +275,43 @@ def _get_test_sample(
     axes = {
         m: get_axes_infos(t[0] if isinstance(t, tuple) else t) for m, t in info.items()
     }
+    tensors: dict[MemberId, Tensor] = {}
+    unstacked_dim_order: PerMember[Sequence[AxisId]] = {}
+    for m in info:
+        a = arrays[m]
+        ax = axes[m]
+        axis_order_wo_repititions = [ax_.id for ax_ in ax]
+        if repetitions:
+            for rep_idx, rep_ax, factors in repetitions:
+                if rep_idx < -1 or rep_idx >= len(ax):
+                    raise ValueError(
+                        f"Invalid repetition index {rep_idx} for tensor '{m}' with axes {ax}"
+                    )
+                # Repeat the array along the specified axis according to the factors
+                a = np.stack([a * factor for factor in factors], axis=rep_idx)
+                if len(factors) < rep_ax.size.min:
+                    raise ValueError(
+                        f"Invalid number of repetitions {len(factors)} for axis '{rep_ax.id}' with min size {rep_ax.size.min}"
+                    )
+                if rep_ax.size.max is not None and len(factors) > rep_ax.size.max:
+                    raise ValueError(
+                        f"Invalid number of repetitions {len(factors)} for axis '{rep_ax.id}' with max size {rep_ax.size.max}"
+                    )
+                ax.insert(rep_idx, rep_ax)
+
+        tensors[m] = Tensor.from_numpy(a, dims=ax)
+        if repetitions:
+            tensors[m], udo = tensors[m].transpose_and_return_unstacked_dim_order(
+                axis_order_wo_repititions, extra_dims="stack"
+            )
+            assert udo is not None
+            unstacked_dim_order[m] = udo
+
     return Sample(
-        members={m: Tensor.from_numpy(arrays[m], dims=axes[m]) for m in info},
+        members=tensors,
         stat={},
         id="test-sample",
-        unstacked_dim_order=None,
+        unstacked_dim_order=unstacked_dim_order or None,
     )
 
 
@@ -300,8 +351,10 @@ def get_unstacked_output_dim_orders_for_model(
         else:
             assert_never(out)
 
-        output_orders[out_id] = get_unstacked_output_dim_order(
-            stacked_out_order, unstacked_in_order=in_order, stacked_dims=stacked_dims
+        output_orders[out_id] = get_unstacked_dim_order(
+            stacked_out_order,
+            unstacked_reference_order=in_order,
+            stacked_dims=stacked_dims,
         )
 
     return output_orders
@@ -438,10 +491,22 @@ def get_block_transform(
                     )
                 s = batch_axis_trf
             elif isinstance(a_size, int):
-                s = a_size
+                if a.type == "batch":
+                    if batch_axis_trf is None:
+                        raise ValueError(
+                            "no batch axis found in any input tensor, but output tensor"
+                            + f" '{out.id}' has one."
+                        )
+                    s = batch_axis_trf
+                else:
+                    s = a_size
             elif isinstance(a_size, v0_5.DataDependentSize):
+                assert a.type != "batch", (
+                    "data dependent size cannot be used for batch axis"
+                )
                 s = -1
             elif isinstance(a_size, v0_5.SizeReference):
+                assert a.type != "batch", "size reference cannot be used for batch axis"
                 s = LinearSampleAxisTransform(
                     axis=a_size.axis_id,
                     scale=axis_scales[a_size.tensor_id][a_size.axis_id] / a.scale,
@@ -473,7 +538,7 @@ def get_io_sample_block_metas(
     model: v0_5.ModelDescr,
     input_sample_shape: PerMember[PerAxis[int]],
     *,
-    unstacked_batch_shape: PerAxis[int] | None = None,
+    unstacked_sample_batch_shape: PerAxis[int] | None = None,
     unstacked_dim_order_input: PerMember[Sequence[AxisId]] | None = None,
     ns: Mapping[tuple[MemberId, AxisId], ParameterizedSize_N],
     batch_size: int = 1,
@@ -483,16 +548,18 @@ def get_io_sample_block_metas(
         raise TypeError(f"get_block_meta() not implemented for {type(model)}")
 
     if (
-        unstacked_batch_shape is not None
+        unstacked_sample_batch_shape is not None
         and batch_size != 1
         and (
             not_divisible := {
-                a for a, s in unstacked_batch_shape.items() if s % batch_size != 0
+                a
+                for a, s in unstacked_sample_batch_shape.items()
+                if s % batch_size != 0
             }
         )
     ):
         raise ValueError(
-            f"unstacked_batch_shape={unstacked_batch_shape} is not divisible by batch_size={batch_size} for axes {not_divisible}"
+            f"unstacked_batch_shape={unstacked_sample_batch_shape} is not divisible by batch_size={batch_size} for axes {not_divisible}"
         )
 
     block_axis_sizes = model.get_axis_sizes(ns=ns, batch_size=batch_size)
@@ -510,7 +577,7 @@ def get_io_sample_block_metas(
     n_input_blocks, input_blocks = split_multiple_shapes_into_blocks(
         input_sample_shape,
         input_block_shape,
-        unstacked_batch_shape=unstacked_batch_shape,
+        unstacked_batch_shape=unstacked_sample_batch_shape,
         unstacked_dim_order=unstacked_dim_order_input,
         halo=input_halo,
     )

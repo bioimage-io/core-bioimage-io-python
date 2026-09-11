@@ -23,7 +23,6 @@ from bioimageio.spec.model import v0_5
 from bioimageio.spec.model.v0_5 import SpaceUnit, TimeUnit
 
 from ._magic_tensor_ops import MagicTensorOpsMixin
-from ._multi_index import MultiIndex
 from .axis import BATCH_AXIS_ID, AxisId, AxisInfo, AxisLike, PerAxis
 from .common import (
     CropWhere,
@@ -36,6 +35,7 @@ from .common import (
     SliceInfo,
 )
 from .utils._color import get_default_channel_colors
+from .utils._multi_index import MultiIndex
 from .utils._type_guards import is_dict, is_mapping, is_sequence
 
 try:
@@ -523,7 +523,7 @@ class Tensor(MagicTensorOpsMixin):
             and pad_width.get(BATCH_AXIS_ID, 0) in (0, (0, 0), PadWidth(0, 0))
             and (idx := self.batch_multi_index) is not None
         ):
-            # add multiindex removed by padding when batch axis is not padded
+            # add multi-index removed by padding when batch axis is not padded
             padded_tensor = padded_tensor.assign_batch_multi_index(idx)
 
         return padded_tensor
