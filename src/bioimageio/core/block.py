@@ -111,7 +111,6 @@ def split_tensor_into_blocks(
     block_shape: PerAxis[int],
     *,
     halo: PerAxis[HaloLike],
-    stride: PerAxis[int] | None = None,
     pad_mode: PadMode,
 ) -> tuple[TotalNumberOfBlocks, Generator[Block, Any, None]]:
     """divide a sample tensor into tensor blocks."""
@@ -129,7 +128,6 @@ def split_tensor_into_blocks(
         unstacked_batch_shape=unstacked_batch_shape,
         block_shape=block_shape,
         halo=halo,
-        stride=stride,
     )
     return n_blocks, _block_generator(tensor, block_gen, pad_mode=pad_mode)
 

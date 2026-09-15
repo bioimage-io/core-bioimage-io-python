@@ -289,7 +289,6 @@ def split_shape_into_blocks(
     unstacked_batch_shape: PerAxis[int] | None,
     block_shape: PerAxis[int],
     halo: PerAxis[HaloLike],
-    stride: PerAxis[int] | None = None,
     unstacked_dim_order: Sequence[AxisId] | None,
 ) -> tuple[TotalNumberOfBlocks, Generator[BlockMeta, Any, None]]:
     if unknown_axes := [
@@ -313,8 +312,6 @@ def split_shape_into_blocks(
 
     # fill in default halo (0) and block axis length (from tensor shape)
     halo = {a: Halo.create(halo.get(a, 0)) for a in shape}
-    if stride is None:
-        stride = {}
 
     inner_1d_slices: dict[AxisId, list[SliceInfo]] = {}
     for a, s in shape.items():
@@ -394,7 +391,6 @@ def split_multiple_shapes_into_blocks(
     unstacked_batch_shape: PerAxis[int] | None,
     unstacked_dim_order: PerMember[Sequence[AxisId] | None] | None,
     halo: PerMember[PerAxis[HaloLike]],
-    strides: PerMember[PerAxis[int]] | None = None,
     broadcast: bool = False,
 ) -> tuple[TotalNumberOfBlocks, Iterable[PerMember[BlockMeta]]]:
     if unknown_blocks := [t for t in block_shapes if t not in shapes]:
@@ -419,13 +415,6 @@ def split_multiple_shapes_into_blocks(
             f"`halo` specified for tensors without block shape: {extra_halo}."
         )
 
-    if strides is None:
-        strides = {}
-
-    assert not (unknown_block := [t for t in strides if t not in block_shapes]), (
-        f"`stride` specified for tensors without block shape: {unknown_block}"
-    )
-
     blocks: dict[MemberId, Iterable[BlockMeta]] = {}
     n_blocks: dict[MemberId, TotalNumberOfBlocks] = {}
     for t in block_shapes:
@@ -437,7 +426,6 @@ def split_multiple_shapes_into_blocks(
             else None,
             block_shape=block_shapes[t],
             halo=halo.get(t, {}),
-            stride=strides.get(t),
         )
         assert n_blocks[t] > 0, n_blocks
 
