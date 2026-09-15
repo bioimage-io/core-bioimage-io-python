@@ -299,15 +299,20 @@ def split_shape_into_blocks(
             f"unknown axes in block_shape: {unknown_axes} for shape {shape}"
         )
 
-    if any(shape.get(a, 1) < block_shape[a] for a in block_shape):
-        # TODO: allow larger blockshape
-        raise ValueError(f"shape {shape} is smaller than block shape {block_shape}")
+    if large_block_dims := [
+        (a, b, s) for a in block_shape if (s := shape.get(a, 1)) < (b := block_shape[a])
+    ]:
+        logger.warning(
+            "Block shape dimensions {} larger than shape dimensions {} are limiting the shape size",
+            {a: b for a, b, _s in large_block_dims},
+            {a: s for a, _b, s in large_block_dims},
+        )
 
+    block_shape = {a: min(s, block_shape.get(a, s)) for a, s in shape.items()}
     assert all(a in shape for a in halo), (tuple(shape), set(halo))
 
     # fill in default halo (0) and block axis length (from tensor shape)
     halo = {a: Halo.create(halo.get(a, 0)) for a in shape}
-    block_shape = {a: block_shape.get(a, s) for a, s in shape.items()}
     if stride is None:
         stride = {}
 
