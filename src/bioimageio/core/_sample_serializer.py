@@ -65,12 +65,13 @@ class SampleSerializer(ABC, Generic[SerializedSampleBlockType]):
         pad_mode: PadMode | PerMember[PadMode] = "symmetric",
     ) -> Iterable[SerializedSampleBlockType]:
 
-        _n_blocks, input_blocks = sample.split_into_blocks(
+        _n_blocks, blocks = sample.split_into_blocks(
             block_shapes=block_shapes,
             halo=halo,
             pad_mode=pad_mode,
         )
-        for block in input_blocks:
+        assert _n_blocks > 0, "sample has no blocks"
+        for block in blocks:
             yield cls.serialize_sample_block(block)
 
     @staticmethod

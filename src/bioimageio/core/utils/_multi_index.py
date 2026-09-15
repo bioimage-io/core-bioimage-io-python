@@ -9,9 +9,7 @@ import pandas as pd
 from numpy.typing import NDArray
 from typing_extensions import assert_never
 
-from bioimageio.core.axis import BATCH_AXIS_ID, AxisId
-
-from ..axis import AxisId, PerAxis
+from ..axis import BATCH_AXIS_ID, AxisId, PerAxis
 from ..common import PerMember
 from ._type_guards import is_ndarray
 

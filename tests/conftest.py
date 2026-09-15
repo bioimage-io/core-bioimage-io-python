@@ -276,6 +276,12 @@ def unet2d_expand_output_shape(request: FixtureRequest):
 
 
 # written as model group to automatically skip on missing torch
+@fixture(scope="session", params=[] if skip_torch else ["unet2d_multi_tensor"])
+def unet2d_multi_tensor(request: FixtureRequest):
+    return MODEL_SOURCES[request.param]
+
+
+# written as model group to automatically skip on missing torch
 @fixture(scope="session", params=[] if skip_torch else ["unet2d_fixed_shape"])
 def unet2d_fixed_shape(request: FixtureRequest):
     return MODEL_SOURCES[request.param]

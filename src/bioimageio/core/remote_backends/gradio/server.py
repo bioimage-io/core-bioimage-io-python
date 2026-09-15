@@ -34,7 +34,7 @@ except ImportError:
 
 logger.enable("bioimageio")
 
-app = gr.Server()
+app = gr.Server(version="0.1")
 
 
 @app.api(name="predict")  # pyright: ignore[reportUntypedFunctionDecorator]
@@ -250,11 +250,11 @@ def root():
 def main(port: int | None = None) -> str:
     logger.info("Starting bioimageio.core gradio server on port {}", port)
     _app, local_url, _share_url = app.launch(
-        mcp_server=False,
-        show_error=True,
-        server_name="localhost",
+        debug=True,
+        mcp_server=True,
+        server_name="0.0.0.0",
         server_port=port,
-        debug=False,
+        show_error=True,
     )
     return local_url
 

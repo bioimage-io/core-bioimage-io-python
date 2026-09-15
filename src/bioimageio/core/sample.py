@@ -184,9 +184,7 @@ class Sample:
                 unstacked_dim_order=self.unstacked_dim_order[m]
                 if self.unstacked_dim_order is not None
                 else None,
-                unstacked_batch_shape=self.unstacked_batch_shape[m]
-                if self.unstacked_batch_shape is not None
-                else None,
+                unstacked_batch_shape=self.unstacked_batch_shape,
             )
             for m, sh in self.shape.items()
         }
@@ -522,7 +520,7 @@ class Sample:
                 f"Different batch lengths after unstacking: {batch_lengths}"
             )
 
-        stat: Stat = {
+        stat: Stat = {  # TODO: update stat calculations to maintain any multi-index batch index.
             k: v.unstack_batch_multi_index(errors="ignore", unstacked_dim_order=None)
             if isinstance(v, Tensor)
             else float(v)

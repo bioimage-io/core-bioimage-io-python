@@ -172,11 +172,8 @@ def test_gradio_adapter():
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason="requires python 3.10 or higher")
-@pytest.mark.parametrize("with_blocking", [True])  # TODO: add True
-def test_gradio_pipeline(with_blocking: bool):
-
-    port = 7861
-
+@pytest.mark.parametrize("with_blocking", [False, True])
+def test_gradio_pipeline_direct(with_blocking: bool):
     def predict_direct(
         model_descr: AnyModelDescr,
         sample: Sample,
@@ -210,9 +207,7 @@ def test_gradio_pipeline(with_blocking: bool):
             )
         )
 
-    models: list[tuple[str, AnyModelDescr, Sample, Sample]] = []
-    # for model_id in ("affable-shark", "ambitious-sloth"):
-    for model_id in ("ambitious-sloth",):
+    for model_id in ("affable-shark", "ambitious-sloth"):
         model = load_model(model_id, format_version="latest", perform_io_checks=False)
         sample = get_test_input_sample(
             model,
@@ -242,63 +237,87 @@ def test_gradio_pipeline(with_blocking: bool):
             direct_out.members,
             expected_out.members,
         )
-        models.append((model_id, model, sample, expected_out))
 
-    if _is_port_in_use(port):
-        with socket.socket() as s:
-            s.bind(("", 0))
-            _host, port = s.getsockname()
 
-    server_process = multiprocessing.Process(
-        target=gradio_server_main, kwargs={"port": port}
-    )
-    server_process.start()
+@pytest.mark.skipif(sys.version_info < (3, 10), reason="requires python 3.10 or higher")
+@pytest.mark.parametrize("with_blocking", [False, True])
+@pytest.mark.parametrize("with_server", [False, True])
+def test_gradio_pipeline(
+    with_blocking: bool,
+    with_server: bool,
+    shape_change_model: str,
+    unet2d_expand_output_shape: str,
+    unet2d_multi_tensor: str,
+):
+    port = 7860
+
+    if with_server:
+        if _is_port_in_use(port):
+            with socket.socket() as s:
+                s.bind(("", 0))
+                _host, port = s.getsockname()
+
+        server_process = multiprocessing.Process(
+            target=gradio_server_main, kwargs={"port": port}
+        )
+        server_process.start()
+    else:
+        server_process = None
+
     prepared: list[tuple[str, GradioPredictionPipeline, Sample, Sample]] = []
     try:
-        deadline = time.monotonic() + 30
-        while time.monotonic() < deadline:
-            try:
-                with socket.create_connection(("localhost", port), timeout=1):
-                    break
-            except OSError:
-                pass
-            time.sleep(0.2)
-        else:
-            raise TimeoutError(f"gradio server did not become ready on port {port}")
+        if with_server:
+            deadline = time.monotonic() + 30
+            while time.monotonic() < deadline:
+                try:
+                    with socket.create_connection(("localhost", port), timeout=1):
+                        break
+                except OSError:
+                    pass
+                time.sleep(0.2)
+            else:
+                raise TimeoutError(f"gradio server did not become ready on port {port}")
 
-        server_url = f"http://localhost:{port}/"
-        for model_id, model, sample, expected_out in models:
+            server_url = f"http://localhost:{port}/"
+        else:
+            server_url = "run_in_client_process"
+
+        for model_source in (
+            shape_change_model,
+            unet2d_expand_output_shape,
+            unet2d_multi_tensor,
+        ):
+            model = load_model(
+                model_source, format_version="latest", perform_io_checks=False
+            )
+            input_sample = get_test_input_sample(
+                model,
+                repetitions=[
+                    (
+                        2,
+                        AxisInfo(
+                            id=AxisId("extra_dim"),
+                            type="index",
+                            size=AxisSize(min=2, max=2),
+                        ),
+                        [1.0, 0.8],
+                    )
+                ],
+            )
+            expected_out = get_test_output_sample(model)
             logger.debug(
-                "connecting prediction pipeline to {} for {}", server_url, model_id
+                "connecting prediction pipeline to {} for {}", server_url, model_source
             )
             pipeline = GradioPredictionPipeline(model, server=server_url)
             server_status = pipeline.get_status()
-            logger.info("Server status for model {}: {}", model_id, server_status)
-            prepared.append((model_id, pipeline, sample, expected_out))
-
-        for model_id_loop, pp, sample_in, expected_out_loop in prepared:
-            if with_blocking:
-                predict = pp.predict_sample_with_blocking
-            else:
-                predict = pp.predict_sample_without_blocking
-
-            actual_out = predict(sample_in).unstack_batch_multi_index()[
-                {AxisId("extra_dim"): 0}
-            ]
-            logger.info(
-                "comparing actual output to expected output for model {}",
-                model_id_loop,
-            )
-            assert actual_out.members == expected_out_loop.members, (
-                actual_out.members,
-                expected_out_loop.members,
-            )
+            logger.info("Server status for model {}: {}", model_source, server_status)
+            prepared.append((model_source, pipeline, input_sample, expected_out))
 
         executor = ThreadPoolExecutor(max_workers=4)
         try:
             futures = [
                 (
-                    model_id_loop,
+                    model_source,
                     (
                         executor.submit(pp.predict_sample_with_blocking, sample_in)
                         if with_blocking
@@ -308,9 +327,9 @@ def test_gradio_pipeline(with_blocking: bool):
                     ),
                     expected_out_loop,
                 )
-                for model_id_loop, pp, sample_in, expected_out_loop in prepared
+                for model_source, pp, sample_in, expected_out_loop in prepared
             ]
-            for model_id_loop, future, expected_out_loop in futures:
+            for _model_source, future, expected_out_loop in futures:
                 actual_out = future.result(timeout=20).unstack_batch_multi_index()[
                     {AxisId("extra_dim"): 0}
                 ]
@@ -320,23 +339,28 @@ def test_gradio_pipeline(with_blocking: bool):
             executor.shutdown(wait=False, cancel_futures=True)
     finally:
         logger.info("Closing prediction pipelines before shutting down gradio server")
-        for _, pp, _, _ in prepared:
+        for model_source, pp, _, _ in prepared:
             try:
                 pp.close()
             except Exception:
-                logger.exception("Failed to close prediction pipeline")
+                logger.exception(
+                    "Failed to close prediction pipeline for {}", model_source
+                )
 
         logger.info("Terminating gradio server process on port {}", port)
-        if server_process.is_alive():
+        if server_process is not None and server_process.is_alive():
             server_process.terminate()
             server_process.join(timeout=10)
 
-        if server_process.is_alive():
+        if server_process is not None and server_process.is_alive():
             logger.warning(
                 "Gradio server on port {} did not exit cleanly; force killing.", port
             )
             server_process.kill()
             server_process.join(timeout=10)
 
-        assert not server_process.is_alive(), "gradio server still alive after shutdown"
-        logger.info("gradio server exited with code {}", server_process.exitcode)
+        assert server_process is None or not server_process.is_alive(), (
+            "gradio server still alive after shutdown"
+        )
+        if server_process is not None:
+            logger.info("gradio server exited with code {}", server_process.exitcode)

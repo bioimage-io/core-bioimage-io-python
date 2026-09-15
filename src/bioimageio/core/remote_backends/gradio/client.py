@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
+import time
+from collections.abc import Iterable, Iterator, Mapping
 from types import MappingProxyType
-from typing import Literal
+from typing import Any, Generic, Literal, TypeVar, overload
 
-from gradio_client import Client
+from gradio_client.client import Client, Job
 from loguru import logger
 
 from bioimageio.spec import AnyModelDescr, ValidationSummary
@@ -19,6 +20,7 @@ from ...common import BlocksizeParameter, PerMember
 from ...io import JsonValue
 from ...sample import Sample, SampleBlock
 from ...stat_measures import Measure, MeasureValue
+from ...utils._type_guards import is_sequence
 from .serializer import GradioSampleSerializer
 
 SerializedSampleBlock = dict[str, JsonValue]
@@ -107,6 +109,85 @@ class GradioModelAdapter(RemoteModelAdapter[SerializedSampleBlock]):
         return None
 
 
+T = TypeVar("T")
+
+
+class _DummyJob(Generic[T]):
+    def __init__(self, result: T):
+        super().__init__()
+        self._result = result
+
+    def result(self, timeout: float | None = None) -> T:
+        return self._result
+
+    def __iter__(self):
+        yield self._result
+
+
+class _DummyJobIterable(Generic[T]):
+    def __init__(self, result: Iterable[T]):
+        assert isinstance(result, Iterable), "result must be iterable"
+        super().__init__()
+        self._count = 0
+        self._result = result
+        self._outputs: list[T] = []
+        self._done = False
+
+    def status(self) -> dict[Literal["status"], str]:
+        return {"status": "dummy done" if self._done else "dummy running"}
+
+    def result(self, timeout: float | None = None) -> T:
+        self._outputs = list(self)
+        return self._outputs[-1]
+
+    def done(self) -> bool:
+        return self._done
+
+    def cancel(self) -> bool:
+        self._result = ()
+        return True
+
+    def outputs(self) -> list[T]:
+        return list(self._outputs)
+
+    def __iter__(self) -> Iterator[T]:
+        for res in self._outputs:
+            yield res
+
+        for res in self._result:
+            self._outputs.append(res)
+            yield res
+        self._done = True
+
+
+class _DummyClient:
+    @overload
+    def submit(
+        self, api_name: Literal["/get_status"], **kwargs: Any
+    ) -> _DummyJob[dict[Literal["message"], str]]: ...
+    @overload
+    def submit(
+        self, api_name: Literal["/predict"], **kwargs: Any
+    ) -> _DummyJobIterable[SerializedSampleBlock]: ...
+    def submit(
+        self, api_name: Literal["/get_status", "/predict"], **kwargs: Any
+    ) -> (
+        _DummyJob[dict[Literal["message"], str]]
+        | _DummyJobIterable[SerializedSampleBlock]
+    ):
+        if api_name == "/get_status":
+            return _DummyJob({"message": "dummy client"})
+        elif api_name == "/predict":
+            from .server import predict as server_predict
+
+            return _DummyJobIterable(server_predict(**kwargs))
+        else:
+            raise ValueError(f"Unknown api_name: {api_name}")
+
+    def close(self):
+        pass
+
+
 class GradioPredictionPipeline(RemotePredictionPipeline):
     """Prediction pipeline to use the bioimage-io-gradio-runner as a fully remote prediction pipeline."""
 
@@ -114,7 +195,7 @@ class GradioPredictionPipeline(RemotePredictionPipeline):
         self,
         model_description: AnyModelDescr,
         *,
-        server: str | None = None,
+        server: str | None | Literal["run_in_client_process"] = None,
         precomputed_statistics: Mapping[Measure, MeasureValue] = MappingProxyType({}),
         default_blocksize_parameter: BlocksizeParameter = 10,
         default_batch_size: int = 1,
@@ -139,7 +220,12 @@ class GradioPredictionPipeline(RemotePredictionPipeline):
             default_blocksize_parameter=default_blocksize_parameter,
             default_batch_size=default_batch_size,
         )
-        self._client = Client(self.server, httpx_kwargs={"timeout": 60})
+        if server == "run_in_client_process":
+            # run via dummy client (intended for debugging)
+            self._client = _DummyClient()
+        else:
+            self._client = Client(self.server, httpx_kwargs={"timeout": 60})
+
         self._serialized_model, self._sha256 = (
             DescriptionSerializer.serialize_to_string_and_hash(model_description)
         )
@@ -172,8 +258,8 @@ class GradioPredictionPipeline(RemotePredictionPipeline):
                 self._client,
                 self._serialized_model,
                 self._sha256,
-                serialized_input_sample=self._serializer.serialize_sample(
-                    sample_block.as_sample()
+                serialized_input_sample=(
+                    self._serializer.serialize_sample_block(sample_block),
                 ),
                 blocksize=None,
                 skip_preprocessing=skip_preprocessing,
@@ -274,7 +360,7 @@ class GradioPredictionPipeline(RemotePredictionPipeline):
 
 
 def _call_predict_api(
-    client: Client,
+    client: Client | _DummyClient,
     serialized_model: str,
     sha256: str,
     serialized_input_sample: Iterable[SerializedSampleBlock],
@@ -288,12 +374,12 @@ def _call_predict_api(
     skip_output_cropping: bool,
     batch_size: int | None,
 ) -> Iterable[SerializedSampleBlock]:
-    def submit(model: str):
+    def submit(model: str, input_sample: list[SerializedSampleBlock]):
         return client.submit(
             api_name="/predict",
             model=model,
             sha256=sha256,
-            input_sample=serialized_input_sample,
+            input_sample=input_sample,
             blocksize={
                 str(k): {str(kk): vv for kk, vv in v.items()}
                 for k, v in blocksize.items()
@@ -307,28 +393,64 @@ def _call_predict_api(
             batch_size=batch_size,
         )
 
+    def iterate_job(
+        job: _DummyJobIterable[SerializedSampleBlock] | Job,
+    ) -> Iterable[SerializedSampleBlock]:
+        seconds_between_polls: float = 1.0
+        timeout_seconds: float = 300.0
+        output_idx = 0
+        started = time.time()
+        seconds_to_sleep = 0.01  # first sleep is shorter for faster initial responses
+        while not job.done():
+            if (time.time() - started) > timeout_seconds:
+                _ = job.cancel()
+                raise TimeoutError(
+                    f"Timeout of {timeout_seconds} seconds exceeded while waiting for prediciton job {job.status()}."
+                )
+
+            logger.debug("Waiting for submitted prediction job")
+            time.sleep(seconds_to_sleep)
+            seconds_to_sleep = seconds_between_polls
+            if isinstance(job, _DummyJobIterable):
+                # dummy job runs in the same thread, so we need to call result to let it run
+                _ = job.result(timeout_seconds)
+
+            outs: Any = job.outputs()  # pyright: ignore[reportUnknownVariableType]
+            assert is_sequence(outs)
+            outs = outs[output_idx:]
+            for out in outs:
+                yield out
+                output_idx += 1
+
+    # cannot json serialize any iterable, so we need to convert to a list first
+    # this also makes it trivial to not exhaust the iterable in case we need to retry with model upload
+    serialized_input_sample_list = list(serialized_input_sample)
+
     try_with_model_upload = True
-    # try:
-    #     job = submit("")
-    #     return list(job)  # TOOD: reactivate yielding
-    #     # for block in job:  # pyright: ignore[reportUnknownVariableType]
-    #     #     yield block  # pyright: ignore[reportReturnType]
-    #     #     # we got one response, so the model cache was hit...
-    #     #     try_with_model_upload = False
-    # except Exception as e:
-    #     # A raised exception on the server seems to simply return an empty response sequence,
-    #     # so this except is likely not triggered at all.
-    #     # Below we retry on empty return value, too.
-    #     if try_with_model_upload:
-    #         logger.warning(
-    #             "Failed to submit job without model upload, trying with model upload, error was: {}",
-    #             e,
-    #         )
-    #     else:
-    #         raise
+    try:
+        job = submit("", input_sample=serialized_input_sample_list)
+        for block in iterate_job(job):
+            yield block
+            # we got one response, so the model cache was hit...
+            try_with_model_upload = False
+    except Exception as e:
+        # A raised exception on the server seems to simply return an empty response sequence,
+        # so this except is likely not triggered at all.
+        # Below we retry on empty return value, too.
+        if try_with_model_upload:
+            logger.warning(
+                "Failed to submit job without model upload, trying with model upload, error was: {}",
+                e,
+            )
+        else:
+            # An exception occured somehow after successfully obtaining the first block of the result
+            # even though the server should only return a single block as we only submitted a single block.
+            raise
 
     if try_with_model_upload:
-        job = submit(serialized_model)
-        return list(job)  # TOOD: reactivate yielding
-        # for block in job:  # pyright: ignore[reportUnknownVariableType]
-        #     yield block  # pyright: ignore[reportReturnType]
+        job = submit(
+            serialized_model,
+            input_sample=serialized_input_sample_list,
+        )
+        for block in iterate_job(job):
+            yield block
