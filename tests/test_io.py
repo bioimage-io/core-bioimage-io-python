@@ -50,6 +50,31 @@ def test_tensor_io_numpy(
     assert (actual == expected).to_numpy().all()
 
 
+@pytest.mark.parametrize("suffix", [".png", ".tiff", ".zarr"])
+def test_save_sample(tmp_path: Path, suffix: str):
+    from bioimageio.core import Sample, Tensor
+    from bioimageio.core.common import MemberId
+    from bioimageio.core.io import load_tensor, save_sample
+
+    members = {
+        MemberId("raw"): np.arange(6, dtype=np.uint8).reshape(2, 3),
+        MemberId("mask"): np.ones((2, 3), dtype=np.uint8),
+    }
+    sample = Sample(
+        members={
+            m: Tensor.from_numpy(data, dims=("y", "x")) for m, data in members.items()
+        },
+        stat={},
+        id="sample",
+    )
+
+    save_sample(tmp_path / f"{sample.id}_{{member_id}}{suffix}", sample)
+
+    for member_id, expected in members.items():
+        actual = load_tensor(tmp_path / f"sample_{member_id}{suffix}")
+        np.testing.assert_array_equal(actual, expected)
+
+
 @pytest.mark.parametrize(
     "name",
     [

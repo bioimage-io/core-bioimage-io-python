@@ -316,10 +316,9 @@ def split_shape_into_blocks(
     inner_1d_slices: dict[AxisId, list[SliceInfo]] = {}
     for a, s in shape.items():
         inner_size = block_shape[a] - sum(halo[a])
-        stride_1d = stride.get(a, inner_size)
         inner_1d_slices[a] = [
             SliceInfo(min(p, s - inner_size), min(p + inner_size, s))
-            for p in range(0, s, stride_1d)
+            for p in range(0, s, inner_size)
         ]
 
     n_blocks = prod(map(len, inner_1d_slices.values()))
