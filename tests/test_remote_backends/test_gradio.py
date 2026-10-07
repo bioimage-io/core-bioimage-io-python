@@ -27,6 +27,27 @@ from bioimageio.core.remote_backends.gradio.server import predict as server_pred
 from bioimageio.spec import AnyModelDescr
 
 
+def test_gradio_sample_serializer(unet2d_diff_output_shape: str):
+    model = load_model(
+        unet2d_diff_output_shape, format_version="latest", perform_io_checks=False
+    )
+    sample = get_test_input_sample(model)
+    serialized = GradioSampleSerializer.serialize_sample(sample)
+    deserialized = GradioSampleSerializer.deserialize_sample(serialized)
+    assert deserialized.members == sample.members
+    assert deserialized == sample
+
+    # blockwise
+    serialized_blockwise = GradioSampleSerializer.serialize_sample_blockwise(
+        sample, model=model, blocksize_parameter=10
+    )
+    deserialized_blockwise = GradioSampleSerializer.deserialize_sample(
+        serialized_blockwise
+    )
+    assert deserialized_blockwise.members == sample.members
+    assert deserialized_blockwise == sample
+
+
 def _is_port_in_use(port: int) -> bool:
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         return s.connect_ex(("localhost", port)) == 0
@@ -319,11 +340,9 @@ def test_gradio_pipeline(
                 (
                     model_source,
                     (
-                        executor.submit(pp.predict_sample_with_blocking, sample_in)
+                        executor.submit(pp.predict_with_blocking, sample_in)
                         if with_blocking
-                        else executor.submit(
-                            pp.predict_sample_without_blocking, sample_in
-                        )
+                        else executor.submit(pp.predict_without_blocking, sample_in)
                     ),
                     expected_out_loop,
                 )

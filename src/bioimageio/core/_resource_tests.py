@@ -1022,14 +1022,12 @@ def _test_recreate_test_outputs(
         ) as prediction_pipeline:
             prediction_pipeline.apply_preprocessing(test_input)
             test_input_preprocessed = deepcopy(test_input)
-            results_not_postprocessed = (
-                prediction_pipeline.predict_sample_without_blocking(
-                    test_input,
-                    skip_postprocessing=True,
-                    skip_preprocessing=True,
-                    skip_input_padding=True,
-                    skip_output_cropping=True,
-                )
+            results_not_postprocessed = prediction_pipeline.predict_without_blocking(
+                test_input,
+                skip_postprocessing=True,
+                skip_preprocessing=True,
+                skip_input_padding=True,
+                skip_output_cropping=True,
             )
             results = deepcopy(results_not_postprocessed)
             prediction_pipeline.apply_postprocessing(results)
@@ -1231,7 +1229,7 @@ def _test_parametrized_inference(
             for n, batch_size, inputs, exptected_output_shape in generate_test_cases():
                 error: str | None = None
                 try:
-                    result = prediction_pipeline.predict_sample_without_blocking(
+                    result = prediction_pipeline.predict_without_blocking(
                         inputs, skip_input_padding=True, skip_output_cropping=True
                     )
                 except Exception as e:

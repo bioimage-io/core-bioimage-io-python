@@ -53,7 +53,6 @@ from . import stat_calculators as stat_calculators
 from . import stat_measures as stat_measures
 from . import tensor as tensor
 from . import weight_converters as weight_converters
-from ._prediction_pipeline import IntermediatePrediction as IntermediatePrediction
 from ._prediction_pipeline import PredictionPipeline as PredictionPipeline
 from ._prediction_pipeline import RemotePredictionPipeline as RemotePredictionPipeline
 from ._prediction_pipeline import (
@@ -74,13 +73,10 @@ from ._settings import settings as settings
 from .axis import Axis as Axis
 from .axis import AxisId as AxisId
 from .backends import create_model_adapter as create_model_adapter
-from .block_meta import BlockMeta as BlockMeta
 from .common import MemberId as MemberId
 from .prediction import predict as predict
 from .prediction import predict_many as predict_many
 from .sample import Sample as Sample
-from .sample import SampleBlock as SampleBlock
-from .sample import SampleBlockMeta as SampleBlockMeta
 from .stat_calculators import compute_dataset_measures as compute_dataset_measures
 from .stat_calculators import compute_measures as compute_measures
 from .stat_calculators import compute_sample_measures as compute_sample_measures

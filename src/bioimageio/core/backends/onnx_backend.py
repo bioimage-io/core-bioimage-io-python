@@ -15,7 +15,7 @@ from numpy.typing import NDArray
 from bioimageio.spec.model import v0_4, v0_5
 
 from .._model_adapter import LocalModelAdapter
-from ..utils._type_guards import is_list, is_tuple
+from .._utils.type_guards import is_list, is_tuple
 
 
 class ONNXModelAdapter(LocalModelAdapter[Optional[str], rt.InferenceSession]):
@@ -32,9 +32,7 @@ class ONNXModelAdapter(LocalModelAdapter[Optional[str], rt.InferenceSession]):
         self._input_names: list[str] | None = None
         super().__init__(model_description=model_description, devices=devices)
 
-    def _parse_devices(
-        self, devices: Sequence[str] | None
-    ) -> Sequence[str | None]:
+    def _parse_devices(self, devices: Sequence[str] | None) -> Sequence[str | None]:
         available_providers: Any = None
         if hasattr(rt, "get_available_providers"):
             available_providers = cast(Any, rt.get_available_providers())

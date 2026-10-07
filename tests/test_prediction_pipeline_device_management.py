@@ -1,7 +1,7 @@
 from pathlib import Path
 
 import pytest
-from numpy.testing import assert_array_almost_equal
+from xarray.testing import assert_allclose  # pyright: ignore[reportUnknownVariableType]
 
 from bioimageio.core.common import SupportedWeightsFormat
 from bioimageio.spec.model.v0_4 import ModelDescr as ModelDescr04
@@ -33,55 +33,53 @@ def _test_device_management(
 
     inputs = get_test_input_sample(bio_model)
     with pred_pipe as pp:
-        outputs = pp.predict_sample_without_blocking(
+        outputs = pp.predict_without_blocking(
             inputs, skip_input_padding=True, skip_output_cropping=True
         )
 
-    expected_outputs = get_test_output_sample(bio_model)
+        expected_outputs = get_test_output_sample(bio_model)
 
-    assert len(outputs.shape) == len(expected_outputs.shape)
-    for m in expected_outputs.members:
-        out = outputs.members[m].data
-        assert out is not None
-        exp = expected_outputs.members[m].data
-        assert_array_almost_equal(out, exp, decimal=2)
+        assert len(outputs.shape) == len(expected_outputs.shape)
+        for m in expected_outputs.members:
+            out = outputs.members[m].as_numpy().data
+            exp = expected_outputs.members[m].as_numpy().data
+            assert_allclose(out, exp, rtol=1e-2, atol=1e-2)
 
     # repeat inference with context manager to test load/predict/unload/load/predict
     with pred_pipe as pp:
-        outputs = pp.predict_sample_without_blocking(
+        outputs = pp.predict_without_blocking(
             inputs, skip_input_padding=True, skip_output_cropping=True
         )
 
-    assert len(outputs.shape) == len(expected_outputs.shape)
-    for m in expected_outputs.members:
-        out = outputs.members[m].data
-        assert out is not None
-        exp = expected_outputs.members[m].data
-        assert_array_almost_equal(out, exp, decimal=2)
+        assert len(outputs.shape) == len(expected_outputs.shape)
+        for m in expected_outputs.members:
+            out = outputs.members[m].as_numpy().data
+            exp = expected_outputs.members[m].as_numpy().data
+            assert_allclose(out, exp, rtol=1e-2, atol=1e-2)
 
 
-@pytest.mark.parametrize("device", ["cpu", "cuda"])
+@pytest.mark.parametrize("device", ["cpu", "cuda", "mps"])
 def test_device_management_torch(any_torch_model: Path, device: str):
     _test_device_management(any_torch_model, "pytorch_state_dict", device=device)
 
 
-@pytest.mark.parametrize("device", ["cpu", "cuda"])
+@pytest.mark.parametrize("device", ["cpu", "cuda", "mps"])
 def test_device_management_torchscript(any_torchscript_model: Path, device: str):
     _test_device_management(any_torchscript_model, "torchscript", device=device)
 
 
-@pytest.mark.parametrize("device", ["cpu", "cuda"])
+@pytest.mark.parametrize("device", ["cpu", "cuda", "mps"])
 def test_device_management_onnx(any_onnx_model: Path, device: str):
     _test_device_management(any_onnx_model, "onnx", device=device)
 
 
-@pytest.mark.parametrize("device", ["cpu", "cuda"])
+@pytest.mark.parametrize("device", ["cpu", "cuda", "mps"])
 def test_device_management_tensorflow(any_tensorflow_model: Path, device: str):
     _test_device_management(
         any_tensorflow_model, "tensorflow_saved_model_bundle", device=device
     )
 
 
-@pytest.mark.parametrize("device", ["cpu", "cuda"])
+@pytest.mark.parametrize("device", ["cpu", "cuda", "mps"])
 def test_device_management_keras(any_keras_model: Path, device: str):
     _test_device_management(any_keras_model, "keras_hdf5", device=device)

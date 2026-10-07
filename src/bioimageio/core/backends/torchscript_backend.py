@@ -12,7 +12,7 @@ from numpy.typing import NDArray
 from bioimageio.spec.model import v0_4, v0_5
 
 from .._model_adapter import LocalModelAdapter
-from ..utils._type_guards import is_list, is_tuple
+from .._utils.type_guards import is_list, is_tuple
 from .pytorch_backend import get_devices
 
 
@@ -30,9 +30,7 @@ class TorchscriptModelAdapter(LocalModelAdapter[torch.device, Any]):
         self._weight_descr = model_description.weights.torchscript
         super().__init__(model_description=model_description, devices=devices)
 
-    def _parse_devices(
-        self, devices: Sequence[str] | None
-    ) -> Sequence[torch.device]:
+    def _parse_devices(self, devices: Sequence[str] | None) -> Sequence[torch.device]:
         return get_devices(devices)
 
     def _init_model_on_device(self, device: torch.device) -> Any:

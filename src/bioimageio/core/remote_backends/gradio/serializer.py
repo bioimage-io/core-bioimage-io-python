@@ -3,6 +3,7 @@ from __future__ import annotations
 import tempfile
 from collections.abc import Mapping
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 from gradio_client import handle_file
@@ -13,7 +14,6 @@ from ..._common_annotations import PerMemberAnno
 from ..._sample_serializer import SampleSerializer
 from ...common import MemberId
 from ...io import JsonValue, load_stat, save_tensor, serialize_stat
-from ...sample import SampleBlock, SampleBlockMeta
 from ...tensor import Tensor
 
 
@@ -32,7 +32,7 @@ class _SerializableBlock(BaseModel, frozen=True):
 
 
 class _SerializableSampleBlock(BaseModel, frozen=True):
-    meta: SampleBlockMeta
+    meta: Any  # SampleBlockMeta
     data: PerMemberAnno[_SerializableBlock | Path]
     serialized_stat: list[JsonValue]
 
@@ -42,7 +42,7 @@ SerializedSampleBlock = dict[str, JsonValue]
 
 class GradioSampleSerializer(SampleSerializer[SerializedSampleBlock]):
     @staticmethod
-    def serialize_sample_block(sample_block: SampleBlock) -> SerializedSampleBlock:
+    def serialize_sample_block(sample_block: Sample) -> SerializedSampleBlock:
         handled_members: dict[MemberId, _SerializableBlock] = {}
         for m, t in sample_block.members.items():
             handled_members[m] = _SerializableBlock.from_tensor(t)

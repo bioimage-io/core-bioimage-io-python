@@ -28,7 +28,7 @@ from ._ops_stardist import StardistPostprocessing2D, StardistPostprocessing3D
 from .axis import CHANNEL_AXIS_ID, AxisId
 from .common import DTypeStr, MemberId
 from .digest_spec import get_member_id, import_callable
-from .sample import Sample, SampleBlock
+from .sample import Sample
 from .stat_calculators import StatsCalculator
 from .stat_measures import (
     DatasetMean,
@@ -78,7 +78,7 @@ class AddKnownDatasetStats(BlockwiseOperator):
     def required_measures(self) -> Collection[Measure]:
         return set()
 
-    def __call__(self, sample: Sample | SampleBlock) -> None:
+    def __call__(self, sample: Sample) -> None:  #  | SampleBlock
         sample.stat.update(self.dataset_stats)
 
 

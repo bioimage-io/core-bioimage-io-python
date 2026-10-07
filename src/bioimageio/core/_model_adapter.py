@@ -8,22 +8,30 @@ from queue import LifoQueue
 from typing import (
     Any,
     Generic,
+    Literal,
+    cast,
 )
 
+import dask.array as da
+from dask.delayed import Delayed, delayed
 from exceptiongroup import ExceptionGroup
 from loguru import logger
 from numpy.typing import NDArray
-from typing_extensions import TypeVar
+from typing_extensions import TypeVar, assert_never
 
+from bioimageio.core.axis import AxisId, PerAxis
 from bioimageio.spec import ValidationSummary
 from bioimageio.spec.model import AnyModelDescr, v0_4
 
 from ._sample_serializer import SampleSerializer, SerializedSampleBlockType
 from .common import PerMember
-from .digest_spec import get_axes_infos, get_member_ids
+from .digest_spec import (
+    get_axes_infos,
+    get_member_ids,
+    get_unstacked_output_dim_orders_for_model,
+)
 from .sample import Sample
-from .tensor import Tensor
-from .utils._multi_index import restore_batch_multi_index
+from .tensor import Array, MultiIndex, Tensor, restore_batch_multi_index
 
 
 class ModelAdapter(ABC):
@@ -46,7 +54,12 @@ class ModelAdapter(ABC):
     ```
     """
 
-    def __init__(self, model_description: AnyModelDescr, devices: Sequence[str] | None):
+    def __init__(
+        self,
+        model_description: AnyModelDescr,
+        devices: Sequence[str] | None,
+        computation_mode: Literal["eager", "lazy"] = "lazy",
+    ):
         super().__init__()
         self._model_descr = model_description
         self._input_ids = get_member_ids(model_description.inputs)
@@ -58,12 +71,35 @@ class ModelAdapter(ABC):
             tuple(a.id for a in get_axes_infos(t)) for t in model_description.outputs
         ]
         if isinstance(model_description, v0_4.ModelDescr):
+            if computation_mode == "lazy":
+                warnings.warn(
+                    "'lazy' computation mode is not supported for v0.4 model descriptions. Falling back to 'eager' computation mode."
+                )
+                computation_mode = "eager"
+
             self._input_is_optional = [False] * len(model_description.inputs)
         else:
             self._input_is_optional = [ipt.optional for ipt in model_description.inputs]
 
+        self.computation_mode: Literal["eager", "lazy"] = computation_mode
+
         self._devices = devices
         self.load()
+
+    def get_output_shape(
+        self,
+        input_shape: PerMember[PerAxis[int]],
+    ) -> PerMember[PerAxis[int]]:
+        if isinstance(self._model_descr, v0_4.ModelDescr):
+            raise NotImplementedError(
+                "v0_4.ModelDescr.get_output_shape is not implemented. Please update the model description to v0_5 or later."
+            )
+        return {
+            m: {d: s if isinstance(s, int) else -1 for d, s in s_per_a.items()}
+            for m, s_per_a in self._model_descr.get_output_tensor_sizes(
+                input_shape
+            ).items()
+        }
 
     @property
     def model_descr(self) -> AnyModelDescr:
@@ -74,14 +110,22 @@ class ModelAdapter(ABC):
         self._loaded = True
 
     @abstractmethod
-    def forward(self, inputs: PerMember[Tensor | None]) -> PerMember[Tensor | None]: ...
+    def forward(
+        self, inputs: PerMember[Tensor | Array | None]
+    ) -> PerMember[Tensor | None]:
+        """
+        Run forward pass of model to get model predictions
+
+        Args:
+            inputs: input tensors for the model, keyed by member id
+        """
 
     @abstractmethod
     def unload(self):
         """Unload model from any devices, freeing their memory.
 
         Note:
-            The moder adapter should be considered unusable afterwards.
+            The model adapter should be considered unusable afterwards.
         """
         self._loaded = False
 
@@ -147,15 +191,16 @@ class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
     @abstractmethod
     def _init_model_on_device(self, device: DeviceType) -> ModelType: ...
 
-    def forward(self, inputs: PerMember[Tensor | None]) -> PerMember[Tensor | None]:
+    def forward(
+        self, inputs: PerMember[Tensor | Array | None]
+    ) -> PerMember[Tensor | None]:
         """
         Run forward pass of model to get model predictions
-
-        Note: sample id and stample stat attributes are passed through
 
         Args:
             inputs: input tensors for the model, keyed by member id
         """
+
         if not self._loaded:
             raise RuntimeError("Model must be `.load()`ed before calling forward()")
 
@@ -163,49 +208,130 @@ class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
         if unexpected:
             warnings.warn(f"Got unexpected input tensor IDs: {unexpected}")
 
-        input_arrays = [
-            (
-                None
-                if (a := inputs.get(in_id)) is None
-                else a.transpose(in_order).to_numpy()
-            )
-            for in_id, in_order in zip(self._input_ids, self._input_axes)
-        ]
+        multi_batch_indices: dict[str, MultiIndex] = {}
+        input_arrays: list[Array | None] = []
+        for in_id, in_order in zip(self._input_ids, self._input_axes):
+            if isinstance((a := inputs.get(in_id)), Tensor):
+                a_transposed = a.transpose(
+                    in_order,
+                    extra_dims="stack" if a.batch_multi_index is None else "raise",
+                )
+                if a_transposed.batch_multi_index is not None:
+                    multi_batch_indices[in_id] = a_transposed.batch_multi_index
+
+                a = a_transposed.data.data
+
+            input_arrays.append(a)
 
         logger.debug(
             "NN input shapes: {}",
             [a.shape if a is not None else None for a in input_arrays],
         )
-        device, model = self._model_queue.get()
-        try:
-            output_arrays = self._forward_impl(device, model, input_arrays)
-        finally:
-            self._model_queue.put((device, model))
 
-        logger.debug(
-            "NN output shapes: {}",
-            [a.shape if a is not None else None for a in output_arrays],
-        )
-        if len(output_arrays) > len(self._output_ids):
-            warnings.warn(
-                f"Model produced more outputs ({len(output_arrays)}) than specified in the model description ({len(self._output_ids)}). Extra outputs will be ignored."
+        if self.computation_mode == "eager":
+            output_arrays = self._forward_arrays(input_arrays)
+            logger.debug(
+                "NN output shapes: {}",
+                [a.shape if a is not None else None for a in output_arrays],
             )
+            if len(output_arrays) > len(self._output_ids):
+                warnings.warn(
+                    f"Model produced more outputs ({len(output_arrays)}) than specified in the model description ({len(self._output_ids)}). Extra outputs will be ignored."
+                )
             output_arrays = output_arrays[: len(self._output_ids)]
 
-        output_tensors = [
-            None if a is None else Tensor(a, dims=d)
-            for a, d in zip(output_arrays, self._output_axes)
-        ]
-        outputs = {
-            tid: out
-            for tid, out in zip(
-                self._output_ids,
-                output_tensors,
+            output_tensors = [
+                None if a is None else Tensor(a, dims=d)
+                for a, d in zip(output_arrays, self._output_axes)
+            ]
+            outputs = {
+                tid: out
+                for tid, out in zip(
+                    self._output_ids,
+                    output_tensors,
+                )
+                if out is not None
+            }
+        elif self.computation_mode == "lazy":
+            output_arrays = cast(
+                Sequence[Delayed | None],
+                delayed(
+                    self._forward_arrays,
+                    pure=False,
+                    nout=len(self._output_ids),
+                    # TODO: add name to avoid hashing inputs?
+                )(input_arrays),
             )
-            if out is not None
-        }
-        outputs = restore_batch_multi_index(inputs, outputs)
+            in_shape = {
+                m: {d: int(s) for d, s in zip(dims, a.shape)}
+                for m, a, dims in zip(self._input_ids, input_arrays, self._input_axes)
+                if a is not None
+            }
+            out_shape = self.get_output_shape(in_shape)
+            outputs = {
+                m: Tensor(
+                    da.from_delayed(
+                        a, shape=[out_shape[m][d] for d in dims], dtype=dtype
+                    ),
+                    dims=dims,
+                )
+                for m, a, dims, dtype in zip(
+                    self._output_ids,
+                    output_arrays,
+                    self._output_axes,
+                    [out.dtype for out in self._model_descr.outputs],
+                )
+                if a is not None
+            }
+        else:
+            assert_never(self.computation_mode)
+
+        if multi_batch_indices:
+            outputs = restore_batch_multi_index(multi_batch_indices.values(), outputs)
+            # Reorder unstacked output dims to match the order of the unstacked input dims, if possible
+            unstacked_output_dim_orders = get_unstacked_output_dim_orders_for_model(
+                self._model_descr,
+                {
+                    m: in_tensor.dims
+                    for m, in_tensor in inputs.items()
+                    if isinstance(in_tensor, Tensor)
+                },
+                stacked_output_dims={
+                    m: [
+                        AxisId(name)
+                        for name in out.batch_multi_index.names
+                        if name is not None
+                    ]
+                    for m, out in outputs.items()
+                    if out.batch_multi_index is not None
+                },
+            )
+            outputs = {
+                m: out.transpose(unstacked_output_dim_orders[m])
+                for m, out in outputs.items()
+            }
+
         return outputs
+
+    def _forward_arrays(self, input_arrays: Sequence[Array | None]):
+        if not self._loaded:
+            raise RuntimeError(
+                "Cannot compute model outputs because the model adapter is unloaded. "
+                + "Compute lazy outputs inside the prediction pipeline context "
+                + "(`with pred_pipe as pp:`), before the model is unloaded."
+            )
+        device, model = self._model_queue.get()
+        try:
+            return self._forward_impl(
+                device,
+                model,
+                [
+                    cast(NDArray[Any], a.compute()) if isinstance(a, da.Array) else a
+                    for a in input_arrays
+                ],
+            )
+        finally:
+            self._model_queue.put((device, model))
 
     @abstractmethod
     def _forward_impl(
@@ -273,7 +399,7 @@ class RemoteModelAdapter(ModelAdapter, ABC, Generic[SerializedSampleBlockType]):
         )
         serialized_output = self._forward_impl(serialized_input)
         output = self._serializer.deserialize_sample(serialized_output).members
-        output = restore_batch_multi_index(inputs, output)
+        output = restore_batch_multi_index(inputs.values(), output)
         return output
 
     @abstractmethod

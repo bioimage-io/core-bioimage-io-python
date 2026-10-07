@@ -99,7 +99,7 @@ def predict(
                 for b in sample_block_iterator
             ),
         ):
-            output_block = pp.predict_sample_block(
+            output_block = pp.predict_block(
                 block,
                 skip_preprocessing=skip_preprocessing,
                 skip_postprocessing=skip_postprocessing,
@@ -114,8 +114,8 @@ def predict(
         output_sample = None
         if isinstance(blocksize, int):
             try:
-                if pp.has_non_blockwise_postprocessing and not skip_postprocessing:
-                    output_sample = pp.predict_sample_with_blocking(
+                if pp.has_samplewise_postprocessing and not skip_postprocessing:
+                    output_sample = pp.predict_with_blocking(
                         deserialized_input_sample,
                         skip_preprocessing=skip_preprocessing,
                         skip_postprocessing=skip_postprocessing,
@@ -123,7 +123,7 @@ def predict(
                         batch_size=batch_size,
                     )
                 else:
-                    for output in pp.predict_sample_with_blocking_yield_intermediates(
+                    for output in pp._predict_with_blocking_impl(
                         deserialized_input_sample,
                         skip_preprocessing=skip_preprocessing,
                         skip_postprocessing=skip_postprocessing,
@@ -145,7 +145,7 @@ def predict(
                     e,
                 )
         if output_sample is None:
-            output_sample = pp.predict_sample_without_blocking(
+            output_sample = pp.predict_without_blocking(
                 deserialized_input_sample,
                 skip_preprocessing=skip_preprocessing,
                 skip_postprocessing=skip_postprocessing,

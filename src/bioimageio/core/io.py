@@ -26,6 +26,7 @@ from pydantic import BaseModel, RootModel, TypeAdapter
 from typing_extensions import Literal, TypeAlias, assert_never
 from typing_extensions import TypeAliasType as _TypeAliasType
 
+from bioimageio.core._utils.type_hints import cast_and_assert
 from bioimageio.spec._internal.io import (
     RelativeDirectory,
     ZarrSource,
@@ -46,26 +47,25 @@ from bioimageio.spec.common import (
 )
 from bioimageio.spec.utils import load_array, save_array
 
-from .axis import (
-    BATCH_AXIS_ID,
-    AxisId,
-    AxisLike,
-    PerAxis,
-    single_letter_dims_if_possible,
-)
-from .common import MemberId, PerMember, SliceInfo
-from .sample import Sample, SampleBlock
-from .stat_measures import DatasetMeasure, MeasureValue, SampleMeasure, Stat
-from .tensor import Tensor
-from .utils._color import hex_to_rgb
-from .utils._io_zarr import open_zarr_multiscale_array
-from .utils._tiff_metadata import (
+from ._utils.color import hex_to_rgb
+from ._utils.io_zarr import open_zarr_multiscale_array
+from ._utils.tiff_metadata import (
     ImageJMetadata,
     OmeChannelMetadata,
     OmeMetadata,
     create_ome_metadata_from_xml_string,
 )
-from .utils._type_guards import is_tuple
+from ._utils.type_guards import is_tuple
+from .axis import (
+    AxisId,
+    AxisLike,
+    PerAxis,
+    single_letter_dims_if_possible,
+)
+from .common import PerMember
+from .sample import Sample
+from .stat_measures import DatasetMeasure, MeasureValue, SampleMeasure, Stat
+from .tensor import Tensor
 
 if TYPE_CHECKING:
     JsonValue: TypeAlias = Union[
@@ -489,10 +489,15 @@ def save_tensor(
     tensor: Tensor,
     *,
     io_lib: IO_Lib | None = None,
-    roi_and_tensor_shape: tuple[PerAxis[SliceInfo], PerAxis[int]] | None = None,
+    chunk_shape: PerAxis[int] | None = None,
+    shard_shape: PerAxis[int] | None = None,
 ) -> None:
     _ = _save_tensor_impl(
-        path, tensor, io_lib=io_lib, roi_and_tensor_shape=roi_and_tensor_shape
+        path,
+        tensor,
+        io_lib=io_lib,
+        chunk_shape=chunk_shape,
+        shard_shape=shard_shape,
     )
 
 
@@ -500,8 +505,9 @@ def _save_tensor_impl(
     path: Path | str,
     tensor: Tensor,
     *,
-    io_lib: IO_Lib | None = None,
-    roi_and_tensor_shape: tuple[PerAxis[SliceInfo], PerAxis[int]] | None = None,
+    io_lib: IO_Lib | None,
+    chunk_shape: PerAxis[int] | None,
+    shard_shape: PerAxis[int] | None,
 ) -> IO_Lib:
     try:
         output_path, extensions, internal_path = _interprete_tensor_source(path)
@@ -513,33 +519,6 @@ def _save_tensor_impl(
             "Saving tensors to HTTP URLs is not implemented. Please save to a local file path."
         )
 
-    if (BATCH_AXIS_ID in tensor.dims) and (not extensions or extensions[-1] != ".npy"):
-        if roi_and_tensor_shape is not None:
-            roi, tensor_shape = roi_and_tensor_shape
-            if tensor_shape.get(BATCH_AXIS_ID, 0) == 1:
-                # remove singleton batch dimension from tensor shape, roi and the given tensor if present
-                tensor_shape = {
-                    k: v for k, v in tensor_shape.items() if k != BATCH_AXIS_ID
-                }
-                if BATCH_AXIS_ID in tensor.dims:
-                    tensor = tensor.squeeze(BATCH_AXIS_ID)
-                if BATCH_AXIS_ID in roi:
-                    assert (
-                        roi[BATCH_AXIS_ID].start == 0 and roi[BATCH_AXIS_ID].stop == 1
-                    ), roi[BATCH_AXIS_ID]
-                    roi = {k: v for k, v in roi.items() if k != BATCH_AXIS_ID}
-
-            if BATCH_AXIS_ID in roi or BATCH_AXIS_ID in tensor_shape:
-                raise NotImplementedError(
-                    "Saving a region of interest (roi) with a non-singleton batch dimension to non-NPY formats is not supported."
-                )
-
-        if tensor.batch_multi_index is not None:
-            tensor = tensor.unstack_batch_multi_index(errors="raise")
-
-        if BATCH_AXIS_ID in tensor.dims:
-            tensor = tensor.squeeze(BATCH_AXIS_ID)
-
     if io_lib is None:
         try_io_libs = _select_io_libs_based_on_extension(extensions)
         exceptions: list[Exception] = []
@@ -549,7 +528,8 @@ def _save_tensor_impl(
                     path,
                     tensor,
                     io_lib=try_io_lib,
-                    roi_and_tensor_shape=roi_and_tensor_shape,
+                    chunk_shape=chunk_shape,
+                    shard_shape=shard_shape,
                 )
             except Exception as e:
                 exceptions.append(e)
@@ -565,36 +545,26 @@ def _save_tensor_impl(
             output_path,
             tensor,
             internal_path=internal_path,
-            roi_and_tensor_shape=roi_and_tensor_shape,
+            chunk_shape=chunk_shape,
+            shard_shape=shard_shape,
         )
     elif io_lib == "clearscale":
         _save_tensor_clearscale(
             output_path,
             tensor,
             internal_path=internal_path,
-            roi_and_tensor_shape=roi_and_tensor_shape,
+            chunk_shape=chunk_shape,
+            shard_shape=shard_shape,
         )
     elif io_lib == "imageio":
-        if roi_and_tensor_shape is not None:
-            raise NotImplementedError(
-                "Saving a region of interest (roi) is not implemented for imageio."
-            )
         _save_tensor_imageio(output_path, tensor, internal_path=internal_path)
     elif io_lib == "numpy":
-        if roi_and_tensor_shape is not None:
-            raise NotImplementedError(
-                "Saving a region of interest (roi) is not implemented for numpy."
-            )
         if internal_path:
             raise NotImplementedError(
                 "Saving to an internal path is not implemented for numpy."
             )
         _save_tensor_numpy(output_path, tensor)
     elif io_lib == "tifffile":
-        if roi_and_tensor_shape is not None:
-            raise NotImplementedError(
-                "Saving a region of interest (roi) is not implemented for tifffile."
-            )
         if internal_path is not None:
             raise NotImplementedError(
                 "Saving to an internal path is not implemented for tifffile."
@@ -611,7 +581,8 @@ def _save_tensor_bioio(
     path: Path | ZipPath | FtpUrl,
     tensor: Tensor,
     internal_path: PurePath | None,
-    roi_and_tensor_shape: tuple[PerAxis[SliceInfo], PerAxis[int]] | None,
+    chunk_shape: PerAxis[int] | None = None,
+    shard_shape: PerAxis[int] | None = None,
 ) -> None:
     """Save an image tensor using bioio"""
 
@@ -635,12 +606,6 @@ def _save_tensor_bioio(
             raise NotImplementedError(
                 "Saving to an internal path that is not '0' is not implemented for zarr files with io_lib='bioio'."
             )
-        if roi_and_tensor_shape is None:
-            tensor_shape = tensor.tagged_shape
-        else:
-            raise NotImplementedError(
-                "Saving a region of interest (roi) is not implemented for saving zarr files with io_lib='bioio'."
-            )
 
         import bioio_ome_zarr.writers
 
@@ -660,7 +625,7 @@ def _save_tensor_bioio(
                 label=f"channel{i}" if channel_names is None else channel_names[i],
                 color="#FF0000" if channel_colors is None else channel_colors[i],
             )
-            for i in range(tensor_shape.get(AxisId("channel"), 0))
+            for i in range(tensor.tagged_shape.get(AxisId("channel"), 0))
         ]
         zf = int(os.getenv("ZARR_FORMAT", "3"))
         if zf not in (2, 3):
@@ -671,7 +636,7 @@ def _save_tensor_bioio(
         unit = tensor.get_physical_scale_unit()
         writer = bioio_ome_zarr.writers.OMEZarrWriter(
             store=path,
-            level_shapes=[[tensor_shape[d] for d in tensor.dims]],
+            level_shapes=[[tensor.tagged_shape[d] for d in tensor.dims]],
             dtype=tensor.dtype,
             zarr_format=zf,
             image_name=tensor.name or "Image",
@@ -680,26 +645,22 @@ def _save_tensor_bioio(
             axes_units=[unit.get(a) for a in tensor.dims],
             physical_pixel_size=[scale.get(a, 1.0) for a in tensor.dims],
             channels=channels,
+            chunk_shape=[chunk_shape[a] for a in tensor.dims]
+            if chunk_shape is not None
+            else None,
+            shard_shape=[shard_shape[a] for a in tensor.dims]
+            if shard_shape is not None
+            else None,
         )
         logger.info("OME-Zarr metadata: {}", writer.preview_metadata())
         writer.write_full_volume(tensor.data.data)
         return
     elif path.suffix.lower() in (".tif", ".tiff"):
-        if roi_and_tensor_shape is not None:
-            raise NotImplementedError(
-                "Saving a region of interest (roi) is not implemented for saving tiff files with io_lib='bioio'."
-            )
-
         from bioio_ome_tiff.writers import OmeTiffWriter
 
         save = OmeTiffWriter.save  # pyright: ignore[reportUnknownVariableType]
         bioio_axis_letters = "TCZYX"
     elif path.suffix.lower() in (".gif", ".mp4", ".mkv"):
-        if roi_and_tensor_shape is not None:
-            raise NotImplementedError(
-                "Saving a region of interest (roi) is not implemented for saving video files with io_lib='bioio'."
-            )
-
         from bioio_imageio.writers import TimeseriesWriter
 
         tensor = tensor.squeeze()
@@ -719,11 +680,6 @@ def _save_tensor_bioio(
         ".wmv",
         ".ogg",
     ):
-        if roi_and_tensor_shape is not None:
-            raise NotImplementedError(
-                "Saving a region of interest (roi) is not implemented for saving 2d images with io_lib='bioio'."
-            )
-
         from bioio_imageio.writers import TwoDWriter
 
         tensor = tensor.squeeze()
@@ -776,7 +732,8 @@ def _save_tensor_clearscale(
     path: Path | ZipPath | FtpUrl,
     tensor: Tensor,
     internal_path: PurePath | None,
-    roi_and_tensor_shape: tuple[PerAxis[SliceInfo], PerAxis[int]] | None,
+    chunk_shape: PerAxis[int] | None = None,
+    shard_shape: PerAxis[int] | None = None,
 ) -> None:
     import clearscale
     import dask.array
@@ -808,29 +765,11 @@ def _save_tensor_clearscale(
             )
             single_letter_dims = canonical_single_letter_dims
 
-    if roi_and_tensor_shape is None:
-        roi = (slice(None),) * len(tensor.dims)
-        roi_map = None
-        tensor_shape = tensor.tagged_shape
-        tensor_shape_tuple = tensor.shape
-    else:
-        roi_map, tensor_shape = roi_and_tensor_shape
-        roi = tuple(
-            slice(None) if (s := roi_map.get(d)) is None else slice(s.start, s.stop)
-            for d in tensor.dims
-        )
-        tensor_shape_tuple = tuple(tensor_shape.get(d, 1) for d in tensor.dims)
+    tensor_shape_tuple = tuple(tensor.tagged_shape[d] for d in tensor.dims)
 
     logger.debug(
         "Saving tensor {} to {} with clearscale+zarr-python",
-        tensor.tagged_shape
-        if roi_map is None
-        else [
-            f"{d}[:{s}]"
-            if (r := roi_map.get(d)) is None
-            else f"{d}[{r.start}:{r.stop}]"
-            for d, s in tensor.tagged_shape.items()
-        ],
+        tensor.tagged_shape,
         path,
     )
 
@@ -884,22 +823,28 @@ def _save_tensor_clearscale(
         name=SCALE_KEY,
         overwrite=True,
         dimension_names=None if ZARR_FORMAT == 2 else tuple(dim_map.values()),
-        shards=None if ZARR_FORMAT == 2 else "auto",
+        chunks="auto"
+        if chunk_shape is None
+        else tuple(chunk_shape[d] for d in tensor.dims),
+        shards=None
+        if ZARR_FORMAT == 2
+        else "auto"
+        if shard_shape is None
+        else tuple(shard_shape[d] for d in tensor.dims),
     )
     zarr_array = zarr_group.require_array(
         **create_array_kwargs,
-        shape=[tensor_shape[d] for d in tensor.dims],
+        shape=[tensor.tagged_shape[d] for d in tensor.dims],
         dtype=tensor.dtype,
     )
     xr_array = tensor.data
     if dm := {k: v for k, v in dim_map.items() if k != v}:
-        xr_array = xr_array.rename(dm)  # pyright: ignore[reportUnknownVariableType]
-        assert isinstance(xr_array, xr.DataArray)
+        xr_array = cast_and_assert(xr.DataArray, xr_array.rename(dm))
 
     if isinstance(xr_array.data, np.ndarray):
-        zarr_array[roi] = xr_array.data
+        zarr_array[:] = xr_array.data
     elif isinstance(xr_array.data, dask.array.Array):
-        dask.array.to_zarr(xr_array.data, zarr_array, compute=True, region=roi)
+        dask.array.to_zarr(xr_array.data, zarr_array, compute=True)
     else:
         assert_never(xr_array.data)
 
@@ -1129,6 +1074,7 @@ class _CreateArrayKwargs(TypedDict):
     overwrite: bool
     dimension_names: tuple[str, ...] | None
     shards: Literal["auto"] | tuple[int, ...] | None
+    chunks: Literal["auto"] | tuple[int, ...]
 
 
 _zarr_url_adapter: TypeAdapter[ZarrUrl] = TypeAdapter(ZarrUrl)
@@ -1218,111 +1164,48 @@ def _get_file_source_extension_and_internal_path(
 
 def save_sample(
     path: Path | str | PerMember[Path | str],
-    sample: Sample | Iterable[SampleBlock],
+    sample: Sample,
     *,
-    max_workers: int | None = None,
+    chunk_shape: PerMember[PerAxis[int]] | None = None,
+    shard_shape: PerMember[PerAxis[int]] | None = None,
 ) -> None:
     """Save a **sample** to a **path** pattern
     or all sample members in the **path** mapping.
 
-    If **path** is a pathlib.Path or a string and the **sample** has multiple members,
-    **path** it must contain `{member_id}` (or `{input_id}` or `{output_id}`).
+    Args:
+        path: A path pattern or a mapping of member_id to path pattern.
+            If **path** is a pathlib.Path or a string and the **sample** has multiple members,
+            **path** it must contain `{member_id}` (or `{input_id}` or `{output_id}`).
+        sample: Sample to save
+        chunk_shape: Optional (re-)chunking of the sample data for applicable image formats (zarr).
+        shard_shape: Optional sharding of the sample data for applicable image formats (zarr).
 
     (Each) **path** may contain `{sample_id}` to be formatted with the **sample** object.
     """
 
-    if isinstance(sample, Sample):
-        first_block = sample
-        remaining_blocks = ()
-    else:
-        remaining_blocks = iter(sample)
-        first_block = next(remaining_blocks)
-
     if not isinstance(path, Mapping):
-        if len(first_block.members) < 2 or any(
+        if len(sample.members) < 2 or any(
             m in str(path) for m in ("{member_id}", "{input_id}", "{output_id}")
         ):
-            path = {m: path for m in first_block.members}
+            path = {m: path for m in sample.members}
         else:
             raise ValueError(
-                f"path {path} must contain '{{member_id}}' for sample with multiple members {list(first_block.members)}."
+                f"path {path} must contain '{{member_id}}' for sample with multiple members {list(sample.members)}."
             )
 
-    def save_block_member(
-        sample_block: Sample | SampleBlock,
-        m: MemberId,
-        p: Path | str,
-        io_lib: IO_Lib | None = None,
-    ) -> IO_Lib:
-        if isinstance(sample_block, Sample):
-            sample_id = sample_block.id
-            t = sample_block.members[m]
-            roi_and_tensor_shape = None
-        else:
-            sample_id = sample_block.sample_id
-            roi = dict(sample_block.blocks[m].inner_slice)
-            t = sample_block.blocks[m].inner_data
-            if (
-                unstacked_batch_slice := sample_block.blocks[m].unstacked_batch_slice
-            ) is not None:
-                _ = roi.pop(BATCH_AXIS_ID, None)
-                assert not any(d in unstacked_batch_slice for d in roi), (
-                    unstacked_batch_slice,
-                    roi,
-                )
-                roi = {**unstacked_batch_slice, **roi}
-                t = t.unstack_batch_multi_index(errors="raise")
-                assert t.dims == tuple(roi.keys()), (t.dims, tuple(roi.keys()))
-                assert t.tagged_shape == {a: s.stop - s.start for a, s in roi.items()}
-
-            tensor_shape = dict(sample_block.sample_shape[m])
-            if (
-                unstacked_sample_batch_shape
-                := sample_block.unstacked_sample_batch_shape
-            ) is not None:
-                _ = tensor_shape.pop(BATCH_AXIS_ID, None)
-                assert not any(
-                    d in unstacked_sample_batch_shape for d in tensor_shape
-                ), (
-                    unstacked_sample_batch_shape,
-                    tensor_shape,
-                )
-                tensor_shape = {**unstacked_sample_batch_shape, **tensor_shape}
-                assert t.dims == tuple(tensor_shape.keys()), (
-                    t.dims,
-                    tuple(tensor_shape.keys()),
-                )
-
-            assert (
-                unstacked_sample_batch_shape is None
-                and unstacked_batch_slice is None
-                or (
-                    unstacked_sample_batch_shape is not None
-                    and unstacked_batch_slice is not None
-                )
+    with ThreadPoolExecutor(max_workers=min(len(sample.members), 4)) as executor:
+        for m, p in path.items():
+            _ = executor.submit(
+                save_tensor,
+                Path(
+                    str(p).format(
+                        sample_id=sample.id, member_id=m, input_id=m, output_id=m
+                    )
+                ),
+                sample.members[m],
+                chunk_shape=chunk_shape[m] if chunk_shape is not None else None,
+                shard_shape=shard_shape[m] if shard_shape is not None else None,
             )
-            roi_and_tensor_shape = (roi, tensor_shape)
-
-        p_formatted = Path(
-            str(p).format(sample_id=sample_id, member_id=m, input_id=m, output_id=m)
-        )
-        return _save_tensor_impl(
-            p_formatted, t, roi_and_tensor_shape=roi_and_tensor_shape, io_lib=io_lib
-        )
-
-    io_lib = None
-    with (
-        ThreadPoolExecutor(
-            max_workers=1  # TODO: Fix missing blocks when saving blocks with clearscale+zarr-python in parallel
-            # TODO: check if all io_libs (with roi support) can handle parallel writing to the same file
-        ) as executor
-    ):
-        for sample_block in chain([first_block], remaining_blocks):
-            for m, p in path.items():
-                if io_lib is None:
-                    io_lib = save_block_member(sample_block, m, p, io_lib)
-                else:
-                    _ = executor.submit(save_block_member, sample_block, m, p, io_lib)
 
 
 class _StatEntry(BaseModel, frozen=True, arbitrary_types_allowed=True):
@@ -1414,3 +1297,69 @@ def ensure_unzipped(source: PermissiveFileSource | ZipPath | BytesReader, folder
 def get_suffix(source: ZipPath | FileSource) -> Suffix:
     """DEPRECATED: use source.suffix instead."""
     return source.suffix
+
+
+# def _determine_chunk_and_shard_shapes(
+#     shape: PerAxis[int],
+#     block_shape: PerAxis[int],
+#     item_size: int,
+# ) -> tuple[PerAxis[int], PerAxis[int]]:
+#     def increase_shard_size(shard_size: int, shape_size: int, chunk_size: int) -> int:
+#         """increase shard size by chunk_size (or a multiple of chunk_size such that the last two chunks fall into the same shard).
+#         Will not increase shard size beyond shape_size.
+#         """
+#         while (
+#             shard_size < shape_size
+#             and shape_size % shard_size
+#             != 0  # last shard is smaller than the shard size
+#             and shape_size % shard_size
+#             < 2 * chunk_size  # last shard is smaller than 2*inner_size,
+#             # but the last two blocks may overlap and must land in the same shard
+#         ):
+#             shard_size = min(shard_size + chunk_size, shape_size)
+
+#         return shard_size
+
+#     shard_shape: dict[AxisId, int] | None = {}
+#     # create smallest possible shard shape
+#     for a, shape_size in shape.items():
+#         # The smallest possible shard shape is made up of the inner sizes (that will make up the chunks)
+#         block_size = block_shape[a]
+#         shard_shape[a] = increase_shard_size(block_size, shape_size, block_size)
+
+#     shard_byte_size = prod(shard_shape.values()) * item_size
+#     if (
+#         shard_byte_size < SHARDED_INNER_CHUNK_MAX_BYTES // 2
+#         and BATCH_AXIS_ID in shape
+#         and unstacked_batch_shape is not None
+#     ):
+#         # increase shard shape along a stacked multi-index batch dimension if present (to optimize writing)
+#         shard_shape[BATCH_AXIS_ID] = max(
+#             shard_shape[BATCH_AXIS_ID], prod(unstacked_batch_shape.values())
+#         )
+
+#     shard_byte_size = prod(shard_shape.values()) * item_size
+#     increase_order = [
+#         a
+#         for a in (
+#             CHANNEL_AXIS_ID,
+#             AxisId("x"),
+#             AxisId("y"),
+#             AxisId("z"),
+#             AxisId("t"),
+#             AxisId("i"),
+#         )
+#         if a in shape
+#     ]
+#     increase_order += [a for a in shape if a not in increase_order]
+#     while (
+#         any(shard_shape[a] < s for a, s in shape.items())
+#         and shard_byte_size < SHARDED_INNER_CHUNK_MAX_BYTES // 2
+#     ):
+#         for a in increase_order:
+#             shard_shape[a] = increase_shard_size(
+#                 shard_shape[a], shape[a], inner_sizes[a]
+#             )
+#             shard_byte_size = prod(shard_shape.values()) * item_size
+#             if shard_byte_size >= SHARDED_INNER_CHUNK_MAX_BYTES // 2:
+#                 break

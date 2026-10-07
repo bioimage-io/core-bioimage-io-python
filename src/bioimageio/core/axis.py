@@ -32,7 +32,7 @@ def _guess_axis_type(a: str):
             + " Consider using one of:"
             + " 'b', 'batch', 't', 'time', 's', 'sample', 'i',"
             + " 'index', 'c', 'channel', 'x', 'y', 'z',"
-            + " 'space*'. Or create an `Axis` object instead.",
+            + " 'space*'. Or create an `Axis` object with an explicity type instead.",
             a,
         )
         return "unknown"
@@ -46,6 +46,7 @@ AxisId: TypeAlias = v0_5.AxisId
 
 BATCH_AXIS_ID = v0_5.BATCH_AXIS_ID
 CHANNEL_AXIS_ID = v0_5.CHANNEL_AXIS_ID
+TIME_AXIS_ID = v0_5.DEFAULT_TIME_AXIS_ID
 
 _T = TypeVar("_T")
 PerAxis = Mapping[AxisId, _T]

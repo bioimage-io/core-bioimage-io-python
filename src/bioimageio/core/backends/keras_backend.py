@@ -18,8 +18,8 @@ from bioimageio.spec.model import v0_4
 
 from .._model_adapter import LocalModelAdapter
 from .._settings import settings
-from ..utils._compare import warn_about_version
-from ..utils._type_guards import is_list, is_tuple
+from .._utils.compare import warn_about_version
+from .._utils.type_guards import is_list, is_tuple
 
 os.environ["KERAS_BACKEND"] = settings.keras_backend
 

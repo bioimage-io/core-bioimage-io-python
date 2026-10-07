@@ -1,56 +1,30 @@
 from __future__ import annotations
 
 import collections.abc
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from math import ceil, floor
-from types import MappingProxyType
 from typing import (
     Any,
-    Callable,
-    Generic,
     Literal,
-    TypeVar,
-    Union,
 )
 
-import numpy as np
-import pydantic
 import xarray as xr
 from loguru import logger
 from numpy.typing import NDArray
 from typing_extensions import Self, assert_never
 
-from bioimageio.core.utils._multi_index import get_unstacked_dim_order
-
-from ._common_annotations import PerMemberAnno
-from .axis import BATCH_AXIS_ID, AxisId, PerAxis
-from .block import Block
-from .block_meta import (
-    BlockMeta,
-    LinearAxisTransform,
-    split_multiple_shapes_into_blocks,
-)
+from ._utils.resolve_per_member_key import resolve_per_member_var
+from .axis import AxisId, PerAxis
 from .common import (
-    BlockIndex,
-    Halo,
-    HaloLike,
     MemberId,
     PadMode,
     PadWidthLike,
     PerMember,
     SampleId,
     SliceInfo,
-    TotalNumberOfBlocks,
 )
 from .stat_measures import Stat
 from .tensor import Tensor
-from .utils._multi_index import (
-    MultiIndex,
-    create_tensor_with_multiindex,
-    get_unstacked_shape,
-)
-from .utils._resolve_per_member_key import resolve_per_member_var
 
 
 @dataclass
@@ -63,46 +37,39 @@ class Sample:
     `MemberId("raw")` and `MemberId("mask")` image.
     """
 
+    id: SampleId
+    """Identifies the `Sample` within the dataset -- typically a number or a string."""
+
     members: dict[MemberId, Tensor]
     """The sample's tensors"""
 
     stat: Stat
     """Sample and dataset statistics"""
 
-    id: SampleId
-    """Identifies the `Sample` within the dataset -- typically a number or a string."""
-
-    unstacked_dim_order: PerMember[Sequence[AxisId] | None] | None = None
-    """The order of the fully unstacked tensor"""
+    # unstacked_dim_order: PerMember[Sequence[AxisId] | None] | None = None
+    # """The order of the fully unstacked tensor"""
 
     def __getitem__(
         self,
-        key: PerMember[
-            SliceInfo
-            | slice
-            | int
-            | PerAxis[SliceInfo | slice | int]
-            | Tensor
-            | xr.DataArray
-        ]
-        | PerAxis[SliceInfo | slice | int],
+        key: PerMember[PerAxis[SliceInfo | slice | int] | Tensor | xr.DataArray]
+        | PerAxis[SliceInfo | slice | int]
+        | Tensor
+        | xr.DataArray,
     ) -> Self:
         per_member_key = resolve_per_member_var(
             key,
-            valid_member_index_types=(
+            valid_per_member_types=(
                 SliceInfo,
                 slice,
                 int,
                 Tensor,
                 xr.DataArray,
-                Mapping[AxisId, Union[SliceInfo, slice, int]],
             ),
-            valid_axis_index_types=(SliceInfo, slice, int),
+            valid_per_axis_types=(SliceInfo, slice, int),
             members=self.members,
         )
 
         return self.__class__(
-            unstacked_dim_order=self.unstacked_dim_order,
             members={
                 m: t[per_member_key[m]]
                 for m, t in self.members.items()
@@ -118,237 +85,379 @@ class Sample:
             if t.name is None:
                 t.name = str(m)
 
-    @property
-    def batch_multi_index(self) -> MultiIndex | None:
-        """Return the batch multi-index of the sample, if it has one.
+    # def chunk(
+    #     self,
+    #     chunk_shapes: PerMember[PerAxis[int]],
+    #     *,
+    #     halo: PerMember[PerAxis[HaloLike]] | None = None,
+    #     pad_mode: PadMode | PerMember[PadMode] = "symmetric",
+    # ) -> Self:
+    #     """Return a new sample with chunked sample members.
 
-        Returns:
-            The batch multi-index of the sample, or `None` if the sample does not have a batch dimension.
-        """
-        if not self.members:
-            return None
+    #     Args:
+    #         chunk_shapes: The chunk shapes per member and axis.
+    #     """
+    #     return self.__class__(
+    #         members=chunk_tensors(
+    #             self.members, chunk_shapes=chunk_shapes, halo=halo, pad_mode=pad_mode
+    #         ),
+    #         stat=self.stat,
+    #         id=self.id,
+    #     )
 
-        for tensor in self.members.values():
-            idx = tensor.batch_multi_index
-            if isinstance(idx, MultiIndex):
-                return idx
+    # def chunkwise(
+    #     self,
+    #     func: Callable[[Sample], Sample],
+    # ) -> Self:
+    #     """Apply a function to each chunk of the chunked sample.
 
-        return None
+    #     See [chunk][] for chunking a sample.
 
-    def set_block(self, block: SampleBlock) -> None:
-        """Set values of `block`.
+    #     Args:
+    #         func: The function to apply to each sample chunk.
+    #     """
+    #     return self.__class__(
+    #         id=self.id,
+    #         members=chunkwise(self.members, func),
+    #         stat=self.stat,
+    #     )
 
-        Note:
-            - Updates only existing sample members (extra block members are ignored)
-            - Ignores missing block members (i.e. members in the sample but not in the block are not modified)
+    # def split_into_blocks(
+    #     self,
+    #     block_shapes: PerMember[PerAxis[int]] | PerAxis[int],
+    #     *,
+    #     halo: PerMember[PerAxis[HaloLike]],
+    #     broadcast: bool = False,
+    # ) -> tuple[BlockLocShape, PerMember[BlockArray]]:
+    #     """Split multiple shapes (e.g. sample member shapes) into aligned blocks.
 
-        Raises:
-            ValueError if block and sample members do not overlap at all.
-        """
-        no_overlap = True
-        for m in self.members:
-            if m not in block.blocks:
-                continue
-            b = block.blocks[m]
-            self.members[m][b.inner_slice] = b.inner_data
-            no_overlap = False
+    #     Args:
+    #         block_shapes: the block shape per sample member (depending on `broaadcast` the block shapes must result in the same number of blocks for all sample members)
+    #         halo: the halo around each block per sample member
+    #         broadcast: whether to broadcast block shapes of members resulting in fewer blocks to match other sample members.
+    #     """
 
-        if no_overlap:
-            raise ValueError(
-                f"block with members {list(block.blocks)} does not overlap with sample members {list(self.members)}"
-            )
+    #     if unknown_blocks := [t for t in block_shapes if t not in self.shape]:
+    #         raise ValueError(
+    #             f"block shape specified for unknown tensors: {unknown_blocks}."
+    #         )
+
+    #     if not block_shapes:
+    #         b_shapes = self.shape
+    #     elif is_mapping(block_shapes, v_type=int):
+    #         b_shapes = {m: block_shapes for m in self.shape}
+    #     else:
+    #         assert not any(isinstance(v, int) for v in block_shapes.values())
+    #         b_shapes: PerMember[PerAxis[int]] = block_shapes  # pyright: ignore[reportAssignmentType]
+
+    #     del block_shapes
+
+    #     if not broadcast and (
+    #         missing_blocks := [t for t in self.shape if t not in b_shapes]
+    #     ):
+    #         raise ValueError(
+    #             f"No block shape specified for {missing_blocks}."
+    #             + " Set `broadcast` to True if these tensors should be repeated"
+    #             + " as a whole for each block."
+    #         )
+
+    #     if extra_halo := [t for t in halo if t not in b_shapes]:
+    #         raise ValueError(
+    #             f"`halo` specified for tensors without block shape: {extra_halo}."
+    #         )
+
+    #     blocks: PerMember[BlockArray] = {}
+    #     block_locs: PerMember[BlockLocShape] = {}
+    #     for m in b_shapes:
+    #         block_locs[m], blocks[m] = self._split_member_into_blocks(
+    #             member=m,
+    #             block_shape=b_shapes[m],
+    #             halo=halo.get(m, {}),
+    #         )
+    #         assert all(b > 0 for b in block_locs[m]), block_locs
+
+    #     assert len(blocks) > 0, blocks
+    #     assert len(block_locs) > 0, block_locs
+    #     unique_block_locs = set(block_locs.values())
+
+    #     if len(unique_block_locs) != 1:
+    #         if not broadcast:
+    #             raise ValueError(
+    #                 f"Mismatch for number of blocks per dimension: { {t: b.shape for t, b in blocks.items()} }. Set `broadcast` to True if this is expected."
+    #             )
+
+    #         blocks = dict(zip(blocks.keys(), np.broadcast_arrays(*blocks.values())))
+    #         block_locs = {m: b.shape for m, b in blocks.items()}
+    #         unique_block_locs = set(block_locs.values())
+    #         assert len(unique_block_locs) == 1, (
+    #             f"Mismatch for total number of blocks (after braodcasting?!): {block_locs}"
+    #         )
+
+    #     return next(iter(unique_block_locs)), blocks
+
+    # def foo(*bs: BlockMeta) -> SampleBlockMeta:
+    #     return SampleBlockMeta.from_blocks(dict(zip(blocks.keys(), bs)))
+
+    # foo_op = np.frompyfunc(foo, len(blocks), 1)
+    # out = foo_op(*blocks.values())
+    # assert out.shape == next(iter(blocks.values())).shape
+    # return n, out
+
+    # @property
+    # def batch_multi_index(self) -> MultiIndex | None:
+    #     """Return the batch multi-index of the sample, if it has one.
+
+    #     Returns:
+    #         The batch multi-index of the sample, or `None` if the sample does not have a batch dimension.
+    #     """
+    #     if not self.members:
+    #         return None
+
+    #     for tensor in self.members.values():
+    #         idx = tensor.batch_multi_index
+    #         if isinstance(idx, MultiIndex):
+    #             return idx
+
+    #     return None
+
+    # def set_block(self, block: SampleBlock) -> None:
+    #     """Set values of `block`.
+
+    #     Note:
+    #         - Updates only existing sample members (extra block members are ignored)
+    #         - Ignores missing block members (i.e. members in the sample but not in the block are not modified)
+
+    #     Raises:
+    #         ValueError if block and sample members do not overlap at all.
+    #     """
+    #     no_overlap = True
+    #     for m in self.members:
+    #         if m not in block.blocks:
+    #             continue
+    #         b = block.blocks[m]
+    #         self.members[m][b.inner_slice] = b.inner_data
+    #         no_overlap = False
+
+    #     if no_overlap:
+    #         raise ValueError(
+    #             f"block with members {list(block.blocks)} does not overlap with sample members {list(self.members)}"
+    #         )
 
     @property
     def shape(self) -> PerMember[PerAxis[int]]:
         return {tid: t.sizes for tid, t in self.members.items()}
 
-    @property
-    def unstacked_batch_shape(self) -> PerAxis[int] | None:
-        """The shape of the unstacked batch axis
-        For example `{"t": 10, "z": 5}` for a sample with stacked "t" and "z" dimensions resulting in a batch length of 50).
-        Note: As the batch axis has to match across members this is the same for all members."""
-        if (idx := self.batch_multi_index) is None:
-            return None
+    # @property
+    # def unstacked_batch_shape(self) -> PerAxis[int] | None:
+    #     """The shape of the unstacked batch axis
+    #     For example `{"t": 10, "z": 5}` for a sample with stacked "t" and "z" dimensions resulting in a batch length of 50).
+    #     Note: As the batch axis has to match across members this is the same for all members."""
+    #     if (idx := self.batch_multi_index) is None:
+    #         return None
 
-        return {
-            BATCH_AXIS_ID if a == "original_batch" else AxisId(a): s
-            for a, s in zip(idx.names, idx.levshape)
-        }
+    #     return {
+    #         BATCH_AXIS_ID if a == "original_batch" else AxisId(a): s
+    #         for a, s in zip(idx.names, idx.levshape)
+    #     }
 
-    @property
-    def unstacked_shape(self) -> PerMember[PerAxis[int]]:
-        """combined (stacked) shape with the unstacked sample batch shape in order of unstacked_dim_order (if available)"""
-        return {
-            m: get_unstacked_shape(
-                sh,
-                unstacked_dim_order=self.unstacked_dim_order[m]
-                if self.unstacked_dim_order is not None
-                else None,
-                unstacked_batch_shape=self.unstacked_batch_shape,
-            )
-            for m, sh in self.shape.items()
-        }
+    # @property
+    # def unstacked_shape(self) -> PerMember[PerAxis[int]]:
+    #     """combined (stacked) shape with the unstacked sample batch shape in order of unstacked_dim_order (if available)"""
+    #     return {
+    #         m: get_unstacked_shape(
+    #             sh,
+    #             unstacked_dim_order=self.unstacked_dim_order[m]
+    #             if self.unstacked_dim_order is not None
+    #             else None,
+    #             unstacked_batch_shape=self.unstacked_batch_shape,
+    #         )
+    #         for m, sh in self.shape.items()
+    #     }
 
     def as_arrays(self) -> dict[MemberId, NDArray[Any]]:
         """Return sample as dictionary of arrays."""
         return {m: t.to_numpy() for m, t in self.members.items()}
 
-    def split_into_blocks(
-        self,
-        block_shapes: PerMember[PerAxis[int]],
-        halo: PerMember[PerAxis[HaloLike]],
-        pad_mode: PadMode | PerMember[PadMode],
-        broadcast: bool = False,
-    ) -> tuple[TotalNumberOfBlocks, Iterable[SampleBlockWithOrigin]]:
-        assert not (missing := [m for m in block_shapes if m not in self.members]), (
-            f"`block_shapes` specified for unknown members: {missing}"
-        )
-        assert not (missing := [m for m in halo if m not in block_shapes]), (
-            f"`halo` specified for members without `block_shape`: {missing}"
-        )
+    # def split_into_blocks_meta(
+    #     self,
+    #     block_shapes: PerMember[PerAxis[int]],
+    #     halo: PerMember[PerAxis[HaloLike]],
+    #     broadcast: bool = False,
+    # ) -> tuple[BlockLocShape, NDArray[Any]]:  # really NDArray[SampleBlockMeta]
+    #     assert not (missing := [m for m in block_shapes if m not in self.members]), (
+    #         f"`block_shapes` specified for unknown members: {missing}"
+    #     )
+    #     assert not (missing := [m for m in halo if m not in block_shapes]), (
+    #         f"`halo` specified for members without `block_shape`: {missing}"
+    #     )
 
-        n_blocks, blocks = split_multiple_shapes_into_blocks(
-            shapes=self.shape,
-            unstacked_batch_shape=self.unstacked_batch_shape,
-            unstacked_dim_order=self.unstacked_dim_order,
-            block_shapes=block_shapes,
-            halo=halo,
-            broadcast=broadcast,
-        )
-        return n_blocks, sample_block_generator(blocks, origin=self, pad_mode=pad_mode)
+    #     n, blocks = split_multiple_shapes_into_blocks(
+    #         shapes=self.shape,
+    #         unstacked_batch_shape=self.unstacked_batch_shape,
+    #         unstacked_dim_order=self.unstacked_dim_order,
+    #         block_shapes=block_shapes,
+    #         halo=halo,
+    #         broadcast=broadcast,
+    #     )
+    #     return n, sample_block_meta_generator(blocks, sample_id=self.id)
 
-    def as_single_block(self, halo: PerMember[PerAxis[Halo]] | None = None):
-        if halo is None:
-            halo = {}
+    # def split_into_blocks(
+    #     self,
+    #     block_shapes: PerMember[PerAxis[int]],
+    #     halo: PerMember[PerAxis[HaloLike]],
+    #     pad_mode: PadMode | PerMember[PadMode],
+    #     broadcast: bool = False,
+    # ) -> tuple[BlockLocShape, Iterable[SampleBlockWithOrigin]]:
+    #     n_blocks, blocks = self.split_into_blocks_meta(block_shapes, halo, broadcast)
+    #     return n_blocks, sample_block_generator(
+    #         blocks.flatten(), origin=self, pad_mode=pad_mode
+    #     )
 
-        return SampleBlockWithOrigin(
-            sample_shape=self.shape,
-            sample_id=self.id,
-            blocks={
-                m: Block(
-                    sample_shape=self.shape[m],
-                    unstacked_sample_batch_shape=self.unstacked_batch_shape,
-                    unstacked_dim_order=self.unstacked_dim_order[m]
-                    if self.unstacked_dim_order is not None
-                    else None,
-                    data=data,
-                    inner_slice={a: SliceInfo(0, s) for a, s in self.shape[m].items()},
-                    unstacked_batch_slice=None
-                    if self.unstacked_batch_shape is None
-                    else {
-                        a: SliceInfo(0, s)
-                        for a, s in self.unstacked_batch_shape.items()
-                    },
-                    halo=halo.get(m, {}),
-                    block_index=0,
-                    blocks_in_sample=1,
-                )
-                for m, data in self.members.items()
-            },
-            stat=self.stat,
-            origin=self,
-            block_index=0,
-            blocks_in_sample=1,
-        )
+    # def get_blocks(
+    #     self,
+    #     block_shapes: PerMember[PerAxis[int]],
+    #     *,
+    #     halo: PerMember[PerAxis[HaloLike]],
+    #     pad_mode: PadMode | PerMember[PadMode],
+    #     broadcast: bool = False,
+    # ) -> tuple[BlockLocShape, PerMember[BlockMetaArray]]:
+    #     n_blocks, blocks = self.split_into_blocks_meta(block_shapes, halo, broadcast)
+    #     return n_blocks, sample_block_generator(
+    #         blocks.flatten(), origin=self, pad_mode=pad_mode
+    #     )
 
-    @classmethod
-    def from_blocks(
-        cls,
-        sample_blocks: Iterable[SampleBlock],
-        *,
-        fill_value: float = float("nan"),
-    ) -> Self:
-        """Create a `Sample` from an iterable of `SampleBlock`s.
+    # def as_single_block(self, halo: PerMember[PerAxis[Halo]] | None = None):
+    #     if halo is None:
+    #         halo = {}
 
-        Note:
-            All sample blocks must have the same `sample_id`.
+    #     return SampleBlockWithOrigin(
+    #         sample_shape=self.shape,
+    #         sample_id=self.id,
+    #         blocks={
+    #             m: Block(
+    #                 sample_shape=self.shape[m],
+    #                 unstacked_sample_batch_shape=self.unstacked_batch_shape,
+    #                 unstacked_dim_order=self.unstacked_dim_order[m]
+    #                 if self.unstacked_dim_order is not None
+    #                 else None,
+    #                 data=data,
+    #                 inner_slice={a: SliceInfo(0, s) for a, s in self.shape[m].items()},
+    #                 unstacked_batch_slice=None
+    #                 if self.unstacked_batch_shape is None
+    #                 else {
+    #                     a: SliceInfo(0, s)
+    #                     for a, s in self.unstacked_batch_shape.items()
+    #                 },
+    #                 halo=halo.get(m, {}),
+    #                 block_loc=0,
+    #                 block_loc_shape=1,
+    #             )
+    #             for m, data in self.members.items()
+    #         },
+    #         stat=self.stat,
+    #         origin=self,
+    #         block_loc=0,
+    #         blocks_loc_shape=1,
+    #     )
 
-        Args:
-            sample_blocks: The blocks to create the sample from.
-            fill_value: The value to fill missing values with (default: `nan`).
-        """
-        output = None
-        for output in cls.from_blocks_yield_intermediates(
-            sample_blocks, fill_value=fill_value
-        ):
-            pass
+    # @classmethod
+    # def from_blocks(
+    #     cls,
+    #     sample_blocks: Iterable[SampleBlock],
+    #     *,
+    #     fill_value: float = float("nan"),
+    # ) -> Self:
+    #     """Create a `Sample` from an iterable of `SampleBlock`s.
 
-        if output is None:
-            raise ValueError("no sample blocks provided")
+    #     Note:
+    #         All sample blocks must have the same `sample_id`.
 
-        return output
+    #     Args:
+    #         sample_blocks: The blocks to create the sample from.
+    #         fill_value: The value to fill missing values with (default: `nan`).
+    #     """
+    #     output = None
+    #     for output in cls.from_blocks_yield_intermediates(
+    #         sample_blocks, fill_value=fill_value
+    #     ):
+    #         pass
 
-    @classmethod
-    def from_blocks_yield_intermediates(
-        cls,
-        sample_blocks: Iterable[SampleBlock],
-        *,
-        fill_value: float = float("nan"),
-    ):
-        """Create a `Sample` from an iterable of `SampleBlock`s, yielding the intermediate sample after each block.
+    #     if output is None:
+    #         raise ValueError("no sample blocks provided")
 
-        Args:
-            sample_blocks: The blocks to create the sample from.
-            fill_value: The value to fill missing values with (default: `nan`).
-        """
-        output = None
-        for sample_block in sample_blocks:
-            if output is None:
-                output = cls(
-                    members={},
-                    stat={},
-                    id=None,
-                    unstacked_dim_order=sample_block.unstacked_dim_order,
-                )
-            if output.id is None:
-                output.id = sample_block.sample_id
-            else:
-                assert output.id == sample_block.sample_id, (
-                    "sample id changed between sample blocks"
-                )
+    #     return output
 
-            output.stat = sample_block.stat
+    # @classmethod
+    # def from_blocks_yield_intermediates(
+    #     cls,
+    #     sample_blocks: Iterable[SampleBlock],
+    #     *,
+    #     fill_value: float = float("nan"),
+    # ):
+    #     """Create a `Sample` from an iterable of `SampleBlock`s, yielding the intermediate sample after each block.
 
-            for m, block in sample_block.blocks.items():
-                if m not in output.members:
-                    if -1 in block.sample_shape.values():
-                        raise NotImplementedError(
-                            "merging blocks with data dependent axis not yet implemented"
-                        )
+    #     Args:
+    #         sample_blocks: The blocks to create the sample from.
+    #         fill_value: The value to fill missing values with (default: `nan`).
+    #     """
+    #     output = None
+    #     for sample_block in sample_blocks:
+    #         if output is None:
+    #             output = cls(
+    #                 members={},
+    #                 stat={},
+    #                 id=None,
+    #                 unstacked_dim_order=sample_block.unstacked_dim_order,
+    #             )
+    #         if output.id is None:
+    #             output.id = sample_block.sample_id
+    #         else:
+    #             assert output.id == sample_block.sample_id, (
+    #                 "sample id changed between sample blocks"
+    #             )
 
-                    if (
-                        block.unstacked_sample_batch_shape is not None
-                        and block.unstacked_dim_order is not None
-                    ):
-                        sizes = {
-                            **block.sample_shape,
-                            **block.unstacked_sample_batch_shape,
-                        }
-                        full_unstacked_shape = {
-                            a: sizes[a] for a in block.unstacked_dim_order
-                        }
-                        t = create_tensor_with_multiindex(
-                            full_unstacked_shape,
-                            fill_value=fill_value,
-                            dtype=np.dtype(block.data.dtype),
-                            transpose_to=tuple(block.sample_shape.keys()),
-                        )
-                    else:
-                        t = Tensor(
-                            np.full(
-                                shape=tuple(block.sample_shape.values()),
-                                fill_value=fill_value,
-                                dtype=block.data.dtype,
-                            ),
-                            dims=tuple(block.sample_shape.keys()),
-                        )
+    #         output.stat = sample_block.stat
 
-                    output.members[m] = t
+    #         for m, block in sample_block.blocks.items():
+    #             if m not in output.members:
+    #                 if -1 in block.sample_shape.values():
+    #                     raise NotImplementedError(
+    #                         "merging blocks with data dependent axis not yet implemented"
+    #                     )
 
-                output.members[m][block.inner_slice] = block.inner_data
-            yield output
+    #                 if (
+    #                     block.unstacked_sample_batch_shape is not None
+    #                     and block.unstacked_dim_order is not None
+    #                 ):
+    #                     sizes = {
+    #                         **block.sample_shape,
+    #                         **block.unstacked_sample_batch_shape,
+    #                     }
+    #                     full_unstacked_shape = {
+    #                         a: sizes[a] for a in block.unstacked_dim_order
+    #                     }
+    #                     t = create_tensor_with_multiindex(
+    #                         full_unstacked_shape,
+    #                         fill_value=fill_value,
+    #                         dtype=np.dtype(block.data.dtype),
+    #                         transpose_to=tuple(block.sample_shape.keys()),
+    #                     )
+    #                 else:
+    #                     t = Tensor(
+    #                         np.full(
+    #                             shape=tuple(block.sample_shape.values()),
+    #                             fill_value=fill_value,
+    #                             dtype=block.data.dtype,
+    #                         ),
+    #                         dims=tuple(block.sample_shape.keys()),
+    #                     )
 
-        yield output
+    #                 output.members[m] = t
+
+    #             output.members[m][block.inner_slice] = block.inner_data
+    #         yield output
+
+    #     yield output
 
     def pad(
         self,
@@ -373,96 +482,90 @@ class Sample:
             },
             stat=self.stat,
             id=self.id,
-            unstacked_dim_order=self.unstacked_dim_order,
         )
 
-    def transpose(
-        self,
-        axes: PerMember[Sequence[AxisId]],
-        *,
-        extra_dims: Literal["raise", "squeeze", "stack", "squeeze_or_stack"] = "raise",
-        missing_dims: Literal[
-            "raise", "expand", "unstack", "unstack_or_expand"
-        ] = "raise",
-    ) -> Self:
-        """Return a new sample with transposed sample members.
+    # def transpose(
+    #     self,
+    #     axes: PerMember[Sequence[AxisId]],
+    #     *,
+    #     extra_dims: Literal["raise", "squeeze", "stack", "squeeze_or_stack"] = "raise",
+    #     missing_dims: Literal[
+    #         "raise", "expand", "unstack", "unstack_or_expand"
+    #     ] = "raise",
+    # ) -> Self:
+    #     """Return a new sample with transposed sample members.
 
-        Raises:
-            ValueError: If not all batch dimensions have the same length after transposition (and possibly stacking/unstacking extra dimensions).
+    #     Raises:
+    #         ValueError: If not all batch dimensions have the same length after transposition (and possibly stacking/unstacking extra dimensions).
 
-        """
-        if any(unknown := [m not in self.members for m in axes]):
-            raise ValueError(f"Axes specified for unknown members: {unknown}")
+    #     """
+    #     if any(unknown := [m not in self.members for m in axes]):
+    #         raise ValueError(f"Axes specified for unknown members: {unknown}")
 
-        members: dict[MemberId, Tensor] = {}
-        individual_unstacked_dim_order: dict[MemberId, list[AxisId] | None] = {}
-        for m, t in self.members.items():
-            if m in axes:
-                members[m], individual_unstacked_dim_order[m] = (
-                    t.transpose_and_return_unstacked_dim_order(
-                        axes=axes[m],
-                        extra_dims=extra_dims,
-                        missing_dims=missing_dims,
-                    )
-                )
-            else:
-                members[m] = t
-                individual_unstacked_dim_order[m] = None
+    #     members: dict[MemberId, Tensor] = {}
+    #     individual_unstacked_dim_order: dict[MemberId, list[AxisId] | None] = {}
+    #     for m, t in self.members.items():
+    #         if m in axes:
+    #             members[m], individual_unstacked_dim_order[m] = (
+    #                 t.transpose_and_return_unstacked_dim_order(
+    #                     axes=axes[m],
+    #                     extra_dims=extra_dims,
+    #                     missing_dims=missing_dims,
+    #                 )
+    #             )
+    #         else:
+    #             members[m] = t
+    #             individual_unstacked_dim_order[m] = None
 
-        if any(order is None for order in individual_unstacked_dim_order.values()):
-            unstacked_dim_order = None
-        else:
-            unstacked_dim_order = {
-                m: order
-                for m, order in individual_unstacked_dim_order.items()
-                if order is not None
-            }
+    #     # if any(order is None for order in individual_unstacked_dim_order.values()):
+    #     #     unstacked_dim_order = None
+    #     # else:
+    #     #     unstacked_dim_order = {
+    #     #         m: order
+    #     #         for m, order in individual_unstacked_dim_order.items()
+    #     #         if order is not None
+    #     #     }
 
-        if (
-            len(
-                batch_lengths := {
-                    t.sizes[AxisId("batch")]
-                    for t in members.values()
-                    if AxisId("batch") in t.dims
-                }
-            )
-            > 1
-        ):
-            raise ValueError(
-                f"Transposed sample members have incompatible batch lengths: {batch_lengths}."
-            )
+    #     if (
+    #         len(
+    #             batch_lengths := {
+    #                 t.sizes[AxisId("batch")]
+    #                 for t in members.values()
+    #                 if AxisId("batch") in t.dims
+    #             }
+    #         )
+    #         > 1
+    #     ):
+    #         raise ValueError(
+    #             f"Transposed sample members have incompatible batch lengths: {batch_lengths}."
+    #         )
 
-        return self.__class__(
-            members=members,
-            stat=dict(self.stat),
-            id=self.id,
-            unstacked_dim_order=unstacked_dim_order,
-        )
+    #     return self.__class__(members=members, stat=dict(self.stat), id=self.id)
 
-    def assign_batch_multi_index(self, multi_index: MultiIndex) -> Self:
-        """Return a new sample with the batch multi-index assigned to all sample members.
+    # def assign_batch_multi_index(self, multi_index: MultiIndex) -> Self:
+    #     """Return a new sample with the batch multi-index assigned to all sample members.
 
-        Raises:
-            ValueError: If not all sample members have a batch dimension.
-        """
-        if len(
-            no_batch := [
-                m for m, t in self.members.items() if AxisId("batch") not in t.dims
-            ]
-        ) == len(self.members):
-            raise ValueError(f"No member has a batch dimension: {no_batch}")
+    #     Raises:
+    #         ValueError: If not all sample members have a batch dimension.
+    #     """
+    #     if len(
+    #         no_batch := [
+    #             m for m, t in self.members.items() if AxisId("batch") not in t.dims
+    #         ]
+    #     ) == len(self.members):
+    #         raise ValueError(f"No member has a batch dimension: {no_batch}")
 
-        return self.__class__(
-            members={
-                m: t
-                if AxisId("batch") not in t.dims
-                else t.assign_batch_multi_index(multi_index)
-                for m, t in self.members.items()
-            },
-            stat=dict(self.stat),
-            id=self.id,
-            unstacked_dim_order=self.unstacked_dim_order,
-        )
+    #     return self.__class__(
+    #         members={
+    #             m: t
+    #             if AxisId("batch") not in t.dims
+    #             else t.assign_batch_multi_index(multi_index)
+    #             for m, t in self.members.items()
+    #         },
+    #         stat=dict(self.stat),
+    #         id=self.id,
+    #         unstacked_dim_order=self.unstacked_dim_order,
+    #     )
 
     def unstack_batch_multi_index(
         self,
@@ -530,356 +633,121 @@ class Sample:
             members=members,
             stat=stat,
             id=self.id,
-            unstacked_dim_order=None,
         )
 
 
-BlockT = TypeVar("BlockT", bound=BlockMeta)
+# @dataclass(frozen=True)
+# class SampleBlock(SampleBlockBase[Block]):
+#     """A block of a dataset sample"""
+
+#     blocks: dict[MemberId, Block]
+#     """Individual tensor blocks comprising this sample block"""
+
+#     stat: Stat
+#     """computed statistics"""
+
+#     @property
+#     def members(self) -> PerMember[Tensor]:
+#         """the sample block's tensors"""
+#         return {m: b.data for m, b in self.blocks.items()}
+
+#     @classmethod
+#     def from_meta(
+#         cls, meta: SampleBlockMeta, data: PerMember[Tensor], *, stat: Stat
+#     ) -> SampleBlock:
+#         return cls(
+#             sample_shape={
+#                 m: {
+#                     a: data[m].tagged_shape[a] if s == -1 else s
+#                     for a, s in member_shape.items()
+#                 }
+#                 for m, member_shape in meta.sample_shape.items()
+#             },
+#             sample_id=meta.sample_id,
+#             blocks={
+#                 m: Block.from_meta(b, data=data[m]) for m, b in meta.blocks.items()
+#             },
+#             stat=stat,
+#             block_loc=meta.block_loc,
+#             blocks_loc_shape=meta.blocks_loc_shape,
+#         )
+
+#     def get_meta(self) -> SampleBlockMeta:
+#         return SampleBlockMeta(
+#             sample_id=self.sample_id,
+#             blocks={m: b.get_meta() for m, b in self.blocks.items()},
+#             sample_shape=self.sample_shape,
+#             block_loc=self.block_loc,
+#             blocks_loc_shape=self.blocks_loc_shape,
+#         )
+
+#     def as_sample(self) -> Sample:
+#         """Convert this sample block to a `Sample` with the shape of this block.
+
+#         Note:
+#             If you want to convert one or more sample block to a sample with the shape of the original, whole sample,
+#             use `Sample.from_blocks()` instead.
+#         """
+#         return Sample(
+#             members=dict(self.members),
+#             stat=dict(self.stat),
+#             id=self.sample_id,
+#             unstacked_dim_order=self.unstacked_dim_order,
+#         )
+
+#     @property
+#     def unstacked_dim_order(self) -> PerMember[Sequence[AxisId] | None]:
+#         return {m: b.unstacked_dim_order for m, b in self.blocks.items()}
+
+#     @property
+#     def batch_multi_index(self) -> MultiIndex | None:
+#         """Return the batch multi-index of the sample block, if it has one.
+
+#         Returns:
+#             The batch multi-index of the sample block, or `None` if the sample block does not have a multi-index batch dimension.
+#         """
+#         for tensor in self.members.values():
+#             idx = tensor.batch_multi_index
+#             if idx is not None:
+#                 return idx
+
+#         return None
 
 
-@pydantic.dataclasses.dataclass(frozen=True)
-class SampleBlockBase(Generic[BlockT]):
-    """base class for `SampleBlockMeta` and `SampleBlock`"""
+# @dataclass(frozen=True)
+# class SampleBlockWithOrigin(SampleBlock):
+#     """A `SampleBlock` with a reference (`origin`) to the whole `Sample`"""
 
-    sample_shape: PerMemberAnno[PerAxis[int]]
-    """the sample shape this block represents a part of"""
-
-    sample_id: SampleId
-    """identifier for the sample within its dataset"""
-
-    blocks: PerMemberAnno[BlockT]
-    """Individual tensor blocks comprising this sample block"""
-
-    block_index: BlockIndex
-    """the n-th block of the sample"""
-
-    blocks_in_sample: TotalNumberOfBlocks
-    """total number of blocks in the sample"""
-
-    @property
-    def shape(self) -> PerMember[PerAxis[int]]:
-        return MappingProxyType({mid: b.shape for mid, b in self.blocks.items()})
-
-    @property
-    def inner_shape(self) -> PerMember[PerAxis[int]]:
-        return MappingProxyType({mid: b.inner_shape for mid, b in self.blocks.items()})
-
-    @property
-    def unstacked_sample_batch_shape(self) -> PerAxis[int] | None:
-        """The shape of the unstacked batch axis, if the sample has a multi-index batch axis"""
-        for b in self.blocks.values():
-            if b.unstacked_sample_batch_shape is not None:
-                return b.unstacked_sample_batch_shape
-
-        return None
-
-    @property
-    def unstacked_dim_order(self) -> PerMemberAnno[Sequence[AxisId] | None] | None:
-        """The dim order of the unstacked tensors, if the sample has a multi-index batch axis"""
-        for b in self.blocks.values():
-            if b.unstacked_dim_order is not None:
-                return MappingProxyType(
-                    {mid: bb.unstacked_dim_order for mid, bb in self.blocks.items()}
-                )
-
-        return None
-
-    @property
-    def unstacked_sample_shape(self) -> PerMemberAnno[PerAxis[int]]:
-        """combined (stacked) sample shape with the unstacked sample batch shape in order of unstacked_dim_order (if available)"""
-        return MappingProxyType(
-            {mid: b.unstacked_sample_shape for mid, b in self.blocks.items()}
-        )
+#     origin: Sample
+#     """the sample this sample block was taken from"""
 
 
-@dataclass
-class LinearSampleAxisTransform(LinearAxisTransform):
-    member: MemberId
+# def sample_block_generator(
+#     blocks: Iterable[PerMember[BlockMeta] | SampleBlockMeta],
+#     *,
+#     origin: Sample,
+#     pad_mode: PadMode | PerMember[PadMode],
+# ) -> Iterable[SampleBlockWithOrigin]:
+#     for member_blocks in blocks:
+#         if isinstance(member_blocks, SampleBlockMeta):
+#             member_blocks = member_blocks.blocks
 
-
-@pydantic.dataclasses.dataclass(frozen=True)
-class SampleBlockMeta(SampleBlockBase[BlockMeta]):
-    """Meta data of a dataset sample block"""
-
-    def get_transformed(
-        self, new_axes: PerMember[PerAxis[LinearSampleAxisTransform | int]]
-    ) -> Self:
-        sample_shape = {
-            m: {
-                a: (
-                    trf
-                    if isinstance(trf, int)
-                    else trf.compute(self.sample_shape[trf.member][trf.axis])
-                )
-                for a, trf in new_axes[m].items()
-            }
-            for m in new_axes
-        }
-
-        def get_member_halo(m: MemberId, round: Callable[[float], int]):
-            return {
-                a: (
-                    Halo(0, 0)
-                    if isinstance(trf, int)
-                    or trf.axis not in self.blocks[trf.member].halo
-                    else Halo(
-                        round(self.blocks[trf.member].halo[trf.axis].left * trf.scale),
-                        round(self.blocks[trf.member].halo[trf.axis].right * trf.scale),
-                    )
-                )
-                for a, trf in new_axes[m].items()
-            }
-
-        halo: dict[MemberId, dict[AxisId, Halo]] = {}
-        for m in new_axes:
-            halo[m] = get_member_halo(m, floor)
-            if halo[m] != get_member_halo(m, ceil):
-                raise ValueError(
-                    f"failed to unambiguously scale halo {halo[m]} with {new_axes[m]}"
-                    + f" for {m}."
-                )
-
-        inner_slice = {
-            m: {
-                a: (
-                    SliceInfo(0, trf)
-                    if isinstance(trf, int)
-                    else SliceInfo(
-                        trf.compute(
-                            self.blocks[trf.member].inner_slice[trf.axis].start
-                        ),
-                        trf.compute(self.blocks[trf.member].inner_slice[trf.axis].stop),
-                    )
-                )
-                for a, trf in new_axes[m].items()
-            }
-            for m in new_axes
-        }
-        unstacked_batch_slice = None
-        for b in self.blocks.values():
-            if b.unstacked_batch_slice is None:
-                continue
-            elif unstacked_batch_slice is None:
-                unstacked_batch_slice = b.unstacked_batch_slice
-            else:
-                assert unstacked_batch_slice == b.unstacked_batch_slice, (
-                    "Incompatible unstacked batch slices across sample block members"
-                )
-
-        unstacked_dim_order: dict[MemberId, list[AxisId] | None] = {}
-        for m, trfs in new_axes.items():
-            for trf in trfs.values():
-                if isinstance(trf, LinearSampleAxisTransform):
-                    unstacked_in_order = self.blocks[trf.member].unstacked_dim_order
-                    stacked_dims = list(
-                        self.blocks[trf.member].unstacked_sample_batch_shape or ()
-                    )
-                    unstacked_dim_order[m] = get_unstacked_dim_order(
-                        list(trfs),
-                        unstacked_reference_order=unstacked_in_order,
-                        stacked_dims=stacked_dims,
-                    )
-                    break
-                elif isinstance(trf, int):
-                    pass
-                else:
-                    assert_never(trf)
-            else:
-                unstacked_dim_order[m] = None
-
-        return self.__class__(
-            blocks={
-                m: BlockMeta(
-                    sample_shape=sample_shape[m],
-                    unstacked_sample_batch_shape=self.unstacked_sample_batch_shape,
-                    unstacked_dim_order=unstacked_dim_order[m],
-                    inner_slice=inner_slice[m],
-                    unstacked_batch_slice=unstacked_batch_slice,
-                    halo=halo[m],
-                    block_index=self.block_index,
-                    blocks_in_sample=self.blocks_in_sample,
-                )
-                for m in new_axes
-            },
-            sample_shape=sample_shape,
-            sample_id=self.sample_id,
-            block_index=self.block_index,
-            blocks_in_sample=self.blocks_in_sample,
-        )
-
-    def with_data(self, data: PerMember[Tensor], *, stat: Stat) -> SampleBlock:
-        return SampleBlock(
-            sample_shape={
-                m: {
-                    a: data[m].tagged_shape[a] if s == -1 else s
-                    for a, s in member_shape.items()
-                }
-                for m, member_shape in self.sample_shape.items()
-            },
-            sample_id=self.sample_id,
-            blocks={
-                m: Block.from_meta(b, data=data[m]) for m, b in self.blocks.items()
-            },
-            stat=stat,
-            block_index=self.block_index,
-            blocks_in_sample=self.blocks_in_sample,
-        )
-
-
-@dataclass(frozen=True)
-class SampleBlock(SampleBlockBase[Block]):
-    """A block of a dataset sample"""
-
-    blocks: dict[MemberId, Block]
-    """Individual tensor blocks comprising this sample block"""
-
-    stat: Stat
-    """computed statistics"""
-
-    @property
-    def members(self) -> PerMember[Tensor]:
-        """the sample block's tensors"""
-        return {m: b.data for m, b in self.blocks.items()}
-
-    def get_transformed_meta(
-        self, new_axes: PerMember[PerAxis[LinearSampleAxisTransform | int]]
-    ) -> SampleBlockMeta:
-        return SampleBlockMeta(
-            sample_id=self.sample_id,
-            blocks=dict(self.blocks),
-            sample_shape=self.sample_shape,
-            block_index=self.block_index,
-            blocks_in_sample=self.blocks_in_sample,
-        ).get_transformed(new_axes)
-
-    @classmethod
-    def from_meta(
-        cls, meta: SampleBlockMeta, data: PerMember[Tensor], stat: Stat
-    ) -> Self:
-        return cls(
-            sample_shape=meta.sample_shape,
-            sample_id=meta.sample_id,
-            blocks={
-                m: Block.from_meta(b, data=data[m]) for m, b in meta.blocks.items()
-            },
-            stat=stat,
-            block_index=meta.block_index,
-            blocks_in_sample=meta.blocks_in_sample,
-        )
-
-    def get_meta(self) -> SampleBlockMeta:
-        return SampleBlockMeta(
-            sample_id=self.sample_id,
-            blocks={m: b.get_meta() for m, b in self.blocks.items()},
-            sample_shape=self.sample_shape,
-            block_index=self.block_index,
-            blocks_in_sample=self.blocks_in_sample,
-        )
-
-    def as_sample(self) -> Sample:
-        """Convert this sample block to a `Sample` with the shape of this block.
-
-        Note:
-            If you want to convert one or more sample block to a sample with the shape of the original, whole sample,
-            use `Sample.from_blocks()` instead.
-        """
-        return Sample(
-            members=dict(self.members),
-            stat=dict(self.stat),
-            id=self.sample_id,
-            unstacked_dim_order=self.unstacked_dim_order,
-        )
-
-    @property
-    def unstacked_dim_order(self) -> PerMember[Sequence[AxisId] | None]:
-        return {m: b.unstacked_dim_order for m, b in self.blocks.items()}
-
-    @property
-    def batch_multi_index(self) -> MultiIndex | None:
-        """Return the batch multi-index of the sample block, if it has one.
-
-        Returns:
-            The batch multi-index of the sample block, or `None` if the sample block does not have a multi-index batch dimension.
-        """
-        for tensor in self.members.values():
-            idx = tensor.batch_multi_index
-            if idx is not None:
-                return idx
-
-        return None
-
-
-@dataclass(frozen=True)
-class SampleBlockWithOrigin(SampleBlock):
-    """A `SampleBlock` with a reference (`origin`) to the whole `Sample`"""
-
-    origin: Sample
-    """the sample this sample block was taken from"""
-
-
-class _ConsolidatedMemberBlocks:
-    def __init__(self, blocks: PerMember[BlockMeta]):
-        super().__init__()
-        block_indices = {b.block_index for b in blocks.values()}
-        assert len(block_indices) == 1
-        self.block_index = block_indices.pop()
-        blocks_in_samples = {b.blocks_in_sample for b in blocks.values()}
-        assert len(blocks_in_samples) == 1
-        self.blocks_in_sample = blocks_in_samples.pop()
-
-
-def sample_block_meta_generator(
-    blocks: Iterable[PerMember[BlockMeta]],
-    *,
-    sample_shape: PerMember[PerAxis[int]],  # TODO: remove redundant sample_shape arg?
-    sample_id: SampleId,
-):
-    for member_blocks in blocks:
-        cons = _ConsolidatedMemberBlocks(member_blocks)
-        unstacked_batch_shape = None
-        for m, b in member_blocks.items():
-            if b.unstacked_sample_batch_shape is not None:
-                if unstacked_batch_shape is None:
-                    unstacked_batch_shape = b.unstacked_sample_batch_shape
-                else:
-                    assert unstacked_batch_shape == b.unstacked_sample_batch_shape, (
-                        f"unstacked batch shape mismatch for member {m}: {unstacked_batch_shape} != {b.unstacked_sample_batch_shape}"
-                    )
-
-            assert b.sample_shape == sample_shape[m]
-
-        yield SampleBlockMeta(
-            blocks=dict(member_blocks),
-            sample_shape=sample_shape,
-            sample_id=sample_id,
-            block_index=cons.block_index,
-            blocks_in_sample=cons.blocks_in_sample,
-        )
-
-
-def sample_block_generator(
-    blocks: Iterable[PerMember[BlockMeta]],
-    *,
-    origin: Sample,
-    pad_mode: PadMode | PerMember[PadMode],
-) -> Iterable[SampleBlockWithOrigin]:
-    for member_blocks in blocks:
-        cons = _ConsolidatedMemberBlocks(member_blocks)
-        yield SampleBlockWithOrigin(
-            blocks={
-                m: Block.from_sample_member(
-                    origin.members[m],
-                    block=member_blocks[m],
-                    pad_mode=pad_mode.get(m, "symmetric")
-                    if isinstance(pad_mode, collections.abc.Mapping)
-                    else pad_mode,
-                )
-                for m in origin.members
-            },
-            sample_shape=origin.shape,
-            origin=origin,
-            stat=origin.stat,
-            sample_id=origin.id,
-            block_index=cons.block_index,
-            blocks_in_sample=cons.blocks_in_sample,
-        )
+#         cons = _ConsolidatedMemberBlocks(member_blocks)
+#         yield SampleBlockWithOrigin(
+#             blocks={
+#                 m: Block.from_sample_member(
+#                     origin.members[m],
+#                     block=member_blocks[m],
+#                     pad_mode=pad_mode.get(m, "symmetric")
+#                     if isinstance(pad_mode, collections.abc.Mapping)
+#                     else pad_mode,
+#                 )
+#                 for m in origin.members
+#             },
+#             sample_shape=origin.shape,
+#             origin=origin,
+#             stat=origin.stat,
+#             sample_id=origin.id,
+#             block_loc=cons.block_index,
+#             blocks_loc_shape=cons.blocks_in_sample,
+#         )

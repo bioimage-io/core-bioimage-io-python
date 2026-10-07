@@ -8,7 +8,7 @@ import pytest
 from numpy.typing import NDArray
 
 from bioimageio.core import AxisId
-from bioimageio.core.utils._multi_index import MultiIndex, create_tensor_with_multiindex
+from bioimageio.core.tensor import MultiIndex
 
 UNSTACKED_SHAPE = {AxisId("batch"): 2, AxisId("z"): 3, AxisId("x"): 4}
 TRANSPOSE_TO = (AxisId("batch"), AxisId("x"))

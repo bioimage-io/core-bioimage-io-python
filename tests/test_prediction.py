@@ -154,7 +154,6 @@ def test_predict_z_as_batch(unet2d_nuclei_broad_model: str):
             MemberId("raw"): Tensor(data, dims=["batch", "channel", "z", "y", "x"])
         },
         stat=input_sample.stat,
-        unstacked_dim_order=input_sample.unstacked_dim_order,
     )
     input_sample = transpose_sample_for_model(input_sample, model)
     out = predict(model=unet2d_nuclei_broad_model, inputs=input_sample)
@@ -174,7 +173,7 @@ def test_predict_z_as_batch(unet2d_nuclei_broad_model: str):
 def test_transpose_sample_for_model_stacks_extra_z_to_batch(
     unet2d_nuclei_broad_model: str,
 ):
-    from bioimageio.core.utils._multi_index import MultiIndex
+    from bioimageio.core._utils.multi_index import MultiIndex
 
     model = load_model(
         unet2d_nuclei_broad_model, perform_io_checks=False, format_version="latest"

@@ -57,8 +57,8 @@ def test_save_sample(tmp_path: Path, suffix: str):
     from bioimageio.core.io import load_tensor, save_sample
 
     members = {
-        MemberId("raw"): np.arange(6, dtype=np.uint8).reshape(2, 3),
-        MemberId("mask"): np.ones((2, 3), dtype=np.uint8),
+        MemberId("raw"): np.arange(30, dtype=np.uint8).reshape(5, 6),
+        MemberId("mask"): np.ones((5, 6), dtype=np.uint8),
     }
     sample = Sample(
         members={

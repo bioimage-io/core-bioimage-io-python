@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Hashable, Mapping
+from dataclasses import dataclass
 from typing import (
     Literal,
     NamedTuple,
@@ -10,9 +11,14 @@ from typing import (
 
 from typing_extensions import Self, TypeAlias, assert_never
 
+from bioimageio.spec._internal.utils import SLOTS
 from bioimageio.spec.model import v0_5
 
-SupportedWeightsFormat = Literal[
+# SHARDED_INNER_CHUNK_MAX_BYTES: int = 1048576  # 1 MiB
+# NON_SHARDED_CHUNK_MAX_BYTES: int = 67_108_864  # 64MiB
+PROCESSING_CHUNK_MIN_BYTES: int = 104_857_600  # 100 MiB
+
+SupportedWeightsFormat: TypeAlias = Literal[
     "keras_hdf5",
     "keras_v3",
     "onnx",
@@ -21,7 +27,7 @@ SupportedWeightsFormat = Literal[
     "torchscript",
 ]
 
-QuantileMethod = Literal[
+QuantileMethod: TypeAlias = Literal[
     "inverted_cdf",
     # "averaged_inverted_cdf",
     # "closest_observation",
@@ -46,7 +52,7 @@ Note:
 
 """
 
-DTypeStr = Literal[
+DTypeStr: TypeAlias = Literal[
     "bool",
     "float32",
     "float64",
@@ -81,22 +87,22 @@ class _LeftRight(NamedTuple):
             assert_never(like)
 
 
-_Where = Literal["left", "right", "left_and_right"]
+_Where: TypeAlias = Literal["left", "right", "left_and_right"]
 
 
 class CropWidth(_LeftRight):
     pass
 
 
-CropWidthLike = _LeftRightLike[CropWidth]
-CropWhere = _Where
+CropWidthLike: TypeAlias = _LeftRightLike[CropWidth]
+CropWhere: TypeAlias = _Where
 
 
 class Halo(_LeftRight):
     pass
 
 
-HaloLike = _LeftRightLike[Halo]
+HaloLike: TypeAlias = _LeftRightLike[Halo]
 
 
 class OverlapWidth(_LeftRight):
@@ -113,9 +119,18 @@ PadMode: TypeAlias = Union[Literal["constant", "edge", "reflect", "symmetric"], 
 PadWhere: TypeAlias = _Where
 
 
-class SliceInfo(NamedTuple):
+@dataclass(frozen=True, **SLOTS)
+class SliceInfo:
     start: int
     stop: int
+
+
+@dataclass(frozen=True, **SLOTS)
+class SliceInfoWithOverlap(SliceInfo):
+    """SliceInfo aware of the fact that it overlaps with neighboring blocks."""
+
+    start_wo_overlap: int
+    stop_wo_overlap: int
 
 
 SampleId = Hashable
@@ -133,7 +148,31 @@ Parameter to determine a concrete size for paramtrized axis sizes defined by
 """
 
 _T = TypeVar("_T")
+# PerMember = Union[
+#     Mapping[MemberId, _T], Mapping[str, _T], Mapping[Union[MemberId, str], _T]
+# ]
 PerMember = Mapping[MemberId, _T]
+BlockLoc = tuple[int, ...]
+BlockLocShape = tuple[int, ...]
 
-BlockIndex = int
-TotalNumberOfBlocks = int
+
+class DataDepSize(NamedTuple):
+    min: int
+    max: int | None
+
+
+def resolve_pad_mode(mode: PadMode):
+    constant_value = None
+    if isinstance(mode, str):
+        mode_name = mode
+    elif isinstance(mode, v0_5.ConstantPadding):
+        mode_name = mode.mode
+        constant_value = mode.value
+    elif isinstance(
+        mode, (v0_5.EdgePadding, v0_5.ReflectPadding, v0_5.SymmetricPadding)
+    ):
+        mode_name = mode.mode
+    else:
+        assert_never(mode)
+
+    return mode_name, constant_value

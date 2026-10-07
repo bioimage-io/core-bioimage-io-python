@@ -16,7 +16,6 @@ def _alter_sample(sample: Sample, offset: float) -> Sample:
         id=f"{sample.id}_altered",
         members={m: t + offset for m, t in sample.members.items()},
         stat=sample.stat,
-        unstacked_dim_order=sample.unstacked_dim_order,
     )
 
 
@@ -46,7 +45,7 @@ def _test_prediction_pipeline(
         multiple_outputs = list(
             executor.map(
                 partial(
-                    pp.predict_sample_without_blocking,
+                    pp.predict_without_blocking,
                     skip_input_padding=True,
                     skip_output_cropping=True,
                 ),
@@ -121,7 +120,7 @@ def test_blockwise_prediction_with_stacked_dims(unet2d_nuclei_broad_model: Path)
             )
         ],
     )
-    outputs = pp.predict_sample_with_blocking(inputs).unstack_batch_multi_index()[
+    outputs = pp.predict_with_blocking(inputs).unstack_batch_multi_index()[
         {AxisId("extra_dim"): 0}
     ]
 

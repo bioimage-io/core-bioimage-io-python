@@ -13,14 +13,14 @@ from bioimageio.spec.model import v0_4
 
 from ..._description_serializer import DescriptionSerializer
 from ..._model_adapter import RemoteModelAdapter
-from ..._prediction_pipeline import IntermediatePrediction, RemotePredictionPipeline
+from ..._prediction_pipeline import RemotePredictionPipeline
 from ..._settings import settings
+from ..._utils.type_guards import is_sequence
 from ...axis import PerAxis
 from ...common import BlocksizeParameter, PerMember
 from ...io import JsonValue
-from ...sample import Sample, SampleBlock
+from ...sample import Sample
 from ...stat_measures import Measure, MeasureValue
-from ...utils._type_guards import is_sequence
 from .serializer import GradioSampleSerializer
 
 SerializedSampleBlock = dict[str, JsonValue]
@@ -239,7 +239,7 @@ class GradioPredictionPipeline(RemotePredictionPipeline):
         )
         self._client.close()
 
-    def predict_sample_block(
+    def predict_block(
         self,
         sample_block: SampleBlock,
         skip_preprocessing: bool = False,
@@ -272,7 +272,7 @@ class GradioPredictionPipeline(RemotePredictionPipeline):
         output_meta = sample_block.get_transformed_meta(self._block_transform)
         return output_meta.with_data(output_block.members, stat=sample_block.stat)
 
-    def _predict_sample_without_blocking_impl(
+    def _predict_without_blocking_impl(
         self,
         sample: Sample,
         skip_preprocessing: bool = False,
@@ -296,7 +296,7 @@ class GradioPredictionPipeline(RemotePredictionPipeline):
             )
         )
 
-    def _predict_sample_with_fixed_blocking_yield_intermediates_impl(
+    def _predict_with_fixed_blocking_impl(
         self,
         sample: Sample,
         input_block_shape: PerMember[PerAxis[int]],
@@ -347,7 +347,7 @@ class GradioPredictionPipeline(RemotePredictionPipeline):
             yield from block_iterator
 
         return (
-            first_intermediate.last_block.blocks_in_sample,
+            first_intermediate.last_block.blocks_loc_shape,
             _intermediate_predictions(),
         )
 

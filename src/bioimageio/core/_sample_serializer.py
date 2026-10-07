@@ -9,10 +9,10 @@ from typing import (
 
 from bioimageio.spec.model import v0_5
 
+from ._utils.type_hints import NestedList
 from .axis import PerAxis
 from .common import HaloLike, PadMode, PerMember
-from .digest_spec import split_sample_into_blocks_for_model
-from .sample import Sample, SampleBlock
+from .sample import Sample
 
 SerializedSampleBlockType = TypeVar("SerializedSampleBlockType")
 
@@ -22,19 +22,18 @@ class SampleSerializer(ABC, Generic[SerializedSampleBlockType]):
     def serialize_sample(
         cls,
         sample: Sample,
-    ) -> tuple[SerializedSampleBlockType]:
-        """Serialize a sample as a single block"""
-        return (cls.serialize_sample_block(sample.as_single_block()),)
+    ) -> NestedList[SerializedSampleBlockType]:
+        """Serialize a sample (chunkwise for chunked samples)"""
+
+        # for block in sample.blockwise
+        return cls.serialize_sample_block(block)
 
     @classmethod
     def deserialize_sample(
         cls,
         serialized: Iterable[SerializedSampleBlockType],
-        fill_value: float = float("nan"),
     ) -> Sample:
-        return Sample.from_blocks(
-            (cls.deserialize_sample_block(s) for s in serialized), fill_value=fill_value
-        )
+        return Sample.from_blocks((cls.deserialize_sample_block(s) for s in serialized))
 
     def serialize_sample_blockwise(
         self,
@@ -46,14 +45,10 @@ class SampleSerializer(ABC, Generic[SerializedSampleBlockType]):
     ) -> Iterable[SerializedSampleBlockType]:
         """Split a sample into blocks according to the model's input specifications and `blocksize_parameter` and serialize each block."""
 
-        _n_blocks, blocks = split_sample_into_blocks_for_model(
-            sample,
-            model=model,
-            blocksize_parameter=blocksize_parameter,
-            batch_size=batch_size,
-        )
-        for block in blocks:
-            yield self.serialize_sample_block(block)
+        block_shape = model.get_tensor_sizes(
+            blocksize_parameter, batch_size, sample.shape
+        ).inputs
+        sample = sample.chunk(block_shape)
 
     @classmethod
     def serialize_sample_with_fixed_blocking(

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from bioimageio.core.utils._type_guards import is_list, is_ndarray
+from bioimageio.core._utils.type_guards import is_list, is_ndarray
 from tests.test_bioimageio_collection import expensive_test
 
 

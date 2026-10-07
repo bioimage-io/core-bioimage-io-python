@@ -81,6 +81,7 @@ from ._prediction_pipeline import (
     create_prediction_pipeline,
     create_remote_prediction_pipeline,
 )
+from ._utils import compare
 from .commands import WeightFormatArgAll, WeightFormatArgAny, package, test
 from .common import MemberId, SampleId, SupportedWeightsFormat
 from .digest_spec import get_member_ids, load_sample_for_model
@@ -90,7 +91,6 @@ from .remote_backends import create_remote_model_adapter
 from .sample import Sample
 from .stat_calculators import StatsCalculator
 from .stat_measures import Measure, MeasureValue, Stat
-from .utils import compare
 from .weight_converters._add_weights import add_weights
 
 WEIGHT_FORMAT_ALIASES = AliasChoices(
@@ -836,11 +836,11 @@ class PredictCmd(CmdBase, WithSource):
 
         if blockwise:
             predict_method = partial(
-                pp.predict_sample_with_blocking,
+                pp.predict_with_blocking,
                 ns=None if isinstance(blockwise, bool) else blockwise,
             )
         else:
-            predict_method = pp.predict_sample_without_blocking
+            predict_method = pp.predict_without_blocking
 
         for sample_in, sp_out in tqdm(
             zip(input_dataset(dict(stat)), sample_paths_out),

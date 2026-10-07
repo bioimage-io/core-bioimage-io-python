@@ -103,25 +103,21 @@ def predict(
                     input_block_shape,
                 )
 
-            _n_intermediates, output = (
-                pp.predict_sample_with_fixed_blocking_yield_intermediates(
-                    sample,
-                    input_block_shape=input_block_shape,
-                    skip_preprocessing=skip_preprocessing,
-                    skip_postprocessing=skip_postprocessing,
-                )
+            _n_intermediates, output = pp.predict_with_fixed_blocking(
+                sample,
+                input_block_shape=input_block_shape,
+                skip_preprocessing=skip_preprocessing,
+                skip_postprocessing=skip_postprocessing,
             )
         elif blocksize_parameter is not None:
-            _n_intermediates, output = (
-                pp.predict_sample_with_blocking_yield_intermediates(
-                    sample,
-                    skip_preprocessing=skip_preprocessing,
-                    skip_postprocessing=skip_postprocessing,
-                    ns=blocksize_parameter,
-                )
+            _n_intermediates, output = pp._predict_with_blocking_impl(
+                sample,
+                skip_preprocessing=skip_preprocessing,
+                skip_postprocessing=skip_postprocessing,
+                ns=blocksize_parameter,
             )
         else:
-            output = pp.predict_sample_without_blocking(
+            output = pp.predict_without_blocking(
                 sample,
                 skip_preprocessing=skip_preprocessing,
                 skip_postprocessing=skip_postprocessing,
@@ -135,7 +131,7 @@ def predict(
                 save_output = output
                 return_output = output
             else:
-                if pp.has_non_blockwise_postprocessing:
+                if pp.has_samplewise_postprocessing:
                     final_output = None
                     for out in output:
                         final_output = out

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-from ._xml_utils import xml_to_dict
+from .xml_utils import xml_to_dict
 
 
 class ImageJMetadata(BaseModel, extra="allow"):
