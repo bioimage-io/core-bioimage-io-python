@@ -127,7 +127,7 @@ def test_predict_save_output(prep: Prep, tmp_path: Path):
     out = predict(
         model=prep.prediction_pipeline,
         inputs=prep.input_sample,
-        save_output_path=save_path,
+        output_path=save_path,
     )
     _assert_equal_samples(out, prep.output_sample)
     assert save_path.parent.exists()

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import itertools
-from collections.abc import Collection, Mapping, Sequence
+from collections.abc import Mapping, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
 from functools import partial
@@ -12,12 +12,14 @@ from typing import (
     Any,
     Callable,
     Literal,
+    cast,
 )
 
 import dask.array as da
 import numpy as np
 from loguru import logger
 from numpy.typing import NDArray
+from typing_extensions import assert_never
 
 from bioimageio.core._utils.type_hints import NestedList, cast_and_assert
 from bioimageio.spec._internal.utils import SLOTS
@@ -36,7 +38,7 @@ from .common import (
     SliceInfo,
     SliceInfoWithOverlap,
 )
-from .tensor import Tensor
+from .tensor import Array, Tensor
 
 
 @dataclass
@@ -191,8 +193,8 @@ class BlockMeta:
         )
 
     @property
-    def dims(self) -> Collection[AxisId]:
-        return set(self.inner_shape)
+    def dims(self) -> tuple[AxisId, ...]:
+        return tuple(self.inner_shape)
 
     @property
     def tagged_shape(self) -> PerAxis[int]:
@@ -212,6 +214,13 @@ class BlockMeta:
             else SliceInfo(s.start, s.stop)
             for a, s in self.inner_slice.items()
         }
+
+    @property
+    def inner_shape_wo_overlap(self) -> PerAxis[int]:
+        """axis lengths of the inner region (without halo and without overlap)"""
+        return MappingProxyType(
+            {a: s.stop - s.start for a, s in self.inner_slice_wo_overlap.items()}
+        )
 
     def __post_init__(self):
         assert all(a in self.full_shape for a in self.inner_slice), (
@@ -574,14 +583,13 @@ def apply_blockwise(
     inputs: PerMember[Tensor],
     *,
     block_shape: PerMember[PerAxis[int]],
-    pad_mode: PadMode | PerMember[PadMode],
+    pad_mode: PadMode | PerMember[PadMode] | Literal["none"],
     input_halo: PerMember[PerAxis[Halo]],
     output_halo: PerMember[PerAxis[Halo]],
     get_output_shape: Callable[[PerMember[PerAxis[int]]], PerMember[PerAxis[int]]],
     block_shape_factors: PerMember[PerAxis[int]] | None = MappingProxyType({}),
     chunk_shape: PerMember[PerAxis[int]] | int = PROCESSING_CHUNK_MIN_BYTES,
-    blockwise_processing_mode: Literal["parallel", "sequential"] = "parallel",
-    chunkwise_processing_mode: Literal["parallel", "sequential"] = "parallel",
+    blockwise_processing_mode: Literal["parallel", "sequential", "auto"] = "auto",
 ) -> dict[MemberId, Tensor]:
     """Apply `func` to `inputs` blockwise.
 
@@ -591,7 +599,7 @@ def apply_blockwise(
         inputs: the input tensors to process
         block_shape: the shape of the blocks to be processed by func
         pad_mode: the padding mode (optionally per input member) to use when the halo extends beyond the tensor boundary
-            if "none" and `output_halo` is not empty, the output will be smaller by the `output_halo`
+            if "none" and `output_halo` is not empty, the output will be smaller by `output_halo`
         input_halo: the halo around each input block (e.g. to compenstate for `output_halo` such that cropped output blocks can be stitched together)
             Within the sample halo is realized as overlap between neighboring blocks, outside the sample halo is realized as padding.
         output_halo: the halo to be cropped from each output block
@@ -608,9 +616,19 @@ def apply_blockwise(
             Chunks are larger than blocks and help to reduce the number of tasks in the dask graph for 'parallel' processing.
             Must be larger than `block_shape`.
             If an integer is given, it is interpreted as the minimum number of bytes of any input chunk tensor.
-        chunkwise_processing_mode: (WIP) 'parallel' (via dask graph) or 'sequential'
-        blockwise_processing_mode: (WIP) 'parallel' (via dask graph; nested inside chunk task if chunksiwe_processing_mode='parallel') or 'sequential'
+        blockwise_processing_mode: (WIP) processing mode wihin a (parallelly processed) dask chunk.
+            Options are
+            - 'parallel': nest blockwise tasks inside the chunk task)
+            - 'sequential': (not yet implemented) full chunk is a single task
+            - 'auto': automatically choose between 'parallel' and 'sequential' based on the number of blocks per chunk and the total number of chunks to avoid large task graphs.
     """
+    if blockwise_processing_mode == "auto":
+        blockwise_processing_mode = "parallel"  # TODO: implement auto mode
+        logger.info("using blockwise_processing_mode='parallel' for ")
+    elif blockwise_processing_mode == "sequential":
+        raise NotImplementedError(
+            "blockwise_processing_mode='sequential' is not yet implemented"
+        )
 
     if isinstance(chunk_shape, int):
         chunk_shape = get_chunk_shape(
@@ -630,7 +648,7 @@ def apply_blockwise(
         _apply_blockwise_impl,
         func,
         block_shape=block_shape,
-        pad_mode=pad_mode,
+        pad_mode="none",
         input_halo=input_halo,
         output_halo=output_halo,
         processing_mode=blockwise_processing_mode,
@@ -642,10 +660,10 @@ def apply_blockwise(
         process_chunk,
         inputs,
         block_shape=chunk_shape,
-        pad_mode="none",
+        pad_mode=pad_mode,
         input_halo=input_halo,
         output_halo=output_halo,
-        processing_mode=chunkwise_processing_mode,
+        processing_mode="parallel",
         block_shape_factors=block_shape_factors,
         get_output_shape=get_output_shape,
     )
@@ -698,6 +716,7 @@ def _apply_blockwise_impl(
         func,
         input_blocks,
         output_halo=output_halo,
+        keep_output_halo_at_sample_edge=pad_mode == "none",
         processing_mode=processing_mode,
         get_output_shape=get_output_shape,
     )
@@ -708,6 +727,7 @@ def apply_to_block_array(
     input_blocks: PerMember[BlockArray],
     *,
     output_halo: PerMember[PerAxis[HaloLike]],
+    keep_output_halo_at_sample_edge: bool,
     processing_mode: Literal["parallel", "sequential"] = "parallel",
     get_output_shape: Callable[[PerMember[PerAxis[int]]], PerMember[PerAxis[int]]],
 ) -> dict[MemberId, Tensor]:
@@ -716,8 +736,8 @@ def apply_to_block_array(
         func,
         input_blocks,
         output_halo=output_halo,
-        processing_mode=processing_mode,
         get_output_shape=get_output_shape,
+        keep_output_halo_at_sample_edge=keep_output_halo_at_sample_edge,
     )
 
     def select_arrays(
@@ -732,9 +752,16 @@ def apply_to_block_array(
     while isinstance(first_block, list):
         first_block = first_block[0]
 
+    if processing_mode == "parallel":
+        block_impl = cast(Callable[[NestedList[Array]], da.Array], da.block)
+    elif processing_mode == "sequential":
+        block_impl = cast(Callable[[NestedList[Array]], NDArray[Any]], np.block)
+    else:
+        assert_never(processing_mode)
+
     return {
         output_id: Tensor(
-            da.block(
+            block_impl(
                 select_arrays(nested_outputs, output_id),
             ),
             dims=first_block[output_id].dims,
@@ -748,8 +775,8 @@ def apply_to_blocks(
     blocks: PerMember[BlockArray],
     *,
     output_halo: PerMember[PerAxis[HaloLike]],
-    processing_mode: Literal["parallel", "sequential"] = "parallel",
     get_output_shape: Callable[[PerMember[PerAxis[int]]], PerMember[PerAxis[int]]],
+    keep_output_halo_at_sample_edge: bool,
 ) -> NestedList[dict[MemberId, Tensor]]:
     if not all(b.size > 0 for b in blocks.values()):
         raise ValueError(
@@ -761,13 +788,14 @@ def apply_to_blocks(
         raise ValueError(f"Input block grids do not match: {block_ndims}")
 
     block_grid_shape = next(iter(block_ndims.values()))
+    first_block = cast(Sequence[Block], next(iter(blocks.values())).flat)[0]
+    block_grid_dims = first_block.dims
 
     output_halo = {
         m: {a: Halo.create(h) for a, h in h_per_a.items()}
         for m, h_per_a in output_halo.items()
     }
 
-    # TODO: differentiate between parallel and sequential processing modes
     def func_blocks(
         axis: int = 0, loc: tuple[int, ...] = ()
     ) -> NestedList[dict[MemberId, Tensor]]:
@@ -792,44 +820,60 @@ def apply_to_blocks(
             raise NotImplementedError(
                 "Output block overlap to the right is not implemented."
             )
-        if left_input_overlap:
-            outer_input_shape_wo_overlap = {
-                m: {
-                    a: s.stop
-                    - s.start
-                    + sum(cast_and_assert(Block, b[loc]).halo.get(a, (0,)))
-                    for a, s in cast_and_assert(
-                        Block, b[loc]
-                    ).inner_slice_wo_overlap.items()
-                }
-                for m, b in blocks.items()
-            }
-            inner_output_shape_no_overlap_left = {
-                m: {
-                    a: None if ss < 1 else ss - sum(output_halo.get(m, {}).get(a, (0,)))
-                    for a, ss in s.items()
-                }
-                for m, s in get_output_shape(outer_input_shape_wo_overlap).items()
-            }
-        else:
-            inner_output_shape_no_overlap_left = None
 
+        valid_input_shape = {
+            m: b[loc].inner_shape_wo_overlap for m, b in blocks.items()
+        }
+        valid_output_shape = get_output_shape(valid_input_shape)
+        input_members = {m: b[loc].outer_tensor for m, b in blocks.items()}
         ret: dict[MemberId, Tensor] = {}
-        for m, t in func({m: b[loc].outer_tensor for m, b in blocks.items()}).items():
+        for m, t in func(input_members).items():
             if t is None:
                 continue
 
             # crop halo to keep inner output
-            t = t.crop_halo(output_halo.get(m))
+            keep_halo_here: dict[AxisId, Halo] = {}
+            if (crop_halo_here := output_halo.get(m)) is not None:
+                crop_halo_here = dict(crop_halo_here)
+                if keep_output_halo_at_sample_edge:
+                    assert len(block_grid_dims) == len(block_grid_shape) == len(loc)
+                    for a, grid_size, loc_idx in zip(
+                        block_grid_dims, block_grid_shape, loc
+                    ):
+                        if a not in crop_halo_here:
+                            continue
 
-            # crop inner output overlap
-            if inner_output_shape_no_overlap_left is not None:
-                output_slice_no_overlap_left = {
-                    a: SliceInfo(start=t.tagged_shape[a] - s, stop=t.tagged_shape[a])
-                    for a, s in inner_output_shape_no_overlap_left[m].items()
-                    if s is not None
-                }
-                t = t[output_slice_no_overlap_left]
+                        if loc_idx == 0 and loc_idx == grid_size - 1:
+                            # single block is first and last block
+                            keep_halo_here[a] = crop_halo_here[a]
+                            crop_halo_here[a] = Halo(0, 0)
+                        elif loc_idx == 0:
+                            # first block
+                            keep_halo_here[a] = Halo(crop_halo_here[a].left, 0)
+                            crop_halo_here[a] = Halo(0, crop_halo_here[a].right)
+                        elif loc_idx == grid_size - 1:
+                            # last block
+                            keep_halo_here[a] = Halo(0, crop_halo_here[a].right)
+                            crop_halo_here[a] = Halo(crop_halo_here[a].left, 0)
+
+                t = t.crop_halo(crop_halo_here)
+
+            overlap_halo = {
+                a: Halo(overlap, 0)
+                for a, vs in valid_output_shape[m].items()
+                if (
+                    overlap := t.tagged_shape[a]
+                    - sum(
+                        keep_halo_here.get(a, Halo(0, 0))
+                    )  # consider the edge halo we explicitly keep to be valid, so we do not error consider it overlap
+                    - vs
+                )
+                != 0
+            }
+            assert set(overlap_halo) == left_input_overlap, (
+                f"need to crop overlap {overlap_halo} but expected overlap in {left_input_overlap}"
+            )
+            t = t.crop_halo(overlap_halo)
 
             ret[m] = t
 

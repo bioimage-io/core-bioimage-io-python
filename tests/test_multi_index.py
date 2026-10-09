@@ -8,14 +8,11 @@ import pytest
 from numpy.typing import NDArray
 
 from bioimageio.core import AxisId
-from bioimageio.core.tensor import MultiIndex
+from bioimageio.core.tensor import MultiIndex, Tensor
 
 UNSTACKED_SHAPE = {AxisId("batch"): 2, AxisId("z"): 3, AxisId("x"): 4}
 TRANSPOSE_TO = (AxisId("batch"), AxisId("x"))
-ARRAY_BACKENDS = pytest.mark.parametrize(
-    "backend",
-    ["numpy", "dask"],
-)
+ARRAY_BACKENDS = pytest.mark.parametrize("backend", ["numpy", "dask"])
 ArrayBackend = Literal["numpy", "dask"]
 
 
@@ -28,75 +25,84 @@ def _array(backend: ArrayBackend, data: NDArray[Any]) -> NDArray[Any] | da.Array
 
 
 @ARRAY_BACKENDS
-def test_create_tensor_with_multiindex_from_unstacked_data(backend: ArrayBackend):
-    unstacked_data = _array(
-        backend,
-        np.arange(2 * 3 * 4).reshape(2, 3, 4),
+def test_stack_and_unstack_batch_multi_index(backend: ArrayBackend):
+    data = np.arange(24).reshape(2, 3, 4)
+    tensor = Tensor.from_array(_array(backend, data), dims=tuple(UNSTACKED_SHAPE))
+
+    stacked, dim_order = tensor.transpose_and_return_unstacked_dim_order(
+        TRANSPOSE_TO, extra_dims="stack"
     )
 
-    tensor = create_tensor_with_multiindex(
-        UNSTACKED_SHAPE,
-        TRANSPOSE_TO,
-        unstacked_data=unstacked_data,
-    )
+    assert stacked.dims == TRANSPOSE_TO
+    assert stacked.shape == (6, 4)
+    assert dim_order == list(UNSTACKED_SHAPE)
+    assert isinstance(stacked.data.data, da.Array if backend == "dask" else np.ndarray)
+    np.testing.assert_array_equal(stacked.to_numpy(), data.reshape(6, 4))
+    index = stacked.batch_multi_index
+    assert isinstance(index, MultiIndex)
+    assert tuple(index.names) == ("original_batch", "z")
+    assert list(index) == [(b, z) for b in range(2) for z in range(3)]
 
-    assert tensor.dims == TRANSPOSE_TO
-    assert tensor.shape == (6, 4)
-    np.testing.assert_array_equal(
-        tensor.to_numpy(), np.asarray(unstacked_data).reshape(6, 4)
-    )
-    batch_index = tensor.data.indexes[AxisId("batch")]  # pyright: ignore[reportUnknownVariableType]
-    assert isinstance(batch_index, MultiIndex)
-    assert tuple(str(level) for level in batch_index.names) == ("original_batch", "z")
-
-
-def test_create_tensor_with_multiindex_fills_unstacked_tensor():
-    tensor = create_tensor_with_multiindex(
-        UNSTACKED_SHAPE,
-        TRANSPOSE_TO,
-        fill_value=7,
-        dtype=np.dtype(np.int16),
-    )
-
-    assert tensor.dtype == "int16"
-    np.testing.assert_array_equal(tensor.to_numpy(), np.full((6, 4), 7, dtype=np.int16))
+    for restored in (
+        stacked.unstack_batch_multi_index(unstacked_dim_order=dim_order),
+        stacked.transpose(tuple(UNSTACKED_SHAPE), missing_dims="unstack"),
+    ):
+        assert restored.dims == tensor.dims
+        assert restored.batch_multi_index is None
+        np.testing.assert_array_equal(restored.to_numpy(), data)
 
 
 @ARRAY_BACKENDS
-def test_create_tensor_with_multiindex_from_stacked_data(backend: ArrayBackend):
-    stacked_data = _array(
-        backend,
-        np.arange(6 * 4, dtype=np.float32).reshape(6, 4),
-    )
+def test_assign_batch_multi_index_to_stacked_data(backend: ArrayBackend):
+    data = np.arange(24, dtype=np.float32).reshape(6, 4)
+    tensor = Tensor.from_array(_array(backend, data), dims=TRANSPOSE_TO)
+    index = MultiIndex.from_product([range(2), range(3)], names=["original_batch", "z"])
 
-    tensor = create_tensor_with_multiindex(
-        UNSTACKED_SHAPE,
-        TRANSPOSE_TO,
-        stacked_data=stacked_data,
-    )
+    indexed = tensor.assign_batch_multi_index(index)
 
-    assert tensor.dtype == "float32"
-    np.testing.assert_array_equal(tensor.to_numpy(), stacked_data)
+    assert tensor.batch_multi_index is None
+    assert indexed.batch_multi_index is not None
+    assert indexed.batch_multi_index.equals(index)
+    assert indexed.dtype == "float32"
+    np.testing.assert_array_equal(indexed.to_numpy(), data)
+    restored = indexed.unstack_batch_multi_index()
+    assert restored.dims == tuple(UNSTACKED_SHAPE)
+    np.testing.assert_array_equal(restored.to_numpy(), data.reshape(2, 3, 4))
 
 
 @ARRAY_BACKENDS
-def test_create_tensor_with_multiindex_rejects_incompatible_inputs(
-    backend: ArrayBackend,
-):
-    with pytest.raises(ValueError, match="may not be provided together"):
-        _ = create_tensor_with_multiindex(
-            UNSTACKED_SHAPE,
-            TRANSPOSE_TO,
-            unstacked_data=_array(backend, np.zeros((2, 3, 4))),
-            stacked_data=_array(backend, np.zeros((6, 4))),
-        )
+def test_stack_without_original_batch(backend: ArrayBackend):
+    data = np.arange(12).reshape(3, 4)
+    tensor = Tensor.from_array(_array(backend, data), dims=("z", "x"))
 
-    with pytest.raises(ValueError, match="dtype must be specified"):
-        _ = create_tensor_with_multiindex(UNSTACKED_SHAPE, TRANSPOSE_TO)
+    stacked = tensor.transpose(TRANSPOSE_TO, extra_dims="stack")
 
-    with pytest.raises(ValueError, match="does not match"):
-        _ = create_tensor_with_multiindex(
-            UNSTACKED_SHAPE,
-            TRANSPOSE_TO,
-            stacked_data=_array(backend, np.zeros((2, 3, 4))),
-        )
+    assert stacked.shape == (3, 4)
+    index = stacked.batch_multi_index
+    assert isinstance(index, MultiIndex)
+    assert tuple(index.names) == ("original_batch", "z")
+    assert list(index) == [(0, z) for z in range(3)]
+    unstacked = stacked.unstack_batch_multi_index()
+    assert unstacked.dims == tuple(UNSTACKED_SHAPE)
+    assert unstacked.shape == (1, 3, 4)
+    np.testing.assert_array_equal(unstacked.to_numpy(), data[np.newaxis])
+    restored = stacked.transpose(tensor.dims, missing_dims="unstack")
+    assert restored.dims == tensor.dims
+    np.testing.assert_array_equal(restored.to_numpy(), data)
+
+
+@ARRAY_BACKENDS
+def test_multi_index_rejects_incompatible_axes(backend: ArrayBackend):
+    tensor = Tensor.from_array(_array(backend, np.zeros((3, 4))), dims=("z", "x"))
+    index = MultiIndex.from_product([range(3)], names=["z"])
+
+    with pytest.raises(ValueError, match="without a 'batch' axis"):
+        _ = tensor.assign_batch_multi_index(index)
+
+    with pytest.raises(ValueError, match="Cannot stack extra dimensions to batch"):
+        _ = tensor.transpose(("x",), extra_dims="stack")
+
+    with pytest.raises(ValueError, match="does not have a MultiIndex"):
+        _ = Tensor.from_array(
+            _array(backend, np.zeros((6, 4))), dims=TRANSPOSE_TO
+        ).transpose(tuple(UNSTACKED_SHAPE), missing_dims="unstack")

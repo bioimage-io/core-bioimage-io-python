@@ -10,6 +10,7 @@ from tempfile import TemporaryDirectory
 from typing import (
     Any,
     Callable,
+    Final,
     Literal,
     Union,
 )
@@ -626,7 +627,7 @@ def create_sample_for_model(
     return Sample(members=members, stat={} if stat is None else stat, id=sample_id)
 
 
-load_sample_for_model = create_sample_for_model
+load_sample_for_model: Final = create_sample_for_model
 
 
 def transpose_sample_for_model(

@@ -7,6 +7,7 @@ readme = "README.md"
 dynamic = ["version"]
 dependencies = [
     "bioimageio.spec ==0.5.14.3",
+    "dask[array]",
     "imagecodecs",
     "imageio>=2.10",
     "loguru",
@@ -60,7 +61,6 @@ bioio = [
     "bioio-imageio",
     "bioio-ome-tiff",
     "bioio-ome-zarr",
-    "dask[array]",
 ]
 # clearscale = ["clearscale", "dask[array]", "zarr"]  # TODO: add clearscale extra deps once clearscale is available on pypi
 dev = [
@@ -71,7 +71,6 @@ dev = [
     "bioio-ome-zarr",
     "cellpose<4.2",                             # for model testing
     "crick",
-    "dask[array]",
     "httpx",
     "jax",
     "jupyter",

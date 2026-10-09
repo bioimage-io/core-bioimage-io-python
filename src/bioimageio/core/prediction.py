@@ -31,7 +31,7 @@ def predict(
     input_block_shape: Mapping[MemberId, Mapping[AxisId, int]] | None = None,
     skip_preprocessing: bool = False,
     skip_postprocessing: bool = False,
-    save_output_path: Path | str | None = None,
+    output_path: Path | str | None = None,
     devices: Sequence[str] | None = None,
 ) -> Sample:
     """Run prediction for a single set of input(s) with a bioimage.io model
@@ -41,7 +41,7 @@ def predict(
             May be given as RDF source, model description or prediction pipeline.
         inputs: the input sample or the named input(s) for this model as a dictionary
         sample_id: the sample id.
-            The **sample_id** is used to format **save_output_path**
+            The **sample_id** is used to format **output_path**
             and to distinguish sample specific log messages.
         blocksize_parameter: (optional) Tile the input into blocks parametrized by
             **blocksize_parameter** according to any parametrized axis sizes defined
@@ -53,7 +53,7 @@ def predict(
                 run prediction independent of the exact block shape.
         skip_preprocessing: Flag to skip the model's preprocessing.
         skip_postprocessing: Flag to skip the model's postprocessing.
-        save_output_path: A path with to save the output to. M
+        output_path: A path with to save the output to.
             Must contain:
             - `{output_id}` (or `{member_id}`) if the model has multiple output tensors
             May contain:
@@ -77,13 +77,13 @@ def predict(
 
     with pp:
         model = pp.model_descr
-        if save_output_path is not None and (
-            "{output_id}" not in str(save_output_path)
-            and "{member_id}" not in str(save_output_path)
+        if output_path is not None and (
+            "{output_id}" not in str(output_path)
+            and "{member_id}" not in str(output_path)
             and len(model.outputs) > 1
         ):
             raise ValueError(
-                f"Missing `{{output_id}}` in save_output_path={save_output_path} to "
+                f"Missing `{{output_id}}` in output_path={output_path} to "
                 + "distinguish model outputs "
                 + str([get_member_id(d) for d in model.outputs])
             )
@@ -103,18 +103,18 @@ def predict(
                     input_block_shape,
                 )
 
-            _n_intermediates, output = pp.predict_with_fixed_blocking(
+            output = pp.predict_with_fixed_blocking(
                 sample,
                 input_block_shape=input_block_shape,
                 skip_preprocessing=skip_preprocessing,
                 skip_postprocessing=skip_postprocessing,
             )
         elif blocksize_parameter is not None:
-            _n_intermediates, output = pp._predict_with_blocking_impl(
+            output = pp.predict_with_blocking(
                 sample,
+                ns=blocksize_parameter,
                 skip_preprocessing=skip_preprocessing,
                 skip_postprocessing=skip_postprocessing,
-                ns=blocksize_parameter,
             )
         else:
             output = pp.predict_without_blocking(
@@ -123,50 +123,10 @@ def predict(
                 skip_postprocessing=skip_postprocessing,
             )
 
-        if save_output_path:
-            output_ref: list[Sample | None] = [
-                None
-            ]  # to store final output when saving blockwise
-            if isinstance(output, Sample):
-                save_output = output
-                return_output = output
-            else:
-                if pp.has_samplewise_postprocessing:
-                    final_output = None
-                    for out in output:
-                        final_output = out
+        if output_path:
+            save_sample(output_path, output)
 
-                    assert final_output is not None
-                    save_output = final_output.sample
-                    return_output = final_output.sample
-                else:
-                    iterable_output = output
-
-                    def blockwise_output():
-                        for out in iterable_output:
-                            output_ref[0] = out.sample
-                            yield out.last_block
-
-                    save_output = blockwise_output()
-                    return_output = None
-
-            save_sample(save_output_path, save_output)
-            if return_output is None:
-                return_output = output_ref[0]
-                assert return_output is not None, (
-                    "saving output blockwise failed to produce a final output sample"
-                )
-        else:
-            if isinstance(output, Sample):
-                return_output = output
-            else:
-                return_output = None
-                for out in output:
-                    return_output = out.sample
-
-                assert return_output is not None
-
-    return return_output
+    return output
 
 
 def predict_many(
@@ -182,7 +142,7 @@ def predict_many(
     | None = None,
     skip_preprocessing: bool = False,
     skip_postprocessing: bool = False,
-    save_output_path: Path | str | None = None,
+    output_path: Path | str | None = None,
 ) -> Iterator[Sample]:
     """Run prediction for a multiple sets of inputs with a bioimage.io model
 
@@ -197,14 +157,14 @@ def predict_many(
             blocksize according to any parametrized axis sizes defined in the model RDF.
         skip_preprocessing: Flag to skip the model's preprocessing.
         skip_postprocessing: Flag to skip the model's postprocessing.
-        save_output_path: A path to save the output to.
+        output_path: A path to save the output to.
             Must contain:
             - `{sample_id}` to differentiate predicted samples
             - `{output_id}` (or `{member_id}`) if the model has multiple outputs
     """
-    if save_output_path is not None and "{sample_id}" not in str(save_output_path):
+    if output_path is not None and "{sample_id}" not in str(output_path):
         raise ValueError(
-            f"Missing `{{sample_id}}` in save_output_path={save_output_path}"
+            f"Missing `{{sample_id}}` in output_path={output_path}"
             + " to differentiate predicted samples."
         )
 
@@ -243,5 +203,5 @@ def predict_many(
             blocksize_parameter=blocksize_parameter,
             skip_preprocessing=skip_preprocessing,
             skip_postprocessing=skip_postprocessing,
-            save_output_path=save_output_path,
+            output_path=output_path,
         )

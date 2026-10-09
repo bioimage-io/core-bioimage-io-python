@@ -67,6 +67,23 @@ class AxisDescrLike(Protocol):
 AxisLike = Union[_AxisLikePlain, AxisDescrLike, v0_5.AnyAxis, "Axis", "AxisInfo"]
 
 
+def axis_id_from_axis_like(a: AxisLike) -> AxisId:
+    if isinstance(
+        a,
+        (Axis, v0_5.AxisBase),
+    ):
+        return a.id
+    elif isinstance(a, AxisDescrLike):
+        a = a.id
+
+    if isinstance(a, AxisId):
+        return a
+    elif isinstance(a, str):
+        return AxisId(a)
+    else:
+        assert_never(a)
+
+
 @dataclass
 class Axis:
     id: AxisId

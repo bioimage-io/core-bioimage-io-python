@@ -29,7 +29,14 @@ from ._magic_tensor_ops import MagicTensorOpsMixin
 from ._utils.color import get_default_channel_colors
 from ._utils.type_guards import is_dict, is_mapping, is_sequence
 from ._utils.type_hints import cast_and_assert
-from .axis import BATCH_AXIS_ID, AxisId, AxisInfo, AxisLike, PerAxis
+from .axis import (
+    BATCH_AXIS_ID,
+    AxisId,
+    AxisInfo,
+    AxisLike,
+    PerAxis,
+    axis_id_from_axis_like,
+)
 from .common import (
     CropWhere,
     DTypeStr,
@@ -69,9 +76,7 @@ class Tensor(MagicTensorOpsMixin):
         dims: Sequence[AxisId | AxisLike],
     ) -> None:
         super().__init__()
-        axes = tuple(
-            a if isinstance(a, AxisId) else AxisInfo.create(a).id for a in dims
-        )
+        axes = tuple(axis_id_from_axis_like(a) for a in dims)
         if isinstance(array, xr.DataArray):
             self._data: xr.DataArray = array.transpose(*axes)
             assert isinstance(self._data, xr.DataArray)
@@ -912,7 +917,7 @@ class Tensor(MagicTensorOpsMixin):
             "raise", "expand", "unstack", "unstack_or_expand"
         ] = "unstack_or_expand",
     ) -> tuple[Self, list[AxisId] | None]:
-        axes = [a if isinstance(a, AxisId) else AxisId(a) for a in axes]
+        axes = [axis_id_from_axis_like(a) for a in axes]
         array = self._data
 
         unhandled_missing_dims = [a for a in axes if a not in self.dims]

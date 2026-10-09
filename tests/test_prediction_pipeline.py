@@ -120,9 +120,7 @@ def test_blockwise_prediction_with_stacked_dims(unet2d_nuclei_broad_model: Path)
             )
         ],
     )
-    outputs = pp.predict_with_blocking(inputs).unstack_batch_multi_index()[
-        {AxisId("extra_dim"): 0}
-    ]
+    outputs = pp.predict_with_blocking(inputs)[{AxisId("extra_dim"): 0}]
 
     expected_outputs = get_test_output_sample(bio_model)
     assert len(outputs.shape) == len(expected_outputs.shape)
