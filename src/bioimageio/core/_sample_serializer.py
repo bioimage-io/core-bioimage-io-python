@@ -1,18 +1,24 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Iterable
 from typing import (
+    Callable,
     Generic,
     TypeVar,
+    cast,
 )
+
+import dask.array as da
+import numpy as np
 
 from bioimageio.spec.model import v0_5
 
 from ._utils.type_hints import NestedList
 from .axis import PerAxis
-from .common import HaloLike, PadMode, PerMember
+from .block import Block, split_multiple_tensors_into_blocks
+from .common import HaloLike, MemberId, PadMode, PerMember
 from .sample import Sample
+from .tensor import Array, Tensor
 
 SerializedSampleBlockType = TypeVar("SerializedSampleBlockType")
 
@@ -23,32 +29,87 @@ class SampleSerializer(ABC, Generic[SerializedSampleBlockType]):
         cls,
         sample: Sample,
     ) -> NestedList[SerializedSampleBlockType]:
-        """Serialize a sample (chunkwise for chunked samples)"""
+        """Serialize a sample as a single block."""
 
-        # for block in sample.blockwise
-        return cls.serialize_sample_block(block)
+        return cls.serialize_sample_block(sample)
 
     @classmethod
     def deserialize_sample(
         cls,
-        serialized: Iterable[SerializedSampleBlockType],
+        serialized: NestedList[SerializedSampleBlockType],
     ) -> Sample:
-        return Sample.from_blocks((cls.deserialize_sample_block(s) for s in serialized))
+        """Assemble a nested block grid; blocks must already be cropped to avoid overlap."""
 
+        if not isinstance(serialized, list):
+            return cls.deserialize_sample_block(serialized)
+
+        leaves: list[Sample] = []
+
+        def deserialize(
+            grid: NestedList[SerializedSampleBlockType],
+        ) -> NestedList[Sample]:
+            if isinstance(grid, list):
+                if not grid:
+                    raise ValueError("Serialized sample contains an empty block grid")
+                return [
+                    deserialize(item)
+                    for item in cast(list[NestedList[SerializedSampleBlockType]], grid)
+                ]
+
+            sample = cls.deserialize_sample_block(grid)
+            leaves.append(sample)
+            return sample
+
+        samples = deserialize(cast(NestedList[SerializedSampleBlockType], serialized))
+        first = leaves[0]
+        for sample in leaves[1:]:
+            if sample.id != first.id:
+                raise ValueError("Sample blocks have different sample IDs")
+            if sample.members.keys() != first.members.keys():
+                raise ValueError("Sample blocks have different members")
+            if any(sample.members[m].dims != t.dims for m, t in first.members.items()):
+                raise ValueError("Sample blocks have different member dimensions")
+
+        def select_arrays(
+            grid: NestedList[Sample], member: MemberId
+        ) -> NestedList[Array]:
+            if isinstance(grid, list):
+                return [select_arrays(item, member) for item in grid]
+            return grid.members[member].data.data
+
+        members: dict[MemberId, Tensor] = {}
+        for member, tensor in first.members.items():
+            block_impl = cast(
+                Callable[[NestedList[Array]], Array],
+                da.block
+                if any(
+                    isinstance(s.members[member].data.data, da.Array) for s in leaves
+                )
+                else np.block,
+            )
+            members[member] = Tensor(
+                block_impl(select_arrays(samples, member)), tensor.dims
+            )
+
+        return Sample(id=first.id, members=members, stat=first.stat)
+
+    @classmethod
     def serialize_sample_blockwise(
-        self,
+        cls,
         sample: Sample,
         *,
         model: v0_5.ModelDescr,
         blocksize_parameter: int,
         batch_size: int = 1,
-    ) -> Iterable[SerializedSampleBlockType]:
+    ) -> NestedList[SerializedSampleBlockType]:
         """Split a sample into blocks according to the model's input specifications and `blocksize_parameter` and serialize each block."""
 
         block_shape = model.get_tensor_sizes(
             blocksize_parameter, batch_size, sample.shape
         ).inputs
-        sample = sample.chunk(block_shape)
+        return cls.serialize_sample_with_fixed_blocking(
+            sample, block_shapes=block_shape, halo={}
+        )
 
     @classmethod
     def serialize_sample_with_fixed_blocking(
@@ -58,24 +119,43 @@ class SampleSerializer(ABC, Generic[SerializedSampleBlockType]):
         block_shapes: PerMember[PerAxis[int]],
         halo: PerMember[PerAxis[HaloLike]],
         pad_mode: PadMode | PerMember[PadMode] = "symmetric",
-    ) -> Iterable[SerializedSampleBlockType]:
+    ) -> NestedList[SerializedSampleBlockType]:
+        """Serialize an aligned block grid, retaining each block's halo and overlap."""
 
-        _n_blocks, blocks = sample.split_into_blocks(
-            block_shapes=block_shapes,
+        blocks = split_multiple_tensors_into_blocks(
+            sample.members,
+            block_shape=block_shapes,
             halo=halo,
             pad_mode=pad_mode,
         )
-        assert _n_blocks > 0, "sample has no blocks"
-        for block in blocks:
-            yield cls.serialize_sample_block(block)
+        grid_shape = next(iter(blocks.values())).shape
+        if any(size == 0 for size in grid_shape):
+            raise ValueError("Sample has no blocks")
+
+        def serialize_grid(
+            loc: tuple[int, ...] = (),
+        ) -> NestedList[SerializedSampleBlockType]:
+            if len(loc) < len(grid_shape):
+                return [serialize_grid((*loc, i)) for i in range(grid_shape[len(loc)])]
+            return cls.serialize_sample_block(
+                Sample(
+                    id=sample.id,
+                    stat=sample.stat,
+                    members={
+                        m: cast(Block, b[loc]).outer_tensor for m, b in blocks.items()
+                    },
+                )
+            )
+
+        return serialize_grid()
 
     @staticmethod
     @abstractmethod
     def serialize_sample_block(
-        sample_block: SampleBlock,
+        sample_block: Sample,
     ) -> SerializedSampleBlockType: ...
 
     @staticmethod
     @abstractmethod
-    def deserialize_sample_block(serialized: SerializedSampleBlockType) -> SampleBlock:
-        """Deserialize a sample block into a new sample or merge it into `output_sample` if provided."""
+    def deserialize_sample_block(serialized: SerializedSampleBlockType) -> Sample:
+        """Deserialize one block into a sample."""

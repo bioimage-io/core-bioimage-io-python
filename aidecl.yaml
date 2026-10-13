@@ -1,0 +1,38 @@
+schema_version: 1.0.0
+project:
+  name: bioimageio.core
+  content_type: software
+  repository: https://github.com/bioimage-io/core-bioimage-io-python
+  version: 0.12.0
+  license: MIT
+ai_usage:
+  used: true
+  summary: >-
+    GitHub Copilot and OpenAI Codex were used for writing unit tests, usage examples and initial drafts of the library
+    code and doc strings.
+  level: moderate
+  tools:
+    - name: GitHub Copilot
+      type: assistant
+      hosting: cloud_vendor
+      purpose: Test generation and component scaffolding
+    - name: OpenAI Codex
+      type: assistant
+      hosting: cloud
+      purpose: Test generation and component scaffolding
+  scope:
+    code_generation: true
+    testing: true
+    documentation: true
+    code_completion: true
+    refactoring: true
+    infrastructure: true
+    debugging: true
+  code_proportion:
+    ai_generated_percent: 15
+    ai_assisted_percent: 25
+    human_only_percent: 60
+    method: self_reported
+declaration:
+  declared_by: Fynn Beuttenmueller
+  date: '2026-10-13'

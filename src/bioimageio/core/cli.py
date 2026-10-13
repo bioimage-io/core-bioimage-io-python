@@ -853,7 +853,7 @@ class PredictCmd(CmdBase, WithSource):
             ):
                 try:
                     _ = pp.model_description.validate_input_tensors(
-                        sample_in.as_arrays()
+                        {m: t.to_numpy() for m, t in sample_in.members.items()}
                     )
                 except Exception as e:
                     logger.warning(

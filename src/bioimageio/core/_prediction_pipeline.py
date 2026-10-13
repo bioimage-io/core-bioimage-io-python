@@ -591,15 +591,28 @@ class PredictionPipeline(_PredictionPipelineBase):
         def get_output_shape(
             input_shape: PerMember[PerAxis[int]],
         ) -> PerMember[PerAxis[int]]:
-            assert not isinstance(self._model_descr, v0_4.ModelDescr), (
-                "forward_with_fixed_chunking_impl_dask is not implemented for v0_4.ModelDescr"
-            )
-            return {
-                m: {d: s if isinstance(s, int) else -1 for d, s in s_per_a.items()}
-                for m, s_per_a in self._model_descr.get_output_tensor_sizes(
-                    input_shape
-                ).items()
-            }
+            if isinstance(self._model_descr, v0_4.ModelDescr):
+                return {
+                    MemberId(m): {
+                        AxisId(d): s if isinstance(s, int) else -1
+                        for d, s in s_per_a.items()
+                    }
+                    for m, s_per_a in self._model_descr.get_output_tensor_sizes(
+                        {
+                            v0_4.TensorName(m): {
+                                str(a)[0]: s for a, s in s_per_a.items()
+                            }
+                            for m, s_per_a in input_shape.items()
+                        }
+                    ).items()
+                }
+            else:
+                return {
+                    m: {d: s if isinstance(s, int) else -1 for d, s in s_per_a.items()}
+                    for m, s_per_a in self._model_descr.get_output_tensor_sizes(
+                        input_shape
+                    ).items()
+                }
 
         return apply_blockwise(
             self._adapter.forward,
@@ -611,6 +624,11 @@ class PredictionPipeline(_PredictionPipelineBase):
             output_halo=self._default_output_halo,
             get_output_shape=get_output_shape,
         )
+
+    @property
+    def is_loaded(self) -> bool:
+        """`True` if the model adapter is loaded and ready for inference."""
+        return self._adapter.is_loaded
 
     def load(self):
         """Prepare prediction pipeline for use.

@@ -159,5 +159,52 @@ def test_load_tensor_zarr_group():
 
     from bioimageio.core.io import load_tensor
 
-    tensor = load_tensor(source)
+    with pytest.raises(
+        ValueError,
+        match="Expected a path to a zarr array, but got a path to a zarr group",
+    ):
+        tensor = load_tensor(source, io_lib="clearscale")
+        assert tensor.dims == ("channel", "z", "y", "x")
+
+    tensor = load_tensor(source, io_lib="clearscale")
     assert tensor.dims == ("channel", "z", "y", "x")
+
+
+@pytest.mark.parametrize("io_lib", ["clearscale", "bioio"])
+@pytest.mark.parametrize("subgroup", ["", "/0/0"])
+def test_load_zarr_from_group(
+    io_lib: Literal["clearscale", "bioio"], subgroup: str, tmp_path: Path
+):
+    import zarr
+
+    from bioimageio.core.io import load_tensor
+
+    group_source = tmp_path / f"image.ome.zarr{subgroup}"
+    group = zarr.open_group(group_source, mode="w", zarr_format=2)
+    scale_key = "0"
+    expected = np.arange(2 * 3 * 4 * 5, dtype=np.uint16).reshape(2, 3, 4, 5)
+    _ = group.create_array(scale_key, data=expected)
+    group.attrs["multiscales"] = [
+        {
+            "version": "0.4",
+            "axes": [
+                {"name": "c", "type": "channel"},
+                {"name": "z", "type": "space"},
+                {"name": "y", "type": "space"},
+                {"name": "x", "type": "space"},
+            ],
+            "datasets": [
+                {
+                    "path": scale_key,
+                    "coordinateTransformations": [
+                        {"type": "scale", "scale": [1, 1, 1, 1]}
+                    ],
+                }
+            ],
+        }
+    ]
+    source = group_source / scale_key
+
+    tensor = load_tensor(source, io_lib=io_lib)
+    assert tensor.dims == ("channel", "z", "y", "x")
+    np.testing.assert_array_equal(tensor.to_numpy(), expected)

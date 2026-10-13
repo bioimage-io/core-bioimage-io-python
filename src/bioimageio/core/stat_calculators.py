@@ -1,24 +1,27 @@
 from __future__ import annotations
 
-import collections
 import warnings
-from collections import OrderedDict
-from collections.abc import Collection, Iterable, Iterator, Mapping, Sequence
+from collections.abc import Collection, Iterable, Mapping, Sequence
+from copy import copy
 from itertools import product
 from typing import (
     Any,
     Union,
+    cast,
 )
 
+import dask.array as da
 import numpy as np
 import xarray as xr
+from dask.delayed import Delayed, delayed  # pyright: ignore[reportUnknownVariableType]
 from loguru import logger
 from numpy.typing import NDArray
 from typing_extensions import assert_never
 
 from bioimageio.spec.model.v0_5 import BATCH_AXIS_ID
 
-from .axis import AxisId, PerAxis
+from ._utils.statistics import compute_quantiles
+from .axis import AxisId
 from .common import MemberId, QuantileMethod
 from .sample import Sample
 from .stat_measures import (
@@ -56,7 +59,7 @@ else:
 
 
 class MeanCalculator:
-    """to calculate sample and dataset mean for in-memory samples"""
+    """Build lazy sample and dataset means."""
 
     def __init__(self, member_id: MemberId, axes: Sequence[AxisId] | None):
         super().__init__()
@@ -64,14 +67,16 @@ class MeanCalculator:
         self._mean: Tensor | None = None
         self._axes = None if axes is None else tuple(axes)
         self._member_id = member_id
-        self._sample_mean = SampleMean(member_id=self._member_id, axes=self._axes)
-        self._dataset_mean = DatasetMean(member_id=self._member_id, axes=self._axes)
 
     def compute(self, sample: Sample) -> dict[SampleMean, MeasureValue]:
-        return {self._sample_mean: self._compute_impl(sample)}
+        return {
+            SampleMean(member_id=self._member_id, axes=self._axes): self._compute_impl(
+                sample
+            )
+        }
 
     def _compute_impl(self, sample: Sample) -> Tensor:
-        tensor = sample.members[self._member_id].astype("float64", copy=False)
+        tensor = sample.members[self._member_id].as_dask().astype("float64", copy=False)
         return tensor.mean(dim=self._axes)
 
     def update(self, sample: Sample) -> None:
@@ -81,7 +86,7 @@ class MeanCalculator:
     def compute_and_update(self, sample: Sample) -> dict[SampleMean, MeasureValue]:
         mean = self._compute_impl(sample)
         self._update_impl(sample.members[self._member_id], mean)
-        return {self._sample_mean: mean}
+        return {SampleMean(member_id=self._member_id, axes=self._axes): mean}
 
     def _update_impl(self, tensor: Tensor, tensor_mean: Tensor):
         assert tensor_mean.dtype == "float64"
@@ -104,7 +109,7 @@ class MeanCalculator:
         if self._mean is None:
             return {}
         else:
-            return {self._dataset_mean: self._mean}
+            return {DatasetMean(member_id=self._member_id, axes=self._axes): self._mean}
 
 
 class MeanVarStdCalculator:
@@ -121,7 +126,7 @@ class MeanVarStdCalculator:
     def compute(
         self, sample: Sample
     ) -> dict[SampleMean | SampleVar | SampleStd, MeasureValue]:
-        tensor = sample.members[self._member_id]
+        tensor = sample.members[self._member_id].as_dask()
         mean = tensor.mean(dim=self._axes)
         c = (tensor - mean).data
         if self._axes is None:
@@ -151,7 +156,7 @@ class MeanVarStdCalculator:
         if self._axes is not None and BATCH_AXIS_ID not in self._axes:
             return
 
-        tensor = sample.members[self._member_id].astype("float64", copy=False)
+        tensor = sample.members[self._member_id].as_dask().astype("float64", copy=False)
         mean_b = tensor.mean(dim=self._axes)
         assert mean_b.dtype == "float64"
         # reduced voxel count
@@ -217,8 +222,9 @@ class SampleQuantilesCalculator:
         self._method: QuantileMethod = method
 
     def compute(self, sample: Sample) -> dict[SampleQuantile, MeasureValue]:
-        tensor = sample.members[self._member_id]
-        ps = tensor.quantile(self._qs, dim=self._axes, method=self._method)
+        ps = compute_quantiles(
+            sample.members[self._member_id], self._qs, self._axes, self._method
+        )
         return {
             SampleQuantile(
                 q=q, axes=self._axes, member_id=self._member_id, method=self._method
@@ -250,8 +256,8 @@ class MeanQuantilesCalculator:
 
     def update(self, sample: Sample):
         tensor = sample.members[self._member_id]
-        sample_estimates = tensor.quantile(
-            self._qs, dim=self._axes, method="linear"
+        sample_estimates = compute_quantiles(
+            tensor, self._qs, self._axes, "linear"
         ).astype("float64", copy=False)
 
         # reduced voxel count
@@ -281,6 +287,31 @@ class MeanQuantilesCalculator:
             }
 
 
+def _update_crick_digests(
+    previous: list[TDigest] | None,
+    data: NDArray[Any],
+    remaining_shape: tuple[int, ...],
+) -> list[TDigest]:
+    assert crick is not None
+    # A new state keeps earlier results stable across updates and repeated computes.
+    digests = (
+        [copy(d) for d in previous]
+        if previous is not None
+        else [TDigest() for _ in range(int(np.prod(remaining_shape)))]
+    )
+    for digest, idx in zip(digests, product(*map(range, remaining_shape))):
+        digest.update(data[idx])
+    return digests
+
+
+def _get_crick_quantiles(
+    digests: list[TDigest], qs: tuple[float, ...], remaining_shape: tuple[int, ...]
+) -> NDArray[Any]:
+    return np.asarray([[d.quantile(q) for d in digests] for q in qs]).reshape(
+        (len(qs), *remaining_shape)
+    )
+
+
 class CrickQuantilesCalculator:
     """to calculate dataset quantiles with the experimental [crick libray](https://github.com/dask/crick)"""
 
@@ -297,42 +328,37 @@ class CrickQuantilesCalculator:
         self._qs = sorted(set(qs))
         self._axes = None if axes is None else tuple(axes)
         self._member_id = member_id
-        self._digest: list[TDigest] | None = None
+        self._digest: Delayed | None = None
         self._dims: tuple[AxisId, ...] | None = None
-        self._indices: Iterator[tuple[int, ...]] | None = None
         self._shape: tuple[int, ...] | None = None
 
-    def _initialize(self, tensor_sizes: PerAxis[int]):
-        assert crick is not None
-        out_sizes: OrderedDict[AxisId, int] = collections.OrderedDict(
-            _quantiles=len(self._qs)
-        )
-        if self._axes is not None:
-            for d, s in tensor_sizes.items():
-                if d not in self._axes:
-                    out_sizes[d] = s
-
-        self._dims, self._shape = zip(*out_sizes.items())
-        assert self._shape is not None
-        d = int(np.prod(self._shape[1:]))
-        self._digest = [TDigest() for _ in range(d)]
-        self._indices = product(*map(range, self._shape[1:]))
-
     def update(self, part: Sample):
-        tensor = (
-            part.members[self._member_id]
-            if isinstance(part, Sample)
-            else part.members[self._member_id].data
-        )
+        tensor = part.members[self._member_id].as_dask()
         assert "_quantiles" not in tensor.dims
-        if self._digest is None:
-            self._initialize(tensor.tagged_shape)
+        dims = tuple(
+            d for d in tensor.dims if self._axes is not None and d not in self._axes
+        )
+        if self._dims is not None and set(dims) == set(self._dims):
+            dims = self._dims
+        shape = tuple(tensor.sizes[d] for d in dims)
+        if self._dims is not None and (dims != self._dims or shape != self._shape):
+            raise ValueError("Dataset quantiles require matching unreduced dimensions.")
 
-        assert self._digest is not None
-        assert self._indices is not None
-        assert self._dims is not None
-        for i, idx in enumerate(self._indices):
-            self._digest[i].update(tensor[dict(zip(self._dims[1:], idx))])
+        self._dims = dims
+        self._shape = shape
+        array = tensor.transpose((*dims, *(d for d in tensor.dims if d not in dims)))
+        data = array.data.data
+        assert isinstance(data, da.Array)
+        # Preserve upstream keys so statistics and preprocessing share input reads.
+        rechunked = cast(da.Array, data.rechunk(data.shape))  # pyright: ignore[reportArgumentType]
+        deferred_data = cast(
+            Delayed,
+            rechunked.to_delayed(optimize_graph=False).item(),  # pyright: ignore[reportAttributeAccessIssue]
+        )
+        # shortcut: materializes one sample per task; use chunked digests for larger inputs.
+        self._digest = delayed(_update_crick_digests, pure=True)(
+            self._digest, deferred_data, shape
+        )
 
     def finalize(self) -> dict[DatasetQuantile, MeasureValue]:
         if self._digest is None:
@@ -341,14 +367,21 @@ class CrickQuantilesCalculator:
             assert self._dims is not None
             assert self._shape is not None
 
-            vs: NDArray[Any] = np.asarray(
-                [[d.quantile(q) for d in self._digest] for q in self._qs]
-            ).reshape(self._shape)
+            vs = cast(
+                da.Array,
+                da.from_delayed(
+                    delayed(_get_crick_quantiles, pure=True)(
+                        self._digest, tuple(self._qs), self._shape
+                    ),
+                    shape=(len(self._qs), *self._shape),
+                    dtype="float64",
+                ),
+            )
             return {
                 DatasetQuantile(
                     q=q, axes=self._axes, member_id=self._member_id
-                ): Tensor(v, dims=self._dims[1:])
-                for q, v in zip(self._qs, vs)
+                ): Tensor(cast(da.Array, vs[i]), dims=self._dims)
+                for i, q in enumerate(self._qs)
             }
 
 
@@ -369,7 +402,7 @@ class NaiveSampleMeasureCalculator:
         self.measure = measure
 
     def compute(self, sample: Sample) -> dict[SampleMeasure, MeasureValue]:
-        return {self.measure: self.measure.compute(sample)}
+        return {self.measure: self.measure.compute(sample.as_dask())}
 
 
 SampleMeasureCalculator = Union[
@@ -384,7 +417,7 @@ DatasetMeasureCalculator = Union[
 
 
 class StatsCalculator:
-    """Estimates dataset statistics and computes sample statistics efficiently"""
+    """Builds lazy dataset and sample statistics without evaluating tensor data."""
 
     def __init__(
         self,
@@ -397,7 +430,9 @@ class StatsCalculator:
             measures
         )
         if not initial_dataset_measures:
-            self._current_dataset_measures: dict[DatasetMeasure, MeasureValue] | None = None
+            self._current_dataset_measures: (
+                dict[DatasetMeasure, MeasureValue] | None
+            ) = None
         else:
             missing_dataset_meas = {
                 m
@@ -424,7 +459,7 @@ class StatsCalculator:
         _ = self._update(sample)
 
     def finalize(self) -> dict[DatasetMeasure, MeasureValue]:
-        """returns aggregated dataset statistics"""
+        """Return lazy aggregated statistics for the samples registered so far."""
         if self._current_dataset_measures is None:
             self._current_dataset_measures = {}
             for calc in self.dataset_calculators:
@@ -480,8 +515,10 @@ def get_measure_calculators(
     # split required measures into groups
     required_sample_means: set[SampleMean] = set()
     required_dataset_means: set[DatasetMean] = set()
-    required_sample_mean_var_std: set[SampleMean | SampleVar | SampleStd] = set()
-    required_dataset_mean_var_std: set[DatasetMean | DatasetVar | DatasetStd] = (
+    required_sample_mean_var_std: set[tuple[MemberId, tuple[AxisId, ...] | None]] = (
+        set()
+    )
+    required_dataset_mean_var_std: set[tuple[MemberId, tuple[AxisId, ...] | None]] = (
         set()
     )
     required_sample_quantiles: dict[
@@ -497,21 +534,9 @@ def get_measure_calculators(
         elif isinstance(rm, DatasetMean):
             required_dataset_means.add(rm)
         elif isinstance(rm, (SampleVar, SampleStd)):
-            required_sample_mean_var_std.update(
-                {
-                    msv(axes=rm.axes, member_id=rm.member_id)
-                    for msv in (SampleMean, SampleStd, SampleVar)
-                }
-            )
-            assert rm in required_sample_mean_var_std
+            required_sample_mean_var_std.add((rm.member_id, rm.axes))
         elif isinstance(rm, (DatasetVar, DatasetStd)):
-            required_dataset_mean_var_std.update(
-                {
-                    msv(axes=rm.axes, member_id=rm.member_id)
-                    for msv in (DatasetMean, DatasetStd, DatasetVar)
-                }
-            )
-            assert rm in required_dataset_mean_var_std
+            required_dataset_mean_var_std.add((rm.member_id, rm.axes))
         elif isinstance(rm, SampleQuantile):
             required_sample_quantiles.setdefault(
                 (rm.member_id, rm.axes, rm.method), set()
@@ -524,28 +549,24 @@ def get_measure_calculators(
             assert_never(rm)
 
     for rm in required_sample_means:
-        if rm in required_sample_mean_var_std:
+        if (rm.member_id, rm.axes) in required_sample_mean_var_std:
             # computed togehter with var and std
             continue
 
         sample_calculators.append(MeanCalculator(member_id=rm.member_id, axes=rm.axes))
 
-    for rm in required_sample_mean_var_std:
-        sample_calculators.append(
-            MeanVarStdCalculator(member_id=rm.member_id, axes=rm.axes)
-        )
+    for tid, axes in required_sample_mean_var_std:
+        sample_calculators.append(MeanVarStdCalculator(member_id=tid, axes=axes))
 
     for rm in required_dataset_means:
-        if rm in required_dataset_mean_var_std:
+        if (rm.member_id, rm.axes) in required_dataset_mean_var_std:
             # computed togehter with var and std
             continue
 
         dataset_calculators.append(MeanCalculator(member_id=rm.member_id, axes=rm.axes))
 
-    for rm in required_dataset_mean_var_std:
-        dataset_calculators.append(
-            MeanVarStdCalculator(member_id=rm.member_id, axes=rm.axes)
-        )
+    for tid, axes in required_dataset_mean_var_std:
+        dataset_calculators.append(MeanVarStdCalculator(member_id=tid, axes=axes))
 
     for (tid, axes, m), qs in required_sample_quantiles.items():
         sample_calculators.append(
@@ -563,7 +584,7 @@ def get_measure_calculators(
 def compute_dataset_measures(
     measures: Iterable[DatasetMeasure], dataset: Iterable[Sample]
 ) -> dict[DatasetMeasure, MeasureValue]:
-    """compute all dataset `measures` for the given `dataset`"""
+    """Build lazy dataset measures, consuming samples without evaluating their data."""
     sample_calculators, calculators = get_measure_calculators(measures)
     assert not sample_calculators
 
@@ -582,7 +603,7 @@ def compute_dataset_measures(
 def compute_sample_measures(
     measures: Iterable[SampleMeasure], sample: Sample
 ) -> dict[SampleMeasure, MeasureValue]:
-    """compute all sample `measures` for the given `sample`"""
+    """Build lazy sample measures; convert the returned tensors to NumPy to evaluate."""
     calculators, dataset_calculators = get_measure_calculators(measures)
     assert not dataset_calculators
     ret: dict[SampleMeasure, MeasureValue] = {}
@@ -596,8 +617,10 @@ def compute_sample_measures(
 def compute_measures(
     measures: Iterable[Measure], dataset: Iterable[Sample]
 ) -> dict[Measure, MeasureValue]:
-    """compute all `measures` for the given `dataset`
-    sample measures are computed for the last sample in `dataset`"""
+    """Build lazy measures for the dataset and its last sample.
+
+    The dataset iterable is consumed without evaluating tensor data.
+    """
     sample_calculators, dataset_calculators = get_measure_calculators(measures)
     ret: dict[Measure, MeasureValue] = {}
     sample = None

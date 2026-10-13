@@ -3,7 +3,7 @@ from __future__ import annotations
 import gc
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Iterable, Sequence
+from collections.abc import Sequence
 from queue import LifoQueue
 from typing import (
     Any,
@@ -19,11 +19,12 @@ from loguru import logger
 from numpy.typing import NDArray
 from typing_extensions import TypeVar, assert_never
 
-from bioimageio.core.axis import AxisId, PerAxis
 from bioimageio.spec import ValidationSummary
 from bioimageio.spec.model import AnyModelDescr, v0_4
 
 from ._sample_serializer import SampleSerializer, SerializedSampleBlockType
+from ._utils.type_hints import NestedList, cast_and_assert
+from .axis import AxisId, PerAxis
 from .common import PerMember
 from .digest_spec import (
     get_axes_infos,
@@ -84,7 +85,7 @@ class ModelAdapter(ABC):
         self.computation_mode: Literal["eager", "lazy"] = computation_mode
 
         self._devices = devices
-        self.load()
+        self._loaded = False
 
     def get_output_shape(
         self,
@@ -105,8 +106,14 @@ class ModelAdapter(ABC):
     def model_descr(self) -> AnyModelDescr:
         return self._model_descr
 
+    @property
+    def is_loaded(self) -> bool:
+        """`True` if the model adapter is loaded and ready for inference."""
+        return self._loaded
+
     @abstractmethod
     def load(self) -> None:
+        """Load the model adapter and prepare it for inference."""
         self._loaded = True
 
     @abstractmethod
@@ -229,7 +236,7 @@ class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
         )
 
         if self.computation_mode == "eager":
-            output_arrays = self._forward_arrays(input_arrays)
+            output_arrays = self._forward_arrays(*input_arrays)
             logger.debug(
                 "NN output shapes: {}",
                 [a.shape if a is not None else None for a in output_arrays],
@@ -253,15 +260,29 @@ class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
                 if out is not None
             }
         elif self.computation_mode == "lazy":
+            deferred_inputs = [
+                cast_and_assert(
+                    Delayed,
+                    a.rechunk(
+                        a.shape  # pyright: ignore[reportArgumentType]
+                    )
+                    .to_delayed(optimize_graph=False)
+                    .item(),
+                )
+                if isinstance(a, da.Array)
+                else a
+                for a in input_arrays
+            ]
+
             output_arrays = cast(
                 Sequence[Delayed | None],
                 delayed(
                     self._forward_arrays,
                     pure=False,
                     nout=len(self._output_ids),
-                    # TODO: add name to avoid hashing inputs?
-                )(input_arrays),
+                )(*deferred_inputs),
             )
+
             in_shape = {
                 m: {d: int(s) for d, s in zip(dims, a.shape)}
                 for m, a, dims in zip(self._input_ids, input_arrays, self._input_axes)
@@ -313,7 +334,7 @@ class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
 
         return outputs
 
-    def _forward_arrays(self, input_arrays: Sequence[Array | None]):
+    def _forward_arrays(self, *input_arrays: Array | None):
         if not self._loaded:
             raise RuntimeError(
                 "Cannot compute model outputs because the model adapter is unloaded. "
@@ -389,23 +410,29 @@ class RemoteModelAdapter(ModelAdapter, ABC, Generic[SerializedSampleBlockType]):
     def server(self) -> str:
         return self._server
 
-    def forward(self, inputs: PerMember[Tensor | None]) -> PerMember[Tensor | None]:
+    def forward(
+        self, inputs: PerMember[Tensor | Array | None]
+    ) -> PerMember[Tensor | None]:
+        input_dims = dict(zip(self._input_ids, self._input_axes))
         serialized_input = self._serializer.serialize_sample(
             Sample(
-                members={k: v for k, v in inputs.items() if v is not None},
+                members={
+                    k: v if isinstance(v, Tensor) else Tensor(v, dims=input_dims[k])
+                    for k, v in inputs.items()
+                    if v is not None
+                },
                 stat={},
                 id=None,
             )
         )
         serialized_output = self._forward_impl(serialized_input)
         output = self._serializer.deserialize_sample(serialized_output).members
-        output = restore_batch_multi_index(inputs.values(), output)
         return output
 
     @abstractmethod
     def _forward_impl(
-        self, serialized_input_sample: Iterable[SerializedSampleBlockType]
-    ) -> Iterable[SerializedSampleBlockType]: ...
+        self, serialized_input_sample: NestedList[SerializedSampleBlockType]
+    ) -> NestedList[SerializedSampleBlockType]: ...
 
     @abstractmethod
     def test(self) -> ValidationSummary | None:

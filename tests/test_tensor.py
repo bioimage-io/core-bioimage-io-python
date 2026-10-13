@@ -1,11 +1,47 @@
 from collections.abc import Sequence
 
+import dask.array as da
 import numpy as np
 import pytest
 import xarray as xr
+from dask.callbacks import Callback
 from xarray.testing import assert_equal  # pyright: ignore[reportUnknownVariableType]
 
 from bioimageio.core import AxisId, Tensor
+
+
+def _no_execution(*args: object) -> None:
+    pytest.fail("as_dask evaluated a task")
+
+
+@pytest.mark.parametrize("shape,dims", [((), ()), ((2, 3), ("y", "x"))])
+def test_as_dask_preserves_data_and_metadata(
+    shape: tuple[int, ...], dims: tuple[str, ...]
+):
+    data = xr.DataArray(
+        np.arange(np.prod(shape), dtype="int16").reshape(shape),
+        dims=dims,
+        coords={d: np.arange(s) + 10 for d, s in zip(dims, shape)},
+        name="input",
+        attrs={"unit": "intensity"},
+    )
+    tensor = Tensor.from_xarray(data)
+    with Callback(pretask=_no_execution):
+        actual = tensor.as_dask()
+
+    assert isinstance(actual.data.data, da.Array)
+    assert isinstance(tensor.data.data, np.ndarray)
+    assert actual.dtype == tensor.dtype
+    assert actual.dims == tensor.dims
+    xr.testing.assert_identical(actual.data, data)
+
+
+def test_as_dask_preserves_existing_graph_and_chunks():
+    tensor = Tensor.from_numpy(np.arange(24).reshape(4, 6), dims=("y", "x")).chunk(
+        {AxisId("y"): 2, AxisId("x"): 3}
+    )
+    with Callback(pretask=_no_execution):
+        assert tensor.as_dask() is tensor
 
 
 @pytest.mark.parametrize(

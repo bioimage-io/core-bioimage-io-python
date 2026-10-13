@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import os
 import warnings
 import zipfile
 from collections.abc import Iterable, Mapping, Sequence
@@ -13,6 +12,7 @@ from pathlib import Path, PosixPath, PurePath, PurePosixPath
 from shutil import copyfileobj
 from typing import TYPE_CHECKING, TypedDict, Union
 
+import dask.diagnostics
 import numpy as np
 import pydantic
 import xarray as xr
@@ -57,6 +57,7 @@ from ._utils.tiff_metadata import (
 )
 from ._utils.type_guards import is_tuple
 from .axis import (
+    BATCH_AXIS_ID,
     AxisId,
     AxisLike,
     PerAxis,
@@ -491,6 +492,7 @@ def save_tensor(
     io_lib: IO_Lib | None = None,
     chunk_shape: PerAxis[int] | None = None,
     shard_shape: PerAxis[int] | None = None,
+    progressbar: bool = True,
 ) -> None:
     _ = _save_tensor_impl(
         path,
@@ -498,6 +500,7 @@ def save_tensor(
         io_lib=io_lib,
         chunk_shape=chunk_shape,
         shard_shape=shard_shape,
+        progressbar=progressbar,
     )
 
 
@@ -508,7 +511,11 @@ def _save_tensor_impl(
     io_lib: IO_Lib | None,
     chunk_shape: PerAxis[int] | None,
     shard_shape: PerAxis[int] | None,
+    progressbar: bool,
 ) -> IO_Lib:
+    if tensor.tagged_shape.get(BATCH_AXIS_ID, 2) == 1:
+        tensor = tensor.squeeze(BATCH_AXIS_ID)
+
     try:
         output_path, extensions, internal_path = _interprete_tensor_source(path)
     except Exception:
@@ -530,6 +537,7 @@ def _save_tensor_impl(
                     io_lib=try_io_lib,
                     chunk_shape=chunk_shape,
                     shard_shape=shard_shape,
+                    progressbar=progressbar,
                 )
             except Exception as e:
                 exceptions.append(e)
@@ -540,39 +548,46 @@ def _save_tensor_impl(
         raise ExceptionGroup(
             "Failed to save tensor with any available io_lib", exceptions
         )
-    elif io_lib == "bioio":
-        _save_tensor_bioio(
-            output_path,
-            tensor,
-            internal_path=internal_path,
-            chunk_shape=chunk_shape,
-            shard_shape=shard_shape,
-        )
-    elif io_lib == "clearscale":
-        _save_tensor_clearscale(
-            output_path,
-            tensor,
-            internal_path=internal_path,
-            chunk_shape=chunk_shape,
-            shard_shape=shard_shape,
-        )
-    elif io_lib == "imageio":
-        _save_tensor_imageio(output_path, tensor, internal_path=internal_path)
-    elif io_lib == "numpy":
-        if internal_path:
-            raise NotImplementedError(
-                "Saving to an internal path is not implemented for numpy."
-            )
-        _save_tensor_numpy(output_path, tensor)
-    elif io_lib == "tifffile":
-        if internal_path is not None:
-            raise NotImplementedError(
-                "Saving to an internal path is not implemented for tifffile."
-            )
 
-        _save_tensor_tifffile(output_path, extensions, tensor)
+    if progressbar:
+        pbar_ctxt = dask.diagnostics.ProgressBar()  # pyright: ignore[reportPrivateImportUsage]
     else:
-        assert_never(io_lib)
+        pbar_ctxt = nullcontext()
+
+    with pbar_ctxt:
+        if io_lib == "bioio":
+            _save_tensor_bioio(
+                output_path,
+                tensor,
+                internal_path=internal_path,
+                chunk_shape=chunk_shape,
+                shard_shape=shard_shape,
+            )
+        elif io_lib == "clearscale":
+            _save_tensor_clearscale(
+                output_path,
+                tensor,
+                internal_path=internal_path,
+                chunk_shape=chunk_shape,
+                shard_shape=shard_shape,
+            )
+        elif io_lib == "imageio":
+            _save_tensor_imageio(output_path, tensor, internal_path=internal_path)
+        elif io_lib == "numpy":
+            if internal_path:
+                raise NotImplementedError(
+                    "Saving to an internal path is not implemented for numpy."
+                )
+            _save_tensor_numpy(output_path, tensor)
+        elif io_lib == "tifffile":
+            if internal_path is not None:
+                raise NotImplementedError(
+                    "Saving to an internal path is not implemented for tifffile."
+                )
+
+            _save_tensor_tifffile(output_path, extensions, tensor)
+        else:
+            assert_never(io_lib)
 
     return io_lib
 
@@ -609,6 +624,17 @@ def _save_tensor_bioio(
 
         import bioio_ome_zarr.writers
 
+        try:
+            import zarr
+        except ImportError:
+            zarr_format = 3
+        else:
+            zarr_format = zarr.config.get("default_zarr_format", 3)
+            if zarr_format not in (2, 3):
+                raise NotImplementedError(
+                    f"DEFAULT_ZARR_FORMAT={zarr_format} is not supported. (expected 2 or 3)"
+                )
+
         axes_names = single_letter_dims_if_possible(tensor.dims)
         axes_types = [
             {"time": "time", "t": "time", "channel": "channel", "c": "channel"}.get(
@@ -627,18 +653,13 @@ def _save_tensor_bioio(
             )
             for i in range(tensor.tagged_shape.get(AxisId("channel"), 0))
         ]
-        zf = int(os.getenv("ZARR_FORMAT", "3"))
-        if zf not in (2, 3):
-            raise NotImplementedError(
-                f"ZARR_FORMAT={zf} is not supported. (expected 2 or 3)"
-            )
 
         unit = tensor.get_physical_scale_unit()
         writer = bioio_ome_zarr.writers.OMEZarrWriter(
             store=path,
             level_shapes=[[tensor.tagged_shape[d] for d in tensor.dims]],
             dtype=tensor.dtype,
-            zarr_format=zf,
+            zarr_format=zarr_format,
             image_name=tensor.name or "Image",
             axes_names=list(axes_names),
             axes_types=axes_types,
@@ -767,19 +788,21 @@ def _save_tensor_clearscale(
 
     tensor_shape_tuple = tuple(tensor.tagged_shape[d] for d in tensor.dims)
 
+    zarr_format = zarr.config.get("default_zarr_format")
+    scale_key = "s0" if internal_path is None else str(internal_path)
     logger.debug(
-        "Saving tensor {} to {} with clearscale+zarr-python",
+        "Saving tensor {} to '{}' of {} with clearscale+zarr-python using zarr_format={} and dims={}",
         tensor.tagged_shape,
+        scale_key,
         path,
+        zarr_format,
+        single_letter_dims,
     )
-
-    ZARR_FORMAT: int = int(os.getenv("ZARR_FORMAT", "3"))
-    SCALE_KEY = "s0" if internal_path is None else str(internal_path)
 
     dim_map = dict(zip(tensor.dims, single_letter_dims))
     multiscale = clearscale.Multiscale(
         {
-            SCALE_KEY: clearscale.Scale(
+            scale_key: clearscale.Scale(
                 shape=clearscale.Shape(
                     **dict(zip(dim_map.values(), tensor_shape_tuple))
                 ),
@@ -794,13 +817,13 @@ def _save_tensor_clearscale(
             )
         }
     )
-    if ZARR_FORMAT == 2:
+    if zarr_format == 2:
         zarr_attrs: dict[str, JsonValueReadOnly] = {
             "multiscales": [
                 multiscale.to_ome_zarr(version="0.4")
             ],  # TODO: add axis semantics
         }
-    elif ZARR_FORMAT == 3:
+    elif zarr_format == 3:
         zarr_attrs: dict[str, JsonValueReadOnly] = {
             "ome": {
                 "version": "0.5",
@@ -810,24 +833,24 @@ def _save_tensor_clearscale(
             }
         }
     else:
-        raise NotImplementedError(f"ZARR_FORMAT={ZARR_FORMAT} is not supported.")
+        raise NotImplementedError(f"Zarr format {zarr_format} is not supported.")
 
     zarr_group = zarr.open_group(
         str(path),
         mode="a",
-        zarr_format=ZARR_FORMAT,
+        zarr_format=zarr_format,
         attributes=zarr_attrs,
     )
 
     create_array_kwargs = _CreateArrayKwargs(
-        name=SCALE_KEY,
+        name=scale_key,
         overwrite=True,
-        dimension_names=None if ZARR_FORMAT == 2 else tuple(dim_map.values()),
+        dimension_names=None if zarr_format == 2 else tuple(dim_map.values()),
         chunks="auto"
         if chunk_shape is None
         else tuple(chunk_shape[d] for d in tensor.dims),
         shards=None
-        if ZARR_FORMAT == 2
+        if zarr_format == 2
         else "auto"
         if shard_shape is None
         else tuple(shard_shape[d] for d in tensor.dims),
@@ -1168,7 +1191,7 @@ def save_sample(
     *,
     chunk_shape: PerMember[PerAxis[int]] | None = None,
     shard_shape: PerMember[PerAxis[int]] | None = None,
-) -> None:
+) -> PerMember[Path]:
     """Save a **sample** to a **path** pattern
     or all sample members in the **path** mapping.
 
@@ -1193,19 +1216,23 @@ def save_sample(
                 f"path {path} must contain '{{member_id}}' for sample with multiple members {list(sample.members)}."
             )
 
+    output_paths = {
+        m: Path(
+            str(p).format(sample_id=sample.id, member_id=m, input_id=m, output_id=m)
+        )
+        for m, p in path.items()
+    }
     with ThreadPoolExecutor(max_workers=min(len(sample.members), 4)) as executor:
-        for m, p in path.items():
+        for m, p in output_paths.items():
             _ = executor.submit(
                 save_tensor,
-                Path(
-                    str(p).format(
-                        sample_id=sample.id, member_id=m, input_id=m, output_id=m
-                    )
-                ),
+                p,
                 sample.members[m],
                 chunk_shape=chunk_shape[m] if chunk_shape is not None else None,
                 shard_shape=shard_shape[m] if shard_shape is not None else None,
             )
+
+    return output_paths
 
 
 class _StatEntry(BaseModel, frozen=True, arbitrary_types_allowed=True):

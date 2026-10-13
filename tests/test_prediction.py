@@ -42,7 +42,12 @@ def prep(any_model: str):
     model = load_model(any_model, perform_io_checks=False)
     input_sample = get_test_input_sample(model)
     output_sample = get_test_output_sample(model)
-    return Prep(model, create_prediction_pipeline(model), input_sample, output_sample)
+    pp = create_prediction_pipeline(model)
+    pp.load()
+    try:
+        yield Prep(model, pp, input_sample, output_sample)
+    finally:
+        pp.unload()
 
 
 def test_predict_with_pipeline(prep: Prep):

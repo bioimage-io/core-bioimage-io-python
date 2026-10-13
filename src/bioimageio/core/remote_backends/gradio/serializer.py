@@ -3,17 +3,19 @@ from __future__ import annotations
 import tempfile
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any
+from typing import Annotated, cast
 
 import numpy as np
 from gradio_client import handle_file
-from pydantic import BaseModel
+from pydantic import BaseModel, BeforeValidator
 from typing_extensions import Self
 
 from ..._common_annotations import PerMemberAnno
 from ..._sample_serializer import SampleSerializer
-from ...common import MemberId
+from ...axis import AxisId
+from ...common import MemberId, SampleId
 from ...io import JsonValue, load_stat, save_tensor, serialize_stat
+from ...sample import Sample
 from ...tensor import Tensor
 
 
@@ -31,8 +33,16 @@ class _SerializableBlock(BaseModel, frozen=True):
         return cls.model_validate(handled)
 
 
+def _restore_sample_id(value: object) -> object:
+    # JSON encodes tuple sample IDs as lists.
+    if isinstance(value, list):
+        return tuple(_restore_sample_id(item) for item in cast(list[object], value))
+    return value
+
+
 class _SerializableSampleBlock(BaseModel, frozen=True):
-    meta: Any  # SampleBlockMeta
+    id: Annotated[SampleId, BeforeValidator(_restore_sample_id)]
+    dims: PerMemberAnno[tuple[AxisId, ...]]
     data: PerMemberAnno[_SerializableBlock | Path]
     serialized_stat: list[JsonValue]
 
@@ -49,25 +59,30 @@ class GradioSampleSerializer(SampleSerializer[SerializedSampleBlock]):
 
         serializable = _SerializableSampleBlock(
             data=handled_members,
-            meta=sample_block.get_meta(),
+            id=sample_block.id,
+            dims={m: t.dims for m, t in sample_block.members.items()},
             serialized_stat=serialize_stat(sample_block.stat),
         )
         serialized = serializable.model_dump(mode="json")
         return serialized
 
     @staticmethod
-    def deserialize_sample_block(serialized: SerializedSampleBlock) -> SampleBlock:
+    def deserialize_sample_block(serialized: SerializedSampleBlock) -> Sample:
         deserializable_sample = _SerializableSampleBlock.model_validate(serialized)
-        sample_meta = deserializable_sample.meta
+        if deserializable_sample.data.keys() != deserializable_sample.dims.keys():
+            raise ValueError(
+                "Serialized sample data and dimensions have different members"
+            )
+
         members = {
-            k: Tensor.from_numpy(
-                np.load(v if isinstance(v, Path) else v.path),
-                dims=list(sample_meta.shape[k]),
+            k: Tensor(
+                np.load(v if isinstance(v, Path) else v.path, allow_pickle=False),
+                dims=deserializable_sample.dims[k],
             )
             for k, v in deserializable_sample.data.items()
         }
-        return SampleBlock.from_meta(
-            sample_meta,
-            data=members,
+        return Sample(
+            id=deserializable_sample.id,
+            members=members,
             stat=load_stat(deserializable_sample.serialized_stat),
         )

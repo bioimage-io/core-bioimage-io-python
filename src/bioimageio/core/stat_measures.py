@@ -34,7 +34,7 @@ def tensor_custom_before_validator(data: Tensor | Mapping[str, Any]):
 
 
 def tensor_custom_serializer(t: Tensor) -> dict[str, Any]:
-    # custome serialization logic
+    # Serialization explicitly evaluates lazy statistics.
     return {"data": t.data.to_numpy().tolist(), "dims": list(map(str, t.dims))}
 
 
@@ -63,7 +63,7 @@ class SampleMeasureBase(MeasureBase, ABC, frozen=True):
 
     @abstractmethod
     def compute(self, sample: SampleLike) -> MeasureValue:
-        """compute the measure"""
+        """Compute eagerly for NumPy inputs and lazily for Dask inputs."""
         ...
 
 

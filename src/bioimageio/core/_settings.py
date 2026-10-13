@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import os
 import platform
+import warnings
 from typing import Annotated, Literal
 
-from loguru import logger
 from pydantic import Field, field_validator
 
 from bioimageio.spec._internal._settings import Settings as SpecSettings
@@ -32,7 +32,9 @@ class Settings(SpecSettings):
             and platform.system().lower() == "darwin"
             and platform.machine().lower() == "arm64"
         ):
-            logger.info("Set environment variable 'PYTORCH_ENABLE_MPS_FALLBACK=1'.")
+            warnings.warn(
+                "environment variable 'PYTORCH_ENABLE_MPS_FALLBACK' not set, setting 'PYTORCH_ENABLE_MPS_FALLBACK=1'."
+            )
             os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
             return True
 

@@ -4,13 +4,11 @@ import collections.abc
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import (
-    Any,
     Literal,
 )
 
 import xarray as xr
 from loguru import logger
-from numpy.typing import NDArray
 from typing_extensions import Self, assert_never
 
 from ._utils.resolve_per_member_key import resolve_per_member_var
@@ -89,9 +87,27 @@ class Sample:
     def shape(self) -> PerMember[PerAxis[int]]:
         return {tid: t.sizes for tid, t in self.members.items()}
 
-    def as_arrays(self) -> dict[MemberId, NDArray[Any]]:
-        """Return sample as dictionary of arrays."""
-        return {m: t.to_numpy() for m, t in self.members.items()}
+    def as_numpy(self) -> Self:
+        """Return sample as a new sample with all members converted to numpy arrays."""
+        return self.__class__(
+            members={m: t.as_numpy() for m, t in self.members.items()},
+            stat={
+                k: v.as_numpy() if isinstance(v, Tensor) else v
+                for k, v in self.stat.items()
+            },
+            id=self.id,
+        )
+
+    def as_dask(self) -> Self:
+        """Return sample as a new sample with all members converted to dask arrays."""
+        return self.__class__(
+            members={m: t.as_dask() for m, t in self.members.items()},
+            stat={
+                k: v.as_dask() if isinstance(v, Tensor) else v
+                for k, v in self.stat.items()
+            },
+            id=self.id,
+        )
 
     def pad(
         self,

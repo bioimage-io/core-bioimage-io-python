@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import atexit
 import itertools
 from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence, Sized
 from pathlib import Path
+from typing import overload
 
 from loguru import logger
 from tqdm import tqdm
@@ -19,6 +21,43 @@ from .io import save_sample
 from .sample import Sample
 
 
+@overload
+def predict(
+    *,
+    model: PermissiveFileSource
+    | v0_4.ModelDescr
+    | v0_5.ModelDescr
+    | PredictionPipeline,
+    inputs: Sample | PerMember[TensorSource] | TensorSource,
+    sample_id: Hashable = "sample",
+    blocksize_parameter: BlocksizeParameter | None = None,
+    input_block_shape: Mapping[MemberId, Mapping[AxisId, int]] | None = None,
+    skip_preprocessing: bool = False,
+    skip_postprocessing: bool = False,
+    output_path: None = None,
+    devices: Sequence[str] | None = None,
+) -> Sample: ...
+
+
+@overload
+def predict(
+    *,
+    model: PermissiveFileSource
+    | v0_4.ModelDescr
+    | v0_5.ModelDescr
+    | PredictionPipeline,
+    inputs: Sample | PerMember[TensorSource] | TensorSource,
+    sample_id: Hashable = "sample",
+    blocksize_parameter: BlocksizeParameter | None = None,
+    input_block_shape: Mapping[MemberId, Mapping[AxisId, int]] | None = None,
+    skip_preprocessing: bool = False,
+    skip_postprocessing: bool = False,
+    output_path: Path | str,
+    devices: Sequence[str] | None = None,
+) -> PerMember[Path]: ...
+
+
+@overload
 def predict(
     *,
     model: PermissiveFileSource
@@ -33,7 +72,24 @@ def predict(
     skip_postprocessing: bool = False,
     output_path: Path | str | None = None,
     devices: Sequence[str] | None = None,
-) -> Sample:
+) -> Sample | PerMember[Path]: ...
+
+
+def predict(
+    *,
+    model: PermissiveFileSource
+    | v0_4.ModelDescr
+    | v0_5.ModelDescr
+    | PredictionPipeline,
+    inputs: Sample | PerMember[TensorSource] | TensorSource,
+    sample_id: Hashable = "sample",
+    blocksize_parameter: BlocksizeParameter | None = None,
+    input_block_shape: Mapping[MemberId, Mapping[AxisId, int]] | None = None,
+    skip_preprocessing: bool = False,
+    skip_postprocessing: bool = False,
+    output_path: Path | str | None = None,
+    devices: Sequence[str] | None = None,
+) -> Sample | PerMember[Path]:
     """Run prediction for a single set of input(s) with a bioimage.io model
 
     Args:
@@ -58,10 +114,19 @@ def predict(
             - `{output_id}` (or `{member_id}`) if the model has multiple output tensors
             May contain:
             - `{sample_id}` to avoid overwriting recurrent calls
+
+    Returns:
+        The eager (numpy-based) output sample if **model** was not given as a prediction pipeline and **output_path** was None.
+        The lazy (dask-based) output sample if **model** was given as a prediction pipeline and **output_path** was None.
+        The mapping of output tensor id to output file path if **output_path** was given.
     """
     if isinstance(model, PredictionPipeline):
         pp = model
         model = pp.model_descr
+        unload_pp = False
+        if not pp.is_loaded:
+            pp.load()
+            _ = atexit.register(pp.unload)
     else:
         if not isinstance(model, (v0_4.ModelDescr, v0_5.ModelDescr)):
             loaded = load_description(model)
@@ -74,18 +139,19 @@ def predict(
             fixed_dataset_statistics=inputs.stat if isinstance(inputs, Sample) else {},
             devices=devices,
         )
+        unload_pp = True
 
-    with pp:
-        model = pp.model_descr
+    try:
+        model_descr = pp.model_descr
         if output_path is not None and (
             "{output_id}" not in str(output_path)
             and "{member_id}" not in str(output_path)
-            and len(model.outputs) > 1
+            and len(model_descr.outputs) > 1
         ):
             raise ValueError(
                 f"Missing `{{output_id}}` in output_path={output_path} to "
                 + "distinguish model outputs "
-                + str([get_member_id(d) for d in model.outputs])
+                + str([get_member_id(d) for d in model_descr.outputs])
             )
 
         if isinstance(inputs, Sample):
@@ -124,9 +190,50 @@ def predict(
             )
 
         if output_path:
-            save_sample(output_path, output)
+            return save_sample(output_path, output)
+        elif unload_pp:
+            return output.as_numpy()
+        else:
+            return output
+    finally:
+        if unload_pp:
+            pp.unload()
 
-    return output
+
+@overload
+def predict_many(
+    *,
+    model: PermissiveFileSource
+    | v0_4.ModelDescr
+    | v0_5.ModelDescr
+    | PredictionPipeline,
+    inputs: Iterable[PerMember[TensorSource]] | Iterable[TensorSource],
+    sample_id: str | Iterable[str] = "sample{i:03}",
+    blocksize_parameter: v0_5.ParameterizedSize_N
+    | Mapping[tuple[MemberId, AxisId], v0_5.ParameterizedSize_N]
+    | None = None,
+    skip_preprocessing: bool = False,
+    skip_postprocessing: bool = False,
+    output_path: Path | str,
+) -> Iterator[PerMember[Path]]: ...
+
+
+@overload
+def predict_many(
+    *,
+    model: PermissiveFileSource
+    | v0_4.ModelDescr
+    | v0_5.ModelDescr
+    | PredictionPipeline,
+    inputs: Iterable[PerMember[TensorSource]] | Iterable[TensorSource],
+    sample_id: str | Iterable[str] = "sample{i:03}",
+    blocksize_parameter: v0_5.ParameterizedSize_N
+    | Mapping[tuple[MemberId, AxisId], v0_5.ParameterizedSize_N]
+    | None = None,
+    skip_preprocessing: bool = False,
+    skip_postprocessing: bool = False,
+    output_path: None = None,
+) -> Iterator[Sample]: ...
 
 
 def predict_many(
@@ -143,7 +250,7 @@ def predict_many(
     skip_preprocessing: bool = False,
     skip_postprocessing: bool = False,
     output_path: Path | str | None = None,
-) -> Iterator[Sample]:
+) -> Iterator[Sample] | Iterator[PerMember[Path]]:
     """Run prediction for a multiple sets of inputs with a bioimage.io model
 
     Args:
@@ -161,6 +268,11 @@ def predict_many(
             Must contain:
             - `{sample_id}` to differentiate predicted samples
             - `{output_id}` (or `{member_id}`) if the model has multiple outputs
+
+    Returns:
+        An iterator of the mapping of output tensor id to output file path if **output_path** was given.
+        An iterator of the lazy output samples if **output_path** was None and **model** was given as a prediction pipeline
+        An iterator of the eager output samples if **output_path** was None and **model** was not given as a prediction pipeline
     """
     if output_path is not None and "{sample_id}" not in str(output_path):
         raise ValueError(
@@ -196,7 +308,7 @@ def predict_many(
     )
 
     for i, (s_id, ipts) in tqdm(enumerate(zip(sample_ids, inputs)), total=total):
-        yield predict(
+        output = predict(
             model=pp,
             inputs=ipts,
             sample_id=s_id.format(i=i),
@@ -205,3 +317,9 @@ def predict_many(
             skip_postprocessing=skip_postprocessing,
             output_path=output_path,
         )
+        if output_path is None:
+            assert isinstance(output, Sample)
+            yield output
+        else:
+            assert isinstance(output, Mapping)
+            yield output

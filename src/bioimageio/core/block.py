@@ -385,6 +385,7 @@ class Block(BlockMeta):
 
 
 BlockArray = Annotated[NDArray[np.object_], "NDArray[Block]"]
+# BlockMetaArray = Annotated[NDArray[np.object_], "NDArray[BlockMeta]"]
 
 
 def split_tensor_into_blocks(
@@ -958,9 +959,16 @@ def get_chunk_shape(
     increment_chunk_dims(singleton_dims[::-1])
 
     logger.info(
-        "Calculated chunk shape {} ({} MiB) for block shape {} and sample shape {}",
+        "Calculated chunk shape {} ({} {}) for block shape {} and sample shape {}",
         chunk_shape,
-        get_max_chunk_size(),
+        c
+        if (c := get_max_chunk_size()) < 1024
+        else c // 1024
+        if c < 1024**2
+        else c // 1024**2
+        if c < 1024**3
+        else c // 1024**3,
+        "B" if c < 1024 else "KiB" if c < 1024**2 else "MiB" if c < 1024**3 else "GiB",
         block_shape,
         {m: dict(t.tagged_shape) for m, t in tensors.items()},
     )

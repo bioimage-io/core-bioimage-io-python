@@ -283,7 +283,7 @@ class Tensor(MagicTensorOpsMixin):
         self._data.attrs["name"] = name
 
     def squeeze(self, dim: AxisId | Sequence[AxisId] | None = None) -> Self:
-        """Return a tensor with all the singleton dimensions removed."""
+        """Return a new tensor with squeezed data."""
         squeezed = self._data.squeeze(dim=dim)  # pyright: ignore[reportUnknownVariableType]
         assert isinstance(squeezed, xr.DataArray)
         return self.__class__.from_xarray(squeezed)
@@ -433,6 +433,22 @@ class Tensor(MagicTensorOpsMixin):
         """Return a new Tensor instance with this tensor's data as a numpy array (wrapped in an xarray DataArray).
         Use `to_numpy()` to get the raw numpy array."""
         return self.from_xarray(cast_and_assert(xr.DataArray, self.data.as_numpy()))
+
+    def as_dask(self) -> Self:
+        """Return a Dask-backed tensor without evaluating its data.
+
+        NumPy data is chunked automatically. An existing Dask-backed tensor is
+        returned unchanged, preserving its graph and chunks.
+        """
+        if isinstance(self.data.data, da.Array):
+            return self
+
+        return self.from_xarray(
+            cast_and_assert(
+                xr.DataArray,
+                self.data.copy(data=da.from_array(self.data.data, chunks="auto")),
+            )
+        )
 
     def crop_halo(self, halo: PerAxis[HaloLike] | None) -> Self:
         """helper to crop a halo from the tensor"""

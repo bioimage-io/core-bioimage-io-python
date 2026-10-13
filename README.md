@@ -19,7 +19,7 @@ and compute selected dataset statistics used for preprocessing.
 
 [Here you find the bioimageio.core documentation.](https://bioimage-io.github.io/core-bioimage-io-python)
 
-#### Examples
+### Examples
 
 Notebooks that save and load resource descriptions and validate their format (using <a href="https://bioimage-io.github.io/spec-bioimage-io/">bioimageio.spec</a>, a dependency of bioimageio.core)
 <ul>
@@ -38,9 +38,14 @@ Use the described resources in Python with <a href="https://bioimage-io.github.i
 </a></li>
 </ul>
 
-#### Presentations
+### Presentations
 
 - [Create a model from scratch](https://bioimage-io.github.io/core-bioimage-io-python/presentations/create_ambitious_sloth.slides.html) ([source](https://github.com/bioimage-io/core-bioimage-io-python/tree/main/presentations))
+
+## Use of AI
+
+This project is AI assisted,
+see [aidecl.yaml](aidecl.yaml) (following [AI Declaration Format](https://ai-declaration.org/)) for details.
 
 ## Set up Development Environment
 
