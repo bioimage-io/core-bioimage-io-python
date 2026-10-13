@@ -272,7 +272,7 @@ def _load_tensor_bioio(
                 f"Internal path {internal_path} not found with bioio in {src}"
             )
 
-    dataarray_bioio = img.xarray_dask_data.squeeze()  # pyright: ignore[reportUnknownVariableType]
+    dataarray_bioio = img.xarray_dask_data.squeeze()
     assert isinstance(dataarray_bioio, xr.DataArray)
 
     # map bioio TCZYX/YXS axes to AxisId objects
@@ -280,7 +280,7 @@ def _load_tensor_bioio(
     axes_map = {
         d: AxisId("channel") if d == "S" else AxisId(d) for d in dataarray_bioio.dims
     }
-    dataarray = dataarray_bioio.rename(axes_map)  # pyright: ignore[reportUnknownVariableType]
+    dataarray = dataarray_bioio.rename(axes_map)
     assert isinstance(dataarray, xr.DataArray)
 
     t = Tensor.from_xarray(dataarray)
@@ -341,7 +341,7 @@ def _load_tensor_clearscale(source: FileDescr | PermissiveFileSource) -> Tensor:
         source.as_posix() if isinstance(source, Path) else str(source)
     )
     image = da.from_zarr(array)
-    axes = tuple(str(a) for a in ms.axes())
+    axes = tuple(str(a) for a in ms.axes)
     return Tensor.from_xarray(xr.DataArray(image, dims=axes))
 
 
@@ -374,7 +374,7 @@ def _load_tensor_tifffile(source: FileDescr | PermissiveFileSource) -> Tensor:
     with ctxt as f:
         assert not isinstance(f, TextIOWrapper)
 
-        with tifffile.TiffFile(f, name=name) as tif:  # pyright: ignore[reportUnknownVariableType]
+        with tifffile.TiffFile(f, name=name) as tif:
             assert isinstance(tif, tifffile.TiffFile)
             xr_data = tif.asxarray()
             page = tif.pages[0]
@@ -697,7 +697,7 @@ def _save_tensor_bioio(
         d: bioio_axis_map.get(str(d).lower(), str(d)[:1].upper()) for d in tensor.dims
     }
 
-    bioio_data = bioio_data.rename(dim_map)  # pyright: ignore[reportUnknownVariableType]
+    bioio_data = bioio_data.rename(dim_map)
     assert isinstance(bioio_data, xr.DataArray)
 
     if not all(str(d) in bioio_axis_letters for d in bioio_data.dims):

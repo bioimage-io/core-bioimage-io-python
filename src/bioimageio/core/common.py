@@ -14,10 +14,6 @@ from typing_extensions import Self, TypeAlias, assert_never
 from bioimageio.spec._internal.utils import SLOTS
 from bioimageio.spec.model import v0_5
 
-# SHARDED_INNER_CHUNK_MAX_BYTES: int = 1048576  # 1 MiB
-# NON_SHARDED_CHUNK_MAX_BYTES: int = 67_108_864  # 64MiB
-PROCESSING_CHUNK_MIN_BYTES: int = 104_857_600  # 100 MiB
-
 SupportedWeightsFormat: TypeAlias = Literal[
     "keras_hdf5",
     "keras_v3",

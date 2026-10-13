@@ -24,12 +24,7 @@ def create_random_dataset(tid: MemberId, axes: tuple[AxisId, ...]):
     sizes = list(range(n, len(axes) + n))
     data = np.asarray(np.random.rand(*sizes))
     ds = [
-        Sample(
-            members={tid: Tensor(data[i : i + 1], dims=axes)},
-            stat={},
-            id=None,
-            unstacked_dim_order=None,
-        )
+        Sample(members={tid: Tensor(data[i : i + 1], dims=axes)}, stat={}, id=None)
         for i in range(n)
     ]
     return Tensor(data, dims=axes), ds

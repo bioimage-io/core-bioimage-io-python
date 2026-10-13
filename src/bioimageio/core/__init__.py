@@ -39,7 +39,6 @@ from bioimageio.spec import validate_format as validate_format
 
 from . import axis as axis
 from . import backends as backends
-from . import block_meta as block_meta
 from . import cli as cli
 from . import commands as commands
 from . import common as common

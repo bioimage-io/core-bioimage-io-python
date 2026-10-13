@@ -84,7 +84,7 @@ from ._prediction_pipeline import (
 from ._utils import compare
 from .commands import WeightFormatArgAll, WeightFormatArgAny, package, test
 from .common import MemberId, SampleId, SupportedWeightsFormat
-from .digest_spec import get_member_ids, load_sample_for_model
+from .digest_spec import create_sample_for_model, get_member_ids
 from .io import load_stat, save_sample, save_stat
 from .proc_setup import get_required_dataset_measures
 from .remote_backends import create_remote_model_adapter
@@ -801,9 +801,9 @@ class PredictCmd(CmdBase, WithSource):
 
         def input_dataset(stat: Stat):
             for s, sp_in in zip(sample_ids, sample_paths_in):
-                yield load_sample_for_model(
+                yield create_sample_for_model(
                     model=model_descr,
-                    paths=sp_in,
+                    inputs=sp_in,
                     stat=stat,
                     sample_id=s,
                 )
@@ -914,7 +914,6 @@ class PredictBlockArtifactsCmd(PredictCmd):
             members={t: a.members[t] - b.members[t] for t in a.members},
             id=a.id,
             stat=a.stat,
-            unstacked_dim_order=a.unstacked_dim_order,
         )
 
 

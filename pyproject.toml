@@ -62,7 +62,7 @@ bioio = [
     "bioio-ome-tiff",
     "bioio-ome-zarr",
 ]
-# clearscale = ["clearscale", "dask[array]", "zarr"]  # TODO: add clearscale extra deps once clearscale is available on pypi
+# clearscale = ["clearscale", "zarr"]  # TODO: add clearscale extra deps once clearscale is available on pypi
 dev = [
     "bioio",
     "bioio-bioformats",
@@ -83,7 +83,7 @@ dev = [
     "onnxscript",
     "packaging>=17.0",
     "pre-commit",
-    "pyright==1.1.411",
+    "pyright==1.1.414",
     "pytest",
     "pytest-cov",
     "python-dotenv",

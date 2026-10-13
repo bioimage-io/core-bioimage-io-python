@@ -25,9 +25,9 @@ from bioimageio.core._utils.type_hints import NestedList, cast_and_assert
 from bioimageio.spec._internal.utils import SLOTS
 
 from ._axis_annotations import PerAxisAnno
-from .axis import TIME_AXIS_ID, AxisId, PerAxis
+from ._settings import settings
+from .axis import TIME_AXIS_ID, AxisId, AxisSize, PerAxis
 from .common import (
-    PROCESSING_CHUNK_MIN_BYTES,
     BlockLoc,
     Halo,
     HaloLike,
@@ -390,10 +390,9 @@ BlockArray = Annotated[NDArray[np.object_], "NDArray[Block]"]
 def split_tensor_into_blocks(
     tensor: Tensor,
     *,
-    block_shape: PerAxis[int],
+    block_shape: PerAxis[int | AxisSize],
     halo: PerAxis[HaloLike],
     pad_mode: PadMode | Literal["none"],
-    block_shape_factors: PerAxis[int] | None,
 ) -> BlockArray:
     """
     Args:
@@ -411,72 +410,81 @@ def split_tensor_into_blocks(
             f"unknown dims in halo: {unknown_halo_dims} for tensor {tensor.dims}"
         )
 
-    if isinstance(pad_mode, Mapping) and (
-        unknown_pad_dims := [a for a in pad_mode if a not in tensor.dims]
-    ):
-        raise ValueError(
-            f"unknown dims in pad_mode: {unknown_pad_dims} for tensor {tensor.dims}"
-        )
-
-    if large_block_dims := [
-        (a, b, shape_size_limit)
-        for a in block_shape
-        if (shape_size_limit := tensor.tagged_shape.get(a, 1)) < (b := block_shape[a])
-    ]:
-        logger.warning(
-            "Block shape dimensions {} larger than shape dimensions {} are limiting the shape size",
-            {a: b for a, b, _s in large_block_dims},
-            {a: s for a, _b, s in large_block_dims},
-        )
-
-    block_shape = {d: block_shape.get(d, s) for d, s in tensor.tagged_shape.items()}
-    if any(block_shape[d] > tensor.tagged_shape[d] for d in tensor.dims):
-        raise ValueError(
-            f"block_shape {block_shape} larger than tensor shape {tensor.tagged_shape}."
-        )
-
-    if block_shape_factors is None and any(
-        tensor.tagged_shape[d] % block_shape[d] != 0 for d in tensor.dims
-    ):
-        raise ValueError(
-            f"tensor shape {tensor.tagged_shape} not divisible by block_shape {block_shape} and `block_shape_factors` is None."
-        )
-
     # fill in default halo (0)
     halo = {d: Halo.create(halo.get(d, 0)) for d in tensor.dims}
 
-    inner_1d_slices: dict[AxisId, list[SliceInfo | SliceInfoWithOverlap]] = {}
-    inner_sizes = {d: block_shape[d] - sum(halo[d]) for d in tensor.dims}
-    for d in tensor.dims:
-        valid_edge_left = halo[d].left if pad_mode == "none" else 0
-        valid_edge_right = halo[d].right if pad_mode == "none" else 0
-        shape_size_limit = tensor.tagged_shape[d] - valid_edge_right
-        inner_size = inner_sizes[d]
-        block_shape_factor = (
-            block_shape_factors.get(d, block_shape[d])
-            if block_shape_factors is not None
-            else None
-        )
-        inner_1d_slices[d] = [
-            SliceInfo(p, p + inner_size)
-            if p + inner_size <= shape_size_limit
-            or block_shape_factor
-            is None  # redundant for typing as we check for divisiblity above for `block_shape_factors is None`
-            else SliceInfo(p, shape_size_limit)
-            if (shape_size_limit - p) % block_shape_factor == 0
-            else SliceInfoWithOverlap(
-                shape_size_limit
-                - (
-                    block_shape_factor
-                    * ceil((shape_size_limit - p) / block_shape_factor)
-                )
-                + sum(halo[d]),
-                shape_size_limit,
-                p,
-                shape_size_limit,
+    main_block_shape = {
+        d: (
+            bs_limit := min(
+                s + (s_halo := 0 if pad_mode == "none" else sum(halo[d])),
+                bs.max or s + s_halo,
             )
-            for p in range(valid_edge_left, shape_size_limit, inner_size)
-        ]
+        )
+        - ((bs_limit - bs.min) % (bs.step or 1))
+        if isinstance((bs := block_shape.get(d, s)), AxisSize)
+        else bs
+        for d, s in tensor.tagged_shape.items()
+    }
+
+    if large_block_dims := {
+        a
+        for a, bs in block_shape.items()
+        if tensor.tagged_shape.get(a, 1)
+        < (bs.max or bs.min if isinstance(bs, AxisSize) else bs)
+    }:
+        raise ValueError(
+            "Block shape {} larger than tensor shape {} along {}",
+            block_shape,
+            tensor.tagged_shape,
+            large_block_dims,
+        )
+
+    inner_1d_slices: dict[AxisId, list[SliceInfo | SliceInfoWithOverlap]] = {}
+    inner_sizes = {d: main_block_shape[d] - sum(halo[d]) for d in tensor.dims}
+    for d in tensor.dims:
+        inner_first_start = halo[d].left if pad_mode == "none" else 0
+        inner_last_stop = tensor.tagged_shape[d] - (
+            halo[d].right if pad_mode == "none" else 0
+        )
+        inner_size = inner_sizes[d]
+        outer_size = block_shape.get(d, tensor.tagged_shape[d] + sum(halo[d]))
+        if isinstance(outer_size, int):
+            outer_size = AxisSize(min=outer_size)
+
+        outer_min = outer_size.min
+        step = outer_size.step or 1
+        assert inner_size % step == 0
+
+        inner_1d_slices[d] = []
+        for start in range(inner_first_start, inner_last_stop, inner_size):
+            if start + inner_size <= inner_last_stop:
+                inner_1d_slices[d].append(SliceInfo(start, start + inner_size))
+            else:
+                inner_remainder = inner_last_stop - start
+                outer_remainder = inner_remainder + sum(halo[d])
+                if (
+                    outer_remainder >= outer_min
+                    and (outer_remainder - outer_min) % step == 0
+                ):
+                    # last block has valid shape
+                    inner_1d_slices[d].append(SliceInfo(start, inner_last_stop))
+                else:
+                    # last block needs to overlap to have a valid shape
+                    minimum_outer_remainder = outer_min + (
+                        step
+                        * max(
+                            0,
+                            ceil((outer_remainder - outer_min) / step),
+                        )
+                    )
+                    valid_inner_start = inner_last_stop - (
+                        minimum_outer_remainder - sum(halo[d])
+                    )
+                    inner_1d_slices[d].append(
+                        SliceInfoWithOverlap(
+                            valid_inner_start, inner_last_stop, start, inner_last_stop
+                        )
+                    )
 
     out_shape = tuple(len(slices) for slices in inner_1d_slices.values())
     out: BlockArray = np.empty(out_shape, dtype=object)
@@ -484,12 +492,7 @@ def split_tensor_into_blocks(
         block_loc: BlockLoc = idx
         inner_slice = {d: inner_1d_slices[d][i] for d, i in zip(tensor.dims, block_loc)}
         out[idx] = Block(
-            parent=tensor,
-            inner_slice=inner_slice,
-            halo=halo,
-            # block_loc=block_loc,
-            # block_loc_shape=out_shape,
-            pad_mode=pad_mode,
+            parent=tensor, inner_slice=inner_slice, halo=halo, pad_mode=pad_mode
         )
 
     return out
@@ -497,27 +500,25 @@ def split_tensor_into_blocks(
 
 def split_multiple_tensors_into_blocks(
     tensors: PerMember[Tensor],
-    block_shape: PerMember[PerAxis[int]],
+    block_shape: PerMember[PerAxis[int | AxisSize]],
     *,
     halo: PerMember[PerAxis[HaloLike]],
     broadcast: bool = False,
     pad_mode: PadMode | PerMember[PadMode] | Literal["none"],
-    block_shape_factors: PerMember[PerAxis[int] | None] | None,
 ) -> dict[MemberId, BlockArray]:
     """Split multiple tensors (e.g. sample members) into aligned blocks.
 
     Args:
         tensors: the tensors to split into blocks
-        block_shape: the block shape per sample member (depending on `broaadcast` the block shapes must result in the same number of blocks for all tensors)
-        halo: the halo around each block per sample member
+        block_shape: the block shape per sample member (depending on `broaadcast` the block shapes must result in the same number of blocks for all tensors).
+            Omitted axes are treated as having a block size equal to the tensor axis size.
+            To allow for variable block sizes along a given axis, the block size can be specified as an `AxisSize` with a `min` `max` and `step` value.
+            Any such parameterized axis may result in blocks overlapping along that axis, if the tensor shape does not divide by the maximum block size with a valid remainder.
+        halo: the halo around each block per sample member, omitted axes are treated as having a halo of 0.
         broadcast: whether to allow broadcasting the resulting tensor blocks to each other, e.g. if one tensor does not have a dimension along which another is blocked up.
-        pad_mode: the padding mode (optionally per sample member) to use when the halo extends beyond the tensor boundary
-        block_shape_factors: The factors by which the block shape has to be divisible to allow smaller blocks.
-            Any axis not included in a given mapping is assumed to be set to the block shape.
-            If the tensor shape does not divide evenly by a block shape factor, the last two blocks will overlap along that axis.
-            If the tensor shape is smaller than a block shape factor, an exception is raised.
-            `None` means no smaller blocks are allowed, nor is overlap allowed; an exception is raised if the shape does not divide evenly.
-            To allow arbitrary small blocks, set the block shape factor to 1 for all axes, e.g. `defaultdict(lambda: defaultdict(lambda: 1))`.
+        pad_mode: the padding mode (optionally per sample member) to use when the halo extends beyond the tensor boundary.
+    Raises:
+        ValueError: If the tensor shape cannot be divided into blocks according to `block_shape`.
     """
 
     if unknown_blocks := [m for m in block_shape if m not in tensors]:
@@ -551,9 +552,6 @@ def split_multiple_tensors_into_blocks(
             pad_mode=pad_mode.get(m, "symmetric")
             if isinstance(pad_mode, Mapping)
             else pad_mode,
-            block_shape_factors=block_shape_factors.get(m, {})
-            if block_shape_factors is not None
-            else None,
         )
 
     assert len(blocks) > 0, blocks
@@ -582,13 +580,12 @@ def apply_blockwise(
     ],
     inputs: PerMember[Tensor],
     *,
-    block_shape: PerMember[PerAxis[int]],
+    block_shape: PerMember[PerAxis[int | AxisSize]],
     pad_mode: PadMode | PerMember[PadMode] | Literal["none"],
     input_halo: PerMember[PerAxis[Halo]],
     output_halo: PerMember[PerAxis[Halo]],
     get_output_shape: Callable[[PerMember[PerAxis[int]]], PerMember[PerAxis[int]]],
-    block_shape_factors: PerMember[PerAxis[int]] | None = MappingProxyType({}),
-    chunk_shape: PerMember[PerAxis[int]] | int = PROCESSING_CHUNK_MIN_BYTES,
+    chunk_shape: PerMember[PerAxis[int]] | int = settings.processing_chunk_min_bytes,
     blockwise_processing_mode: Literal["parallel", "sequential", "auto"] = "auto",
 ) -> dict[MemberId, Tensor]:
     """Apply `func` to `inputs` blockwise.
@@ -597,7 +594,7 @@ def apply_blockwise(
     Args:
         func: the function to apply to each block
         inputs: the input tensors to process
-        block_shape: the shape of the blocks to be processed by func
+        block_shape: the shape of the blocks to be processed by func. May be expressed using `AxisSize` objects to allow for variable block shapes.
         pad_mode: the padding mode (optionally per input member) to use when the halo extends beyond the tensor boundary
             if "none" and `output_halo` is not empty, the output will be smaller by `output_halo`
         input_halo: the halo around each input block (e.g. to compenstate for `output_halo` such that cropped output blocks can be stitched together)
@@ -606,12 +603,6 @@ def apply_blockwise(
         get_output_shape: a function to compute the output shape based on the input shape.
             May return values <1 for output axes without halo, which means the output will be concatenated along those axes.
             (Only used if the input shape does not evenly divide by the block shape to correct overlapping outputs.)
-        block_shape_factors: The factors by which the block shape has to be divisible to allow smaller blocks.
-            Any axis not included in a given mapping is assumed to be set to the block shape.
-            If the tensor shape does not divide evenly by a block shape factor, the last two blocks will overlap along that axis.
-            If the tensor shape is smaller than a block shape factor, an exception is raised.
-            `None` means no smaller blocks are allowed, nor is overlap allowed; an exception is raised if the shape does not divide evenly.
-            To allow arbitrary small blocks, set the block shape factor to 1 for all axes, e.g. `defaultdict(lambda: defaultdict(lambda: 1))`.
         chunk_shape: the shape of the chunks to process.
             Chunks are larger than blocks and help to reduce the number of tasks in the dask graph for 'parallel' processing.
             Must be larger than `block_shape`.
@@ -630,18 +621,42 @@ def apply_blockwise(
             "blockwise_processing_mode='sequential' is not yet implemented"
         )
 
+    max_block_shape: dict[MemberId, dict[AxisId, int]] = {}
+    for m, b in block_shape.items():
+        max_block_shape[m] = {}
+        for d, bs in b.items():
+            if isinstance(bs, AxisSize):
+                max_tensor_size = inputs[m].tagged_shape.get(d, 1) + sum(
+                    input_halo.get(m, {}).get(d, Halo(0, 0))
+                )
+                effective_bs = max(
+                    bs.min,
+                    max_tensor_size if bs.max is None else min(bs.max, max_tensor_size),
+                )
+                if (
+                    not isinstance(chunk_shape, int)
+                    and m in chunk_shape
+                    and d in chunk_shape[m]
+                ):
+                    effective_bs = min(effective_bs, chunk_shape[m][d])
+            else:
+                effective_bs = bs
+
+            max_block_shape[m][d] = effective_bs
+
     if isinstance(chunk_shape, int):
         chunk_shape = get_chunk_shape(
-            inputs, block_shape=block_shape, chunk_min_bytes=chunk_shape
+            inputs, block_shape=max_block_shape, chunk_min_bytes=chunk_shape
         )
+
     if any(
-        chunk_shape[m][d] < block_shape[m][d]
+        max_block_shape[m][d] > chunk_shape[m][d]
         for m in chunk_shape
         for d in chunk_shape[m]
-        if m in block_shape and d in block_shape[m]
+        if m in max_block_shape and d in max_block_shape[m]
     ):
         raise ValueError(
-            f"chunk_shape {chunk_shape} must not be smaller than block_shape {block_shape}"
+            f"block_shape {block_shape} must not be larger than chunk_shape {chunk_shape}"
         )
 
     process_chunk = partial(
@@ -653,7 +668,6 @@ def apply_blockwise(
         output_halo=output_halo,
         processing_mode=blockwise_processing_mode,
         get_output_shape=get_output_shape,
-        block_shape_factors=block_shape_factors,
     )
 
     return _apply_blockwise_impl(
@@ -664,7 +678,6 @@ def apply_blockwise(
         input_halo=input_halo,
         output_halo=output_halo,
         processing_mode="parallel",
-        block_shape_factors=block_shape_factors,
         get_output_shape=get_output_shape,
     )
 
@@ -673,8 +686,7 @@ def _apply_blockwise_impl(
     func: Callable[[PerMember[Tensor]], PerMember[Tensor | None]],
     inputs: PerMember[Tensor],
     *,
-    block_shape: PerMember[PerAxis[int]],
-    block_shape_factors: PerMember[PerAxis[int]] | None = MappingProxyType({}),
+    block_shape: PerMember[PerAxis[int | AxisSize]],
     pad_mode: PadMode | PerMember[PadMode] | Literal["none"],
     input_halo: PerMember[PerAxis[HaloLike]],
     output_halo: PerMember[PerAxis[HaloLike]],
@@ -687,13 +699,7 @@ def _apply_blockwise_impl(
     Args:
         func: the function to apply to each block
         inputs: the input tensors to process
-        block_shape: the shape of the blocks to be processed by func
-        block_shape_factors: The factors by which the block shape has to be divisible to allow smaller blocks.
-                    Any axis not included in a given mapping is assumed to be set to the block shape.
-                    If the tensor shape does not divide evenly by a block shape factor, the last two blocks will overlap along that axis.
-                    If the tensor shape is smaller than a block shape factor, an exception is raised.
-                    `None` means no smaller blocks are allowed, nor is overlap allowed; an exception is raised if the shape does not divide evenly.
-                    To allow arbitrary small blocks, set the block shape factor to 1 for all axes, e.g. `defaultdict(lambda: defaultdict(lambda: 1))`.
+        block_shape: the shape of the blocks to be processed by func. May be expressed using `AxisSize` objects to allow for variable block shapes.
         pad_mode: the padding mode (optionally per input member) to use when the halo extends beyond the tensor boundary
             if "none" and `output_halo` is not empty, the output will be smaller by the `output_halo`
         input_halo: the halo around each input block (e.g. to compenstate for `output_halo` such that cropped output blocks can be stitched together)
@@ -709,7 +715,6 @@ def _apply_blockwise_impl(
         halo=input_halo,
         broadcast=True,
         pad_mode=pad_mode,
-        block_shape_factors=block_shape_factors,
     )
 
     return apply_to_block_array(
@@ -885,7 +890,7 @@ def apply_to_blocks(
 def get_chunk_shape(
     tensors: PerMember[Tensor],
     block_shape: PerMember[PerAxis[int]],
-    chunk_min_bytes: int = PROCESSING_CHUNK_MIN_BYTES,
+    chunk_min_bytes: int = settings.processing_chunk_min_bytes,
 ) -> PerMember[PerAxis[int]]:
     if unknown_members := [m for m in block_shape if m not in tensors]:
         raise ValueError(
@@ -935,6 +940,7 @@ def get_chunk_shape(
                         if a in chunk_shape[m]
                     ):
                         incr_dims.remove(a)
+                        break
 
     # increment chunk dimensions in order of non-singleton spatial, time, other, then any singleton dim
     non_singleton_spatial_dims = [
@@ -959,99 +965,3 @@ def get_chunk_shape(
         {m: dict(t.tagged_shape) for m, t in tensors.items()},
     )
     return chunk_shape
-
-
-# def get_transformed_block_arrays(
-#     input_blocks: PerMember[BlockArray], output_axes: PerMember[PerAxis[LinearAxisTransform | int]]
-# ) -> PerMember[BlockArray]:
-#     first_block = {m: next(iter(cast(Iterator[Block], b.flat))) for m, b in input_blocks.items()}
-
-#     all_input_blocks_ndims = {m: b.shape for m, b in input_blocks.items()}
-#     input_blocks_ndims = next(iter(all_input_blocks_ndims.values()))
-#     assert all(s == input_blocks_ndims for s in all_input_blocks_ndims.values()), (
-#         f"Input block grids do not match: {all_input_blocks_ndims}"
-#     )
-
-#     def transform_shape(input_shape: PerMember[PerAxis[int]]):
-#         return {
-#         m: {
-#             a: (
-#                 trf
-#                 if isinstance(trf, int)
-#                 else trf.compute(input_shape[trf.member][trf.axis])
-#             )
-#             for a, trf in output_axes[m].items()
-#         }
-#         for m in output_axes
-#     }
-#     output_shape = transform_shape({m: first_block[m].full_shape for m in input_blocks})
-
-#     # output shape in number of blocks
-#     output_blocks_ndims = transform_shape({m: dict(zip(first_block[m].dims, b.shape)) for m, b in input_blocks.items()})
-
-#     output_blocks: PerMember[BlockArray] = {m: np.empty(tuple(v.values()), dtype=object) for m, v in output_blocks_ndims.items()}
-#     assert prod(output_blocks_ndims.values())
-#     def get_member_halo(block_idx: tuple[int, ...], m: MemberId, round: Callable[[float], int]):
-#         return {
-#             a: (
-#                 Halo(0, 0)
-#                 if isinstance(trf, int)
-#                 or trf.axis not in input_blocks[trf.member][block_idx].halo
-#                 else Halo(
-#                     round(input_blocks[trf.member][block_idx].halo[trf.axis].left * trf.scale),
-#                     round(input_blocks[trf.member][block_idx].halo[trf.axis].right * trf.scale),
-#                 )
-#             )
-#             for a, trf in output_axes[m].items()
-#         }
-
-#     example_input_key = next(iter(first_block))
-#     example_input_
-#     for idx in itertools.product(*(range(s) for s in output_blocks_ndims)):
-#         pass
-
-
-#     halo: dict[MemberId, dict[AxisId, Halo]] = {}
-#     for m in output_axes:
-#         halo[m] = get_member_halo(input_blocks[m], m, floor)
-#         if halo[m] != get_member_halo(input_blocks[m], m, ceil):
-#             raise ValueError(
-#                 f"failed to unambiguously scale halo {halo[m]} with {output_axes[m]}"
-#                 + f" for {m}."
-#             )
-
-#     inner_slice = {
-#         m: {
-#             a: (
-#                 SliceInfo(0, trf)
-#                 if isinstance(trf, int)
-#                 else SliceInfo(
-#                     trf.compute(
-#                         self.blocks[trf.member].inner_slice[trf.axis].start
-#                     ),
-#                     trf.compute(self.blocks[trf.member].inner_slice[trf.axis].stop),
-#                 )
-#             )
-#             for a, trf in output_axes[m].items()
-#         }
-#         for m in output_axes
-#     }
-#     unstacked_batch_slice = None
-#     for b in self.blocks.values():
-#         if b.unstacked_batch_slice is None:
-#             continue
-#         elif unstacked_batch_slice is None:
-#             unstacked_batch_slice = b.unstacked_batch_slice
-#         else:
-#             assert unstacked_batch_slice == b.unstacked_batch_slice, (
-#                 "Incompatible unstacked batch slices across sample block members"
-#             )
-
-#     return {
-#             m: Block(
-#                 parent=output_shape[m],
-#                 inner_slice=inner_slice[m],
-#                 halo=halo[m],
-#             )
-#             for m in output_axes
-#         }

@@ -16,11 +16,11 @@ from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
 
 from ._model_adapter import ModelAdapter
 from ._op_base import BlockwiseOperator, SamplewiseOperator
-from .axis import AxisId, PerAxis
+from ._settings import settings
+from .axis import AxisId, AxisSize, PerAxis
 from .backends import create_model_adapter
 from .block import apply_blockwise
 from .common import (
-    PROCESSING_CHUNK_MIN_BYTES,
     BlocksizeParameter,
     Halo,
     MemberId,
@@ -227,16 +227,23 @@ class _PredictionPipelineBase(ABC):
                 for a in ipt.axes
                 if isinstance(a.size, v0_5.ParameterizedSize)
             }
-        block_shape = self._model_descr.get_tensor_sizes(
+        max_block_shape = self._model_descr.get_tensor_sizes(
             ns, batch_size or self._default_batch_size, sample.shape
         ).inputs
-        block_shape_factors = self._model_descr.get_tensor_sizes(
-            0, 1, sample.shape
-        ).inputs
+        block_shape = {
+            ipt.id: {
+                a.id: AxisSize(
+                    min=a.size.min, max=max_block_shape[ipt.id][a.id], step=a.size.step
+                )
+                if isinstance(a.size, v0_5.ParameterizedSize)
+                else max_block_shape[ipt.id][a.id]
+                for a in ipt.axes
+            }
+            for ipt in self._model_descr.inputs
+        }
         return self._predict_with_fixed_blocking_impl(
             sample,
             block_shape=block_shape,
-            block_shape_factors=block_shape_factors,
             skip_preprocessing=skip_preprocessing,
             skip_postprocessing=skip_postprocessing,
             skip_input_padding=skip_input_padding,
@@ -246,8 +253,7 @@ class _PredictionPipelineBase(ABC):
     def predict_with_fixed_blocking(
         self,
         sample: Sample,
-        input_block_shape: PerMember[PerAxis[int]],
-        input_block_shape_factors: PerMember[PerAxis[int]] | None = None,
+        input_block_shape: PerMember[PerAxis[int | AxisSize]],
         skip_preprocessing: bool = False,
         skip_postprocessing: bool = False,
         skip_input_padding: bool = False,
@@ -271,7 +277,6 @@ class _PredictionPipelineBase(ABC):
             sample = pp._predict_with_fixed_blocking_impl(
                 sample,
                 block_shape=input_block_shape,
-                block_shape_factors=input_block_shape_factors or input_block_shape,
                 skip_preprocessing=False,
                 skip_postprocessing=False,
                 skip_input_padding=False,
@@ -281,7 +286,6 @@ class _PredictionPipelineBase(ABC):
         return self._predict_with_fixed_blocking_impl(
             sample,
             block_shape=input_block_shape,
-            block_shape_factors=input_block_shape_factors or input_block_shape,
             skip_preprocessing=skip_preprocessing,
             skip_postprocessing=skip_postprocessing,
             skip_input_padding=skip_input_padding,
@@ -292,9 +296,8 @@ class _PredictionPipelineBase(ABC):
     def _predict_with_fixed_blocking_impl(
         self,
         sample: Sample,
-        block_shape: PerMember[PerAxis[int]],
+        block_shape: PerMember[PerAxis[int | AxisSize]],
         *,
-        block_shape_factors: PerMember[PerAxis[int]],
         skip_preprocessing: bool,
         skip_postprocessing: bool,
         skip_input_padding: bool,
@@ -524,9 +527,8 @@ class PredictionPipeline(_PredictionPipelineBase):
     def _predict_with_fixed_blocking_impl(
         self,
         sample: Sample,
-        block_shape: PerMember[PerAxis[int]],
+        block_shape: PerMember[PerAxis[int | AxisSize]],
         *,
-        block_shape_factors: PerMember[PerAxis[int]],
         skip_preprocessing: bool,
         skip_postprocessing: bool,
         skip_input_padding: bool,
@@ -558,9 +560,8 @@ class PredictionPipeline(_PredictionPipelineBase):
 
         output_members = self._forward_with_fixed_blocking(
             sample.members,
-            chunk_shape=PROCESSING_CHUNK_MIN_BYTES,
+            chunk_shape=settings.processing_chunk_min_bytes,
             block_shape=block_shape,
-            block_shape_factors=block_shape_factors,
         )
         sample = Sample(id=sample.id, members=output_members, stat=sample.stat)
 
@@ -585,8 +586,7 @@ class PredictionPipeline(_PredictionPipelineBase):
         self,
         sample_members: PerMember[Tensor],
         chunk_shape: PerMember[PerAxis[int]] | int,
-        block_shape: PerMember[PerAxis[int]],
-        block_shape_factors: PerMember[PerAxis[int]],
+        block_shape: PerMember[PerAxis[int | AxisSize]],
     ) -> dict[MemberId, Tensor]:
         def get_output_shape(
             input_shape: PerMember[PerAxis[int]],
@@ -610,7 +610,6 @@ class PredictionPipeline(_PredictionPipelineBase):
             input_halo=self._default_input_halo,
             output_halo=self._default_output_halo,
             get_output_shape=get_output_shape,
-            block_shape_factors=block_shape_factors,
         )
 
     def load(self):

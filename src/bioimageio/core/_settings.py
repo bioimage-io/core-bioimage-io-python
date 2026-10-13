@@ -46,6 +46,9 @@ class Settings(SpecSettings):
     )
     """URL to the bioimageio collection config"""
 
+    processing_chunk_min_bytes: int = 104_857_600  # 100 MiB
+    """Minimum number of bytes to process in a single (dask) chunk when processing large tensors blockwise."""
+
     gradio_server: str | None = None
     """URL or Hugging Face space name to connect to with the remote gradio model adapter or remote gradio prediction pipeline.
 

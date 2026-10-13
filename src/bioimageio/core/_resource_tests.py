@@ -1208,7 +1208,6 @@ def _test_parametrized_inference(
                 },
                 stat=test_input.stat,
                 id=test_input.id,
-                unstacked_dim_order=None,
             )
             expected_output_shapes = {
                 t.id: {

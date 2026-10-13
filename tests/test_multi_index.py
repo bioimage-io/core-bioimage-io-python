@@ -8,6 +8,7 @@ import pytest
 from numpy.typing import NDArray
 
 from bioimageio.core import AxisId
+from bioimageio.core._utils.type_hints import cast_and_assert
 from bioimageio.core.tensor import MultiIndex, Tensor
 
 UNSTACKED_SHAPE = {AxisId("batch"): 2, AxisId("z"): 3, AxisId("x"): 4}
@@ -56,7 +57,10 @@ def test_stack_and_unstack_batch_multi_index(backend: ArrayBackend):
 def test_assign_batch_multi_index_to_stacked_data(backend: ArrayBackend):
     data = np.arange(24, dtype=np.float32).reshape(6, 4)
     tensor = Tensor.from_array(_array(backend, data), dims=TRANSPOSE_TO)
-    index = MultiIndex.from_product([range(2), range(3)], names=["original_batch", "z"])
+    index = cast_and_assert(
+        MultiIndex,
+        MultiIndex.from_product([range(2), range(3)], names=["original_batch", "z"]),
+    )
 
     indexed = tensor.assign_batch_multi_index(index)
 
@@ -94,7 +98,9 @@ def test_stack_without_original_batch(backend: ArrayBackend):
 @ARRAY_BACKENDS
 def test_multi_index_rejects_incompatible_axes(backend: ArrayBackend):
     tensor = Tensor.from_array(_array(backend, np.zeros((3, 4))), dims=("z", "x"))
-    index = MultiIndex.from_product([range(3)], names=["z"])
+    index = cast_and_assert(
+        MultiIndex, MultiIndex.from_product([range(3)], names=["z"])
+    )
 
     with pytest.raises(ValueError, match="without a 'batch' axis"):
         _ = tensor.assign_batch_multi_index(index)
