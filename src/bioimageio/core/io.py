@@ -243,7 +243,34 @@ def _load_tensor_bioio(
 
     del source
 
-    img = bioio.BioImage(src)
+    try:
+        img = bioio.BioImage(src)
+    except Exception:
+        # try to open zarr groups along the internal path for local zarr storage
+        if not isinstance(src, Path) or internal_path is None:
+            raise
+
+        img = None
+        for gs in chain([src / internal_path], (src / internal_path).parents):
+            if gs == src:
+                break
+            try:
+                import bioio_ome_zarr
+
+                img = bioio.BioImage(gs, reader=bioio_ome_zarr.Reader)
+            except Exception:
+                logger.info(f"Failed to load tensor with bioio from {gs}")
+            else:
+                if gs == src / internal_path:
+                    internal_path = None
+                else:
+                    internal_path = (src / internal_path).relative_to(gs).as_posix()
+
+                break
+
+        if img is None:
+            raise
+
     if internal_path is not None:
         internal_path_found = False
         try:

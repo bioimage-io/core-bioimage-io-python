@@ -102,6 +102,9 @@ def test_predict_with_blocking(with_procs: bool, prep: Prep):
 
 
 def test_predict_with_fixed_blocking(prep: Prep):
+    if prep.model.name == "Fixed-shape":
+        pytest.skip("Fixed-shape 0.4 model does not support blocking")
+
     block_along = list(prep.input_sample.members)
     input_block_shape: Mapping[MemberId, Mapping[AxisId, int]] = {
         ba: {

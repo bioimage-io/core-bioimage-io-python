@@ -209,7 +209,7 @@ class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
         """
 
         if not self._loaded:
-            raise RuntimeError("Model must be `.load()`ed before calling forward()")
+            raise RuntimeError("Model must be loaded before calling forward()")
 
         unexpected = [mid for mid in inputs if mid not in self._input_ids]
         if unexpected:

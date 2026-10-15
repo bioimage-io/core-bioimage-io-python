@@ -146,44 +146,26 @@ def test_tensor_io(
         assert (actual == expected).to_numpy().all()
 
 
-def test_load_tensor_zarr():
-    source = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr/2"
-    from bioimageio.core.io import load_tensor
-
-    img = load_tensor(source)
-    assert img.shape
-
-
-def test_load_tensor_zarr_group():
-    source = "https://uk1s3.embassy.ebi.ac.uk/idr/zarr/v0.4/idr0062A/6001240.zarr"
-
-    from bioimageio.core.io import load_tensor
-
-    with pytest.raises(
-        ValueError,
-        match="Expected a path to a zarr array, but got a path to a zarr group",
-    ):
-        tensor = load_tensor(source, io_lib="clearscale")
-        assert tensor.dims == ("channel", "z", "y", "x")
-
-    tensor = load_tensor(source, io_lib="clearscale")
-    assert tensor.dims == ("channel", "z", "y", "x")
-
-
 @pytest.mark.parametrize("io_lib", ["clearscale", "bioio"])
-@pytest.mark.parametrize("subgroup", ["", "/0/0"])
+@pytest.mark.parametrize("group_path", ["", "group"])
+@pytest.mark.parametrize("scale_key", ["", "s0", "0", "scalekeyvalue"])
 def test_load_zarr_from_group(
-    io_lib: Literal["clearscale", "bioio"], subgroup: str, tmp_path: Path
+    io_lib: Literal["clearscale", "bioio"],
+    group_path: str,
+    scale_key: str,
+    tmp_path: Path,
 ):
     import zarr
 
     from bioimageio.core.io import load_tensor
 
-    group_source = tmp_path / f"image.ome.zarr{subgroup}"
+    default_scale_key = "0"
+    storage_source = tmp_path / "image.ome.zarr"
+    group_source = storage_source / group_path if storage_source else storage_source
     group = zarr.open_group(group_source, mode="w", zarr_format=2)
-    scale_key = "0"
     expected = np.arange(2 * 3 * 4 * 5, dtype=np.uint16).reshape(2, 3, 4, 5)
-    _ = group.create_array(scale_key, data=expected)
+    _ = group.create_array(scale_key or default_scale_key, data=expected)
+    # group = zarr.open_group(storage_source, mode="a", zarr_format=2)
     group.attrs["multiscales"] = [
         {
             "version": "0.4",
@@ -195,7 +177,7 @@ def test_load_zarr_from_group(
             ],
             "datasets": [
                 {
-                    "path": scale_key,
+                    "path": scale_key or default_scale_key,
                     "coordinateTransformations": [
                         {"type": "scale", "scale": [1, 1, 1, 1]}
                     ],
