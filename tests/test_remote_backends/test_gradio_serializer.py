@@ -110,3 +110,34 @@ def test_mismatched_members():
     _ = dims.pop("raw")
     with pytest.raises(ValueError, match="different members"):
         _ = GradioSampleSerializer.deserialize_sample_block(payload)
+
+
+@pytest.mark.parametrize("lazy", [False, True])
+def test_singleton_batch_round_trip(lazy: bool):
+    tensor = Tensor(
+        np.arange(6).reshape(1, 1, 2, 3), dims=["batch", "channel", "y", "x"]
+    )
+    if lazy:
+        tensor = tensor.as_dask()
+    sample = Sample(id="batch", members={MemberId("raw"): tensor}, stat={})
+    restored = GradioSampleSerializer.deserialize_sample(
+        GradioSampleSerializer.serialize_sample(sample)
+    )
+    assert_same_sample(restored, sample)
+
+
+@pytest.mark.parametrize("lazy", [False, True])
+def test_batch_multi_index_round_trip(lazy: bool):
+    tensor = Tensor(
+        np.arange(12).reshape(1, 2, 2, 3), dims=["batch", "extra", "y", "x"]
+    )
+    if lazy:
+        tensor = tensor.as_dask()
+    tensor = tensor.transpose(["batch", "y", "x"], extra_dims="stack")
+    sample = Sample(id="stacked", members={MemberId("raw"): tensor}, stat={})
+    payload = json.loads(json.dumps(GradioSampleSerializer.serialize_sample(sample)))
+    restored = GradioSampleSerializer.deserialize_sample(payload)
+    assert_same_sample(restored, sample)
+    index = restored.members[MemberId("raw")].batch_multi_index
+    assert index is not None
+    assert index.equals(tensor.batch_multi_index)

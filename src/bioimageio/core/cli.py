@@ -645,7 +645,7 @@ class PredictCmd(CmdBase, WithSource):
     def cli_cmd(self):
         try:
             for out_sample, out_path in self._yield_predictions(self.blockwise):
-                save_sample(out_path, out_sample)
+                _ = save_sample(out_path, out_sample)
         except Exception as e:
             if not self.blockwise:
                 raise RuntimeError(
@@ -842,28 +842,29 @@ class PredictCmd(CmdBase, WithSource):
         else:
             predict_method = pp.predict_without_blocking
 
-        for sample_in, sp_out in tqdm(
-            zip(input_dataset(dict(stat)), sample_paths_out),
-            total=len(inputs),
-            desc=f"predict with {self.descr_id}",
-            unit="sample",
-        ):
-            if self.blockwise is False and not isinstance(
-                pp.model_description, v0_4.ModelDescr
+        with pp:
+            for sample_in, sp_out in tqdm(
+                zip(input_dataset(dict(stat)), sample_paths_out),
+                total=len(inputs),
+                desc=f"predict with {self.descr_id}",
+                unit="sample",
             ):
-                try:
-                    _ = pp.model_description.validate_input_tensors(
-                        {m: t.to_numpy() for m, t in sample_in.members.items()}
-                    )
-                except Exception as e:
-                    logger.warning(
-                        "Input sample '{}' failed validation for whole-sample prediction: {}\n"
-                        + "Consider using blockwise processing, e.g. with `--blockwise=10` to process inputs in blocks.",
-                        sample_in.id,
-                        e,
-                    )
+                if self.blockwise is False and not isinstance(
+                    pp.model_description, v0_4.ModelDescr
+                ):
+                    try:
+                        _ = pp.model_description.validate_input_tensors(
+                            {m: t.to_numpy() for m, t in sample_in.members.items()}
+                        )
+                    except Exception as e:
+                        logger.warning(
+                            "Input sample '{}' failed validation for whole-sample prediction: {}\n"
+                            + "Consider using blockwise processing, e.g. with `--blockwise=10` to process inputs in blocks.",
+                            sample_in.id,
+                            e,
+                        )
 
-            yield (predict_method(sample_in), sp_out)
+                yield (predict_method(sample_in), sp_out)
 
 
 class PredictBlockArtifactsCmd(PredictCmd):

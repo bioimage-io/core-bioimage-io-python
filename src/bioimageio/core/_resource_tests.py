@@ -909,7 +909,7 @@ def evaluate_mismatched_elements(
         r_expected = expected_np[r_max_idx].item()
 
         # Calculate the max absolute difference with the relative tolerance subtracted
-        abs_diff_wo_rtol: NDArray[np.float32] = abs_diff - rtol_value
+        abs_diff_wo_rtol = abs_diff - rtol_value
         a_max_idx = np.unravel_index(abs_diff_wo_rtol.argmax(), abs_diff_wo_rtol.shape)
 
         a_max = abs_diff[a_max_idx].item()
@@ -1029,6 +1029,10 @@ def _test_recreate_test_outputs(
                 skip_input_padding=True,
                 skip_output_cropping=True,
             )
+            results_not_postprocessed.members = {
+                m: tensor.as_numpy()
+                for m, tensor in results_not_postprocessed.members.items()
+            }
             results = deepcopy(results_not_postprocessed)
             prediction_pipeline.apply_postprocessing(results)
 

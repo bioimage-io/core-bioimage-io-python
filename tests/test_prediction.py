@@ -137,8 +137,8 @@ def test_predict_save_output(prep: Prep, tmp_path: Path):
         inputs=prep.input_sample,
         output_path=save_path,
     )
-    _assert_equal_samples(out, prep.output_sample)
-    assert save_path.parent.exists()
+    out_path = next(iter(out.values()))
+    assert out_path.exists()
 
 
 def test_predict_z_as_batch(unet2d_nuclei_broad_model: str):

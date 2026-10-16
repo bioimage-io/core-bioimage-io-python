@@ -1,7 +1,11 @@
-from typing import Any, TypeAlias, TypeVar, Union
+from typing import Any, TypeVar, Union
+
+from typing_extensions import TypeAliasType
 
 _T = TypeVar("_T")
-NestedList: TypeAlias = Union[list["NestedList[_T]"], _T]
+NestedList = TypeAliasType(
+    "NestedList", Union[list["NestedList[_T]"], _T], type_params=(_T,)
+)
 
 
 def cast_and_assert(typ: type[_T], x: Any) -> _T:

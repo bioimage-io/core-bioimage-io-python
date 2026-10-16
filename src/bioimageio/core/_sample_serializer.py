@@ -14,7 +14,7 @@ import numpy as np
 from bioimageio.spec.model import v0_5
 
 from ._utils.type_hints import NestedList
-from .axis import PerAxis
+from .axis import AxisSize, PerAxis
 from .block import Block, split_multiple_tensors_into_blocks
 from .common import HaloLike, MemberId, PadMode, PerMember
 from .sample import Sample
@@ -102,13 +102,21 @@ class SampleSerializer(ABC, Generic[SerializedSampleBlockType]):
         blocksize_parameter: int,
         batch_size: int = 1,
     ) -> NestedList[SerializedSampleBlockType]:
-        """Split a sample into blocks according to the model's input specifications and `blocksize_parameter` and serialize each block."""
+        """Serialize a non-overlapping grid with model-derived maximum block sizes.
+
+        Edge blocks may be smaller so deserialization reconstructs the original sample.
+        """
 
         block_shape = model.get_tensor_sizes(
             blocksize_parameter, batch_size, sample.shape
         ).inputs
         return cls.serialize_sample_with_fixed_blocking(
-            sample, block_shapes=block_shape, halo={}
+            sample,
+            block_shapes={
+                m: {a: AxisSize(min=1, max=size) for a, size in shape.items()}
+                for m, shape in block_shape.items()
+            },
+            halo={},
         )
 
     @classmethod
@@ -116,7 +124,7 @@ class SampleSerializer(ABC, Generic[SerializedSampleBlockType]):
         cls,
         sample: Sample,
         *,
-        block_shapes: PerMember[PerAxis[int]],
+        block_shapes: PerMember[PerAxis[int | AxisSize]],
         halo: PerMember[PerAxis[HaloLike]],
         pad_mode: PadMode | PerMember[PadMode] = "symmetric",
     ) -> NestedList[SerializedSampleBlockType]:

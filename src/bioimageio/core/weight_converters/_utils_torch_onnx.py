@@ -1,4 +1,5 @@
 """helper to export both TorchScript or PytorchStateDict to ONNX"""
+
 from __future__ import annotations
 
 from collections import defaultdict
@@ -44,7 +45,7 @@ def get_torch_sample_inputs(model_descr: ModelDescr) -> tuple[torch.Tensor, ...]
     )
     procs.pre(sample)
     inputs_numpy = [
-        sample.members[get_member_id(ipt)].data.data for ipt in model_descr.inputs
+        sample.members[get_member_id(ipt)].to_numpy() for ipt in model_descr.inputs
     ]
     return tuple(torch.from_numpy(ipt) for ipt in inputs_numpy)
 

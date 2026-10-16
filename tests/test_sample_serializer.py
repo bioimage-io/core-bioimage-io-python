@@ -76,15 +76,28 @@ def test_fixed_blocking_round_trip(lazy: bool):
     assert isinstance(restored.members[MemberId("mask")].data.data, np.ndarray)
 
 
-def test_model_blocking():
-    sample = make_sample()
-    block_shapes = {m: {AxisId("y"): 2, AxisId("x"): 3} for m in sample.members}
+@pytest.mark.parametrize("lazy", [False, True])
+@pytest.mark.parametrize("block_y, block_x", [(2, 3), (3, 4)])
+def test_model_blocking(lazy: bool, block_y: int, block_x: int):
+    sample = make_sample(lazy)
+    block_shapes = {
+        m: {AxisId("y"): block_y, AxisId("x"): block_x} for m in sample.members
+    }
     model = Mock(spec=v0_5.ModelDescr)
     model.get_tensor_sizes.return_value = SimpleNamespace(inputs=block_shapes)
     serialized = IdentitySerializer.serialize_sample_blockwise(
         sample, model=cast(v0_5.ModelDescr, model), blocksize_parameter=2, batch_size=3
     )
     model.get_tensor_sizes.assert_called_once_with(2, 3, sample.shape)
+    assert isinstance(serialized, list)
+    last_row = serialized[-1]
+    assert isinstance(last_row, list)
+    last_block = last_row[-1]
+    assert isinstance(last_block, Sample)
+    assert last_block.members[MemberId("raw")].tagged_shape == {
+        AxisId("y"): (4 - 1) % block_y + 1,
+        AxisId("x"): (6 - 1) % block_x + 1,
+    }
     restored = IdentitySerializer.deserialize_sample(serialized)
     for m, tensor in sample.members.items():
         np.testing.assert_array_equal(restored.members[m].to_numpy(), tensor.to_numpy())

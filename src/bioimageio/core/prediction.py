@@ -139,6 +139,7 @@ def predict(
             fixed_dataset_statistics=inputs.stat if isinstance(inputs, Sample) else {},
             devices=devices,
         )
+        pp.load()
         unload_pp = True
 
     try:

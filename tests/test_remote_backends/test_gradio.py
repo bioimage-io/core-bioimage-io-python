@@ -37,7 +37,6 @@ def test_gradio_sample_serializer(unet2d_diff_output_shape: str):
     assert deserialized.members == sample.members
     assert deserialized == sample
 
-    # blockwise
     serialized_blockwise = GradioSampleSerializer.serialize_sample_blockwise(
         sample, model=model, blocksize_parameter=10
     )
@@ -252,7 +251,9 @@ def test_gradio_pipeline_direct(with_blocking: bool):
             blocksize=10 if with_blocking else None,
             batch_size=1 if with_blocking else None,
         )
-        direct_out = direct_out.unstack_batch_multi_index()[{AxisId("extra_dim"): 0}]
+        direct_out = direct_out.unstack_batch_multi_index(errors="ignore")[
+            {AxisId("extra_dim"): 0}
+        ]
         logger.info("direct prediction check for model {}", model_id)
         assert direct_out.members == expected_out.members, (
             direct_out.members,
@@ -349,21 +350,21 @@ def test_gradio_pipeline(
                 for model_source, pp, sample_in, expected_out_loop in prepared
             ]
             for _model_source, future, expected_out_loop in futures:
-                actual_out = future.result(timeout=20).unstack_batch_multi_index()[
-                    {AxisId("extra_dim"): 0}
-                ]
+                actual_out = future.result(timeout=20).unstack_batch_multi_index(
+                    errors="ignore"
+                )[{AxisId("extra_dim"): 0}]
                 assert actual_out.members == expected_out_loop.members
 
         finally:
-            executor.shutdown(wait=False, cancel_futures=True)
+            executor.shutdown(wait=True, cancel_futures=True)
     finally:
         logger.info("Closing prediction pipelines before shutting down gradio server")
         for model_source, pp, _, _ in prepared:
             try:
-                pp.close()
+                pp.unload()
             except Exception:
                 logger.exception(
-                    "Failed to close prediction pipeline for {}", model_source
+                    "Failed to unload prediction pipeline for {}", model_source
                 )
 
         logger.info("Terminating gradio server process on port {}", port)

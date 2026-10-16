@@ -540,13 +540,17 @@ def _save_tensor_impl(
     shard_shape: PerAxis[int] | None,
     progressbar: bool,
 ) -> IO_Lib:
-    if tensor.tagged_shape.get(BATCH_AXIS_ID, 2) == 1:
-        tensor = tensor.squeeze(BATCH_AXIS_ID)
-
     try:
         output_path, extensions, internal_path = _interprete_tensor_source(path)
     except Exception:
         output_path, extensions, internal_path = _interprete_tensor_target(path)
+
+    if (
+        extensions is None
+        or ".npy" not in extensions
+        and tensor.tagged_shape.get(BATCH_AXIS_ID, 2) == 1
+    ):
+        tensor = tensor.squeeze(BATCH_AXIS_ID)
 
     if isinstance(output_path, RootHttpUrl):
         raise NotImplementedError(
@@ -656,7 +660,7 @@ def _save_tensor_bioio(
         except ImportError:
             zarr_format = 3
         else:
-            zarr_format = zarr.config.get("default_zarr_format", 3)
+            zarr_format = zarr.config.get("default_zarr_format")
             if zarr_format not in (2, 3):
                 raise NotImplementedError(
                     f"DEFAULT_ZARR_FORMAT={zarr_format} is not supported. (expected 2 or 3)"

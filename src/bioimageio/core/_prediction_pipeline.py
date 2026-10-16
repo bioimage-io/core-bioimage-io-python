@@ -86,6 +86,20 @@ class _PredictionPipelineBase(ABC):
         self._input_ids = tuple(get_member_ids(model_descr.inputs))
         self._output_ids = tuple(get_member_ids(model_descr.outputs))
 
+    def __enter__(self):
+        self.load()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):  # type: ignore
+        self.unload()
+        return False
+
+    @abstractmethod
+    def load(self): ...
+
+    @abstractmethod
+    def unload(self): ...
+
     @property
     def input_ids(self) -> Sequence[MemberId]:
         return self._input_ids
@@ -390,14 +404,6 @@ class PredictionPipeline(_PredictionPipelineBase):
                 self._samplewise_postprocessing.append(op)
 
         self._adapter = model_adapter
-
-    def __enter__(self):
-        self.load()
-        return self
-
-    def __exit__(self, exc_type, exc_val, exc_tb):  # type: ignore
-        self.unload()
-        return False
 
     @property
     def has_samplewise_preprocessing(self) -> bool:

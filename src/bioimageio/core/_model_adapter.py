@@ -226,7 +226,7 @@ class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
                 if a_transposed.batch_multi_index is not None:
                     multi_batch_indices[in_id] = a_transposed.batch_multi_index
 
-                a = a_transposed.data.data
+                a = a_transposed.to_numpy()
 
             input_arrays.append(a)
 
@@ -364,6 +364,8 @@ class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
         """framework specific forward implementation"""
 
     def unload(self):
+        if not self.is_loaded:
+            return
         for _ in range(len(self._initialized_devices)):
             device, model = self._model_queue.get()
             try:

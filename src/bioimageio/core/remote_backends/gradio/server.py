@@ -1,16 +1,16 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
-from itertools import chain
-from typing import Any, Literal
+from typing import Any, Literal, Union
 
 import gradio as gr
 from loguru import logger
+from pydantic import TypeAdapter
 
 import bioimageio.core
-from bioimageio.core import AxisId, Stat
+from bioimageio.core import Stat
 from bioimageio.core._description_serializer import DescriptionSerializer
-from bioimageio.core.axis import PerAxis
+from bioimageio.core._utils.type_hints import NestedList
+from bioimageio.core.axis import AxisSize, PerAxis
 from bioimageio.core.backends import create_model_adapter
 from bioimageio.core.common import PerMember
 from bioimageio.core.remote_backends.gradio.serializer import (
@@ -42,30 +42,24 @@ app = gr.Server(version="0.1")
 def predict(
     model: str,
     sha256: str,
-    input_sample: Iterable[SerializedSampleBlock],
-    blocksize: int
-    | Literal["blockwise_as_serialized"]
-    | PerMember[PerAxis[int]]
-    | None = None,
+    input_sample: NestedList[SerializedSampleBlock],
+    blocksize: int | PerMember[PerAxis[int | AxisSize]] | None = None,
     skip_preprocessing: bool = False,
     skip_postprocessing: bool = False,
     skip_input_padding: bool = False,
     skip_output_cropping: bool = False,
     batch_size: int | None = None,
-) -> Iterable[SerializedSampleBlock]:
+) -> NestedList[SerializedSampleBlock]:
     """Run prediction on a sample
 
     Args:
-        input_sample: Input sample as a sequence of serialized sample blocks.
-             Use bioimageio.core.backends.gradio_backend.GradioModelAdapter.serialize_sample to create this from a Sample object.
+        input_sample: Serialized sample or nested block grid created with GradioSampleSerializer.
         model: A model source: URL, nickname or base64 encoded model package (if len(model) > 2083).
         sha256: Sha256 hash of the model's bioimageio.yaml file at the model source or of the encoded model package.
         blocksize:
             - None (default): run non-blockwise, full-sample prediction.
             - integer: run blockwise prediction with a block size derived from the model and this blocksize parameter.
-            - "blockwise_as_serialized": run blockwise prediction with the same blocking as the serialized input sample.
-              (Non-blockwise pre- and postprocessing steps will be ignored.)
-            - PerMember[PerAxis[int]]: run blockwise prediction with a fixed block shape given for each sample member.
+            - PerMember[PerAxis[int | AxisSize]]: run blockwise prediction with a fixed block shape given for each sample member.
         skip_preprocessing: If True, skip preprocessing steps defined in the model.
         skip_postprocessing: If True, skip postprocessing steps defined in the model.
         skip_input_padding: If True, skip input padding for non-blockwise prediction.
@@ -83,89 +77,31 @@ def predict(
     def setup(stat: Stat):
         model_adapter = _get_model_adapter(model, sha256=sha256)
         return bioimageio.core.create_prediction_pipeline(
-            model_adapter.model_descr, fixed_dataset_statistics=stat
+            model_adapter.model_descr,
+            model_adapter=model_adapter,
+            fixed_dataset_statistics=stat,
         )
 
-    if blocksize == "blockwise_as_serialized":
-        sample_block_iterator = iter(input_sample)
-        deserialized_input_block = GradioSampleSerializer.deserialize_sample_block(
-            next(sample_block_iterator)
+    sample = GradioSampleSerializer.deserialize_sample(input_sample)
+    pp = setup(sample.stat)
+    kwargs = {
+        "skip_preprocessing": skip_preprocessing,
+        "skip_postprocessing": skip_postprocessing,
+        "skip_input_padding": skip_input_padding,
+        "skip_output_cropping": skip_output_cropping,
+    }
+    if isinstance(blocksize, int):
+        output = pp.predict_with_blocking(
+            sample, ns=blocksize, batch_size=batch_size, **kwargs
         )
-        pp = setup(deserialized_input_block.stat)
-        for block in chain(
-            [deserialized_input_block],
-            (
-                GradioSampleSerializer.deserialize_sample_block(b)
-                for b in sample_block_iterator
-            ),
-        ):
-            output_block = pp.predict_block(
-                block,
-                skip_preprocessing=skip_preprocessing,
-                skip_postprocessing=skip_postprocessing,
-            )
-            yield GradioSampleSerializer.serialize_sample_block(output_block)
+    elif isinstance(blocksize, dict):
+        block_shape = TypeAdapter(
+            PerMember[PerAxis[Union[int, AxisSize]]]
+        ).validate_python(blocksize)
+        output = pp.predict_with_fixed_blocking(sample, block_shape, **kwargs)
     else:
-        deserialized_input_sample = GradioSampleSerializer.deserialize_sample(
-            input_sample
-        )
-        pp = setup(deserialized_input_sample.stat)
-
-        output_sample = None
-        if isinstance(blocksize, int):
-            try:
-                if pp.has_samplewise_postprocessing and not skip_postprocessing:
-                    output_sample = pp.predict_with_blocking(
-                        deserialized_input_sample,
-                        skip_preprocessing=skip_preprocessing,
-                        skip_postprocessing=skip_postprocessing,
-                        ns=blocksize,
-                        batch_size=batch_size,
-                    )
-                else:
-                    for output in pp._predict_with_blocking_impl(
-                        deserialized_input_sample,
-                        skip_preprocessing=skip_preprocessing,
-                        skip_postprocessing=skip_postprocessing,
-                        ns=blocksize,
-                        batch_size=batch_size,
-                    )[1]:
-                        # with purely blockwise postprocesssing or with postprocessing skipped,
-                        # predicted blocks are part of the final result, so we yield them immediately.
-                        yield GradioSampleSerializer.serialize_sample_block(
-                            output.last_block
-                        )
-
-                    return
-
-            except Exception as e:
-                logger.warning(
-                    "Falling back to full-sample prediction for model {}: {}",
-                    pp.model_descr.id or pp.model_descr.name,
-                    e,
-                )
-        if output_sample is None:
-            output_sample = pp.predict_without_blocking(
-                deserialized_input_sample,
-                skip_preprocessing=skip_preprocessing,
-                skip_postprocessing=skip_postprocessing,
-                skip_input_padding=skip_input_padding,
-                skip_output_cropping=skip_output_cropping,
-            )
-
-        if all(
-            axes.get(AxisId("batch"), 1) > 1 for axes in output_sample.shape.values()
-        ):
-            # yield batches
-            yield from GradioSampleSerializer.serialize_sample_with_fixed_blocking(
-                output_sample,
-                block_shapes={
-                    m: {AxisId("batch"): batch_size or 1} for m in output_sample.shape
-                },
-                halo={},
-            )
-        else:
-            yield from GradioSampleSerializer.serialize_sample(output_sample)
+        output = pp.predict_without_blocking(sample, **kwargs)
+    return GradioSampleSerializer.serialize_sample(output)
 
 
 @app.api(name="load_model")  # pyright: ignore[reportUntypedFunctionDecorator]
@@ -221,7 +157,9 @@ def _get_model_adapter(
         raise ValueError("Model source cannot be empty")
 
     model_descr = _get_model(model, sha256=sha256)
-    return create_model_adapter(model_description=model_descr)
+    adapter = create_model_adapter(model_description=model_descr)
+    adapter.load()
+    return adapter
 
 
 def _get_model(
