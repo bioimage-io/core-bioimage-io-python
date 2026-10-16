@@ -1,14 +1,20 @@
 from __future__ import annotations
 
+import sys
+
+import pytest
+
+if sys.version_info < (3, 10):
+    pytest.skip(reason="requires python 3.10 or higher")
+
+
 import multiprocessing
 import socket
-import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import Process
 from typing import Literal
 
-import pytest
 from loguru import logger
 
 from bioimageio.core import Sample, Tensor, load_model
@@ -16,18 +22,14 @@ from bioimageio.core._description_serializer import DescriptionSerializer
 from bioimageio.core.axis import AxisId, AxisInfo, AxisSize, PerAxis
 from bioimageio.core.common import PerMember
 from bioimageio.core.digest_spec import get_test_input_sample, get_test_output_sample
-from bioimageio.core.remote_backends.gradio.client import GradioPredictionPipeline
-from bioimageio.core.remote_backends.gradio.serializer import (
-    GradioSampleSerializer,
-)
-from bioimageio.core.remote_backends.gradio.server import (
-    main as gradio_server_main,
-)
-from bioimageio.core.remote_backends.gradio.server import predict as server_predict
 from bioimageio.spec import AnyModelDescr
 
 
 def test_gradio_sample_serializer(unet2d_diff_output_shape: str):
+    from bioimageio.core.remote_backends.gradio.serializer import (
+        GradioSampleSerializer,
+    )
+
     model = load_model(
         unet2d_diff_output_shape, format_version="latest", perform_io_checks=False
     )
@@ -52,7 +54,6 @@ def _is_port_in_use(port: int) -> bool:
         return s.connect_ex(("localhost", port)) == 0
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason="requires python 3.10 or higher")
 def test_gradio_adapter():
     from bioimageio.core import load_model
     from bioimageio.core.digest_spec import get_test_input_sample
@@ -112,7 +113,6 @@ def test_gradio_adapter():
         server_process.join()
 
 
-# @pytest.mark.skipif(sys.version_info < (3, 10), reason="requires python 3.10 or higher")
 # def test_gradio_pipeline():
 #     from bioimageio.core import Sample, load_model
 #     from bioimageio.core.axis import AxisId, AxisInfo, AxisSize
@@ -191,9 +191,13 @@ def test_gradio_adapter():
 #         server_process.join(timeout=20)
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason="requires python 3.10 or higher")
 @pytest.mark.parametrize("with_blocking", [False, True])
 def test_gradio_pipeline_direct(with_blocking: bool):
+    from bioimageio.core.remote_backends.gradio.serializer import (
+        GradioSampleSerializer,
+    )
+    from bioimageio.core.remote_backends.gradio.server import predict as server_predict
+
     def predict_direct(
         model_descr: AnyModelDescr,
         sample: Sample,
@@ -261,7 +265,6 @@ def test_gradio_pipeline_direct(with_blocking: bool):
         )
 
 
-@pytest.mark.skipif(sys.version_info < (3, 10), reason="requires python 3.10 or higher")
 @pytest.mark.parametrize("with_blocking", [False, True])
 @pytest.mark.parametrize("with_server", [False, True])
 def test_gradio_pipeline(
@@ -271,6 +274,13 @@ def test_gradio_pipeline(
     unet2d_expand_output_shape: str,
     unet2d_multi_tensor: str,
 ):
+    from bioimageio.core.remote_backends.gradio.client import (
+        GradioPredictionPipeline,
+    )
+    from bioimageio.core.remote_backends.gradio.server import (
+        main as gradio_server_main,
+    )
+
     port = 7860
 
     if with_server:
