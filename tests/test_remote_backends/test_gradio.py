@@ -341,6 +341,7 @@ def test_gradio_pipeline(
                 "connecting prediction pipeline to {} for {}", server_url, model_source
             )
             pipeline = GradioPredictionPipeline(model, server=server_url)
+            pipeline.load()
             server_status = pipeline.get_status()
             logger.info("Server status for model {}: {}", model_source, server_status)
             prepared.append((model_source, pipeline, input_sample, expected_out))

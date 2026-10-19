@@ -25,6 +25,9 @@ def _test_device_management(
     ):
         pytest.skip("Need at least one cuda device for this test")
 
+    if device == "mps" and (not hasattr(torch, "mps") or torch.mps.device_count() == 0):
+        pytest.skip("Need at least one mps device for this test")
+
     bio_model = load_description(model_package)
     assert isinstance(bio_model, (ModelDescr, ModelDescr04))
     pred_pipe = create_prediction_pipeline(
