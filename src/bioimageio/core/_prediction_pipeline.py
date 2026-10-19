@@ -419,6 +419,12 @@ class PredictionPipeline(_PredictionPipelineBase):
         """`True` if any postprocessing operators in the pipeline are not applicable blockwise."""
         return bool(self._samplewise_postprocessing)
 
+    def apply_input_padding(self, sample: Sample) -> None:
+        padded_sample = sample.pad(
+            pad_width=self._default_input_halo, mode=self._pad_mode
+        )
+        sample.members = padded_sample.members
+
     def apply_preprocessing(self, sample: Sample) -> None:
         """Apply all preprocessing in-place, also may updates sample stats"""
 
@@ -461,6 +467,19 @@ class PredictionPipeline(_PredictionPipelineBase):
         """
         for op in self._samplewise_postprocessing:
             op(sample)
+
+    def apply_output_cropping(self, sample: Sample) -> None:
+        sample.members = {
+            m: t
+            if m not in self._default_output_halo
+            else t[
+                {
+                    a: slice(h.left, t.tagged_shape[a] + -h.right)
+                    for a, h in self._default_output_halo[m].items()
+                }
+            ]
+            for m, t in sample.members.items()
+        }
 
     def raise_for_non_blockwise_preprocessing(self):
         """
@@ -505,7 +524,7 @@ class PredictionPipeline(_PredictionPipelineBase):
             sample, self._model_descr, extra_dims="stack"
         )
         if not skip_input_padding:
-            sample = sample.pad(pad_width=self._default_input_halo, mode=self._pad_mode)
+            self.apply_input_padding(sample)
 
         if not skip_preprocessing:
             self.apply_preprocessing(sample)
@@ -521,17 +540,7 @@ class PredictionPipeline(_PredictionPipelineBase):
             self.apply_postprocessing(output)
 
         if not skip_output_cropping:
-            output.members = {
-                m: t
-                if m not in self._default_output_halo
-                else t[
-                    {
-                        a: slice(h.left, None if h.right == 0 else -h.right)
-                        for a, h in self._default_output_halo[m].items()
-                    }
-                ]
-                for m, t in output.members.items()
-            }
+            self.apply_output_cropping(output)
 
         return output
 
@@ -564,7 +573,7 @@ class PredictionPipeline(_PredictionPipelineBase):
 
         """
         if not skip_input_padding:
-            sample = sample.pad(pad_width=self._default_input_halo, mode=self._pad_mode)
+            self.apply_input_padding(sample)
 
         if not skip_preprocessing:
             self.apply_preprocessing(sample)
@@ -580,16 +589,7 @@ class PredictionPipeline(_PredictionPipelineBase):
             self.apply_postprocessing(sample)
 
         if not skip_output_cropping:
-            roi = {
-                m: {
-                    d: slice(None)
-                    if (h := self._default_output_halo.get(m, {}).get(d)) is None
-                    else slice(h.left, s - h.right)
-                    for d, s in shape.items()
-                }
-                for m, shape in sample.shape.items()
-            }
-            sample = sample[roi]
+            self.apply_output_cropping(sample)
 
         return sample
 
