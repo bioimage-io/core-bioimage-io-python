@@ -5,15 +5,11 @@ from typing import Any
 
 import zarr
 from loguru import logger
-from torch import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    import clearscale
 
 
 def open_zarr_multiscale_array(
     uri: str,
-) -> tuple[zarr.Array[Any], clearscale.Scale]:
+) -> tuple[zarr.Array[Any], Any]:
     """Open a zarr multiscale array from a URI"""
     ms, _uri_to_parent, sub_uri = _recurse_url_to_find_group(uri)
 
@@ -31,7 +27,7 @@ def open_zarr_multiscale_array(
     return zarr_array_or_group, ms[sub_uri]
 
 
-def _recurse_url_to_find_group(uri: str) -> tuple[clearscale.Multiscale, str, str]:
+def _recurse_url_to_find_group(uri: str) -> tuple[Any, str, str]:
     """URI may point to an OME-Zarr "multiscales" root or to a specific scale.
     Try to find OME-Zarr spec first at URI, then search parent directories.
     Returns
@@ -69,8 +65,8 @@ def _recurse_url_to_find_group(uri: str) -> tuple[clearscale.Multiscale, str, st
 
 def _ms_from_group(
     zarr_group: zarr.Group, must_have_dataset: str | None = None
-) -> clearscale.Multiscale:
-    import clearscale
+) -> Any:
+    import clearscale  # pyright: ignore[reportMissingImports]
 
     # 1. Discover the "multiscales" list
     try:
@@ -90,7 +86,7 @@ def _ms_from_group(
 
     # 2. Convert all entries of the "multiscales" list
     # (There will practically never be more than one)
-    valid_multiscales: list[clearscale.Multiscale] = []
+    valid_multiscales: list[Any] = []
     for ome_ms in ome_multiscales:
         try:
             assert isinstance(ome_ms, Mapping)

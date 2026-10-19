@@ -10,7 +10,7 @@ from io import BytesIO, TextIOWrapper
 from itertools import chain
 from pathlib import Path, PosixPath, PurePath, PurePosixPath
 from shutil import copyfileobj
-from typing import TYPE_CHECKING, TypedDict, Union
+from typing import TYPE_CHECKING, Any, TypedDict, Union
 
 import dask.diagnostics
 import numpy as np
@@ -824,7 +824,7 @@ def _save_tensor_clearscale(
     chunk_shape: PerAxis[int] | None = None,
     shard_shape: PerAxis[int] | None = None,
 ) -> None:
-    import clearscale
+    import clearscale  # pyright: ignore[reportMissingImports]
     import dask.array
     import zarr
 
@@ -868,7 +868,7 @@ def _save_tensor_clearscale(
     )
 
     dim_map = dict(zip(tensor.dims, single_letter_dims))
-    multiscale = clearscale.Multiscale(
+    multiscale: Any = clearscale.Multiscale(
         {
             scale_key: clearscale.Scale(
                 shape=clearscale.Shape(
