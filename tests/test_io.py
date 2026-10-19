@@ -50,7 +50,20 @@ def test_tensor_io_numpy(
     assert (actual == expected).to_numpy().all()
 
 
-@pytest.mark.parametrize("suffix", [".png", ".tiff", ".zarr"])
+@pytest.mark.parametrize(
+    "suffix",
+    [
+        ".png",
+        pytest.param(
+            ".tiff",
+            marks=pytest.mark.skipif(
+                sys.version_info < (3, 12),
+                reason="tifffile tensor loading and saving requires Python >=3.12.",
+            ),
+        ),
+        ".zarr",
+    ],
+)
 def test_save_sample(tmp_path: Path, suffix: str):
     from bioimageio.core import Sample, Tensor
     from bioimageio.core.common import MemberId
@@ -79,7 +92,13 @@ def test_save_sample(tmp_path: Path, suffix: str):
     "name",
     [
         "img.png",
-        "img.tiff",
+        pytest.param(
+            "img.tiff",
+            marks=pytest.mark.skipif(
+                sys.version_info < (3, 12),
+                reason="tifffile tensor loading requires Python >=3.12.",
+            ),
+        ),
         "img.zarr",
         "img.zarr/0",
         "img.zarr/s2",

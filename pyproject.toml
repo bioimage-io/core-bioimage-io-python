@@ -89,6 +89,7 @@ dev = [
     "pytest-cov",
     "pytest-timeout",
     "python-dotenv",
+    'tifffile;python_version>="3.12"',          # we're using the new `tifffile.asxarray` which is only available in tifffile>=2026.5.2, which requires py>=3.12
     "segment-anything",                         # for model testing
     "stardist",
     "tensorflow",

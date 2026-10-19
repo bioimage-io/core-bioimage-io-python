@@ -431,6 +431,10 @@ def _load_tensor_tifffile(source: FileDescr | PermissiveFileSource) -> Tensor:
         assert not isinstance(f, TextIOWrapper)
 
         tif = tifffile.TiffFile(f, name=name)
+        if not hasattr(tif, "asxarray"):
+            raise ImportError(
+                "tifffile version >= 2026.5.2 is required for loading tensors with tifffile"
+            )
         with tif:
             xr_data = tif.asxarray()
             page = tif.pages[0]
@@ -1031,7 +1035,15 @@ def _save_tensor_tifffile(
             "Saving tiff files to FTP URLs is not implemented. Please save to a local file path instead."
         )
 
+    import inspect
+
     import tifffile
+
+    tifffile_imwrite_signature = inspect.signature(tifffile.imwrite)  # pyright: ignore[reportUnknownArgumentType]
+    if "kind" not in tifffile_imwrite_signature.parameters:
+        raise NotImplementedError(
+            "Saving tensors with tifffile uses tifffile.imwrite(...kind=...) (added in tifffile 2026.5.2)."
+        )
 
     logger.trace("tensor dims {}", tensor.dims)
     tensor = tensor.transpose("TZCYX")  # tifffile expects TZCYX order
