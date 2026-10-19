@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import warnings
 import zipfile
 from collections.abc import Iterable, Mapping, Sequence
@@ -556,7 +557,7 @@ def save_tensor(
     io_lib: IO_Lib | None = None,
     chunk_shape: PerAxis[int] | None = None,
     shard_shape: PerAxis[int] | None = None,
-    progressbar: bool = True,
+    progressbar: bool = not os.getenv("GITHUB_ACTIONS"),
 ) -> None:
     _ = _save_tensor_impl(
         path,
