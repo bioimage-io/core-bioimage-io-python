@@ -13,9 +13,9 @@ if TYPE_CHECKING:
 
 def open_zarr_multiscale_array(
     uri: str,
-) -> tuple[zarr.Array[Any], clearscale.Multiscale]:
+) -> tuple[zarr.Array[Any], clearscale.Scale]:
     """Open a zarr multiscale array from a URI"""
-    ms, _uri_to_parent, _sub_uri = _recurse_url_to_find_group(uri)
+    ms, _uri_to_parent, sub_uri = _recurse_url_to_find_group(uri)
 
     zarr_array_or_group = zarr.open(uri)
     if isinstance(zarr_array_or_group, zarr.Group):
@@ -28,7 +28,7 @@ def open_zarr_multiscale_array(
                 + " Append '/<key>' to the URI to open a specific array."
             )
 
-    return zarr_array_or_group, ms
+    return zarr_array_or_group, ms[sub_uri]
 
 
 def _recurse_url_to_find_group(uri: str) -> tuple[clearscale.Multiscale, str, str]:

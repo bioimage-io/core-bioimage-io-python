@@ -344,8 +344,18 @@ def _load_tensor_bioio(
         for k, v in unit_bioio.items()
         if k in axes_map and v is not None
     }
-    t.set_physical_scale(scale)
-    t.set_physical_scale_unit(unit)
+    try:
+        t.set_physical_scale(scale)
+    except Exception as e:
+        logger.opt(exception=e).warning(
+            "Failed to interprete physical scale: {}", scale
+        )
+    try:
+        t.set_physical_scale_unit(unit)
+    except Exception as e:
+        logger.opt(exception=e).warning(
+            "Failed to interprete physical scale unit: {}", unit
+        )
     return t
 
 
@@ -365,12 +375,29 @@ def _load_tensor_clearscale(source: FileDescr | PermissiveFileSource) -> Tensor:
         )
 
     logger.debug("loading tensor from {} with clearscale+zarr-python", source)
-    array, ms = open_zarr_multiscale_array(
+    array, scale = open_zarr_multiscale_array(
         source.as_posix() if isinstance(source, Path) else str(source)
     )
     image = da.from_zarr(array)
-    axes = tuple(str(a) for a in ms.axes)
-    return Tensor.from_xarray(xr.DataArray(image, dims=axes))
+    axes = tuple(str(a) for a in scale.shape)
+    tensor = Tensor.from_xarray(xr.DataArray(image, dims=axes))
+    try:
+        tensor.set_physical_scale(
+            {AxisId(str(a)): value for a, value in scale.pixel_size.items()}
+        )
+    except Exception as e:
+        logger.opt(exception=e).warning(
+            "Failed to interprete clearscale scale.pixel_size: {}", scale.pixel_size
+        )
+    try:
+        tensor.set_physical_scale_unit(
+            {AxisId(str(a)): value for a, value in scale.unit.items()}
+        )
+    except Exception as e:
+        logger.opt(exception=e).warning(
+            "Failed to interprete clearscale scale.unit: {}", scale.unit
+        )
+    return tensor
 
 
 def _load_tensor_tifffile(source: FileDescr | PermissiveFileSource) -> Tensor:
@@ -477,7 +504,12 @@ def _load_tensor_tifffile(source: FileDescr | PermissiveFileSource) -> Tensor:
         AxisId("z"): z_scale,
         AxisId("time"): t_scale,
     }
-    t.set_physical_scale({k: v for k, v in scale.items() if k in t.dims})
+    try:
+        t.set_physical_scale({k: v for k, v in scale.items() if k in t.dims})
+    except Exception as e:
+        logger.opt(exception=e).warning(
+            "Failed to interprete physical scale from tif metadata: {}", scale
+        )
 
     # set physical scale unit
     x_unit = ome_metadata.PhysicalSizeXUnit or ij_metadata.unit
@@ -500,7 +532,12 @@ def _load_tensor_tifffile(source: FileDescr | PermissiveFileSource) -> Tensor:
         AxisId("z"): z_unit,
         AxisId("time"): t_unit,
     }
-    t.set_physical_scale_unit({k: v for k, v in scale_unit.items() if k in t.dims})
+    try:
+        t.set_physical_scale_unit({k: v for k, v in scale_unit.items() if k in t.dims})
+    except Exception as e:
+        logger.opt(exception=e).warning(
+            "Failed to interprete physical scale unit from tif metadata: {}", scale_unit
+        )
 
     # set channel names
     if ome_metadata.Channel is not None:

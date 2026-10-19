@@ -112,10 +112,7 @@ def test_tensor_io(
     from bioimageio.core.io import load_tensor, save_tensor
 
     if io_lib == "clearscale":
-        try:
-            import clearscale as _
-        except ImportError:
-            pytest.skip("clearscale not installed")
+        _ = pytest.importorskip("clearscale")
 
         if name.find(".zarr") == -1:
             pytest.skip("clearscale only supports zarr")
@@ -146,6 +143,58 @@ def test_tensor_io(
         assert (actual == expected).to_numpy().all()
 
 
+@pytest.mark.parametrize("zarr_format", [2, 3])
+@pytest.mark.parametrize("io_lib", ["clearscale", "bioio"])
+@pytest.mark.parametrize("internal_path", ["", "0"])
+def test_tensor_ome_zarr_metadata_roundtrip(
+    zarr_format: int,
+    io_lib: Literal["clearscale", "bioio"],
+    internal_path: str,
+    tmp_path: Path,
+):
+    zarr = pytest.importorskip("zarr")
+    _ = pytest.importorskip(
+        "clearscale" if io_lib == "clearscale" else "bioio_ome_zarr"
+    )
+
+    from bioimageio.core import AxisId, Tensor
+    from bioimageio.core.io import load_tensor, save_tensor
+
+    expected = Tensor.from_numpy(
+        np.arange(3 * 4 * 5, dtype=np.uint16).reshape(3, 4, 5),
+        dims=("z", "y", "x"),
+    )
+    pixel_size = {AxisId("z"): 2.5, AxisId("y"): 0.5, AxisId("x"): 0.25}
+    units = {axis: "micrometer" for axis in pixel_size}
+    expected.set_physical_scale(pixel_size)
+    expected.set_physical_scale_unit(units)
+    store = tmp_path / "image.ome.zarr"
+    path = store / internal_path
+
+    with zarr.config.set({"default_zarr_format": zarr_format}):
+        save_tensor(path, expected, io_lib=io_lib)
+
+    group = zarr.open_group(store, mode="r")
+    assert group.metadata.zarr_format == zarr_format
+    metadata = group.attrs if zarr_format == 2 else group.attrs["ome"]
+    multiscale = metadata["multiscales"][0]
+    assert [axis["name"] for axis in multiscale["axes"]] == ["z", "y", "x"]
+    assert [axis["unit"] for axis in multiscale["axes"]] == ["micrometer"] * 3
+    dataset = multiscale["datasets"][0]
+    assert dataset["coordinateTransformations"] == [
+        {"type": "scale", "scale": list(pixel_size.values())}
+    ]
+    array = group[dataset["path"]]
+    assert array.metadata.zarr_format == zarr_format
+
+    actual = load_tensor(path, io_lib=io_lib)
+    assert actual.dims == expected.dims
+    assert actual.dtype == expected.dtype
+    np.testing.assert_array_equal(actual.to_numpy(), expected.to_numpy())
+    assert actual.get_physical_scale() == pytest.approx(pixel_size)
+    assert actual.get_physical_scale_unit() == units
+
+
 @pytest.mark.parametrize("io_lib", ["clearscale", "bioio"])
 @pytest.mark.parametrize("group_path", ["", "group"])
 @pytest.mark.parametrize("scale_key", ["", "s0", "0", "scalekeyvalue"])
@@ -155,6 +204,9 @@ def test_load_zarr_from_group(
     scale_key: str,
     tmp_path: Path,
 ):
+    if io_lib == "clearscale":
+        _ = pytest.importorskip("clearscale")
+
     import zarr
 
     from bioimageio.core.io import load_tensor
