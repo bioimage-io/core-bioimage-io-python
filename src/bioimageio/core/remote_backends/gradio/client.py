@@ -203,10 +203,11 @@ class GradioPredictionPipeline(RemotePredictionPipeline):
     def _predict_without_blocking_impl(
         self,
         sample: Sample,
-        skip_preprocessing: bool = False,
-        skip_postprocessing: bool = False,
-        skip_input_padding: bool = False,
-        skip_output_cropping: bool = False,
+        *,
+        skip_input_padding: bool,
+        skip_preprocessing: bool,
+        skip_postprocessing: bool,
+        skip_output_cropping: bool,
     ) -> Sample:
         if self._client is None:
             raise RuntimeError(

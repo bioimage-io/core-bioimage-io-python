@@ -1039,7 +1039,7 @@ def _save_tensor_tifffile(
 
     import tifffile
 
-    tifffile_imwrite_signature = inspect.signature(tifffile.imwrite)  # pyright: ignore[reportUnknownArgumentType]
+    tifffile_imwrite_signature = inspect.signature(tifffile.imwrite)
     if "kind" not in tifffile_imwrite_signature.parameters:
         raise NotImplementedError(
             "Saving tensors with tifffile uses tifffile.imwrite(...kind=...) (added in tifffile 2026.5.2)."

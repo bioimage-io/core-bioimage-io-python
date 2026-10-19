@@ -2,7 +2,7 @@ import sys
 from importlib.util import find_spec
 from inspect import signature
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal, cast
 
 import numpy as np
 import pytest
@@ -244,7 +244,7 @@ def test_load_zarr_from_group(
     default_scale_key = "0"
     storage_source = tmp_path / "image.ome.zarr"
     group_source = storage_source / group_path if storage_source else storage_source
-    uses_zarr_format = "zarr_format" in signature(zarr.open_group).parameters
+    uses_zarr_format = "zarr_format" in signature(cast(Any, zarr.open_group)).parameters
     if uses_zarr_format:
         group = zarr.open_group(group_source, mode="w", zarr_format=2)
     else:
@@ -253,7 +253,9 @@ def test_load_zarr_from_group(
     if uses_zarr_format:
         _ = group.create_array(scale_key or default_scale_key, data=expected)
     else:
-        _ = group.create_dataset(scale_key or default_scale_key, data=expected)
+        _dataset: Any = cast(Any, group).create_dataset(
+            scale_key or default_scale_key, data=expected
+        )
     group.attrs["multiscales"] = [
         {
             "version": "0.4",
