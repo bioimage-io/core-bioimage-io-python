@@ -367,7 +367,6 @@ class Block(BlockMeta):
     A ValueError is raised when the halo extends beyond the tensor boundary and `pad_mode` is "none"."""
 
     def __post_init__(self):
-        super().__post_init__()
         assert not self.padding or self.pad_mode != "none", (
             "block requires padding but `pad_mode` is 'none'"
         )

@@ -907,7 +907,7 @@ class PredictBlockArtifactsCmd(PredictCmd):
                         v_b,
                     )
 
-            save_sample(out_path, diff_sample)
+            _ = save_sample(out_path, diff_sample)
 
     @staticmethod
     def _subtract_samples(a: Sample, b: Sample) -> Sample:

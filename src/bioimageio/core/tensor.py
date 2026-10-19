@@ -4,10 +4,10 @@ import collections.abc
 from collections.abc import Collection, Iterator, Mapping, Sequence
 from itertools import permutations
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     Literal,
+    Protocol,
     Union,
     cast,
     get_args,
@@ -55,11 +55,11 @@ from .common import (
 
 MultiIndex = pd.MultiIndex
 
-if TYPE_CHECKING:
-    from numpy.typing import NDArray
-    from xarray.core.types import DaCompatible
-
 Array: TypeAlias = "NDArray[Any] | dask.array.Array"
+
+
+class _SupportsArray(Protocol):
+    def __array__(self) -> NDArray[Any]: ...
 
 
 # TODO: complete docstrings
@@ -68,7 +68,14 @@ class Tensor(MagicTensorOpsMixin):
     """A wrapper around an xr.DataArray for better integration with bioimageio.spec
     and improved type annotations."""
 
-    _Compatible: TypeAlias = Union["Tensor", xr.DataArray, "DaCompatible"]
+    _Compatible: TypeAlias = Union[
+        "Tensor",
+        xr.DataArray,
+        xr.Variable,
+        _SupportsArray,
+        Sequence[Any],
+        "np.generic[Any]",
+    ]
 
     def __init__(
         self,
@@ -166,7 +173,9 @@ class Tensor(MagicTensorOpsMixin):
     def get_physical_scale(self) -> PerAxis[float]:
         """Return the physical scale of each axis in units (see `get_physical_scale_unit`)."""
         _scale = self._data.attrs.get("physical_scale", None)
-        scale: Mapping[Any, Any] = _scale if is_mapping(_scale) else {}
+        scale: Mapping[Any, Any] = (
+            _scale if _scale is not None and is_mapping(_scale) else {}
+        )
         del _scale
         return {
             a if isinstance(a, AxisId) else AxisId(a): 1.0 if s is None else float(s)
@@ -187,7 +196,9 @@ class Tensor(MagicTensorOpsMixin):
     def get_physical_scale_unit(self) -> PerAxis[SpaceUnit | TimeUnit | str]:
         """Return the physical unit of each axis."""
         _unit = self._data.attrs.get("physical_scale_unit", None)
-        unit: Mapping[Any, Any] = _unit if is_mapping(_unit) else {}
+        unit: Mapping[Any, Any] = (
+            _unit if _unit is not None and is_mapping(_unit) else {}
+        )
         del _unit
         return {d: "" if (u := unit.get(d)) is None else str(u) for d in self.dims}
 
@@ -208,7 +219,7 @@ class Tensor(MagicTensorOpsMixin):
         """Return the channel names if available, otherwise None."""
 
         names = self._data.attrs.get("channel_names", None)
-        if not is_sequence(names):
+        if names is None or not is_sequence(names):
             return None
 
         if len(names) != self.sizes.get(AxisId("channel"), 0):
@@ -241,7 +252,9 @@ class Tensor(MagicTensorOpsMixin):
             return None
 
         colors = self._data.attrs.get("channel_colors", None)
-        if not is_sequence(colors):
+        if colors is None:
+            pass
+        elif not is_sequence(colors):
             colors = None
 
         if colors is not None and len(colors) < n_channels:
@@ -284,7 +297,7 @@ class Tensor(MagicTensorOpsMixin):
 
     def squeeze(self, dim: AxisId | Sequence[AxisId] | None = None) -> Self:
         """Return a new tensor with squeezed data."""
-        squeezed = self._data.squeeze(dim=dim)  # pyright: ignore[reportUnknownVariableType]
+        squeezed = self._data.squeeze(dim=dim)
         assert isinstance(squeezed, xr.DataArray)
         return self.__class__.from_xarray(squeezed)
 
@@ -294,15 +307,7 @@ class Tensor(MagicTensorOpsMixin):
         f: Callable[[Any, Any], Any],
     ) -> Self:
         _ = self._data._inplace_binary_op(  # pyright: ignore[reportPrivateUsage]
-            (
-                other_d
-                if (other_d := other.data) is not None
-                and isinstance(
-                    other_d,
-                    xr.DataArray,
-                )
-                else other
-            ),
+            other._data if isinstance(other, Tensor) else other,
             f,
         )
         return self
@@ -324,7 +329,7 @@ class Tensor(MagicTensorOpsMixin):
         dims = [AxisId(d) for d in data_array.dims]
         dim_map = {d: a for d, a in zip(data_array.dims, dims) if d != a}
         if dim_map:
-            data_array = data_array.rename(dim_map)  # pyright: ignore[reportUnknownVariableType]
+            data_array = data_array.rename(dim_map)
             assert isinstance(data_array, xr.DataArray)
 
         return cls(array=data_array, dims=dims)
@@ -386,7 +391,7 @@ class Tensor(MagicTensorOpsMixin):
 
     @property
     def dtype(self) -> DTypeStr:
-        dt = str(self.data.dtype)  # pyright: ignore[reportUnknownArgumentType]
+        dt = str(self.data.dtype)
         assert dt in get_args(DTypeStr)
         return dt  # pyright: ignore[reportReturnType]
 

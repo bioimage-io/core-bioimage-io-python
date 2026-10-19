@@ -55,7 +55,7 @@ def convert(
         model = load_torch_model(
             state_dict_weights_descr, load_state=True, devices=devices
         )
-        scripted_model: ScriptModule | tuple[Any, ...] = (
+        scripted_model: ScriptModule | tuple[Any, ...] = (  # pyright: ignore[reportUnknownVariableType]
             torch.jit.trace(model, input_data)
             if use_tracing
             else torch.jit.script(model)

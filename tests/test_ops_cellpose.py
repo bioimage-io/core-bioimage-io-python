@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from bioimageio.core._utils.type_guards import is_list, is_ndarray
+from bioimageio.core._utils.type_hints import cast_and_assert
 from tests.test_bioimageio_collection import expensive_test
 
 
@@ -47,7 +48,9 @@ def test_cellpose_export(tmp_path: Path):
 
     cellpose_original = cellpose.models.CellposeModel(gpu=False)
 
-    input_array = imageio.imread(sample_input_path).transpose(2, 0, 1)
+    input_array = cast_and_assert(
+        np.ndarray, np.asarray(imageio.imread(sample_input_path)).transpose(2, 0, 1)
+    )
     assert is_ndarray(input_array)
     print("input:", input_array.shape)
     input_array = input_array[None, :, 256:512, 256:512]
@@ -75,7 +78,9 @@ def test_cellpose_export(tmp_path: Path):
     )
 
     # run original cellpose model
-    mask, flows, _ = cellpose_original.eval(input_array.transpose(0, 2, 3, 1))  # pyright: ignore[reportUnknownVariableType]
+    mask, flows, _ = cellpose_original.eval(  # pyright: ignore[reportUnknownVariableType]
+        cast_and_assert(np.ndarray, input_array.transpose(0, 2, 3, 1))
+    )
     assert is_ndarray(mask)
     assert is_list(flows)
     print("mask shape:", mask.shape)

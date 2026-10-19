@@ -97,6 +97,24 @@ def test_some_magic_ops():
     assert tensor + 2 == 2 + tensor
 
 
+@pytest.mark.parametrize("operand_kind", ["scalar", "numpy", "xarray", "tensor"])
+def test_inplace_add(operand_kind: str):
+    tensor = Tensor.from_numpy(np.arange(6).reshape(2, 3), dims="yx")
+    operand = (
+        2
+        if operand_kind == "scalar"
+        else np.full((2, 3), 2)
+        if operand_kind == "numpy"
+        else xr.DataArray(np.full((2, 3), 2), dims=("y", "x"))
+        if operand_kind == "xarray"
+        else Tensor.from_numpy(np.full((2, 3), 2), dims="yx")
+    )
+    original = tensor
+    tensor += operand
+    assert tensor is original
+    np.testing.assert_array_equal(tensor.to_numpy(), np.arange(6).reshape(2, 3) + 2)
+
+
 def test_shape_attributes():
     tensor = Tensor.from_numpy(np.random.rand(1, 2, 25, 26), dims=None)
     assert tensor.shape_tuple == tensor.shape

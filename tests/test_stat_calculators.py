@@ -6,7 +6,6 @@ from typing import Any, cast
 import dask.array as da
 import numpy as np
 import pytest
-import xarray as xr
 from dask.base import compute  # pyright: ignore[reportUnknownVariableType]
 from dask.callbacks import Callback
 from dask.delayed import delayed  # pyright: ignore[reportUnknownVariableType]
@@ -52,9 +51,7 @@ _DATASET_TYPES = (DatasetMean, DatasetVar, DatasetStd, DatasetQuantile)
 def _sample(data: NDArray[np.float64], lazy: bool) -> Sample:
     tensor = Tensor(data, dims=_DIMS)
     if lazy:
-        tensor = Tensor.from_xarray(
-            cast(xr.DataArray, tensor.data.chunk(dict(zip(_DIMS, (1, 1, 2, 3)))))
-        )
+        tensor = Tensor.from_xarray(tensor.data.chunk(dict(zip(_DIMS, (1, 1, 2, 3)))))
     return Sample(id=None, members={_MEMBER: tensor}, stat={})
 
 

@@ -13,7 +13,7 @@ from typing import (
 )
 
 import dask.array as da
-from dask.delayed import Delayed, delayed
+from dask.delayed import Delayed, delayed  # pyright: ignore[reportUnknownVariableType]
 from exceptiongroup import ExceptionGroup
 from loguru import logger
 from numpy.typing import NDArray

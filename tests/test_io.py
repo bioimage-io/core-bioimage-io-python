@@ -68,7 +68,7 @@ def test_save_sample(tmp_path: Path, suffix: str):
         id="sample",
     )
 
-    save_sample(tmp_path / f"{sample.id}_{{member_id}}{suffix}", sample)
+    _ = save_sample(tmp_path / f"{sample.id}_{{member_id}}{suffix}", sample)
 
     for member_id, expected in members.items():
         actual = load_tensor(tmp_path / f"sample_{member_id}{suffix}")

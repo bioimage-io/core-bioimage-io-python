@@ -366,12 +366,14 @@ def test_scale_range(tid: MemberId):
 
     eps = 1.0e-6
     mi, ma = np_data.min(), np_data.max()
-    exp_data = (np_data - mi) / (ma - mi + eps)
-    expected = xr.DataArray(exp_data, dims=("x", "y"))
+    expected = (np_data - mi) / (ma - mi + eps)
 
     op(sample)
-    # NOTE xarray.testing.assert_allclose compares irrelavant properties here and fails although the result is correct
-    np.testing.assert_allclose(expected, sample.members[tid].data, rtol=1e-5, atol=1e-7)
+    assert sample.members[tid].dims == ("x", "y")
+    assert sample.members[tid].shape == (3, 3)
+    np.testing.assert_allclose(
+        expected, sample.members[tid].to_numpy(), rtol=1e-5, atol=1e-7
+    )
 
 
 def test_scale_range_axes(tid: MemberId):
@@ -405,12 +407,13 @@ def test_scale_range_axes(tid: MemberId):
     np.testing.assert_allclose(p_low_expected.squeeze(), sample.stat[lower_quantile])
     np.testing.assert_allclose(p_up_expected.squeeze(), sample.stat[upper_quantile])
 
-    exp_data = (np_data - p_low_expected) / (p_up_expected - p_low_expected + eps)
-    expected = xr.DataArray(exp_data, dims=("channel", "x", "y"))
+    expected = (np_data - p_low_expected) / (p_up_expected - p_low_expected + eps)
 
     op(sample)
-    # NOTE xarray.testing.assert_allclose compares irrelavant properties here and fails although the result is correct
-    np.testing.assert_allclose(expected, sample.members[tid].data, rtol=1e-5, atol=1e-7)
+    assert sample.members[tid].dims == ("channel", "x", "y")
+    np.testing.assert_allclose(
+        expected, sample.members[tid].to_numpy(), rtol=1e-5, atol=1e-7
+    )
 
 
 def test_sigmoid(tid: MemberId):

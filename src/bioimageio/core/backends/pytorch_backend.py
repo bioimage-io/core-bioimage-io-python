@@ -110,7 +110,7 @@ class PytorchModelAdapter(LocalModelAdapter[torch.device, nn.Module]):
             if r is None:
                 result.append(None)
             elif isinstance(r, torch.Tensor):
-                r_np: NDArray[Any] = (  # pyright: ignore[reportUnknownVariableType]
+                r_np: NDArray[Any] = (
                     r.detach().cpu().numpy()
                 )
                 result.append(r_np)

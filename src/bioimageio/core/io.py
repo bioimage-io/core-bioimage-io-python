@@ -429,8 +429,8 @@ def _load_tensor_tifffile(source: FileDescr | PermissiveFileSource) -> Tensor:
     with ctxt as f:
         assert not isinstance(f, TextIOWrapper)
 
-        with tifffile.TiffFile(f, name=name) as tif:
-            assert isinstance(tif, tifffile.TiffFile)
+        tif = tifffile.TiffFile(f, name=name)
+        with tif:
             xr_data = tif.asxarray()
             page = tif.pages[0]
             if isinstance(page, tifffile.TiffFrame):
@@ -800,7 +800,7 @@ def _save_tensor_bioio(
 
     image_name = None if internal_path is None else str(internal_path)
     physical_scale = tensor.get_physical_scale()
-    save(
+    _ = save(
         bioio_data.data,
         path,
         dim_order=dim_order,
@@ -1148,7 +1148,7 @@ def _save_tensor_tifffile(
         assert not isinstance(f, TextIOWrapper)
         _ = tifffile.imwrite(
             f,
-            tensor.data,
+            tensor.to_numpy(),
             kind=kind,
             software="bioimageio.core",
             resolution=resolution,

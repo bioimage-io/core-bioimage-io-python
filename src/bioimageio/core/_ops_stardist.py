@@ -127,7 +127,7 @@ class StardistPostprocessing2D(
             polygons_to_label,  # pyright: ignore[reportUnknownVariableType]
         )
 
-        points, probi, disti = non_maximum_suppression(  # pyright: ignore[reportUnknownVariableType]
+        points, probi, disti = non_maximum_suppression(
             dist,
             prob,
             grid=self.grid,

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import collections.abc
+import importlib.abc
 import importlib.util
 import sys
 from collections.abc import Iterable, Mapping, Sequence
@@ -136,7 +137,7 @@ def _import_from_file_impl(
 
             sys.modules[module_name] = module  # cache this module
 
-            assert importlib_spec.loader is not None
+            assert isinstance(importlib_spec.loader, importlib.abc.ExecutionLoader)
             importlib_spec.loader.exec_module(module)
 
         except Exception as e:
