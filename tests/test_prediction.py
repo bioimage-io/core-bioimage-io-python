@@ -1,4 +1,4 @@
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Literal, NamedTuple
 
@@ -23,6 +23,7 @@ from bioimageio.core.digest_spec import (
     transpose_sample_for_model,
 )
 from bioimageio.spec import AnyModelDescr
+from bioimageio.spec.model import v0_4
 
 
 def _assert_equal_samples(expected: Sample, actual: Sample):
@@ -103,10 +104,10 @@ def test_predict_with_blocking(with_procs: bool, prep: Prep):
 
 def test_predict_with_fixed_blocking(prep: Prep):
     if prep.model.name == "Fixed-shape":
-        pytest.skip("Fixed-shape 0.4 model does not support blocking")
+        pytest.skip("Fixed-shape model does not support blocking")
 
     block_along = list(prep.input_sample.members)
-    input_block_shape: Mapping[MemberId, Mapping[AxisId, int]] = {
+    input_block_shape: dict[MemberId, Mapping[AxisId, int]] = {
         ba: {
             "x": min(  # pyright: ignore[reportAssignmentType]
                 128, prep.input_sample.members[ba].tagged_shape[AxisId("x")]
@@ -117,16 +118,56 @@ def test_predict_with_fixed_blocking(prep: Prep):
         }
         for ba in block_along
     }
+    if isinstance(prep.model, v0_4.ModelDescr):
+        for ipt in prep.model.inputs:
+            if isinstance(ipt.shape, Sequence):
+                input_block_shape[MemberId(ipt.name)] = {
+                    AxisId(a): size for a, size in zip(ipt.axes, ipt.shape)
+                }
+
+    if any(
+        s <= input_block_shape[m].get(a, 1)
+        for m in block_along
+        for a, s in prep.input_sample.members[m].tagged_shape.items()
+    ):
+        # pad input sample to make input larger than block shape while keeping the same data in the first block
+        input_sample = prep.input_sample.pad(
+            pad_width={
+                m: {
+                    a: (0, max(10, input_block_shape[m].get(a, 1) - s))
+                    for a, s in prep.input_sample.members[m].tagged_shape.items()
+                    if a not in ("batch", "channel")
+                }
+                for m in block_along
+            },
+            mode="symmetric",
+        )
+        did_pad_input = True
+    else:
+        input_sample = prep.input_sample
+        did_pad_input = False
+
     try:
         out = predict(
             model=prep.prediction_pipeline,
-            inputs=prep.input_sample,
+            inputs=input_sample,
             input_block_shape=input_block_shape,
             sample_id=prep.input_sample.id,
         )
     except NotImplementedError as e:
         pytest.skip(str(e))
 
+    if did_pad_input:
+        # crop output to match the original input sample shape
+        out.members = {
+            m: t[
+                {
+                    a: slice(0, s)
+                    for a, s in prep.output_sample.members[m].tagged_shape.items()
+                }
+            ]
+            for m, t in out.members.items()
+        }
     _assert_equal_samples(out, prep.output_sample)
 
 
