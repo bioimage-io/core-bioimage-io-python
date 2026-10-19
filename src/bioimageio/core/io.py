@@ -868,7 +868,7 @@ def _save_tensor_clearscale(
     )
 
     dim_map = dict(zip(tensor.dims, single_letter_dims))
-    multiscale: Any = clearscale.Multiscale(
+    multiscale: Any = clearscale.Multiscale(  # pyright: ignore[reportUnknownVariableType]
         {
             scale_key: clearscale.Scale(
                 shape=clearscale.Shape(

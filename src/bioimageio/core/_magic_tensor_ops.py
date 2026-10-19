@@ -9,7 +9,7 @@ from typing_extensions import Self
 from xarray.core import nputils
 
 if TYPE_CHECKING:
-    from xarray.core import ops
+    from xarray.computation import ops
 else:
     try:
         # xarray >= 2025.03
