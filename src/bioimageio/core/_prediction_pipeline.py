@@ -119,9 +119,9 @@ class _PredictionPipelineBase(ABC):
     def predict_without_blocking(
         self,
         sample: Sample,
+        skip_input_padding: bool = False,
         skip_preprocessing: bool = False,
         skip_postprocessing: bool = False,
-        skip_input_padding: bool = False,
         skip_output_cropping: bool = False,
     ) -> Sample:
         """Predict a whole sample at once.
@@ -132,25 +132,25 @@ class _PredictionPipelineBase(ABC):
 
         Args:
             sample: input sample
+            skip_input_padding: if `True`, skip padding the input sample according to the model's (optional) output halos.
             skip_preprocessing: if `True`, skip all preprocessing steps (except for any preceding prediction pipeline).
             skip_postprocessing: if `True`, skip all postprocessing steps (except for any preceding prediction pipeline).
-            skip_input_padding: if `True`, skip padding the input sample according to the model's (optional) output halos.
             skip_output_cropping: if `True`, skip cropping any output halos from the model output.
         """
         for pp in self._get_preceding_prediction_pipelines_for_sample(sample):
             sample = pp.predict_without_blocking(
                 sample,
+                skip_input_padding=skip_input_padding,
                 skip_preprocessing=False,
                 skip_postprocessing=False,
-                skip_input_padding=skip_input_padding,
                 skip_output_cropping=skip_output_cropping,
             )
 
         return self._predict_without_blocking_impl(
             sample,
+            skip_input_padding=skip_input_padding,
             skip_preprocessing=skip_preprocessing,
             skip_postprocessing=skip_postprocessing,
-            skip_input_padding=skip_input_padding,
             skip_output_cropping=skip_output_cropping,
         )
 
@@ -158,9 +158,10 @@ class _PredictionPipelineBase(ABC):
     def _predict_without_blocking_impl(
         self,
         sample: Sample,
+        *,
+        skip_input_padding: bool,
         skip_preprocessing: bool,
         skip_postprocessing: bool,
-        skip_input_padding: bool,
         skip_output_cropping: bool,
     ) -> Sample:
         """Predict a whole sample at once.
@@ -171,9 +172,10 @@ class _PredictionPipelineBase(ABC):
 
         Args:
             sample: input sample
+            batch_size: if provided, use this batch size for the model prediction. Otherwise, use the default batch size of the pipeline.
+            skip_input_padding: if `True`, skip padding the input sample according to the model's (optional) output halos.
             skip_preprocessing: if `True`, skip all preprocessing steps.
             skip_postprocessing: if `True`, skip all postprocessing steps.
-            skip_input_padding: if `True`, skip padding the input sample according to the model's (optional) output halos.
             skip_output_cropping: if `True`, skip cropping any output halos from the model output.
         """
 
@@ -184,10 +186,10 @@ class _PredictionPipelineBase(ABC):
         | Mapping[tuple[MemberId, AxisId], v0_5.ParameterizedSize_N]
         | None = None,
         *,
-        skip_preprocessing: bool = False,
-        skip_postprocessing: bool = False,
         batch_size: int | None = None,
         skip_input_padding: bool = False,
+        skip_preprocessing: bool = False,
+        skip_postprocessing: bool = False,
         skip_output_cropping: bool = False,
     ) -> Sample:
 
@@ -204,11 +206,11 @@ class _PredictionPipelineBase(ABC):
 
         return self._predict_with_blocking_impl(
             sample,
+            ns=ns,
+            skip_input_padding=skip_input_padding,
+            batch_size=batch_size,
             skip_preprocessing=skip_preprocessing,
             skip_postprocessing=skip_postprocessing,
-            ns=ns,
-            batch_size=batch_size,
-            skip_input_padding=skip_input_padding,
             skip_output_cropping=skip_output_cropping,
         )
 
@@ -219,10 +221,10 @@ class _PredictionPipelineBase(ABC):
         | Mapping[tuple[MemberId, AxisId], v0_5.ParameterizedSize_N]
         | None,
         *,
-        skip_preprocessing: bool,
-        skip_postprocessing: bool,
         batch_size: int | None,
         skip_input_padding: bool,
+        skip_preprocessing: bool,
+        skip_postprocessing: bool,
         skip_output_cropping: bool,
     ) -> Sample:
         if isinstance(self._model_descr, v0_4.ModelDescr):
@@ -258,9 +260,9 @@ class _PredictionPipelineBase(ABC):
         return self._predict_with_fixed_blocking_impl(
             sample,
             block_shape=block_shape,
+            skip_input_padding=skip_input_padding,
             skip_preprocessing=skip_preprocessing,
             skip_postprocessing=skip_postprocessing,
-            skip_input_padding=skip_input_padding,
             skip_output_cropping=skip_output_cropping,
         )
 
@@ -268,9 +270,10 @@ class _PredictionPipelineBase(ABC):
         self,
         sample: Sample,
         input_block_shape: PerMember[PerAxis[int | AxisSize]],
+        *,
+        skip_input_padding: bool = False,
         skip_preprocessing: bool = False,
         skip_postprocessing: bool = False,
-        skip_input_padding: bool = False,
         skip_output_cropping: bool = False,
     ) -> Sample:
         """Predict `sample` with given `input_block_shape`.
@@ -282,27 +285,28 @@ class _PredictionPipelineBase(ABC):
         Args:
             sample: The sample to predict on.
             input_block_shape: Mapping of input member id to mapping of axis id to block size for that axis.
+            skip_input_padding: If `True`, skip input padding that compensates for the model's output halo.
             skip_preprocessing: If `True`, skip all preprocessing steps.
             skip_postprocessing: If `True`, skip all postprocessing steps.
-            skip_input_padding: If `True`, skip input padding; output might correspond to a smaller region within the input.
+            skip_output_cropping: If `True`, skip output cropping of the model's halo.
         """
 
         for pp in self._get_preceding_prediction_pipelines_for_sample(sample):
             sample = pp._predict_with_fixed_blocking_impl(
                 sample,
                 block_shape=input_block_shape,
+                skip_input_padding=False,
                 skip_preprocessing=False,
                 skip_postprocessing=False,
-                skip_input_padding=False,
                 skip_output_cropping=False,
             )
 
         return self._predict_with_fixed_blocking_impl(
             sample,
             block_shape=input_block_shape,
+            skip_input_padding=skip_input_padding,
             skip_preprocessing=skip_preprocessing,
             skip_postprocessing=skip_postprocessing,
-            skip_input_padding=skip_input_padding,
             skip_output_cropping=skip_output_cropping,
         )
 
@@ -312,9 +316,9 @@ class _PredictionPipelineBase(ABC):
         sample: Sample,
         block_shape: PerMember[PerAxis[int | AxisSize]],
         *,
+        skip_input_padding: bool,
         skip_preprocessing: bool,
         skip_postprocessing: bool,
-        skip_input_padding: bool,
         skip_output_cropping: bool,
     ) -> Sample: ...
 
@@ -491,10 +495,11 @@ class PredictionPipeline(_PredictionPipelineBase):
     def _predict_without_blocking_impl(
         self,
         sample: Sample,
-        skip_preprocessing: bool = False,
-        skip_postprocessing: bool = False,
-        skip_input_padding: bool = False,
-        skip_output_cropping: bool = False,
+        *,
+        skip_input_padding: bool,
+        skip_preprocessing: bool,
+        skip_postprocessing: bool,
+        skip_output_cropping: bool,
     ) -> Sample:
         sample = transpose_sample_for_model(
             sample, self._model_descr, extra_dims="stack"
@@ -535,9 +540,9 @@ class PredictionPipeline(_PredictionPipelineBase):
         sample: Sample,
         block_shape: PerMember[PerAxis[int | AxisSize]],
         *,
+        skip_input_padding: bool,
         skip_preprocessing: bool,
         skip_postprocessing: bool,
-        skip_input_padding: bool,
         skip_output_cropping: bool,
     ) -> Sample:
         """Predict `sample` with given `input_block_shape`.
@@ -552,10 +557,10 @@ class PredictionPipeline(_PredictionPipelineBase):
         Args:
             sample: The sample to predict on.
             input_block_shape: Mapping of input member id to mapping of axis id to block size for that axis.
+            skip_input_padding: If `True`, skip input padding that compensates for the model's output halo.
             skip_preprocessing: If `True`, skip all preprocessing steps.
             skip_postprocessing: If `True`, skip all postprocessing steps.
-            skip_input_padding: If `True`, skip input padding.
-            skip_output_cropping: If `True`, skip output cropping (of the halo).
+            skip_output_cropping: If `True`, skip output cropping of the model's halo.
 
         """
         if not skip_input_padding:
