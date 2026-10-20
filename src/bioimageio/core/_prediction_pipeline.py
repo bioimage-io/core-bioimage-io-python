@@ -706,6 +706,7 @@ def create_prediction_pipeline(
     weight_format: SupportedWeightsFormat | None = None,
     weights_format: SupportedWeightsFormat | None = None,
     dataset_for_initial_statistics: Iterable[Sample | Sequence[Tensor]] = (),
+    dataset_fits_in_memory: bool = False,
     keep_updating_initial_dataset_statistics: bool = False,
     fixed_dataset_statistics: Mapping[Measure, MeasureValue] = MappingProxyType({}),
     model_adapter: ModelAdapter | None = None,
@@ -735,6 +736,7 @@ def create_prediction_pipeline(
         dataset_for_initial_statistics: (optional) If preprocessing steps require input
             dataset statistics, **dataset_for_initial_statistics** allows you to
             specifcy a dataset from which these statistics are computed.
+        dataset_fits_in_memory: (optional) Set to `True` if the dataset for initial statistics fits in memory.
         keep_updating_initial_dataset_statistics: (optional) Set to `True` if you want
             to update dataset statistics with each processed sample.
         fixed_dataset_statistics: (optional) Precomputed dataset (and optionally sample) statistics.
@@ -778,6 +780,7 @@ def create_prediction_pipeline(
         dataset(),
         keep_updating_initial_dataset_stats=keep_updating_initial_dataset_statistics,
         fixed_dataset_stats=fixed_dataset_statistics,
+        dataset_fits_in_memory=dataset_fits_in_memory,
     )
 
     def _get_preceding_model_ids(model: AnyModelDescr) -> set[v0_5.ModelId]:

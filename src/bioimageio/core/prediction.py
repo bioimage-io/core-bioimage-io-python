@@ -6,9 +6,12 @@ from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence, Siz
 from pathlib import Path
 from typing import overload
 
+import dask.array as da
 from loguru import logger
 from tqdm import tqdm
 
+from bioimageio.core._utils.type_hints import cast_and_assert
+from bioimageio.core.tensor import Tensor
 from bioimageio.spec import load_description
 from bioimageio.spec.common import PermissiveFileSource
 from bioimageio.spec.model import v0_4, v0_5
@@ -85,10 +88,10 @@ def predict(
     sample_id: Hashable = "sample",
     blocksize_parameter: BlocksizeParameter | None = None,
     input_block_shape: Mapping[MemberId, Mapping[AxisId, int]] | None = None,
-    skip_preprocessing: bool = False,
-    skip_postprocessing: bool = False,
     output_path: Path | str | None = None,
     devices: Sequence[str] | None = None,
+    cache_path_after_preprocessing: Path | str | None = None,
+    cache_path_before_postprocessing: Path | str | None = None,
 ) -> Sample | PerMember[Path]:
     """Run prediction for a single set of input(s) with a bioimage.io model
 
@@ -107,8 +110,16 @@ def predict(
         input_block_shape: (optional) Tile the input sample tensors into blocks.
             Note: Use **blocksize_parameter** for a parameterized block shape to
                 run prediction independent of the exact block shape.
-        skip_preprocessing: Flag to skip the model's preprocessing.
-        skip_postprocessing: Flag to skip the model's postprocessing.
+        cache_path_after_preprocessing: (experimental)
+            A path to cache the input after preprocessing.
+            Must have a '.zarr' suffix.
+            Must include `{member_id}`.
+            If the model has no preprocessing this will be ignored.
+        cache_path_before_postprocessing: (experimental)
+            A path to cache the output before postprocessing.
+            Must have a '.zarr' suffix.
+            Must include `{member_id}`.
+            If the model has no postprocessing this will be ignored.
         output_path: A path with to save the output to.
             Must contain:
             - `{output_id}` (or `{member_id}`) if the model has multiple output tensors
@@ -120,6 +131,32 @@ def predict(
         The lazy (dask-based) output sample if **model** was given as a prediction pipeline and **output_path** was None.
         The mapping of output tensor id to output file path if **output_path** was given.
     """
+    if cache_path_after_preprocessing is not None:
+        if "{member_id}" not in str(cache_path_after_preprocessing):
+            raise ValueError(
+                f"Missing `{{member_id}}` in cache_path_after_preprocessing={cache_path_after_preprocessing}"
+                + " to differentiate cached sample members."
+            )
+        if Path(cache_path_after_preprocessing).suffix != ".zarr":
+            raise NotImplementedError(
+                f"cache_path_after_preprocessing={cache_path_after_preprocessing} must have a '.zarr' suffix"
+            )
+    if cache_path_before_postprocessing is not None:
+        if "{member_id}" not in str(cache_path_before_postprocessing):
+            raise ValueError(
+                f"Missing `{{member_id}}` in cache_path_before_postprocessing={cache_path_before_postprocessing}"
+                + " to differentiate cached sample members."
+            )
+        if Path(cache_path_before_postprocessing).suffix != ".zarr":
+            raise NotImplementedError(
+                f"cache_path_before_postprocessing={cache_path_before_postprocessing} must have a '.zarr' suffix"
+            )
+        if cache_path_before_postprocessing == cache_path_after_preprocessing:
+            raise ValueError(
+                f"cache_path_before_postprocessing={cache_path_before_postprocessing} must be different from "
+                + f"cache_path_after_preprocessing={cache_path_after_preprocessing}"
+            )
+
     if isinstance(model, PredictionPipeline):
         pp = model
         model = pp.model_descr
@@ -162,6 +199,36 @@ def predict(
                 pp.model_descr, inputs=inputs, sample_id=sample_id
             )
 
+        pp.apply_input_padding(sample)
+        pp.apply_preprocessing(sample)
+        if cache_path_after_preprocessing is not None:
+            for m in list(sample.members):
+                cache_path = Path(
+                    str(cache_path_after_preprocessing).format(member_id=m)
+                )
+                assert str(cache_path) != str(output_path)
+                assert str(cache_path) != str(cache_path_after_preprocessing)
+                assert str(cache_path) != str(cache_path_before_postprocessing)
+
+                data = cast_and_assert(da.Array, sample.members[m].as_dask().data.data)
+                logger.info(
+                    "caching input sample member {} to {}",
+                    m,
+                    cache_path,
+                )
+                cached_data = da.to_zarr(
+                    data,
+                    cache_path,
+                    compute=False,
+                    return_stored=True,
+                    overwrite=True,
+                    mode="a",
+                )
+                cached_tensor = Tensor(
+                    da.from_zarr(cached_data), sample.members[m].dims
+                )
+                sample.members[m] = cached_tensor
+
         if input_block_shape is not None:
             if blocksize_parameter is not None:
                 logger.warning(
@@ -173,22 +240,58 @@ def predict(
             output = pp.predict_with_fixed_blocking(
                 sample,
                 input_block_shape=input_block_shape,
-                skip_preprocessing=skip_preprocessing,
-                skip_postprocessing=skip_postprocessing,
+                skip_input_padding=True,
+                skip_preprocessing=True,
+                skip_postprocessing=True,
+                skip_output_cropping=True,
             )
         elif blocksize_parameter is not None:
             output = pp.predict_with_blocking(
                 sample,
                 ns=blocksize_parameter,
-                skip_preprocessing=skip_preprocessing,
-                skip_postprocessing=skip_postprocessing,
+                skip_input_padding=True,
+                skip_preprocessing=True,
+                skip_postprocessing=True,
+                skip_output_cropping=True,
             )
         else:
             output = pp.predict_without_blocking(
                 sample,
-                skip_preprocessing=skip_preprocessing,
-                skip_postprocessing=skip_postprocessing,
+                skip_input_padding=True,
+                skip_preprocessing=True,
+                skip_postprocessing=True,
+                skip_output_cropping=True,
             )
+
+        if cache_path_before_postprocessing is not None:
+            for m in list(output.members):
+                cache_path = Path(
+                    str(cache_path_before_postprocessing).format(member_id=m)
+                )
+                assert str(cache_path) != str(output_path)
+                assert str(cache_path) != str(cache_path_before_postprocessing)
+
+                data = cast_and_assert(da.Array, output.members[m].as_dask().data.data)
+                logger.info(
+                    "caching output sample member {} to {}",
+                    m,
+                    cache_path,
+                )
+                cached_data = da.to_zarr(
+                    data,
+                    cache_path,
+                    compute=False,
+                    return_stored=True,
+                    overwrite=True,
+                    mode="a",
+                )
+                cached_tensor = Tensor(
+                    da.from_zarr(cached_data), output.members[m].dims
+                )
+                output.members[m] = cached_tensor
+
+        pp.apply_postprocessing(output)
+        pp.apply_output_cropping(output)
 
         if output_path:
             return save_sample(output_path, output)
@@ -314,8 +417,8 @@ def predict_many(
             inputs=ipts,
             sample_id=s_id.format(i=i),
             blocksize_parameter=blocksize_parameter,
-            skip_preprocessing=skip_preprocessing,
-            skip_postprocessing=skip_postprocessing,
+            skip_preprocessing=True,
+            skip_postprocessing=True,
             output_path=output_path,
         )
         if output_path is None:

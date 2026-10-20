@@ -279,6 +279,7 @@ def _get_stat(
     dataset: Iterable[Sample],
     dataset_length: int,
     stats_path: Path,
+    dataset_fits_in_memory: bool,
 ) -> Stat:
     req_dataset_meas, _ = get_required_dataset_measures(model_descr)
     if not req_dataset_meas:
@@ -295,7 +296,9 @@ def _get_stat(
 
         return stat
 
-    stats_calc = StatsCalculator(req_dataset_meas)
+    stats_calc = StatsCalculator(
+        req_dataset_meas, dataset_fits_in_memory=dataset_fits_in_memory
+    )
 
     for sample in tqdm(
         dataset, total=dataset_length, desc="precomputing dataset stats", unit="sample"
@@ -533,6 +536,12 @@ class PredictCmd(CmdBase, WithSource):
     - `remote`: Run preprocessing/postprocessing on the server as well.
 
      
+    """
+
+    dataset_fits_in_memory: bool = False
+    """Allow dataset statistics to be computed in memory.
+
+    Note: Currently this only makes a difference for quantiles that are estimated from sample quantiles for OOM computation.
     """
 
     example: bool = False
@@ -810,7 +819,11 @@ class PredictCmd(CmdBase, WithSource):
 
         stat: dict[Measure, MeasureValue] = dict(
             _get_stat(
-                model_descr, input_dataset({}), len(sample_ids), self.stats
+                model_descr,
+                input_dataset({}),
+                len(sample_ids),
+                self.stats,
+                dataset_fits_in_memory=self.dataset_fits_in_memory,
             ).items()
         )
 

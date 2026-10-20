@@ -429,14 +429,10 @@ def split_tensor_into_blocks(
     if large_block_dims := {
         a
         for a, bs in block_shape.items()
-        if tensor.tagged_shape.get(a, 1)
-        < (bs.max or bs.min if isinstance(bs, AxisSize) else bs)
+        if main_block_shape.get(a, 1) < (bs.min if isinstance(bs, AxisSize) else bs)
     }:
         raise ValueError(
-            "Block shape {} larger than tensor shape {} along {}",
-            block_shape,
-            tensor.tagged_shape,
-            large_block_dims,
+            f"Block shape {block_shape} larger than tensor shape + halo {main_block_shape} along {large_block_dims}.",
         )
 
     inner_1d_slices: dict[AxisId, list[SliceInfo | SliceInfoWithOverlap]] = {}
@@ -611,24 +607,16 @@ def apply_blockwise(
             Options are
             - 'parallel': nest blockwise tasks inside the chunk task)
             - 'sequential': (not yet implemented) full chunk is a single task
-            - 'auto': automatically choose between 'parallel' and 'sequential' based on the number of blocks per chunk and the total number of chunks to avoid large task graphs.
+            - 'auto': automatically choose between 'parallel' and 'sequential' based on the number of chunks to avoid large task graphs.
     """
-    if blockwise_processing_mode == "auto":
-        blockwise_processing_mode = "parallel"  # TODO: implement auto mode
-        logger.info("using blockwise_processing_mode='parallel' for ")
-    elif blockwise_processing_mode == "sequential":
-        raise NotImplementedError(
-            "blockwise_processing_mode='sequential' is not yet implemented"
-        )
-
     max_block_shape: dict[MemberId, dict[AxisId, int]] = {}
     for m, b in block_shape.items():
         max_block_shape[m] = {}
         for d, bs in b.items():
             if isinstance(bs, AxisSize):
-                max_tensor_size = inputs[m].tagged_shape.get(d, 1) + sum(
-                    input_halo.get(m, {}).get(d, Halo(0, 0))
-                )
+                max_tensor_size = inputs[m].tagged_shape.get(d, 1)
+                if pad_mode != "none":
+                    max_tensor_size += sum(input_halo.get(m, {}).get(d, Halo(0, 0)))
                 effective_bs = max(
                     bs.min,
                     max_tensor_size if bs.max is None else min(bs.max, max_tensor_size),
@@ -646,7 +634,9 @@ def apply_blockwise(
 
     if isinstance(chunk_shape, int):
         chunk_shape = get_chunk_shape(
-            inputs, block_shape=max_block_shape, chunk_min_bytes=chunk_shape
+            inputs,
+            block_shape=max_block_shape,
+            chunk_min_bytes=chunk_shape,
         )
 
     if any(
@@ -657,6 +647,32 @@ def apply_blockwise(
     ):
         raise ValueError(
             f"block_shape {block_shape} must not be larger than chunk_shape {chunk_shape}"
+        )
+
+    if blockwise_processing_mode == "auto":
+        n_input_chunks = max(
+            prod(
+                ceil(
+                    inputs[m].tagged_shape[d]
+                    / (
+                        bs
+                        if isinstance((bs := block_shape[m][d]), int)
+                        else bs.max or bs.min
+                    )
+                )
+                for d in block_shape[m]
+            )
+            for m in block_shape
+        )
+        if n_input_chunks > 100:
+            blockwise_processing_mode = "sequential"
+        else:
+            blockwise_processing_mode = "parallel"
+
+        logger.info(
+            "using blockwise_processing_mode='{}' within each of the {} input chunks",
+            blockwise_processing_mode,
+            n_input_chunks,
         )
 
     process_chunk = partial(
@@ -924,23 +940,33 @@ def get_chunk_shape(
 
     def increment_chunk_dims(incr_dims: Sequence[AxisId]):
         incr_dims = list(incr_dims)
-        while incr_dims:
-            for a in incr_dims:
+        for _ in range(1_000_000):
+            for a in list(incr_dims):
                 if get_max_chunk_size() >= chunk_min_bytes:
                     return
+                max_chunk_sizes = {
+                    m: max(block_shape[m][a], tensors[m].tagged_shape[a])
+                    for m in tensors
+                    if a in tensors[m].tagged_shape
+                }
                 for m in tensors:
+                    if a not in tensors[m].dims:
+                        continue
+
                     chunk_shape[m][a] = min(
-                        tensors[m].tagged_shape[a],
+                        max_chunk_sizes[m],
                         chunk_shape[m][a] + block_shape[m][a],
                     )
 
-                    if all(
-                        chunk_shape[m][a] == tensors[m].tagged_shape[a]
-                        for m in chunk_shape
-                        if a in chunk_shape[m]
-                    ):
-                        incr_dims.remove(a)
-                        break
+                if all(
+                    chunk_shape[m][a] == max_chunk_sizes[m]
+                    for m in chunk_shape
+                    if a in chunk_shape[m]
+                ):
+                    incr_dims.remove(a)
+
+                if not incr_dims:
+                    break
 
     # increment chunk dimensions in order of non-singleton spatial, time, other, then any singleton dim
     non_singleton_spatial_dims = [

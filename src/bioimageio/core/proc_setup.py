@@ -65,6 +65,7 @@ def get_pre_and_postprocessing(
     dataset_for_initial_statistics: Iterable[Sample],
     keep_updating_initial_dataset_stats: bool = False,
     fixed_dataset_stats: Mapping[Measure, MeasureValue] | None = None,
+    dataset_fits_in_memory: bool = False,
 ) -> _ProcessingCallables:
     """Creates callables to apply pre- and postprocessing in-place to a sample"""
 
@@ -73,6 +74,7 @@ def get_pre_and_postprocessing(
         dataset_for_initial_statistics=dataset_for_initial_statistics,
         keep_updating_initial_dataset_stats=keep_updating_initial_dataset_stats,
         fixed_dataset_stats=fixed_dataset_stats,
+        dataset_fits_in_memory=dataset_fits_in_memory,
     )
     return _ProcessingCallables(_ApplyProcs(setup.pre), _ApplyProcs(setup.post))
 
@@ -82,6 +84,7 @@ def setup_pre_and_postprocessing(
     dataset_for_initial_statistics: Iterable[Sample],
     keep_updating_initial_dataset_stats: bool = False,
     fixed_dataset_stats: Mapping[Measure, MeasureValue] | None = None,
+    dataset_fits_in_memory: bool = False,
 ) -> PreAndPostprocessing:
     """Get pre- and postprocessing operators for a `model` description.
 
@@ -97,7 +100,9 @@ def setup_pre_and_postprocessing(
         if fixed_dataset_stats is None or m not in fixed_dataset_stats
     }
     if missing_stats:
-        initial_stats_calc = StatsCalculator(missing_stats)
+        initial_stats_calc = StatsCalculator(
+            missing_stats, dataset_fits_in_memory=dataset_fits_in_memory
+        )
         for sample in dataset_for_initial_statistics:
             initial_stats_calc.update(sample)
 
@@ -105,7 +110,11 @@ def setup_pre_and_postprocessing(
         prep.insert(
             0,
             UpdateStats(
-                StatsCalculator(required, initial_stats),
+                StatsCalculator(
+                    required,
+                    initial_stats,
+                    dataset_fits_in_memory=dataset_fits_in_memory,
+                ),
                 keep_updating_initial_dataset_stats=keep_updating_initial_dataset_stats,
             ),
         )

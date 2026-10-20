@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import warnings
-from collections.abc import Collection, Iterable, Mapping, Sequence
+from collections.abc import Callable, Collection, Iterable, Mapping, Sequence
 from copy import copy
+from functools import partial
 from itertools import product
 from typing import (
     Any,
@@ -233,6 +234,53 @@ class SampleQuantilesCalculator:
         }
 
 
+class InMemoryDatasetQuantilesCalculator:
+    """to calculate dataset quantiles in memory for datasets that fit in memory."""
+
+    def __init__(
+        self,
+        member_id: MemberId,
+        axes: Sequence[AxisId] | None,
+        qs: Collection[float],
+    ):
+        super().__init__()
+        assert all(0.0 <= q <= 1.0 for q in qs)
+        self._qs = sorted(set(qs))
+        self._axes = None if axes is None else tuple(axes)
+        self._member_id = member_id
+        self._samples: list[Tensor] = []
+
+    def update(self, sample: Sample):
+        self._samples.append(sample.members[self._member_id].as_dask())
+
+    def finalize(self) -> dict[DatasetQuantile, MeasureValue]:
+        if not self._samples:
+            return {}
+
+        dims = self._samples[0].dims
+        if BATCH_AXIS_ID in dims:
+            combine = cast(
+                Callable[[Any], da.Array],
+                partial(da.concatenate, axis=dims.index(BATCH_AXIS_ID)),
+            )
+        else:
+            dims = (BATCH_AXIS_ID, *dims)
+            combine = cast(Callable[[Any], da.Array], da.stack)
+
+        dataset = Tensor(combine(s.data.data for s in self._samples), dims=dims)
+
+        if self._axes is not None and BATCH_AXIS_ID not in self._axes:
+            axes = (BATCH_AXIS_ID, *self._axes)
+        else:
+            axes = self._axes
+
+        ps = compute_quantiles(dataset, self._qs, axes, "linear")
+        return {
+            DatasetQuantile(q=q, axes=self._axes, member_id=self._member_id): p
+            for q, p in zip(self._qs, ps)
+        }
+
+
 class MeanQuantilesCalculator:
     """to calculate dataset quantiles heuristically by averaging across samples
 
@@ -412,7 +460,10 @@ SampleMeasureCalculator = Union[
     NaiveSampleMeasureCalculator,
 ]
 DatasetMeasureCalculator = Union[
-    MeanCalculator, MeanVarStdCalculator, DatasetQuantilesCalculator
+    MeanCalculator,
+    MeanVarStdCalculator,
+    DatasetQuantilesCalculator,
+    InMemoryDatasetQuantilesCalculator,
 ]
 
 
@@ -423,11 +474,13 @@ class StatsCalculator:
         self,
         measures: Collection[Measure],
         initial_dataset_measures: Mapping[DatasetMeasure, MeasureValue] | None = None,
+        *,
+        dataset_fits_in_memory: bool = False,
     ):
         super().__init__()
         self.sample_count = 0
         self.sample_calculators, self.dataset_calculators = get_measure_calculators(
-            measures
+            measures, datast_fits_in_memory=dataset_fits_in_memory
         )
         if not initial_dataset_measures:
             self._current_dataset_measures: (
@@ -505,7 +558,7 @@ class StatsCalculator:
 
 
 def get_measure_calculators(
-    required_measures: Iterable[Measure],
+    required_measures: Iterable[Measure], *, datast_fits_in_memory: bool = False
 ) -> tuple[list[SampleMeasureCalculator], list[DatasetMeasureCalculator]]:
     """determines which calculators are needed to compute the required measures efficiently"""
 
@@ -573,10 +626,13 @@ def get_measure_calculators(
             SampleQuantilesCalculator(member_id=tid, axes=axes, qs=qs, method=m)
         )
 
+    DQCalc = (
+        InMemoryDatasetQuantilesCalculator
+        if datast_fits_in_memory
+        else DatasetQuantilesCalculator
+    )
     for (tid, axes), qs in required_dataset_quantiles.items():
-        dataset_calculators.append(
-            DatasetQuantilesCalculator(member_id=tid, axes=axes, qs=qs)
-        )
+        dataset_calculators.append(DQCalc(member_id=tid, axes=axes, qs=qs))
 
     return sample_calculators, dataset_calculators
 
