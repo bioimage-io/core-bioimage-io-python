@@ -361,23 +361,14 @@ class Block(BlockMeta):
     parent: Tensor
     """the full tensor this block is a part of"""
 
-    pad_mode: PadMode | Literal["none"]
-    """The padding mode to use when the halo extends beyond the tensor boundary.
-
-    A ValueError is raised when the halo extends beyond the tensor boundary and `pad_mode` is "none"."""
-
-    def __post_init__(self):
-        assert not self.padding or self.pad_mode != "none", (
-            "block requires padding but `pad_mode` is 'none'"
-        )
+    pad_mode: PadMode
+    """The padding mode to use when the halo extends beyond the tensor boundary."""
 
     @property
     def outer_tensor(self) -> Tensor:
         """the outer tensor of the block (including halo and possibly padding)"""
         outer_tensor = self.parent[self.outer_slice]
         if self.padding:
-            if self.pad_mode == "none":
-                raise ValueError("block requires padding but `pad_mode` is 'none'")
             outer_tensor = outer_tensor.pad(self.padding, mode=self.pad_mode)
 
         return outer_tensor
@@ -392,11 +383,22 @@ def split_tensor_into_blocks(
     *,
     block_shape: PerAxis[int | AxisSize],
     halo: PerAxis[HaloLike],
-    pad_mode: PadMode | Literal["none"],
+    pad_mode: PadMode,
+    pad_boundary: Literal["allow", True, False] = True,
 ) -> BlockArray:
-    """
+    """Split a tensor, optionally padding single blocks to a valid axis size.
+
     Args:
-        item_size: size of a single element in bytes, used to find shard and chunk sizes
+        tensor: the tensor to split into blocks
+        block_shape: the block shape, omitted axes are treated as having a block size equal to the tensor axis size.
+            To allow for variable block sizes along a given axis,
+            the block size can be specified as an `AxisSize` with a `min` `max` and `step` value.
+        halo: the halo around each block, omitted axes are treated as having a halo of 0.
+        pad_mode: the padding mode to use when the halo extends beyond the tensor boundary.
+        pad_boundary:
+            True: pad boundary halos, possibly more to make a single block valid;
+            False: forbid boundary padding
+            "allow": pad only to make a single block valid, no to account for boundary halos.
     """
     if unknown_dims := [
         a for a in block_shape if a not in tensor.dims and block_shape[a] != 1
@@ -413,18 +415,25 @@ def split_tensor_into_blocks(
     # fill in default halo (0)
     halo = {d: Halo.create(halo.get(d, 0)) for d in tensor.dims}
 
-    main_block_shape = {
-        d: (
-            bs_limit := min(
-                s + (s_halo := 0 if pad_mode == "none" else sum(halo[d])),
-                bs.max or s + s_halo,
-            )
-        )
-        - ((bs_limit - bs.min) % (bs.step or 1))
-        if isinstance((bs := block_shape.get(d, s)), AxisSize)
-        else bs
-        for d, s in tensor.tagged_shape.items()
-    }
+    main_block_shape: dict[AxisId, int] = {}
+    single_block_dims: set[AxisId] = set()
+    for d, s in tensor.tagged_shape.items():
+        outer_size = s + (sum(halo[d]) if pad_boundary is True else 0)
+        bs = block_shape.get(d, outer_size)
+        if isinstance(bs, AxisSize):
+            step = bs.step or 1
+            padded_size = bs.min + max(0, ceil((outer_size - bs.min) / step)) * step
+            limit = min(outer_size, bs.max or outer_size)
+            main_block_shape[d] = limit - (limit - bs.min) % step
+            fits_single_block = bs.max is None or padded_size <= bs.max
+        else:
+            padded_size = bs
+            main_block_shape[d] = min(bs, outer_size) if pad_boundary is False else bs
+            fits_single_block = outer_size <= bs
+
+        if pad_boundary is not False and fits_single_block:
+            main_block_shape[d] = padded_size
+            single_block_dims.add(d)
 
     if large_block_dims := {
         a
@@ -438,18 +447,30 @@ def split_tensor_into_blocks(
     inner_1d_slices: dict[AxisId, list[SliceInfo | SliceInfoWithOverlap]] = {}
     inner_sizes = {d: main_block_shape[d] - sum(halo[d]) for d in tensor.dims}
     for d in tensor.dims:
-        inner_first_start = halo[d].left if pad_mode == "none" else 0
+        inner_first_start = halo[d].left if pad_boundary is not True else 0
         inner_last_stop = tensor.tagged_shape[d] - (
-            halo[d].right if pad_mode == "none" else 0
+            halo[d].right if pad_boundary is not True else 0
         )
         inner_size = inner_sizes[d]
+        if inner_size <= 0:
+            raise ValueError(f"Block size must be larger than halo along {d}")
+        if d in single_block_dims:
+            padded_stop = inner_first_start + inner_size
+            inner_1d_slices[d] = [
+                SliceInfo(inner_first_start, inner_last_stop)
+                if padded_stop == inner_last_stop
+                else SliceInfoWithOverlap(
+                    inner_first_start, padded_stop, inner_first_start, inner_last_stop
+                )
+            ]
+            continue
+
         outer_size = block_shape.get(d, tensor.tagged_shape[d] + sum(halo[d]))
         if isinstance(outer_size, int):
             outer_size = AxisSize(min=outer_size)
 
         outer_min = outer_size.min
         step = outer_size.step or 1
-        assert inner_size % step == 0
 
         inner_1d_slices[d] = []
         for start in range(inner_first_start, inner_last_stop, inner_size):
@@ -500,7 +521,8 @@ def split_multiple_tensors_into_blocks(
     *,
     halo: PerMember[PerAxis[HaloLike]],
     broadcast: bool = False,
-    pad_mode: PadMode | PerMember[PadMode] | Literal["none"],
+    pad_mode: PadMode | PerMember[PadMode],
+    pad_boundary: Literal["allow", True, False] = True,
 ) -> dict[MemberId, BlockArray]:
     """Split multiple tensors (e.g. sample members) into aligned blocks.
 
@@ -513,6 +535,10 @@ def split_multiple_tensors_into_blocks(
         halo: the halo around each block per sample member, omitted axes are treated as having a halo of 0.
         broadcast: whether to allow broadcasting the resulting tensor blocks to each other, e.g. if one tensor does not have a dimension along which another is blocked up.
         pad_mode: the padding mode (optionally per sample member) to use when the halo extends beyond the tensor boundary.
+        pad_boundary:
+            True: pad boundary halos, possibly more to make a single block valid;
+            False: forbid boundary padding
+            "allow": pad only to make a single block valid, no to account for boundary halos.
     Raises:
         ValueError: If the tensor shape cannot be divided into blocks according to `block_shape`.
     """
@@ -548,6 +574,7 @@ def split_multiple_tensors_into_blocks(
             pad_mode=pad_mode.get(m, "symmetric")
             if isinstance(pad_mode, Mapping)
             else pad_mode,
+            pad_boundary=pad_boundary,
         )
 
     assert len(blocks) > 0, blocks
@@ -577,7 +604,8 @@ def apply_blockwise(
     inputs: PerMember[Tensor],
     *,
     block_shape: PerMember[PerAxis[int | AxisSize]],
-    pad_mode: PadMode | PerMember[PadMode] | Literal["none"],
+    pad_mode: PadMode | PerMember[PadMode],
+    pad_boundary: Literal["allow", True, False] = True,
     input_halo: PerMember[PerAxis[Halo]],
     output_halo: PerMember[PerAxis[Halo]],
     get_output_shape: Callable[[PerMember[PerAxis[int]]], PerMember[PerAxis[int]]],
@@ -592,7 +620,10 @@ def apply_blockwise(
         inputs: the input tensors to process
         block_shape: the shape of the blocks to be processed by func. May be expressed using `AxisSize` objects to allow for variable block shapes.
         pad_mode: the padding mode (optionally per input member) to use when the halo extends beyond the tensor boundary
-            if "none" and `output_halo` is not empty, the output will be smaller by `output_halo`
+        pad_boundary:
+            True: pad boundary halos, possibly more to make a single block valid;
+            False: forbid boundary padding
+            "allow": pad only to make a single block valid, no to account for boundary halos.
         input_halo: the halo around each input block (e.g. to compenstate for `output_halo` such that cropped output blocks can be stitched together)
             Within the sample halo is realized as overlap between neighboring blocks, outside the sample halo is realized as padding.
         output_halo: the halo to be cropped from each output block
@@ -615,7 +646,7 @@ def apply_blockwise(
         for d, bs in b.items():
             if isinstance(bs, AxisSize):
                 max_tensor_size = inputs[m].tagged_shape.get(d, 1)
-                if pad_mode != "none":
+                if pad_boundary is True:
                     max_tensor_size += sum(input_halo.get(m, {}).get(d, Halo(0, 0)))
                 effective_bs = max(
                     bs.min,
@@ -679,7 +710,8 @@ def apply_blockwise(
         _apply_blockwise_impl,
         func,
         block_shape=block_shape,
-        pad_mode="none",
+        pad_mode=pad_mode,
+        pad_boundary="allow" if pad_boundary is not False else False,
         input_halo=input_halo,
         output_halo=output_halo,
         processing_mode=blockwise_processing_mode,
@@ -691,6 +723,7 @@ def apply_blockwise(
         inputs,
         block_shape=chunk_shape,
         pad_mode=pad_mode,
+        pad_boundary=pad_boundary,
         input_halo=input_halo,
         output_halo=output_halo,
         processing_mode="parallel",
@@ -703,7 +736,8 @@ def _apply_blockwise_impl(
     inputs: PerMember[Tensor],
     *,
     block_shape: PerMember[PerAxis[int | AxisSize]],
-    pad_mode: PadMode | PerMember[PadMode] | Literal["none"],
+    pad_mode: PadMode | PerMember[PadMode],
+    pad_boundary: Literal["allow", True, False] = True,
     input_halo: PerMember[PerAxis[HaloLike]],
     output_halo: PerMember[PerAxis[HaloLike]],
     get_output_shape: Callable[[PerMember[PerAxis[int]]], PerMember[PerAxis[int]]],
@@ -717,7 +751,10 @@ def _apply_blockwise_impl(
         inputs: the input tensors to process
         block_shape: the shape of the blocks to be processed by func. May be expressed using `AxisSize` objects to allow for variable block shapes.
         pad_mode: the padding mode (optionally per input member) to use when the halo extends beyond the tensor boundary
-            if "none" and `output_halo` is not empty, the output will be smaller by the `output_halo`
+        pad_boundary:
+            True: pad boundary halos, possibly more to make a single block valid;
+            False: forbid boundary padding
+            "allow": pad only to make a single block valid, no to account for boundary halos.
         input_halo: the halo around each input block (e.g. to compenstate for `output_halo` such that cropped output blocks can be stitched together)
             Within the sample halo is realized as overlap between neighboring blocks, outside the sample halo is realized as padding.
         output_halo: the halo to be cropped from each output block
@@ -731,13 +768,14 @@ def _apply_blockwise_impl(
         halo=input_halo,
         broadcast=True,
         pad_mode=pad_mode,
+        pad_boundary=pad_boundary,
     )
 
     return apply_to_block_array(
         func,
         input_blocks,
         output_halo=output_halo,
-        keep_output_halo_at_sample_edge=pad_mode == "none",
+        keep_output_halo_at_sample_edge=pad_boundary is not True,
         processing_mode=processing_mode,
         get_output_shape=get_output_shape,
     )
@@ -836,12 +874,6 @@ def apply_to_blocks(
             for a, s in cast_and_assert(Block, b[loc]).inner_slice.items()
             if isinstance(s, SliceInfoWithOverlap) and s.stop_wo_overlap != s.stop
         }
-        if right_input_overlap:
-            # we currently do not use overlap to the right...
-            raise NotImplementedError(
-                "Output block overlap to the right is not implemented."
-            )
-
         valid_input_shape = {
             m: b[loc].inner_shape_wo_overlap for m, b in blocks.items()
         }
@@ -880,7 +912,7 @@ def apply_to_blocks(
                 t = t.crop_halo(crop_halo_here)
 
             overlap_halo = {
-                a: Halo(overlap, 0)
+                a: Halo(0, overlap) if a in right_input_overlap else Halo(overlap, 0)
                 for a, vs in valid_output_shape[m].items()
                 if (
                     overlap := t.tagged_shape[a]
@@ -891,7 +923,7 @@ def apply_to_blocks(
                 )
                 != 0
             }
-            assert set(overlap_halo) == left_input_overlap, (
+            assert set(overlap_halo) == left_input_overlap | right_input_overlap, (
                 f"need to crop overlap {overlap_halo} but expected overlap in {left_input_overlap}"
             )
             t = t.crop_halo(overlap_halo)
