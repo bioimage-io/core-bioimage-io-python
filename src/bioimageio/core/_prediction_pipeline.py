@@ -246,17 +246,21 @@ class _PredictionPipelineBase(ABC):
         max_block_shape = self._model_descr.get_tensor_sizes(
             ns, batch_size or self._default_batch_size, sample.shape
         ).inputs
-        block_shape = {
-            ipt.id: {
-                a.id: AxisSize(
-                    min=a.size.min, max=max_block_shape[ipt.id][a.id], step=a.size.step
-                )
-                if isinstance(a.size, v0_5.ParameterizedSize)
-                else max_block_shape[ipt.id][a.id]
-                for a in ipt.axes
-            }
-            for ipt in self._model_descr.inputs
-        }
+        block_shape: dict[MemberId, dict[AxisId, int | AxisSize]] = {}
+        for ipt in self._model_descr.inputs:
+            block_shape[ipt.id] = {}
+            for a in ipt.axes:
+                if isinstance(a.size, v0_5.ParameterizedSize):
+                    axis_size = AxisSize(
+                        min=a.size.min,
+                        max=max(a.size.min, max_block_shape[ipt.id][a.id]),
+                        step=a.size.step,
+                    )
+                else:
+                    axis_size = max_block_shape[ipt.id][a.id]
+
+                block_shape[ipt.id][a.id] = axis_size
+
         return self._predict_with_fixed_blocking_impl(
             sample,
             block_shape=block_shape,

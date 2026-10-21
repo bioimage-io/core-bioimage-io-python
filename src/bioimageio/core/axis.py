@@ -127,6 +127,16 @@ class AxisSize:
     max: int | None = None
     step: int | None = None
 
+    def __post_init__(self):
+        if self.min < 0:
+            raise ValueError(f"AxisSize min must be non-negative, but got {self.min}")
+        if self.max is not None and self.max < self.min:
+            raise ValueError(
+                f"AxisSize max must be greater than or equal to min, but got min={self.min}, max={self.max}"
+            )
+        if self.step is not None and self.step <= 0:
+            raise ValueError(f"AxisSize step must be positive, but got {self.step}")
+
 
 @dataclass
 class AxisInfo(Axis):
