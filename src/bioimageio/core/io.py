@@ -443,31 +443,31 @@ def _load_tensor_tifffile(source: FileDescr | PermissiveFileSource) -> Tensor:
                 if isinstance(page, tifffile.TiffFrame):
                     page = None
 
-            if page is None:
-                x_res = None
-                y_res = None
-                unit = None
-            else:
-                x_res = page.tags["XResolution"].value
-                y_res = page.tags["YResolution"].value
+            x_res = None
+            y_res = None
+            unit = None
+            if page is not None:
+                if "XResolution" in page.tags:
+                    try:
+                        x_res = page.tags["XResolution"].value
+                        x_res = x_res[0] / x_res[1] if is_tuple(x_res) else x_res
+                        x_res = None if x_res is None else float(x_res)
+                    except Exception as e:
+                        logger.opt(exception=e).warning(
+                            "Failed to interprete tiff XResolution tag: {}", x_res
+                        )
+                        x_res = None
 
-                try:
-                    x_res = x_res[0] / x_res[1] if is_tuple(x_res) else x_res
-                    x_res = None if x_res is None else float(x_res)
-                except Exception as e:
-                    logger.opt(exception=e).warning(
-                        "Failed to interprete tiff XResolution tag: {}", x_res
-                    )
-                    x_res = None
-
-                try:
-                    y_res = y_res[0] / y_res[1] if is_tuple(y_res) else y_res
-                    y_res = None if y_res is None else float(y_res)
-                except Exception as e:
-                    logger.opt(exception=e).warning(
-                        "Failed to interprete tiff YResolution tag: {}", y_res
-                    )
-                    y_res = None
+                if "YResolution" in page.tags:
+                    try:
+                        y_res = page.tags["YResolution"].value
+                        y_res = y_res[0] / y_res[1] if is_tuple(y_res) else y_res
+                        y_res = None if y_res is None else float(y_res)
+                    except Exception as e:
+                        logger.opt(exception=e).warning(
+                            "Failed to interprete tiff YResolution tag: {}", y_res
+                        )
+                        y_res = None
 
                 unit_tag = page.tags.get("ResolutionUnit")
                 unit = unit_tag.value if unit_tag else None
