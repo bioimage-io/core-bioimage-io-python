@@ -46,7 +46,7 @@ onnx = [
     "onnxscript",
     'onnx_ir!=0.1.14;python_version<"3.10"', # uses typing.Concatentate which requires py>=3.10
 ]
-pytorch = ["torch>=1.6,<3", "torchvision>=0.21", "keras>=3.0,<4"]
+pytorch = ["torch>=1.6,<3", "torchvision>=0.21", "keras>=3.0,<4", "safetensors"]
 tensorflow = ["tensorflow", "keras>=2.15,<4", "h5py"]
 partners = [
     # "biapy",          # pins core exactly

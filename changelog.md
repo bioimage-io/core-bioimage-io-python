@@ -6,6 +6,7 @@
 - add option to compute (percentile) dataset statistics in-memory
 - add experimental caching to disk for `predict()`
 - dropped `is_volume` flag from `load_image()`
+- added support to load pytorch state dict weights from .safetensors file
 
 ### 0.11.0
 
