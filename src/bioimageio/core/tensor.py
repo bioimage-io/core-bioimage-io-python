@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import collections.abc
 from collections.abc import Collection, Iterator, Mapping, Sequence
+from dataclasses import dataclass
 from itertools import permutations
 from typing import (
     Any,
@@ -60,6 +61,16 @@ Array: TypeAlias = "NDArray[Any] | dask.array.Array"
 
 class _SupportsArray(Protocol):
     def __array__(self) -> NDArray[Any]: ...
+
+
+@dataclass
+class TensorMetaData:
+    """Metadata for a tensor"""
+
+    name: str | None
+    channel_names: list[str] | None
+    physical_scale: PerAxis[float | None] | None
+    physical_scale_unit: PerAxis[str | None] | None
 
 
 # TODO: complete docstrings
@@ -168,7 +179,24 @@ class Tensor(MagicTensorOpsMixin):
                 reflexive,
             ),
         )
+        data.attrs.update(self._data.attrs)
         return self.__class__.from_xarray(data)
+
+    def get_metadata(self) -> TensorMetaData:
+        """Return the tensor's supported metadata as a typed snapshot."""
+        return TensorMetaData(
+            name=self.name,
+            channel_names=self.channel_names,
+            physical_scale=self.get_physical_scale(),
+            physical_scale_unit=self.get_physical_scale_unit(),
+        )
+
+    def set_metadata(self, metadata: TensorMetaData) -> None:
+        """Apply non-None metadata fields using the corresponding setters."""
+        self.name = metadata.name
+        self.channel_names = metadata.channel_names
+        self.set_physical_scale(metadata.physical_scale)
+        self.set_physical_scale_unit(metadata.physical_scale_unit)
 
     def get_physical_scale(self) -> PerAxis[float]:
         """Return the physical scale of each axis in units (see `get_physical_scale_unit`)."""
@@ -180,18 +208,22 @@ class Tensor(MagicTensorOpsMixin):
         return {
             a if isinstance(a, AxisId) else AxisId(a): 1.0 if s is None else float(s)
             for a, s in scale.items()
+            if a in self.dims
         }
 
-    def set_physical_scale(self, scale: PerAxis[float | None]) -> None:
+    def set_physical_scale(self, scale: PerAxis[float | None] | None) -> None:
         """Set the physical scale of each axis in units (see `set_physical_scale_unit`)."""
-        if unknown_axes := [d for d in scale if d not in self.dims]:
-            raise ValueError(
-                f"Cannot set physical scale for axes {unknown_axes} not in tensor axes {self.dims}"
-            )
+        if scale is None:
+            self._data.attrs.pop("physical_scale", None)
+        else:
+            if unknown_axes := [d for d in scale if d not in self.dims]:
+                raise ValueError(
+                    f"Cannot set physical scale for axes {unknown_axes} not in tensor axes {self.dims}"
+                )
 
-        self._data.attrs["physical_scale"] = {
-            d: 1.0 if (s := scale.get(d)) is None else float(s) for d in self.dims
-        }
+            self._data.attrs["physical_scale"] = {
+                d: 1.0 if (s := scale.get(d)) is None else float(s) for d in self.dims
+            }
 
     def get_physical_scale_unit(self) -> PerAxis[SpaceUnit | TimeUnit | str]:
         """Return the physical unit of each axis."""
@@ -203,16 +235,19 @@ class Tensor(MagicTensorOpsMixin):
         return {d: "" if (u := unit.get(d)) is None else str(u) for d in self.dims}
 
     def set_physical_scale_unit(
-        self, unit: PerAxis[SpaceUnit | TimeUnit | str | None]
+        self, unit: PerAxis[SpaceUnit | TimeUnit | str | None] | None
     ) -> None:
         """Set the physical unit of each axis."""
-        if unknown_axes := [d for d in unit if d not in self.dims]:
-            raise ValueError(
-                f"Cannot set physical scale unit for axes {unknown_axes} not in tensor axes {self.dims}"
-            )
-        self._data.attrs["physical_scale_unit"] = {
-            d: "" if (u := unit.get(d)) is None else str(u) for d in self.dims
-        }
+        if unit is None:
+            self._data.attrs.pop("physical_scale_unit", None)
+        else:
+            if unknown_axes := [d for d in unit if d not in self.dims]:
+                raise ValueError(
+                    f"Cannot set physical scale unit for axes {unknown_axes} not in tensor axes {self.dims}"
+                )
+            self._data.attrs["physical_scale_unit"] = {
+                d: "" if (u := unit.get(d)) is None else str(u) for d in self.dims
+            }
 
     @property
     def channel_names(self) -> list[str] | None:
@@ -317,6 +352,7 @@ class Tensor(MagicTensorOpsMixin):
             f, *args, **kwargs
         )
         assert isinstance(data, xr.DataArray)
+        data.attrs.update(self._data.attrs)
         return self.__class__.from_xarray(data)
 
     @classmethod
@@ -546,6 +582,7 @@ class Tensor(MagicTensorOpsMixin):
                 ),
             )
             ret = self.__class__.from_array(overlapping, dims=self.dims)
+            ret.data.attrs.update(self._data.attrs)
             if self.batch_multi_index is not None:
                 ret = ret.assign_batch_multi_index(self.batch_multi_index)
         else:
@@ -571,14 +608,16 @@ class Tensor(MagicTensorOpsMixin):
 
         note: if dtype is already satisfied copy if `copy`"""
         return self.__class__.from_xarray(
-            cast_and_assert(xr.DataArray, self._data.astype(dtype, copy=copy))
+            cast_and_assert(
+                xr.DataArray, self._data.astype(dtype, copy=copy, keep_attrs=True)
+            )
         )
 
     def clip(self, min: float | None = None, max: float | None = None):
         """Return a tensor whose values are limited to [min, max].
         At least one of max or min must be given."""
         return self.__class__.from_xarray(
-            cast_and_assert(xr.DataArray, self._data.clip(min, max))
+            cast_and_assert(xr.DataArray, self._data.clip(min, max, keep_attrs=True))
         )
 
     def crop_to(
@@ -641,8 +680,22 @@ class Tensor(MagicTensorOpsMixin):
         assert isinstance(ret, (bool, float, int))
         return ret
 
+    @classmethod
+    def _from_reduced_xarray(cls, data: xr.DataArray) -> Self:
+        tensor = cls.from_xarray(data)
+        for key in ("physical_scale", "physical_scale_unit"):
+            if (values := tensor.data.attrs.get(key)) is not None and is_mapping(
+                values
+            ):
+                tensor.data.attrs[key] = {
+                    a: value for a, value in values.items() if a in tensor.dims
+                }
+        return tensor
+
     def mean(self, dim: AxisId | Sequence[AxisId] | None = None) -> Self:
-        return self.__class__.from_xarray(self._data.mean(dim=dim))
+        return self.__class__._from_reduced_xarray(
+            self._data.mean(dim=dim, keep_attrs=True)
+        )
 
     def pad(
         self,
@@ -739,9 +792,10 @@ class Tensor(MagicTensorOpsMixin):
         assert dim is None or (
             (quantile_dim := AxisId("quantile")) != dim and quantile_dim not in set(dim)
         )
-        return self.__class__.from_xarray(
+        return self.__class__._from_reduced_xarray(
             cast_and_assert(
-                xr.DataArray, self._data.quantile(q, dim=dim, method=method)
+                xr.DataArray,
+                self._data.quantile(q, dim=dim, method=method, keep_attrs=True),
             )
         )
 
@@ -780,14 +834,14 @@ class Tensor(MagicTensorOpsMixin):
         return tensor
 
     def std(self, dim: AxisId | Sequence[AxisId] | None = None) -> Self:
-        return self.__class__.from_xarray(
-            cast_and_assert(xr.DataArray, self._data.std(dim=dim))
+        return self.__class__._from_reduced_xarray(
+            cast_and_assert(xr.DataArray, self._data.std(dim=dim, keep_attrs=True))
         )
 
     def sum(self, dim: AxisId | Sequence[AxisId] | None = None) -> Self:
         """Reduce this Tensor's data by applying sum along some dimension(s)."""
-        return self.__class__.from_xarray(
-            cast_and_assert(xr.DataArray, self._data.sum(dim=dim))
+        return self.__class__._from_reduced_xarray(
+            cast_and_assert(xr.DataArray, self._data.sum(dim=dim, keep_attrs=True))
         )
 
     @property
@@ -1040,8 +1094,8 @@ class Tensor(MagicTensorOpsMixin):
         ), unstacked_dim_order
 
     def var(self, dim: AxisId | Sequence[AxisId] | None = None) -> Self:
-        return self.__class__.from_xarray(
-            cast_and_assert(xr.DataArray, self._data.var(dim=dim))
+        return self.__class__._from_reduced_xarray(
+            cast_and_assert(xr.DataArray, self._data.var(dim=dim, keep_attrs=True))
         )
 
     @classmethod

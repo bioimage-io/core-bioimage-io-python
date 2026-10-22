@@ -104,6 +104,11 @@ class _StardistPostprocessingBase(SamplewiseOperator, ABC, Generic[NdTuple, NdBo
             np.stack(labels)[..., None],
             dims=(AxisId("batch"), *allowed_spatial, AxisId("channel")),
         )
+        grid = dict(zip(allowed_spatial, self.grid))
+        instance_labels.set_physical_scale(
+            {a: s / grid.get(a, 1) for a, s in prob_dist.get_physical_scale().items()}
+        )
+        instance_labels.set_physical_scale_unit(prob_dist.get_physical_scale_unit())
         sample.members[self.instance_labels_output_id] = instance_labels
 
     @abstractmethod

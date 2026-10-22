@@ -90,6 +90,7 @@ class SampleSerializer(ABC, Generic[SerializedSampleBlockType]):
             members[member] = Tensor(
                 block_impl(select_arrays(samples, member)), tensor.dims
             )
+            members[member].set_metadata(tensor.get_metadata())
 
         return Sample(id=first.id, members=members, stat=first.stat)
 

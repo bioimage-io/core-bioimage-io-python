@@ -30,6 +30,7 @@ from .common import (
 from .digest_spec import (
     get_input_halo,
     get_member_ids,
+    get_output_tensor_metadata,
     transpose_sample_for_model,
 )
 from .proc_ops import Processing
@@ -534,9 +535,7 @@ class PredictionPipeline(_PredictionPipelineBase):
             self.apply_preprocessing(sample)
 
         output_members = {
-            k: v
-            for k, v in self._adapter.forward(sample.members).items()
-            if v is not None
+            k: v for k, v in self._forward(sample.members).items() if v is not None
         }
 
         output = Sample(members=output_members, stat=sample.stat, id=sample.id)
@@ -597,6 +596,15 @@ class PredictionPipeline(_PredictionPipelineBase):
 
         return sample
 
+    def _forward(self, inputs: PerMember[Tensor]) -> PerMember[Tensor | None]:
+        outputs = self._adapter.forward(inputs)
+        for m, metadata in get_output_tensor_metadata(
+            self._model_descr, inputs
+        ).items():
+            if (tensor := outputs.get(m)) is not None:
+                tensor.set_metadata(metadata)
+        return outputs
+
     def _forward_with_fixed_blocking(
         self,
         sample_members: PerMember[Tensor],
@@ -630,7 +638,7 @@ class PredictionPipeline(_PredictionPipelineBase):
                 }
 
         return apply_blockwise(
-            self._adapter.forward,
+            self._forward,
             sample_members,
             chunk_shape=chunk_shape,
             block_shape=block_shape,

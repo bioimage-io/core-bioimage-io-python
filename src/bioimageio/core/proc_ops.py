@@ -25,6 +25,7 @@ from bioimageio.spec.model.v0_5 import (
 from ._op_base import BlockwiseOperator, SamplewiseOperator, SimpleOperator
 from ._ops_cellpose import CellposeFlowDynamics
 from ._ops_stardist import StardistPostprocessing2D, StardistPostprocessing3D
+from ._utils.type_hints import cast_and_assert
 from .axis import CHANNEL_AXIS_ID, AxisId
 from .common import DTypeStr, MemberId
 from .digest_spec import get_member_id, import_callable
@@ -572,7 +573,11 @@ class Sigmoid(SimpleOperator):
     """1 / (1 + e^(-input))."""
 
     def _apply(self, x: Tensor, stat: Stat) -> Tensor:
-        return Tensor(1.0 / (1.0 + np.exp(-x)), dims=x.dims)
+        return Tensor.from_xarray(
+            cast_and_assert(
+                xr.DataArray, x.data.copy(data=1.0 / (1.0 + np.exp(-x.data.data)))
+            )
+        )
 
     @property
     def required_measures(self) -> Collection[Measure]:
@@ -603,7 +608,7 @@ class Softmax(SimpleOperator):
     def _apply(self, x: Tensor, stat: Stat) -> Tensor:
         axis_idx = x.dims.index(self.axis)
         result = scipy.special.softmax(x.data, axis=axis_idx)
-        result_xr = xr.DataArray(result, dims=x.dims)
+        result_xr = cast_and_assert(xr.DataArray, x.data.copy(data=result))
         return Tensor.from_xarray(result_xr)
 
     @property
@@ -779,7 +784,11 @@ class CustomProcessing(SimpleOperator):
         self._custom_callable = self.custom_factory(**self.kwargs)
 
     def _apply(self, x: Tensor, stat: Stat) -> Tensor:
-        return Tensor.from_numpy(self._custom_callable(x.to_numpy()), dims=x.dims)
+        return Tensor.from_xarray(
+            cast_and_assert(
+                xr.DataArray, x.data.copy(data=self._custom_callable(x.to_numpy()))
+            )
+        )
 
     def get_output_shape(
         self, input_shape: Mapping[AxisId, int]

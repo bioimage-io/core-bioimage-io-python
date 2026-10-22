@@ -49,6 +49,9 @@ def test_apply_blockwise_padding(
         pytest.skip("Input is smaller than the minimum valid block")
     x, member = AxisId("x"), MemberId("input")
     tensor = Tensor(np.arange(length), dims=[x])
+    tensor.name = "calibrated input"
+    tensor.set_physical_scale({x: 0.25})
+    tensor.set_physical_scale_unit({x: "um"})
     calls: list[int] = []
 
     def identity(inputs: PerMember[Tensor]) -> PerMember[Tensor]:
@@ -70,6 +73,7 @@ def test_apply_blockwise_padding(
         blockwise_processing_mode=mode,
     )
     np.testing.assert_array_equal(outputs[member].to_numpy(), tensor.to_numpy())
+    assert outputs[member].get_metadata() == tensor.get_metadata()
     if length <= 10 and pad_boundary is not False:
         assert len(calls) == 1
 

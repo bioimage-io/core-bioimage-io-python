@@ -43,7 +43,7 @@ from .sample import (
     Sample,
 )
 from .stat_measures import Stat
-from .tensor import Tensor, get_unstacked_dim_order
+from .tensor import Tensor, TensorMetaData, get_unstacked_dim_order
 
 TensorSource: TypeAlias = Union[
     Tensor, xr.DataArray, NDArray[Any], PermissiveFileSource
@@ -159,6 +159,52 @@ def _import_from_file_impl(
 
     else:
         return callable_attr
+
+
+def get_output_tensor_metadata(
+    model: AnyModelDescr, inputs: PerMember[Tensor]
+) -> dict[MemberId, TensorMetaData]:
+    """Map input metadata like physical scales and units to newly created network outputs."""
+    metadata: dict[MemberId, TensorMetaData] = {}
+    if isinstance(model, v0_4.ModelDescr):
+        return metadata
+
+    input_axes = {(ipt.id, a.id): a for ipt in model.inputs for a in ipt.axes}
+    for out in model.outputs:
+        scales: dict[AxisId, float] = {}
+        units: dict[AxisId, str] = {}
+        channel_names = None
+        for axis in out.axes:
+            if axis.type == "channel":
+                channel_names = axis.channel_names
+                continue
+            if axis.type not in ("space", "time"):
+                continue
+            if isinstance(axis.size, v0_5.SizeReference):
+                ref = (axis.size.tensor_id, axis.size.axis_id)
+            else:
+                candidates = [key for key in input_axes if key[1] == axis.id]
+                if len(candidates) != 1:
+                    continue
+                ref = candidates[0]
+
+            if ref not in input_axes or ref[0] not in inputs:
+                continue
+            tensor = inputs[ref[0]]
+            scale = tensor.get_physical_scale().get(ref[1])
+            if scale is None:
+                continue
+            scales[axis.id] = scale * axis.scale / input_axes[ref].scale
+            units[axis.id] = tensor.get_physical_scale_unit()[ref[1]]
+
+        if scales:
+            metadata[out.id] = TensorMetaData(
+                name=str(out.id),
+                channel_names=channel_names,
+                physical_scale=scales,
+                physical_scale_unit=units,
+            )
+    return metadata
 
 
 def get_axes_infos(

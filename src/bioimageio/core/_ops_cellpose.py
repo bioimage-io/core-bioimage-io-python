@@ -79,7 +79,10 @@ class CellposeFlowDynamics(SamplewiseOperator):
             )
 
         masks = [self._apply_impl(xx) for xx in x]
-        return Tensor.from_numpy(np.stack(masks, axis=0), dims=x.dims)
+        output = Tensor.from_numpy(np.stack(masks, axis=0), dims=x.dims)
+        output.set_physical_scale(x.get_physical_scale())
+        output.set_physical_scale_unit(x.get_physical_scale_unit())
+        return output
 
     def _apply_impl(self, x: Tensor) -> NDArray[Any]:
         """apply on a tensor without batch dimension"""

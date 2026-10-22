@@ -19,6 +19,82 @@ from bioimageio.core.stat_measures import SampleMean, SampleQuantile, SampleStd
 from bioimageio.core.tensor import Tensor
 
 
+@pytest.mark.parametrize("activation", ["sigmoid", "softmax"])
+@pytest.mark.parametrize("lazy", [False, True])
+def test_activations_preserve_physical_metadata(activation: str, lazy: bool):
+    from bioimageio.core.proc_ops import Sigmoid, Softmax
+
+    tensor = Tensor(np.arange(12, dtype=np.float32).reshape(3, 4), dims="yx")
+    tensor.set_physical_scale({AxisId("y"): 0.25, AxisId("x"): 0.2})
+    tensor.set_physical_scale_unit({AxisId("y"): "um", AxisId("x"): "um"})
+    if lazy:
+        tensor = tensor.as_dask()
+    mid = MemberId("input")
+    sample = Sample(members={mid: tensor}, stat={}, id=None)
+    op = (
+        Sigmoid(mid, mid)
+        if activation == "sigmoid"
+        else Softmax(mid, mid, axis=AxisId("x"))
+    )
+    op(sample)
+    actual = sample.members[mid]
+    assert actual.get_physical_scale() == tensor.get_physical_scale()
+    assert actual.get_physical_scale_unit() == tensor.get_physical_scale_unit()
+    assert actual.dims == tensor.dims
+
+
+@pytest.mark.parametrize("postprocessing", ["cellpose", "stardist"])
+def test_instance_postprocessing_preserves_physical_metadata(
+    postprocessing: str, monkeypatch: pytest.MonkeyPatch
+):
+    from bioimageio.core._ops_cellpose import CellposeFlowDynamics
+    from bioimageio.core._ops_stardist import StardistPostprocessing2D
+
+    mid = MemberId("prediction")
+    tensor = Tensor(np.zeros((1, 3, 2, 4), dtype=np.float32), dims="bcyx")
+    tensor.set_physical_scale({AxisId("y"): 0.6, AxisId("x"): 0.9})
+    tensor.set_physical_scale_unit({AxisId("y"): "um", AxisId("x"): "um"})
+    sample = Sample(members={mid: tensor}, stat={}, id=None)
+    if postprocessing == "cellpose":
+
+        def cellpose_labels(
+            self: CellposeFlowDynamics, x: Tensor
+        ) -> NDArray[np.uint16]:
+            return np.zeros((1, *x.shape[1:]), dtype=np.uint16)
+
+        monkeypatch.setattr(CellposeFlowDynamics, "_apply_impl", cellpose_labels)
+        op = CellposeFlowDynamics(labels_id=mid)
+        op(sample)
+        expected = {AxisId("y"): 0.6, AxisId("x"): 0.9}
+    else:
+
+        def stardist_labels(
+            self: StardistPostprocessing2D,
+            prob: NDArray[Any],
+            dist: NDArray[Any],
+            spatial_shape: tuple[int, int],
+        ) -> NDArray[np.int32]:
+            return np.zeros(spatial_shape, dtype=np.int32)
+
+        monkeypatch.setattr(StardistPostprocessing2D, "_impl", stardist_labels)
+        stardist = StardistPostprocessing2D(
+            prob_dist_input_id=mid,
+            instance_labels_output_id=mid,
+            grid=(2, 3),
+            prob_threshold=0.5,
+            nms_threshold=0.4,
+            b=0,
+            n_rays=2,
+        )
+        stardist(sample)
+        expected = {AxisId("y"): 0.3, AxisId("x"): 0.3}
+    actual = sample.members[mid]
+    assert {a: actual.get_physical_scale()[a] for a in expected} == pytest.approx(
+        expected
+    )
+    assert actual.get_physical_scale_unit() == tensor.get_physical_scale_unit()
+
+
 @pytest.fixture(scope="module")
 def tid():
     return MemberId("data123")
@@ -116,7 +192,7 @@ def test_zero_mean_unit_variance_fixed(tid: MemberId):
 def test_zero_mean_unit_variance_fixed2(tid: MemberId):
     from bioimageio.core.proc_ops import FixedZeroMeanUnitVariance
 
-    np_data = np.arange(9).reshape(3, 3)
+    np_data = np.arange(9).reshape(3, 3).astype("float32")
     mean = float(np_data.mean())
     std = float(np_data.mean())
     eps = 1.0e-7
@@ -552,6 +628,10 @@ def test_custom_postprocessing_callable_class(tid: MemberId) -> None:
     data = xr.DataArray(np.ones((2, 3), dtype=np.float32), dims=("y", "x"))
     out_id = MemberId("out")
     sample = Sample(members={out_id: Tensor.from_xarray(data)}, stat={}, id=None)
+    scale = {AxisId("y"): 0.25, AxisId("x"): 0.2}
+    unit = {AxisId("y"): "um", AxisId("x"): "um"}
+    sample.members[out_id].set_physical_scale(scale)
+    sample.members[out_id].set_physical_scale_unit(unit)
 
     op = CustomProcessing(
         input=out_id,
@@ -560,6 +640,8 @@ def test_custom_postprocessing_callable_class(tid: MemberId) -> None:
         kwargs={"scale": 3.0},
     )
     op(sample)
+    assert sample.members[out_id].get_physical_scale() == scale
+    assert sample.members[out_id].get_physical_scale_unit() == unit
 
     expected = xr.DataArray(np.full((2, 3), 3.0, dtype=np.float32), dims=("y", "x"))
     xr.testing.assert_allclose(
@@ -581,6 +663,10 @@ def test_custom_postprocessing_factory_function(tid: MemberId) -> None:
     data = xr.DataArray(np_data, dims=("y", "x"))
     out_id = MemberId("out2")
     sample = Sample(members={out_id: Tensor.from_xarray(data)}, stat={}, id=None)
+    scale = {AxisId("y"): 0.25, AxisId("x"): 0.2}
+    unit = {AxisId("y"): "um", AxisId("x"): "um"}
+    sample.members[out_id].set_physical_scale(scale)
+    sample.members[out_id].set_physical_scale_unit(unit)
 
     op = CustomProcessing(
         input=out_id,
@@ -589,6 +675,8 @@ def test_custom_postprocessing_factory_function(tid: MemberId) -> None:
         kwargs={"threshold": 0.5},
     )
     op(sample)
+    assert sample.members[out_id].get_physical_scale() == scale
+    assert sample.members[out_id].get_physical_scale_unit() == unit
 
     expected = xr.DataArray(np.array([[0, 1], [0, 1]], dtype=np.uint8), dims=("y", "x"))
     xr.testing.assert_equal(expected, sample.members[out_id].data)

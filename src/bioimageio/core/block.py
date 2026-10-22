@@ -818,7 +818,7 @@ def apply_to_block_array(
     else:
         assert_never(processing_mode)
 
-    return {
+    outputs = {
         output_id: Tensor(
             block_impl(
                 select_arrays(nested_outputs, output_id),
@@ -827,6 +827,9 @@ def apply_to_block_array(
         )
         for output_id in first_block
     }
+    for output_id, tensor in outputs.items():
+        tensor.set_metadata(first_block[output_id].get_metadata())
+    return outputs
 
 
 def apply_to_blocks(

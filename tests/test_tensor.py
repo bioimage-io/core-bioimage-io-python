@@ -1,4 +1,6 @@
-from collections.abc import Sequence
+from __future__ import annotations
+
+from collections.abc import Callable, Sequence
 
 import dask.array as da
 import numpy as np
@@ -8,6 +10,156 @@ from dask.callbacks import Callback
 from xarray.testing import assert_equal  # pyright: ignore[reportUnknownVariableType]
 
 from bioimageio.core import AxisId, Tensor
+from bioimageio.core.tensor import TensorMetaData
+
+
+def test_set_metadata():
+    tensor = Tensor(np.zeros((2, 3, 4)), dims="cyx")
+    tensor.set_metadata(
+        TensorMetaData(
+            name="input",
+            channel_names=["first", "second"],
+            physical_scale={AxisId("y"): 0.25, AxisId("x"): 0.2},
+            physical_scale_unit={AxisId("y"): "um", AxisId("x"): "um"},
+        )
+    )
+    assert tensor.name == "input"
+    assert tensor.channel_names == ["first", "second"]
+    assert tensor.get_physical_scale() == {"channel": 1.0, "y": 0.25, "x": 0.2}
+    assert tensor.get_physical_scale_unit() == {"channel": "", "y": "um", "x": "um"}
+
+    metadata = tensor.get_metadata()
+    assert metadata == TensorMetaData(
+        name="input",
+        channel_names=["first", "second"],
+        physical_scale={AxisId("channel"): 1.0, AxisId("y"): 0.25, AxisId("x"): 0.2},
+        physical_scale_unit={
+            AxisId("channel"): "",
+            AxisId("y"): "um",
+            AxisId("x"): "um",
+        },
+    )
+    restored = Tensor(np.zeros(tensor.shape), dims=tensor.dims)
+    restored.set_metadata(metadata)
+    assert restored.get_metadata() == metadata
+
+    tensor.set_metadata(
+        TensorMetaData(
+            name=None, channel_names=None, physical_scale=None, physical_scale_unit=None
+        )
+    )
+    assert tensor.name is None
+    assert tensor.channel_names is None
+    assert "physical_scale" not in tensor.data.attrs
+    assert "physical_scale_unit" not in tensor.data.attrs
+
+
+@pytest.mark.parametrize(
+    "metadata",
+    [
+        TensorMetaData(
+            name=None,
+            channel_names=None,
+            physical_scale={AxisId("z"): 0.5},
+            physical_scale_unit=None,
+        ),
+        TensorMetaData(
+            name=None,
+            channel_names=None,
+            physical_scale=None,
+            physical_scale_unit={AxisId("z"): "um"},
+        ),
+    ],
+)
+def test_set_metadata_validates_axes(metadata: TensorMetaData):
+    tensor = Tensor(np.zeros((3, 4)), dims="yx")
+    with pytest.raises(ValueError, match="not in tensor axes"):
+        tensor.set_metadata(metadata)
+
+
+@pytest.mark.parametrize("lazy", [False, True])
+@pytest.mark.parametrize(
+    "operation",
+    [
+        "binary",
+        "unary",
+        "astype",
+        "clip",
+        "mean",
+        "std",
+        "sum",
+        "var",
+        "quantile",
+        "slice",
+        "transpose",
+        "pad",
+        "chunk",
+    ],
+)
+def test_processing_preserves_physical_metadata(operation: str, lazy: bool):
+    tensor = Tensor(np.arange(24, dtype=np.float32).reshape(4, 6), dims="yx")
+    scale = {AxisId("y"): 0.25, AxisId("x"): 0.2}
+    unit = {AxisId("y"): "um", AxisId("x"): "um"}
+    tensor.set_physical_scale(scale)
+    tensor.set_physical_scale_unit(unit)
+    if lazy:
+        tensor = tensor.as_dask()
+    operations: dict[str, Callable[[Tensor], Tensor]] = {
+        "binary": lambda x: 2 * x + 1,
+        "unary": lambda x: -x,
+        "astype": lambda x: x.astype("float64"),
+        "clip": lambda x: x.clip(2, 20),
+        "mean": lambda x: x.mean(AxisId("y")),
+        "std": lambda x: x.std(AxisId("y")),
+        "sum": lambda x: x.sum(AxisId("y")),
+        "var": lambda x: x.var(AxisId("y")),
+        "quantile": lambda x: x.quantile(0.5, AxisId("y")),
+        "slice": lambda x: x[{AxisId("y"): 0}],
+        "transpose": lambda x: x.transpose("xy"),
+        "pad": lambda x: x.pad({AxisId("x"): 1}),
+        "chunk": lambda x: x.chunk(
+            {AxisId("y"): 2, AxisId("x"): 3}, halo={AxisId("x"): 1}
+        ),
+    }
+    with xr.set_options(keep_attrs=False):
+        actual = operations[operation](tensor)
+    assert actual.get_physical_scale() == {a: scale[a] for a in actual.dims}
+    assert actual.get_physical_scale_unit() == {a: unit[a] for a in actual.dims}
+    assert tensor.get_physical_scale() == scale
+    assert tensor.get_physical_scale_unit() == unit
+
+
+@pytest.mark.parametrize("operation", ["mean", "std", "sum", "var", "quantile"])
+@pytest.mark.parametrize("dim", [None, AxisId("y"), [AxisId("y"), AxisId("x")], []])
+@pytest.mark.parametrize("lazy", [False, True])
+def test_reductions_remove_calibration_of_reduced_axes(
+    operation: str, dim: AxisId | list[AxisId] | None, lazy: bool
+):
+    tensor = Tensor(np.arange(24, dtype=np.float32).reshape(4, 6), dims="yx")
+    scale = {AxisId("y"): 0.25, AxisId("x"): 0.2}
+    unit = {AxisId("y"): "um", AxisId("x"): "um"}
+    tensor.set_physical_scale(scale)
+    tensor.set_physical_scale_unit(unit)
+    tensor.name = "calibrated input"
+    if lazy:
+        tensor = tensor.as_dask()
+    reductions: dict[str, Callable[[], Tensor]] = {
+        "mean": lambda: tensor.mean(dim),
+        "std": lambda: tensor.std(dim),
+        "sum": lambda: tensor.sum(dim),
+        "var": lambda: tensor.var(dim),
+        "quantile": lambda: tensor.quantile(0.5, dim),
+    }
+    actual = reductions[operation]()
+    assert actual.data.attrs["physical_scale"] == {a: scale[a] for a in actual.dims}
+    assert actual.data.attrs["physical_scale_unit"] == {a: unit[a] for a in actual.dims}
+    assert actual.name == tensor.name
+    assert tensor.data.attrs["physical_scale"] == scale
+    assert tensor.data.attrs["physical_scale_unit"] == unit
+    if AxisId("y") not in actual.dims:
+        expanded = actual.expand_dims([AxisId("y")])
+        assert AxisId("y") not in expanded.get_physical_scale()
+        assert AxisId("y") not in expanded.data.attrs["physical_scale_unit"]
 
 
 def _no_execution(*args: object) -> None:

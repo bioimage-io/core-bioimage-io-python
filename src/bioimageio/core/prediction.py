@@ -227,6 +227,7 @@ def predict(
                 cached_tensor = Tensor(
                     da.from_zarr(cached_data), sample.members[m].dims
                 )
+                cached_tensor.set_metadata(sample.members[m].get_metadata())
                 sample.members[m] = cached_tensor
 
         if input_block_shape is not None:
@@ -288,6 +289,7 @@ def predict(
                 cached_tensor = Tensor(
                     da.from_zarr(cached_data), output.members[m].dims
                 )
+                cached_tensor.set_metadata(output.members[m].get_metadata())
                 output.members[m] = cached_tensor
 
         pp.apply_postprocessing(output)

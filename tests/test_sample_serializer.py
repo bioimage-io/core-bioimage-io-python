@@ -50,6 +50,10 @@ def test_serialize_whole_sample():
 @pytest.mark.parametrize("lazy", [False, True])
 def test_fixed_blocking_round_trip(lazy: bool):
     sample = make_sample(lazy)
+    for tensor in sample.members.values():
+        tensor.name = "calibrated image"
+        tensor.set_physical_scale({AxisId("y"): 0.25, AxisId("x"): 0.2})
+        tensor.set_physical_scale_unit({AxisId("y"): "um", AxisId("x"): "um"})
     serialized = IdentitySerializer.serialize_sample_with_fixed_blocking(
         sample,
         block_shapes={m: {AxisId("y"): 2, AxisId("x"): 3} for m in sample.members},
@@ -70,7 +74,13 @@ def test_fixed_blocking_round_trip(lazy: bool):
     assert restored.id == sample.id
     assert restored.stat is sample.stat
     for m, tensor in sample.members.items():
+        assert restored.members[m].name == tensor.name
         assert restored.members[m].dims == tensor.dims
+        assert restored.members[m].get_physical_scale() == tensor.get_physical_scale()
+        assert (
+            restored.members[m].get_physical_scale_unit()
+            == tensor.get_physical_scale_unit()
+        )
         np.testing.assert_array_equal(restored.members[m].to_numpy(), tensor.to_numpy())
     assert isinstance(restored.members[MemberId("raw")].data.data, da.Array) == lazy
     assert isinstance(restored.members[MemberId("mask")].data.data, np.ndarray)
