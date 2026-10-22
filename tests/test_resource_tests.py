@@ -48,10 +48,12 @@ def test_loading_description_multiple_times(unet2d_nuclei_broad_model: str):
     assert not isinstance(model_descr, InvalidDescr)
 
 
-def test_test_description_runtime_env(unet2d_nuclei_broad_model: str):
+def test_test_description_runtime_env(unet2d_nuclei_broad_model_old: str):
     from bioimageio.core._resource_tests import test_description
 
-    summary = test_description(unet2d_nuclei_broad_model, runtime_env="as-described")
+    summary = test_description(
+        unet2d_nuclei_broad_model_old, runtime_env="as-described"
+    )
 
     assert summary.status == "passed", summary.display()
 

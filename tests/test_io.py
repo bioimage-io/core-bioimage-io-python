@@ -1,6 +1,8 @@
 import sys
+from importlib.util import find_spec
+from inspect import signature
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal, cast
 
 import numpy as np
 import pytest
@@ -69,6 +71,9 @@ def test_save_sample(tmp_path: Path, suffix: str):
     from bioimageio.core.common import MemberId
     from bioimageio.core.io import load_tensor, save_sample
 
+    if suffix == ".zarr" and find_spec("clearscale") is None:
+        pytest.importorskip("bioio_ome_zarr")
+
     members = {
         MemberId("raw"): np.arange(30, dtype=np.uint8).reshape(5, 6),
         MemberId("mask"): np.ones((5, 6), dtype=np.uint8),
@@ -135,6 +140,10 @@ def test_tensor_io(
 
         if name.find(".zarr") == -1:
             pytest.skip("clearscale only supports zarr")
+    elif io_lib == "bioio" and (
+        name.endswith(".zarr") or name.endswith(".zarr/0")
+    ):
+        pytest.importorskip("bioio_ome_zarr")
     elif io_lib == "imageio":
         if name.find(".zarr") != -1:
             pytest.skip("imageio does not support zarr")
@@ -225,6 +234,8 @@ def test_load_zarr_from_group(
 ):
     if io_lib == "clearscale":
         _ = pytest.importorskip("clearscale")
+    else:
+        pytest.importorskip("bioio_ome_zarr")
 
     import zarr
 
@@ -233,10 +244,18 @@ def test_load_zarr_from_group(
     default_scale_key = "0"
     storage_source = tmp_path / "image.ome.zarr"
     group_source = storage_source / group_path if storage_source else storage_source
-    group = zarr.open_group(group_source, mode="w", zarr_format=2)
+    uses_zarr_format = "zarr_format" in signature(cast(Any, zarr.open_group)).parameters
+    if uses_zarr_format:
+        group = zarr.open_group(group_source, mode="w", zarr_format=2)
+    else:
+        group = zarr.open_group(group_source, mode="w")
     expected = np.arange(2 * 3 * 4 * 5, dtype=np.uint16).reshape(2, 3, 4, 5)
-    _ = group.create_array(scale_key or default_scale_key, data=expected)
-    # group = zarr.open_group(storage_source, mode="a", zarr_format=2)
+    if uses_zarr_format:
+        _ = group.create_array(scale_key or default_scale_key, data=expected)
+    else:
+        _dataset: Any = cast(Any, group).create_dataset(
+            scale_key or default_scale_key, data=expected
+        )
     group.attrs["multiscales"] = [
         {
             "version": "0.4",
