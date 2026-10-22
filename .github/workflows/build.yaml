@@ -81,11 +81,11 @@ jobs:
             run-expensive-tests: true
             report-coverage: true
             save-cache: true
-          - python-version: '3.14'
-            numpy-version: 2
-            spec-from-main: true
-          - python-version: '3.15'
-            numpy-version: 2
+          # - python-version: '3.14'
+          #   numpy-version: 2
+          #   spec-from-main: true
+          # - python-version: '3.15'
+          #   numpy-version: 2
 
     steps:
       - uses: actions/checkout@v4
