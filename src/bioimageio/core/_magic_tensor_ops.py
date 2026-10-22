@@ -3,17 +3,20 @@
 # TODO: should we generate this ourselves?
 # TODO: test these magic methods
 import operator
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 from typing_extensions import Self
 from xarray.core import nputils
 
-try:
-    # xarray >= 2025.03
+if TYPE_CHECKING:
     from xarray.computation import ops
-except ImportError:
-    # xarray < 2025.03
-    from xarray.core import ops  # type: ignore
+else:
+    try:
+        # xarray >= 2025.03
+        from xarray.computation import ops
+    except ImportError:
+        # xarray < 2025.03
+        from xarray.core import ops
 
 
 class MagicTensorOpsMixin:

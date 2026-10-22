@@ -1,6 +1,9 @@
 # pyright: reportUnknownVariableType=false
+from __future__ import annotations
+
 import gc
-from typing import Any, List, Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Any
 
 import torch
 from loguru import logger
@@ -9,15 +12,15 @@ from numpy.typing import NDArray
 from bioimageio.spec.model import v0_4, v0_5
 
 from .._model_adapter import LocalModelAdapter
-from ..utils._type_guards import is_list, is_tuple
+from .._utils.type_guards import is_list, is_tuple
 from .pytorch_backend import get_devices
 
 
 class TorchscriptModelAdapter(LocalModelAdapter[torch.device, Any]):
     def __init__(
         self,
-        model_description: Union[v0_4.ModelDescr, v0_5.ModelDescr],
-        devices: Optional[Sequence[str]] = None,
+        model_description: v0_4.ModelDescr | v0_5.ModelDescr,
+        devices: Sequence[str] | None = None,
     ):
         if model_description.weights.torchscript is None:
             raise ValueError(
@@ -27,9 +30,7 @@ class TorchscriptModelAdapter(LocalModelAdapter[torch.device, Any]):
         self._weight_descr = model_description.weights.torchscript
         super().__init__(model_description=model_description, devices=devices)
 
-    def _parse_devices(
-        self, devices: Optional[Sequence[str]]
-    ) -> Sequence[torch.device]:
+    def _parse_devices(self, devices: Sequence[str] | None) -> Sequence[torch.device]:
         return get_devices(devices)
 
     def _init_model_on_device(self, device: torch.device) -> Any:
@@ -46,8 +47,8 @@ class TorchscriptModelAdapter(LocalModelAdapter[torch.device, Any]):
         self,
         device: torch.device,
         model: Any,
-        input_arrays: Sequence[Optional[NDArray[Any]]],
-    ) -> List[Optional[NDArray[Any]]]:
+        input_arrays: Sequence[NDArray[Any] | None],
+    ) -> list[NDArray[Any] | None]:
         with torch.no_grad():
             torch_tensor = [
                 None if a is None else torch.from_numpy(a).to(device)

@@ -2,7 +2,7 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 from pathlib import Path
 
-from bioimageio.core import Sample
+from bioimageio.core import AxisId, Sample
 from bioimageio.core._resource_tests import evaluate_mismatched_elements
 from bioimageio.core.common import SupportedWeightsFormat
 from bioimageio.spec import load_description
@@ -33,41 +33,40 @@ def _test_prediction_pipeline(
         bio_model.validation_summary.format()
     )
 
-    pp = create_prediction_pipeline(
+    with create_prediction_pipeline(
         bioimageio_model=bio_model, weight_format=weights_format, devices=["cpu", "cpu"]
-    )
+    ) as pp:
+        inputs = get_test_input_sample(bio_model)
 
-    inputs = get_test_input_sample(bio_model)
-
-    # test in a multi-threaded setting
-    multiple_inputs = [inputs, _alter_sample(inputs, offset=100.0)]
-    with ThreadPoolExecutor(max_workers=3) as executor:
-        multiple_outputs = list(
-            executor.map(
-                partial(
-                    pp.predict_sample_without_blocking,
-                    skip_input_padding=True,
-                    skip_output_cropping=True,
-                ),
-                multiple_inputs,
+        # test in a multi-threaded setting
+        multiple_inputs = [inputs, _alter_sample(inputs, offset=100.0)]
+        with ThreadPoolExecutor(max_workers=3) as executor:
+            multiple_outputs = list(
+                executor.map(
+                    partial(
+                        pp.predict_without_blocking,
+                        skip_input_padding=True,
+                        skip_output_cropping=True,
+                    ),
+                    multiple_inputs,
+                )
             )
-        )
 
-    outputs = multiple_outputs[0]
+        outputs = multiple_outputs[0]
 
-    expected_outputs = get_test_output_sample(bio_model)
-    assert len(outputs.shape) == len(expected_outputs.shape)
-    for m in expected_outputs.members:
-        out = outputs.members[m]
-        assert out is not None
-        exp = expected_outputs.members[m]
-        mismatched_ppm, msg, error_msg = evaluate_mismatched_elements(
-            out, exp, rtol=0.01, atol=0.1, name=m
-        )
-        if error_msg is not None:
-            raise AssertionError(error_msg)
-        elif mismatched_ppm > 50_000:
-            raise AssertionError(msg)
+        expected_outputs = get_test_output_sample(bio_model)
+        assert len(outputs.shape) == len(expected_outputs.shape)
+        for m in expected_outputs.members:
+            out = outputs.members[m]
+            assert out is not None
+            exp = expected_outputs.members[m]
+            mismatched_ppm, msg, error_msg = evaluate_mismatched_elements(
+                out, exp, rtol=0.01, atol=0.1, mismatched_tol=50_000, name=m
+            )
+            if error_msg is not None:
+                raise AssertionError(error_msg)
+            elif mismatched_ppm > 50_000:
+                raise AssertionError(msg)
 
 
 def test_prediction_pipeline_torch(any_torch_model: Path):
@@ -88,3 +87,49 @@ def test_prediction_pipeline_tensorflow(any_tensorflow_model: Path):
 
 def test_prediction_pipeline_keras(any_keras_model: Path):
     _test_prediction_pipeline(any_keras_model, "keras_hdf5")
+
+
+def test_blockwise_prediction_with_stacked_dims(unet2d_nuclei_broad_model: Path):
+    from bioimageio.core import load_model_description
+    from bioimageio.core._prediction_pipeline import create_prediction_pipeline
+    from bioimageio.core.axis import AxisInfo, AxisSize
+    from bioimageio.core.digest_spec import (
+        get_test_input_sample,
+        get_test_output_sample,
+    )
+
+    bio_model = load_model_description(
+        unet2d_nuclei_broad_model, format_version="latest"
+    )
+    with create_prediction_pipeline(
+        bioimageio_model=bio_model,
+        weight_format="pytorch_state_dict",
+        devices=["cpu", "cpu"],
+    ) as pp:
+        inputs = get_test_input_sample(
+            bio_model,
+            repetitions=[
+                (
+                    2,
+                    AxisInfo(
+                        AxisId("extra_dim"), type="index", size=AxisSize(min=2, max=2)
+                    ),
+                    [1.0, 0.8],
+                )
+            ],
+        )
+        outputs = pp.predict_with_blocking(inputs)[{AxisId("extra_dim"): 0}]
+
+        expected_outputs = get_test_output_sample(bio_model)
+        assert len(outputs.shape) == len(expected_outputs.shape)
+        for m in expected_outputs.members:
+            out = outputs.members[m]
+            assert out is not None
+            exp = expected_outputs.members[m]
+            mismatched_ppm, msg, error_msg = evaluate_mismatched_elements(
+                out, exp, rtol=0.01, atol=0.1, mismatched_tol=50_000, name=m
+            )
+            if error_msg is not None:
+                raise AssertionError(error_msg)
+            elif mismatched_ppm > 50_000:
+                raise AssertionError(msg)

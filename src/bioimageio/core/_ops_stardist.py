@@ -1,18 +1,17 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
+from collections.abc import Collection
 from dataclasses import dataclass
 from typing import (
     Any,
-    Collection,
     Generic,
-    List,
-    Optional,
-    Tuple,
-    Union,
+    cast,
 )
 
 import numpy as np
 from numpy.typing import NDArray
-from typing_extensions import Self, TypeVar, cast
+from typing_extensions import Self, TypeVar
 
 from bioimageio.spec.model import v0_5
 
@@ -25,16 +24,16 @@ from .stat_measures import (
 )
 from .tensor import Tensor
 
-NdTuple = TypeVar("NdTuple", Tuple[int, int], Tuple[int, int, int])
+NdTuple = TypeVar("NdTuple", tuple[int, int], tuple[int, int, int])
 NdBorder = TypeVar(
     "NdBorder",
-    Tuple[Tuple[int, int], Tuple[int, int]],
-    Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int]],
+    tuple[tuple[int, int], tuple[int, int]],
+    tuple[tuple[int, int], tuple[int, int], tuple[int, int]],
 )
 
 
 @dataclass
-class _StardistPostprocessingBase(SamplewiseOperator, Generic[NdTuple, NdBorder], ABC):
+class _StardistPostprocessingBase(SamplewiseOperator, ABC, Generic[NdTuple, NdBorder]):
     prob_dist_input_id: MemberId
     instance_labels_output_id: MemberId
 
@@ -47,7 +46,7 @@ class _StardistPostprocessingBase(SamplewiseOperator, Generic[NdTuple, NdBorder]
     nms_threshold: float
     """The IoU threshold for non-maximum suppression."""
 
-    b: Union[int, NdBorder]
+    b: int | NdBorder
     """Border region in which object probability is set to zero."""
 
     n_rays: int
@@ -86,7 +85,7 @@ class _StardistPostprocessingBase(SamplewiseOperator, Generic[NdTuple, NdBorder]
         prob_dist = prob_dist.transpose(
             (AxisId("batch"), *allowed_spatial, AxisId("channel"))
         )
-        labels: List[NDArray[Any]] = []
+        labels: list[NDArray[Any]] = []
         for batch_idx in range(prob_dist.sizes[AxisId("batch")]):
             prob = prob_dist[
                 {AxisId("batch"): batch_idx, AxisId("channel"): 0}
@@ -105,6 +104,11 @@ class _StardistPostprocessingBase(SamplewiseOperator, Generic[NdTuple, NdBorder]
             np.stack(labels)[..., None],
             dims=(AxisId("batch"), *allowed_spatial, AxisId("channel")),
         )
+        grid = dict(zip(allowed_spatial, self.grid))
+        instance_labels.set_physical_scale(
+            {a: s / grid.get(a, 1) for a, s in prob_dist.get_physical_scale().items()}
+        )
+        instance_labels.set_physical_scale_unit(prob_dist.get_physical_scale_unit())
         sample.members[self.instance_labels_output_id] = instance_labels
 
     @abstractmethod
@@ -117,18 +121,18 @@ class _StardistPostprocessingBase(SamplewiseOperator, Generic[NdTuple, NdBorder]
 @dataclass
 class StardistPostprocessing2D(
     _StardistPostprocessingBase[
-        Tuple[int, int], Tuple[Tuple[int, int], Tuple[int, int]]
+        tuple[int, int], tuple[tuple[int, int], tuple[int, int]]
     ]
 ):
     def _impl(
-        self, prob: NDArray[Any], dist: NDArray[Any], spatial_shape: Tuple[int, int]
+        self, prob: NDArray[Any], dist: NDArray[Any], spatial_shape: tuple[int, int]
     ) -> NDArray[np.int32]:
         from stardist import (
             non_maximum_suppression,  # pyright: ignore[reportUnknownVariableType]
             polygons_to_label,  # pyright: ignore[reportUnknownVariableType]
         )
 
-        points, probi, disti = non_maximum_suppression(  # pyright: ignore[reportUnknownVariableType]
+        points, probi, disti = non_maximum_suppression(
             dist,
             prob,
             grid=self.grid,
@@ -163,20 +167,20 @@ class StardistPostprocessing2D(
 @dataclass
 class StardistPostprocessing3D(
     _StardistPostprocessingBase[
-        Tuple[int, int, int], Tuple[Tuple[int, int], Tuple[int, int], Tuple[int, int]]
+        tuple[int, int, int], tuple[tuple[int, int], tuple[int, int], tuple[int, int]]
     ]
 ):
-    anisotropy: Tuple[float, float, float]
+    anisotropy: tuple[float, float, float]
     """Anisotropy factors for 3D star-convex polyhedra, i.e. the physical pixel size along each spatial axis."""
 
-    overlap_label: Optional[int] = None
+    overlap_label: int | None = None
     """Optional label to apply to any area of overlapping predicted objects."""
 
     def _impl(
         self,
         prob: NDArray[Any],
         dist: NDArray[Any],
-        spatial_shape: Tuple[int, int, int],
+        spatial_shape: tuple[int, int, int],
     ) -> NDArray[np.int32]:
         from stardist import (
             Rays_GoldenSpiral,

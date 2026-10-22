@@ -1,13 +1,10 @@
+from __future__ import annotations
+
+from collections.abc import Iterable, Mapping, Sequence
 from itertools import chain
 from typing import (
     Callable,
-    Iterable,
-    List,
-    Mapping,
     NamedTuple,
-    Optional,
-    Sequence,
-    Set,
     Union,
 )
 
@@ -43,8 +40,8 @@ TensorDescr = Union[
 
 
 class PreAndPostprocessing(NamedTuple):
-    pre: List[Processing]
-    post: List[Processing]
+    pre: list[Processing]
+    post: list[Processing]
 
 
 class _ProcessingCallables(NamedTuple):
@@ -67,7 +64,8 @@ def get_pre_and_postprocessing(
     *,
     dataset_for_initial_statistics: Iterable[Sample],
     keep_updating_initial_dataset_stats: bool = False,
-    fixed_dataset_stats: Optional[Mapping[Measure, MeasureValue]] = None,
+    fixed_dataset_stats: Mapping[Measure, MeasureValue] | None = None,
+    dataset_fits_in_memory: bool = False,
 ) -> _ProcessingCallables:
     """Creates callables to apply pre- and postprocessing in-place to a sample"""
 
@@ -76,6 +74,7 @@ def get_pre_and_postprocessing(
         dataset_for_initial_statistics=dataset_for_initial_statistics,
         keep_updating_initial_dataset_stats=keep_updating_initial_dataset_stats,
         fixed_dataset_stats=fixed_dataset_stats,
+        dataset_fits_in_memory=dataset_fits_in_memory,
     )
     return _ProcessingCallables(_ApplyProcs(setup.pre), _ApplyProcs(setup.post))
 
@@ -84,7 +83,8 @@ def setup_pre_and_postprocessing(
     model: AnyModelDescr,
     dataset_for_initial_statistics: Iterable[Sample],
     keep_updating_initial_dataset_stats: bool = False,
-    fixed_dataset_stats: Optional[Mapping[Measure, MeasureValue]] = None,
+    fixed_dataset_stats: Mapping[Measure, MeasureValue] | None = None,
+    dataset_fits_in_memory: bool = False,
 ) -> PreAndPostprocessing:
     """Get pre- and postprocessing operators for a `model` description.
 
@@ -100,7 +100,9 @@ def setup_pre_and_postprocessing(
         if fixed_dataset_stats is None or m not in fixed_dataset_stats
     }
     if missing_stats:
-        initial_stats_calc = StatsCalculator(missing_stats)
+        initial_stats_calc = StatsCalculator(
+            missing_stats, dataset_fits_in_memory=dataset_fits_in_memory
+        )
         for sample in dataset_for_initial_statistics:
             initial_stats_calc.update(sample)
 
@@ -108,7 +110,11 @@ def setup_pre_and_postprocessing(
         prep.insert(
             0,
             UpdateStats(
-                StatsCalculator(required, initial_stats),
+                StatsCalculator(
+                    required,
+                    initial_stats,
+                    dataset_fits_in_memory=dataset_fits_in_memory,
+                ),
                 keep_updating_initial_dataset_stats=keep_updating_initial_dataset_stats,
             ),
         )
@@ -120,18 +126,18 @@ def setup_pre_and_postprocessing(
 
 
 class RequiredMeasures(NamedTuple):
-    pre: Set[Measure]
-    post: Set[Measure]
+    pre: set[Measure]
+    post: set[Measure]
 
 
 class RequiredDatasetMeasures(NamedTuple):
-    pre: Set[DatasetMeasure]
-    post: Set[DatasetMeasure]
+    pre: set[DatasetMeasure]
+    post: set[DatasetMeasure]
 
 
 class RequiredSampleMeasures(NamedTuple):
-    pre: Set[SampleMeasure]
-    post: Set[SampleMeasure]
+    pre: set[SampleMeasure]
+    post: set[SampleMeasure]
 
 
 def get_requried_measures(model: AnyModelDescr) -> RequiredMeasures:
@@ -161,9 +167,9 @@ def get_requried_sample_measures(model: AnyModelDescr) -> RequiredSampleMeasures
 
 def _get_described_procs(
     tensor_descrs: Iterable[TensorDescr],
-) -> List[Processing]:
+) -> list[Processing]:
     tensor_descrs = list(tensor_descrs)
-    procs: List[Processing] = []
+    procs: list[Processing] = []
     for t_descr in tensor_descrs:
         if isinstance(t_descr, (v0_4.InputTensorDescr, v0_4.OutputTensorDescr)):
             member_id = get_member_id(t_descr)

@@ -14,9 +14,8 @@ Other notable bioimageio.core functionalities include:
 - Creating and manipulating `Sample`s consisting of tensors with associated statistics.
 - Computing statistics on datasets (represented as sequences of samples), see `compute_dataset_measures`.
 """
-# ruff: noqa: E402
 
-__version__ = "0.11.0"
+__version__ = "0.12.0"
 from loguru import logger
 
 logger.disable("bioimageio.core")
@@ -40,7 +39,6 @@ from bioimageio.spec import validate_format as validate_format
 
 from . import axis as axis
 from . import backends as backends
-from . import block_meta as block_meta
 from . import cli as cli
 from . import commands as commands
 from . import common as common
@@ -54,7 +52,6 @@ from . import stat_calculators as stat_calculators
 from . import stat_measures as stat_measures
 from . import tensor as tensor
 from . import weight_converters as weight_converters
-from ._prediction_pipeline import IntermediatePrediction as IntermediatePrediction
 from ._prediction_pipeline import PredictionPipeline as PredictionPipeline
 from ._prediction_pipeline import RemotePredictionPipeline as RemotePredictionPipeline
 from ._prediction_pipeline import (
@@ -75,13 +72,10 @@ from ._settings import settings as settings
 from .axis import Axis as Axis
 from .axis import AxisId as AxisId
 from .backends import create_model_adapter as create_model_adapter
-from .block_meta import BlockMeta as BlockMeta
 from .common import MemberId as MemberId
 from .prediction import predict as predict
 from .prediction import predict_many as predict_many
 from .sample import Sample as Sample
-from .sample import SampleBlock as SampleBlock
-from .sample import SampleBlockMeta as SampleBlockMeta
 from .stat_calculators import compute_dataset_measures as compute_dataset_measures
 from .stat_calculators import compute_measures as compute_measures
 from .stat_calculators import compute_sample_measures as compute_sample_measures

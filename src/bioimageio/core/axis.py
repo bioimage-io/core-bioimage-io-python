@@ -1,39 +1,41 @@
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import (
     Literal,
-    Mapping,
-    Optional,
     TypeVar,
     Union,
 )
 
+from loguru import logger
 from typing_extensions import Protocol, TypeAlias, assert_never, runtime_checkable
 
 from bioimageio.spec.model import v0_5
 
 
 def _guess_axis_type(a: str):
+    a = a.lower()
     if a in ("b", "batch"):
         return "batch"
     elif a in ("t", "time"):
         return "time"
-    elif a in ("i", "index"):
+    elif a in ("s", "sample", "i", "index"):
         return "index"
     elif a in ("c", "channel"):
         return "channel"
-    elif a in ("x", "y", "z"):
+    elif a in ("x", "y", "z") or a.startswith("space"):
         return "space"
     else:
-        raise ValueError(
-            f"Failed to infer axis type for axis id '{a}'."
-            + " Consider using one of: '"
-            + "', '".join(
-                ["b", "batch", "t", "time", "i", "index", "c", "channel", "x", "y", "z"]
-            )
-            + "'. Or creating an `Axis` object instead."
+        logger.warning(
+            "Failed to infer axis type for axis id '{}'."
+            + " Consider using one of:"
+            + " 'b', 'batch', 't', 'time', 's', 'sample', 'i',"
+            + " 'index', 'c', 'channel', 'x', 'y', 'z',"
+            + " 'space*'. Or create an `Axis` object with an explicity type instead.",
+            a,
         )
+        return "unknown"
 
 
 S = TypeVar("S", bound=str)
@@ -41,6 +43,10 @@ S = TypeVar("S", bound=str)
 
 AxisId: TypeAlias = v0_5.AxisId
 """An axis identifier, e.g. 'batch', 'channel', 'z', 'y', 'x'"""
+
+BATCH_AXIS_ID = v0_5.BATCH_AXIS_ID
+CHANNEL_AXIS_ID = v0_5.CHANNEL_AXIS_ID
+TIME_AXIS_ID = v0_5.DEFAULT_TIME_AXIS_ID
 
 _T = TypeVar("_T")
 PerAxis = Mapping[AxisId, _T]
@@ -61,16 +67,37 @@ class AxisDescrLike(Protocol):
 AxisLike = Union[_AxisLikePlain, AxisDescrLike, v0_5.AnyAxis, "Axis", "AxisInfo"]
 
 
+def axis_id_from_axis_like(a: AxisLike) -> AxisId:
+    if isinstance(
+        a,
+        (Axis, v0_5.AxisBase),
+    ):
+        return a.id
+    elif isinstance(a, AxisDescrLike):
+        a = a.id
+
+    if isinstance(a, AxisId):
+        return a
+    elif isinstance(a, str):
+        return AxisId(a)
+    else:
+        assert_never(a)
+
+
 @dataclass
 class Axis:
     id: AxisId
-    type: Literal["batch", "channel", "index", "space", "time"]
+    type: Literal["batch", "channel", "index", "space", "time", "unknown"]
 
     def __post_init__(self):
-        if self.type == "batch":
-            self.id = AxisId("batch")
-        elif self.type == "channel":
-            self.id = AxisId("channel")
+        if self.type == "batch" and self.id != BATCH_AXIS_ID:
+            raise ValueError(
+                f"Axis with type 'batch' must have id '{BATCH_AXIS_ID}', but got '{self.id}'"
+            )
+        if self.type == "channel" and self.id != CHANNEL_AXIS_ID:
+            raise ValueError(
+                f"Axis with type 'channel' must have id '{CHANNEL_AXIS_ID}', but got '{self.id}'"
+            )
 
     @classmethod
     def create(cls, axis: AxisLike) -> Axis:
@@ -97,8 +124,18 @@ class Axis:
 @dataclass
 class AxisSize:
     min: int
-    max: Optional[int] = None
-    step: Optional[int] = None
+    max: int | None = None
+    step: int | None = None
+
+    def __post_init__(self):
+        if self.min < 0:
+            raise ValueError(f"AxisSize min must be non-negative, but got {self.min}")
+        if self.max is not None and self.max < self.min:
+            raise ValueError(
+                f"AxisSize max must be greater than or equal to min, but got min={self.min}, max={self.max}"
+            )
+        if self.step is not None and self.step <= 0:
+            raise ValueError(f"AxisSize step must be positive, but got {self.step}")
 
 
 @dataclass
@@ -106,9 +143,7 @@ class AxisInfo(Axis):
     size: AxisSize
 
     @classmethod
-    def create(
-        cls, axis: AxisLike, size: Optional[Union[int, AxisSize]] = None
-    ) -> AxisInfo:
+    def create(cls, axis: AxisLike, size: int | AxisSize | None = None) -> AxisInfo:
         if isinstance(axis, AxisInfo):
             return axis
 
@@ -142,3 +177,32 @@ class AxisInfo(Axis):
             size = AxisSize(min=size, max=size)
 
         return AxisInfo(id=axis_base.id, type=axis_base.type, size=size)
+
+
+def single_letter_dims_if_possible(
+    dims: Sequence[AxisId],
+) -> tuple[str, ...]:
+    """Return a tuple of single-letter dimension names if possible, otherwise return the original dimension names."""
+    single_letter_dims: list[str] = []
+
+    for d in dims:
+        d = str(d).lower()
+        if d in ("batch", "b"):
+            single_letter_dims.append("b")
+        elif d in ("time", "t"):
+            single_letter_dims.append("t")
+        elif d in ("index", "i"):
+            single_letter_dims.append("i")
+        elif d in ("channel", "c"):
+            single_letter_dims.append("c")
+        elif d in "zyx":
+            single_letter_dims.append(d)
+        else:
+            # Return original dims if any dim cannot be converted to a single letter
+            return tuple(dims)
+
+    if len(set(single_letter_dims)) != len(single_letter_dims):
+        # Return original dims if any single letter dim is not unique
+        return tuple(dims)
+
+    return tuple(single_letter_dims)

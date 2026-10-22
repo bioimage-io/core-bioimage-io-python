@@ -1,13 +1,15 @@
+from __future__ import annotations
+
 import json
 import subprocess
-from typing import Optional
 
 import pytest
-from bioimageio.spec._internal.gh_utils import set_github_warning
 from packaging.version import Version
 
+from bioimageio.spec._internal.gh_utils import set_github_warning
 
-def test_bioimageio_spec_version(conda_cmd: Optional[str]):
+
+def test_bioimageio_spec_version(conda_cmd: str | None):
     if conda_cmd is None:
         pytest.skip("requires conda")
 

@@ -1,33 +1,30 @@
 from __future__ import annotations
 
 import collections.abc
+import importlib.abc
 import importlib.util
 import sys
+from collections.abc import Iterable, Mapping, Sequence
 from itertools import chain
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import (
     Any,
     Callable,
-    Dict,
-    Iterable,
-    List,
+    Final,
     Literal,
-    Mapping,
-    NamedTuple,
-    Optional,
-    Sequence,
-    Tuple,
     Union,
 )
 from zipfile import ZipFile, is_zipfile
 
+import dask.array as da
 import numpy as np
 import xarray as xr
 from loguru import logger
 from numpy.typing import NDArray
 from typing_extensions import TypeAlias, Unpack, assert_never
 
+from bioimageio.core._utils.type_hints import cast_and_assert
 from bioimageio.spec._internal.io import HashKwargs, PermissiveFileSource
 from bioimageio.spec.common import FileDescr, FileSource
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
@@ -35,23 +32,18 @@ from bioimageio.spec.model.v0_4 import CallableFromDepencency, CallableFromFile
 from bioimageio.spec.model.v0_5 import (
     ArchitectureFromFileDescr,
     ArchitectureFromLibraryDescr,
-    ParameterizedSize_N,
 )
 from bioimageio.spec.utils import load_array
 
-from .axis import AxisId, AxisInfo, AxisLike, PerAxis
-from .block_meta import split_multiple_shapes_into_blocks
-from .common import Halo, MemberId, PerMember, SampleId, TotalNumberOfBlocks
+from .axis import CHANNEL_AXIS_ID, Axis, AxisId, AxisInfo, PerAxis
+from .block import LinearAxisTransform
+from .common import Halo, MemberId, PerMember, SampleId
 from .io import load_tensor
 from .sample import (
-    LinearSampleAxisTransform,
     Sample,
-    SampleBlockMeta,
-    SampleBlockWithOrigin,
-    sample_block_meta_generator,
 )
 from .stat_measures import Stat
-from .tensor import Tensor
+from .tensor import Tensor, TensorMetaData, get_unstacked_dim_order
 
 TensorSource: TypeAlias = Union[
     Tensor, xr.DataArray, NDArray[Any], PermissiveFileSource
@@ -59,13 +51,11 @@ TensorSource: TypeAlias = Union[
 
 
 def import_callable(
-    node: Union[
-        ArchitectureFromFileDescr,
-        ArchitectureFromLibraryDescr,
-        CallableFromDepencency,
-        CallableFromFile,
-        v0_5.CustomProcessingDescr,
-    ],
+    node: ArchitectureFromFileDescr
+    | ArchitectureFromLibraryDescr
+    | CallableFromDepencency
+    | CallableFromFile
+    | v0_5.CustomProcessingDescr,
     /,
     **kwargs: Unpack[HashKwargs],
 ) -> Callable[..., Any]:
@@ -84,12 +74,12 @@ def import_callable(
         assert_never(node)
 
     if not callable(c):
-        raise ValueError(f"{node} (imported: {c}) is not callable")
+        raise TypeError(f"{node} (imported: {c}) is not callable")
 
     return c
 
 
-tmp_dirs_in_use: List[TemporaryDirectory[str]] = []
+tmp_dirs_in_use: list[TemporaryDirectory[str]] = []
 """keep global reference to temporary directories created during import to delay cleanup"""
 
 
@@ -117,8 +107,8 @@ def _import_from_file_impl(
     module = sys.modules.get(module_name)
     if module is None:
         try:
-            td_kwargs: Dict[str, Any] = (
-                dict(ignore_cleanup_errors=True) if sys.version_info >= (3, 10) else {}
+            td_kwargs: dict[str, Any] = (
+                {"ignore_cleanup_errors": True} if sys.version_info >= (3, 10) else {}
             )
             if sys.version_info >= (3, 12):
                 td_kwargs["delete"] = False
@@ -147,7 +137,7 @@ def _import_from_file_impl(
 
             sys.modules[module_name] = module  # cache this module
 
-            assert importlib_spec.loader is not None
+            assert isinstance(importlib_spec.loader, importlib.abc.ExecutionLoader)
             importlib_spec.loader.exec_module(module)
 
         except Exception as e:
@@ -171,25 +161,67 @@ def _import_from_file_impl(
         return callable_attr
 
 
+def get_output_tensor_metadata(
+    model: AnyModelDescr, inputs: PerMember[Tensor]
+) -> dict[MemberId, TensorMetaData]:
+    """Map input metadata like physical scales and units to newly created network outputs."""
+    metadata: dict[MemberId, TensorMetaData] = {}
+    if isinstance(model, v0_4.ModelDescr):
+        return metadata
+
+    input_axes = {(ipt.id, a.id): a for ipt in model.inputs for a in ipt.axes}
+    for out in model.outputs:
+        scales: dict[AxisId, float] = {}
+        units: dict[AxisId, str] = {}
+        channel_names = None
+        for axis in out.axes:
+            if axis.type == "channel":
+                channel_names = axis.channel_names
+                continue
+            if axis.type not in ("space", "time"):
+                continue
+            if isinstance(axis.size, v0_5.SizeReference):
+                ref = (axis.size.tensor_id, axis.size.axis_id)
+            else:
+                candidates = [key for key in input_axes if key[1] == axis.id]
+                if len(candidates) != 1:
+                    continue
+                ref = candidates[0]
+
+            if ref not in input_axes or ref[0] not in inputs:
+                continue
+            tensor = inputs[ref[0]]
+            scale = tensor.get_physical_scale().get(ref[1])
+            if scale is None:
+                continue
+            scales[axis.id] = scale * axis.scale / input_axes[ref].scale
+            units[axis.id] = tensor.get_physical_scale_unit()[ref[1]]
+
+        if scales:
+            metadata[out.id] = TensorMetaData(
+                name=str(out.id),
+                channel_names=channel_names,
+                physical_scale=scales,
+                physical_scale_unit=units,
+            )
+    return metadata
+
+
 def get_axes_infos(
-    io_descr: Union[
-        v0_4.InputTensorDescr,
-        v0_4.OutputTensorDescr,
-        v0_5.InputTensorDescr,
-        v0_5.OutputTensorDescr,
-    ],
-) -> List[AxisInfo]:
+    io_descr: v0_4.InputTensorDescr
+    | v0_4.OutputTensorDescr
+    | v0_5.InputTensorDescr
+    | v0_5.OutputTensorDescr,
+) -> list[AxisInfo]:
     """get a unified, simplified axis representation from spec axes"""
     return [AxisInfo.create(a) for a in io_descr.axes]
 
 
 def get_member_id(
-    tensor_description: Union[
-        v0_4.InputTensorDescr,
-        v0_4.OutputTensorDescr,
-        v0_5.InputTensorDescr,
-        v0_5.OutputTensorDescr,
-    ],
+    tensor_description: v0_4.InputTensorDescr
+    | v0_4.OutputTensorDescr
+    | v0_5.InputTensorDescr
+    | v0_5.OutputTensorDescr,
 ) -> MemberId:
     """get the normalized tensor ID, usable as a sample member ID"""
 
@@ -205,19 +237,30 @@ def get_member_id(
 
 def get_member_ids(
     tensor_descriptions: Iterable[
-        Union[
-            v0_4.InputTensorDescr,
-            v0_4.OutputTensorDescr,
-            v0_5.InputTensorDescr,
-            v0_5.OutputTensorDescr,
-        ]
+        v0_4.InputTensorDescr
+        | v0_4.OutputTensorDescr
+        | v0_5.InputTensorDescr
+        | v0_5.OutputTensorDescr
     ],
-) -> List[MemberId]:
+) -> list[MemberId]:
     """get normalized tensor IDs to be used as sample member IDs"""
     return [get_member_id(descr) for descr in tensor_descriptions]
 
 
-def get_test_input_sample(model: AnyModelDescr) -> Sample:
+def get_test_input_sample(
+    model: AnyModelDescr,
+    *,
+    repetitions: Sequence[tuple[int, Axis | AxisInfo, Sequence[float]]] = (),
+) -> Sample:
+    """returns a model's test input sample
+
+    Args:
+        model: The model for which to create a test input sample.
+        repetitions: A mapping of additional axes (keyed by their index and ID) to sequences of value factors. This adds new dimensions with scaled repetitions of the original test sample that will be stacked into a/the batch dimension.
+
+    Returns:
+        A test input sample for the given model.
+    """
     if isinstance(model, v0_4.ModelDescr):
         info = {
             MemberId(d.name): (d, t) for d, t in zip(model.inputs, model.test_inputs)
@@ -225,14 +268,18 @@ def get_test_input_sample(model: AnyModelDescr) -> Sample:
     else:
         info = {d.id: d for d in model.inputs}
 
-    return _get_test_sample(info)
+    return _get_test_sample(info, repetitions=repetitions)
 
 
 get_test_inputs = get_test_input_sample
 """DEPRECATED: use `get_test_input_sample` instead"""
 
 
-def get_test_output_sample(model: AnyModelDescr) -> Sample:
+def get_test_output_sample(
+    model: AnyModelDescr,
+    *,
+    repetitions: Sequence[tuple[int, Axis | AxisInfo, Sequence[float]]] = (),
+) -> Sample:
     """returns a model's test output sample"""
     if isinstance(model, v0_4.ModelDescr):
         info = {
@@ -241,7 +288,7 @@ def get_test_output_sample(model: AnyModelDescr) -> Sample:
     else:
         info = {d.id: d for d in model.outputs}
 
-    return _get_test_sample(info)
+    return _get_test_sample(info, repetitions=repetitions)
 
 
 get_test_outputs = get_test_output_sample
@@ -249,25 +296,13 @@ get_test_outputs = get_test_output_sample
 
 
 def _get_test_sample(
-    info: Union[
-        Mapping[MemberId, Union[v0_5.InputTensorDescr, v0_5.OutputTensorDescr]],
-        Mapping[
-            MemberId,
-            Tuple[
-                v0_4.InputTensorDescr,
-                FileSource,
-            ],
-        ],
-        Mapping[
-            MemberId,
-            Tuple[
-                v0_4.OutputTensorDescr,
-                FileSource,
-            ],
-        ],
-    ],
+    info: Mapping[MemberId, v0_5.InputTensorDescr | v0_5.OutputTensorDescr]
+    | Mapping[MemberId, tuple[v0_4.InputTensorDescr, FileSource]]
+    | Mapping[MemberId, tuple[v0_4.OutputTensorDescr, FileSource]],
+    *,
+    repetitions: Sequence[tuple[int, Axis | AxisInfo, Sequence[float]]] = (),
 ) -> Sample:
-    arrays: Dict[MemberId, NDArray[Any]] = {}
+    arrays: dict[MemberId, NDArray[Any] | da.Array] = {}
     for m, src in info.items():
         if isinstance(src, tuple):
             arrays[m] = load_array(src[1])
@@ -280,27 +315,104 @@ def _get_test_sample(
         else:
             assert_never(src)
 
-    axes = {
-        m: get_axes_infos(t[0] if isinstance(t, tuple) else t) for m, t in info.items()
+    axes: dict[MemberId, list[Axis | AxisInfo]] = {
+        m: list(get_axes_infos(t[0] if isinstance(t, tuple) else t))
+        for m, t in info.items()
     }
-    return Sample(
-        members={m: Tensor.from_numpy(arrays[m], dims=axes[m]) for m in info},
-        stat={},
-        id="test-sample",
-    )
+    tensors: dict[MemberId, Tensor] = {}
+    for m in info:
+        a = arrays[m]
+        ax = axes[m]
+        if repetitions:
+            for rep_idx, rep_ax, factors in repetitions:
+                if rep_idx < -1 or rep_idx >= len(ax):
+                    raise ValueError(
+                        f"Invalid repetition index {rep_idx} for tensor '{m}' with axes {ax}"
+                    )
+                # Repeat the array along the specified axis according to the factors
+                repitition_arrays = {
+                    factor: cast_and_assert(da.Array, da.from_array(a) * factor)
+                    for factor in set(factors)
+                }
+                a = cast_and_assert(
+                    da.Array,
+                    da.stack(
+                        [repitition_arrays[factor] for factor in factors], axis=rep_idx
+                    ),
+                )
+
+                if len(factors) > 100:
+                    # max 100 chunks along repition axis
+                    chunk_size = max(1, len(factors) // 100)
+                    chunk_shape = list(a.shape)
+                    chunk_shape.insert(rep_idx, chunk_size)
+                    a = cast_and_assert(da.Array, a.rechunk(chunk_shape))  # pyright: ignore[reportArgumentType]
+
+                if isinstance(rep_ax, AxisInfo):
+                    if len(factors) < rep_ax.size.min:
+                        raise ValueError(
+                            f"Invalid number of repetitions {len(factors)} for axis '{rep_ax.id}' with min size {rep_ax.size.min}"
+                        )
+                    if rep_ax.size.max is not None and len(factors) > rep_ax.size.max:
+                        raise ValueError(
+                            f"Invalid number of repetitions {len(factors)} for axis '{rep_ax.id}' with max size {rep_ax.size.max}"
+                        )
+
+                ax.insert(rep_idx, rep_ax)
+
+        tensors[m] = Tensor.from_array(a, dims=ax)
+
+    return Sample(members=tensors, stat={}, id="test-sample")
 
 
-class IO_SampleBlockMeta(NamedTuple):
-    input: SampleBlockMeta
-    output: SampleBlockMeta
+def get_unstacked_output_dim_orders_for_model(
+    model: v0_4.ModelDescr | v0_5.ModelDescr,
+    unstacked_input_order: PerMember[Sequence[AxisId]] | None,
+    stacked_output_dims: PerMember[Sequence[AxisId]] | None,
+) -> PerMember[Sequence[AxisId]]:
+    """Returns the unstacked output dim order for each output tensor of a model,
+    given optional unstacked input dim order and optional output stacked dims."""
+    output_orders: dict[MemberId, Sequence[AxisId]] = {}
+    for out in model.outputs:
+        in_order = None
+        if isinstance(out, v0_5.OutputTensorDescr):
+            out_id = out.id
+            stacked_out_order = [ax.id for ax in out.axes]
+            if unstacked_input_order is not None:
+                for ax in out.axes:
+                    if isinstance(ax.size, v0_5.SizeReference):
+                        in_order = unstacked_input_order.get(ax.size.tensor_id)
+                        break
+        elif isinstance(out, v0_4.OutputTensorDescr):
+            out_id = MemberId(out.name)
+            stacked_out_order = [AxisId(ax) for ax in out.axes]
+            if unstacked_input_order is not None:
+                for s in out.shape:
+                    if isinstance(s, v0_4.ImplicitOutputShape):
+                        in_order = unstacked_input_order.get(
+                            MemberId(s.reference_tensor)
+                        )
+                        break
+        else:
+            assert_never(out)
+
+        output_orders[out_id] = get_unstacked_dim_order(
+            stacked_out_order,
+            unstacked_reference_order=in_order,
+            stacked_dims=stacked_output_dims.get(out_id)
+            if stacked_output_dims is not None
+            else None,
+        )
+
+    return output_orders
 
 
 def get_input_halo(
-    model: v0_5.ModelDescr, output_halo: Optional[PerMember[PerAxis[Halo]]] = None
+    model: v0_5.ModelDescr, output_halo: PerMember[PerAxis[Halo]] | None = None
 ):
     """returns which halo input tensors need to be divided into blocks with, such that
     `output_halo` can be cropped from their outputs without introducing gaps."""
-    input_halo: Dict[MemberId, Dict[AxisId, Halo]] = {}
+    input_halo: dict[MemberId, dict[AxisId, Halo]] = {}
     outputs = {t.id: t for t in model.outputs}
     all_tensors = {**{t.id: t for t in model.inputs}, **outputs}
     if output_halo is None:
@@ -319,7 +431,7 @@ def get_input_halo(
         for a, ah in th.items():
             s = axes[a].size
             if not isinstance(s, v0_5.SizeReference):
-                raise ValueError(
+                raise TypeError(
                     f"Unable to map output halo for {t}.{a} to an input axis"
                 )
 
@@ -342,15 +454,15 @@ def get_input_halo(
 
 def get_block_transform(
     model: v0_5.ModelDescr,
-) -> PerMember[PerAxis[Union[LinearSampleAxisTransform, int]]]:
-    """returns how a model's output tensor shapes relates to its input shapes"""
-    ret: Dict[MemberId, Dict[AxisId, Union[LinearSampleAxisTransform, int]]] = {}
+) -> PerMember[PerAxis[LinearAxisTransform | int]]:
+    """returns how a model's output tensor shapes relates to given input shapes"""
+    ret: dict[MemberId, dict[AxisId, LinearAxisTransform | int]] = {}
     batch_axis_trf = None
     for ipt in model.inputs:
         for a in ipt.axes:
             if a.type == "batch":
-                batch_axis_trf = LinearSampleAxisTransform(
-                    axis=a.id, scale=1, offset=0, member=ipt.id
+                batch_axis_trf = LinearAxisTransform(
+                    member=ipt.id, axis=a.id, scale=1, offset=0
                 )
                 break
         if batch_axis_trf is not None:
@@ -359,10 +471,65 @@ def get_block_transform(
         t.id: {a.id: a.scale for a in t.axes}
         for t in chain(model.inputs, model.outputs)
     }
+    # a common inaccuracy in bioimage.io model specs is to define a fixed output size equal to a correspoding fixed input size, while the output size should actually be a size reference to the fixed input size to encode the relationship between input and output sizes. The following dict is used to patch such cases, by replacing the fixed output size with a size reference to the corresponding fixed input size.
+    patched_size_ref_for_fixed_output_size_matching_fixed_input_size: dict[
+        MemberId, dict[AxisId, v0_5.SizeReference]
+    ] = {}
+    inconsistet_outputs: set[MemberId] = set()
     for out in model.outputs:
-        new_axes: Dict[AxisId, Union[LinearSampleAxisTransform, int]] = {}
         for a in out.axes:
-            if a.size is None:
+            if not isinstance(a.size, int):
+                continue
+
+            for ipt in model.inputs:
+                for ia in ipt.axes:
+                    if (
+                        a.type not in ("space", "time")
+                        or a.type != ia.type
+                        or a.id != ia.id
+                        or a.size != ia.size
+                        or a.scale != ia.scale
+                        or a.unit != ia.unit
+                    ):
+                        continue
+
+                    previous_size_refs = list(
+                        patched_size_ref_for_fixed_output_size_matching_fixed_input_size.get(
+                            out.id, {}
+                        ).values()
+                    )
+                    if previous_size_refs and ipt.id != previous_size_refs[0].tensor_id:
+                        inconsistet_outputs.add(out.id)
+                    else:
+                        patched_size_ref_for_fixed_output_size_matching_fixed_input_size.setdefault(
+                            out.id, {}
+                        )[a.id] = v0_5.SizeReference(tensor_id=ipt.id, axis_id=ia.id)
+
+    # remove inconsistent outputs from the patch dict
+    patched_size_ref_for_fixed_output_size_matching_fixed_input_size = {
+        m: {a: sr for a, sr in srs.items()}
+        for m, srs in patched_size_ref_for_fixed_output_size_matching_fixed_input_size.items()
+        if m not in inconsistet_outputs
+    }
+    if patched_size_ref_for_fixed_output_size_matching_fixed_input_size:
+        logger.warning(
+            "Patched output size references: {}\nThe fixed output sizes were likely intended to be defined as size references to the corresponding fixed input sizes.",
+            {
+                (k, kk): (sr.tensor_id, sr.axis_id)
+                for k, v in patched_size_ref_for_fixed_output_size_matching_fixed_input_size.items()
+                for kk, sr in v.items()
+            },
+        )
+
+    for out in model.outputs:
+        new_axes: dict[AxisId, LinearAxisTransform | int] = {}
+        for a in out.axes:
+            a_size = (
+                patched_size_ref_for_fixed_output_size_matching_fixed_input_size.get(
+                    out.id, {}
+                ).get(a.id, a.size)
+            )
+            if a_size is None:
                 assert a.type == "batch"
                 if batch_axis_trf is None:
                     raise ValueError(
@@ -370,99 +537,64 @@ def get_block_transform(
                         + f" '{out.id}' has one."
                     )
                 s = batch_axis_trf
-            elif isinstance(a.size, int):
-                s = a.size
-            elif isinstance(a.size, v0_5.DataDependentSize):
+            elif isinstance(a_size, int):
+                if a.type == "batch":
+                    if batch_axis_trf is None:
+                        raise ValueError(
+                            "no batch axis found in any input tensor, but output tensor"
+                            + f" '{out.id}' has one."
+                        )
+                    s = batch_axis_trf
+                else:
+                    s = a_size
+            elif isinstance(a_size, v0_5.DataDependentSize):
+                assert a.type != "batch", (
+                    "data dependent size cannot be used for batch axis"
+                )
                 s = -1
-            elif isinstance(a.size, v0_5.SizeReference):
-                s = LinearSampleAxisTransform(
-                    axis=a.size.axis_id,
-                    scale=axis_scales[a.size.tensor_id][a.size.axis_id] / a.scale,
-                    offset=a.size.offset,
-                    member=a.size.tensor_id,
+            elif isinstance(a_size, v0_5.SizeReference):
+                assert a.type != "batch", "size reference cannot be used for batch axis"
+                s = LinearAxisTransform(
+                    axis=a_size.axis_id,
+                    scale=axis_scales[a_size.tensor_id][a_size.axis_id] / a.scale,
+                    offset=a_size.offset,
+                    member=a_size.tensor_id,
                 )
             else:
-                assert_never(a.size)
+                assert_never(a_size)
 
             new_axes[a.id] = s
 
         # account for postprocessing that changes the nubmer of output channels by
         # overwriting described output shape by the intermediate output shape
-        c = AxisId("channel")
-        if c not in new_axes:
-            continue
-        for post in out.postprocessing:
-            if post.id == "cellpose_flow_dynamics":
-                new_axes[c] = 3
-                break
-            elif post.id == "stardist_postprocessing":
-                new_axes[c] = post.kwargs.n_rays + 1
-                break
+        if CHANNEL_AXIS_ID in new_axes:
+            for post in out.postprocessing:
+                if post.id == "cellpose_flow_dynamics":
+                    new_axes[CHANNEL_AXIS_ID] = 3
+                    break
+                elif post.id == "stardist_postprocessing":
+                    new_axes[CHANNEL_AXIS_ID] = post.kwargs.n_rays + 1
+                    break
 
         ret[out.id] = new_axes
 
     return ret
 
 
-def get_io_sample_block_metas(
-    model: v0_5.ModelDescr,
-    input_sample_shape: PerMember[PerAxis[int]],
-    ns: Mapping[Tuple[MemberId, AxisId], ParameterizedSize_N],
-    batch_size: int = 1,
-) -> Tuple[TotalNumberOfBlocks, Iterable[IO_SampleBlockMeta]]:
-    """returns an iterable yielding meta data for corresponding input and output samples"""
-    if not isinstance(model, v0_5.ModelDescr):
-        raise TypeError(f"get_block_meta() not implemented for {type(model)}")
-
-    block_axis_sizes = model.get_axis_sizes(ns=ns, batch_size=batch_size)
-    input_block_shape = {
-        t: {aa: s for (tt, aa), s in block_axis_sizes.inputs.items() if tt == t}
-        for t in {tt for tt, _ in block_axis_sizes.inputs}
-    }
-    output_halo = {
-        t.id: {
-            a.id: Halo(a.halo, a.halo) for a in t.axes if isinstance(a, v0_5.WithHalo)
-        }
-        for t in model.outputs
-    }
-    input_halo = get_input_halo(model, output_halo)
-
-    n_input_blocks, input_blocks = split_multiple_shapes_into_blocks(
-        input_sample_shape, input_block_shape, halo=input_halo
-    )
-    block_transform = get_block_transform(model)
-    return n_input_blocks, (
-        IO_SampleBlockMeta(ipt, ipt.get_transformed(block_transform))
-        for ipt in sample_block_meta_generator(
-            input_blocks, sample_shape=input_sample_shape, sample_id=None
-        )
-    )
-
-
 def get_tensor(
     src: TensorSource,
-    descr: Union[
-        v0_4.InputTensorDescr,
-        v0_5.InputTensorDescr,
-        v0_4.OutputTensorDescr,
-        v0_5.OutputTensorDescr,
-        Sequence[AxisInfo],
-    ],
-    *,
-    extra_dims: Literal["raise", "squeeze", "stack", "squeeze_or_stack"] = "squeeze",
-    missing_dims: Literal["raise", "expand", "unstack", "unstack_or_expand"] = "raise",
+    descr: v0_4.InputTensorDescr
+    | v0_5.InputTensorDescr
+    | v0_4.OutputTensorDescr
+    | v0_5.OutputTensorDescr
+    | Sequence[AxisInfo],
 ):
     """helper to cast/load various tensor sources
 
     Args:
         src: the tensor source to load/cast
         descr: the tensor description or a sequence of axis infos
-        extra_dims:
-            How to handle extra dimensions in the input tensors.
-            If "raise", any extra dimensions will raise an error.
-            If "squeeze", any extra singleton dimensions will be squeezed, non-singleton dimensions will raise an error.
-            If "stack", any extra dimensions will be stacked to the batch dimension. Such a stacked batch dimension then has a multi-index that can be unstacked using `Tensor.unstack_batch_multi_index()`.
-            If "squeeze_or_stack", any extra singleton dimensions will be squeezed, non-singleton dimensions will be stacked to the batch dimension.
+
     """
 
     if isinstance(
@@ -479,48 +611,45 @@ def get_tensor(
         axes = descr
 
     if isinstance(src, Tensor):
-        output_dims = [a.id for a in axes]
-        return src.transpose(
-            output_dims, extra_dims=extra_dims, missing_dims=missing_dims
-        )
+        output = src
     elif isinstance(src, xr.DataArray):
-        output_dims = [a.id for a in axes]
+        output = Tensor.from_xarray(src)
 
-        return Tensor.from_xarray(src).transpose(
-            axes=output_dims, extra_dims=extra_dims, missing_dims=missing_dims
-        )
     elif isinstance(src, np.ndarray):
-        return Tensor.from_numpy(src, dims=axes)
+        output = Tensor.from_numpy(src, dims=axes)
     else:
-        return load_tensor(src, axes=axes)
+        output = load_tensor(src, axes=axes)
+
+    for a in axes:
+        if a.id not in output.dims:
+            raise ValueError(
+                f"Missing axis '{a.id}' in tensor with dims {output.dims}. Expected axes: {axes}"
+            )
+
+    return output
 
 
 def create_sample_for_model(
     model: AnyModelDescr,
+    inputs: PerMember[TensorSource] | TensorSource,
     *,
-    stat: Optional[Stat] = None,
+    stat: Stat | None = None,
     sample_id: SampleId = None,
-    inputs: Union[PerMember[TensorSource], TensorSource],
-    extra_dims: Literal["raise", "squeeze", "stack", "squeeze_or_stack"] = "stack",
 ) -> Sample:
     """Create a sample from a single set of input(s) for a specific bioimage.io model
 
     Args:
         model: a bioimage.io model description
+        inputs: the input(s) constituting a single sample, e.g. {'raw': ..., 'mask': ...}.
         stat: dictionary with sample and dataset statistics (may be updated in-place!)
-        inputs: the input(s) constituting a single sample.
-        extra_dims: How to handle extra dimensions in the input tensors.
-            If "raise", any extra dimensions will raise an error.
-            If "squeeze", any extra singleton dimensions will be squeezed, non-singleton dimensions will raise an error.
-            If "stack", any extra dimensions will be stacked to the batch dimension. Such a stacked batch dimension then has a multi-index that can be unstacked using `Tensor.unstack_batch_multi_index()`.
-            If "squeeze_or_stack", any extra singleton dimensions will be squeezed, non-singleton dimensions will be stacked to the batch dimension.
+        sample_id: sample ID
     """
 
     model_inputs = {get_member_id(d): d for d in model.inputs}
     if isinstance(inputs, collections.abc.Mapping):
         inputs = {MemberId(k): v for k, v in inputs.items()}
     elif len(model_inputs) == 1:
-        inputs = {list(model_inputs)[0]: inputs}
+        inputs = {next(iter(model_inputs)): inputs}
     else:
         raise TypeError(
             f"Expected `inputs` to be a mapping with keys {tuple(model_inputs)}"
@@ -536,114 +665,77 @@ def create_sample_for_model(
     }:
         raise ValueError(f"Missing non-optional model inputs: {missing}")
 
-    return Sample(
-        members={
-            m: get_tensor(inputs[m], ipt, extra_dims=extra_dims)
-            for m, ipt in model_inputs.items()
-            if m in inputs
-        },
-        stat={} if stat is None else stat,
-        id=sample_id,
-    )
+    members: dict[MemberId, Tensor] = {}
+    for m, ipt in model_inputs.items():
+        if m in inputs:
+            tensor = get_tensor(inputs[m], ipt)
+            members[m] = tensor
+
+    return Sample(members=members, stat={} if stat is None else stat, id=sample_id)
 
 
-def load_sample_for_model(
-    *,
-    model: AnyModelDescr,
-    paths: PerMember[Path],
-    axes: Optional[PerMember[Sequence[AxisLike]]] = None,
-    stat: Optional[Stat] = None,
-    sample_id: Optional[SampleId] = None,
-):
-    """load a single sample from `paths` that can be processed by `model`"""
-
-    if axes is None:
-        axes = {}
-
-    # make sure members are keyed by MemberId, not string
-    paths = {MemberId(k): v for k, v in paths.items()}
-    axes = {MemberId(k): v for k, v in axes.items()}
-
-    model_inputs = {get_member_id(d): d for d in model.inputs}
-
-    if unknown := {k for k in paths if k not in model_inputs}:
-        raise ValueError(f"Got unexpected paths for {unknown}")
-
-    if unknown := {k for k in axes if k not in model_inputs}:
-        raise ValueError(f"Got unexpected axes hints for: {unknown}")
-
-    members: Dict[MemberId, Tensor] = {}
-    for m, p in paths.items():
-        if m not in axes:
-            axes[m] = get_axes_infos(model_inputs[m])
-            logger.info(
-                "loading '{}' from {} with default input axes {} ",
-                m,
-                p,
-                axes[m],
-            )
-        members[m] = load_tensor(p, axes[m])
-
-    return Sample(
-        members=members,
-        stat={} if stat is None else stat,
-        id=sample_id or tuple(sorted(paths.values())),
-    )
-
-
-def split_sample_into_blocks_for_model(
-    sample: Sample,
-    model: v0_5.ModelDescr,
-    blocksize_parameter: int,
-    batch_size: int = 1,
-) -> Tuple[TotalNumberOfBlocks, Iterable[SampleBlockWithOrigin]]:
-    if isinstance(model, v0_4.ModelDescr):
-        raise NotImplementedError(
-            "`predict_sample_with_blocking` not implemented for v0_4.ModelDescr"
-            + f" {model.name}."
-            + " Consider using `predict_sample_with_fixed_blocking` or update the model description to format version 0.5."
-        )
-
-    ns = {
-        (ipt.id, a.id): blocksize_parameter
-        for ipt in model.inputs
-        for a in ipt.axes
-        if isinstance(a.size, v0_5.ParameterizedSize)
-    }
-    halo = get_input_halo(model)
-
-    input_block_shape = model.get_tensor_sizes(ns, batch_size=batch_size).inputs
-
-    return sample.split_into_blocks(
-        block_shapes=input_block_shape,
-        halo=halo,
-        pad_mode={ipt.id: ipt.pad or "symmetric" for ipt in model.inputs},
-    )
+load_sample_for_model: Final = create_sample_for_model
 
 
 def transpose_sample_for_model(
     sample: Sample,
     model: AnyModelDescr,
+    *,
     extra_dims: Literal["raise", "squeeze", "stack", "squeeze_or_stack"] = "stack",
-    missing_dims: Literal["raise", "expand", "unstack", "unstack_or_expand"] = "raise",
+    missing_dims: Literal[
+        "raise", "expand", "unstack", "unstack_or_expand"
+    ] = "unstack",
 ) -> Sample:
-    """Transpose sample members to the order expected as inputs by the model.
+    return Sample(
+        members=transpose_inputs_for_model(
+            sample.members, model, extra_dims=extra_dims, missing_dims=missing_dims
+        ),
+        stat=sample.stat,
+        id=sample.id,
+    )
 
-    Unexpected dimensions are stacked to the batch dimension, missing dimensions are added as singletons.
-    """
+
+def transpose_inputs_for_model(
+    inputs: PerMember[Tensor],
+    model: AnyModelDescr,
+    *,
+    extra_dims: Literal["raise", "squeeze", "stack", "squeeze_or_stack"] = "stack",
+    missing_dims: Literal[
+        "raise", "expand", "unstack", "unstack_or_expand"
+    ] = "unstack",
+) -> dict[MemberId, Tensor]:
+    """Transpose sample members to the order expected as inputs by the model."""
 
     axes = {get_member_id(d): [a.id for a in get_axes_infos(d)] for d in model.inputs}
     for m in axes:
-        if m not in sample.members and not (
+        if m not in inputs and not (
             isinstance(model, v0_5.ModelDescr)
-            and [d for d in model.inputs if get_member_id(d) == m][0].optional
+            and next(d for d in model.inputs if get_member_id(d) == m).optional
         ):
             raise ValueError(
                 f"Sample is missing non-optional member {m} required by model"
             )
 
-    return sample.transpose(
-        axes=axes,
-        extra_dims=extra_dims,
-        missing_dims=missing_dims,
-    )
+    if any(unknown := [m not in inputs for m in axes]):
+        raise ValueError(f"Axes specified for unknown members: {unknown}")
+
+    transposed = {
+        m: t.transpose(axes[m], extra_dims=extra_dims, missing_dims=missing_dims)
+        for m, t in inputs.items()
+        if m in axes
+    }
+    if (
+        len(
+            batch_lengths := {
+                t.sizes[AxisId("batch")]
+                for t in transposed.values()
+                if AxisId("batch") in t.dims
+            }
+        )
+        > 1
+    ):
+        raise ValueError(
+            f"Transposed tensors have incompatible batch lengths: {batch_lengths}."
+        )
+
+    return transposed

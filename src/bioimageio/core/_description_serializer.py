@@ -1,7 +1,6 @@
 import base64
 import hashlib
 from io import BytesIO
-from typing import Tuple
 from zipfile import ZipFile
 
 from bioimageio.spec import (
@@ -33,11 +32,16 @@ class DescriptionSerializer:
 
         safe_bytes = cls._get_safe_bytes(package_bytes)
         serialized_str = safe_bytes.decode(cls.STRING_ENCODING)
-        if len(serialized_str) <= 2083:
-            raise RuntimeError(
-                "Serialized model description should be longer than 2083 characters to not be treated as a URL on the server side."
-            )
+        serialized_str = cls._pad_to_min_length(serialized_str)
         return serialized_str
+
+    MIN_LENGTH = 2084
+    """Serialized strings of at most 2083 characters would be treated as a URL on the server side."""
+
+    @classmethod
+    def _pad_to_min_length(cls, serialized_str: str) -> str:
+        # `base64.b64decode` discards non-alphabet characters, so newlines are safe padding
+        return serialized_str + "\n" * (cls.MIN_LENGTH - len(serialized_str))
 
     @staticmethod
     def _get_safe_bytes(raw_bytes: bytes) -> bytes:
@@ -52,18 +56,15 @@ class DescriptionSerializer:
     def deserialize(serialized: bytes) -> ResourceDescr:
         descr = load_description(ZipFile(BytesIO(serialized)), perform_io_checks=False)
         if isinstance(descr, InvalidDescr):
-            raise ValueError(f"invalid serialized model package: {descr.get_reason()}")
+            raise TypeError(f"invalid serialized model package: {descr.get_reason()}")
 
         return descr
 
     @classmethod
-    def serialize_to_string_and_hash(cls, rd: ResourceDescr) -> Tuple[str, Sha256]:
+    def serialize_to_string_and_hash(cls, rd: ResourceDescr) -> tuple[str, Sha256]:
         package_bytes = cls.serialize(rd)
         safe_bytes = cls._get_safe_bytes(package_bytes)
         serialized_str = safe_bytes.decode(cls.STRING_ENCODING)
-        if len(serialized_str) <= 2083:
-            raise RuntimeError(
-                "Serialized model description should be longer than 2083 characters to not be treated as a URL on the server side."
-            )
+        serialized_str = cls._pad_to_min_length(serialized_str)
         sha256 = Sha256(hashlib.sha256(package_bytes).hexdigest())
         return serialized_str, sha256

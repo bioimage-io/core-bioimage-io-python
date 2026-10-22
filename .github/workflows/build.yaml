@@ -69,23 +69,22 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - python-version: '3.9'
-            numpy-version: 1
-          - python-version: '3.9'
-            numpy-version: 2
           - python-version: '3.10'
-            run-expensive-tests: true
-            report-coverage: true
-            save-cache: true
             numpy-version: 1
           - python-version: '3.11'
             numpy-version: 2
           - python-version: '3.12'
             numpy-version: 1
-          - python-version: '3.12'
-            numpy-version: 2
             spec-from-main: true
-          # - python-version: '3.13'
+          - python-version: '3.13'
+            numpy-version: 2
+            run-expensive-tests: true
+            report-coverage: true
+            save-cache: true
+          # - python-version: '3.14'
+          #   numpy-version: 2
+          #   spec-from-main: true
+          # - python-version: '3.15'
           #   numpy-version: 2
 
     steps:
@@ -173,7 +172,7 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: coverage.xml
-      - uses: orgoro/coverage@v3.2
+      - uses: orgoro/coverage@v3.3
         with:
           coverageFile: coverage.xml
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -252,7 +251,7 @@ jobs:
           path: dist
       - uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: '3.13'
           cache: 'pip'
       - run: pip install -e .[dev,docs,partners]
       - name: Check doc scripts

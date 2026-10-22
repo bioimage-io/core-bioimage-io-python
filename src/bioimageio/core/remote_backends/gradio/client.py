@@ -1,32 +1,30 @@
-from types import MappingProxyType
-from typing import Dict, Iterable, Literal, Mapping, Optional, Tuple, Union
+from __future__ import annotations
 
-from gradio_client import Client
+from collections.abc import Mapping
+from types import MappingProxyType
+from typing import Any, Generic, Literal, TypeVar, overload
+
+from gradio_client.client import Client
 from loguru import logger
 
 from bioimageio.spec import AnyModelDescr, ValidationSummary
-from bioimageio.spec.model import v0_4
 
-from ..._description_serializer import DescriptionSerializer as DescriptionSerializer
+from ..._description_serializer import DescriptionSerializer
 from ..._model_adapter import RemoteModelAdapter
-from ..._prediction_pipeline import IntermediatePrediction, RemotePredictionPipeline
+from ..._prediction_pipeline import RemotePredictionPipeline
 from ..._settings import settings
-from ...axis import PerAxis
+from ..._utils.type_hints import NestedList
+from ...axis import AxisSize, PerAxis
 from ...common import BlocksizeParameter, PerMember
-from ...io import JsonValue
-from ...sample import Sample, SampleBlock
+from ...sample import Sample
 from ...stat_measures import Measure, MeasureValue
-from .serializer import GradioSampleSerializer
-
-SerializedSampleBlock = Dict[str, JsonValue]
+from .serializer import GradioSampleSerializer, SerializedSampleBlock
 
 
 class GradioModelAdapter(RemoteModelAdapter[SerializedSampleBlock]):
     """Model adapter to use the bioimage-io-gradio-runner as a backend for model inference."""
 
-    def __init__(
-        self, model_description: AnyModelDescr, *, server: Optional[str] = None
-    ):
+    def __init__(self, model_description: AnyModelDescr, *, server: str | None = None):
         """Initialize the GradioModelAdapter.
 
         Note:
@@ -51,8 +49,8 @@ class GradioModelAdapter(RemoteModelAdapter[SerializedSampleBlock]):
         )
 
     def _forward_impl(
-        self, serialized_input_sample: Iterable[SerializedSampleBlock]
-    ) -> Iterable[SerializedSampleBlock]:
+        self, serialized_input_sample: NestedList[SerializedSampleBlock]
+    ) -> NestedList[SerializedSampleBlock]:
         return _call_predict_api(
             self._client,
             self._serialized_model,
@@ -86,7 +84,7 @@ class GradioModelAdapter(RemoteModelAdapter[SerializedSampleBlock]):
                 if result:
                     break
 
-    def test(self) -> Optional[ValidationSummary]:
+    def test(self) -> ValidationSummary | None:
         for model_data in ("", self._serialized_model):
             try:
                 result = self._client.submit(
@@ -106,6 +104,46 @@ class GradioModelAdapter(RemoteModelAdapter[SerializedSampleBlock]):
         return None
 
 
+T = TypeVar("T")
+
+
+class _DummyJob(Generic[T]):
+    def __init__(self, result: T):
+        super().__init__()
+        self._result = result
+
+    def result(self, timeout: float | None = None) -> T:
+        return self._result
+
+
+class _DummyClient:
+    @overload
+    def submit(
+        self, api_name: Literal["/get_status"], **kwargs: Any
+    ) -> _DummyJob[dict[Literal["message"], str]]: ...
+    @overload
+    def submit(
+        self, api_name: Literal["/predict"], **kwargs: Any
+    ) -> _DummyJob[NestedList[SerializedSampleBlock]]: ...
+    def submit(
+        self, api_name: Literal["/get_status", "/predict"], **kwargs: Any
+    ) -> (
+        _DummyJob[dict[Literal["message"], str]]
+        | _DummyJob[NestedList[SerializedSampleBlock]]
+    ):
+        if api_name == "/get_status":
+            return _DummyJob({"message": "dummy client"})
+        elif api_name == "/predict":
+            from .server import predict as server_predict
+
+            return _DummyJob(server_predict(**kwargs))
+        else:
+            raise ValueError(f"Unknown api_name: {api_name}")
+
+    def close(self):
+        pass
+
+
 class GradioPredictionPipeline(RemotePredictionPipeline):
     """Prediction pipeline to use the bioimage-io-gradio-runner as a fully remote prediction pipeline."""
 
@@ -113,7 +151,7 @@ class GradioPredictionPipeline(RemotePredictionPipeline):
         self,
         model_description: AnyModelDescr,
         *,
-        server: Optional[str] = None,
+        server: str | None | Literal["run_in_client_process"] = None,
         precomputed_statistics: Mapping[Measure, MeasureValue] = MappingProxyType({}),
         default_blocksize_parameter: BlocksizeParameter = 10,
         default_batch_size: int = 1,
@@ -138,54 +176,44 @@ class GradioPredictionPipeline(RemotePredictionPipeline):
             default_blocksize_parameter=default_blocksize_parameter,
             default_batch_size=default_batch_size,
         )
-        self._client = Client(self.server, httpx_kwargs={"timeout": 60})
+        self._client = None
+
         self._serialized_model, self._sha256 = (
             DescriptionSerializer.serialize_to_string_and_hash(model_description)
         )
         self._serializer = GradioSampleSerializer
         self._precomputed_statistics = dict(precomputed_statistics)
 
-    def predict_sample_block(
-        self,
-        sample_block: SampleBlock,
-        skip_preprocessing: bool = False,
-        skip_postprocessing: bool = False,
-    ) -> SampleBlock:
-        if isinstance(self._model_descr, v0_4.ModelDescr):
-            raise NotImplementedError(
-                f"predict_sample_block not implemented for model {self._model_descr.format_version}"
-            )
+    def load(self) -> None:
+        if self._server == "run_in_client_process":
+            # run via dummy client (intended for debugging)
+            self._client = _DummyClient()
         else:
-            assert self._block_transform is not None
+            self._client = Client(self.server, httpx_kwargs={"timeout": 60})
 
-        sample_block.stat.update(self._precomputed_statistics)
-        output_block = self._serializer.deserialize_sample(
-            _call_predict_api(
-                self._client,
-                self._serialized_model,
-                self._sha256,
-                serialized_input_sample=self._serializer.serialize_sample(
-                    sample_block.as_sample()
-                ),
-                blocksize=None,
-                skip_preprocessing=skip_preprocessing,
-                skip_postprocessing=skip_postprocessing,
-                skip_input_padding=True,
-                skip_output_cropping=True,
-                batch_size=self._default_batch_size,
+    def unload(self):
+        if self._client is not None:
+            logger.info(
+                "Closing GradioPredictionPipeline client connection to server {}",
+                self.server,
             )
-        )
-        output_meta = sample_block.get_transformed_meta(self._block_transform)
-        return output_meta.with_data(output_block.members, stat=sample_block.stat)
+            self._client.close()
+            self._client = None
 
-    def _predict_sample_without_blocking_impl(
+    def _predict_without_blocking_impl(
         self,
         sample: Sample,
-        skip_preprocessing: bool = False,
-        skip_postprocessing: bool = False,
-        skip_input_padding: bool = False,
-        skip_output_cropping: bool = False,
+        *,
+        skip_input_padding: bool,
+        skip_preprocessing: bool,
+        skip_postprocessing: bool,
+        skip_output_cropping: bool,
     ) -> Sample:
+        if self._client is None:
+            raise RuntimeError(
+                "GradioPredictionPipeline client is not initialized. "
+                + "Please call 'load()' before predicting or use the PredictionPipeline as context manager."
+            )
         sample.stat.update(self._precomputed_statistics)
         return self._serializer.deserialize_sample(
             _call_predict_api(
@@ -202,115 +230,98 @@ class GradioPredictionPipeline(RemotePredictionPipeline):
             )
         )
 
-    def _predict_sample_with_fixed_blocking_yield_intermediates_impl(
+    def _predict_with_fixed_blocking_impl(
         self,
         sample: Sample,
-        input_block_shape: PerMember[PerAxis[int]],
+        block_shape: PerMember[PerAxis[int | AxisSize]],
         *,
-        skip_preprocessing: bool = False,
-        skip_postprocessing: bool = False,
-        fill_value: float = float("nan"),
-    ) -> Tuple[int, Iterable[IntermediatePrediction]]:
+        skip_preprocessing: bool,
+        skip_postprocessing: bool,
+        skip_input_padding: bool,
+        skip_output_cropping: bool,
+    ) -> Sample:
+        if self._client is None:
+            raise RuntimeError(
+                "GradioPredictionPipeline client is not initialized. "
+                + "Please call 'load()' before predicting or use the PredictionPipeline as context manager."
+            )
+
         sample.stat.update(self._precomputed_statistics)
-
-        # blocking for serialization is not really important, but we might as well block
-        # the same way we want the backend to block for blockwise prediction
-        serialized_input_sample = self._serializer.serialize_sample_with_fixed_blocking(
-            sample, block_shapes=input_block_shape, halo=self._default_input_halo
-        )
-
-        def _predict_blocks():
-            output_sample = None
-            for serialized_output_block in _call_predict_api(
+        return self._serializer.deserialize_sample(
+            _call_predict_api(
                 self._client,
                 self._serialized_model,
                 self._sha256,
-                serialized_input_sample=serialized_input_sample,
-                blocksize=input_block_shape,
+                serialized_input_sample=self._serializer.serialize_sample(sample),
+                blocksize=block_shape,
                 skip_preprocessing=skip_preprocessing,
                 skip_postprocessing=skip_postprocessing,
-                skip_input_padding=False,
-                skip_output_cropping=False,
+                skip_input_padding=skip_input_padding,
+                skip_output_cropping=skip_output_cropping,
                 batch_size=self._default_batch_size,
-            ):
-                output_block = self._serializer.deserialize_sample_block(
-                    serialized_output_block
-                )
-                if output_sample is None:
-                    output_sample = Sample.from_blocks(
-                        [output_block], fill_value=fill_value
-                    )
-                else:
-                    output_sample.set_block(output_block)
-
-                yield IntermediatePrediction(output_sample, output_block)
-
-        block_iterator = _predict_blocks()
-        first_intermediate = next(block_iterator)
-
-        def _intermediate_predictions() -> Iterable[IntermediatePrediction]:
-            yield first_intermediate
-            yield from block_iterator
-
-        return (
-            first_intermediate.last_block.blocks_in_sample,
-            _intermediate_predictions(),
+            )
         )
+
+    def get_status(self) -> dict[Literal["message"], str]:
+        """Check the status of the server."""
+        if self._client is None:
+            raise RuntimeError(
+                "GradioPredictionPipeline client is not initialized. "
+                + "Please call 'load()' before predicting or use the PredictionPipeline as context manager."
+            )
+
+        logger.info(
+            "Checking status of GradioPredictionPipeline server {}", self.server
+        )
+        return self._client.submit(api_name="/get_status").result(timeout=30)
 
 
 def _call_predict_api(
-    client: Client,
+    client: Client | _DummyClient,
     serialized_model: str,
     sha256: str,
-    serialized_input_sample: Iterable[SerializedSampleBlock],
-    blocksize: Optional[
-        Union[int, Literal["blockwise_as_serialized"], PerMember[PerAxis[int]]]
-    ],
+    serialized_input_sample: NestedList[SerializedSampleBlock],
+    blocksize: int
+    | Literal["blockwise_as_serialized"]
+    | PerMember[PerAxis[int | AxisSize]]
+    | None,
     skip_preprocessing: bool,
     skip_postprocessing: bool,
     skip_input_padding: bool,
     skip_output_cropping: bool,
-    batch_size: Optional[int],
-) -> Iterable[SerializedSampleBlock]:
-    def submit(model: str):
+    batch_size: int | None,
+) -> NestedList[SerializedSampleBlock]:
+    if isinstance(blocksize, Mapping):
+        serialized_blocksize = {
+            str(member): {
+                str(axis): {"min": size.min, "max": size.max, "step": size.step}
+                if isinstance(size, AxisSize)
+                else size
+                for axis, size in axes.items()
+            }
+            for member, axes in blocksize.items()
+        }
+    else:
+        serialized_blocksize = blocksize
+
+    def submit(model: str) -> NestedList[SerializedSampleBlock]:
         return client.submit(
             api_name="/predict",
             model=model,
             sha256=sha256,
             input_sample=serialized_input_sample,
-            blocksize={
-                str(k): {str(kk): vv for kk, vv in v.items()}
-                for k, v in blocksize.items()
-            }
-            if not (blocksize is None or isinstance(blocksize, (int, str)))
-            else blocksize,
+            blocksize=serialized_blocksize,
             skip_preprocessing=skip_preprocessing,
             skip_postprocessing=skip_postprocessing,
             skip_input_padding=skip_input_padding,
             skip_output_cropping=skip_output_cropping,
             batch_size=batch_size,
-        )
+        ).result(timeout=300)
 
-    try_with_model_upload = True
     try:
-        job = submit("")
-        for block in job:  # pyright: ignore[reportUnknownVariableType]
-            yield block  # pyright: ignore[reportReturnType]
-            # we got one response, so the model cache was hit...
-            try_with_model_upload = False
+        return submit("")
     except Exception as e:
-        # A raised exception on the server seems to simply return an empty response sequence,
-        # so this except is likely not triggered at all.
-        # Below we retry on empty return value, too.
-        if try_with_model_upload:
-            logger.warning(
-                "Failed to submit job without model upload, trying with model upload, error was: {}",
-                e,
-            )
-        else:
-            raise e
-
-    if try_with_model_upload:
-        job = submit(serialized_model)
-        for block in job:  # pyright: ignore[reportUnknownVariableType]
-            yield block  # pyright: ignore[reportReturnType]
+        logger.warning(
+            "Prediction without model upload failed; retrying with model upload: {}", e
+        )
+        return submit(serialized_model)

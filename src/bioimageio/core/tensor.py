@@ -1,68 +1,76 @@
 from __future__ import annotations
 
 import collections.abc
+from collections.abc import Collection, Iterator, Mapping, Sequence
+from dataclasses import dataclass
 from itertools import permutations
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
-    Dict,
-    Iterator,
-    List,
     Literal,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
+    Protocol,
     Union,
     cast,
     get_args,
 )
 
+import dask.array
+import dask.array as da
 import numpy as np
 import pandas as pd
 import xarray as xr
 from loguru import logger
 from numpy.typing import DTypeLike, NDArray
-from typing_extensions import Self, assert_never
+from typing_extensions import Self, TypeAlias, assert_never
 
 from bioimageio.spec.model import v0_5
+from bioimageio.spec.model.v0_5 import SpaceUnit, TimeUnit
 
 from ._magic_tensor_ops import MagicTensorOpsMixin
-from .axis import AxisId, AxisInfo, AxisLike, PerAxis
+from ._utils.color import get_default_channel_colors
+from ._utils.type_guards import is_dict, is_mapping, is_sequence
+from ._utils.type_hints import cast_and_assert
+from .axis import (
+    BATCH_AXIS_ID,
+    AxisId,
+    AxisInfo,
+    AxisLike,
+    PerAxis,
+    axis_id_from_axis_like,
+)
 from .common import (
     CropWhere,
     DTypeStr,
+    Halo,
+    HaloLike,
+    MemberId,
     PadMode,
     PadWhere,
     PadWidth,
     PadWidthLike,
+    PerMember,
     QuantileMethod,
     SliceInfo,
+    resolve_pad_mode,
 )
 
-if TYPE_CHECKING:
-    from numpy.typing import ArrayLike, NDArray
+MultiIndex = pd.MultiIndex
+
+Array: TypeAlias = "NDArray[Any] | dask.array.Array"
 
 
-_ScalarOrArray = Union["ArrayLike", np.generic, "NDArray[Any]"]  # TODO: add "DaskArray"
+class _SupportsArray(Protocol):
+    def __array__(self) -> NDArray[Any]: ...
 
 
-def _resolve_pad_mode(mode: PadMode):
-    constant_value = None
-    if isinstance(mode, str):
-        mode_name = mode
-    elif isinstance(mode, v0_5.ConstantPadding):
-        mode_name = mode.mode
-        constant_value = mode.value
-    elif isinstance(
-        mode, (v0_5.EdgePadding, v0_5.ReflectPadding, v0_5.SymmetricPadding)
-    ):
-        mode_name = mode.mode
-    else:
-        assert_never(mode)
+@dataclass
+class TensorMetaData:
+    """Metadata for a tensor"""
 
-    return mode_name, constant_value
+    name: str | None
+    channel_names: list[str] | None
+    physical_scale: PerAxis[float | None] | None
+    physical_scale_unit: PerAxis[str | None] | None
 
 
 # TODO: complete docstrings
@@ -71,62 +79,74 @@ class Tensor(MagicTensorOpsMixin):
     """A wrapper around an xr.DataArray for better integration with bioimageio.spec
     and improved type annotations."""
 
-    _Compatible = Union["Tensor", xr.DataArray, _ScalarOrArray]
+    _Compatible: TypeAlias = Union[
+        "Tensor",
+        xr.DataArray,
+        xr.Variable,
+        _SupportsArray,
+        Sequence[Any],
+        "np.generic[Any]",
+    ]
 
     def __init__(
         self,
-        array: Union[NDArray[Any], xr.DataArray],
-        dims: Sequence[Union[AxisId, AxisLike]],
+        array: Array | xr.DataArray,
+        dims: Sequence[AxisId | AxisLike],
     ) -> None:
         super().__init__()
-        axes = tuple(
-            a if isinstance(a, AxisId) else AxisInfo.create(a).id for a in dims
-        )
+        axes = tuple(axis_id_from_axis_like(a) for a in dims)
         if isinstance(array, xr.DataArray):
-            self._data = array.transpose(*axes)
+            self._data: xr.DataArray = array.transpose(*axes)
+            assert isinstance(self._data, xr.DataArray)
         else:
             self._data = xr.DataArray(array, dims=axes)
 
     def __repr__(self) -> str:
-        return f"<Tensor {repr(self._data)}>"
+        return f"<Tensor {self._data!r}>"
 
-    def __array__(self, dtype: DTypeLike = None):
+    def __array__(self, dtype: DTypeLike | None = None):
         return np.asarray(self._data, dtype=dtype)
 
     def __getitem__(
         self,
-        key: Union[
-            SliceInfo,
-            slice,
-            int,
-            PerAxis[Union[SliceInfo, slice, int]],
-            Tensor,
-            xr.DataArray,
-        ],
+        key: SliceInfo
+        | slice
+        | int
+        | PerAxis[SliceInfo | slice | int]
+        | Tensor
+        | xr.DataArray,
     ) -> Self:
         if isinstance(key, SliceInfo):
-            key = slice(*key)
+            key = slice(key.start, key.stop)
         elif isinstance(key, collections.abc.Mapping):
             key = {
-                a: s if isinstance(s, int) else s if isinstance(s, slice) else slice(*s)
+                a: s
+                if isinstance(s, int)
+                else s
+                if isinstance(s, slice)
+                else slice(s.start, s.stop)
                 for a, s in key.items()
             }
         elif isinstance(key, Tensor):
             key = key._data
 
-        return self.__class__.from_xarray(self._data[key])
+        selected = cast_and_assert(xr.DataArray, self._data[key])
+        return self.__class__.from_xarray(selected)
 
     def __setitem__(
         self,
-        key: Union[PerAxis[Union[SliceInfo, slice]], Tensor, xr.DataArray],
-        value: Union[Tensor, xr.DataArray, float, int],
+        key: PerAxis[SliceInfo | slice] | Tensor | xr.DataArray,
+        value: Tensor | xr.DataArray | float,
     ) -> None:
         if isinstance(key, Tensor):
             key = key._data
         elif isinstance(key, xr.DataArray):
             pass
         else:
-            key = {a: s if isinstance(s, slice) else slice(*s) for a, s in key.items()}
+            key = {
+                a: s if isinstance(s, slice) else slice(s.start, s.stop)
+                for a, s in key.items()
+            }
 
         if isinstance(value, Tensor):
             value = value._data
@@ -151,12 +171,170 @@ class Tensor(MagicTensorOpsMixin):
         f: Callable[[Any, Any], Any],
         reflexive: bool = False,
     ) -> Self:
-        data = self._data._binary_op(  # pyright: ignore[reportPrivateUsage]
-            (other._data if isinstance(other, Tensor) else other),
-            f,
-            reflexive,
+        data = cast_and_assert(
+            xr.DataArray,
+            self._data._binary_op(  # pyright: ignore[reportPrivateUsage]
+                (other._data if isinstance(other, Tensor) else other),
+                f,
+                reflexive,
+            ),
         )
+        data.attrs.update(self._data.attrs)
         return self.__class__.from_xarray(data)
+
+    def get_metadata(self) -> TensorMetaData:
+        """Return the tensor's supported metadata as a typed snapshot."""
+        return TensorMetaData(
+            name=self.name,
+            channel_names=self.channel_names,
+            physical_scale=self.get_physical_scale(),
+            physical_scale_unit=self.get_physical_scale_unit(),
+        )
+
+    def set_metadata(self, metadata: TensorMetaData) -> None:
+        """Apply non-None metadata fields using the corresponding setters."""
+        self.name = metadata.name
+        self.channel_names = metadata.channel_names
+        self.set_physical_scale(metadata.physical_scale)
+        self.set_physical_scale_unit(metadata.physical_scale_unit)
+
+    def get_physical_scale(self) -> PerAxis[float]:
+        """Return the physical scale of each axis in units (see `get_physical_scale_unit`)."""
+        _scale = self._data.attrs.get("physical_scale", None)
+        scale: Mapping[Any, Any] = (
+            _scale if _scale is not None and is_mapping(_scale) else {}
+        )
+        del _scale
+        return {
+            a if isinstance(a, AxisId) else AxisId(a): 1.0 if s is None else float(s)
+            for a, s in scale.items()
+            if a in self.dims
+        }
+
+    def set_physical_scale(self, scale: PerAxis[float | None] | None) -> None:
+        """Set the physical scale of each axis in units (see `set_physical_scale_unit`)."""
+        if scale is None:
+            self._data.attrs.pop("physical_scale", None)
+        else:
+            if unknown_axes := [d for d in scale if d not in self.dims]:
+                raise ValueError(
+                    f"Cannot set physical scale for axes {unknown_axes} not in tensor axes {self.dims}"
+                )
+
+            self._data.attrs["physical_scale"] = {
+                d: 1.0 if (s := scale.get(d)) is None else float(s) for d in self.dims
+            }
+
+    def get_physical_scale_unit(self) -> PerAxis[SpaceUnit | TimeUnit | str]:
+        """Return the physical unit of each axis."""
+        _unit = self._data.attrs.get("physical_scale_unit", None)
+        unit: Mapping[Any, Any] = (
+            _unit if _unit is not None and is_mapping(_unit) else {}
+        )
+        del _unit
+        return {d: "" if (u := unit.get(d)) is None else str(u) for d in self.dims}
+
+    def set_physical_scale_unit(
+        self, unit: PerAxis[SpaceUnit | TimeUnit | str | None] | None
+    ) -> None:
+        """Set the physical unit of each axis."""
+        if unit is None:
+            self._data.attrs.pop("physical_scale_unit", None)
+        else:
+            if unknown_axes := [d for d in unit if d not in self.dims]:
+                raise ValueError(
+                    f"Cannot set physical scale unit for axes {unknown_axes} not in tensor axes {self.dims}"
+                )
+            self._data.attrs["physical_scale_unit"] = {
+                d: "" if (u := unit.get(d)) is None else str(u) for d in self.dims
+            }
+
+    @property
+    def channel_names(self) -> list[str] | None:
+        """Return the channel names if available, otherwise None."""
+
+        names = self._data.attrs.get("channel_names", None)
+        if names is None or not is_sequence(names):
+            return None
+
+        if len(names) != self.sizes.get(AxisId("channel"), 0):
+            logger.warning(
+                "Number of channel names ({}) does not match number of channels ({})",
+                len(names),
+                self.sizes.get(AxisId("channel"), 0),
+            )
+            return None
+
+        return [str(name) for name in names]
+
+    @channel_names.setter
+    def channel_names(self, names: list[str] | None) -> None:
+        """Set the channel names."""
+        if names is not None and len(names) != self.sizes.get(AxisId("channel"), 0):
+            logger.warning(
+                "Number of channel names ({}) does not match number of channels ({})",
+                len(names),
+                self.sizes.get(AxisId("channel"), 0),
+            )
+        self._data.attrs["channel_names"] = names
+
+    @property
+    def channel_colors(self) -> list[str] | None:
+        """Return channel colors ."""
+
+        n_channels = self.sizes.get(AxisId("channel"), 0)
+        if n_channels == 0:
+            return None
+
+        colors = self._data.attrs.get("channel_colors", None)
+        if colors is None:
+            pass
+        elif not is_sequence(colors):
+            colors = None
+
+        if colors is not None and len(colors) < n_channels:
+            logger.warning(
+                "Overwriting existing channel colors with default colors due to too few channel colors: {} colors for {} channels",
+                len(colors),
+                n_channels,
+            )
+            colors = None
+
+        if colors is None:
+            default_channel_colors = get_default_channel_colors(n_channels)
+            self.channel_colors = default_channel_colors
+            return default_channel_colors
+        else:
+            return [str(c) for c in colors[:n_channels]]
+
+    @channel_colors.setter
+    def channel_colors(self, colors: list[str] | None) -> None:
+        """Set the channel colors."""
+        n_channels = self.sizes.get(AxisId("channel"), 0)
+        if colors is not None and len(colors) < n_channels:
+            logger.warning(
+                "Number of channel colors ({}) lower than number of channels ({})",
+                len(colors),
+                n_channels,
+            )
+        self._data.attrs["channel_colors"] = colors
+
+    @property
+    def name(self) -> str | None:
+        """Return the name of the tensor if available, otherwise None."""
+        name = self._data.attrs.get("name")
+        return None if name is None else str(name)
+
+    @name.setter
+    def name(self, name: str | None) -> None:
+        """Set the name of the tensor."""
+        self._data.attrs["name"] = name
+
+    def squeeze(self, dim: AxisId | Sequence[AxisId] | None = None) -> Self:
+        """Return a new tensor with squeezed data."""
+        squeezed = self._data.squeeze(dim=dim)
+        assert isinstance(squeezed, xr.DataArray)
+        return self.__class__.from_xarray(squeezed)
 
     def _inplace_binary_op(
         self,
@@ -164,23 +342,17 @@ class Tensor(MagicTensorOpsMixin):
         f: Callable[[Any, Any], Any],
     ) -> Self:
         _ = self._data._inplace_binary_op(  # pyright: ignore[reportPrivateUsage]
-            (
-                other_d
-                if (other_d := getattr(other, "data")) is not None
-                and isinstance(
-                    other_d,
-                    xr.DataArray,
-                )
-                else other
-            ),
+            other._data if isinstance(other, Tensor) else other,
             f,
         )
         return self
 
     def _unary_op(self, f: Callable[[Any], Any], *args: Any, **kwargs: Any) -> Self:
-        data = self._data._unary_op(  # pyright: ignore[reportPrivateUsage]
+        data: xr.DataArray = self._data._unary_op(  # pyright: ignore[reportPrivateUsage]
             f, *args, **kwargs
         )
+        assert isinstance(data, xr.DataArray)
+        data.attrs.update(self._data.attrs)
         return self.__class__.from_xarray(data)
 
     @classmethod
@@ -190,15 +362,30 @@ class Tensor(MagicTensorOpsMixin):
         note for internal use: this factory method is round-trip save
             for any `Tensor`'s  `data` property (an xarray.DataArray).
         """
-        return cls(array=data_array, dims=tuple(AxisId(d) for d in data_array.dims))
+        dims = [AxisId(d) for d in data_array.dims]
+        dim_map = {d: a for d, a in zip(data_array.dims, dims) if d != a}
+        if dim_map:
+            data_array = data_array.rename(dim_map)
+            assert isinstance(data_array, xr.DataArray)
+
+        return cls(array=data_array, dims=dims)
 
     @classmethod
     def from_numpy(
         cls,
         array: NDArray[Any],
         *,
-        dims: Optional[Union[AxisLike, Sequence[AxisLike]]],
-    ) -> Tensor:
+        dims: AxisLike | Sequence[AxisLike] | None,
+    ) -> Self:
+        return cls.from_array(array, dims=dims)
+
+    @classmethod
+    def from_array(
+        cls,
+        array: Array,
+        *,
+        dims: AxisLike | Sequence[AxisLike] | None,
+    ) -> Self:
         """create a `Tensor` from a numpy array
 
         Args:
@@ -222,11 +409,12 @@ class Tensor(MagicTensorOpsMixin):
 
         successful_view = _get_array_view(array, axis_infos)
         if successful_view is None:
+            dims_formatted = "".join(f"\n{d}" for d in dim_seq)
             raise ValueError(
-                f"Array shape {original_shape} does not map to axes {dims}"
+                f"Array shape {original_shape} does not map to axes: {dims_formatted}"
             )
 
-        return Tensor(successful_view, dims=tuple(a.id for a in axis_infos))
+        return cls(successful_view, dims=tuple(a.id for a in axis_infos))
 
     @property
     def data(self):
@@ -235,11 +423,11 @@ class Tensor(MagicTensorOpsMixin):
     @property
     def dims(self):  # TODO: rename to `axes`?
         """Tuple of dimension names associated with this tensor."""
-        return cast(Tuple[AxisId, ...], self._data.dims)
+        return cast(tuple[AxisId, ...], self._data.dims)
 
     @property
     def dtype(self) -> DTypeStr:
-        dt = str(self.data.dtype)  # pyright: ignore[reportUnknownArgumentType]
+        dt = str(self.data.dtype)
         assert dt in get_args(DTypeStr)
         return dt  # pyright: ignore[reportReturnType]
 
@@ -277,32 +465,165 @@ class Tensor(MagicTensorOpsMixin):
         return self.sizes
 
     def to_numpy(self) -> NDArray[Any]:
-        """Return the data of this tensor as a numpy array."""
-        return self.data.to_numpy()  # pyright: ignore[reportUnknownVariableType]
+        """Return the data of this tensor as a numpy array.
+
+        Use `as_numpy()` to get a new `Tensor` instance with the data as a numpy array (wrapped in an xarray DataArray)."""
+        return self.data.to_numpy()
+
+    def as_numpy(self) -> Self:
+        """Return a new Tensor instance with this tensor's data as a numpy array (wrapped in an xarray DataArray).
+        Use `to_numpy()` to get the raw numpy array."""
+        return self.from_xarray(cast_and_assert(xr.DataArray, self.data.as_numpy()))
+
+    def as_dask(self) -> Self:
+        """Return a Dask-backed tensor without evaluating its data.
+
+        NumPy data is chunked automatically. An existing Dask-backed tensor is
+        returned unchanged, preserving its graph and chunks.
+        """
+        if isinstance(self.data.data, da.Array):
+            return self
+
+        return self.from_xarray(
+            cast_and_assert(
+                xr.DataArray,
+                self.data.copy(data=da.from_array(self.data.data, chunks="auto")),
+            )
+        )
+
+    def crop_halo(self, halo: PerAxis[HaloLike] | None) -> Self:
+        """helper to crop a halo from the tensor"""
+        if not halo:
+            return self
+
+        return self[
+            {
+                d: slice(h[0], self.tagged_shape[d] - h[1])
+                if (h := Halo.create(halo.get(d, 0))) != Halo(0, 0)
+                else slice(None)
+                for d in self.dims
+            }
+        ]
+
+    def chunk(
+        self,
+        chunk_sizes: PerAxis[int],
+        halo: PerAxis[HaloLike] | None = None,
+        pad_mode: PadMode | Literal["none"] = "none",
+    ) -> Self:
+        """Return a tensor with the same data but chunked according to `chunk_sizes`."""
+        if da is None:
+            raise ImportError(
+                "Dask is not installed. Please install dask to use the chunking functionality."
+            )
+
+        if pad_mode != "none" and halo is not None:
+            data = self.pad(pad_width=halo, mode=pad_mode).data
+        else:
+            data = self.data
+
+        chunked = cast_and_assert(xr.DataArray, data.chunk(chunk_sizes))
+        if halo is not None:
+            for a, h in halo.items():
+                if a not in self.dims:
+                    raise ValueError(f"Axis {a} not in tensor dimensions {self.dims}")
+
+                if isinstance(h, int):
+                    if h < 0:
+                        raise ValueError(
+                            f"Halo size for axis {a} must be non-negative, got {h}"
+                        )
+                elif isinstance(h, tuple):
+                    if len(h) != 2 or any(x < 0 for x in h):
+                        raise ValueError(
+                            f"Halo size for axis {a} must be a non-negative integer or a tuple of two non-negative integers, got {h}"
+                        )
+
+                    if len(set(h)) != 1 and pad_mode != "none":
+                        raise ValueError(
+                            f"Halo size for chunking with pad_mode {pad_mode} must be symmetric, got {h}"
+                        )
+
+                else:
+                    raise TypeError(
+                        f"Halo size for axis {a} must be a non-negative integer or a tuple of two non-negative integers, got {h}"
+                    )
+
+            depth = [
+                h
+                if isinstance((h := halo.get(d, 0)), int)
+                else h[0]
+                if len(set(h)) == 1
+                else {"-": h[0], "+": h[1]}
+                for d in self.dims
+            ]
+
+            enlarged_chunk_shape = tuple(
+                chunk_sizes.get(a, self.tagged_shape[a])
+                + (2 * h if isinstance(h, int) else h["-"] + h["+"])
+                for a, h in zip(self.dims, depth)
+            )
+
+            def map_overlap_chunk(x: NDArray[Any]) -> NDArray[Any]:
+                return x
+
+            overlapping = cast_and_assert(
+                da.Array,
+                da.map_overlap(
+                    map_overlap_chunk,
+                    chunked.data,
+                    depth=depth,
+                    boundary="none",  # we explicitly pad above to avoid mapping `pad_mode` to `boundary`
+                    dtype=chunked.data.dtype,
+                    chunks=enlarged_chunk_shape,
+                    trim=False,
+                    allow_rechunk=False,
+                    # meta=np.array((), dtype=chunked.data.dtype),  # possibly not a numpy array
+                ),
+            )
+            ret = self.__class__.from_array(overlapping, dims=self.dims)
+            ret.data.attrs.update(self._data.attrs)
+            if self.batch_multi_index is not None:
+                ret = ret.assign_batch_multi_index(self.batch_multi_index)
+        else:
+            ret = self.__class__.from_xarray(chunked)
+
+        assert ret.name == self.name
+        assert ret.channel_names == self.channel_names
+        assert ret.channel_colors == self.channel_colors
+        assert (
+            ret.batch_multi_index is None
+            and self.batch_multi_index is None
+            or (ret.batch_multi_index == self.batch_multi_index).all()
+        )
+        return ret
 
     def argmax(self) -> Mapping[AxisId, int]:
         ret = self._data.argmax(...)
-        assert isinstance(ret, dict)
+        assert is_dict(ret)
         return {cast(AxisId, k): cast(int, v.item()) for k, v in ret.items()}
 
     def astype(self, dtype: DTypeStr, *, copy: bool = False):
         """Return tensor cast to `dtype`
 
         note: if dtype is already satisfied copy if `copy`"""
-        return self.__class__.from_xarray(self._data.astype(dtype, copy=copy))
+        return self.__class__.from_xarray(
+            cast_and_assert(
+                xr.DataArray, self._data.astype(dtype, copy=copy, keep_attrs=True)
+            )
+        )
 
-    def clip(self, min: Optional[float] = None, max: Optional[float] = None):
+    def clip(self, min: float | None = None, max: float | None = None):
         """Return a tensor whose values are limited to [min, max].
         At least one of max or min must be given."""
-        return self.__class__.from_xarray(self._data.clip(min, max))
+        return self.__class__.from_xarray(
+            cast_and_assert(xr.DataArray, self._data.clip(min, max, keep_attrs=True))
+        )
 
     def crop_to(
         self,
         sizes: PerAxis[int],
-        crop_where: Union[
-            CropWhere,
-            PerAxis[CropWhere],
-        ] = "left_and_right",
+        crop_where: CropWhere | PerAxis[CropWhere] = "left_and_right",
     ) -> Self:
         """crop to match `sizes`"""
         if isinstance(crop_where, str):
@@ -310,7 +631,7 @@ class Tensor(MagicTensorOpsMixin):
         else:
             crop_axis_where = crop_where
 
-        slices: Dict[AxisId, SliceInfo] = {}
+        slices: dict[AxisId, SliceInfo] = {}
 
         for a, s_is in self.sizes.items():
             if a not in sizes or sizes[a] == s_is:
@@ -341,14 +662,14 @@ class Tensor(MagicTensorOpsMixin):
 
         return self[slices]
 
-    def expand_dims(self, dims: Union[Sequence[AxisId], PerAxis[int]]) -> Self:
-        return self.__class__.from_xarray(self._data.expand_dims(dims=dims))
+    def expand_dims(self, dims: Sequence[AxisId] | PerAxis[int]) -> Self:
+        return self.__class__.from_xarray(
+            cast_and_assert(xr.DataArray, self._data.expand_dims(dims=dims))
+        )
 
     def item(
         self,
-        key: Union[
-            None, SliceInfo, slice, int, PerAxis[Union[SliceInfo, slice, int]]
-        ] = None,
+        key: None | SliceInfo | slice | int | PerAxis[SliceInfo | slice | int] = None,
     ):
         """Copy a tensor element to a standard Python scalar and return it."""
         if key is None:
@@ -359,8 +680,22 @@ class Tensor(MagicTensorOpsMixin):
         assert isinstance(ret, (bool, float, int))
         return ret
 
-    def mean(self, dim: Optional[Union[AxisId, Sequence[AxisId]]] = None) -> Self:
-        return self.__class__.from_xarray(self._data.mean(dim=dim))
+    @classmethod
+    def _from_reduced_xarray(cls, data: xr.DataArray) -> Self:
+        tensor = cls.from_xarray(data)
+        for key in ("physical_scale", "physical_scale_unit"):
+            if (values := tensor.data.attrs.get(key)) is not None and is_mapping(
+                values
+            ):
+                tensor.data.attrs[key] = {
+                    a: value for a, value in values.items() if a in tensor.dims
+                }
+        return tensor
+
+    def mean(self, dim: AxisId | Sequence[AxisId] | None = None) -> Self:
+        return self.__class__._from_reduced_xarray(
+            self._data.mean(dim=dim, keep_attrs=True)
+        )
 
     def pad(
         self,
@@ -368,17 +703,36 @@ class Tensor(MagicTensorOpsMixin):
         mode: PadMode = "symmetric",
     ) -> Self:
         pad_width = {a: PadWidth.create(p) for a, p in pad_width.items()}
-        mode_name, constant_value = _resolve_pad_mode(mode)
-        return self.__class__.from_xarray(
-            self._data.pad(
-                pad_width=pad_width, mode=mode_name, constant_values=constant_value
+        mode_name, constant_value = resolve_pad_mode(mode)
+
+        padded_tensor = self.__class__.from_xarray(
+            cast_and_assert(
+                xr.DataArray,
+                self._data.pad(
+                    pad_width=pad_width,
+                    mode=mode_name,
+                    constant_values=constant_value,
+                    keep_attrs=True,
+                ),
             )
         )
+
+        if (
+            BATCH_AXIS_ID in self.dims
+            # maybe future xarray versions will keep a MultiIndex when padding, but currently they don't
+            and padded_tensor.batch_multi_index is not None
+            and pad_width.get(BATCH_AXIS_ID, 0) in (0, (0, 0), PadWidth(0, 0))
+            and (idx := self.batch_multi_index) is not None
+        ):
+            # add multi-index removed by padding when batch axis is not padded
+            padded_tensor = padded_tensor.assign_batch_multi_index(idx)
+
+        return padded_tensor
 
     def pad_to(
         self,
         sizes: PerAxis[int],
-        pad_where: Union[PadWhere, PerAxis[PadWhere]] = "left_and_right",
+        pad_where: PadWhere | PerAxis[PadWhere] = "left_and_right",
         mode: PadMode = "symmetric",
     ) -> Self:
         """pad `tensor` to match `sizes`"""
@@ -387,7 +741,7 @@ class Tensor(MagicTensorOpsMixin):
         else:
             pad_axis_where = pad_where
 
-        pad_width: Dict[AxisId, PadWidth] = {}
+        pad_width: dict[AxisId, PadWidth] = {}
         for a, s_is in self.sizes.items():
             if a not in sizes or sizes[a] == s_is:
                 pad_width[a] = PadWidth(0, 0)
@@ -419,8 +773,8 @@ class Tensor(MagicTensorOpsMixin):
 
     def quantile(
         self,
-        q: Union[float, Sequence[float]],
-        dim: Optional[Union[AxisId, Sequence[AxisId]]] = None,
+        q: float | Sequence[float],
+        dim: AxisId | Sequence[AxisId] | None = None,
         method: QuantileMethod = "linear",
     ) -> Self:
         assert (
@@ -438,27 +792,24 @@ class Tensor(MagicTensorOpsMixin):
         assert dim is None or (
             (quantile_dim := AxisId("quantile")) != dim and quantile_dim not in set(dim)
         )
-        return self.__class__.from_xarray(
-            self._data.quantile(q, dim=dim, method=method)
+        return self.__class__._from_reduced_xarray(
+            cast_and_assert(
+                xr.DataArray,
+                self._data.quantile(q, dim=dim, method=method, keep_attrs=True),
+            )
         )
 
     def resize_to(
         self,
         sizes: PerAxis[int],
         *,
-        pad_where: Union[
-            PadWhere,
-            PerAxis[PadWhere],
-        ] = "left_and_right",
-        crop_where: Union[
-            CropWhere,
-            PerAxis[CropWhere],
-        ] = "left_and_right",
+        pad_where: PadWhere | PerAxis[PadWhere] = "left_and_right",
+        crop_where: CropWhere | PerAxis[CropWhere] = "left_and_right",
         pad_mode: PadMode = "symmetric",
     ):
         """return cropped/padded tensor with `sizes`"""
-        crop_to_sizes: Dict[AxisId, int] = {}
-        pad_to_sizes: Dict[AxisId, int] = {}
+        crop_to_sizes: dict[AxisId, int] = {}
+        pad_to_sizes: dict[AxisId, int] = {}
         new_axes = dict(sizes)
         for a, s_is in self.sizes.items():
             a = AxisId(str(a))
@@ -482,79 +833,124 @@ class Tensor(MagicTensorOpsMixin):
 
         return tensor
 
-    def std(self, dim: Optional[Union[AxisId, Sequence[AxisId]]] = None) -> Self:
-        return self.__class__.from_xarray(self._data.std(dim=dim))
+    def std(self, dim: AxisId | Sequence[AxisId] | None = None) -> Self:
+        return self.__class__._from_reduced_xarray(
+            cast_and_assert(xr.DataArray, self._data.std(dim=dim, keep_attrs=True))
+        )
 
-    def sum(self, dim: Optional[Union[AxisId, Sequence[AxisId]]] = None) -> Self:
+    def sum(self, dim: AxisId | Sequence[AxisId] | None = None) -> Self:
         """Reduce this Tensor's data by applying sum along some dimension(s)."""
-        return self.__class__.from_xarray(self._data.sum(dim=dim))
+        return self.__class__._from_reduced_xarray(
+            cast_and_assert(xr.DataArray, self._data.sum(dim=dim, keep_attrs=True))
+        )
 
-    def assign_batch_multi_index(self, multi_index: "pd.MultiIndex") -> Self:
+    @property
+    def batch_multi_index(self) -> MultiIndex | None:
+        """Return the batch multi-index if available, otherwise None."""
+        if BATCH_AXIS_ID not in self.dims:
+            return None
+
+        idx = self._data.indexes.get(BATCH_AXIS_ID)  # pyright: ignore[reportUnknownVariableType]
+        if not isinstance(idx, MultiIndex):
+            return None
+
+        return idx
+
+    def assign_batch_multi_index(self, multi_index: MultiIndex) -> Self:
         """Set the batch multi-index for this tensor.
 
         Args:
             multi_index: The multi-index to set.
         """
-        if AxisId("batch") not in self.dims:
+        if BATCH_AXIS_ID not in self.dims:
             raise ValueError(
                 "Cannot set batch multi-index on a tensor without a 'batch' axis."
             )
 
-        return self.__class__.from_xarray(
-            self._data.assign_coords({AxisId("batch"): multi_index})
+        # # TODO: check if we really need to create/assign coordinates object
+        # alternatively create new multi-index: self._data.set_xindex(multi_index.names)
+        data = cast_and_assert(
+            xr.DataArray,
+            self._data.drop_vars(
+                list(multi_index.names) + [BATCH_AXIS_ID], errors="ignore"
+            ),
         )
+        mindex_coords = cast_and_assert(
+            xr.Coordinates,
+            xr.Coordinates.from_pandas_multiindex(multi_index, BATCH_AXIS_ID),
+        )
+        data = cast_and_assert(xr.DataArray, data.assign_coords(mindex_coords))
+        return self.__class__.from_xarray(data)
 
     def unstack_batch_multi_index(
-        self, *, errors: Literal["raise", "ignore"] = "raise"
+        self,
+        *,
+        errors: Literal["raise", "warn", "ignore"] = "raise",
+        unstacked_dim_order: Sequence[AxisId] | None = None,
     ) -> Self:
         """Unstack the batch multi-index of this tensor.
 
         Returns:
             A new tensor with the batch multi-index unstacked into separate axes.
         """
-        if AxisId("batch") not in self.dims:
+        if BATCH_AXIS_ID not in self.dims:
+            error_msg = (
+                "Cannot unstack batch multi-index on a tensor without a 'batch' axis."
+            )
             if errors == "raise":
-                raise ValueError(
-                    "Cannot unstack batch multi-index on a tensor without a 'batch' axis."
-                )
+                raise ValueError(error_msg)
+            elif errors == "warn":
+                logger.warning(error_msg)
+                return self
             elif errors == "ignore":
                 return self
             else:
                 assert_never(errors)
 
-        if not isinstance(self._data.indexes.get(AxisId("batch")), pd.MultiIndex):
+        if not isinstance(self._data.indexes.get(BATCH_AXIS_ID), MultiIndex):
+            error_msg = "Cannot unstack batch multi-index on a tensor whose 'batch' axis does not have a MultiIndex."
             if errors == "raise":
-                raise ValueError(
-                    "Cannot unstack batch multi-index on a tensor whose 'batch' axis does not have a MultiIndex."
-                )
+                raise ValueError(error_msg)
+            elif errors == "warn":
+                logger.warning(error_msg)
+                return self
             elif errors == "ignore":
                 return self
             else:
                 assert_never(errors)
 
         old_dims = self.dims
-        array = self._data.unstack(AxisId("batch"))
-        added_dims = [AxisId(d) for d in array.dims if d not in self._data.dims]
+        array = cast_and_assert(xr.DataArray, self._data.unstack(BATCH_AXIS_ID))
+        added_dims = [
+            BATCH_AXIS_ID if d == "original_batch" else AxisId(d)
+            for d in array.dims
+            if d not in self._data.dims
+        ]
 
-        # restore expected axis order, replace batch dim with added dims
-        new_dims: List[AxisId] = []
-        for d in old_dims:
-            if d in array.dims:
-                new_dims.append(d)
-            elif d == AxisId("batch"):
-                new_dims.extend(added_dims)
-            else:
-                raise ValueError(f"Expected axis {d} not found in unstacked array.")
+        if unstacked_dim_order is None:
+            # restore expected axis order, replace batch dim with added dims
+            new_dims: Sequence[AxisId] = []
+            for d in old_dims:
+                if d in array.dims:
+                    new_dims.append(d)
+                elif d == BATCH_AXIS_ID:
+                    new_dims.extend(added_dims)
+                else:
+                    raise ValueError(f"Expected axis {d} not found in unstacked array.")
+        else:
+            new_dims = unstacked_dim_order
 
-        array = array.transpose(*new_dims)
         if AxisId("original_batch") in array.dims:
-            array = array.rename({AxisId("original_batch"): AxisId("batch")})
+            array = cast_and_assert(
+                xr.DataArray, array.rename({AxisId("original_batch"): BATCH_AXIS_ID})
+            )
 
+        array = cast_and_assert(xr.DataArray, array.transpose(*new_dims))
         return self.__class__.from_xarray(array)
 
     def transpose(
         self,
-        axes: Sequence[AxisId],
+        axes: Sequence[AxisLike],
         *,
         extra_dims: Literal[
             "raise", "squeeze", "stack", "squeeze_or_stack"
@@ -580,22 +976,39 @@ class Tensor(MagicTensorOpsMixin):
                 If "unstack", any missing dimensions will be unstacked from the batch dimension. For this option a batch dimension with a multi-index must be present from previous stacking operations or assigned by `Tensor.assign_batch_multi_index()`.
                 If "unstack_or_expand", any missing dimensions will be unstacked from the batch dimension if it has a multi-index, otherwise they will be added as singleton dimensions.
         """
+        transposed, _dim_order = self.transpose_and_return_unstacked_dim_order(
+            axes, extra_dims=extra_dims, missing_dims=missing_dims
+        )
+        return transposed
+
+    def transpose_and_return_unstacked_dim_order(
+        self,
+        axes: Sequence[AxisLike],
+        *,
+        extra_dims: Literal[
+            "raise", "squeeze", "stack", "squeeze_or_stack"
+        ] = "squeeze",
+        missing_dims: Literal[
+            "raise", "expand", "unstack", "unstack_or_expand"
+        ] = "unstack_or_expand",
+    ) -> tuple[Self, list[AxisId] | None]:
+        axes = [axis_id_from_axis_like(a) for a in axes]
         array = self._data
 
-        unhandled_missing_dims = [a for a in axes if a not in array.dims]
+        unhandled_missing_dims = [a for a in axes if a not in self.dims]
         if unhandled_missing_dims and missing_dims == "raise":
             raise ValueError(f"Found missing dimensions {unhandled_missing_dims}.")
 
         unstack_error = None
         if unhandled_missing_dims and missing_dims in ("unstack", "unstack_or_expand"):
-            lets_unstack = AxisId("batch") in array.dims
+            lets_unstack = BATCH_AXIS_ID in array.dims
             if not lets_unstack:
                 unstack_error = f"Missing dimensions {unhandled_missing_dims} found, but 'batch' axis is not in the tensor. Cannot unstack missing dimensions from batch."
                 if missing_dims == "unstack":
                     raise ValueError(unstack_error)
 
             if lets_unstack and not isinstance(
-                array.indexes.get(AxisId("batch")), pd.MultiIndex
+                array.indexes.get(BATCH_AXIS_ID), MultiIndex
             ):
                 lets_unstack = False
                 unstack_error = f"Missing dimensions {unhandled_missing_dims} found, but 'batch' axis does not have a MultiIndex. Cannot unstack missing dimensions from non-multi-index batch."
@@ -605,18 +1018,25 @@ class Tensor(MagicTensorOpsMixin):
             lets_unstack = False
 
         if lets_unstack:
-            array = array.unstack(AxisId("batch"))
+            array = cast_and_assert(xr.DataArray, array.unstack(BATCH_AXIS_ID))
 
             if AxisId("original_batch") in array.dims:
-                if AxisId("batch") in axes:
-                    array = array.rename({AxisId("original_batch"): AxisId("batch")})
+                if BATCH_AXIS_ID in axes:
+                    array = cast_and_assert(
+                        xr.DataArray,
+                        array.rename({AxisId("original_batch"): BATCH_AXIS_ID}),
+                    )
                 else:
-                    array = array.squeeze(AxisId("original_batch"))
+                    array = cast_and_assert(
+                        xr.DataArray, array.squeeze(AxisId("original_batch"))
+                    )
 
             unhandled_missing_dims = [a for a in axes if a not in array.dims]
 
         if unhandled_missing_dims and missing_dims in ("expand", "unstack_or_expand"):
-            array = array.expand_dims(unhandled_missing_dims)
+            array = cast_and_assert(
+                xr.DataArray, array.expand_dims(unhandled_missing_dims)
+            )
             unhandled_missing_dims = []
 
         if unhandled_missing_dims:
@@ -625,6 +1045,8 @@ class Tensor(MagicTensorOpsMixin):
 
             raise ValueError(f"Missing dimensions {unhandled_missing_dims}.")
 
+        assert isinstance(array, xr.DataArray)
+        unstacked_dim_order = None
         unhandled_extra_dims = [a for a in array.dims if a not in axes]
 
         if unhandled_extra_dims and extra_dims == "raise":
@@ -633,7 +1055,8 @@ class Tensor(MagicTensorOpsMixin):
         if unhandled_extra_dims and extra_dims in ("squeeze", "squeeze_or_stack"):
             for d in list(unhandled_extra_dims):
                 if array.sizes[d] == 1:
-                    array = array.squeeze(d)
+                    array = cast_and_assert(xr.DataArray, array.squeeze(d))
+                    assert isinstance(array, xr.DataArray)
                     unhandled_extra_dims.remove(d)
                 elif extra_dims == "squeeze":
                     raise ValueError(
@@ -641,17 +1064,23 @@ class Tensor(MagicTensorOpsMixin):
                     )
 
         if unhandled_extra_dims and extra_dims in ("stack", "squeeze_or_stack"):
-            if AxisId("batch") not in axes:
+            if BATCH_AXIS_ID not in axes:
                 raise ValueError(
                     f"Extra dimensions {unhandled_extra_dims} found but 'batch' axis is not in the desired axes {axes}."
                     + " Cannot stack extra dimensions to batch."
                 )
 
-            if AxisId("batch") in array.dims:
-                array = array.rename({AxisId("batch"): AxisId("original_batch")})
+            unstacked_dim_order = [AxisId(d) for d in array.dims]
+            if BATCH_AXIS_ID in array.dims:
+                array = cast_and_assert(
+                    xr.DataArray,
+                    array.rename({BATCH_AXIS_ID: AxisId("original_batch")}),
+                )
                 unhandled_extra_dims.insert(0, AxisId("original_batch"))
 
-            array = array.stack({AxisId("batch"): unhandled_extra_dims})
+            array = cast_and_assert(
+                xr.DataArray, array.stack({BATCH_AXIS_ID: unhandled_extra_dims})
+            )
             unhandled_extra_dims = []
 
         if unhandled_extra_dims:
@@ -660,62 +1089,202 @@ class Tensor(MagicTensorOpsMixin):
             )
 
         # transpose to the correct axis order
-        return self.__class__.from_xarray(array.transpose(*axes))
+        return self.__class__.from_xarray(
+            cast_and_assert(xr.DataArray, array.transpose(*axes))
+        ), unstacked_dim_order
 
-    def var(self, dim: Optional[Union[AxisId, Sequence[AxisId]]] = None) -> Self:
-        return self.__class__.from_xarray(self._data.var(dim=dim))
+    def var(self, dim: AxisId | Sequence[AxisId] | None = None) -> Self:
+        return self.__class__._from_reduced_xarray(
+            cast_and_assert(xr.DataArray, self._data.var(dim=dim, keep_attrs=True))
+        )
 
     @classmethod
-    def _interprete_array_wo_known_axes(cls, array: NDArray[Any]):
+    def _interprete_array_wo_known_axes(cls, array: Array) -> Self:
         ndim = array.ndim
+        shape = [s if isinstance(s, int) else -1 for s in array.shape]
+
+        current_axes: list[v0_5.InputAxis]
         if ndim == 2:
-            current_axes = (
-                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=array.shape[0]),
-                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=array.shape[1]),
-            )
-        elif ndim == 3 and any(s <= 3 for s in array.shape):
-            current_axes = (
+            current_axes = [
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=shape[0]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=shape[1]),
+            ]
+        elif ndim == 3 and any(s <= 10 for s in shape):
+            current_axes = [
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=shape[1]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=shape[2]),
+            ]
+            current_axes.insert(
+                np.argmin(shape),
                 v0_5.ChannelAxis(
                     channel_names=[
-                        v0_5.Identifier(f"channel{i}") for i in range(array.shape[0])
+                        v0_5.Identifier(f"channel{i}") for i in range(min(shape))
                     ]
                 ),
-                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=array.shape[1]),
-                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=array.shape[2]),
             )
         elif ndim == 3:
-            current_axes = (
-                v0_5.SpaceInputAxis(id=v0_5.AxisId("z"), size=array.shape[0]),
-                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=array.shape[1]),
-                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=array.shape[2]),
-            )
+            current_axes = [
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("z"), size=shape[0]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=shape[1]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=shape[2]),
+            ]
         elif ndim == 4:
-            current_axes = (
+            current_axes = [
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("z"), size=shape[1]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=shape[2]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=shape[3]),
+            ]
+            current_axes.insert(
+                np.argmin(shape),
                 v0_5.ChannelAxis(
                     channel_names=[
-                        v0_5.Identifier(f"channel{i}") for i in range(array.shape[0])
+                        v0_5.Identifier(f"channel{i}") for i in range(min(shape))
                     ]
                 ),
-                v0_5.SpaceInputAxis(id=v0_5.AxisId("z"), size=array.shape[1]),
-                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=array.shape[2]),
-                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=array.shape[3]),
             )
         elif ndim == 5:
-            current_axes = (
-                v0_5.BatchAxis(),
+            current_axes = [
+                v0_5.TimeInputAxis(size=shape[1]),
                 v0_5.ChannelAxis(
                     channel_names=[
-                        v0_5.Identifier(f"channel{i}") for i in range(array.shape[1])
+                        v0_5.Identifier(f"channel{i}") for i in range(shape[1])
                     ]
                 ),
-                v0_5.SpaceInputAxis(id=v0_5.AxisId("z"), size=array.shape[2]),
-                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=array.shape[3]),
-                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=array.shape[4]),
-            )
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("z"), size=shape[2]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("y"), size=shape[3]),
+                v0_5.SpaceInputAxis(id=v0_5.AxisId("x"), size=shape[4]),
+            ]
         else:
-            raise ValueError(f"Could not guess an axis mapping for {array.shape}")
+            raise ValueError(f"Could not guess an axis mapping for {shape}")
 
-        return cls(array, dims=tuple(a.id for a in current_axes))
+        dims = tuple(a.id for a in current_axes)
+        return cls(array, dims=dims)
+
+
+def restore_batch_multi_index(
+    inputs: Collection[Tensor | MultiIndex | None], outputs: PerMember[Tensor]
+) -> dict[MemberId, Tensor]:
+    """Restore any batch multi-index found in the inputs to any output with a batch dimension of matching length."""
+    not_processed_outputs = dict(outputs)
+    ret: dict[MemberId, Tensor] = {}
+    for m in tuple(outputs):
+        if BATCH_AXIS_ID not in outputs[m].dims:
+            ret[m] = not_processed_outputs.pop(m)
+
+    input_has_multi_index = False
+    for ipt in inputs:
+        if isinstance(ipt, Tensor):
+            idx = ipt.batch_multi_index
+        else:
+            idx = ipt
+
+        if not isinstance(idx, MultiIndex):
+            continue
+
+        input_has_multi_index = True
+        for m in tuple(not_processed_outputs):
+            if len(idx) == not_processed_outputs[m].tagged_shape.get(BATCH_AXIS_ID):
+                ret[m] = not_processed_outputs.pop(m).assign_batch_multi_index(idx)
+
+    if not_processed_outputs:
+        if input_has_multi_index:
+            logger.warning(
+                "Could not restore batch multi-index for outputs: {}",
+                list(not_processed_outputs),
+            )
+        ret.update(not_processed_outputs)
+
+    return ret
+
+
+def get_unstacked_dim_order(
+    stacked_order: Sequence[AxisId],
+    *,
+    unstacked_reference_order: Sequence[AxisId] | None,
+    stacked_dims: Sequence[AxisId] | None,
+) -> list[AxisId]:
+    if stacked_dims is not None:
+        # make sure that any "original_batch" axis id in the stacked_dims is replaced with the actual batch axis id
+        stacked_dims = [
+            BATCH_AXIS_ID if d == "original_batch" else d for d in stacked_dims
+        ]
+
+    if not stacked_dims and unstacked_reference_order is None:
+        return list(stacked_order)
+    if unstacked_reference_order is not None and list(stacked_order) == [
+        d for d in unstacked_reference_order if d in stacked_order
+    ]:
+        # no differences in non-stacking axes, so we can preserve the unstacked axis order
+        return [
+            d
+            for d in unstacked_reference_order
+            if d in stacked_order or (stacked_dims is not None and d in stacked_dims)
+        ]
+    elif stacked_dims is None:
+        # no stacked dims provided, so we can just return the stacked_out_order
+        return list(stacked_order)
+    elif BATCH_AXIS_ID not in stacked_order:
+        raise ValueError(
+            f"stacked_order={stacked_order} does not contain a batch axis, but stacked_dims={stacked_dims} are provided"
+        )
+    else:
+        # unstack batch axis in its place
+        ret = list(stacked_order)
+        b_idx = ret.index(AxisId("batch"))
+        ret[b_idx : b_idx + 1] = (
+            [
+                d for d in unstacked_reference_order or () if d in stacked_dims
+            ]  # keep unstacked axis order from reference
+            + [
+                d
+                for d in stacked_dims
+                if unstacked_reference_order is None
+                or d not in unstacked_reference_order
+            ]  # add any remaining stacked dims that are not in the unstacked reference order
+        )
+        return ret
+
+
+# def transpose_multiple_tensors(
+#     tensors: PerMember[Tensor],
+#     axes: PerMember[Sequence[AxisId]],
+#     *,
+#     extra_dims: Literal["raise", "squeeze", "stack", "squeeze_or_stack"] = "raise",
+#     missing_dims: Literal["raise", "expand", "unstack", "unstack_or_expand"] = "raise",
+# ) -> PerMember[Tensor]:
+#     """Transpose multiple tensors and make
+#     """
+#     if any(unknown := [m not in tensors for m in axes]):
+#         raise ValueError(f"Axes specified for unknown members: {unknown}")
+
+#     transposed_tensors: dict[MemberId, Tensor] = {}
+#     for m, t in tensors.items():
+#         if m in axes:
+#             transposed_tensors[m] = (
+#                 t.transpose(
+#                     axes=axes[m],
+#                     extra_dims=extra_dims,
+#                     missing_dims=missing_dims,
+#                 )
+#             )
+#         else:
+#             transposed_tensors[m] = t
+
+#     if (
+#         len(
+#             batch_lengths := {
+#                 t.sizes[AxisId("batch")]
+#                 for t in transposed_tensors.values()
+#                 if AxisId("batch") in t.dims
+#             }
+#         )
+#         > 1
+#     ):
+#         raise ValueError(
+#             f"Transposed sample members have incompatible batch lengths: {batch_lengths}."
+#         )
+
+#     return transposed_tensors
 
 
 def _add_singletons(arr: NDArray[Any], axis_infos: Sequence[AxisInfo]):
@@ -739,13 +1308,13 @@ def _add_singletons(arr: NDArray[Any], axis_infos: Sequence[AxisInfo]):
 
 
 def _get_array_view(
-    original_array: NDArray[Any], axis_infos: Sequence[AxisInfo]
-) -> Optional[NDArray[Any]]:
+    original_array: Array, axis_infos: Sequence[AxisInfo]
+) -> Array | None:
     perms = list(permutations(range(len(original_array.shape))))
 
     for perm in perms:
-        view = original_array.transpose(perm)
-        view = _add_singletons(view, axis_infos)
+        view: Array = original_array.transpose(perm)  # pyright: ignore
+        view = _add_singletons(view, axis_infos)  # pyright: ignore
         if len(view.shape) != len(axis_infos):
             return None
 
