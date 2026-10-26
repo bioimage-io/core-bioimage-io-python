@@ -847,7 +847,7 @@ def evaluate_mismatched_elements(
 
         rtol_value = rtol * abs(expected_np)
         abs_diff = abs(actual_np - expected_np)
-        mismatched = abs_diff > atol + rtol_value
+        mismatched = ~np.isclose(actual_np, expected_np, rtol=rtol, atol=atol)
         mismatched_elements = mismatched.sum().item()
 
         mismatched_ppm = mismatched_elements / expected_np.size * 1e6
