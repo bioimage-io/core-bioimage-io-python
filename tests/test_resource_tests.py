@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from bioimageio.core import __version__
+from bioimageio.core.tensor import Tensor
 from bioimageio.spec import InvalidDescr, ValidationContext
 
 
@@ -80,3 +81,18 @@ def test_failed_reproducibility(unet2d_nuclei_broad_model: str, tmp_path: str):
     summary = test_model(model)
 
     assert summary.status == "valid-format"
+
+
+def test_reproducibility_rejects_nan_output():
+    from bioimageio.core._resource_tests import evaluate_mismatched_elements
+
+    actual = Tensor(np.full((2,), np.nan), dims=("x",))
+    expected = Tensor(np.ones((2,)), dims=("x",))
+
+    mismatched_ppm, msg, error_msg = evaluate_mismatched_elements(
+        actual, expected, rtol=1e-3, atol=1e-3, name="output"
+    )
+
+    assert error_msg is None
+    assert mismatched_ppm == 1_000_000
+    assert "2 of 2 elements disagree" in msg
