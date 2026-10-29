@@ -1,6 +1,6 @@
 ### 0.12.0
 
-- bump spec to 0.5.14.3
+- bump spec to 0.5.14.4
 - lazy prediction (via dask graph)
 - support loading zarr images
 - add option to compute (percentile) dataset statistics in-memory
