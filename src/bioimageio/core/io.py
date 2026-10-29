@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import atexit
 import json
 import os
 import warnings
@@ -11,8 +12,9 @@ from io import BytesIO, TextIOWrapper
 from itertools import chain
 from pathlib import Path, PosixPath, PurePath, PurePosixPath
 from shutil import copyfileobj
-from typing import TYPE_CHECKING, Any, TypedDict, Union
+from typing import TYPE_CHECKING, Any, TypedDict, Union, cast
 
+import dask.array as da
 import dask.diagnostics
 import numpy as np
 import pydantic
@@ -56,7 +58,7 @@ from ._utils.tiff_metadata import (
     OmeMetadata,
     create_ome_metadata_from_xml_string,
 )
-from ._utils.type_guards import is_tuple
+from ._utils.type_guards import is_sequence, is_tuple
 from .axis import (
     BATCH_AXIS_ID,
     AxisId,
@@ -93,7 +95,9 @@ JsonValueReadOnly: TypeAlias = Union[
     Mapping[str, "JsonValueReadOnly"],
 ]
 
-IO_Lib: TypeAlias = Literal["bioio", "imageio", "clearscale", "numpy", "tifffile"]
+IO_Lib: TypeAlias = Literal[
+    "bioio", "imageio", "clearscale", "numpy", "tifffile", "h5py"
+]
 
 
 def load_tensor(
@@ -192,6 +196,8 @@ def load_tensor_and_return_unstacked_dim_order(
 
     elif io_lib == "tifffile":
         t = _load_tensor_tifffile(source)
+    elif io_lib == "h5py":
+        t = _load_tensor_h5py(file_source, internal_path, axes=axes)
     else:
         assert_never(io_lib)
 
@@ -212,16 +218,87 @@ def _select_io_libs_based_on_extension(
     if not extensions:
         return ("clearscale", "bioio", "imageio")
 
-    if extensions[-1] == ".npy":
+    if extensions[-2:] in ([".ome", ".tif"], [".ome", ".tiff"]):
+        return ("tifffile", "bioio")
+    elif extensions[-1] == ".npy":
         return ("numpy",)
     elif extensions[-1] == ".zarr":
         return ("clearscale", "bioio")
-    elif extensions[-2:] in ([".ome", ".tif"], [".ome", ".tiff"]):
-        return ("tifffile", "bioio")
     elif extensions[-1] in (".tif", ".tiff"):
         return ("tifffile", "imageio")
+    elif extensions[-1] in (".h4", ".h5", ".hdf", ".hdf4", ".hdf5", ".he5"):
+        return ("h5py", "bioio")
     else:
         return ("bioio", "imageio")
+
+
+def _load_tensor_h5py(
+    source: ZarrSource | FileSource | ZipPath,
+    internal_path: PurePath | None,
+    *,
+    axes: Sequence[AxisLike] | None = None,
+) -> Tensor:
+    import h5py
+
+    if isinstance(source, RelativeDirectory):
+        source = source.absolute()
+
+    file_source = (
+        source if isinstance(source, Path) else BytesIO(get_reader(source).read())
+    )
+    f = h5py.File(file_source, "r")
+    # we need to keep the file open for lazy loading, so we close it on exit
+    _ = atexit.register(f.close)
+    if internal_path is not None:
+        key = internal_path.as_posix()
+    elif len(f.keys()) == 0:
+        raise ValueError(f"HDF5 file {source} is empty")
+    else:
+        if "data" in f:
+            key = "data"
+        else:
+            key = str(min(f.keys()))  # pyright: ignore[reportUnknownArgumentType]
+
+        if len(f.keys()) > 1:
+            warnings.warn(
+                f"choosing to load dataset '{key}' from HDF5 file with multiple datasets: {list(f.keys())}"
+            )
+
+    dataset = f[key]
+    if not isinstance(dataset, h5py.Dataset):
+        raise TypeError(f"HDF5 path {internal_path} does not point to a dataset")
+
+    labels = cast(Any, dataset.attrs.get("DIMENSION_LABELS"))
+    if not is_sequence(labels):
+        if axes is None or dataset.ndim == len(axes):
+            dims = axes
+            dims_out = None
+        else:
+            dims = None  # guess dims
+            dims_out = axes
+    else:
+        dims = tuple(AxisId(str(a)) for a in labels)
+        dims_out = axes
+
+    tensor = Tensor.from_array(
+        cast_and_assert(da.Array, da.from_array(dataset)), dims=dims
+    )
+    for attr, setter in (
+        ("axis_units", tensor.set_physical_scale_unit),
+        ("axis_scale", tensor.set_physical_scale),
+    ):
+        values = cast(Any, dataset.attrs.get(attr))
+        if is_sequence(values):
+            if len(values) != tensor.ndim:
+                raise ValueError(f"HDF5 attribute {attr} must have one value per axis")
+            setter(dict(zip(tensor.dims, values)))
+
+    if dims_out is not None:
+        tensor = tensor.transpose(
+            dims_out, extra_dims="squeeze_or_stack", missing_dims="expand"
+        )
+
+    return tensor
 
 
 def _load_tensor_bioio(
@@ -659,10 +736,71 @@ def _save_tensor_impl(
                 )
 
             _save_tensor_tifffile(output_path, extensions, tensor)
+        elif io_lib == "h5py":
+            _save_tensor_h5py(
+                output_path,
+                tensor,
+                internal_path=internal_path,
+                chunk_shape=chunk_shape,
+            )
         else:
             assert_never(io_lib)
 
     return io_lib
+
+
+def _save_tensor_h5py(
+    path: Path | ZipPath | FtpUrl,
+    tensor: Tensor,
+    internal_path: PurePath | None,
+    chunk_shape: PerAxis[int] | None = None,
+) -> None:
+    import h5py
+
+    if not isinstance(path, Path):
+        raise NotImplementedError("Saving with h5py requires a local file path.")
+
+    name = internal_path.as_posix() if internal_path is not None else "data"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with h5py.File(path, "a") as f:
+        if name in f:
+            if not isinstance(f[name], h5py.Dataset):
+                raise ValueError(f"HDF5 path {name} does not point to a dataset")
+            del f[name]
+
+        dataset = f.create_dataset(
+            name,
+            dtype=tensor.dtype,
+            shape=tensor.shape,
+            chunks=tuple(chunk_shape[a] for a in tensor.dims)
+            if chunk_shape is not None
+            else True,
+            compression="lzf",
+        )
+        dataset.attrs["DIMENSION_LABELS"] = [str(a) for a in tensor.dims]
+        units = tensor.get_physical_scale_unit()
+        if any(units.values()):
+            dataset.attrs["axis_units"] = [units.get(a, "") for a in tensor.dims]
+        scale = tensor.get_physical_scale()
+        if scale:
+            dataset.attrs["axis_scale"] = [scale.get(a, 1.0) for a in tensor.dims]
+
+        if all(d[0].lower() in "tczxy" for d in tensor.dims):
+            # add vigra axis tags
+            dataset.attrs["axistags"] = {
+                "axes": [
+                    {
+                        "key": (a := str(d[0]).lower()),
+                        "typeFlags": 1 if a == "c" else 2 if a in "zxy" else 8,
+                        "resolution": scale.get(d, 0),
+                        "description": units.get(d, ""),
+                    }
+                    for d in tensor.dims
+                ]
+            }
+
+        data = cast_and_assert(da.Array, tensor.as_dask().data.data)
+        da.store(data, dataset, compute=True, lock=True)
 
 
 def _save_tensor_bioio(

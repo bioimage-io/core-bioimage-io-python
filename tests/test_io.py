@@ -7,6 +7,60 @@ from typing import Any, Literal, cast
 import numpy as np
 import pytest
 
+from bioimageio.core.axis import AxisId
+
+
+@pytest.mark.parametrize("internal_path", ["", "group/image"])
+@pytest.mark.parametrize("automatic", [False, True])
+def test_tensor_io_h5py(tmp_path: Path, internal_path: str, automatic: bool):
+    h5py = pytest.importorskip("h5py")
+
+    from bioimageio.core import Tensor
+    from bioimageio.core.io import load_tensor, save_tensor
+
+    path = tmp_path / "nested" / "image.h5"
+    target = path / internal_path if internal_path else path
+    expected = Tensor.from_numpy(
+        np.arange(60, dtype=np.uint16).reshape(3, 4, 5), dims=("z", "y", "x")
+    )
+    expected.set_physical_scale({AxisId("z"): 2.5, AxisId("y"): 0.5, AxisId("x"): 0.25})
+    expected.set_physical_scale_unit(
+        {AxisId("z"): "micrometer", AxisId("y"): "micrometer"}
+    )
+    io_lib = None if automatic else "h5py"
+    save_tensor(target, expected, io_lib=io_lib)
+    with h5py.File(path, "a") as f:
+        f.create_dataset("unrelated", data=[42])
+    save_tensor(target, expected, io_lib=io_lib)
+
+    actual = load_tensor(target, io_lib=io_lib)
+    assert actual.dims == expected.dims
+    assert actual.dtype == expected.dtype
+    np.testing.assert_array_equal(actual.to_numpy(), expected.to_numpy())
+    assert actual.get_physical_scale() == expected.get_physical_scale()
+    assert actual.get_physical_scale_unit() == expected.get_physical_scale_unit()
+    with h5py.File(path, "r") as f:
+        np.testing.assert_array_equal(f["unrelated"][()], [42])
+        dataset = f[internal_path or "data"]
+        assert list(dataset.attrs["DIMENSION_LABELS"]) == ["z", "y", "x"]
+        assert list(dataset.attrs["axis_units"]) == ["micrometer", "micrometer", ""]
+        np.testing.assert_array_equal(dataset.attrs["axis_scale"], [2.5, 0.5, 0.25])
+
+
+def test_load_tensor_h5py_without_axes_metadata(tmp_path: Path):
+    h5py = pytest.importorskip("h5py")
+
+    from bioimageio.core.io import load_tensor
+
+    path = tmp_path / "image.h5"
+    expected = np.arange(20).reshape(4, 5)
+    with h5py.File(path, "w") as f:
+        f.create_dataset("raw", data=expected)
+
+    actual = load_tensor(path / "raw", axes=("x", "y"), io_lib="h5py")
+    assert actual.dims == ("x", "y")
+    np.testing.assert_array_equal(actual.to_numpy(), expected)
+
 
 @pytest.mark.skipif(
     sys.version_info < (3, 10),
@@ -140,9 +194,7 @@ def test_tensor_io(
 
         if name.find(".zarr") == -1:
             pytest.skip("clearscale only supports zarr")
-    elif io_lib == "bioio" and (
-        name.endswith(".zarr") or name.endswith(".zarr/0")
-    ):
+    elif io_lib == "bioio" and (name.endswith(".zarr") or name.endswith(".zarr/0")):
         pytest.importorskip("bioio_ome_zarr")
     elif io_lib == "imageio":
         if name.find(".zarr") != -1:
