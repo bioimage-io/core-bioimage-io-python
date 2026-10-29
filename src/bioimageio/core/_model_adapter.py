@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import gc
+import time
 import warnings
 from abc import ABC, abstractmethod
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
+from dataclasses import dataclass, field
 from queue import LifoQueue
 from typing import (
     Any,
@@ -149,7 +151,35 @@ DeviceType = TypeVar("DeviceType")
 ModelType = TypeVar("ModelType")
 
 
+@dataclass
+class _LocalModelAdapterStats:
+    forward_calls: dict[str, int] = field(
+        default_factory=cast(Callable[[], dict[str, int]], dict)
+    )
+    """forward calls per device"""
+    forward_time: dict[str, float] = field(
+        default_factory=cast(Callable[[], dict[str, float]], dict)
+    )
+    """total forward time per device"""
+
+    def __str__(self) -> str:
+        return (
+            f"forward calls: {self.forward_calls}, "
+            + f"forward time: {self.forward_time}, "
+            + f"forward time per call: { {d: t / self.forward_calls[d] for d, t in self.forward_time.items() if d in self.forward_calls} }"
+        )
+
+
 class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
+    def __init__(
+        self,
+        model_description: AnyModelDescr,
+        devices: Sequence[str] | None,
+        computation_mode: Literal["eager", "lazy"] = "lazy",
+    ):
+        super().__init__(model_description, devices, computation_mode)
+        self._stats = _LocalModelAdapterStats()
+
     def load(self) -> None:
         devices = self._devices
         self._model_queue: LifoQueue[tuple[DeviceType, ModelType]] = LifoQueue()
@@ -219,14 +249,14 @@ class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
         input_arrays: list[Array | None] = []
         for in_id, in_order in zip(self._input_ids, self._input_axes):
             if isinstance((a := inputs.get(in_id)), Tensor):
-                a_transposed = a.transpose(
+                a = a.transpose(
                     in_order,
                     extra_dims="stack" if a.batch_multi_index is None else "raise",
                 )
-                if a_transposed.batch_multi_index is not None:
-                    multi_batch_indices[in_id] = a_transposed.batch_multi_index
+                if a.batch_multi_index is not None:
+                    multi_batch_indices[in_id] = a.batch_multi_index
 
-                a = a_transposed.to_numpy()
+                a = a.data.data
 
             input_arrays.append(a)
 
@@ -342,6 +372,10 @@ class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
                 + "(`with pred_pipe as pp:`), before the model is unloaded."
             )
         device, model = self._model_queue.get()
+        self._stats.forward_calls[str(device)] = (
+            self._stats.forward_calls.get(str(device), 0) + 1
+        )
+        start = time.perf_counter()
         try:
             return self._forward_impl(
                 device,
@@ -352,6 +386,9 @@ class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
                 ],
             )
         finally:
+            self._stats.forward_time[str(device)] = self._stats.forward_time.get(
+                str(device), 0.0
+            ) + (time.perf_counter() - start)
             self._model_queue.put((device, model))
 
     @abstractmethod
@@ -366,6 +403,8 @@ class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
     def unload(self):
         if not self.is_loaded:
             return
+
+        logger.info("model adapter stats: {}", self._stats)
         for _ in range(len(self._initialized_devices)):
             device, model = self._model_queue.get()
             try:
