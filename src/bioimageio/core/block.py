@@ -618,8 +618,12 @@ def apply_blockwise(
     Args:
         func: the function to apply to each block
         inputs: the input tensors to process
-        block_shape: the shape of the blocks to be processed by func. May be expressed using `AxisSize` objects to allow for variable block shapes.
-        pad_mode: the padding mode (optionally per input member) to use when the halo extends beyond the tensor boundary
+        block_shape:
+            The shape of the blocks to be processed by func.
+            May be expressed using `AxisSize` objects to allow for variable block shapes.
+            Missing axes are treated as having a block size equal to the tensor axis size.
+        pad_mode:
+            The padding mode (optionally per input member) to use when the halo extends beyond the tensor boundary
         pad_boundary:
             True: pad boundary halos, possibly more to make a single block valid;
             False: forbid boundary padding
@@ -640,6 +644,12 @@ def apply_blockwise(
             - 'sequential': (not yet implemented) full chunk is a single task
             - 'auto': automatically choose between 'parallel' and 'sequential' based on the number of chunks to avoid large task graphs.
     """
+    # add missing block dims explicitly
+    block_shape = {
+        m: {d: block_shape.get(m, {}).get(d, t.tagged_shape[d]) for d in t.dims}
+        for m, t in inputs.items()
+    }
+
     max_block_shape: dict[MemberId, dict[AxisId, int]] = {}
     for m, b in block_shape.items():
         max_block_shape[m] = {}
@@ -927,7 +937,7 @@ def apply_to_blocks(
                 != 0
             }
             assert set(overlap_halo) == left_input_overlap | right_input_overlap, (
-                f"need to crop overlap {overlap_halo} but expected overlap in {left_input_overlap}"
+                f"need to crop overlap {overlap_halo} but expected overlap in {left_input_overlap | right_input_overlap}"
             )
             t = t.crop_halo(overlap_halo)
 
@@ -948,11 +958,11 @@ def get_chunk_shape(
             f"Block shape specified for unknown tensors: {unknown_members}."
         )
 
-    # default to 1 for missing block dimensions, and map -1 to tensor shape
+    # default to tensor shape for missing block dimensions or block dimensions set to -1
     block_shape = {
         m: {
             d: t.tagged_shape[d]
-            if (b_s := block_shape.get(m, {}).get(d, 1)) == -1
+            if (b_s := block_shape.get(m, {}).get(d, -1)) == -1
             else b_s
             for d in t.dims
         }
@@ -965,6 +975,16 @@ def get_chunk_shape(
     ):
         raise ValueError(
             f"Block shape {block_shape} has dimensions not present in sample shape { {m: tensors[m].tagged_shape for m in tensors} }"
+        )
+
+    if inconsistent := {
+        d: f"{s} != {bs[d]} (from {m})"
+        for m, bs in block_shape.items()
+        for d, s in dim_sizes.items()
+        if d in bs and bs[d] != s
+    }:
+        raise ValueError(
+            f"Block shape has inconsistent sizes across members: {inconsistent}"
         )
 
     chunk_shape = deepcopy(block_shape)
@@ -1004,10 +1024,21 @@ def get_chunk_shape(
                     break
 
     # increment chunk dimensions in order of non-singleton spatial, time, other, then any singleton dim
-    non_singleton_spatial_dims = [
-        d for d in (AxisId("x"), AxisId("y"), AxisId("z")) if dim_sizes.get(d, 0) > 1
-    ]
-    increment_chunk_dims(non_singleton_spatial_dims)
+    if dim_sizes.get(AxisId("z"), 0) <= 1:
+        non_singleton_xy = [
+            d for d in (AxisId("x"), AxisId("y")) if dim_sizes.get(d, 0) > 1
+        ]
+        increment_chunk_dims(non_singleton_xy)
+
+        if dim_sizes.get((d := AxisId("z")), 0) > 1:
+            increment_chunk_dims((d,))
+    else:
+        non_singleton_space_dims = [
+            d
+            for d in (AxisId("x"), AxisId("y"), AxisId("z"))
+            if dim_sizes.get(d, 0) > 1
+        ]
+        increment_chunk_dims(non_singleton_space_dims)
 
     non_singleton_time_dims = [d for d in (TIME_AXIS_ID,) if dim_sizes.get(d, 0) > 1]
     increment_chunk_dims(non_singleton_time_dims)

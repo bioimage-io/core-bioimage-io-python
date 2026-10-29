@@ -611,6 +611,26 @@ class PredictionPipeline(_PredictionPipelineBase):
         chunk_shape: PerMember[PerAxis[int]] | int,
         block_shape: PerMember[PerAxis[int | AxisSize]],
     ) -> dict[MemberId, Tensor]:
+
+        # fill block_shape to treat extra dims unknown to the model like batch dims
+        if isinstance(self._model_descr, v0_4.ModelDescr):
+            model_axes = {
+                AxisId(ax) for ipt in self._model_descr.inputs for ax in ipt.axes
+            }
+        else:
+            model_axes = {ax.id for ipt in self._model_descr.inputs for ax in ipt.axes}
+        block_shape = {
+            m: {
+                a: block_shape[m][a]
+                if m in block_shape and a in block_shape[m]
+                else s
+                if a in model_axes
+                else AxisSize(min=1, max=s, step=1)
+                for a, s in t.tagged_shape.items()
+            }
+            for m, t in sample_members.items()
+        }
+
         def get_output_shape(
             input_shape: PerMember[PerAxis[int]],
         ) -> PerMember[PerAxis[int]]:

@@ -142,3 +142,33 @@ def test_boundary_padding_forbidden_for_small_tensor(block_size: int | AxisSize)
             pad_mode="edge",
             pad_boundary=False,
         )
+
+
+@pytest.mark.parametrize("mode", ["parallel", "sequential"])
+@pytest.mark.parametrize("length", [2, 8, 10])
+def test_unknown_axis_uses_single_input_block(
+    mode: Literal["parallel", "sequential"], length: int
+):
+    z, x, member = AxisId("z"), AxisId("x"), MemberId("input")
+    data = np.arange(length * 8).reshape(length, 8)
+    calls: list[int] = []
+
+    def identity(inputs: PerMember[Tensor]) -> PerMember[Tensor]:
+        calls.append(inputs[member].tagged_shape[z])
+        return inputs
+
+    result = apply_blockwise(
+        identity,
+        {member: Tensor(data, dims=[z, x])},
+        block_shape={member: {x: AxisSize(min=4, max=8, step=4)}},
+        chunk_shape={member: {z: length, x: 8}},
+        pad_mode="edge",
+        pad_boundary="allow",
+        input_halo={},
+        output_halo={},
+        # Like a 2D model, the shape callback does not know the extra axis.
+        get_output_shape=lambda shapes: {member: {x: shapes[member][x]}},
+        blockwise_processing_mode=mode,
+    )
+    np.testing.assert_array_equal(result[member].to_numpy(), data)
+    assert calls == [length]

@@ -198,6 +198,12 @@ def predict(
             sample = create_sample_for_model(
                 pp.model_descr, inputs=inputs, sample_id=sample_id
             )
+            sample.members = {
+                k: v.unstack_batch_multi_index()
+                if v.batch_multi_index is not None
+                else v
+                for k, v in sample.members.items()
+            }
 
         pp.apply_input_padding(sample)
         pp.apply_preprocessing(sample)
