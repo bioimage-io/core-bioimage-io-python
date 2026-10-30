@@ -236,7 +236,7 @@ class _PredictionPipelineBase(ABC):
                 + " or load_model_description(..., format_version='0.5')."
             )
 
-        ns = ns or self._default_blocksize_parameter
+        ns = ns if ns is not None else self._default_blocksize_parameter
         if isinstance(ns, int):
             ns = {
                 (ipt.id, a.id): ns
