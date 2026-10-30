@@ -22,7 +22,6 @@ from numpy.typing import NDArray
 from typing_extensions import assert_never
 
 from bioimageio.core._utils.type_hints import NestedList, cast_and_assert
-from bioimageio.spec._internal.utils import SLOTS
 
 from ._axis_annotations import PerAxisAnno
 from ._settings import settings
@@ -52,7 +51,7 @@ class LinearAxisTransform:
         return round(s * self.scale) + self.offset
 
 
-@dataclass(frozen=True, **SLOTS)
+@dataclass(frozen=True, slots=True)
 class BlockMeta:
     """A block of data within a sample
 
@@ -324,7 +323,7 @@ class BlockMeta:
     #     )
 
 
-@dataclass(frozen=True, **SLOTS)
+@dataclass(frozen=True, slots=True)
 class Block(BlockMeta):
     """A block of data within a sample
 

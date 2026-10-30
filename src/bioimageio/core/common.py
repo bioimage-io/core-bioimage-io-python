@@ -11,7 +11,6 @@ from typing import (
 
 from typing_extensions import Self, TypeAlias, assert_never
 
-from bioimageio.spec._internal.utils import SLOTS
 from bioimageio.spec.model import v0_5
 
 SupportedWeightsFormat: TypeAlias = Literal[
@@ -115,13 +114,13 @@ PadMode: TypeAlias = Union[Literal["constant", "edge", "reflect", "symmetric"], 
 PadWhere: TypeAlias = _Where
 
 
-@dataclass(frozen=True, **SLOTS)
+@dataclass(frozen=True, slots=True)
 class SliceInfo:
     start: int
     stop: int
 
 
-@dataclass(frozen=True, **SLOTS)
+@dataclass(frozen=True, slots=True)
 class SliceInfoWithOverlap(SliceInfo):
     """SliceInfo aware of the fact that it overlaps with neighboring blocks."""
 
