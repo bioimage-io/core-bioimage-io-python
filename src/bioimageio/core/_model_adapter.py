@@ -163,10 +163,18 @@ class _LocalModelAdapterStats:
     """total forward time per device"""
 
     def __str__(self) -> str:
+        forward_time = ", ".join(
+            f"{device}: {time:.2g}" for device, time in self.forward_time.items()
+        )
+        forward_time_per_call = ", ".join(
+            f"{device}: {time / self.forward_calls[device]:.2g}"
+            for device, time in self.forward_time.items()
+            if device in self.forward_calls
+        )
         return (
             f"forward calls: {self.forward_calls}, "
-            + f"forward time: {self.forward_time}, "
-            + f"forward time per call: { {d: t / self.forward_calls[d] for d, t in self.forward_time.items() if d in self.forward_calls} }"
+            f"forward time: {forward_time}, "
+            f"forward time per call: {forward_time_per_call}"
         )
 
 
