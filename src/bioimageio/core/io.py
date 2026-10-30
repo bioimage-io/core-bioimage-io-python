@@ -208,7 +208,7 @@ def load_tensor_and_return_unstacked_dim_order(
             axes, extra_dims="squeeze_or_stack", missing_dims="unstack_or_expand"
         )
 
-    logger.debug("Loaded tensor {} with {}", t.tagged_shape, io_lib)
+    logger.info("Loaded tensor {} with {}", t.tagged_shape, io_lib)
     return t, unstacked_dim_order
 
 
@@ -814,7 +814,7 @@ def _save_tensor_bioio(
 
     import bioio_base.types
 
-    logger.debug(
+    logger.info(
         "Saving tensor to {}{} with bioio",
         path,
         f"/{internal_path}" if internal_path else "",
@@ -1001,7 +1001,7 @@ def _save_tensor_clearscale(
 
     zarr_format = zarr.config.get("default_zarr_format")
     scale_key = "s0" if internal_path is None else str(internal_path)
-    logger.debug(
+    logger.info(
         "Saving tensor {} to '{}' of {} with clearscale+zarr-python using zarr_format={} and dims={}",
         tensor.tagged_shape,
         scale_key,
@@ -1048,11 +1048,10 @@ def _save_tensor_clearscale(
 
     zarr_group = zarr.open_group(
         str(path),
-        mode="a",
+        mode="w",
         zarr_format=zarr_format,
-        # attributes=zarr_attrs, # Opening an existing group does not update its attributes...
+        attributes=zarr_attrs,
     )
-    zarr_group.attrs.update(zarr_attrs)
 
     create_array_kwargs = _CreateArrayKwargs(
         name=scale_key,
@@ -1154,7 +1153,7 @@ def _save_tensor_numpy(path: Path | ZipPath | FtpUrl, tensor: Tensor) -> None:
             "Saving numpy arrays to FTP URLs is not implemented. Please save to a local file path instead."
         )
 
-    logger.debug("Saving tensor to {} with numpy", path)
+    logger.info("Saving tensor to {} with numpy", path)
 
     if isinstance(path, ZipPath):
         folder = path.filename.parent
@@ -1192,7 +1191,7 @@ def _save_tensor_tifffile(
             "Saving tensor with more than 5 dimensions ({}) will likely fail."
         )
 
-    logger.debug("Saving tensor to {} with tifffile", path)
+    logger.info("Saving tensor to {} with tifffile", path)
 
     scale = tensor.get_physical_scale()
     x_scale = scale.get(AxisId("x"))
