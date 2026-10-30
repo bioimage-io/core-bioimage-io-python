@@ -206,9 +206,8 @@ class Tensor(MagicTensorOpsMixin):
         )
         del _scale
         return {
-            a if isinstance(a, AxisId) else AxisId(a): 1.0 if s is None else float(s)
-            for a, s in scale.items()
-            if a in self.dims
+            a if isinstance(a, AxisId) else AxisId(a): 1.0 if scale.get(a) is None else float(scale.get(a))
+            for a in self.dims
         }
 
     def set_physical_scale(self, scale: PerAxis[float | None] | None) -> None:
