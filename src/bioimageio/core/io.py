@@ -1050,8 +1050,9 @@ def _save_tensor_clearscale(
         str(path),
         mode="a",
         zarr_format=zarr_format,
-        attributes=zarr_attrs,
+        # attributes=zarr_attrs, # Opening an existing group does not update its attributes...
     )
+    zarr_group.attrs.update(zarr_attrs)
 
     create_array_kwargs = _CreateArrayKwargs(
         name=scale_key,
