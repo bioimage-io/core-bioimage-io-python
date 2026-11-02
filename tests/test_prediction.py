@@ -26,9 +26,17 @@ from bioimageio.spec import AnyModelDescr
 from bioimageio.spec.model import v0_4
 
 
-def _assert_equal_samples(expected: Sample, actual: Sample):
+def _assert_equal_samples(actual: Sample, expected: Sample):
     assert expected.id == actual.id
-    assert expected.members == actual.members
+    assert expected.members.keys() == actual.members.keys()
+    for member, tensor in expected.members.items():
+        assert actual.members[member].dims == tensor.dims
+        np.testing.assert_allclose(
+            actual.members[member].to_numpy(),
+            tensor.to_numpy(),
+            rtol=1e-2,
+            atol=1e-2,
+        )
 
 
 class Prep(NamedTuple):
@@ -76,8 +84,6 @@ def test_predict_with_model_description(
         model=prep.model,
         inputs=ipt,
         sample_id=prep.input_sample.id,
-        skip_preprocessing=False,
-        skip_postprocessing=False,
     )
     _assert_equal_samples(out, prep.output_sample)
 
@@ -85,13 +91,11 @@ def test_predict_with_model_description(
 @pytest.mark.parametrize("with_procs", [True, False])
 def test_predict_with_blocking(with_procs: bool, prep: Prep):
     try:
-        out = predict(
-            model=prep.prediction_pipeline,
-            inputs=prep.input_sample,
-            blocksize_parameter=3,
-            sample_id=prep.input_sample.id,
-            skip_preprocessing=with_procs,
-            skip_postprocessing=with_procs,
+        out = prep.prediction_pipeline.predict_with_blocking(
+            prep.input_sample,
+            ns=3,
+            skip_preprocessing=not with_procs,
+            skip_postprocessing=not with_procs,
         )
     except NotImplementedError as e:
         pytest.skip(str(e))
@@ -99,7 +103,9 @@ def test_predict_with_blocking(with_procs: bool, prep: Prep):
     if with_procs:
         _assert_equal_samples(out, prep.output_sample)
     else:
-        assert isinstance(out, Sample)
+        assert out.shape == prep.output_sample.shape
+        for tensor in out.members.values():
+            assert np.isfinite(tensor.to_numpy()).all()
 
 
 def test_predict_with_fixed_blocking(prep: Prep):

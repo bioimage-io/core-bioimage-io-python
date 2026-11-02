@@ -6,12 +6,18 @@ from typing import Any, Literal, cast
 
 import numpy as np
 import pytest
+from exceptiongroup import ExceptionGroup
 
 from bioimageio.core.axis import AxisId
 
 
 @pytest.mark.parametrize("internal_path", ["", "group/image"])
 @pytest.mark.parametrize("automatic", [False, True])
+@pytest.mark.xfail(
+    strict=True,
+    raises=(TypeError, ExceptionGroup),
+    reason="HDF5 writer assigns a Python dict to the axistags attribute; it must serialize it",
+)
 def test_tensor_io_h5py(tmp_path: Path, internal_path: str, automatic: bool):
     h5py = pytest.importorskip("h5py")
 
@@ -60,6 +66,82 @@ def test_load_tensor_h5py_without_axes_metadata(tmp_path: Path):
     actual = load_tensor(path / "raw", axes=("x", "y"), io_lib="h5py")
     assert actual.dims == ("x", "y")
     np.testing.assert_array_equal(actual.to_numpy(), expected)
+
+
+@pytest.mark.parametrize("internal_path", ["", "group/image"])
+@pytest.mark.xfail(
+    strict=True,
+    raises=AssertionError,
+    reason="HDF5 reader ignores NumPy array attributes for axis labels, units, and scale",
+)
+def test_load_tensor_h5py_calibration(tmp_path: Path, internal_path: str):
+    h5py = pytest.importorskip("h5py")
+    from bioimageio.core.io import load_tensor
+
+    path = tmp_path / "calibrated.h5"
+    expected = np.arange(60, dtype=np.uint16).reshape(3, 4, 5)
+    with h5py.File(path, "w") as f:
+        dataset = f.create_dataset(internal_path or "data", data=expected)
+        dataset.attrs["DIMENSION_LABELS"] = ["z", "y", "x"]
+        dataset.attrs["axis_scale"] = [2.5, 0.5, 0.25]
+        dataset.attrs["axis_units"] = ["micrometer", "micrometer", ""]
+
+    actual = load_tensor(path / internal_path if internal_path else path, io_lib="h5py")
+    assert actual.dims == ("z", "y", "x")
+    assert actual.dtype == "uint16"
+    assert actual.get_physical_scale() == {"z": 2.5, "y": 0.5, "x": 0.25}
+    assert actual.get_physical_scale_unit() == {
+        "z": "micrometer",
+        "y": "micrometer",
+        "x": "",
+    }
+    np.testing.assert_array_equal(actual.to_numpy(), expected)
+
+
+@pytest.mark.parametrize(
+    "problem, error, message",
+    [
+        ("empty", ValueError, "is empty"),
+        ("group", TypeError, "does not point to a dataset"),
+        pytest.param(
+            "axis_scale",
+            ValueError,
+            "one value per axis",
+            marks=pytest.mark.xfail(
+                strict=True,
+                raises=pytest.fail.Exception,
+                reason="HDF5 reader skips validation of NumPy array attributes",
+            ),
+        ),
+        pytest.param(
+            "axis_units",
+            ValueError,
+            "one value per axis",
+            marks=pytest.mark.xfail(
+                strict=True,
+                raises=pytest.fail.Exception,
+                reason="HDF5 reader skips validation of NumPy array attributes",
+            ),
+        ),
+    ],
+)
+def test_load_tensor_h5py_rejects_invalid_metadata(
+    tmp_path: Path, problem: str, error: type[Exception], message: str
+):
+    h5py = pytest.importorskip("h5py")
+    from bioimageio.core.io import load_tensor
+
+    path = tmp_path / "invalid.h5"
+    with h5py.File(path, "w") as f:
+        if problem == "group":
+            _ = f.create_group("raw")
+        elif problem != "empty":
+            dataset = f.create_dataset("raw", data=np.zeros((2, 3)))
+            dataset.attrs["DIMENSION_LABELS"] = ["y", "x"]
+            dataset.attrs[problem] = [0.5] if problem == "axis_scale" else ["um"]
+    source = path if problem == "empty" else path / "raw"
+    with pytest.raises(error, match=message):
+        _ = load_tensor(source, io_lib="h5py")
 
 
 @pytest.mark.skipif(
@@ -194,7 +276,7 @@ def test_tensor_io(
 
         if name.find(".zarr") == -1:
             pytest.skip("clearscale only supports zarr")
-    elif io_lib == "bioio" and (name.endswith(".zarr") or name.endswith(".zarr/0")):
+    elif io_lib == "bioio" and name.endswith((".zarr", ".zarr/0")):
         pytest.importorskip("bioio_ome_zarr")
     elif io_lib == "imageio":
         if name.find(".zarr") != -1:

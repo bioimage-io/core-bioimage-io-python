@@ -190,4 +190,5 @@ known-first-party = ["bioimageio"]
 exclude_also = ["if TYPE_CHECKING:", "assert_never\\("]
 
 [tool.coverage.run]
+branch = true
 patch = ["subprocess"]

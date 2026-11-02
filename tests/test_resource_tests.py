@@ -1,7 +1,10 @@
 from pathlib import Path
 
 import numpy as np
+import pytest
 
+from bioimageio.core import Tensor
+from bioimageio.core._resource_tests import evaluate_mismatched_elements
 from bioimageio.spec import InvalidDescr, ValidationContext
 
 
@@ -76,3 +79,47 @@ def test_failed_reproducibility(unet2d_nuclei_broad_model: str, tmp_path: str):
     summary = test_model(model)
 
     assert summary.status == "valid-format"
+
+
+@pytest.mark.parametrize(
+    "actual, expected, rtol, atol, ppm",
+    [
+        ([1.0, 2.0], [1.0, 2.0], 0, 0, 0),
+        ([1.125, 2.0], [1.0, 2.0], 0, 0.125, 0),
+        ([1.0, 2.25], [1.0, 2.0], 0.125, 0, 0),
+        ([1.25, 2.0], [1.0, 2.0], 0, 0.125, 500_000),
+        ([1.0, 2.5], [1.0, 2.0], 0.125, 0, 500_000),
+    ],
+)
+def test_mismatched_elements_tolerance_boundaries(
+    actual: list[float], expected: list[float], rtol: float, atol: float, ppm: float
+):
+    mismatched, message, error = evaluate_mismatched_elements(
+        Tensor(np.asarray(actual), dims=["x"]),
+        Tensor(np.asarray(expected), dims=["x"]),
+        rtol=rtol,
+        atol=atol,
+        mismatched_tol=0,
+        name="output",
+    )
+    assert error is None
+    assert mismatched == ppm
+    assert ("all elements agree" in message) == (ppm == 0)
+
+
+@pytest.mark.xfail(
+    strict=True,
+    raises=AssertionError,
+    reason="evaluate_mismatched_elements reports NaN predictions as matching finite references",
+)
+@pytest.mark.parametrize("nan_in_reference", [False, True])
+def test_mismatched_elements_detects_nan(nan_in_reference: bool):
+    actual = Tensor(
+        np.array([np.nan if not nan_in_reference else 0.0, 1.0]), dims=["x"]
+    )
+    expected = Tensor(np.array([np.nan if nan_in_reference else 0.0, 1.0]), dims=["x"])
+    mismatched, _, error = evaluate_mismatched_elements(
+        actual, expected, rtol=1e-3, atol=1e-3, mismatched_tol=0, name="output"
+    )
+    assert error is None
+    assert mismatched == 500_000

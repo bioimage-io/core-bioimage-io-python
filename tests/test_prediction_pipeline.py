@@ -1,6 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
-from functools import partial
 from pathlib import Path
+
+import numpy as np
 
 from bioimageio.core import AxisId, Sample
 from bioimageio.core._resource_tests import evaluate_mismatched_elements
@@ -40,17 +41,27 @@ def _test_prediction_pipeline(
 
         # test in a multi-threaded setting
         multiple_inputs = [inputs, _alter_sample(inputs, offset=100.0)]
+
+        def run(sample: Sample) -> Sample:
+            # Evaluate lazy inference in the worker while the adapter is loaded.
+            return pp.predict_without_blocking(
+                sample, skip_input_padding=True, skip_output_cropping=True
+            ).as_numpy()
+
+        sequential_outputs = [run(sample) for sample in multiple_inputs]
         with ThreadPoolExecutor(max_workers=3) as executor:
-            multiple_outputs = list(
-                executor.map(
-                    partial(
-                        pp.predict_without_blocking,
-                        skip_input_padding=True,
-                        skip_output_cropping=True,
-                    ),
-                    multiple_inputs,
+            multiple_outputs = list(executor.map(run, multiple_inputs))
+
+        for actual, expected in zip(multiple_outputs, sequential_outputs):
+            assert actual.id == expected.id
+            assert actual.shape == expected.shape
+            for member in expected.members:
+                np.testing.assert_allclose(
+                    actual.members[member].to_numpy(),
+                    expected.members[member].to_numpy(),
+                    rtol=0.01,
+                    atol=0.1,
                 )
-            )
 
         outputs = multiple_outputs[0]
 

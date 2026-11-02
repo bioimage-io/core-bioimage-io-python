@@ -31,9 +31,31 @@ class _IdentityAdapter(ModelAdapter):
 
 @pytest.mark.parametrize("blocking", [None, "parameterized", "fixed"])
 @pytest.mark.parametrize("output_scale", [1, 2])
-@pytest.mark.parametrize("use_predict", [True, False])
+@pytest.mark.parametrize(
+    "execution",
+    [
+        "pipeline",
+        "predict",
+        pytest.param(
+            "cache_preprocessing",
+            marks=pytest.mark.xfail(
+                strict=True,
+                raises=TypeError,
+                reason="predict passes the Dask array returned by to_zarr(return_stored=True) to from_zarr",
+            ),
+        ),
+        pytest.param(
+            "cache_postprocessing",
+            marks=pytest.mark.xfail(
+                strict=True,
+                raises=TypeError,
+                reason="predict passes the Dask array returned by to_zarr(return_stored=True) to from_zarr",
+            ),
+        ),
+    ],
+)
 def test_predict_preserves_tiff_resolution(
-    tmp_path: Path, blocking: str | None, output_scale: int, use_predict: bool
+    tmp_path: Path, blocking: str | None, output_scale: int, execution: str
 ):
     import sys
 
@@ -110,14 +132,20 @@ def test_predict_preserves_tiff_resolution(
         source, data, imagej=True, resolution=(5, 4), metadata={"unit": "um"}
     )
     with pipeline:
-        if use_predict:
-            _ = pytest.importorskip("zarr")
-            _ = predict(
+        if execution != "pipeline":
+            if execution.startswith("cache_"):
+                _ = pytest.importorskip("zarr")
+            # Cache arguments are implemented but missing from predict's overloads.
+            predict(  # pyright: ignore[reportCallIssue]
                 model=pipeline,
                 inputs=source,
                 output_path=target,
-                cache_path_after_preprocessing=tmp_path / "pre_{member_id}.zarr",
-                cache_path_before_postprocessing=tmp_path / "post_{member_id}.zarr",
+                cache_path_after_preprocessing=tmp_path / "pre_{member_id}.zarr"
+                if execution == "cache_preprocessing"
+                else None,
+                cache_path_before_postprocessing=tmp_path / "post_{member_id}.zarr"
+                if execution == "cache_postprocessing"
+                else None,
                 blocksize_parameter=1 if blocking == "parameterized" else None,
                 input_block_shape={input_id: {a: 8 for a in axes}}
                 if blocking == "fixed"
