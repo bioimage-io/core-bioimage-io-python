@@ -5,11 +5,12 @@ from dataclasses import dataclass
 from typing import (
     Literal,
     NamedTuple,
+    TypeAlias,
     TypeVar,
     Union,
 )
 
-from typing_extensions import Self, TypeAlias, assert_never
+from typing_extensions import Self, assert_never
 
 from bioimageio.spec.model import v0_5
 
@@ -110,7 +111,7 @@ class PadWidth(_LeftRight):
 
 PadWidthLike: TypeAlias = _LeftRightLike[PadWidth]
 Padding: TypeAlias = v0_5.Padding
-PadMode: TypeAlias = Union[Literal["constant", "edge", "reflect", "symmetric"], Padding]
+PadMode: TypeAlias = Literal["constant", "edge", "reflect", "symmetric"] | Padding
 PadWhere: TypeAlias = _Where
 
 
@@ -133,10 +134,7 @@ SampleId = Hashable
 MemberId = v0_5.TensorId
 """ID of a `Sample` member, see `bioimageio.core.sample.Sample`"""
 
-BlocksizeParameter: TypeAlias = Union[
-    v0_5.ParameterizedSize_N,
-    Mapping[tuple[MemberId, v0_5.AxisId], v0_5.ParameterizedSize_N],
-]
+BlocksizeParameter: TypeAlias = v0_5.ParameterizedSize_N | Mapping[tuple[MemberId, v0_5.AxisId], v0_5.ParameterizedSize_N]
 """
 Parameter to determine a concrete size for paramtrized axis sizes defined by
 `bioimageio.spec.model.v0_5.ParameterizedSize`.

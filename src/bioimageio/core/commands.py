@@ -5,8 +5,7 @@ from __future__ import annotations
 
 from collections.abc import Sequence
 from pathlib import Path
-
-from typing_extensions import Literal
+from typing import Literal
 
 from bioimageio.spec import (
     InvalidDescr,

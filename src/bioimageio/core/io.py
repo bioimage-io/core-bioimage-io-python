@@ -12,7 +12,7 @@ from io import BytesIO, TextIOWrapper
 from itertools import chain
 from pathlib import Path, PosixPath, PurePath, PurePosixPath
 from shutil import copyfileobj
-from typing import TYPE_CHECKING, Any, TypedDict, Union, cast
+from typing import TYPE_CHECKING, Any, Literal, TypeAlias, TypedDict, cast
 
 import dask.array as da
 import dask.diagnostics
@@ -26,8 +26,8 @@ from imageio.v3 import (
 )
 from loguru import logger
 from pydantic import BaseModel, RootModel, TypeAdapter
-from typing_extensions import Literal, TypeAlias, assert_never
 from typing_extensions import TypeAliasType as _TypeAliasType
+from typing_extensions import assert_never
 
 from bioimageio.core._utils.type_hints import cast_and_assert
 from bioimageio.spec._internal.io import (
@@ -72,9 +72,7 @@ from .stat_measures import DatasetMeasure, MeasureValue, SampleMeasure, Stat
 from .tensor import Tensor
 
 if TYPE_CHECKING:
-    JsonValue: TypeAlias = Union[
-        bool, int, float, str, None, list["JsonValue"], dict[str, "JsonValue"]
-    ]  # note: order relevant for deserializing
+    JsonValue: TypeAlias = bool | int | float | str | None | list["JsonValue"] | dict[str, "JsonValue"]  # note: order relevant for deserializing
 
 else:
     # for pydantic validation we need to use `TypeAliasType`,
@@ -82,18 +80,10 @@ else:
     # however this results in a partially unknown type with the current pyright 1.1.388
     JsonValue: TypeAlias = _TypeAliasType(
         "JsonValue",
-        Union[bool, int, float, str, None, list["JsonValue"], dict[str, "JsonValue"]],
+        bool | int | float | str | None | list["JsonValue"] | dict[str, "JsonValue"],
     )
 
-JsonValueReadOnly: TypeAlias = Union[
-    bool,
-    int,
-    float,
-    str,
-    None,
-    Sequence["JsonValueReadOnly"],
-    Mapping[str, "JsonValueReadOnly"],
-]
+JsonValueReadOnly: TypeAlias = bool | int | float | str | None | Sequence["JsonValueReadOnly"] | Mapping[str, "JsonValueReadOnly"]
 
 IO_Lib: TypeAlias = Literal[
     "bioio", "imageio", "clearscale", "numpy", "tifffile", "h5py"

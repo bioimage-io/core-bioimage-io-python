@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import itertools
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from copy import deepcopy
 from dataclasses import dataclass
 from functools import partial
@@ -10,7 +10,6 @@ from types import MappingProxyType
 from typing import (
     Annotated,
     Any,
-    Callable,
     Literal,
     cast,
 )

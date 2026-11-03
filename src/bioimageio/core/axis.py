@@ -4,12 +4,13 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import (
     Literal,
+    TypeAlias,
     TypeVar,
     Union,
 )
 
 from loguru import logger
-from typing_extensions import Protocol, TypeAlias, assert_never, runtime_checkable
+from typing_extensions import Protocol, assert_never, runtime_checkable
 
 from bioimageio.spec.model import v0_5
 

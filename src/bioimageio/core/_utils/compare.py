@@ -1,9 +1,10 @@
 from collections.abc import Sequence
 from difflib import HtmlDiff, unified_diff
+from typing import Literal
 
 from loguru import logger
 from ruyaml import Optional
-from typing_extensions import Literal, assert_never
+from typing_extensions import assert_never
 
 from bioimageio.spec._internal.version_type import Version
 

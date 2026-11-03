@@ -1,10 +1,10 @@
-from typing import Any, TypeVar, Union
+from typing import Any, TypeVar
 
 from typing_extensions import TypeAliasType
 
 _T = TypeVar("_T")
 NestedList = TypeAliasType(
-    "NestedList", Union[list["NestedList[_T]"], _T], type_params=(_T,)
+    "NestedList", list["NestedList[_T]"] | _T, type_params=(_T,)
 )
 
 

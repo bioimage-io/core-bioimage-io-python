@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from itertools import chain
 from typing import (
-    Callable,
     NamedTuple,
     Union,
 )

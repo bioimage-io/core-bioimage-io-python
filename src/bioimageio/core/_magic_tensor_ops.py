@@ -3,7 +3,8 @@
 # TODO: should we generate this ourselves?
 # TODO: test these magic methods
 import operator
-from typing import TYPE_CHECKING, Any, Callable
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
 from typing_extensions import Self
 from xarray.core import nputils

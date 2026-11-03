@@ -2,14 +2,13 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, TypeVar
+from typing import Any, TypeGuard, TypeVar
 
 import numpy as np
 import pytest
 import scipy  # pyright: ignore[reportMissingTypeStubs]
 import xarray as xr
 from numpy.typing import NDArray
-from typing_extensions import TypeGuard
 
 from bioimageio.core.axis import AxisId
 from bioimageio.core.common import MemberId

@@ -4,16 +4,15 @@ import collections.abc
 import importlib.abc
 import importlib.util
 import sys
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from itertools import chain
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import (
     Any,
-    Callable,
     Final,
     Literal,
-    Union,
+    TypeAlias,
 )
 from zipfile import ZipFile, is_zipfile
 
@@ -23,7 +22,7 @@ import xarray as xr
 from dask.array.core import Array as DaskArray
 from loguru import logger
 from numpy.typing import NDArray
-from typing_extensions import TypeAlias, Unpack, assert_never
+from typing_extensions import Unpack, assert_never
 
 from bioimageio.core._utils.type_hints import cast_and_assert
 from bioimageio.spec._internal.io import HashKwargs, PermissiveFileSource
@@ -46,9 +45,7 @@ from .sample import (
 from .stat_measures import Stat
 from .tensor import Tensor, TensorMetaData, get_unstacked_dim_order
 
-TensorSource: TypeAlias = Union[
-    Tensor, xr.DataArray, NDArray[Any], DaskArray, PermissiveFileSource
-]
+TensorSource: TypeAlias = Tensor | xr.DataArray | NDArray[Any] | DaskArray | PermissiveFileSource
 
 
 def import_callable(

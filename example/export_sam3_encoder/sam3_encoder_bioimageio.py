@@ -28,8 +28,8 @@ modification of the ``sam3`` package (nor an upstream PR) is required.
 from __future__ import annotations
 
 import torch
-import torch.nn as nn
 from sam3.model_builder import build_sam3_image_model
+from torch import nn
 
 
 class Sam3EncoderBioImageIO(nn.Module):

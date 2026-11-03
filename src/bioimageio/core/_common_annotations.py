@@ -6,6 +6,7 @@ from typing import (
     Annotated,
     Any,
     TypeVar,
+    get_args,
 )
 
 import pydantic
@@ -17,7 +18,6 @@ from pydantic_core.core_schema import (
     no_info_plain_validator_function,
     plain_serializer_function_ser_schema,
 )
-from typing_extensions import get_args
 
 from .common import PerMember
 

@@ -23,7 +23,6 @@ from pathlib import Path
 import imageio.v3 as imageio
 import numpy as np
 import torch
-
 from sam3_encoder_bioimageio import Sam3EncoderBioImageIO
 
 # SAM 3 was trained at 1008x1008 (patch size 14 -> 72x72 feature grid).

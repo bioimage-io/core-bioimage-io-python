@@ -7,8 +7,8 @@ from typing import (
     Any,
     Literal,
     Protocol,
+    TypeAlias,
     TypeVar,
-    Union,
 )
 
 import numpy as np
@@ -18,7 +18,6 @@ from pydantic import (
     Discriminator,
     PlainSerializer,
 )
-from typing_extensions import TypeAlias
 
 from .axis import AxisId
 from .common import MemberId, PerMember, QuantileMethod
@@ -38,14 +37,7 @@ def tensor_custom_serializer(t: Tensor) -> dict[str, Any]:
     return {"data": t.data.to_numpy().tolist(), "dims": list(map(str, t.dims))}
 
 
-MeasureValue: TypeAlias = Union[
-    float,
-    Annotated[
-        Tensor,
-        BeforeValidator(tensor_custom_before_validator),
-        PlainSerializer(tensor_custom_serializer),
-    ],
-]
+MeasureValue: TypeAlias = float | Annotated[Tensor, BeforeValidator(tensor_custom_before_validator), PlainSerializer(tensor_custom_serializer)]
 
 
 # using Sample Protocol really only to avoid circular imports
@@ -179,20 +171,20 @@ class DatasetQuantile(_Quantile, DatasetMeasureBase, frozen=True):
 
 
 SampleMeasure: TypeAlias = Annotated[
-    Union[SampleMean, SampleStd, SampleVar, SampleQuantile], Discriminator("name")
+    SampleMean | SampleStd | SampleVar | SampleQuantile, Discriminator("name")
 ]
 DatasetMeasure: TypeAlias = Annotated[
-    Union[DatasetMean, DatasetStd, DatasetVar, DatasetQuantile], Discriminator("name")
+    DatasetMean | DatasetStd | DatasetVar | DatasetQuantile, Discriminator("name")
 ]
 Measure: TypeAlias = Annotated[
-    Union[SampleMeasure, DatasetMeasure], Discriminator("scope")
+    SampleMeasure | DatasetMeasure, Discriminator("scope")
 ]
 Stat: TypeAlias = dict[Measure, MeasureValue]
 
-MeanMeasure: TypeAlias = Union[SampleMean, DatasetMean]
-StdMeasure: TypeAlias = Union[SampleStd, DatasetStd]
-VarMeasure: TypeAlias = Union[SampleVar, DatasetVar]
-PercentileMeasure: TypeAlias = Union[SampleQuantile, DatasetQuantile]
+MeanMeasure: TypeAlias = SampleMean | DatasetMean
+StdMeasure: TypeAlias = SampleStd | DatasetStd
+VarMeasure: TypeAlias = SampleVar | DatasetVar
+PercentileMeasure: TypeAlias = SampleQuantile | DatasetQuantile
 MeanMeasureT = TypeVar("MeanMeasureT", bound=MeanMeasure)
 StdMeasureT = TypeVar("StdMeasureT", bound=StdMeasure)
 VarMeasureT = TypeVar("VarMeasureT", bound=VarMeasure)

@@ -3,9 +3,7 @@ They widen the type to T[Any], which is not always correct."""
 
 from __future__ import annotations
 
-from typing import Any
-
-from typing_extensions import TypeGuard
+from typing import Any, TypeGuard
 
 from bioimageio.spec._internal.type_guards import is_dict as is_dict
 from bioimageio.spec._internal.type_guards import is_kwargs as is_kwargs

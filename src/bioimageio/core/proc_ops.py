@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 import collections.abc
-from collections.abc import Collection, Mapping, Sequence
+from collections.abc import Callable, Collection, Mapping, Sequence
 from dataclasses import InitVar, dataclass, field
 from functools import partial
 from typing import (
     Any,
-    Callable,
     Literal,
     Union,
 )

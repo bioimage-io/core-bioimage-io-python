@@ -1,14 +1,14 @@
 from __future__ import annotations
 
 import collections.abc
-from collections.abc import Collection, Iterator, Mapping, Sequence
+from collections.abc import Callable, Collection, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from itertools import permutations
 from typing import (
     Any,
-    Callable,
     Literal,
     Protocol,
+    TypeAlias,
     Union,
     cast,
     get_args,
@@ -21,7 +21,7 @@ import xarray as xr
 from dask.array.core import Array as DaskArray
 from loguru import logger
 from numpy.typing import DTypeLike, NDArray
-from typing_extensions import Self, TypeAlias, assert_never
+from typing_extensions import Self, assert_never
 
 from bioimageio.spec.model import v0_5
 from bioimageio.spec.model.v0_5 import SpaceUnit, TimeUnit

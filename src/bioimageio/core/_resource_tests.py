@@ -6,7 +6,7 @@ import platform
 import subprocess
 import sys
 import warnings
-from collections.abc import Hashable, Sequence
+from collections.abc import Callable, Hashable, Sequence
 from contextlib import nullcontext
 from copy import deepcopy
 from io import StringIO
@@ -15,15 +15,15 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import (
     Any,
-    Callable,
     Literal,
+    get_args,
     overload,
 )
 
 import numpy as np
 from loguru import logger
 from numpy.typing import NDArray
-from typing_extensions import NotRequired, TypedDict, Unpack, assert_never, get_args
+from typing_extensions import NotRequired, TypedDict, Unpack, assert_never
 
 from bioimageio.spec import (
     AnyDatasetDescr,
