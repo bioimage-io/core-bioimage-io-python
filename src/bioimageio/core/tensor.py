@@ -14,11 +14,11 @@ from typing import (
     get_args,
 )
 
-import dask.array
 import dask.array as da
 import numpy as np
 import pandas as pd
 import xarray as xr
+from dask.array.core import Array as DaskArray
 from loguru import logger
 from numpy.typing import DTypeLike, NDArray
 from typing_extensions import Self, TypeAlias, assert_never
@@ -56,7 +56,7 @@ from .common import (
 
 MultiIndex = pd.MultiIndex
 
-Array: TypeAlias = "NDArray[Any] | dask.array.Array"
+Array: TypeAlias = NDArray[Any] | DaskArray
 
 
 class _SupportsArray(Protocol):
@@ -206,7 +206,9 @@ class Tensor(MagicTensorOpsMixin):
         )
         del _scale
         return {
-            a if isinstance(a, AxisId) else AxisId(a): 1.0 if scale.get(a) is None else float(scale.get(a))
+            a if isinstance(a, AxisId) else AxisId(a): 1.0
+            if scale.get(a) is None
+            else float(scale.get(a))
             for a in self.dims
         }
 

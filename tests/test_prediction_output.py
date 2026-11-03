@@ -36,22 +36,9 @@ class _IdentityAdapter(ModelAdapter):
     [
         "pipeline",
         "predict",
-        pytest.param(
-            "cache_preprocessing",
-            marks=pytest.mark.xfail(
-                strict=True,
-                raises=TypeError,
-                reason="predict passes the Dask array returned by to_zarr(return_stored=True) to from_zarr",
-            ),
-        ),
-        pytest.param(
-            "cache_postprocessing",
-            marks=pytest.mark.xfail(
-                strict=True,
-                raises=TypeError,
-                reason="predict passes the Dask array returned by to_zarr(return_stored=True) to from_zarr",
-            ),
-        ),
+        "cache_preprocessing",
+        "cache_postprocessing",
+        "cache_both",
     ],
 )
 def test_predict_preserves_tiff_resolution(
@@ -135,16 +122,15 @@ def test_predict_preserves_tiff_resolution(
         if execution != "pipeline":
             if execution.startswith("cache_"):
                 _ = pytest.importorskip("zarr")
-            # Cache arguments are implemented but missing from predict's overloads.
-            predict(  # pyright: ignore[reportCallIssue]
+            _ = predict(
                 model=pipeline,
                 inputs=source,
                 output_path=target,
                 cache_path_after_preprocessing=tmp_path / "pre_{member_id}.zarr"
-                if execution == "cache_preprocessing"
+                if execution in ("cache_preprocessing", "cache_both")
                 else None,
                 cache_path_before_postprocessing=tmp_path / "post_{member_id}.zarr"
-                if execution == "cache_postprocessing"
+                if execution in ("cache_postprocessing", "cache_both")
                 else None,
                 blocksize_parameter=1 if blocking == "parameterized" else None,
                 input_block_shape={input_id: {a: 8 for a in axes}}
@@ -177,6 +163,19 @@ def test_predict_preserves_tiff_resolution(
         for tag, resolution in [("XResolution", 5), ("YResolution", 4)]:
             numerator, denominator = tif.pages[0].tags[tag].value
             assert numerator / denominator == pytest.approx(resolution / output_scale)
+
+    if execution.startswith("cache_"):
+        zarr = pytest.importorskip("zarr")
+        if execution in ("cache_preprocessing", "cache_both"):
+            np.testing.assert_allclose(
+                zarr.open_array(tmp_path / "pre_input.zarr", mode="r")[:],
+                np.full_like(data, 0.5),
+            )
+        if execution in ("cache_postprocessing", "cache_both"):
+            np.testing.assert_allclose(
+                zarr.open_array(tmp_path / "post_output.zarr", mode="r")[:],
+                np.full_like(data[::output_scale, ::output_scale], 0.5),
+            )
 
 
 @pytest.mark.parametrize("zarr_format", [2, 3])

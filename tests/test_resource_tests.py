@@ -107,11 +107,6 @@ def test_mismatched_elements_tolerance_boundaries(
     assert ("all elements agree" in message) == (ppm == 0)
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="evaluate_mismatched_elements reports NaN predictions as matching finite references",
-)
 @pytest.mark.parametrize("nan_in_reference", [False, True])
 def test_mismatched_elements_detects_nan(nan_in_reference: bool):
     actual = Tensor(

@@ -101,11 +101,6 @@ def test_create_sample_rejects_missing_axis(two_input_model: v0_5.ModelDescr):
         )
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=ValueError,
-    reason="transpose_inputs_for_model rejects omitted optional model inputs",
-)
 def test_transpose_allows_omitting_optional_input(two_input_model: v0_5.ModelDescr):
     tensor = Tensor(np.arange(4).reshape(4, 1), dims=["x", "batch"])
     transposed = transpose_inputs_for_model(

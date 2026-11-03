@@ -1,3 +1,4 @@
+import json
 import sys
 from importlib.util import find_spec
 from inspect import signature
@@ -6,18 +7,12 @@ from typing import Any, Literal, cast
 
 import numpy as np
 import pytest
-from exceptiongroup import ExceptionGroup
 
 from bioimageio.core.axis import AxisId
 
 
 @pytest.mark.parametrize("internal_path", ["", "group/image"])
 @pytest.mark.parametrize("automatic", [False, True])
-@pytest.mark.xfail(
-    strict=True,
-    raises=(TypeError, ExceptionGroup),
-    reason="HDF5 writer assigns a Python dict to the axistags attribute; it must serialize it",
-)
 def test_tensor_io_h5py(tmp_path: Path, internal_path: str, automatic: bool):
     h5py = pytest.importorskip("h5py")
 
@@ -51,6 +46,9 @@ def test_tensor_io_h5py(tmp_path: Path, internal_path: str, automatic: bool):
         assert list(dataset.attrs["DIMENSION_LABELS"]) == ["z", "y", "x"]
         assert list(dataset.attrs["axis_units"]) == ["micrometer", "micrometer", ""]
         np.testing.assert_array_equal(dataset.attrs["axis_scale"], [2.5, 0.5, 0.25])
+        axis_tags = json.loads(dataset.attrs["axistags"])["axes"]
+        assert [axis["key"] for axis in axis_tags] == ["z", "y", "x"]
+        assert [axis["resolution"] for axis in axis_tags] == [2.5, 0.5, 0.25]
 
 
 def test_load_tensor_h5py_without_axes_metadata(tmp_path: Path):
@@ -69,11 +67,6 @@ def test_load_tensor_h5py_without_axes_metadata(tmp_path: Path):
 
 
 @pytest.mark.parametrize("internal_path", ["", "group/image"])
-@pytest.mark.xfail(
-    strict=True,
-    raises=AssertionError,
-    reason="HDF5 reader ignores NumPy array attributes for axis labels, units, and scale",
-)
 def test_load_tensor_h5py_calibration(tmp_path: Path, internal_path: str):
     h5py = pytest.importorskip("h5py")
     from bioimageio.core.io import load_tensor
@@ -103,26 +96,8 @@ def test_load_tensor_h5py_calibration(tmp_path: Path, internal_path: str):
     [
         ("empty", ValueError, "is empty"),
         ("group", TypeError, "does not point to a dataset"),
-        pytest.param(
-            "axis_scale",
-            ValueError,
-            "one value per axis",
-            marks=pytest.mark.xfail(
-                strict=True,
-                raises=pytest.fail.Exception,
-                reason="HDF5 reader skips validation of NumPy array attributes",
-            ),
-        ),
-        pytest.param(
-            "axis_units",
-            ValueError,
-            "one value per axis",
-            marks=pytest.mark.xfail(
-                strict=True,
-                raises=pytest.fail.Exception,
-                reason="HDF5 reader skips validation of NumPy array attributes",
-            ),
-        ),
+        ("axis_scale", ValueError, "one value per axis"),
+        ("axis_units", ValueError, "one value per axis"),
     ],
 )
 def test_load_tensor_h5py_rejects_invalid_metadata(

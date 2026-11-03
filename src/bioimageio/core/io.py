@@ -269,6 +269,8 @@ def _load_tensor_h5py(
         raise TypeError(f"HDF5 path {internal_path} does not point to a dataset")
 
     labels = cast(Any, dataset.attrs.get("DIMENSION_LABELS"))
+    if isinstance(labels, np.ndarray):
+        labels = labels.tolist()
     if not is_sequence(labels):
         if axes is None or dataset.ndim == len(axes):
             dims = axes
@@ -288,6 +290,8 @@ def _load_tensor_h5py(
         ("axis_scale", tensor.set_physical_scale),
     ):
         values = cast(Any, dataset.attrs.get(attr))
+        if isinstance(values, np.ndarray):
+            values = values.tolist()
         if is_sequence(values):
             if len(values) != tensor.ndim:
                 raise ValueError(f"HDF5 attribute {attr} must have one value per axis")
@@ -787,17 +791,19 @@ def _save_tensor_h5py(
 
         if all(d[0].lower() in "tczxy" for d in tensor.dims):
             # add vigra axis tags
-            dataset.attrs["axistags"] = {
-                "axes": [
-                    {
-                        "key": (a := str(d[0]).lower()),
-                        "typeFlags": 1 if a == "c" else 2 if a in "zxy" else 8,
-                        "resolution": scale.get(d, 0),
-                        "description": units.get(d, ""),
-                    }
-                    for d in tensor.dims
-                ]
-            }
+            dataset.attrs["axistags"] = json.dumps(
+                {
+                    "axes": [
+                        {
+                            "key": (a := str(d[0]).lower()),
+                            "typeFlags": 1 if a == "c" else 2 if a in "zxy" else 8,
+                            "resolution": scale.get(d, 0),
+                            "description": units.get(d, ""),
+                        }
+                        for d in tensor.dims
+                    ]
+                }
+            )
 
         data = cast_and_assert(da.Array, tensor.as_dask().data.data)
         da.store(data, dataset, compute=True, lock=True)

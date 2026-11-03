@@ -3,8 +3,10 @@ from __future__ import annotations
 from collections.abc import Mapping
 from pathlib import Path
 
+import dask.array as da
 import numpy as np
 import pytest
+from dask.delayed import delayed  # pyright: ignore[reportUnknownVariableType]
 
 from bioimageio.core import AxisId, MemberId, Sample, Tensor, predict
 from bioimageio.core._model_adapter import ModelAdapter
@@ -94,7 +96,9 @@ def test_predict_applies_processing_once(
 @pytest.mark.parametrize("skip_preprocessing", [False, True])
 @pytest.mark.parametrize("skip_postprocessing", [False, True])
 def test_pipeline_respects_processing_flags(
-    pipeline: PredictionPipeline, skip_preprocessing: bool, skip_postprocessing: bool
+    pipeline: PredictionPipeline,
+    skip_preprocessing: bool,
+    skip_postprocessing: bool,
 ):
     data = np.arange(8, dtype=np.float32)
     sample = Sample(
@@ -133,8 +137,7 @@ def test_predict_rejects_invalid_cache_paths(
     message: str,
 ):
     with pytest.raises(error, match=message):
-        # Cache arguments are implemented but missing from predict's overloads.
-        predict(  # pyright: ignore[reportCallIssue]
+        _ = predict(
             model=pipeline,
             inputs=np.arange(8),
             cache_path_after_preprocessing=pre,
@@ -143,11 +146,38 @@ def test_predict_rejects_invalid_cache_paths(
     assert not pipeline.is_loaded
 
 
-@pytest.mark.xfail(
-    strict=True,
-    raises=TypeError,
-    reason="predict_many passes removed skip_preprocessing/skip_postprocessing arguments to predict",
-)
+def test_predict_cache_reads_wait_for_lazy_writes(
+    pipeline: PredictionPipeline, tmp_path: Path
+):
+    zarr = pytest.importorskip("zarr")
+    calls: list[str] = []
+    data = np.arange(8, dtype=np.float32) + 10
+
+    def load():
+        calls.append("load")
+        return data
+
+    lazy_data = da.from_delayed(delayed(load)(), shape=data.shape, dtype=data.dtype)
+    with pipeline:
+        output = predict(
+            model=pipeline,
+            inputs={MemberId("input"): Tensor(lazy_data, dims=["x"])},
+            cache_path_after_preprocessing=tmp_path / "pre_{member_id}.zarr",
+            cache_path_before_postprocessing=tmp_path / "post_{member_id}.zarr",
+        )
+        assert calls == []
+        np.testing.assert_array_equal(
+            output.members[MemberId("output")].to_numpy(), (data * 2 + 1) * 3 + 5
+        )
+        assert calls == ["load"]
+    np.testing.assert_array_equal(
+        zarr.open_array(tmp_path / "pre_input.zarr", mode="r")[:], data * 2
+    )
+    np.testing.assert_array_equal(
+        zarr.open_array(tmp_path / "post_output.zarr", mode="r")[:], data * 2 + 1
+    )
+
+
 @pytest.mark.parametrize("save_output", [False, True])
 @pytest.mark.parametrize(
     "sample_id, expected_ids",

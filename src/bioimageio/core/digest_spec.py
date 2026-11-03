@@ -20,6 +20,7 @@ from zipfile import ZipFile, is_zipfile
 import dask.array as da
 import numpy as np
 import xarray as xr
+from dask.array.core import Array as DaskArray
 from loguru import logger
 from numpy.typing import NDArray
 from typing_extensions import TypeAlias, Unpack, assert_never
@@ -46,7 +47,7 @@ from .stat_measures import Stat
 from .tensor import Tensor, TensorMetaData, get_unstacked_dim_order
 
 TensorSource: TypeAlias = Union[
-    Tensor, xr.DataArray, NDArray[Any], PermissiveFileSource
+    Tensor, xr.DataArray, NDArray[Any], DaskArray, PermissiveFileSource
 ]
 
 
@@ -615,8 +616,8 @@ def get_tensor(
     elif isinstance(src, xr.DataArray):
         output = Tensor.from_xarray(src)
 
-    elif isinstance(src, np.ndarray):
-        output = Tensor.from_numpy(src, dims=axes)
+    elif isinstance(src, (np.ndarray, DaskArray)):
+        output = Tensor.from_array(src, dims=axes)
     else:
         output = load_tensor(src, axes=axes)
 
@@ -715,9 +716,6 @@ def transpose_inputs_for_model(
             raise ValueError(
                 f"Sample is missing non-optional member {m} required by model"
             )
-
-    if any(unknown := [m not in inputs for m in axes]):
-        raise ValueError(f"Axes specified for unknown members: {unknown}")
 
     transposed = {
         m: t.transpose(axes[m], extra_dims=extra_dims, missing_dims=missing_dims)

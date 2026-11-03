@@ -35,10 +35,10 @@ def predict(
     sample_id: Hashable = "sample",
     blocksize_parameter: BlocksizeParameter | None = None,
     input_block_shape: Mapping[MemberId, Mapping[AxisId, int]] | None = None,
-    skip_preprocessing: bool = False,
-    skip_postprocessing: bool = False,
     output_path: None = None,
     devices: Sequence[str] | None = None,
+    cache_path_after_preprocessing: Path | str | None = None,
+    cache_path_before_postprocessing: Path | str | None = None,
 ) -> Sample: ...
 
 
@@ -53,10 +53,10 @@ def predict(
     sample_id: Hashable = "sample",
     blocksize_parameter: BlocksizeParameter | None = None,
     input_block_shape: Mapping[MemberId, Mapping[AxisId, int]] | None = None,
-    skip_preprocessing: bool = False,
-    skip_postprocessing: bool = False,
     output_path: Path | str,
     devices: Sequence[str] | None = None,
+    cache_path_after_preprocessing: Path | str | None = None,
+    cache_path_before_postprocessing: Path | str | None = None,
 ) -> PerMember[Path]: ...
 
 
@@ -71,10 +71,10 @@ def predict(
     sample_id: Hashable = "sample",
     blocksize_parameter: BlocksizeParameter | None = None,
     input_block_shape: Mapping[MemberId, Mapping[AxisId, int]] | None = None,
-    skip_preprocessing: bool = False,
-    skip_postprocessing: bool = False,
     output_path: Path | str | None = None,
     devices: Sequence[str] | None = None,
+    cache_path_after_preprocessing: Path | str | None = None,
+    cache_path_before_postprocessing: Path | str | None = None,
 ) -> Sample | PerMember[Path]: ...
 
 
@@ -110,6 +110,11 @@ def predict(
         input_block_shape: (optional) Tile the input sample tensors into blocks.
             Note: Use **blocksize_parameter** for a parameterized block shape to
                 run prediction independent of the exact block shape.
+        output_path: A path (pattern) to save the output to.
+            Must contain:
+            - `{output_id}` (or `{member_id}`) if the model has multiple output tensors
+            May contain:
+            - `{sample_id}` to avoid overwriting recurrent calls with distinct **sample_id**.
         cache_path_after_preprocessing: (experimental)
             A path to cache the input after preprocessing.
             Must have a '.zarr' suffix.
@@ -120,11 +125,6 @@ def predict(
             Must have a '.zarr' suffix.
             Must include `{member_id}`.
             If the model has no postprocessing this will be ignored.
-        output_path: A path with to save the output to.
-            Must contain:
-            - `{output_id}` (or `{member_id}`) if the model has multiple output tensors
-            May contain:
-            - `{sample_id}` to avoid overwriting recurrent calls
 
     Returns:
         The eager (numpy-based) output sample if **model** was not given as a prediction pipeline and **output_path** was None.
@@ -228,11 +228,9 @@ def predict(
                     compute=False,
                     return_stored=True,
                     overwrite=True,
-                    mode="a",
+                    mode="w",
                 )
-                cached_tensor = Tensor(
-                    da.from_zarr(cached_data), sample.members[m].dims
-                )
+                cached_tensor = Tensor(cached_data, sample.members[m].dims)
                 cached_tensor.set_metadata(sample.members[m].get_metadata())
                 sample.members[m] = cached_tensor
 
@@ -290,11 +288,9 @@ def predict(
                     compute=False,
                     return_stored=True,
                     overwrite=True,
-                    mode="a",
+                    mode="w",
                 )
-                cached_tensor = Tensor(
-                    da.from_zarr(cached_data), output.members[m].dims
-                )
+                cached_tensor = Tensor(cached_data, output.members[m].dims)
                 cached_tensor.set_metadata(output.members[m].get_metadata())
                 output.members[m] = cached_tensor
 
@@ -324,8 +320,6 @@ def predict_many(
     blocksize_parameter: v0_5.ParameterizedSize_N
     | Mapping[tuple[MemberId, AxisId], v0_5.ParameterizedSize_N]
     | None = None,
-    skip_preprocessing: bool = False,
-    skip_postprocessing: bool = False,
     output_path: Path | str,
 ) -> Iterator[PerMember[Path]]: ...
 
@@ -342,8 +336,6 @@ def predict_many(
     blocksize_parameter: v0_5.ParameterizedSize_N
     | Mapping[tuple[MemberId, AxisId], v0_5.ParameterizedSize_N]
     | None = None,
-    skip_preprocessing: bool = False,
-    skip_postprocessing: bool = False,
     output_path: None = None,
 ) -> Iterator[Sample]: ...
 
@@ -359,8 +351,6 @@ def predict_many(
     blocksize_parameter: v0_5.ParameterizedSize_N
     | Mapping[tuple[MemberId, AxisId], v0_5.ParameterizedSize_N]
     | None = None,
-    skip_preprocessing: bool = False,
-    skip_postprocessing: bool = False,
     output_path: Path | str | None = None,
 ) -> Iterator[Sample] | Iterator[PerMember[Path]]:
     """Run prediction for a multiple sets of inputs with a bioimage.io model
@@ -374,8 +364,6 @@ def predict_many(
             If `{i}` (or `{i:`) is not present and `sample_id` is a single string, `{i:03}` is appended.
         blocksize_parameter: (optional) Tile the input into blocks parametrized by
             blocksize according to any parametrized axis sizes defined in the model RDF.
-        skip_preprocessing: Flag to skip the model's preprocessing.
-        skip_postprocessing: Flag to skip the model's postprocessing.
         output_path: A path to save the output to.
             Must contain:
             - `{sample_id}` to differentiate predicted samples
@@ -425,8 +413,6 @@ def predict_many(
             inputs=ipts,
             sample_id=s_id.format(i=i),
             blocksize_parameter=blocksize_parameter,
-            skip_preprocessing=True,
-            skip_postprocessing=True,
             output_path=output_path,
         )
         if output_path is None:

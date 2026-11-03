@@ -2,7 +2,7 @@
 name = "bioimageio.core"
 description = "Python specific core utilities for bioimage.io resources (in particular DL models)."
 authors = [{ name = "Fynn Beuttenmüller", email = "thefynnbe@gmail.com" }]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [
@@ -24,7 +24,6 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -142,7 +141,7 @@ exclude = [
 ]
 include = ["src", "scripts", "tests"]
 pythonPlatform = "All"
-pythonVersion = "3.9"
+pythonVersion = "3.10"
 reportDuplicateImport = "error"
 reportImplicitStringConcatenation = "error"
 reportIncompatibleMethodOverride = true
