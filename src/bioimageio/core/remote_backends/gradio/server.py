@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Literal, Union
+from typing import Any, Literal
 
 import gradio as gr
 from loguru import logger
@@ -95,9 +95,9 @@ def predict(
             sample, ns=blocksize, batch_size=batch_size, **kwargs
         )
     elif isinstance(blocksize, dict):
-        block_shape = TypeAdapter(
-            PerMember[PerAxis[Union[int, AxisSize]]]
-        ).validate_python(blocksize)
+        block_shape = TypeAdapter(PerMember[PerAxis[int | AxisSize]]).validate_python(
+            blocksize
+        )
         output = pp.predict_with_fixed_blocking(sample, block_shape, **kwargs)
     else:
         output = pp.predict_without_blocking(sample, **kwargs)

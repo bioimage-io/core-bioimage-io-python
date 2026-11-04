@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import collections.abc
-from collections.abc import Callable, Collection, Iterator, Mapping, Sequence
+from collections.abc import Callable, Collection, Hashable, Iterator, Mapping, Sequence
 from dataclasses import dataclass
 from itertools import permutations
 from typing import (
@@ -18,7 +18,6 @@ import dask.array as da
 import numpy as np
 import pandas as pd
 import xarray as xr
-from dask.array.core import Array as DaskArray
 from loguru import logger
 from numpy.typing import DTypeLike, NDArray
 from typing_extensions import Self, assert_never
@@ -56,7 +55,7 @@ from .common import (
 
 MultiIndex = pd.MultiIndex
 
-Array: TypeAlias = NDArray[Any] | DaskArray
+Array: TypeAlias = NDArray[Any] | da.Array
 
 
 class _SupportsArray(Protocol):
@@ -207,8 +206,8 @@ class Tensor(MagicTensorOpsMixin):
         del _scale
         return {
             a if isinstance(a, AxisId) else AxisId(a): 1.0
-            if scale.get(a) is None
-            else float(scale.get(a))
+            if (scale_a := scale.get(a)) is None
+            else float(scale_a)
             for a in self.dims
         }
 
@@ -333,8 +332,7 @@ class Tensor(MagicTensorOpsMixin):
 
     def squeeze(self, dim: AxisId | Sequence[AxisId] | None = None) -> Self:
         """Return a new tensor with squeezed data."""
-        squeezed = self._data.squeeze(dim=dim)
-        assert isinstance(squeezed, xr.DataArray)
+        squeezed = cast_and_assert(xr.DataArray, self._data.squeeze(dim=dim))
         return self.__class__.from_xarray(squeezed)
 
     def _inplace_binary_op(
@@ -342,17 +340,22 @@ class Tensor(MagicTensorOpsMixin):
         other: _Compatible,
         f: Callable[[Any, Any], Any],
     ) -> Self:
-        _ = self._data._inplace_binary_op(  # pyright: ignore[reportPrivateUsage]
-            other._data if isinstance(other, Tensor) else other,
-            f,
+        _ = cast(
+            Any,
+            self._data._inplace_binary_op(  # pyright: ignore[reportPrivateUsage]
+                other._data if isinstance(other, Tensor) else other,
+                f,
+            ),
         )
         return self
 
     def _unary_op(self, f: Callable[[Any], Any], *args: Any, **kwargs: Any) -> Self:
-        data: xr.DataArray = self._data._unary_op(  # pyright: ignore[reportPrivateUsage]
-            f, *args, **kwargs
+        data = cast_and_assert(
+            xr.DataArray,
+            self._data._unary_op(  # pyright: ignore[reportPrivateUsage]
+                f, *args, **kwargs
+            ),
         )
-        assert isinstance(data, xr.DataArray)
         data.attrs.update(self._data.attrs)
         return self.__class__.from_xarray(data)
 
@@ -366,8 +369,7 @@ class Tensor(MagicTensorOpsMixin):
         dims = [AxisId(d) for d in data_array.dims]
         dim_map = {d: a for d, a in zip(data_array.dims, dims) if d != a}
         if dim_map:
-            data_array = data_array.rename(dim_map)
-            assert isinstance(data_array, xr.DataArray)
+            data_array = cast_and_assert(xr.DataArray, data_array.rename(dim_map))
 
         return cls(array=data_array, dims=dims)
 
@@ -600,7 +602,7 @@ class Tensor(MagicTensorOpsMixin):
         return ret
 
     def argmax(self) -> Mapping[AxisId, int]:
-        ret = self._data.argmax(...)
+        ret = cast(dict[Hashable, Any], self._data.argmax(...))
         assert is_dict(ret)
         return {cast(AxisId, k): cast(int, v.item()) for k, v in ret.items()}
 
@@ -695,7 +697,7 @@ class Tensor(MagicTensorOpsMixin):
 
     def mean(self, dim: AxisId | Sequence[AxisId] | None = None) -> Self:
         return self.__class__._from_reduced_xarray(
-            self._data.mean(dim=dim, keep_attrs=True)
+            cast_and_assert(xr.DataArray, self._data.mean(dim=dim, keep_attrs=True))
         )
 
     def pad(

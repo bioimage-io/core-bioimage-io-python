@@ -6,12 +6,13 @@ from pathlib import Path
 from typing import Annotated, cast
 
 import numpy as np
-from gradio_client import handle_file
+from gradio_client import handle_file  # pyright: ignore[reportMissingTypeStubs]
 from pydantic import BaseModel, BeforeValidator
 from typing_extensions import Self
 
 from ..._common_annotations import PerMemberAnno
 from ..._sample_serializer import SampleSerializer
+from ..._utils.type_hints import cast_and_assert
 from ...axis import AxisId
 from ...common import MemberId, SampleId
 from ...io import JsonValue, load_stat, save_tensor, serialize_stat
@@ -92,7 +93,10 @@ class GradioSampleSerializer(SampleSerializer[SerializedSampleBlock]):
         }
         for member, index in deserializable_sample.batch_indices.items():
             members[member] = members[member].assign_batch_multi_index(
-                MultiIndex.from_arrays(list(index.values()), names=list(index))
+                cast_and_assert(
+                    MultiIndex,
+                    MultiIndex.from_arrays(list(index.values()), names=list(index)),
+                )
             )
         return Sample(
             id=deserializable_sample.id,

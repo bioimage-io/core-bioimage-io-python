@@ -1,13 +1,5 @@
 from __future__ import annotations
 
-import sys
-
-import pytest
-
-if sys.version_info < (3, 10):
-    pytest.skip(reason="requires python 3.10 or higher")
-
-
 import multiprocessing
 import socket
 import time
@@ -15,6 +7,7 @@ from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import Process
 from typing import Literal
 
+import pytest
 from loguru import logger
 
 from bioimageio.core import Sample, Tensor, load_model

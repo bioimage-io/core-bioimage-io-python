@@ -14,13 +14,13 @@ from bioimageio.core.axis import AxisId
 from bioimageio.core.common import MemberId
 from bioimageio.core.io import load_stat, save_stat, serialize_stat
 from bioimageio.core.stat_measures import DatasetMean, SampleQuantile, Stat
-from bioimageio.core.tensor import Tensor
+from bioimageio.core.tensor import Array, Tensor
 
 ArrayBackend = Literal["numpy", "dask"]
 ARRAY_BACKENDS = pytest.mark.parametrize("backend", ["numpy", "dask"])
 
 
-def _array(backend: ArrayBackend, data: NDArray[Any]) -> NDArray[Any] | da.Array:
+def _array(backend: ArrayBackend, data: NDArray[Any]) -> Array:
     return (
         cast(da.Array, da.from_array(data, chunks="auto"))
         if backend == "dask"

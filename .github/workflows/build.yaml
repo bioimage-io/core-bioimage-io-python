@@ -98,6 +98,7 @@ jobs:
         run: |
           pip install --upgrade pip
           pip install -e .[dev,partners] numpy==${{matrix.numpy-version}}.*
+          pip install git+https://github.com/ilastik/clearscale.git  # TODO: remove once clearscale is in dev deps
       - name: Pyright
         if: matrix.run-expensive-tests # pyright is not expensive, but we only want to run it once due to otherwise inconsistent typing
         run: |

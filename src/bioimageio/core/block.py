@@ -20,10 +20,9 @@ from loguru import logger
 from numpy.typing import NDArray
 from typing_extensions import assert_never
 
-from bioimageio.core._utils.type_hints import NestedList, cast_and_assert
-
 from ._axis_annotations import PerAxisAnno
 from ._settings import settings
+from ._utils.type_hints import NestedList, cast_and_assert
 from .axis import TIME_AXIS_ID, AxisId, AxisSize, PerAxis
 from .common import (
     BlockLoc,
@@ -809,7 +808,7 @@ def apply_to_block_array(
 
     def select_arrays(
         nested: NestedList[dict[MemberId, Tensor]], member: MemberId
-    ) -> NestedList[NDArray[Any] | da.Array]:
+    ) -> NestedList[Array]:
         if isinstance(nested, list):
             return [select_arrays(item, member) for item in nested]
         else:

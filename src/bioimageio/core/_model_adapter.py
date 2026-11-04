@@ -301,11 +301,7 @@ class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
             deferred_inputs = [
                 cast_and_assert(
                     Delayed,
-                    a.rechunk(
-                        a.shape  # pyright: ignore[reportArgumentType]
-                    )
-                    .to_delayed(optimize_graph=False)
-                    .item(),
+                    delayed(a),
                 )
                 if isinstance(a, da.Array)
                 else a

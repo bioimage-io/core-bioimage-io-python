@@ -7,11 +7,10 @@ from functools import partial
 from typing import (
     Any,
     Literal,
-    Union,
 )
 
 import numpy as np
-import scipy
+import scipy  # pyright: ignore[reportMissingTypeStubs]
 import xarray as xr
 from numpy.typing import NDArray
 from typing_extensions import Self, assert_never
@@ -233,7 +232,10 @@ class Clip(SimpleOperator):
             else:
                 # clip does not support non-scalar values
                 x = Tensor.from_xarray(
-                    x.data.where(x.data >= min_value.data, min_value.data)
+                    cast_and_assert(
+                        xr.DataArray,
+                        x.data.where(x.data >= min_value.data, min_value.data),
+                    )
                 )
                 min_clip_arg = None
         else:
@@ -247,7 +249,10 @@ class Clip(SimpleOperator):
             else:
                 # clip does not support non-scalar values
                 x = Tensor.from_xarray(
-                    x.data.where(x.data <= max_value.data, max_value.data)
+                    cast_and_assert(
+                        xr.DataArray,
+                        x.data.where(x.data <= max_value.data, max_value.data),
+                    )
                 )
                 max_clip_arg = None
         else:
@@ -743,7 +748,7 @@ class FixedZeroMeanUnitVariance(SimpleOperator):
         return v0_5.FixedZeroMeanUnitVarianceDescr(kwargs=kwargs)
 
     def _apply(self, x: Tensor, stat: Stat) -> Tensor:
-        return (x - self.mean) / (self.std + self.eps)
+        return cast_and_assert(Tensor, (x - self.mean) / (self.std + self.eps))
 
 
 @dataclass
@@ -814,32 +819,32 @@ class CustomProcessing(SimpleOperator):
         )
 
 
-ProcDescr = Union[
-    v0_4.PreprocessingDescr,
-    v0_4.PostprocessingDescr,
-    v0_5.PreprocessingDescr,
-    v0_5.PostprocessingDescr,
-]
+ProcDescr = (
+    v0_4.PreprocessingDescr
+    | v0_4.PostprocessingDescr
+    | v0_5.PreprocessingDescr
+    | v0_5.PostprocessingDescr
+)
 
 
-Processing = Union[
-    AddKnownDatasetStats,
-    Binarize,
-    Clip,
-    CellposeFlowDynamics,
-    CustomProcessing,
-    EnsureDtype,
-    FixedZeroMeanUnitVariance,
-    ScaleLinear,
-    ScaleMeanVariance,
-    ScaleRange,
-    Sigmoid,
-    StardistPostprocessing2D,
-    StardistPostprocessing3D,
-    Softmax,
-    UpdateStats,
-    ZeroMeanUnitVariance,
-]
+Processing = (
+    AddKnownDatasetStats
+    | Binarize
+    | Clip
+    | CellposeFlowDynamics
+    | CustomProcessing
+    | EnsureDtype
+    | FixedZeroMeanUnitVariance
+    | ScaleLinear
+    | ScaleMeanVariance
+    | ScaleRange
+    | Sigmoid
+    | StardistPostprocessing2D
+    | StardistPostprocessing3D
+    | Softmax
+    | UpdateStats
+    | ZeroMeanUnitVariance
+)
 
 
 def get_proc(

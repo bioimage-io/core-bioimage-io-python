@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from types import MappingProxyType
 from typing import Any, Generic, Literal, TypeVar, overload
 
-from gradio_client.client import Client
+from gradio_client.client import Client  # pyright: ignore[reportMissingTypeStubs]
 from loguru import logger
 
 from bioimageio.spec import AnyModelDescr, ValidationSummary

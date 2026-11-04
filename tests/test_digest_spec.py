@@ -1,5 +1,8 @@
+from typing import Any, cast
+
 import numpy as np
 import pytest
+from numpy.typing import NDArray
 
 from bioimageio.core import AxisId, MemberId, Tensor
 from bioimageio.core.digest_spec import (
@@ -109,7 +112,8 @@ def test_transpose_allows_omitting_optional_input(two_input_model: v0_5.ModelDes
     assert set(transposed) == {MemberId("required")}
     assert transposed[MemberId("required")].dims == ("batch", "x")
     np.testing.assert_array_equal(
-        transposed[MemberId("required")].to_numpy(), tensor.to_numpy().T
+        transposed[MemberId("required")].to_numpy(),
+        cast(NDArray[Any], tensor.to_numpy().T),
     )
 
 

@@ -5,6 +5,7 @@ import numpy as np
 import pytest
 import xarray as xr
 
+from bioimageio.core._utils.type_hints import cast_and_assert
 from bioimageio.core.common import MemberId
 from bioimageio.core.proc_ops import (
     AddKnownDatasetStats,
@@ -93,5 +94,5 @@ def test_fixed_sample_stats_must_be_present_in_sample_stat(
     for proc in pre:
         proc(sample)
 
-    expected = (data - 10.0) / (5.0 + op.eps)
+    expected = cast_and_assert(xr.DataArray, (data - 10.0) / (5.0 + op.eps))
     xr.testing.assert_allclose(expected, sample.members[tid].data)

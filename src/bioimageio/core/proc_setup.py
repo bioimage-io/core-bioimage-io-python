@@ -4,7 +4,6 @@ from collections.abc import Callable, Iterable, Mapping, Sequence
 from itertools import chain
 from typing import (
     NamedTuple,
-    Union,
 )
 
 from typing_extensions import assert_never
@@ -30,12 +29,12 @@ from .stat_measures import (
     SampleMeasureBase,
 )
 
-TensorDescr = Union[
-    v0_4.InputTensorDescr,
-    v0_4.OutputTensorDescr,
-    v0_5.InputTensorDescr,
-    v0_5.OutputTensorDescr,
-]
+TensorDescr = (
+    v0_4.InputTensorDescr
+    | v0_4.OutputTensorDescr
+    | v0_5.InputTensorDescr
+    | v0_5.OutputTensorDescr
+)
 
 
 class PreAndPostprocessing(NamedTuple):

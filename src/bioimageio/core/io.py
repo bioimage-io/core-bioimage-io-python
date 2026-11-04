@@ -5,7 +5,7 @@ import json
 import os
 import warnings
 import zipfile
-from collections.abc import Iterable, Mapping, Sequence
+from collections.abc import Callable, Iterable, Mapping, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from contextlib import nullcontext
 from io import BytesIO, TextIOWrapper
@@ -29,7 +29,6 @@ from pydantic import BaseModel, RootModel, TypeAdapter
 from typing_extensions import TypeAliasType as _TypeAliasType
 from typing_extensions import assert_never
 
-from bioimageio.core._utils.type_hints import cast_and_assert
 from bioimageio.spec._internal.io import (
     RelativeDirectory,
     ZarrSource,
@@ -59,6 +58,7 @@ from ._utils.tiff_metadata import (
     create_ome_metadata_from_xml_string,
 )
 from ._utils.type_guards import is_sequence, is_tuple
+from ._utils.type_hints import cast_and_assert
 from .axis import (
     BATCH_AXIS_ID,
     AxisId,
@@ -72,7 +72,9 @@ from .stat_measures import DatasetMeasure, MeasureValue, SampleMeasure, Stat
 from .tensor import Tensor
 
 if TYPE_CHECKING:
-    JsonValue: TypeAlias = bool | int | float | str | None | list["JsonValue"] | dict[str, "JsonValue"]  # note: order relevant for deserializing
+    JsonValue: TypeAlias = (
+        bool | int | float | str | None | list["JsonValue"] | dict[str, "JsonValue"]
+    )  # note: order relevant for deserializing
 
 else:
     # for pydantic validation we need to use `TypeAliasType`,
@@ -83,7 +85,15 @@ else:
         bool | int | float | str | None | list["JsonValue"] | dict[str, "JsonValue"],
     )
 
-JsonValueReadOnly: TypeAlias = bool | int | float | str | None | Sequence["JsonValueReadOnly"] | Mapping[str, "JsonValueReadOnly"]
+JsonValueReadOnly: TypeAlias = (
+    bool
+    | int
+    | float
+    | str
+    | None
+    | Sequence["JsonValueReadOnly"]
+    | Mapping[str, "JsonValueReadOnly"]
+)
 
 IO_Lib: TypeAlias = Literal[
     "bioio", "imageio", "clearscale", "numpy", "tifffile", "h5py"
@@ -228,7 +238,7 @@ def _load_tensor_h5py(
     *,
     axes: Sequence[AxisLike] | None = None,
 ) -> Tensor:
-    import h5py
+    import h5py  # pyright: ignore[reportMissingTypeStubs]
 
     if isinstance(source, RelativeDirectory):
         source = source.absolute()
@@ -372,16 +382,14 @@ def _load_tensor_bioio(
                 f"Internal path {internal_path} not found with bioio in {src}"
             )
 
-    dataarray_bioio = img.xarray_dask_data.squeeze()
-    assert isinstance(dataarray_bioio, xr.DataArray)
+    dataarray_bioio = cast_and_assert(xr.DataArray, img.xarray_dask_data.squeeze())
 
     # map bioio TCZYX/YXS axes to AxisId objects
     # (e.g. "T" -> AxisId("time"), "C" -> AxisId("channel"), "S" -> AxisId("channel"))
     axes_map = {
         d: AxisId("channel") if d == "S" else AxisId(d) for d in dataarray_bioio.dims
     }
-    dataarray = dataarray_bioio.rename(axes_map)
-    assert isinstance(dataarray, xr.DataArray)
+    dataarray = cast_and_assert(xr.DataArray, dataarray_bioio.rename(axes_map))
 
     t = Tensor.from_xarray(dataarray)
 
@@ -749,7 +757,7 @@ def _save_tensor_h5py(
     internal_path: PurePath | None,
     chunk_shape: PerAxis[int] | None = None,
 ) -> None:
-    import h5py
+    import h5py  # pyright: ignore[reportMissingTypeStubs]
 
     if not isinstance(path, Path):
         raise NotImplementedError("Saving with h5py requires a local file path.")
@@ -925,8 +933,7 @@ def _save_tensor_bioio(
         d: bioio_axis_map.get(str(d).lower(), str(d)[:1].upper()) for d in tensor.dims
     }
 
-    bioio_data = bioio_data.rename(dim_map)
-    assert isinstance(bioio_data, xr.DataArray)
+    bioio_data = cast_and_assert(xr.DataArray, bioio_data.rename(dim_map))
 
     if not all(str(d) in bioio_axis_letters for d in bioio_data.dims):
         logger.warning(
@@ -963,7 +970,7 @@ def _save_tensor_clearscale(
     chunk_shape: PerAxis[int] | None = None,
     shard_shape: PerAxis[int] | None = None,
 ) -> None:
-    import clearscale  # pyright: ignore[reportMissingImports]
+    import clearscale
     import dask.array
     import zarr
 
@@ -1007,7 +1014,7 @@ def _save_tensor_clearscale(
     )
 
     dim_map = dict(zip(tensor.dims, single_letter_dims))
-    multiscale: Any = clearscale.Multiscale(  # pyright: ignore[reportUnknownVariableType]
+    multiscale: Any = clearscale.Multiscale(
         {
             scale_key: clearscale.Scale(
                 shape=clearscale.Shape(
@@ -1135,8 +1142,8 @@ def _save_tensor_imageio(
             extension,
         )
         tensor = (
-            (tensor - (t_min := tensor.data.min()))
-            / xr.ufuncs.maximum(tensor.data.max() - t_min, 1e-8)
+            (tensor - (t_min := cast(float, tensor.data.min())))
+            / xr.ufuncs.maximum(cast(float, tensor.data.max()) - t_min, 1e-8)
             * 255
         ).astype("uint8")
 
@@ -1173,7 +1180,9 @@ def _save_tensor_tifffile(
 
     import tifffile
 
-    tifffile_imwrite_signature = inspect.signature(tifffile.imwrite)
+    tifffile_imwrite_signature = inspect.signature(
+        cast(Callable[..., Any], tifffile.imwrite)
+    )
     if "kind" not in tifffile_imwrite_signature.parameters:
         raise NotImplementedError(
             "Saving tensors with tifffile uses tifffile.imwrite(...kind=...) (added in tifffile 2026.5.2)."

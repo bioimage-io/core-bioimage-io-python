@@ -7,7 +7,6 @@ from typing import (
     NamedTuple,
     TypeAlias,
     TypeVar,
-    Union,
 )
 
 from typing_extensions import Self, assert_never
@@ -64,7 +63,7 @@ DTypeStr: TypeAlias = Literal[
 
 
 _LeftRight_T = TypeVar("_LeftRight_T", bound="_LeftRight")
-_LeftRightLike = Union[int, tuple[int, int], _LeftRight_T]
+_LeftRightLike = int | tuple[int, int] | _LeftRight_T
 
 
 class _LeftRight(NamedTuple):
@@ -134,7 +133,10 @@ SampleId = Hashable
 MemberId = v0_5.TensorId
 """ID of a `Sample` member, see `bioimageio.core.sample.Sample`"""
 
-BlocksizeParameter: TypeAlias = v0_5.ParameterizedSize_N | Mapping[tuple[MemberId, v0_5.AxisId], v0_5.ParameterizedSize_N]
+BlocksizeParameter: TypeAlias = (
+    v0_5.ParameterizedSize_N
+    | Mapping[tuple[MemberId, v0_5.AxisId], v0_5.ParameterizedSize_N]
+)
 """
 Parameter to determine a concrete size for paramtrized axis sizes defined by
 `bioimageio.spec.model.v0_5.ParameterizedSize`.

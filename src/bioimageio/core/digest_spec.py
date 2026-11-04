@@ -19,12 +19,10 @@ from zipfile import ZipFile, is_zipfile
 import dask.array as da
 import numpy as np
 import xarray as xr
-from dask.array.core import Array as DaskArray
 from loguru import logger
 from numpy.typing import NDArray
 from typing_extensions import Unpack, assert_never
 
-from bioimageio.core._utils.type_hints import cast_and_assert
 from bioimageio.spec._internal.io import HashKwargs, PermissiveFileSource
 from bioimageio.spec.common import FileDescr, FileSource
 from bioimageio.spec.model import AnyModelDescr, v0_4, v0_5
@@ -35,6 +33,7 @@ from bioimageio.spec.model.v0_5 import (
 )
 from bioimageio.spec.utils import load_array
 
+from ._utils.type_hints import cast_and_assert
 from .axis import CHANNEL_AXIS_ID, Axis, AxisId, AxisInfo, PerAxis
 from .block import LinearAxisTransform
 from .common import Halo, MemberId, PerMember, SampleId
@@ -45,7 +44,9 @@ from .sample import (
 from .stat_measures import Stat
 from .tensor import Tensor, TensorMetaData, get_unstacked_dim_order
 
-TensorSource: TypeAlias = Tensor | xr.DataArray | NDArray[Any] | DaskArray | PermissiveFileSource
+TensorSource: TypeAlias = (
+    Tensor | xr.DataArray | NDArray[Any] | da.Array | PermissiveFileSource
+)
 
 
 def import_callable(
@@ -613,7 +614,7 @@ def get_tensor(
     elif isinstance(src, xr.DataArray):
         output = Tensor.from_xarray(src)
 
-    elif isinstance(src, (np.ndarray, DaskArray)):
+    elif isinstance(src, (np.ndarray, da.Array)):
         output = Tensor.from_array(src, dims=axes)
     else:
         output = load_tensor(src, axes=axes)

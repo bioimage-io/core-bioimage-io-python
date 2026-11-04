@@ -9,7 +9,7 @@ from numpy.typing import NDArray
 
 from bioimageio.core import AxisId
 from bioimageio.core._utils.type_hints import cast_and_assert
-from bioimageio.core.tensor import MultiIndex, Tensor
+from bioimageio.core.tensor import Array, MultiIndex, Tensor
 
 UNSTACKED_SHAPE = {AxisId("batch"): 2, AxisId("z"): 3, AxisId("x"): 4}
 TRANSPOSE_TO = (AxisId("batch"), AxisId("x"))
@@ -17,7 +17,7 @@ ARRAY_BACKENDS = pytest.mark.parametrize("backend", ["numpy", "dask"])
 ArrayBackend = Literal["numpy", "dask"]
 
 
-def _array(backend: ArrayBackend, data: NDArray[Any]) -> NDArray[Any] | da.Array:
+def _array(backend: ArrayBackend, data: NDArray[Any]) -> Array:
     return (
         cast(da.Array, da.from_array(data, chunks="auto"))
         if backend == "dask"

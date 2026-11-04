@@ -63,10 +63,8 @@ def _recurse_url_to_find_group(uri: str) -> tuple[Any, str, str]:
     raise ValueError("No multiscale meta found anywhere along the URI")
 
 
-def _ms_from_group(
-    zarr_group: zarr.Group, must_have_dataset: str | None = None
-) -> Any:
-    import clearscale  # pyright: ignore[reportMissingImports]
+def _ms_from_group(zarr_group: zarr.Group, must_have_dataset: str | None = None) -> Any:
+    import clearscale
 
     # 1. Discover the "multiscales" list
     try:

@@ -37,7 +37,14 @@ def tensor_custom_serializer(t: Tensor) -> dict[str, Any]:
     return {"data": t.data.to_numpy().tolist(), "dims": list(map(str, t.dims))}
 
 
-MeasureValue: TypeAlias = float | Annotated[Tensor, BeforeValidator(tensor_custom_before_validator), PlainSerializer(tensor_custom_serializer)]
+MeasureValue: TypeAlias = (
+    float
+    | Annotated[
+        Tensor,
+        BeforeValidator(tensor_custom_before_validator),
+        PlainSerializer(tensor_custom_serializer),
+    ]
+)
 
 
 # using Sample Protocol really only to avoid circular imports
@@ -176,9 +183,7 @@ SampleMeasure: TypeAlias = Annotated[
 DatasetMeasure: TypeAlias = Annotated[
     DatasetMean | DatasetStd | DatasetVar | DatasetQuantile, Discriminator("name")
 ]
-Measure: TypeAlias = Annotated[
-    SampleMeasure | DatasetMeasure, Discriminator("scope")
-]
+Measure: TypeAlias = Annotated[SampleMeasure | DatasetMeasure, Discriminator("scope")]
 Stat: TypeAlias = dict[Measure, MeasureValue]
 
 MeanMeasure: TypeAlias = SampleMean | DatasetMean

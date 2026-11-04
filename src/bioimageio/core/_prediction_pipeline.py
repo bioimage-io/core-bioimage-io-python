@@ -138,6 +138,7 @@ class _PredictionPipelineBase(ABC):
             skip_postprocessing: if `True`, skip all postprocessing steps (except for any preceding prediction pipeline).
             skip_output_cropping: if `True`, skip cropping any output halos from the model output.
         """
+        sample = sample.copy()
         for pp in self._get_preceding_prediction_pipelines_for_sample(sample):
             sample = pp.predict_without_blocking(
                 sample,
@@ -193,7 +194,7 @@ class _PredictionPipelineBase(ABC):
         skip_postprocessing: bool = False,
         skip_output_cropping: bool = False,
     ) -> Sample:
-
+        sample = sample.copy()
         for pp in self._get_preceding_prediction_pipelines_for_sample(sample):
             sample = pp._predict_with_blocking_impl(
                 sample,
@@ -295,7 +296,7 @@ class _PredictionPipelineBase(ABC):
             skip_postprocessing: If `True`, skip all postprocessing steps.
             skip_output_cropping: If `True`, skip output cropping of the model's halo.
         """
-
+        sample = sample.copy()
         for pp in self._get_preceding_prediction_pipelines_for_sample(sample):
             sample = pp._predict_with_fixed_blocking_impl(
                 sample,

@@ -28,7 +28,7 @@ os.environ["KERAS_BACKEND"] = settings.keras_backend
 # TODO: check if we should prefer keras
 try:
     import tensorflow as tf
-    from tensorflow import keras
+    from tensorflow import keras  # pyright: ignore[reportMissingModuleSource]
 
     tf_version = Version(tf.__version__)  # pyright: ignore[reportUnknownArgumentType]
 except Exception:

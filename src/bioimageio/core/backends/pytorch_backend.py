@@ -21,6 +21,7 @@ from bioimageio.spec.utils import download
 
 from .._model_adapter import LocalModelAdapter
 from .._utils.type_guards import is_list, is_ndarray, is_tuple
+from .._utils.type_hints import cast_and_assert
 from ..digest_spec import import_callable
 
 
@@ -186,14 +187,14 @@ def load_torch_state_dict(
     model = model.to(devices[0])
     if path.suffix == ".safetensors":
         if isinstance(path, Path):
-            from safetensors.torch import load_file
+            from safetensors.torch import load_file  # pyright: ignore[reportUnknownVariableType]
 
             state = load_file(path, device=str(devices[0]))
         elif isinstance(path, (ZipPath, BytesReader)):
             from safetensors.torch import load
 
             if isinstance(path, ZipPath):
-                data = path.read_bytes()
+                data = cast_and_assert(bytes, path.read_bytes())
             else:
                 data = path.read()
 

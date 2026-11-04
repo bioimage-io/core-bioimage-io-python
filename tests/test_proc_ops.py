@@ -10,6 +10,7 @@ import scipy  # pyright: ignore[reportMissingTypeStubs]
 import xarray as xr
 from numpy.typing import NDArray
 
+from bioimageio.core._utils.type_hints import cast_and_assert
 from bioimageio.core.axis import AxisId
 from bioimageio.core.common import MemberId
 from bioimageio.core.sample import Sample
@@ -219,7 +220,12 @@ def test_zero_mean_unit_across_axes(tid: MemberId):
     sample.stat = compute_measures(op.required_measures, [sample])
 
     expected = xr.concat(
-        [(data[i : i + 1] - data[i].mean()) / data[i].std() for i in range(2)],
+        [
+            cast_and_assert(
+                xr.DataArray, (data[i : i + 1] - data[i].mean()) / data[i].std()
+            )
+            for i in range(2)
+        ],
         dim="channel",
     )
     op(sample)
@@ -605,8 +611,7 @@ def test_softmax_from_spec_descr(tid: MemberId, tmp_path: Path):
     # Output must be a valid probability distribution (sums to 1 over channel axis)
     out_data = sample.members[tid].data
     assert out_data is not None
-    channel_sums = out_data.sum(dim="channel")
-    assert isinstance(channel_sums, xr.DataArray)
+    channel_sums = cast_and_assert(xr.DataArray, out_data.sum(dim="channel"))
     xr.testing.assert_allclose(
         channel_sums, xr.ones_like(channel_sums), atol=1e-6, rtol=0
     )

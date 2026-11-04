@@ -6,7 +6,7 @@ import tempfile
 from collections.abc import Sequence
 from contextlib import contextmanager, nullcontext
 from pathlib import Path
-from typing import Any, Optional, cast
+from typing import Any, cast
 
 import onnxruntime as rt  # pyright: ignore[reportMissingTypeStubs]
 from loguru import logger
@@ -18,7 +18,7 @@ from .._model_adapter import LocalModelAdapter
 from .._utils.type_guards import is_list, is_tuple
 
 
-class ONNXModelAdapter(LocalModelAdapter[Optional[str], rt.InferenceSession]):
+class ONNXModelAdapter(LocalModelAdapter[str | None, rt.InferenceSession]):
     def __init__(
         self,
         model_description: v0_4.ModelDescr | v0_5.ModelDescr,

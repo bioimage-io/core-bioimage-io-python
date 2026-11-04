@@ -8,7 +8,7 @@ from tests.test_bioimageio_collection import expensive_test
 @expensive_test
 def test_cellpose_export(tmp_path: Path):
     """test case analog to the example in example/export_cellpose_model"""
-    import cellpose.models
+    import cellpose.models  # pyright: ignore[reportMissingTypeStubs]
     import imageio
     import numpy as np
 

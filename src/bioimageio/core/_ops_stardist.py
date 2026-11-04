@@ -127,7 +127,7 @@ class StardistPostprocessing2D(
     def _impl(
         self, prob: NDArray[Any], dist: NDArray[Any], spatial_shape: tuple[int, int]
     ) -> NDArray[np.int32]:
-        from stardist import (
+        from stardist import (  # pyright: ignore[reportMissingTypeStubs]
             non_maximum_suppression,  # pyright: ignore[reportUnknownVariableType]
             polygons_to_label,  # pyright: ignore[reportUnknownVariableType]
         )
@@ -182,12 +182,12 @@ class StardistPostprocessing3D(
         dist: NDArray[Any],
         spatial_shape: tuple[int, int, int],
     ) -> NDArray[np.int32]:
-        from stardist import (
+        from stardist import (  # pyright: ignore[reportMissingTypeStubs]
             Rays_GoldenSpiral,
             non_maximum_suppression_3d,  # pyright: ignore[reportUnknownVariableType]
             polyhedron_to_label,  # pyright: ignore[reportUnknownVariableType]
         )
-        from stardist.matching import (
+        from stardist.matching import (  # pyright: ignore[reportMissingTypeStubs]
             relabel_sequential,  # pyright: ignore[reportUnknownVariableType]
         )
 

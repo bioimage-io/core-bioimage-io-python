@@ -7,7 +7,6 @@ from functools import partial
 from itertools import product
 from typing import (
     Any,
-    Union,
     cast,
 )
 
@@ -453,18 +452,18 @@ class NaiveSampleMeasureCalculator:
         return {self.measure: self.measure.compute(sample.as_dask())}
 
 
-SampleMeasureCalculator = Union[
-    MeanCalculator,
-    MeanVarStdCalculator,
-    SampleQuantilesCalculator,
-    NaiveSampleMeasureCalculator,
-]
-DatasetMeasureCalculator = Union[
-    MeanCalculator,
-    MeanVarStdCalculator,
-    DatasetQuantilesCalculator,
-    InMemoryDatasetQuantilesCalculator,
-]
+SampleMeasureCalculator = (
+    MeanCalculator
+    | MeanVarStdCalculator
+    | SampleQuantilesCalculator
+    | NaiveSampleMeasureCalculator
+)
+DatasetMeasureCalculator = (
+    MeanCalculator
+    | MeanVarStdCalculator
+    | DatasetQuantilesCalculator
+    | InMemoryDatasetQuantilesCalculator
+)
 
 
 class StatsCalculator:

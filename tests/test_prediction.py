@@ -39,6 +39,18 @@ def _assert_equal_samples(actual: Sample, expected: Sample):
         )
 
 
+def _has_output_halo(model: AnyModelDescr) -> bool:
+    return not isinstance(model, v0_4.ModelDescr) and any(
+        getattr(axis, "halo", 0) for output in model.outputs for axis in output.axes
+    )
+
+
+def _assert_valid_sample(actual: Sample, expected: Sample) -> None:
+    assert actual.shape == expected.shape
+    for tensor in actual.members.values():
+        assert np.isfinite(tensor.to_numpy()).all()
+
+
 class Prep(NamedTuple):
     model: AnyModelDescr
     prediction_pipeline: PredictionPipeline
@@ -103,9 +115,7 @@ def test_predict_with_blocking(with_procs: bool, prep: Prep):
     if with_procs:
         _assert_equal_samples(out, prep.output_sample)
     else:
-        assert out.shape == prep.output_sample.shape
-        for tensor in out.members.values():
-            assert np.isfinite(tensor.to_numpy()).all()
+        _assert_valid_sample(out, prep.output_sample)
 
 
 def test_predict_with_fixed_blocking(prep: Prep):

@@ -56,7 +56,7 @@ PerAxis = Mapping[AxisId, _T]
 BatchSize = int
 
 AxisLetter = Literal["b", "i", "t", "c", "z", "y", "x"]
-_AxisLikePlain = Union[str, AxisId, AxisLetter]
+_AxisLikePlain = str | AxisId | AxisLetter
 
 
 @runtime_checkable

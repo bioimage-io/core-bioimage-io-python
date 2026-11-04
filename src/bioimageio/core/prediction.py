@@ -3,6 +3,7 @@ from __future__ import annotations
 import atexit
 import itertools
 from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence, Sized
+from copy import copy
 from pathlib import Path
 from typing import overload
 
@@ -10,18 +11,18 @@ import dask.array as da
 from loguru import logger
 from tqdm import tqdm
 
-from bioimageio.core._utils.type_hints import cast_and_assert
-from bioimageio.core.tensor import Tensor
 from bioimageio.spec import load_description
 from bioimageio.spec.common import PermissiveFileSource
 from bioimageio.spec.model import v0_4, v0_5
 
 from ._prediction_pipeline import PredictionPipeline, create_prediction_pipeline
+from ._utils.type_hints import cast_and_assert
 from .axis import AxisId
 from .common import BlocksizeParameter, MemberId, PerMember
 from .digest_spec import TensorSource, create_sample_for_model, get_member_id
 from .io import save_sample
 from .sample import Sample
+from .tensor import Tensor
 
 
 @overload
@@ -193,7 +194,7 @@ def predict(
             )
 
         if isinstance(inputs, Sample):
-            sample = inputs
+            sample = copy(inputs)
         else:
             sample = create_sample_for_model(
                 pp.model_descr, inputs=inputs, sample_id=sample_id

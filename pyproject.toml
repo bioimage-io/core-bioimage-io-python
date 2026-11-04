@@ -99,6 +99,7 @@ dev = [
     'gradio[mcp];python_version>="3.10"',
     'gradio_client;python_version>="3.10"',
     'onnx_ir!=0.1.14;python_version<"3.10"',                           # uses typing.Concatentate which requires py>=3.10
+    "zarr",
 ]
 docs = [
     "griffe-pydantic",
