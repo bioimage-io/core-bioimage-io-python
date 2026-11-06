@@ -1018,7 +1018,10 @@ def _test_recreate_test_outputs(
         expected_sample = get_test_output_sample(model)
 
         with create_prediction_pipeline(
-            bioimageio_model=model, devices=devices, weight_format=weight_format
+            bioimageio_model=model,
+            devices=devices,
+            weight_format=weight_format,
+            dataset_for_initial_statistics=[test_input],
         ) as prediction_pipeline:
             prediction_pipeline.apply_preprocessing(test_input)
             test_input_preprocessed = deepcopy(test_input)
@@ -1227,7 +1230,10 @@ def _test_parametrized_inference(
         test_input = get_test_input_sample(model)
 
         with create_prediction_pipeline(
-            bioimageio_model=model, devices=devices, weight_format=weight_format
+            bioimageio_model=model,
+            devices=devices,
+            weight_format=weight_format,
+            dataset_for_initial_statistics=[test_input],
         ) as prediction_pipeline:
             for n, batch_size, inputs, exptected_output_shape in generate_test_cases():
                 error: str | None = None

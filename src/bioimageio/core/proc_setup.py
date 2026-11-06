@@ -105,6 +105,20 @@ def setup_pre_and_postprocessing(
             initial_stats_calc.update(sample)
 
         initial_stats = initial_stats_calc.finalize()
+        missing_initial_dataset_stats = {
+            m
+            for m in missing_stats
+            if isinstance(m, DatasetMeasureBase) and m not in initial_stats
+        }
+        if missing_initial_dataset_stats and not keep_updating_initial_dataset_stats:
+            raise ValueError(
+                "Model requires dataset statistics that were not provided: "
+                + f"{missing_initial_dataset_stats}. Provide "
+                + "`dataset_for_initial_statistics` or `fixed_dataset_statistics`, "
+                + "or set `keep_updating_initial_dataset_statistics=True` to update "
+                + "them during prediction."
+            )
+
         prep.insert(
             0,
             UpdateStats(

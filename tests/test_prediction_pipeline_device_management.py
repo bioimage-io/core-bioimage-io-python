@@ -30,11 +30,14 @@ def _test_device_management(
 
     bio_model = load_description(model_package)
     assert isinstance(bio_model, (ModelDescr, ModelDescr04))
+    inputs = get_test_input_sample(bio_model)
     pred_pipe = create_prediction_pipeline(
-        bioimageio_model=bio_model, weight_format=weight_format, devices=[device]
+        bioimageio_model=bio_model,
+        weight_format=weight_format,
+        devices=[device],
+        dataset_for_initial_statistics=[inputs],
     )
 
-    inputs = get_test_input_sample(bio_model)
     with pred_pipe as pp:
         outputs = pp.predict_without_blocking(
             inputs, skip_input_padding=True, skip_output_cropping=True

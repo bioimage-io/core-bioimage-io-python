@@ -63,7 +63,9 @@ def prep(any_model: str):
     model = load_model(any_model, perform_io_checks=False)
     input_sample = get_test_input_sample(model)
     output_sample = get_test_output_sample(model)
-    pp = create_prediction_pipeline(model)
+    pp = create_prediction_pipeline(
+        model, dataset_for_initial_statistics=[input_sample]
+    )
     pp.load()
     try:
         yield Prep(model, pp, input_sample, output_sample)

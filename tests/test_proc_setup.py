@@ -14,13 +14,66 @@ from bioimageio.core.proc_ops import (
 )
 from bioimageio.core.proc_setup import setup_pre_and_postprocessing
 from bioimageio.core.sample import Sample
-from bioimageio.core.stat_measures import SampleMean, SampleStd
+from bioimageio.core.stat_measures import (
+    DatasetMean,
+    DatasetStd,
+    SampleMean,
+    SampleStd,
+)
 from bioimageio.core.tensor import Tensor
 
 
 def _iter_raises_if_consumed():
     raise AssertionError("dataset_for_initial_statistics should not be consumed")
     yield  # pragma: no cover
+
+
+def test_missing_dataset_stats_raise_by_default(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    tid = MemberId("input")
+    mean = DatasetMean(member_id=tid)
+    std = DatasetStd(member_id=tid)
+    op = ZeroMeanUnitVariance(input=tid, output=tid, mean=mean, std=std)
+    model = SimpleNamespace(inputs=[object()], outputs=[object()])
+
+    def fake_get_described_procs(tensor_descrs: Any):
+        return [op] if tensor_descrs is model.inputs else []
+
+    monkeypatch.setattr(
+        "bioimageio.core.proc_setup._get_described_procs", fake_get_described_procs
+    )
+
+    with pytest.raises(ValueError, match="dataset_for_initial_statistics"):
+        _ = setup_pre_and_postprocessing(
+            model=model,  # pyright: ignore[reportArgumentType]
+            dataset_for_initial_statistics=(),
+        )
+
+
+def test_missing_dataset_stats_can_be_updated_during_prediction(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    tid = MemberId("input")
+    mean = DatasetMean(member_id=tid)
+    std = DatasetStd(member_id=tid)
+    op = ZeroMeanUnitVariance(input=tid, output=tid, mean=mean, std=std)
+    model = SimpleNamespace(inputs=[object()], outputs=[object()])
+
+    def fake_get_described_procs(tensor_descrs: Any):
+        return [op] if tensor_descrs is model.inputs else []
+
+    monkeypatch.setattr(
+        "bioimageio.core.proc_setup._get_described_procs", fake_get_described_procs
+    )
+
+    pre, _ = setup_pre_and_postprocessing(
+        model=model,  # pyright: ignore[reportArgumentType]
+        dataset_for_initial_statistics=(),
+        keep_updating_initial_dataset_stats=True,
+    )
+
+    assert isinstance(pre[0], UpdateStats)
 
 
 def test_fixed_sample_stats_are_not_computed_on_the_fly(

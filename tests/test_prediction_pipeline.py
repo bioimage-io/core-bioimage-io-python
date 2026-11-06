@@ -12,11 +12,11 @@ from bioimageio.spec.model.v0_5 import ModelDescr
 
 
 def _alter_sample(sample: Sample, offset: float) -> Sample:
-    # add 1 to all values to get a different sample with the same shape and axes
+    # add an offset to get a different sample with the same shape and axes
     return Sample(
         id=f"{sample.id}_altered",
         members={m: t + offset for m, t in sample.members.items()},
-        stat=sample.stat,
+        stat=sample.stat.copy(),
     )
 
 
@@ -34,14 +34,16 @@ def _test_prediction_pipeline(
         bio_model.validation_summary.format()
     )
 
+    inputs = get_test_input_sample(bio_model)
+    multiple_inputs = [inputs, _alter_sample(inputs, offset=100.0)]
+
     with create_prediction_pipeline(
-        bioimageio_model=bio_model, weight_format=weights_format, devices=["cpu", "cpu"]
+        bioimageio_model=bio_model,
+        weight_format=weights_format,
+        devices=["cpu", "cpu"],
+        dataset_for_initial_statistics=[inputs],
     ) as pp:
-        inputs = get_test_input_sample(bio_model)
-
         # test in a multi-threaded setting
-        multiple_inputs = [inputs, _alter_sample(inputs, offset=100.0)]
-
         def run(sample: Sample) -> Sample:
             # Evaluate lazy inference in the worker while the adapter is loaded.
             return pp.predict_without_blocking(
@@ -112,10 +114,12 @@ def test_blockwise_prediction_with_stacked_dims(unet2d_nuclei_broad_model: Path)
     bio_model = load_model_description(
         unet2d_nuclei_broad_model, format_version="latest"
     )
+    initial_statistics_sample = get_test_input_sample(bio_model)
     with create_prediction_pipeline(
         bioimageio_model=bio_model,
         weight_format="pytorch_state_dict",
         devices=["cpu", "cpu"],
+        dataset_for_initial_statistics=[initial_statistics_sample],
     ) as pp:
         inputs = get_test_input_sample(
             bio_model,

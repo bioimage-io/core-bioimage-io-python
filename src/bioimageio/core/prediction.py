@@ -174,6 +174,8 @@ def predict(
         pp = create_prediction_pipeline(
             model,
             fixed_dataset_statistics=inputs.stat if isinstance(inputs, Sample) else {},
+            keep_updating_initial_dataset_statistics=False,
+            dataset_for_initial_statistics=[inputs],
             devices=devices,
         )
         pp.load()
@@ -389,7 +391,11 @@ def predict_many(
                 raise TypeError(f"expected model description, but got {loaded}")
             model = loaded
 
-        pp = create_prediction_pipeline(model)
+        pp = create_prediction_pipeline(
+            model,
+            keep_updating_initial_dataset_statistics=False,
+            dataset_for_initial_statistics=inputs,
+        )
 
     if isinstance(sample_id, str):
         if "{i}" not in sample_id and "{i:" not in sample_id:

@@ -828,7 +828,9 @@ class PredictCmd(CmdBase, WithSource):
         )
 
         if self.server is not None and self.pre_post_processing_location == "remote":
-            pp = create_remote_prediction_pipeline(model_descr, server=self.server)
+            pp = create_remote_prediction_pipeline(
+                model_descr, server=self.server, precomputed_statistics=stat
+            )
         else:
             if self.server is None:
                 model_adapter = None
@@ -845,6 +847,7 @@ class PredictCmd(CmdBase, WithSource):
                 else self.weight_format,
                 devices=self.devices,
                 model_adapter=model_adapter,
+                fixed_dataset_statistics=stat,
             )
 
         if blockwise:

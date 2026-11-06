@@ -28,9 +28,11 @@ from .common import (
     SupportedWeightsFormat,
 )
 from .digest_spec import (
+    TensorSource,
     get_input_halo,
     get_member_ids,
     get_output_tensor_metadata,
+    get_tensor,
     transpose_sample_for_model,
 )
 from .proc_ops import Processing
@@ -739,7 +741,12 @@ def create_prediction_pipeline(
     devices: Sequence[str] | None = None,
     weight_format: SupportedWeightsFormat | None = None,
     weights_format: SupportedWeightsFormat | None = None,
-    dataset_for_initial_statistics: Iterable[Sample | Sequence[Tensor]] = (),
+    dataset_for_initial_statistics: Iterable[
+        Sample
+        | TensorSource
+        | Sequence[TensorSource]
+        | Mapping[MemberId, Tensor | TensorSource]
+    ] = (),
     dataset_fits_in_memory: bool = False,
     keep_updating_initial_dataset_statistics: bool = False,
     fixed_dataset_statistics: Mapping[Measure, MeasureValue] = MappingProxyType({}),
@@ -769,10 +776,13 @@ def create_prediction_pipeline(
             created to run inference with the **bioimageio_model**.
         dataset_for_initial_statistics: (optional) If preprocessing steps require input
             dataset statistics, **dataset_for_initial_statistics** allows you to
-            specifcy a dataset from which these statistics are computed.
+            specify a dataset from which these statistics are computed. Required when
+            dataset statistics are not supplied by **fixed_dataset_statistics** unless
+            **keep_updating_initial_dataset_statistics** is explicitly enabled.
         dataset_fits_in_memory: (optional) Set to `True` if the dataset for initial statistics fits in memory.
         keep_updating_initial_dataset_statistics: (optional) Set to `True` if you want
-            to update dataset statistics with each processed sample.
+            to update dataset statistics with each processed sample. This also
+            explicitly allows starting without initial dataset statistics.
         fixed_dataset_statistics: (optional) Precomputed dataset (and optionally sample) statistics.
             Any included sample statistics will not be calculated on the fly and it is the callers
             responsibility to use samples with the corresponding statistics availble in `sample.stat`.
@@ -800,6 +810,7 @@ def create_prediction_pipeline(
     )
 
     input_ids = get_member_ids(bioimageio_model.inputs)
+    input_descrs = dict(zip(input_ids, bioimageio_model.inputs))
 
     def dataset():
         common_stat: Stat = {}
@@ -807,7 +818,22 @@ def create_prediction_pipeline(
             if isinstance(x, Sample):
                 yield x
             else:
-                yield Sample(members=dict(zip(input_ids, x)), stat=common_stat, id=i)
+                if not isinstance(x, Mapping):
+                    if isinstance(x, Tensor) or not isinstance(x, Sequence):
+                        x = [x]
+
+                    x = dict(zip(input_ids, x))
+
+                yield Sample(
+                    members={
+                        k: v
+                        if isinstance(v, Tensor)
+                        else get_tensor(v, input_descrs[k])
+                        for k, v in x.items()
+                    },
+                    stat=common_stat,
+                    id=i,
+                )
 
     preprocessing, postprocessing = setup_pre_and_postprocessing(
         bioimageio_model,
