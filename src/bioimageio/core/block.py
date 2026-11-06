@@ -9,8 +9,9 @@ from math import ceil, floor, prod
 from types import MappingProxyType
 from typing import (
     Annotated,
-    Any,
+    Generic,
     Literal,
+    TypeVar,
     cast,
 )
 
@@ -371,8 +372,32 @@ class Block(BlockMeta):
         return outer_tensor
 
 
+_GridItem = TypeVar("_GridItem")
+
+
+@dataclass(frozen=True, slots=True)
+class NestedListWithNamedDims(Generic[_GridItem]):
+    """A nested list of values with names for each nesting dimension.
+
+    `dims` maps each nested-list level in `values` to an axis.
+    """
+
+    dims: tuple[AxisId, ...]
+    """Axis corresponding to each nested-list level in `values`."""
+
+    values: NestedList[_GridItem]
+    """Values arranged in a rectangular nested list whose dimensions are named by `dims`."""
+
+
 BlockArray = Annotated[NDArray[np.object_], "NDArray[Block]"]
-# BlockMetaArray = Annotated[NDArray[np.object_], "NDArray[BlockMeta]"]
+"""An n-dimensional object array of tensor `Block`s.
+
+Unlike `NestedListWithNamedDims`, its Block elements have the same dimensionality as the overall array.
+
+I.e. all array dimensions are explicitly present in the `Block` objects, even if they have length 1.
+This is in contrast to a `NestedListWithNamedDims[Blocks]`, where each block has the same dimensions,
+but the nested list structure may skip singleton dimensions and add additional dimensions.
+"""
 
 
 def split_tensor_into_blocks(
@@ -798,13 +823,14 @@ def apply_to_block_array(
     get_output_shape: Callable[[PerMember[PerAxis[int]]], PerMember[PerAxis[int]]],
 ) -> dict[MemberId, Tensor]:
 
-    nested_outputs = apply_to_blocks(
+    output_grid = apply_to_blocks(
         func,
         input_blocks,
         output_halo=output_halo,
         get_output_shape=get_output_shape,
         keep_output_halo_at_sample_edge=keep_output_halo_at_sample_edge,
     )
+    nested_outputs = output_grid.values
 
     def select_arrays(
         nested: NestedList[dict[MemberId, Tensor]], member: MemberId
@@ -819,16 +845,36 @@ def apply_to_block_array(
         first_block = first_block[0]
 
     if processing_mode == "parallel":
-        block_impl = cast(Callable[[NestedList[Array]], da.Array], da.block)
+        concatenate = cast(Callable[[Sequence[Array], int], Array], da.concatenate)
     elif processing_mode == "sequential":
-        block_impl = cast(Callable[[NestedList[Array]], NDArray[Any]], np.block)
+        concatenate = cast(Callable[[Sequence[Array], int], Array], np.concatenate)
     else:
         assert_never(processing_mode)
 
+    def concatenate_blocks(
+        nested: NestedList[Array], output_dims: Sequence[AxisId], level: int = 0
+    ) -> Array:
+        if not isinstance(nested, list):
+            return nested
+
+        arrays = [concatenate_blocks(item, output_dims, level + 1) for item in nested]
+        if len(arrays) == 1:
+            return arrays[0]
+
+        grid_dim = output_grid.dims[level]
+        if grid_dim not in output_dims:
+            raise ValueError(
+                f"Cannot concatenate blocks along input axis {grid_dim!r}, which is "
+                + f"missing from output axes {tuple(output_dims)}"
+            )
+
+        return concatenate(arrays, output_dims.index(grid_dim))
+
     outputs = {
         output_id: Tensor(
-            block_impl(
+            concatenate_blocks(
                 select_arrays(nested_outputs, output_id),
+                first_block[output_id].dims,
             ),
             dims=first_block[output_id].dims,
         )
@@ -846,7 +892,7 @@ def apply_to_blocks(
     output_halo: PerMember[PerAxis[HaloLike]],
     get_output_shape: Callable[[PerMember[PerAxis[int]]], PerMember[PerAxis[int]]],
     keep_output_halo_at_sample_edge: bool,
-) -> NestedList[dict[MemberId, Tensor]]:
+) -> NestedListWithNamedDims[dict[MemberId, Tensor]]:
     if not all(b.size > 0 for b in blocks.values()):
         raise ValueError(
             "Sample is not split into blocks. Please provide `block_shapes` or split the sample first."
@@ -934,7 +980,9 @@ def apply_to_blocks(
                 != 0
             }
             assert set(overlap_halo) == left_input_overlap | right_input_overlap, (
-                f"need to crop overlap {overlap_halo} but expected overlap in {left_input_overlap | right_input_overlap}"
+                f"need to crop overlap {overlap_halo} from {t.tagged_shape} to "
+                + f"{valid_output_shape[m]}, but expected overlap in "
+                + f"{left_input_overlap | right_input_overlap}"
             )
             t = t.crop_halo(overlap_halo)
 
@@ -942,7 +990,7 @@ def apply_to_blocks(
 
         return ret
 
-    return func_blocks()
+    return NestedListWithNamedDims(dims=block_grid_dims, values=func_blocks())
 
 
 def get_chunk_shape(

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import collections.abc
+import copy
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import (
@@ -199,5 +200,22 @@ class Sample:
         return self.__class__(
             members=members,
             stat=stat,
+            id=self.id,
+        )
+
+    def copy(self, deep: bool = False) -> Self:
+        """Return a copy of the sample.
+
+        Args:
+            deep: Whether to perform a deep copy of the members and stat.
+        """
+        if deep:
+            cp = copy.deepcopy
+        else:
+            cp = copy.copy
+
+        return self.__class__(
+            members=cp(self.members),
+            stat=cp(self.stat),
             id=self.id,
         )

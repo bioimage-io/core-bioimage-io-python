@@ -29,8 +29,7 @@ def test_description_serializer_roundtrip(unet2d_nuclei_broad_model: str):
                 compare(v1, v2)
         elif isinstance(f1, FileDescr) and isinstance(f1.source, RelativeFilePath):
             assert isinstance(f2, FileDescr)
-            # compare absolute paths since the relative paths are not preserved in the serialization
-            assert f1.source.absolute() == f2.source.absolute()
+            assert f1.download().read() == f2.download().read()
             assert f1.sha256 == f2.sha256
         elif isinstance(f1, Node):
             assert isinstance(f2, Node)

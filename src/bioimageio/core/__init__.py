@@ -72,6 +72,7 @@ from ._settings import settings as settings
 from .axis import Axis as Axis
 from .axis import AxisId as AxisId
 from .backends import create_model_adapter as create_model_adapter
+from .block import apply_blockwise as apply_blockwise
 from .common import MemberId as MemberId
 from .prediction import predict as predict
 from .prediction import predict_many as predict_many

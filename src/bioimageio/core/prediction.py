@@ -3,7 +3,6 @@ from __future__ import annotations
 import atexit
 import itertools
 from collections.abc import Hashable, Iterable, Iterator, Mapping, Sequence, Sized
-from copy import copy
 from pathlib import Path
 from typing import overload
 
@@ -194,7 +193,7 @@ def predict(
             )
 
         if isinstance(inputs, Sample):
-            sample = copy(inputs)
+            sample = inputs.copy(deep=False)
         else:
             sample = create_sample_for_model(
                 pp.model_descr, inputs=inputs, sample_id=sample_id

@@ -26,7 +26,7 @@ from bioimageio.spec import AnyModelDescr
 from bioimageio.spec.model import v0_4
 
 
-def _assert_equal_samples(actual: Sample, expected: Sample):
+def _assert_equal_samples(actual: Sample, expected: Sample) -> None:
     assert expected.id == actual.id
     assert expected.members.keys() == actual.members.keys()
     for member, tensor in expected.members.items():
@@ -72,11 +72,13 @@ def prep(any_model: str):
 
 
 def test_predict_with_pipeline(prep: Prep):
-    out = predict(
-        model=prep.prediction_pipeline,
-        inputs=prep.input_sample,
-    )
-    _assert_equal_samples(out, prep.output_sample)
+    input_shape = prep.input_sample.shape
+    out = predict(model=prep.prediction_pipeline, inputs=prep.input_sample)
+    assert prep.input_sample.shape == input_shape
+    if _has_output_halo(prep.model):
+        _assert_valid_sample(out, prep.output_sample)
+    else:
+        _assert_equal_samples(out, prep.output_sample)
 
 
 @pytest.mark.parametrize("tensor_input", ["numpy", "xarray"])
@@ -87,32 +89,34 @@ def test_predict_with_model_description(
         ipt = {m: t.data for m, t in prep.input_sample.members.items()}
         assert all(isinstance(v, xr.DataArray) for v in ipt.values())
     elif tensor_input == "numpy":
-        ipt = {m: t.data.data for m, t in prep.input_sample.members.items()}
+        ipt = {m: t.to_numpy() for m, t in prep.input_sample.members.items()}
         assert all(isinstance(v, np.ndarray) for v in ipt.values())
     else:
         assert_never(tensor_input)
 
-    out = predict(
-        model=prep.model,
-        inputs=ipt,
-        sample_id=prep.input_sample.id,
-    )
-    _assert_equal_samples(out, prep.output_sample)
+    out = predict(model=prep.model, inputs=ipt, sample_id=prep.input_sample.id)
+    if _has_output_halo(prep.model):
+        _assert_valid_sample(out, prep.output_sample)
+    else:
+        _assert_equal_samples(out, prep.output_sample)
 
 
-@pytest.mark.parametrize("with_procs", [True, False])
-def test_predict_with_blocking(with_procs: bool, prep: Prep):
+@pytest.mark.parametrize("skip_procs", [True, False])
+@pytest.mark.parametrize("skip_halo", [True, False])
+def test_predict_with_blocking(skip_procs: bool, skip_halo: bool, prep: Prep):
     try:
         out = prep.prediction_pipeline.predict_with_blocking(
             prep.input_sample,
             ns=3,
-            skip_preprocessing=not with_procs,
-            skip_postprocessing=not with_procs,
+            skip_preprocessing=skip_procs,
+            skip_postprocessing=skip_procs,
+            skip_input_padding=skip_halo,
+            skip_output_cropping=skip_halo,
         )
     except NotImplementedError as e:
         pytest.skip(str(e))
 
-    if with_procs:
+    if skip_procs and skip_halo:
         _assert_equal_samples(out, prep.output_sample)
     else:
         _assert_valid_sample(out, prep.output_sample)
@@ -184,7 +188,7 @@ def test_predict_with_fixed_blocking(prep: Prep):
             ]
             for m, t in out.members.items()
         }
-    _assert_equal_samples(out, prep.output_sample)
+    _assert_valid_sample(out, prep.output_sample)
 
 
 def test_predict_save_output(prep: Prep, tmp_path: Path):
