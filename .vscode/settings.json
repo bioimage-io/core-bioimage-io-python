@@ -1,6 +1,7 @@
 {
     "window.title": "bioimageio.core",
-    "python.analysis.languageServerMode": "full",
+    "python.languageServer": "Pylance",
+    "python.analysis.diagnosticMode": "workspace",
     "python.testing.unittestArgs": [
         "-v",
         "-s",
@@ -11,9 +12,15 @@
     "python.testing.pytestEnabled": true,
     "python.testing.unittestEnabled": false,
     "editor.formatOnSave": true,
-    "editor.codeActionsOnSave": {
-        "source.unusedImports": "explicit",
-        "source.organizeImports": "explicit"
+    "[python]": {
+        "editor.defaultFormatter": "charliermarsh.ruff",
+        "editor.codeActionsOnSave": {
+            "source.unusedImports": "never",
+            "source.organizeImports": "never",
+            "source.fixAll.pylance": "never",
+            "source.fixAll.ruff": "explicit",
+            "source.organizeImports.ruff": "explicit"
+        }
     },
     "python-envs.defaultEnvManager": "ms-python.python:conda",
     "python-envs.defaultPackageManager": "ms-python.python:conda",
