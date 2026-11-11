@@ -1,5 +1,6 @@
 # pyright: reportPrivateUsage=false
 
+import io
 import sys
 from pathlib import Path
 from typing import Any
@@ -8,7 +9,7 @@ import numpy as np
 import pytest
 from numpy.typing import NDArray
 
-from bioimageio.core import bench
+from bioimageio.core import Sample, bench
 
 
 @pytest.mark.parametrize("width", [1, 3, 4, 8])
@@ -41,7 +42,7 @@ def test_slice_controls(
     array = np.arange(np.prod(shape)).reshape(shape)
     source = tmp_path / "stack.npy"
     np.save(source, array)
-    monkeypatch.setattr(sys, "argv", ["bench"])
+    monkeypatch.setattr(sys, "argv", ["bench", "--data", str(source)])
     previews: list[NDArray[Any]] = []
     original_preview = bench._preview
 
@@ -53,16 +54,20 @@ def test_slice_controls(
 
     monkeypatch.setattr(bench, "_preview", capture_preview)
     app = AppTest.from_string("from bioimageio.core.bench import main\nmain()")
-    app.session_state["bench_data_source_0"] = str(source)
+    sample_key = bench._sample_key(0, str(source.resolve()))
     _ = app.run(timeout=20)
     assert not app.exception
-    _ = app.text_input(key="bench_data_dims_0").set_value(", ".join(dims)).run()
+    _ = (
+        app.text_input(key=f"bench_data_dims_{sample_key}")
+        .set_value(", ".join(dims))
+        .run()
+    )
     assert not app.exception
 
     slice_dims = [dim for dim in dims if dim in ("t", "z")]
     for dim in slice_dims:
         axis = dims.index(dim)
-        slider = app.slider(key=f"bench_data_slice_0_{axis}")
+        slider = app.slider(key=f"bench_data_slice_{sample_key}_{axis}")
         assert slider.label == ("Z slice" if dim == "z" else "Time frame")
         _ = slider.set_value(5).run()
         assert not app.exception
@@ -70,17 +75,296 @@ def test_slice_controls(
     np.testing.assert_array_equal(previews[-1], array[(5,) * len(slice_dims)])
 
     # Moving the ROI past the current slice clamps the view to its first slice.
-    _ = app.slider(key="bench_data_roi_0_0").set_range(7, 9).run()
+    _ = app.slider(key=f"bench_data_roi_{sample_key}_0").set_range(7, 9).run()
     assert not app.exception
-    assert app.slider(key="bench_data_slice_0_0").value == 7
+    assert app.slider(key=f"bench_data_slice_{sample_key}_0").value == 7
     expected = array[(7, *((5,) * (len(slice_dims) - 1)))]
     np.testing.assert_array_equal(previews[-1], expected)
 
     # A single-slice ROI needs no slider and still displays the correct plane.
-    _ = app.slider(key="bench_data_roi_0_0").set_range(8, 8).run()
+    _ = app.slider(key=f"bench_data_roi_{sample_key}_0").set_range(8, 8).run()
     assert not app.exception
-    assert "bench_data_slice_0_0" not in [slider.key for slider in app.slider]
+    assert f"bench_data_slice_{sample_key}_0" not in [
+        slider.key for slider in app.slider
+    ]
     np.testing.assert_array_equal(
         previews[-1],
         array[(8, *((5,) * (len(slice_dims) - 1)))],
     )
+
+
+def test_resolve_data_sources(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    for name in ("b.npy", "a.npy", "other.TIF", "notes.txt"):
+        _ = (tmp_path / name).touch()
+    nested = tmp_path / "nested"
+    nested.mkdir()
+    _ = (nested / "c.npy").touch()
+    expected = [str(tmp_path / name) for name in ("a.npy", "b.npy", "other.TIF")]
+    assert bench._resolve_data_sources(str(tmp_path)) == expected
+    assert bench._resolve_data_sources(f"{tmp_path}/*.npy") == expected[:2]
+    assert bench._resolve_data_sources(f"{tmp_path}/**/*.npy") == [
+        *expected[:2],
+        str(nested / "c.npy"),
+    ]
+    # Overlapping entries include each local file once, keeping input order.
+    monkeypatch.chdir(tmp_path)
+    assert bench._resolve_data_sources(f"b.npy\n{tmp_path}/*.npy\n\n") == [
+        expected[1],
+        expected[0],
+    ]
+    url = "https://example.org/image.npy?token=a[1]"
+    assert bench._resolve_data_sources(url) == [url]
+
+
+@pytest.mark.parametrize("source", ["*.png", "empty"])
+def test_resolve_data_sources_no_matches(tmp_path: Path, source: str):
+    (tmp_path / "empty").mkdir()
+    with pytest.raises(ValueError, match="No supported data files"):
+        _ = bench._resolve_data_sources(str(tmp_path / source))
+
+
+def test_dataset_selection(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    _ = pytest.importorskip("streamlit")
+    from streamlit.testing.v1 import AppTest
+
+    monkeypatch.setattr(sys, "argv", ["bench"])
+    for name in ("a.npy", "b.npy"):
+        np.save(tmp_path / name, np.arange(20).reshape(4, 5))
+    app = AppTest.from_string("from bioimageio.core.bench import main\nmain()")
+    _ = app.run(timeout=20)
+    assert not app.exception
+    assert app.session_state["bench_data_ids"] == []
+    assert app.get("popover")[0].proto.popover.label == "Add dataset"
+    _ = app.text_input(key="bench_new_dataset_name").set_value("Cells")
+    _ = app.text_area(key="bench_new_dataset_sources").set_value(str(tmp_path))
+    _ = app.button(key="bench_add_dataset").click().run()
+    assert not app.exception
+    assert app.session_state["bench_data_ids"] == [0]
+    assert app.text_input(key="bench_dataset_name_0").value == "Cells"
+    assert any(c.value == "2 samples" for c in app.caption)
+
+    sample_a = bench._sample_key(0, str(tmp_path / "a.npy"))
+    sample_b = bench._sample_key(0, str(tmp_path / "b.npy"))
+    _ = app.slider(key=f"bench_data_roi_{sample_a}_0").set_range(1, 2).run()
+    assert not app.exception
+    assert app.slider(key=f"bench_data_roi_{sample_b}_0").value == (0, 3)
+    _ = app.text_input(key="bench_dataset_name_0").set_value("Renamed cells").run()
+    assert not app.exception
+    assert app.slider(key=f"bench_data_roi_{sample_a}_0").value == (1, 2)
+    assert app.expander[0].label == "Renamed cells"
+
+    # Removing another sample from the sources must not reset this sample's ROI.
+    _ = (
+        app.text_area(key="bench_data_source_0")
+        .set_value(str(tmp_path / "a.npy"))
+        .run()
+    )
+    assert not app.exception
+    assert app.slider(key=f"bench_data_roi_{sample_a}_0").value == (1, 2)
+    assert any(c.value == "1 sample" for c in app.caption)
+
+    _ = (
+        app.text_area(key="bench_data_source_0")
+        .set_value(str(tmp_path / "missing*.tif"))
+        .run()
+    )
+    assert not app.exception
+    assert any("No supported data files" in error.value for error in app.error)
+    _ = app.text_area(key="bench_data_source_0").set_value(str(tmp_path)).run()
+    assert not app.exception
+    assert not app.error
+    assert app.text_input(key=f"bench_data_dims_{sample_a}").value == "y, x"
+
+    _ = app.button(key="bench_delete_data_0").click().run()
+    assert not app.exception
+    assert app.session_state["bench_data_ids"] == []
+    # Dataset IDs are never reused after deletion.
+    _ = app.button(key="bench_add_dataset").click().run()
+    assert not app.exception
+    assert app.session_state["bench_data_ids"] == [1]
+
+
+def test_dataset_uploads(monkeypatch: pytest.MonkeyPatch):
+    _ = pytest.importorskip("streamlit")
+    from streamlit.testing.v1 import AppTest
+
+    monkeypatch.setattr(sys, "argv", ["bench"])
+    app = AppTest.from_string("from bioimageio.core.bench import main\nmain()")
+    _ = app.run(timeout=20)
+    # Use .npy data, including duplicate file names, to exercise upload identity.
+    buffer = io.BytesIO()
+    np.save(buffer, np.arange(20).reshape(4, 5))
+    content = buffer.getvalue()
+    uploader = app.file_uploader(key="bench_new_dataset_uploads")
+    uploader.upload("sample.npy", content)
+    uploader.upload("sample.npy", content)
+    _ = app.button(key="bench_add_dataset").click().run()
+    assert not app.exception
+    assert len(app.session_state["bench_dataset_uploads_0"]) == 2
+    assert any(c.value == "2 samples" for c in app.caption)
+
+    app.file_uploader(key="bench_data_0_0").upload("extra.npy", content).run()
+    assert not app.exception
+    assert len(app.session_state["bench_dataset_uploads_0"]) == 3
+    assert app.file_uploader(key="bench_data_0_1").value == []
+    uploads = app.session_state["bench_dataset_uploads_0"]
+    sample_key = bench._sample_key(0, uploads[0].id)
+    _ = app.button(key=f"bench_remove_sample_{sample_key}").click().run()
+    assert not app.exception
+    assert len(app.session_state["bench_dataset_uploads_0"]) == 2
+    _ = app.text_input(key="bench_dataset_name_0").set_value("Uploads").run()
+    assert not app.exception
+    assert len(app.session_state["bench_dataset_uploads_0"]) == 2
+
+
+def test_dataset_predictions(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    _ = pytest.importorskip("streamlit")
+    from unittest.mock import MagicMock, Mock
+
+    from streamlit.testing.v1 import AppTest
+
+    from bioimageio.core.axis import AxisId
+    from bioimageio.core.common import MemberId
+    from bioimageio.spec.model import v0_5
+
+    model = v0_5.ModelDescr.model_construct(
+        name="Identity",
+        format_version="0.5.10",
+        inputs=[
+            v0_5.InputTensorDescr(
+                id=MemberId("input"),
+                axes=[
+                    v0_5.SpaceInputAxis(id=AxisId("y"), size=4),
+                    v0_5.SpaceInputAxis(id=AxisId("x"), size=5),
+                ],
+            )
+        ],
+        weights=v0_5.WeightsDescr.model_construct(),
+    )
+    pipeline = MagicMock()
+    pipeline.__enter__.return_value = pipeline
+
+    def predict_sample(sample: Sample) -> Sample:
+        return sample
+
+    pipeline.predict_without_blocking.side_effect = predict_sample
+    monkeypatch.setattr(bench, "load_model", Mock(return_value=model))
+    monkeypatch.setattr(
+        bench, "create_prediction_pipeline", Mock(return_value=pipeline)
+    )
+    monkeypatch.setattr(
+        sys, "argv", ["bench", "--data", str(tmp_path), "--model", "identity-test"]
+    )
+    for index, name in enumerate(("a.npy", "b.npy")):
+        np.save(tmp_path / name, np.full((4, 5), index))
+    app = AppTest.from_string("from bioimageio.core.bench import main\nmain()")
+    _ = app.run(timeout=20)
+    assert not app.exception
+    assert not app.error
+    _ = app.checkbox[1].check().run()
+    assert not app.exception
+    assert pipeline.predict_without_blocking.call_count == 2
+    names = [heading.value for heading in app.subheader]
+    assert "Dataset 1 · a.npy" in names
+    assert "Dataset 1 · b.npy" in names
+    for index, call in enumerate(pipeline.predict_without_blocking.call_args_list):
+        np.testing.assert_array_equal(
+            call.args[0].members[MemberId("input")].to_numpy(), np.full((4, 5), index)
+        )
+
+
+def test_sync_roi_from_any_sample(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    _ = pytest.importorskip("streamlit")
+    from streamlit.testing.v1 import AppTest
+
+    first, second = tmp_path / "a.npy", tmp_path / "b.npy"
+    np.save(first, np.arange(48).reshape(6, 8))
+    np.save(second, np.arange(48).reshape(8, 6))
+    monkeypatch.setattr(
+        sys, "argv", ["bench", "--data", f"{first}\n{second}", "--data", str(first)]
+    )
+    app = AppTest.from_string("from bioimageio.core.bench import main\nmain()")
+    _ = app.run(timeout=20)
+    assert not app.exception
+    first_key = bench._sample_key(0, str(first.resolve()))
+    second_key = bench._sample_key(0, str(second.resolve()))
+    other_dataset_key = bench._sample_key(1, str(first.resolve()))
+    assert f"bench_sync_roi_{other_dataset_key}" not in [
+        button.key for button in app.button
+    ]
+
+    # Also sync to uploaded data, including an axis of size one.
+    buffer = io.BytesIO()
+    np.save(buffer, np.zeros((1, 3)))
+    app.file_uploader(key="bench_data_0_0").upload("small.npy", buffer.getvalue()).run()
+    assert not app.exception
+    upload = app.session_state["bench_dataset_uploads_0"][0]
+    upload_key = bench._sample_key(0, upload.id)
+    _ = app.text_input(key=f"bench_data_dims_{second_key}").set_value("x, y").run()
+    assert not app.exception
+    _ = app.slider(key=f"bench_data_roi_{second_key}_0").set_range(2, 6)
+    _ = app.slider(key=f"bench_data_roi_{second_key}_1").set_range(3, 5).run()
+    assert not app.exception
+    _ = app.button(key=f"bench_sync_roi_{second_key}").click().run()
+    assert not app.exception
+    assert app.slider(key=f"bench_data_roi_{first_key}_0").value == (3, 5)
+    assert app.slider(key=f"bench_data_roi_{first_key}_1").value == (2, 6)
+    assert app.slider(key=f"bench_data_roi_{upload_key}_1").value == (2, 2)
+    assert app.slider(key=f"bench_data_roi_{other_dataset_key}_0").value == (0, 5)
+    assert app.slider(key=f"bench_data_roi_{other_dataset_key}_1").value == (0, 7)
+
+    # A different image can become the source; existing ranges are overwritten.
+    _ = app.slider(key=f"bench_data_roi_{first_key}_0").set_range(1, 4).run()
+    assert not app.exception
+    _ = app.button(key=f"bench_sync_roi_{first_key}").click().run()
+    assert not app.exception
+    assert app.slider(key=f"bench_data_roi_{second_key}_1").value == (1, 4)
+    _ = app.run()
+    assert not app.exception
+    assert app.slider(key=f"bench_data_roi_{second_key}_1").value == (1, 4)
+
+
+def test_sync_roi_axes_and_slice_clamping(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    _ = pytest.importorskip("streamlit")
+    from streamlit.testing.v1 import AppTest
+
+    paths = [tmp_path / name for name in ("stack.npy", "target.npy", "plane.npy")]
+    for path, shape in zip(paths, ((6, 4, 5), (6, 4, 5), (4, 5))):
+        np.save(path, np.zeros(shape))
+    monkeypatch.setattr(
+        sys, "argv", ["bench", "--data", "\n".join(str(path) for path in paths)]
+    )
+    app = AppTest.from_string("from bioimageio.core.bench import main\nmain()")
+    _ = app.run(timeout=20)
+    assert not app.exception
+    source_key, target_key, plane_key = [
+        bench._sample_key(0, str(path.resolve())) for path in paths
+    ]
+    for sample_key in (source_key, target_key):
+        _ = (
+            app.text_input(key=f"bench_data_dims_{sample_key}")
+            .set_value("z, y, x")
+            .run()
+        )
+        assert not app.exception
+    _ = app.slider(key=f"bench_data_slice_{target_key}_0").set_value(5).run()
+    assert not app.exception
+    _ = app.slider(key=f"bench_data_roi_{source_key}_0").set_range(1, 2)
+    _ = app.slider(key=f"bench_data_roi_{source_key}_1").set_range(1, 3).run()
+    assert not app.exception
+    _ = app.button(key=f"bench_sync_roi_{source_key}").click().run()
+    assert not app.exception
+    assert app.slider(key=f"bench_data_slice_{target_key}_0").value == 2
+    assert app.slider(key=f"bench_data_roi_{target_key}_0").value == (1, 2)
+    assert app.slider(key=f"bench_data_roi_{plane_key}_0").value == (1, 3)
+    assert app.slider(key=f"bench_data_roi_{plane_key}_1").value == (0, 4)
+
+    # Syncing a plane back to a stack leaves the stack's unmatched z ROI alone.
+    _ = app.slider(key=f"bench_data_roi_{plane_key}_0").set_range(2, 2).run()
+    assert not app.exception
+    _ = app.button(key=f"bench_sync_roi_{plane_key}").click().run()
+    assert not app.exception
+    assert app.slider(key=f"bench_data_roi_{target_key}_0").value == (1, 2)
+    assert app.slider(key=f"bench_data_roi_{target_key}_1").value == (2, 2)

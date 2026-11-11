@@ -5,6 +5,8 @@ import json
 import sys
 from argparse import ArgumentParser
 from collections.abc import Hashable, Mapping, Sequence
+from glob import glob, has_magic
+from hashlib import sha256
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import Any, NamedTuple, TypeAlias, cast
@@ -39,6 +41,56 @@ RunSignature: TypeAlias = tuple[
 StoredResults: TypeAlias = tuple[
     RunSignature, list[str], dict[tuple[int, int], PredictionResult]
 ]
+DATA_EXTENSIONS = ("npy", "tif", "tiff", "png", "jpg", "jpeg", "h5", "hdf5")
+
+
+class _UploadedSample(NamedTuple):
+    id: str
+    name: str
+    content: bytes
+
+
+def _resolve_data_sources(text: str) -> list[str]:
+    """Expand local directories and globs, preserving URLs and input order."""
+    sources: dict[str, None] = {}
+    for line in text.splitlines():
+        source = line.strip()
+        if not source:
+            continue
+        if "://" in source:
+            sources[source] = None
+            continue
+
+        path = Path(source).expanduser()
+        if path.is_file():
+            matches = [str(path.resolve())]
+        elif path.is_dir() or has_magic(str(path)):
+            candidates = (
+                path.iterdir()
+                if path.is_dir()
+                else (Path(match) for match in glob(str(path), recursive=True))
+            )
+            matches = sorted(
+                {
+                    str(candidate.resolve())
+                    for candidate in candidates
+                    if candidate.is_file()
+                    and candidate.suffix.lower().lstrip(".") in DATA_EXTENSIONS
+                }
+            )
+            if not matches:
+                raise ValueError(f"No supported data files found for '{source}'")
+        else:
+            # Keep tensor selectors (for example, HDF5 internal paths) intact.
+            matches = [str(path)]
+
+        sources.update(dict.fromkeys(matches))
+
+    return list(sources)
+
+
+def _sample_key(dataset_id: int, source_id: str) -> str:
+    return f"{dataset_id}_{sha256(source_id.encode()).hexdigest()[:16]}"
 
 
 class _BenchArgs(NamedTuple):
@@ -233,7 +285,7 @@ def main() -> None:
     if "bench_data_ids" not in st.session_state:
         data_count = cast(
             int,
-            st.session_state.get("bench_data_count", max(1, len(initial.data))),
+            st.session_state.get("bench_data_count", len(initial.data)),
         )
         st.session_state.bench_data_ids = list(range(data_count))
         st.session_state.bench_next_data_id = data_count
@@ -252,18 +304,6 @@ def main() -> None:
                 st.session_state[f"bench_model_{index}"] = source
 
     data_ids = list(cast(list[int], st.session_state.bench_data_ids))
-    data_ids, next_data_id = _with_trailing_empty_row(
-        data_ids,
-        {
-            row_id
-            for row_id in data_ids
-            if st.session_state.get(f"bench_data_source_{row_id}")
-            or st.session_state.get(f"bench_data_{row_id}") is not None
-        },
-        cast(int, st.session_state.bench_next_data_id),
-    )
-    st.session_state.bench_data_ids = data_ids
-    st.session_state.bench_next_data_id = next_data_id
 
     model_ids = list(cast(list[int], st.session_state.bench_model_ids))
     model_ids, next_model_id = _with_trailing_empty_row(
@@ -293,183 +333,307 @@ def main() -> None:
     data_signature: list[DataSignature] = []
     selected_data_sources: list[str] = []
 
+    def collect_uploads(row_id: int, uploader_key: str) -> None:
+        from streamlit.typing import UploadedFile
+
+        uploads = cast(list[UploadedFile], st.session_state[uploader_key])
+        stored_uploads = cast(
+            list[_UploadedSample],
+            st.session_state.get(f"bench_dataset_uploads_{row_id}", []),
+        )
+        known_ids = {upload.id for upload in stored_uploads}
+        st.session_state[f"bench_dataset_uploads_{row_id}"] = [
+            *stored_uploads,
+            *(
+                _UploadedSample(upload.file_id, upload.name, upload.getvalue())
+                for upload in uploads
+                if upload.file_id not in known_ids
+            ),
+        ]
+        # Clear the staging uploader after copying files into dataset state.
+        st.session_state[f"bench_dataset_upload_version_{row_id}"] = (
+            cast(int, st.session_state.get(f"bench_dataset_upload_version_{row_id}", 0))
+            + 1
+        )
+
     _ = st.subheader("Data")
-    for row_id in data_ids:
-        data_column, delete_column = st.columns([10, 1], vertical_alignment="top")
-        name_slot = data_column.empty()
-        upload = data_column.file_uploader(
+    with (
+        st.popover("Add dataset", icon=":material/add:"),
+        st.form("bench_add_dataset_form", clear_on_submit=True),
+    ):
+        new_name = st.text_input("Dataset name", key="bench_new_dataset_name")
+        new_uploads = st.file_uploader(
             "Upload data",
-            type=[
-                "npy",
-                "tif",
-                "tiff",
-                "png",
-                "jpg",
-                "jpeg",
-                "h5",
-                "hdf5",
-            ],
-            key=f"bench_data_{row_id}",
+            type=DATA_EXTENSIONS,
+            accept_multiple_files=True,
+            key="bench_new_dataset_uploads",
         )
-        data_source = (
-            data_column.text_input(
-                "Data path or URL",
-                key=f"bench_data_source_{row_id}",
-                placeholder="Optional path or URL",
-            ).strip()
-            if upload is None
-            else ""
+        new_sources = st.text_area(
+            "Data paths, URLs, globs, or directories",
+            key="bench_new_dataset_sources",
+            placeholder="/path/to/images/*.tif",
+            help="One entry per line. Use **/*.tif to include subdirectories.",
         )
-        display_name = (
-            upload.name
-            if upload is not None
-            else (Path(data_source).name or data_source)
-            if data_source
-            else "New data"
-        )
-        _ = name_slot.markdown(f"**{display_name}**")
-        in_use = bool(data_source or upload is not None)
-        if delete_column.button(
-            "Delete",
-            key=f"bench_delete_data_{row_id}",
-            icon=":material/delete:",
-            help=f"Delete {display_name}",
-            disabled=not in_use,
-            width="stretch",
-        ):
-            st.session_state.bench_data_ids = [
-                existing for existing in data_ids if existing != row_id
+        if st.form_submit_button("Add", key="bench_add_dataset"):
+            row_id = cast(int, st.session_state.bench_next_data_id)
+            st.session_state.bench_data_ids = [*data_ids, row_id]
+            st.session_state.bench_next_data_id = row_id + 1
+            st.session_state[f"bench_dataset_name_{row_id}"] = (
+                new_name.strip() or f"Dataset {row_id + 1}"
+            )
+            st.session_state[f"bench_data_source_{row_id}"] = new_sources
+            st.session_state[f"bench_dataset_uploads_{row_id}"] = [
+                _UploadedSample(upload.file_id, upload.name, upload.getvalue())
+                for upload in new_uploads
             ]
             st.rerun()
 
-        if data_source:
-            selected_data_sources.append(data_source)
-
-        if not in_use:
-            continue
-
-        try:
-            if data_source:
-                array, inferred_dims = load_source_tensor(data_source)
-                data_name = Path(data_source).name or data_source
-                data_id = data_source
-            else:
-                assert upload is not None
-                array, inferred_dims = load_uploaded_tensor(
-                    upload.name, upload.getvalue()
-                )
-                data_name = upload.name
-                data_id = upload.file_id
-        except Exception as exc:
-            source = data_source or (upload.name if upload is not None else "")
-            message = f"Could not read '{source}': {exc}"
-            compatibility_errors.append(message)
-            _ = data_column.error(message)
-            continue
-
-        dims_key = f"bench_data_dims_{row_id}"
-        data_key = f"bench_data_file_{row_id}"
-        if st.session_state.get(data_key) != data_id:
-            st.session_state[data_key] = data_id
-            st.session_state[dims_key] = ", ".join(inferred_dims)
-            for dim_index in range(array.ndim):
-                st.session_state.pop(f"bench_data_roi_{row_id}_{dim_index}", None)
-                st.session_state.pop(f"bench_data_slice_{row_id}_{dim_index}", None)
-
-        _ = data_column.caption(f"Shape: {array.shape} · dtype: {array.dtype}")
-        dims_text = data_column.text_input(
-            "Dimension names",
-            key=dims_key,
-            help=(
-                "Comma- or space-separated BioImage.IO axis names, in array order. "
-                "Examples: `y, x` or `batch, channel, y, x`."
-            ),
+    for row_id in data_ids:
+        name_key = f"bench_dataset_name_{row_id}"
+        st.session_state.setdefault(name_key, f"Dataset {row_id + 1}")
+        dataset_name = (
+            cast(str, st.session_state[name_key]).strip() or f"Dataset {row_id + 1}"
         )
-        dims = tuple(
-            part.strip() for part in dims_text.replace(",", " ").split() if part.strip()
-        )
-        if len(dims) != array.ndim:
-            message = (
-                f"'{data_name}' has {array.ndim} dimensions, but {len(dims)} "
-                f"dimension names were provided: {dims}"
+        with st.expander(dataset_name, expanded=True):
+            data_column, delete_column = st.columns(
+                [10, 1], vertical_alignment="bottom"
             )
-            compatibility_errors.append(message)
-            _ = data_column.error(message)
-            continue
+            dataset_name = (
+                data_column.text_input("Dataset name", key=name_key).strip()
+                or f"Dataset {row_id + 1}"
+            )
+            if delete_column.button(
+                "Delete",
+                key=f"bench_delete_data_{row_id}",
+                icon=":material/delete:",
+                help=f"Delete {dataset_name}",
+                width="stretch",
+            ):
+                st.session_state.bench_data_ids = [
+                    existing for existing in data_ids if existing != row_id
+                ]
+                st.session_state.pop(f"bench_dataset_uploads_{row_id}", None)
+                st.rerun()
 
-        try:
-            tensor = Tensor.from_numpy(array, dims=dims)
-        except Exception as exc:
-            message = f"Invalid dimension names for '{data_name}': {exc}"
-            compatibility_errors.append(message)
-            _ = data_column.error(message)
-            continue
+            version = st.session_state.get(f"bench_dataset_upload_version_{row_id}", 0)
+            uploader_key = f"bench_data_{row_id}_{version}"
+            _ = st.file_uploader(
+                "Upload more data",
+                type=DATA_EXTENSIONS,
+                accept_multiple_files=True,
+                key=uploader_key,
+                on_change=collect_uploads,
+                args=(row_id, uploader_key),
+            )
+            source_text = st.text_area(
+                "Data paths, URLs, globs, or directories",
+                key=f"bench_data_source_{row_id}",
+                help=(
+                    "One entry per line. Directories include supported files directly "
+                    "inside them; use **/*.tif for subdirectories."
+                ),
+            ).strip()
+            if source_text:
+                selected_data_sources.append(source_text)
+            try:
+                sources = _resolve_data_sources(source_text)
+            except Exception as exc:
+                message = f"Could not select data for '{dataset_name}': {exc}"
+                compatibility_errors.append(message)
+                _ = st.error(message)
+                sources = []
 
-        normalized_dims = tuple(str(dim) for dim in tensor.dims)
-        roi_slices: dict[AxisId, slice] = {}
-        roi_signature: list[tuple[str, int, int]] = []
-        browser = data_column.expander("Browse and select ROI", expanded=True)
-        for dim_index, (dim, size) in enumerate(zip(tensor.dims, tensor.shape)):
-            if size == 1:
-                start, stop = 0, 1
-                _ = browser.caption(f"{dim}: singleton")
-            else:
-                start, last = browser.slider(
-                    f"{dim} range",
-                    min_value=0,
-                    max_value=size - 1,
-                    value=(0, size - 1),
-                    key=f"bench_data_roi_{row_id}_{dim_index}",
-                    help="Both displayed indices are included in the view.",
+            uploads = cast(
+                list[_UploadedSample],
+                st.session_state.get(f"bench_dataset_uploads_{row_id}", []),
+            )
+            samples: list[tuple[str, str, _UploadedSample | None]] = [
+                (source, Path(source).name or source, None) for source in sources
+            ]
+            samples.extend((upload.id, upload.name, upload) for upload in uploads)
+            _ = st.caption(
+                f"{len(samples)} {'sample' if len(samples) == 1 else 'samples'}"
+            )
+            if not samples:
+                _ = st.info(
+                    "Upload data or enter paths to add samples to this dataset."
                 )
-                stop = last + 1
+            pending_roi = cast(
+                dict[str, tuple[int, int]] | None,
+                st.session_state.pop(f"bench_dataset_pending_roi_{row_id}", None),
+            )
+            for data_id, data_name, upload in samples:
+                sample_key = _sample_key(row_id, data_id)
+                data_column = st.expander(data_name, expanded=len(samples) == 1)
+                if upload is not None and data_column.button(
+                    "Remove sample",
+                    key=f"bench_remove_sample_{sample_key}",
+                    icon=":material/delete:",
+                ):
+                    st.session_state[f"bench_dataset_uploads_{row_id}"] = [
+                        existing for existing in uploads if existing.id != data_id
+                    ]
+                    st.rerun()
+                try:
+                    if upload is None:
+                        array, inferred_dims = load_source_tensor(data_id)
+                    else:
+                        array, inferred_dims = load_uploaded_tensor(
+                            upload.name, upload.content
+                        )
+                except Exception as exc:
+                    message = f"Could not read '{data_name}' in '{dataset_name}': {exc}"
+                    compatibility_errors.append(message)
+                    _ = data_column.error(message)
+                    continue
 
-            roi_slices[dim] = slice(start, stop)
-            roi_signature.append((str(dim), start, stop))
+                dims_key = f"bench_data_dims_{sample_key}"
+                data_key = f"bench_data_file_{sample_key}"
+                if (
+                    st.session_state.get(data_key) != (data_id, array.shape)
+                    or dims_key not in st.session_state
+                ):
+                    st.session_state[data_key] = (data_id, array.shape)
+                    st.session_state[dims_key] = ", ".join(inferred_dims)
+                    for dim_index in range(array.ndim):
+                        st.session_state.pop(
+                            f"bench_data_roi_{sample_key}_{dim_index}", None
+                        )
+                        st.session_state.pop(
+                            f"bench_data_slice_{sample_key}_{dim_index}", None
+                        )
 
-        view = tensor[roi_slices]
-        preview_indices: dict[AxisId, int] = {}
-        slice_labels: list[str] = []
-        for dim_index, (dim, start, stop) in enumerate(roi_signature):
-            if dim not in ("z", "time"):
-                continue
+                _ = data_column.caption(f"Shape: {array.shape} · dtype: {array.dtype}")
+                dims_text = data_column.text_input(
+                    "Dimension names",
+                    key=dims_key,
+                    help=(
+                        "Comma- or space-separated BioImage.IO axis names, in array order. "
+                        "Examples: `y, x` or `batch, channel, y, x`."
+                    ),
+                )
+                dims = tuple(
+                    part.strip()
+                    for part in dims_text.replace(",", " ").split()
+                    if part.strip()
+                )
+                if len(dims) != array.ndim:
+                    message = (
+                        f"'{data_name}' has {array.ndim} dimensions, but {len(dims)} "
+                        f"dimension names were provided: {dims}"
+                    )
+                    compatibility_errors.append(message)
+                    _ = data_column.error(message)
+                    continue
 
-            label = "Z slice" if dim == "z" else "Time frame"
-            if stop - start == 1:
-                index = start
-                _ = browser.caption(f"{label}: {index}")
-            else:
-                slice_key = f"bench_data_slice_{row_id}_{dim_index}"
-                previous = cast(int, st.session_state.get(slice_key, start))
-                st.session_state[slice_key] = min(max(previous, start), stop - 1)
-                index = browser.slider(
-                    label,
-                    min_value=start,
-                    max_value=stop - 1,
-                    step=1,
-                    key=slice_key,
-                    help="Preview a single slice within the selected ROI.",
+                try:
+                    tensor = Tensor.from_numpy(array, dims=dims)
+                except Exception as exc:
+                    message = f"Invalid dimension names for '{data_name}': {exc}"
+                    compatibility_errors.append(message)
+                    _ = data_column.error(message)
+                    continue
+
+                normalized_dims = tuple(str(dim) for dim in tensor.dims)
+                roi_slices: dict[AxisId, slice] = {}
+                roi_signature: list[tuple[str, int, int]] = []
+                browser = data_column.expander("Browse and select ROI", expanded=True)
+                for dim_index, (dim, size) in enumerate(zip(tensor.dims, tensor.shape)):
+                    roi_key = f"bench_data_roi_{sample_key}_{dim_index}"
+                    if pending_roi is not None and str(dim) in pending_roi and size > 1:
+                        start, stop = pending_roi[str(dim)]
+                        start = min(max(start, 0), size - 1)
+                        last = min(max(stop - 1, start), size - 1)
+                        st.session_state[roi_key] = (start, last)
+                    if size == 1:
+                        start, stop = 0, 1
+                        _ = browser.caption(f"{dim}: singleton")
+                    else:
+                        st.session_state.setdefault(roi_key, (0, size - 1))
+                        start, last = cast(
+                            tuple[int, int],
+                            browser.slider(
+                                f"{dim} range",
+                                min_value=0,
+                                max_value=size - 1,
+                                key=roi_key,
+                                help="Both displayed indices are included in the view.",
+                            ),
+                        )
+                        stop = last + 1
+
+                    roi_slices[dim] = slice(start, stop)
+                    roi_signature.append((str(dim), start, stop))
+
+                if len(samples) > 1 and browser.button(
+                    "Sync ROI selection",
+                    key=f"bench_sync_roi_{sample_key}",
+                    icon=":material/sync:",
+                    help=(
+                        "Copy this image's current ROI ranges to all samples in this "
+                        "dataset. Axes are matched by name and ranges are clipped to "
+                        "each image's size."
+                    ),
+                ):
+                    # Apply on the next pass, before any sample's sliders render.
+                    st.session_state[f"bench_dataset_pending_roi_{row_id}"] = {
+                        dim: (start, stop) for dim, start, stop in roi_signature
+                    }
+                    st.rerun()
+
+                view = tensor[roi_slices]
+                preview_indices: dict[AxisId, int] = {}
+                slice_labels: list[str] = []
+                for dim_index, (dim, start, stop) in enumerate(roi_signature):
+                    if dim not in ("z", "time"):
+                        continue
+
+                    label = "Z slice" if dim == "z" else "Time frame"
+                    if stop - start == 1:
+                        index = start
+                        _ = browser.caption(f"{label}: {index}")
+                    else:
+                        slice_key = f"bench_data_slice_{sample_key}_{dim_index}"
+                        previous = cast(int, st.session_state.get(slice_key, start))
+                        st.session_state[slice_key] = min(
+                            max(previous, start), stop - 1
+                        )
+                        index = browser.slider(
+                            label,
+                            min_value=start,
+                            max_value=stop - 1,
+                            step=1,
+                            key=slice_key,
+                            help="Preview a single slice within the selected ROI.",
+                        )
+
+                    preview_indices[AxisId(dim)] = index - start
+                    slice_labels.append(f"{dim}={index}")
+
+                preview = view[preview_indices] if preview_indices else view
+                caption = f"Current view · shape {view.shape}"
+                if slice_labels:
+                    caption += " · " + ", ".join(slice_labels)
+                _ = browser.image(
+                    _preview(
+                        preview.to_numpy(), dims=tuple(str(dim) for dim in preview.dims)
+                    ),
+                    caption=caption,
+                    alt=f"Preview of {data_name}"
+                    + (" at " + ", ".join(slice_labels) if slice_labels else ""),
+                    width="stretch",
                 )
 
-            preview_indices[AxisId(dim)] = index - start
-            slice_labels.append(f"{dim}={index}")
-
-        preview = view[preview_indices] if preview_indices else view
-        caption = f"Current view · shape {view.shape}"
-        if slice_labels:
-            caption += " · " + ", ".join(slice_labels)
-        _ = browser.image(
-            _preview(preview.to_numpy(), dims=tuple(str(dim) for dim in preview.dims)),
-            caption=caption,
-            alt=f"Preview of {data_name}"
-            + (" at " + ", ".join(slice_labels) if slice_labels else ""),
-            width="stretch",
-        )
-
-        data_entries.append((data_name, view))
-        data_signature.append(
-            (data_id, data_name, normalized_dims, tuple(roi_signature))
-        )
+                display_name = f"{dataset_name} · {data_name}"
+                data_entries.append((display_name, view))
+                data_signature.append(
+                    (
+                        f"{row_id}:{data_id}",
+                        display_name,
+                        normalized_dims,
+                        tuple(roi_signature),
+                    )
+                )
 
     _ = st.subheader("Models")
     models: list[tuple[int, str, v0_5.ModelDescr, bool]] = []
@@ -702,12 +866,13 @@ def main() -> None:
                 _ = column.image(
                     _preview(array),
                     caption=f"{output_name} · shape {array.shape} · {array.dtype}",
+                    alt=f"{output_name} prediction for {data_name}",
                     width="stretch",
                 )
             _ = column.download_button(
                 "Download outputs",
                 _result_archive(result),
-                file_name=f"{data_name}-{model_index + 1}-outputs.npz",
+                file_name=f"{Path(data_name).name}-{data_index + 1}-{model_index + 1}-outputs.npz",
                 mime="application/octet-stream",
                 key=f"bench_download_{data_index}_{model_index}",
                 width="stretch",
