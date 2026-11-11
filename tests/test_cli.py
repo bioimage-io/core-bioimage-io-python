@@ -76,8 +76,9 @@ def test_cli(
     assert ret.returncode == 0, ret.stdout
 
 
+@pytest.mark.parametrize("port", [None, 8765])
 def test_bench_cli_arguments(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], port: int | None
 ):
     from bioimageio.core import cli
 
@@ -110,12 +111,19 @@ def test_bench_cli_arguments(
     monkeypatch.setattr(subprocess, "run", run_streamlit)
     with pytest.raises(SystemExit) as exit_info:
         cli.BenchCmd(
+            port=port,
             server="https://example.com",
             data=["a.npy", "b.npy"],
             model=["model-a", "model-b"],
         ).cli_cmd()
 
     assert exit_info.value.code == 0
+    if port is None:
+        assert "--server.port" not in command
+    else:
+        port_arg_index = command.index("--server.port")
+        assert command[port_arg_index + 1] == str(port)
+        assert port_arg_index < command.index("--")
     state_arg_index = command.index("--state-path")
     assert command[state_arg_index - 1] == "--"
     assert command[state_arg_index + 2 :] == [
@@ -131,7 +139,9 @@ def test_bench_cli_arguments(
         "model-b",
     ]
     assert (
-        "bioimageio bench --server https://final.example.com "
+        "bioimageio bench "
+        + ("" if port is None else f"--port {port} ")
+        + "--server https://final.example.com "
         + "--data 'final data.npy' --model final-model"
         in capsys.readouterr().out
     )

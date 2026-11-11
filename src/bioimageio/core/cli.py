@@ -984,6 +984,9 @@ class EmptyCacheCmd(CmdBase):
 class BenchCmd(CmdBase):
     """Launch the BioImage.IO model prediction comparison app."""
 
+    port: int | None = None
+    """Port for the Streamlit app. If omitted, use Streamlit's configured default."""
+
     server: str | None = None
     """Remote inference server URL or Hugging Face Space name."""
 
@@ -1001,6 +1004,7 @@ class BenchCmd(CmdBase):
             )
 
         app = Path(__file__).with_name("bench.py")
+        streamlit_args = [] if self.port is None else ["--server.port", str(self.port)]
         result: subprocess.CompletedProcess[Any] | None = None
         interrupted = False
         with TemporaryDirectory(prefix="bioimageio-bench-") as temp_dir:
@@ -1021,6 +1025,7 @@ class BenchCmd(CmdBase):
                         "streamlit",
                         "run",
                         str(app),
+                        *streamlit_args,
                         "--",
                         *app_args,
                     ],
@@ -1039,6 +1044,8 @@ class BenchCmd(CmdBase):
                         logger.warning("Could not read final bench state: {}", exc)
 
                 command = ["bioimageio", "bench"]
+                if self.port is not None:
+                    command.extend(("--port", str(self.port)))
                 if state.server is not None:
                     command.extend(("--server", state.server))
                 for source in state.data:

@@ -75,12 +75,23 @@ def _with_trailing_empty_row(
     return [*populated, empty], next_id
 
 
-def _preview(array: NDArray[Any]) -> NDArray[Any]:
-    image = np.squeeze(array)
-    while image.ndim > 3:
-        image = image[0]
-    if image.ndim == 3 and image.shape[-1] not in (3, 4):
-        image = image.max(axis=0)
+def _preview(array: NDArray[Any], *, dims: Sequence[str] | None = None) -> NDArray[Any]:
+    if dims is not None and "y" in dims and "x" in dims:
+        display_dims = ["y", "x"]
+        if "channel" in dims:
+            display_dims.append("channel")
+        order = [dim for dim in dims if dim not in display_dims] + display_dims
+        image = np.transpose(array, tuple(dims.index(dim) for dim in order))
+        while image.ndim > len(display_dims):
+            image = image[0]
+        if "channel" in display_dims and image.shape[-1] not in (3, 4):
+            image = image.max(axis=-1)
+    else:
+        image = np.squeeze(array)
+        while image.ndim > 3:
+            image = image[0]
+        if image.ndim == 3 and image.shape[-1] not in (3, 4):
+            image = image.max(axis=0)
     if image.ndim < 2:
         image = np.atleast_2d(image)
 
@@ -363,6 +374,7 @@ def main() -> None:
             st.session_state[dims_key] = ", ".join(inferred_dims)
             for dim_index in range(array.ndim):
                 st.session_state.pop(f"bench_data_roi_{row_id}_{dim_index}", None)
+                st.session_state.pop(f"bench_data_slice_{row_id}_{dim_index}", None)
 
         _ = data_column.caption(f"Shape: {array.shape} · dtype: {array.dtype}")
         dims_text = data_column.text_input(
@@ -416,9 +428,41 @@ def main() -> None:
             roi_signature.append((str(dim), start, stop))
 
         view = tensor[roi_slices]
+        preview_indices: dict[AxisId, int] = {}
+        slice_labels: list[str] = []
+        for dim_index, (dim, start, stop) in enumerate(roi_signature):
+            if dim not in ("z", "time"):
+                continue
+
+            label = "Z slice" if dim == "z" else "Time frame"
+            if stop - start == 1:
+                index = start
+                _ = browser.caption(f"{label}: {index}")
+            else:
+                slice_key = f"bench_data_slice_{row_id}_{dim_index}"
+                previous = cast(int, st.session_state.get(slice_key, start))
+                st.session_state[slice_key] = min(max(previous, start), stop - 1)
+                index = browser.slider(
+                    label,
+                    min_value=start,
+                    max_value=stop - 1,
+                    step=1,
+                    key=slice_key,
+                    help="Preview a single slice within the selected ROI.",
+                )
+
+            preview_indices[AxisId(dim)] = index - start
+            slice_labels.append(f"{dim}={index}")
+
+        preview = view[preview_indices] if preview_indices else view
+        caption = f"Current view · shape {view.shape}"
+        if slice_labels:
+            caption += " · " + ", ".join(slice_labels)
         _ = browser.image(
-            _preview(view.to_numpy()),
-            caption=f"Current view · shape {view.shape}",
+            _preview(preview.to_numpy(), dims=tuple(str(dim) for dim in preview.dims)),
+            caption=caption,
+            alt=f"Preview of {data_name}"
+            + (" at " + ", ".join(slice_labels) if slice_labels else ""),
             width="stretch",
         )
 
