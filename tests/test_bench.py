@@ -368,3 +368,45 @@ def test_sync_roi_axes_and_slice_clamping(
     assert not app.exception
     assert app.slider(key=f"bench_data_roi_{target_key}_0").value == (1, 2)
     assert app.slider(key=f"bench_data_roi_{target_key}_1").value == (2, 2)
+
+
+def test_model_selection(monkeypatch: pytest.MonkeyPatch):
+    _ = pytest.importorskip("streamlit")
+    from streamlit.testing.v1 import AppTest
+
+    from bioimageio.spec.model import v0_5
+
+    model = v0_5.ModelDescr.model_construct(
+        name="Selected model",
+        format_version="0.5.10",
+        weights=v0_5.WeightsDescr.model_construct(),
+    )
+    monkeypatch.setattr(bench, "load_model", lambda *args, **kwargs: model)
+    monkeypatch.setattr(sys, "argv", ["bench"])
+    app = AppTest.from_string("from bioimageio.core.bench import main\nmain()")
+    _ = app.run(timeout=20)
+    assert not app.exception
+    assert app.session_state["bench_model_ids"] == []
+    assert app.get("form")[0].proto.form.enter_to_submit
+    _ = app.button(key="bench_add_model").click().run()
+    assert not app.exception
+    assert app.session_state["bench_model_ids"] == []
+
+    _ = app.text_input(key="bench_new_models").set_value(" first, , second, ")
+    _ = app.button(key="bench_add_model").click().run()
+    assert not app.exception
+    assert app.session_state["bench_model_ids"] == [0, 1]
+    assert app.text_input(key="bench_model_0").value == "first"
+    assert app.text_input(key="bench_model_1").value == "second"
+    assert app.text_input(key="bench_new_models").value == ""
+    assert sum(m.value == "**Selected model**" for m in app.markdown) == 2
+    _ = app.checkbox(key="bench_model_blockwise_0").check().run()
+    _ = app.text_input(key="bench_new_models").set_value("third")
+    _ = app.button(key="bench_add_model").click().run()
+    assert not app.exception
+    assert app.session_state["bench_model_ids"] == [0, 1, 2]
+    assert app.checkbox(key="bench_model_blockwise_0").value
+    _ = app.button(key="bench_delete_model_1").click().run()
+    assert not app.exception
+    assert app.session_state["bench_model_ids"] == [0, 2]
+    assert app.checkbox(key="bench_model_blockwise_0").value

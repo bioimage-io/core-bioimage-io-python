@@ -295,7 +295,7 @@ def main() -> None:
     if "bench_model_ids" not in st.session_state:
         model_count = cast(
             int,
-            st.session_state.get("bench_model_count", max(1, len(initial.model))),
+            st.session_state.get("bench_model_count", len(initial.model)),
         )
         st.session_state.bench_model_ids = list(range(model_count))
         st.session_state.bench_next_model_id = model_count
@@ -306,17 +306,6 @@ def main() -> None:
     data_ids = list(cast(list[int], st.session_state.bench_data_ids))
 
     model_ids = list(cast(list[int], st.session_state.bench_model_ids))
-    model_ids, next_model_id = _with_trailing_empty_row(
-        model_ids,
-        {
-            row_id
-            for row_id in model_ids
-            if st.session_state.get(f"bench_model_{row_id}")
-        },
-        cast(int, st.session_state.bench_next_model_id),
-    )
-    st.session_state.bench_model_ids = model_ids
-    st.session_state.bench_next_model_id = next_model_id
 
     server = st.text_input(
         "Remote inference server (optional)",
@@ -638,12 +627,52 @@ def main() -> None:
     _ = st.subheader("Models")
     models: list[tuple[int, str, v0_5.ModelDescr, bool]] = []
     selected_model_sources: list[str] = []
+
+    def add_models() -> None:
+        sources = [
+            source.strip()
+            for source in str(st.session_state.bench_new_models).split(",")
+            if source.strip()
+        ]
+        for source in sources:
+            row_id = cast(int, st.session_state.bench_next_model_id)
+            st.session_state[f"bench_model_{row_id}"] = source
+            st.session_state.bench_model_ids.append(row_id)
+            st.session_state.bench_next_model_id = row_id + 1
+        st.session_state.bench_new_models = ""
+
+    with st.form("bench_add_models", border=False, enter_to_submit=True):
+        input_column, add_column = st.columns([10, 1], vertical_alignment="bottom")
+        _ = input_column.text_input(
+            "Add models by ID, URL, or path",
+            key="bench_new_models",
+            placeholder="Enter one or more models, separated by commas",
+        )
+        with add_column:
+            _ = st.form_submit_button(
+                "Add model",
+                key="bench_add_model",
+                on_click=add_models,
+                width="stretch",
+            )
+    if model_ids:
+        for column, label in zip(
+            st.columns([4, 4, 2, 1]),
+            ("Model ID, URL, or path", "Model name", "Blockwise", ""),
+        ):
+            _ = column.markdown(f"**{label}**" if label else "")
+    else:
+        _ = st.caption("No models selected. Add a model to get started.")
+
     for row_id in model_ids:
-        model_column, delete_column = st.columns([10, 1], vertical_alignment="top")
-        name_slot = model_column.empty()
+        model_column, name_column, blockwise_column, delete_column = st.columns(
+            [4, 4, 2, 1], vertical_alignment="top"
+        )
+        name_slot = name_column.empty()
         source = model_column.text_input(
             "Model ID, URL, or path",
             key=f"bench_model_{row_id}",
+            label_visibility="collapsed",
             placeholder="BioImage.IO model ID, URL, or local bioimageio.yaml/package path",
         ).strip()
         _ = name_slot.markdown(f"**{source or 'New model'}**")
@@ -707,7 +736,7 @@ def main() -> None:
         ) -> None:
             st.session_state[manual_key] = not bool(st.session_state[blockwise_key])
 
-        apply_blockwise = model_column.checkbox(
+        apply_blockwise = blockwise_column.checkbox(
             "Apply blockwise",
             key=blockwise_key,
             on_change=record_manual_blockwise_choice,

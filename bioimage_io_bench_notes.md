@@ -16,11 +16,11 @@
 #### Dataset selection
 
 - [ ] data inputs support multiple data files (samples) in one dataset group
-- [ ] support glob pattern/directory for multi file dataset selection
-- [ ] New data -> add dataset (button to pop-up/not fully extended initially)
-- [ ] editable dataset name
+- [x] support glob pattern/directory for multi file dataset selection
+- [x] New data -> add dataset (button to pop-up/not fully extended initially)
+- [x] editable dataset name
 - [ ] support multi tensor inputs
-- [ ] for multiple samples from a single dataset add a button to allow roi selection settings from first image to be auto applied to all samples. "sync ROI selection"
+- [x] for multiple samples from a single dataset add a button to allow roi selection settings from first image to be auto applied to all samples. "sync ROI selection"
 
 #### Model selection
 
