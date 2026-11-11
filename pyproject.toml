@@ -39,6 +39,7 @@ Documentation = "https://bioimage-io.github.io/core-bioimage-io-python/bioimagei
 Source = "https://github.com/bioimage-io/core-bioimage-io-python"
 
 [project.optional-dependencies]
+bench = ["gradio_client", "streamlit>=1.67"]
 onnx = [
     "onnx",
     "onnxruntime",
