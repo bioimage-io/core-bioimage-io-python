@@ -7,6 +7,7 @@ Note: Some docstrings use a hair space ' '
 from __future__ import annotations
 
 import json
+import shlex
 import shutil
 import subprocess
 import sys
@@ -15,9 +16,11 @@ from argparse import RawTextHelpFormatter
 from collections.abc import Iterable, Mapping, Sequence
 from difflib import SequenceMatcher
 from functools import cached_property, partial
+from importlib.util import find_spec
 from io import StringIO
 from pathlib import Path
 from pprint import pformat, pprint
+from tempfile import TemporaryDirectory
 from typing import (
     Annotated,
     Any,
@@ -978,6 +981,83 @@ class EmptyCacheCmd(CmdBase):
         empty_cache()
 
 
+class BenchCmd(CmdBase):
+    """Launch the BioImage.IO model prediction comparison app."""
+
+    server: str | None = None
+    """Remote inference server URL or Hugging Face Space name."""
+
+    data: list[str] = Field(default_factory=list)
+    """Data path or URL. May be specified multiple times."""
+
+    model: list[str] = Field(default_factory=list)
+    """Model ID, URL, or path. May be specified multiple times."""
+
+    def cli_cmd(self) -> None:
+        if find_spec("streamlit") is None:
+            raise ImportError(
+                "Streamlit is not installed. Install the 'bench' extra with "
+                + "`pip install 'bioimageio.core[bench]'`."
+            )
+
+        app = Path(__file__).with_name("bench.py")
+        result: subprocess.CompletedProcess[Any] | None = None
+        interrupted = False
+        with TemporaryDirectory(prefix="bioimageio-bench-") as temp_dir:
+            state_path = Path(temp_dir) / "state.json"
+            app_args = ["--state-path", str(state_path)]
+            if self.server is not None:
+                app_args.extend(("--server", self.server))
+            for source in self.data:
+                app_args.extend(("--data", source))
+            for source in self.model:
+                app_args.extend(("--model", source))
+
+            try:
+                result = subprocess.run(
+                    [
+                        sys.executable,
+                        "-m",
+                        "streamlit",
+                        "run",
+                        str(app),
+                        "--",
+                        *app_args,
+                    ],
+                    check=False,
+                )
+            except KeyboardInterrupt:
+                interrupted = True
+            finally:
+                state = self
+                if state_path.is_file():
+                    try:
+                        state = BenchCmd.model_validate_json(
+                            state_path.read_text(encoding="utf-8")
+                        )
+                    except ValueError as exc:
+                        logger.warning("Could not read final bench state: {}", exc)
+
+                command = ["bioimageio", "bench"]
+                if state.server is not None:
+                    command.extend(("--server", state.server))
+                for source in state.data:
+                    command.extend(("--data", source))
+                for source in state.model:
+                    command.extend(("--model", source))
+
+                print(
+                    "\nRecreate this bench session with:\n  " + shlex.join(command),
+                    flush=True,
+                )
+
+        if interrupted:
+            return
+
+        assert result is not None
+        sys.exit(result.returncode)
+
+
 class ServerCmd(CmdBase):
     """Start a server to connect to with remote model adapters or remote prediction pipelines."""
 
@@ -1052,6 +1132,9 @@ class Bioimageio(
 
     empty_cache: CliSubCommand[EmptyCacheCmd] = Field(alias="empty-cache")
     """Empty the bioimageio cache directory."""
+
+    bench: CliSubCommand[BenchCmd]
+    """Launch the model prediction comparison app."""
 
     server: CliSubCommand[ServerCmd]
     """Start a server to connect to with remote model adapters or remote prediction pipelines."""
