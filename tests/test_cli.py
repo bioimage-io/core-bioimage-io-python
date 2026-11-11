@@ -1,5 +1,7 @@
+import json
 import subprocess
 from collections.abc import Sequence
+from importlib.machinery import ModuleSpec
 from pathlib import Path
 from typing import Any
 
@@ -27,6 +29,7 @@ def run_subprocess(
     "args",
     [
         ["--help"],
+        ["bench", "--help"],
         ["add-weights", "unet2d_nuclei_broad_model", "tmp_path"],
         [
             "package",
@@ -71,6 +74,77 @@ def test_cli(
     ]
     ret = run_subprocess(["bioimageio", *resolved_args])
     assert ret.returncode == 0, ret.stdout
+
+
+def test_bench_cli_arguments(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+):
+    from bioimageio.core import cli
+
+    def find_streamlit(name: str) -> ModuleSpec:
+        assert name == "streamlit"
+        return ModuleSpec(name, loader=None)
+
+    monkeypatch.setattr(cli, "find_spec", find_streamlit)
+    command: list[str] = []
+
+    def run_streamlit(
+        args: Sequence[str], *, check: bool
+    ) -> subprocess.CompletedProcess[str]:
+        command.extend(args)
+        assert not check
+        args_list = list(args)
+        state_path = Path(args_list[args_list.index("--state-path") + 1])
+        _ = state_path.write_text(
+            json.dumps(
+                {
+                    "server": "https://final.example.com",
+                    "data": ["final data.npy"],
+                    "model": ["final-model"],
+                }
+            ),
+            encoding="utf-8",
+        )
+        return subprocess.CompletedProcess(args, 0)
+
+    monkeypatch.setattr(subprocess, "run", run_streamlit)
+    with pytest.raises(SystemExit) as exit_info:
+        cli.BenchCmd(
+            server="https://example.com",
+            data=["a.npy", "b.npy"],
+            model=["model-a", "model-b"],
+        ).cli_cmd()
+
+    assert exit_info.value.code == 0
+    state_arg_index = command.index("--state-path")
+    assert command[state_arg_index - 1] == "--"
+    assert command[state_arg_index + 2 :] == [
+        "--server",
+        "https://example.com",
+        "--data",
+        "a.npy",
+        "--data",
+        "b.npy",
+        "--model",
+        "model-a",
+        "--model",
+        "model-b",
+    ]
+    assert (
+        "bioimageio bench --server https://final.example.com "
+        + "--data 'final data.npy' --model final-model"
+        in capsys.readouterr().out
+    )
+
+    def interrupt_streamlit(
+        args: Sequence[str], *, check: bool
+    ) -> subprocess.CompletedProcess[str]:
+        del args, check
+        raise KeyboardInterrupt
+
+    monkeypatch.setattr(subprocess, "run", interrupt_streamlit)
+    cli.BenchCmd(model=["fallback-model"]).cli_cmd()
+    assert "bioimageio bench --model fallback-model" in capsys.readouterr().out
 
 
 def test_empty_cache(tmp_path: Path, unet2d_nuclei_broad_model: str):

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
+from dataclasses import FrozenInstanceError
 from pathlib import Path
 from typing import Any, TypeGuard, TypeVar
 
@@ -17,6 +18,31 @@ from bioimageio.core.sample import Sample
 from bioimageio.core.stat_calculators import compute_measures
 from bioimageio.core.stat_measures import SampleMean, SampleQuantile, SampleStd
 from bioimageio.core.tensor import Tensor
+
+
+def test_v04_fixed_zmuv_is_immutable():
+    from bioimageio.core.proc_ops import (
+        FixedZeroMeanUnitVariance,
+        get_proc,
+    )
+    from bioimageio.spec.model import v0_4
+
+    descr = v0_4.ZeroMeanUnitVarianceDescr(
+        name="zero_mean_unit_variance",
+        kwargs=v0_4.ZeroMeanUnitVarianceKwargs(
+            mode="fixed",
+            axes="yx",
+            mean=[1.0, 2.0],
+            std=[3.0, 4.0],
+        ),
+    )
+    proc = get_proc(descr, MemberId("input"), tensor_axes="bcyx")
+    assert isinstance(proc, FixedZeroMeanUnitVariance)
+    assert proc.axis == AxisId("channel")
+    assert proc.mean == (1.0, 2.0)
+    assert hash(proc)
+    with pytest.raises(FrozenInstanceError):
+        proc.eps = 1e-5  # pyright: ignore[reportAttributeAccessIssue]
 
 
 @pytest.mark.parametrize("activation", ["sigmoid", "softmax"])
@@ -145,7 +171,7 @@ def test_zero_mean_unit_variance(tid: MemberId):
     m = SampleMean(member_id=tid)
     std = SampleStd(member_id=tid)
     op = ZeroMeanUnitVariance(tid, tid, m, std)
-    req = op.required_measures
+    req = op.get_required_measures()
     sample.stat = compute_measures(req, [sample])
     op(sample)
 
@@ -217,7 +243,7 @@ def test_zero_mean_unit_across_axes(tid: MemberId):
         SampleStd(member_id=tid, axes=(AxisId("x"), AxisId("y"))),
     )
     sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
-    sample.stat = compute_measures(op.required_measures, [sample])
+    sample.stat = compute_measures(op.get_required_measures(), [sample])
 
     expected = xr.concat(
         [
@@ -287,7 +313,7 @@ def test_clip_percentiles():
         descr,
         member_id=MemberId("data"),
     )
-    assert op.required_measures == {
+    assert op.get_required_measures() == {
         SampleQuantile(
             member_id=MemberId("data"),
             scope="sample",
@@ -310,7 +336,7 @@ def test_clip_percentiles():
     sample = Sample(
         members={MemberId("data"): Tensor.from_xarray(data)}, stat={}, id=None
     )
-    sample.stat = compute_measures(op.required_measures, [sample])
+    sample.stat = compute_measures(op.get_required_measures(), [sample])
 
     expected = xr.DataArray(
         np.array([[1, 1, 2, 3, 3], [6, 6, 7, 8, 8], [11, 11, 12, 13, 13]]),
@@ -337,7 +363,7 @@ def test_combination_of_op_steps_with_dims_specified(tid: MemberId):
             axes=(AxisId("x"), AxisId("y")),
         ),
     )
-    sample.stat = compute_measures(op.required_measures, [sample])
+    sample.stat = compute_measures(op.get_required_measures(), [sample])
 
     expected = xr.DataArray(
         np.array(
@@ -388,7 +414,7 @@ def test_scale_mean_variance(tid: MemberId, axes: tuple[AxisId, ...] | None):
         stat={},
         id=None,
     )
-    sample.stat = compute_measures(op.required_measures, [sample])
+    sample.stat = compute_measures(op.get_required_measures(), [sample])
     op(sample)
     xr.testing.assert_allclose(ref_data, sample.members[tid].data, rtol=1e-5, atol=1e-7)
 
@@ -420,7 +446,7 @@ def test_scale_mean_variance_per_channel(tid: MemberId, axes_str: str | None):
         stat={},
         id=None,
     )
-    sample.stat = compute_measures(op.required_measures, [sample])
+    sample.stat = compute_measures(op.get_required_measures(), [sample])
     op(sample)
 
     if axes is not None and AxisId("channel") not in axes:
@@ -443,7 +469,7 @@ def test_scale_range(tid: MemberId):
     np_data = np.arange(9).reshape(3, 3).astype("float32")
     data = xr.DataArray(np_data, dims=("x", "y"))
     sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
-    sample.stat = compute_measures(op.required_measures, [sample])
+    sample.stat = compute_measures(op.get_required_measures(), [sample])
 
     eps = 1.0e-6
     mi, ma = np_data.min(), np_data.max()
@@ -483,7 +509,7 @@ def test_scale_range_axes(tid: MemberId):
     np.testing.assert_allclose(p_low_expected.squeeze(), p_low_direct)
     np.testing.assert_allclose(p_up_expected.squeeze(), p_up_direct)
 
-    sample.stat = compute_measures(op.required_measures, [sample])
+    sample.stat = compute_measures(op.get_required_measures(), [sample])
 
     np.testing.assert_allclose(p_low_expected.squeeze(), sample.stat[lower_quantile])
     np.testing.assert_allclose(p_up_expected.squeeze(), sample.stat[upper_quantile])

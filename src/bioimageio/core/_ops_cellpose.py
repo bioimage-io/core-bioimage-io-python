@@ -1,23 +1,24 @@
-from collections.abc import Collection
 from dataclasses import dataclass
 from typing import Any, Literal, cast
 
 import numpy as np
 from numpy.typing import NDArray
 
-from bioimageio.spec.model.v0_5 import CellposeFlowDynamicsDescr
+from bioimageio.spec.model.v0_5 import (
+    CellposeFlowDynamicsDescr,
+    CellposeFlowDynamicsKwargs,
+)
 
 from ._op_base import SamplewiseOperator
 from .axis import AxisId, PerAxis
 from .common import MemberId
 from .sample import Sample
-from .stat_measures import Measure
 from .tensor import Tensor
 
 DEFAULT_LABELS_ID = MemberId("labels")
 
 
-@dataclass
+@dataclass(frozen=True)
 class CellposeFlowDynamics(SamplewiseOperator):
     """Cellpose flow-dynamics postprocessing operator.
 
@@ -49,8 +50,19 @@ class CellposeFlowDynamics(SamplewiseOperator):
         )
 
     @property
-    def required_measures(self) -> Collection[Measure]:
-        return set()
+    def output_member_ids(self) -> tuple[MemberId, ...]:
+        return (self.labels_id,)
+
+    def get_descr(self):
+        return CellposeFlowDynamicsDescr(
+            kwargs=CellposeFlowDynamicsKwargs(
+                cellprob_threshold=self.cellprob_threshold,
+                flow_threshold=self.flow_threshold,
+                do_3D=self.do_3D,
+                min_size=self.min_size,
+                output_dtype=self.output_dtype,
+            )
+        )
 
     def get_output_shape(self, input_shape: PerAxis[int]) -> PerAxis[int]:
         output_shape = dict(input_shape)

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Collection
 from dataclasses import dataclass
 from typing import (
     Any,
@@ -19,9 +18,6 @@ from ._op_base import SamplewiseOperator
 from .axis import AxisId
 from .common import MemberId
 from .sample import Sample
-from .stat_measures import (
-    Measure,
-)
 from .tensor import Tensor
 
 NdTuple = TypeVar("NdTuple", tuple[int, int], tuple[int, int, int])
@@ -32,7 +28,7 @@ NdBorder = TypeVar(
 )
 
 
-@dataclass
+@dataclass(frozen=True)
 class _StardistPostprocessingBase(SamplewiseOperator, ABC, Generic[NdTuple, NdBorder]):
     prob_dist_input_id: MemberId
     instance_labels_output_id: MemberId
@@ -53,8 +49,8 @@ class _StardistPostprocessingBase(SamplewiseOperator, ABC, Generic[NdTuple, NdBo
     """Number of radial lines (rays) cast from the center of an object to its boundary."""
 
     @property
-    def required_measures(self) -> Collection[Measure]:
-        return set()
+    def output_member_ids(self) -> tuple[MemberId, ...]:
+        return (self.instance_labels_output_id,)
 
     def __call__(self, sample: Sample) -> None:
         prob_dist = sample.members[self.prob_dist_input_id]
@@ -118,12 +114,23 @@ class _StardistPostprocessingBase(SamplewiseOperator, ABC, Generic[NdTuple, NdBo
         raise NotImplementedError
 
 
-@dataclass
+@dataclass(frozen=True)
 class StardistPostprocessing2D(
     _StardistPostprocessingBase[
         tuple[int, int], tuple[tuple[int, int], tuple[int, int]]
     ]
 ):
+    def get_descr(self):
+        return v0_5.StardistPostprocessingDescr(
+            kwargs=v0_5.StardistPostprocessingKwargs2D(
+                grid=self.grid,
+                prob_threshold=self.prob_threshold,
+                nms_threshold=self.nms_threshold,
+                b=self.b,
+                n_rays=self.n_rays,
+            )
+        )
+
     def _impl(
         self, prob: NDArray[Any], dist: NDArray[Any], spatial_shape: tuple[int, int]
     ) -> NDArray[np.int32]:
@@ -164,7 +171,7 @@ class StardistPostprocessing2D(
         )
 
 
-@dataclass
+@dataclass(frozen=True)
 class StardistPostprocessing3D(
     _StardistPostprocessingBase[
         tuple[int, int, int], tuple[tuple[int, int], tuple[int, int], tuple[int, int]]
@@ -175,6 +182,19 @@ class StardistPostprocessing3D(
 
     overlap_label: int | None = None
     """Optional label to apply to any area of overlapping predicted objects."""
+
+    def get_descr(self):
+        return v0_5.StardistPostprocessingDescr(
+            kwargs=v0_5.StardistPostprocessingKwargs3D(
+                grid=self.grid,
+                prob_threshold=self.prob_threshold,
+                nms_threshold=self.nms_threshold,
+                b=self.b,
+                n_rays=self.n_rays,
+                anisotropy=self.anisotropy,
+                overlap_label=self.overlap_label,
+            )
+        )
 
     def _impl(
         self,

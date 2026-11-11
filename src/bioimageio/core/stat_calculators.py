@@ -35,6 +35,7 @@ from .stat_measures import (
     MeasureValue,
     SampleMean,
     SampleMeasure,
+    SampleMeasureBase,
     SampleQuantile,
     SampleStd,
     SampleVar,
@@ -466,6 +467,108 @@ DatasetMeasureCalculator = (
 )
 
 
+def _compute_measures_with_preprocessing(
+    measures: Iterable[Measure],
+    dataset: Sequence[Sample],
+    initial_dataset_measures: Mapping[DatasetMeasure, MeasureValue] | None = None,
+    *,
+    dataset_fits_in_memory: bool = False,
+) -> dict[Measure, MeasureValue]:
+    """Compute measures on the outputs of their preceding processing steps."""
+    requested = tuple(measures)
+    if not dataset:
+        if any(isinstance(m, SampleMeasureBase) for m in requested):
+            raise ValueError("empty dataset")
+        return {}
+
+    dataset_values = dict(initial_dataset_measures or {})
+    sample_values: list[dict[SampleMeasure, MeasureValue]] = [{} for _ in dataset]
+    processed_samples: dict[tuple[int, tuple[object, ...]], Sample] = {}
+    active: set[tuple[int | None, Measure]] = set()
+
+    def apply_preceding_ops(measure: Measure, sample_index: int) -> Sample:
+        cache_key = (sample_index, measure.preceding_ops)
+        cached = processed_samples.get(cache_key)
+        if cached is not None:
+            return cached
+
+        sample = dataset[sample_index].copy(deep=False)
+        sample.stat = dict(sample.stat)
+        for i, proc in enumerate(measure.preceding_ops):
+            proc = proc.bind(measure.preceding_ops[:i])
+            for required in proc.get_required_measures(proc.preceding_ops):
+                if required in sample.stat:
+                    continue
+                if isinstance(required, DatasetMeasureBase):
+                    sample.stat[required] = get_dataset_value(required)
+                else:
+                    sample.stat[required] = get_sample_value(required, sample_index)
+
+            proc(sample)
+
+        processed_samples[cache_key] = sample
+        return sample
+
+    def get_dataset_value(measure: DatasetMeasure) -> MeasureValue:
+        cached = dataset_values.get(measure)
+        if cached is not None:
+            return cached
+
+        active_key = (None, measure)
+        if active_key in active:
+            raise ValueError(f"Cyclic processing dependency for {measure}")
+
+        active.add(active_key)
+        try:
+            bare = measure.model_copy(update={"preceding_ops": ()})
+            transformed = [apply_preceding_ops(measure, i) for i in range(len(dataset))]
+            sample_calculators, dataset_calculators = get_measure_calculators(
+                [bare], datast_fits_in_memory=dataset_fits_in_memory
+            )
+            assert not sample_calculators
+            for sample in transformed:
+                for calculator in dataset_calculators:
+                    calculator.update(sample)
+
+            values: dict[DatasetMeasure, MeasureValue] = {}
+            for calculator in dataset_calculators:
+                values.update(calculator.finalize().items())
+
+            value = values[bare]
+            dataset_values[measure] = value
+            return value
+        finally:
+            active.remove(active_key)
+
+    def get_sample_value(measure: SampleMeasure, sample_index: int) -> MeasureValue:
+        cached = sample_values[sample_index].get(measure)
+        if cached is not None:
+            return cached
+
+        active_key = (sample_index, measure)
+        if active_key in active:
+            raise ValueError(f"Cyclic processing dependency for {measure}")
+
+        active.add(active_key)
+        try:
+            bare = measure.model_copy(update={"preceding_ops": ()})
+            transformed = apply_preceding_ops(measure, sample_index)
+            value = compute_sample_measures([bare], transformed)[bare]
+            sample_values[sample_index][measure] = value
+            return value
+        finally:
+            active.remove(active_key)
+
+    ret: dict[Measure, MeasureValue] = {}
+    for measure in requested:
+        if isinstance(measure, DatasetMeasureBase):
+            ret[measure] = get_dataset_value(measure)
+        else:
+            ret[measure] = get_sample_value(measure, len(dataset) - 1)
+
+    return ret
+
+
 class StatsCalculator:
     """Builds lazy dataset and sample statistics without evaluating tensor data."""
 
@@ -477,10 +580,18 @@ class StatsCalculator:
         dataset_fits_in_memory: bool = False,
     ):
         super().__init__()
+        self._measures = tuple(measures)
+        self._uses_preprocessing = any(m.preceding_ops for m in self._measures)
+        self._dataset_fits_in_memory = dataset_fits_in_memory
+        self._samples: list[Sample] = []
         self.sample_count = 0
-        self.sample_calculators, self.dataset_calculators = get_measure_calculators(
-            measures, datast_fits_in_memory=dataset_fits_in_memory
-        )
+        if self._uses_preprocessing:
+            self.sample_calculators = []
+            self.dataset_calculators = []
+        else:
+            self.sample_calculators, self.dataset_calculators = get_measure_calculators(
+                self._measures, datast_fits_in_memory=dataset_fits_in_memory
+            )
         if not initial_dataset_measures:
             self._current_dataset_measures: (
                 dict[DatasetMeasure, MeasureValue] | None
@@ -488,7 +599,7 @@ class StatsCalculator:
         else:
             missing_dataset_meas = {
                 m
-                for m in measures
+                for m in self._measures
                 if isinstance(m, DatasetMeasureBase)
                 and m not in initial_dataset_measures
             }
@@ -513,10 +624,23 @@ class StatsCalculator:
     def finalize(self) -> dict[DatasetMeasure, MeasureValue]:
         """Return lazy aggregated statistics for the samples registered so far."""
         if self._current_dataset_measures is None:
-            self._current_dataset_measures = {}
-            for calc in self.dataset_calculators:
-                values = calc.finalize()
-                self._current_dataset_measures.update(values.items())
+            if self._uses_preprocessing:
+                requested = [
+                    m for m in self._measures if isinstance(m, DatasetMeasureBase)
+                ]
+                self._current_dataset_measures = cast(
+                    dict[DatasetMeasure, MeasureValue],
+                    _compute_measures_with_preprocessing(
+                        requested,
+                        self._samples,
+                        dataset_fits_in_memory=self._dataset_fits_in_memory,
+                    ),
+                )
+            else:
+                self._current_dataset_measures = {}
+                for calc in self.dataset_calculators:
+                    values = calc.finalize()
+                    self._current_dataset_measures.update(values.items())
 
         return self._current_dataset_measures
 
@@ -536,6 +660,19 @@ class StatsCalculator:
         return {**self._compute(sample), **self.finalize()}
 
     def _compute(self, sample: Sample) -> dict[SampleMeasure, MeasureValue]:
+        if self._uses_preprocessing:
+            requested = [m for m in self._measures if isinstance(m, SampleMeasureBase)]
+            dataset = self._samples or [sample.copy(deep=False)]
+            return cast(
+                dict[SampleMeasure, MeasureValue],
+                _compute_measures_with_preprocessing(
+                    requested,
+                    dataset,
+                    initial_dataset_measures=self.finalize(),
+                    dataset_fits_in_memory=self._dataset_fits_in_memory,
+                ),
+            )
+
         ret: dict[SampleMeasure, MeasureValue] = {}
         for calc in self.sample_calculators:
             values = calc.compute(sample)
@@ -549,8 +686,11 @@ class StatsCalculator:
         last_sample = None
         for el in samples:
             last_sample = el
-            for calc in self.dataset_calculators:
-                calc.update(el)
+            if self._uses_preprocessing:
+                self._samples.append(el.copy(deep=False))
+            else:
+                for calc in self.dataset_calculators:
+                    calc.update(el)
 
         self._current_dataset_measures = None
         return last_sample
@@ -640,6 +780,13 @@ def compute_dataset_measures(
     measures: Iterable[DatasetMeasure], dataset: Iterable[Sample]
 ) -> dict[DatasetMeasure, MeasureValue]:
     """Build lazy dataset measures, consuming samples without evaluating their data."""
+    measures = tuple(measures)
+    if any(m.preceding_ops for m in measures):
+        return cast(
+            dict[DatasetMeasure, MeasureValue],
+            _compute_measures_with_preprocessing(measures, list(dataset)),
+        )
+
     sample_calculators, calculators = get_measure_calculators(measures)
     assert not sample_calculators
 
@@ -659,6 +806,13 @@ def compute_sample_measures(
     measures: Iterable[SampleMeasure], sample: Sample
 ) -> dict[SampleMeasure, MeasureValue]:
     """Build lazy sample measures; convert the returned tensors to NumPy to evaluate."""
+    measures = tuple(measures)
+    if any(m.preceding_ops for m in measures):
+        return cast(
+            dict[SampleMeasure, MeasureValue],
+            _compute_measures_with_preprocessing(measures, [sample]),
+        )
+
     calculators, dataset_calculators = get_measure_calculators(measures)
     assert not dataset_calculators
     ret: dict[SampleMeasure, MeasureValue] = {}
@@ -676,6 +830,10 @@ def compute_measures(
 
     The dataset iterable is consumed without evaluating tensor data.
     """
+    measures = tuple(measures)
+    if any(m.preceding_ops for m in measures):
+        return _compute_measures_with_preprocessing(measures, list(dataset))
+
     sample_calculators, dataset_calculators = get_measure_calculators(measures)
     ret: dict[Measure, MeasureValue] = {}
     sample = None

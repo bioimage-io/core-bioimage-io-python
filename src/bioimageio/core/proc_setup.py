@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from itertools import chain
 from typing import (
     NamedTuple,
 )
@@ -91,7 +90,7 @@ def setup_pre_and_postprocessing(
 
     prep = _get_described_procs(model.inputs)
     post = _get_described_procs(model.outputs)
-    required = {m for p in chain(prep, post) for m in p.required_measures}
+    required = _get_required_measures((*prep, *post))
     missing_stats = {
         m
         for m in required
@@ -156,8 +155,8 @@ def get_requried_measures(model: AnyModelDescr) -> RequiredMeasures:
     pre = _get_described_procs(model.inputs)
     post = _get_described_procs(model.outputs)
     return RequiredMeasures(
-        {m for proc in pre for m in proc.required_measures},
-        {m for proc in post for m in proc.required_measures},
+        _get_required_measures(pre),
+        _get_required_measures(post),
     )
 
 
@@ -182,36 +181,47 @@ def _get_described_procs(
 ) -> list[Processing]:
     tensor_descrs = list(tensor_descrs)
     procs: list[Processing] = []
+    preceding_ops: list[Processing] = []
+
+    def append(proc: Processing) -> None:
+        procs.append(proc.bind(preceding_ops))
+        preceding_ops.append(proc)
+
     for t_descr in tensor_descrs:
+        first_proc = len(procs)
         if isinstance(t_descr, (v0_4.InputTensorDescr, v0_4.OutputTensorDescr)):
             member_id = get_member_id(t_descr)
-            procs.append(
+            append(
                 EnsureDtype(input=member_id, output=member_id, dtype=t_descr.data_type)
             )
 
         if isinstance(t_descr, (v0_4.InputTensorDescr, v0_5.InputTensorDescr)):
             for proc_d in t_descr.preprocessing:
-                procs.append(get_proc(proc_d, t_descr))
+                append(get_proc(proc_d, t_descr))
         elif isinstance(t_descr, (v0_4.OutputTensorDescr, v0_5.OutputTensorDescr)):
             for proc_d in t_descr.postprocessing:
-                procs.append(get_proc(proc_d, t_descr))
+                append(get_proc(proc_d, t_descr))
         else:
             assert_never(t_descr)
 
-        if isinstance(
-            t_descr,
-            (v0_4.InputTensorDescr, (v0_4.InputTensorDescr, v0_4.OutputTensorDescr)),
-        ):
-            if len(procs) == 1:
+        if isinstance(t_descr, (v0_4.InputTensorDescr, v0_4.OutputTensorDescr)):
+            if len(procs) == first_proc + 1:
                 # remove initial ensure_dtype if there are no other proccessing steps
-                assert isinstance(procs[0], EnsureDtype)
-                procs = []
+                assert isinstance(procs[-1], EnsureDtype)
+                _ = procs.pop()
+                _ = preceding_ops.pop()
 
             # ensure 0.4 models get float32 input
             # which has been the implicit assumption for 0.4
             member_id = get_member_id(t_descr)
-            procs.append(
-                EnsureDtype(input=member_id, output=member_id, dtype="float32")
-            )
+            append(EnsureDtype(input=member_id, output=member_id, dtype="float32"))
 
     return procs
+
+
+def _get_required_measures(procs: Iterable[Processing]) -> set[Measure]:
+    return {
+        measure
+        for proc in procs
+        for measure in proc.get_required_measures(proc.preceding_ops)
+    }

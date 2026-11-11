@@ -4,11 +4,13 @@ from typing import Any
 import numpy as np
 import pytest
 import xarray as xr
+from numpy.typing import NDArray
 
 from bioimageio.core._utils.type_hints import cast_and_assert
 from bioimageio.core.common import MemberId
 from bioimageio.core.proc_ops import (
     AddKnownDatasetStats,
+    Clip,
     UpdateStats,
     ZeroMeanUnitVariance,
 )
@@ -21,11 +23,93 @@ from bioimageio.core.stat_measures import (
     SampleStd,
 )
 from bioimageio.core.tensor import Tensor
+from bioimageio.spec.model import v0_5
 
 
 def _iter_raises_if_consumed():
     raise AssertionError("dataset_for_initial_statistics should not be consumed")
     yield  # pragma: no cover
+
+
+def test_statistics_include_preceding_processing():
+    tid = MemberId("input")
+    axes = [v0_5.AxisId("batch"), v0_5.AxisId("x")]
+    input_descr = v0_5.InputTensorDescr.model_construct(
+        id=tid,
+        preprocessing=[
+            v0_5.ClipDescr(kwargs=v0_5.ClipKwargs(min=-1, max=1)),
+            v0_5.ZeroMeanUnitVarianceDescr(
+                kwargs=v0_5.ZeroMeanUnitVarianceKwargs(axes=axes)
+            ),
+        ],
+    )
+    model = SimpleNamespace(inputs=[input_descr], outputs=[])
+    data = np.asarray([[-10.0, 0.0, 10.0]], dtype=np.float32)
+
+    def sample() -> Sample:
+        return Sample(
+            members={tid: Tensor(data, dims=("batch", "x"))}, stat={}, id=None
+        )
+
+    pre, _ = setup_pre_and_postprocessing(
+        model=model,  # pyright: ignore[reportArgumentType]
+        dataset_for_initial_statistics=[sample()],
+    )
+    actual = sample()
+    for proc in pre:
+        proc(actual)
+
+    scale = (2.0 / 3.0) ** 0.5 + 1e-6
+    expected: NDArray[np.float32] = np.asarray(
+        [[-1.0 / scale, 0.0, 1.0 / scale]], dtype=np.float32
+    )
+    np.testing.assert_allclose(actual.members[tid].to_numpy(), expected)
+
+    normalization = pre[-1]
+    assert isinstance(normalization, ZeroMeanUnitVariance)
+    required = normalization.get_required_measures(normalization.preceding_ops)
+    assert all(len(measure.preceding_ops) == 1 for measure in required)
+    assert all(isinstance(measure.preceding_ops[0], Clip) for measure in required)
+
+
+def test_preceding_processing_uses_its_own_measures():
+    tid = MemberId("input")
+    input_descr = v0_5.InputTensorDescr.model_construct(
+        id=tid,
+        preprocessing=[
+            v0_5.ClipDescr(
+                kwargs=v0_5.ClipKwargs(
+                    min_percentile=25,
+                    max_percentile=75,
+                    axes=[v0_5.AxisId("x")],
+                )
+            ),
+            v0_5.ZeroMeanUnitVarianceDescr(
+                kwargs=v0_5.ZeroMeanUnitVarianceKwargs(
+                    axes=[v0_5.AxisId("batch"), v0_5.AxisId("x")]
+                )
+            ),
+        ],
+    )
+    model = SimpleNamespace(inputs=[input_descr], outputs=[])
+    data = np.asarray([[0.0, 1.0, 2.0, 100.0]], dtype=np.float32)
+
+    def sample() -> Sample:
+        return Sample(
+            members={tid: Tensor(data, dims=("batch", "x"))}, stat={}, id=None
+        )
+
+    pre, _ = setup_pre_and_postprocessing(
+        model=model,  # pyright: ignore[reportArgumentType]
+        dataset_for_initial_statistics=[sample()],
+    )
+    actual = sample()
+    for proc in pre:
+        proc(actual)
+
+    normalized = actual.members[tid].to_numpy()
+    np.testing.assert_allclose(normalized.mean(), 0.0, atol=1e-6)
+    np.testing.assert_allclose(normalized.std(), 1.0, atol=1e-5)
 
 
 def test_missing_dataset_stats_raise_by_default(

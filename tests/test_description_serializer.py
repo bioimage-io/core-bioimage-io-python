@@ -1,4 +1,6 @@
+from io import BytesIO
 from typing import Any
+from zipfile import ZipFile
 
 
 def test_description_serializer_roundtrip(unet2d_nuclei_broad_model: str):
@@ -40,3 +42,27 @@ def test_description_serializer_roundtrip(unet2d_nuclei_broad_model: str):
             assert str(f1) == str(f2), (f1, f2)
 
     compare(rd1, rd2)
+
+
+def test_description_serializer_includes_v0_4_relative_architecture(
+    unet2d_nuclei_broad_model_old: str,
+):
+    from bioimageio.core._description_serializer import DescriptionSerializer
+    from bioimageio.spec import load_model_description
+    from bioimageio.spec.common import FileDescr
+    from bioimageio.spec.model import v0_4
+
+    model = load_model_description(
+        unet2d_nuclei_broad_model_old, perform_io_checks=False
+    )
+    assert isinstance(model, v0_4.ModelDescr)
+    weights = model.weights.pytorch_state_dict
+    assert weights is not None
+    assert isinstance(weights.architecture, v0_4.CallableFromFile)
+    architecture = weights.architecture.source_file
+    source = FileDescr(
+        source=architecture, sha256=weights.architecture_sha256
+    ).get_reader()
+
+    with ZipFile(BytesIO(DescriptionSerializer.serialize(model))) as package:
+        assert package.read(str(architecture)) == source.read()

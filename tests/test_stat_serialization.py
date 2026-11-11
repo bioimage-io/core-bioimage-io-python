@@ -13,7 +13,12 @@ from numpy.typing import NDArray
 from bioimageio.core.axis import AxisId
 from bioimageio.core.common import MemberId
 from bioimageio.core.io import load_stat, save_stat, serialize_stat
-from bioimageio.core.stat_measures import DatasetMean, SampleQuantile, Stat
+from bioimageio.core.proc_ops import Clip
+from bioimageio.core.stat_measures import (
+    DatasetMean,
+    SampleQuantile,
+    Stat,
+)
 from bioimageio.core.tensor import Array, Tensor
 
 ArrayBackend = Literal["numpy", "dask"]
@@ -30,7 +35,11 @@ def _array(backend: ArrayBackend, data: NDArray[Any]) -> Array:
 
 def _make_stat_with_tensor_value(backend: ArrayBackend) -> Stat:
     member_id = MemberId("test_tensor")
-    mean_measure = DatasetMean(member_id=member_id, axes=(AxisId("batch"),))
+    mean_measure = DatasetMean(
+        member_id=member_id,
+        axes=(AxisId("batch"),),
+        preceding_ops=(Clip(input=member_id, output=member_id, min=0, max=1),),
+    )
     quantile_measure = SampleQuantile(member_id=member_id, q=0.5)
 
     tensor_value = Tensor(

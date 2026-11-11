@@ -9,13 +9,15 @@ from bioimageio.spec import (
     load_description,
     save_bioimageio_package_to_stream,
 )
-from bioimageio.spec.common import Sha256
+from bioimageio.spec.common import FileDescr, RelativeFilePath, Sha256
+from bioimageio.spec.model import v0_4
 
 
 class DescriptionSerializer:
     """Description serializer intended for client/server communication, NOT for sharing resource descriptions.
 
-    This serializer only includes local files to keep the serialized package small.
+    This serializer only includes local files and required v0.4 Python architectures
+    to keep the serialized package small.
     """
 
     STRING_ENCODING = "ascii"
@@ -23,6 +25,23 @@ class DescriptionSerializer:
     @staticmethod
     def serialize(rd: ResourceDescr) -> bytes:
         stream = save_bioimageio_package_to_stream(rd, local_files_only=True)
+        if isinstance(rd, v0_4.ModelDescr):
+            weights = rd.weights.pytorch_state_dict
+            # v0.4 wraps this path in a string model, so spec packaging misses it.
+            if (
+                weights is not None
+                and isinstance(weights.architecture, v0_4.CallableFromFile)
+                and isinstance(weights.architecture.source_file, RelativeFilePath)
+            ):
+                architecture = weights.architecture.source_file
+                architecture_name = str(architecture)
+                with ZipFile(stream, mode="a") as package:
+                    if architecture_name not in package.namelist():
+                        source = FileDescr(
+                            source=architecture, sha256=weights.architecture_sha256
+                        )
+                        package.writestr(architecture_name, source.get_reader().read())
+
         _ = stream.seek(0)
         return stream.read()
 

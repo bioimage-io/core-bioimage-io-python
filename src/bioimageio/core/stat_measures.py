@@ -9,6 +9,7 @@ from typing import (
     Protocol,
     TypeAlias,
     TypeVar,
+    cast,
 )
 
 import numpy as np
@@ -19,6 +20,7 @@ from pydantic import (
     PlainSerializer,
 )
 
+from ._op_base import Operator
 from .axis import AxisId
 from .common import MemberId, PerMember, QuantileMethod
 from .tensor import Tensor
@@ -47,6 +49,32 @@ MeasureValue: TypeAlias = (
 )
 
 
+def _validate_preceding_ops(value: Any) -> tuple[Operator[Any], ...]:
+    if not isinstance(value, (list, tuple)):
+        raise TypeError("preceding_ops must be a sequence")
+
+    values = cast(list[Any] | tuple[Any, ...], value)
+    if all(isinstance(op, Operator) for op in values):
+        return cast(tuple[Operator[Any], ...], tuple(values))
+
+    from .proc_ops import deserialize_processing
+
+    return tuple(deserialize_processing(cast(Mapping[str, Any], op)) for op in values)
+
+
+def _serialize_preceding_ops(ops: tuple[Operator[Any], ...]) -> list[dict[str, Any]]:
+    from .proc_ops import serialize_processing
+
+    return [serialize_processing(op) for op in ops]
+
+
+PrecedingOps: TypeAlias = Annotated[
+    tuple[Operator[Any], ...],
+    BeforeValidator(_validate_preceding_ops),
+    PlainSerializer(_serialize_preceding_ops),
+]
+
+
 # using Sample Protocol really only to avoid circular imports
 class SampleLike(Protocol):
     @property
@@ -55,6 +83,7 @@ class SampleLike(Protocol):
 
 class MeasureBase(BaseModel, frozen=True):
     member_id: MemberId
+    preceding_ops: PrecedingOps = ()
 
 
 class SampleMeasureBase(MeasureBase, ABC, frozen=True):
