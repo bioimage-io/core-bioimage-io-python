@@ -89,6 +89,20 @@ def test_slice_controls(
 
     np.testing.assert_array_equal(previews[-1], array[(5,) * len(slice_dims)])
 
+    # Full-screen selection preserves the ROI and preview widget state.
+    _ = app.button(key=f"bench_selection_expand_{sample_key}").click().run()
+    assert not app.exception
+    assert app.toggle(key=f"bench_selection_fullscreen_{sample_key}").value is True
+    assert app.slider(key=f"bench_data_slice_{sample_key}_0").value == 5
+    np.testing.assert_array_equal(previews[-1], array[(5,) * len(slice_dims)])
+
+    _ = app.button(key=f"bench_selection_expand_{sample_key}").click().run()
+    assert not app.exception
+    assert app.toggle(key=f"bench_selection_fullscreen_{sample_key}").value is False
+    assert app.slider(key=f"bench_data_slice_{sample_key}_0").value == 5
+    _ = app.toggle(key=f"bench_selection_fullscreen_{sample_key}").set_value(True).run()
+    assert not app.exception
+
     # Moving the ROI past the current slice clamps the view to its first slice.
     _ = app.slider(key=f"bench_data_roi_{sample_key}_0").set_range(7, 9).run()
     assert not app.exception

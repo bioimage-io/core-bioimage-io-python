@@ -551,6 +551,42 @@ def main() -> None:
                 roi_slices: dict[AxisId, slice] = {}
                 roi_signature: list[tuple[str, int, int]] = []
                 browser = data_column.expander("Browse and select ROI", expanded=True)
+                selection_key = f"bench_selection_{sample_key}"
+                selection = browser.container(key=selection_key)
+                fullscreen = selection.toggle(
+                    "Full-screen selection",
+                    key=f"bench_selection_fullscreen_{sample_key}",
+                    help="Enlarge the image with ROI and viewer controls beside it.",
+                )
+                if fullscreen:
+                    # Use an explicit opaque surface: Streamlit does not expose a
+                    # --st-background-color CSS variable on native containers.
+                    background = st.get_option("theme.backgroundColor") or (
+                        "#0e1117" if st.context.theme.type == "dark" else "#ffffff"
+                    )
+                    # Full-screen the whole selection surface, including its controls.
+                    _ = st.html(
+                        f"""<style>
+                        .st-key-{selection_key} {{
+                            position: fixed;
+                            inset: 0;
+                            z-index: 999990;
+                            background-color: {background};
+                            padding: 1.5rem;
+                            overflow: auto;
+                        }}
+                        </style>"""
+                    )
+                    image_column, controls = selection.columns([3, 1])
+                else:
+                    controls = selection.container()
+                    image_column = selection.container()
+                roi_controls = controls.container(border=True)
+                _ = roi_controls.markdown("**ROI selection · prediction input**")
+                _ = roi_controls.caption(
+                    "Range sliders crop the data used for prediction. "
+                    "Both endpoints are included."
+                )
                 for dim_index, (dim, size) in enumerate(zip(tensor.dims, tensor.shape)):
                     roi_key = f"bench_data_roi_{sample_key}_{dim_index}"
                     if pending_roi is not None and str(dim) in pending_roi and size > 1:
@@ -560,17 +596,17 @@ def main() -> None:
                         st.session_state[roi_key] = (start, last)
                     if size == 1:
                         start, stop = 0, 1
-                        _ = browser.caption(f"{dim}: singleton")
+                        _ = roi_controls.caption(f"{dim}: singleton")
                     else:
                         st.session_state.setdefault(roi_key, (0, size - 1))
                         start, last = cast(
                             tuple[int, int],
-                            browser.slider(
-                                f"{dim} range",
+                            roi_controls.slider(
+                                f"{dim} ROI range",
                                 min_value=0,
                                 max_value=size - 1,
                                 key=roi_key,
-                                help="Both displayed indices are included in the view.",
+                                help="Crop the prediction input along this axis, including both endpoints.",
                             ),
                         )
                         stop = last + 1
@@ -578,7 +614,7 @@ def main() -> None:
                     roi_slices[dim] = slice(start, stop)
                     roi_signature.append((str(dim), start, stop))
 
-                if len(samples) > 1 and browser.button(
+                if len(samples) > 1 and roi_controls.button(
                     "Sync ROI selection",
                     key=f"bench_sync_roi_{sample_key}",
                     icon=":material/sync:",
@@ -595,6 +631,12 @@ def main() -> None:
                     st.rerun()
 
                 view = tensor[roi_slices]
+                viewer_controls = controls.container(border=True)
+                _ = viewer_controls.markdown("**Viewer · preview only**")
+                _ = viewer_controls.caption(
+                    "Slice controls change the displayed plane only; "
+                    "the selected ROI is used for prediction."
+                )
                 preview_indices: dict[AxisId, int] = {}
                 slice_labels: list[str] = []
                 for dim_index, (dim, start, stop) in enumerate(roi_signature):
@@ -604,30 +646,57 @@ def main() -> None:
                     label = "Z slice" if dim == "z" else "Time frame"
                     if stop - start == 1:
                         index = start
-                        _ = browser.caption(f"{label}: {index}")
+                        _ = viewer_controls.caption(f"{label}: {index}")
                     else:
                         slice_key = f"bench_data_slice_{sample_key}_{dim_index}"
                         previous = cast(int, st.session_state.get(slice_key, start))
                         st.session_state[slice_key] = min(
                             max(previous, start), stop - 1
                         )
-                        index = browser.slider(
+                        index = viewer_controls.slider(
                             label,
                             min_value=start,
                             max_value=stop - 1,
                             step=1,
                             key=slice_key,
-                            help="Preview a single slice within the selected ROI.",
+                            help="Preview a single slice within the ROI without changing the prediction input.",
                         )
 
                     preview_indices[AxisId(dim)] = index - start
                     slice_labels.append(f"{dim}={index}")
 
                 preview = view[preview_indices] if preview_indices else view
-                caption = f"Current view · shape {view.shape}"
+                caption = f"Selected ROI · shape {view.shape}"
                 if slice_labels:
                     caption += " · " + ", ".join(slice_labels)
-                _ = browser.image(
+                preview_key = f"bench_selection_preview_{sample_key}"
+                fullscreen_button_key = f"bench_selection_expand_{sample_key}"
+                image_surface = image_column.container(key=preview_key)
+                # Replace the image-only fullscreen action with the selection action.
+                # Scope the toolbar override to this dataset preview.
+                _ = st.html(
+                    f"""<style>
+                    .st-key-{preview_key} {{ position: relative; }}
+                    .st-key-{preview_key} button[aria-label^="Fullscreen"] {{
+                        display: none;
+                    }}
+                    .st-key-{fullscreen_button_key} {{
+                        position: absolute;
+                        top: 0.5rem;
+                        right: 0.5rem;
+                        z-index: 1;
+                        opacity: 0;
+                    }}
+                    .st-key-{preview_key}:hover .st-key-{fullscreen_button_key},
+                    .st-key-{preview_key}:focus-within .st-key-{fullscreen_button_key} {{
+                        opacity: 1;
+                    }}
+                    @media (hover: none) {{
+                        .st-key-{fullscreen_button_key} {{ opacity: 1; }}
+                    }}
+                    </style>"""
+                )
+                _ = image_surface.image(
                     _preview(
                         preview.to_numpy(), dims=tuple(str(dim) for dim in preview.dims)
                     ),
@@ -635,6 +704,19 @@ def main() -> None:
                     alt=f"Preview of {data_name}"
                     + (" at " + ", ".join(slice_labels) if slice_labels else ""),
                     width="stretch",
+                )
+
+                _ = image_surface.button(
+                    "Exit full-screen selection"
+                    if fullscreen
+                    else "Full-screen selection",
+                    icon=":material/fullscreen_exit:"
+                    if fullscreen
+                    else ":material/fullscreen:",
+                    key=fullscreen_button_key,
+                    help="Show the image with ROI and slice controls, or return to the page.",
+                    on_click=st.session_state.__setitem__,
+                    args=(f"bench_selection_fullscreen_{sample_key}", not fullscreen),
                 )
 
                 display_name = f"{dataset_name} · {data_name}"

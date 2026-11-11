@@ -15,14 +15,14 @@
 
 #### Dataset selection
 
-- [ ] data inputs support multiple data files (samples) in one dataset group
+- [x] data inputs support multiple data files (samples) in one dataset group
 - [x] support glob pattern/directory for multi file dataset selection
 - [x] New data -> add dataset (button to pop-up/not fully extended initially)
 - [x] editable dataset name
 - [ ] support multi tensor inputs
 - [x] for multiple samples from a single dataset add a button to allow roi selection settings from first image to be auto applied to all samples. "sync ROI selection"
-- [ ] add clear distinction between ROI selection and viewer slider.
-- [ ] In the full screen view of the data during selection put the roi selection sliders and z slice view slider to the side of the full screen image.
+- [x] add clear distinction between ROI selection and viewer slider.
+- [x] In the full screen view of the data during selection put the roi selection sliders and z slice view slider to the side of the full screen image.
 
 #### Model selection
 
