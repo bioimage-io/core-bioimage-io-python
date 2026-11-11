@@ -4,40 +4,39 @@ import copy
 from abc import ABC, abstractmethod
 from collections.abc import Collection, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Generic
+from typing import Any
 
-from typing_extensions import Self, TypeVar
+from torch import TYPE_CHECKING
+from typing_extensions import Self
 
 from .axis import PerAxis
 from .common import MemberId
+from .tensor import Tensor
 
 if TYPE_CHECKING:
     from .sample import Sample
     from .stat_measures import Measure, Stat
-    from .tensor import Tensor
-
-SampleT = TypeVar("SampleT", bound="Sample")
 
 
 @dataclass(frozen=True, kw_only=True)
-class Operator(ABC, Generic[SampleT]):
+class Operator(ABC):
     """Base class for all operators."""
 
-    preceding_ops: tuple[Operator[Any], ...] = ()
+    preceding_ops: tuple[Operator, ...] = ()
 
     @abstractmethod
-    def __call__(self, sample: SampleT) -> None: ...
+    def __call__(self, sample: Sample) -> None: ...
 
     @property
     def output_member_ids(self) -> Collection[MemberId]:
         return ()
 
     def get_required_measures(
-        self, preceding_ops: Sequence[Operator[Any]] = ()
+        self, preceding_ops: Sequence[Operator] = ()
     ) -> Collection[Measure]:
         return ()
 
-    def bind(self, preceding_ops: Sequence[Operator[Any]]) -> Self:
+    def bind(self, preceding_ops: Sequence[Operator]) -> Self:
         bound = copy.copy(self)
         object.__setattr__(bound, "preceding_ops", tuple(preceding_ops))
         return bound
@@ -49,12 +48,12 @@ class Operator(ABC, Generic[SampleT]):
 
 
 @dataclass(frozen=True, kw_only=True)
-class SamplewiseOperator(Operator["Sample"]):
+class SamplewiseOperator(Operator):
     """Base class for operators that can only be applied to whole samples."""
 
 
 @dataclass(frozen=True, kw_only=True)
-class BlockwiseOperator(Operator["Sample"]):  # Union[Sample, SampleBlock]
+class BlockwiseOperator(Operator):
     """Base class for operators that can be applied to whole sample or blockwise."""
 
 

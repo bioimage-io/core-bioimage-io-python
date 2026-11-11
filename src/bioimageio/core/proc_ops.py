@@ -51,7 +51,7 @@ MeasureT = TypeVar("MeasureT", bound=Measure)
 
 
 def _with_preceding_ops(
-    measure: MeasureT, preceding_ops: Sequence[Operator[Any]]
+    measure: MeasureT, preceding_ops: Sequence[Operator]
 ) -> MeasureT:
     relevant = tuple(
         op for op in preceding_ops if measure.member_id in op.output_member_ids
@@ -238,7 +238,7 @@ class Clip(SimpleOperator):
                 )
 
     def get_required_measures(
-        self, preceding_ops: Sequence[Operator[Any]] = ()
+        self, preceding_ops: Sequence[Operator] = ()
     ) -> Collection[Measure]:
         return {
             _with_preceding_ops(arg, preceding_ops)
@@ -484,7 +484,7 @@ class ScaleMeanVariance(SimpleOperator):
     ref_std: SampleStd | DatasetStd = field(init=False)
 
     def get_required_measures(
-        self, preceding_ops: Sequence[Operator[Any]] = ()
+        self, preceding_ops: Sequence[Operator] = ()
     ) -> Collection[Measure]:
         return {
             _with_preceding_ops(measure, preceding_ops)
@@ -601,7 +601,7 @@ class ScaleRange(SimpleOperator):
         assert self.lower.axes == self.upper.axes
 
     def get_required_measures(
-        self, preceding_ops: Sequence[Operator[Any]] = ()
+        self, preceding_ops: Sequence[Operator] = ()
     ) -> Collection[Measure]:
         return {
             _with_preceding_ops(self.lower, preceding_ops),
@@ -734,7 +734,7 @@ class ZeroMeanUnitVariance(SimpleOperator):
         assert self.mean.axes == self.std.axes
 
     def get_required_measures(
-        self, preceding_ops: Sequence[Operator[Any]] = ()
+        self, preceding_ops: Sequence[Operator] = ()
     ) -> Collection[Measure]:
         return {
             _with_preceding_ops(self.mean, preceding_ops),
@@ -1037,7 +1037,7 @@ def get_proc(
         assert_never(proc_descr)
 
 
-def serialize_processing(proc: Operator[Any]) -> dict[str, Any]:
+def serialize_processing(proc: Operator) -> dict[str, Any]:
     if isinstance(proc, CustomProcessing):
         raise TypeError("Custom processing cannot be serialized as part of statistics")
 

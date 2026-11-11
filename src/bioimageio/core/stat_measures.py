@@ -49,27 +49,27 @@ MeasureValue: TypeAlias = (
 )
 
 
-def _validate_preceding_ops(value: Any) -> tuple[Operator[Any], ...]:
+def _validate_preceding_ops(value: Any) -> tuple[Operator, ...]:
     if not isinstance(value, (list, tuple)):
         raise TypeError("preceding_ops must be a sequence")
 
     values = cast(list[Any] | tuple[Any, ...], value)
     if all(isinstance(op, Operator) for op in values):
-        return cast(tuple[Operator[Any], ...], tuple(values))
+        return cast(tuple[Operator, ...], tuple(values))
 
     from .proc_ops import deserialize_processing
 
     return tuple(deserialize_processing(cast(Mapping[str, Any], op)) for op in values)
 
 
-def _serialize_preceding_ops(ops: tuple[Operator[Any], ...]) -> list[dict[str, Any]]:
+def _serialize_preceding_ops(ops: tuple[Operator, ...]) -> list[dict[str, Any]]:
     from .proc_ops import serialize_processing
 
     return [serialize_processing(op) for op in ops]
 
 
 PrecedingOps: TypeAlias = Annotated[
-    tuple[Operator[Any], ...],
+    tuple[Operator, ...],
     BeforeValidator(_validate_preceding_ops),
     PlainSerializer(_serialize_preceding_ops),
 ]
