@@ -410,3 +410,53 @@ def test_model_selection(monkeypatch: pytest.MonkeyPatch):
     assert not app.exception
     assert app.session_state["bench_model_ids"] == [0, 2]
     assert app.checkbox(key="bench_model_blockwise_0").value
+
+
+@pytest.mark.parametrize("cover_kind", ["png", "svg", "missing", "none"])
+def test_model_cards(cover_kind: str, tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    _ = pytest.importorskip("streamlit")
+    from streamlit.testing.v1 import AppTest
+
+    from bioimageio.spec.common import FileDescr
+    from bioimageio.spec.model import v0_5
+
+    covers: list[FileDescr] = []
+    if cover_kind != "none":
+        cover = tmp_path / f"cover.{cover_kind}"
+        if cover_kind == "png":
+            from PIL import Image
+
+            Image.new("RGB", (8, 8), "blue").save(cover)
+        elif cover_kind == "svg":
+            _ = cover.write_text(
+                '<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8">'
+                '<rect width="8" height="8" fill="blue"/></svg>'
+            )
+        covers = [FileDescr.model_construct(source=cover)]
+
+    model = v0_5.ModelDescr.model_construct(
+        name="Model with a card",
+        description="Segments cells in microscopy images.",
+        covers=covers,
+        format_version="0.5.10",
+        weights=v0_5.WeightsDescr.model_construct(),
+    )
+    monkeypatch.setattr(bench, "load_model", lambda *args, **kwargs: model)
+    monkeypatch.setattr(sys, "argv", ["bench"])
+    app = AppTest.from_string("from bioimageio.core.bench import main\nmain()")
+    _ = app.run(timeout=20)
+    _ = app.text_input(key="bench_new_models").set_value(str(tmp_path / "model"))
+    _ = app.button(key="bench_add_model").click().run()
+    assert not app.exception
+    assert not app.error
+    assert any(m.value == "**Model with a card**" for m in app.markdown)
+    assert any(m.value == model.description for m in app.markdown)
+    assert len(app.get("image")) == (1 if cover_kind in ("png", "svg") else 0)
+    assert any(c.value == "Model cover could not be loaded." for c in app.caption) == (
+        cover_kind == "missing"
+    )
+    assert not app.checkbox(key="bench_model_blockwise_0").value
+    _ = app.button(key="bench_delete_model_0").click().run()
+    assert not app.exception
+    assert not app.get("image")
+    assert not any(m.value == model.description for m in app.markdown)

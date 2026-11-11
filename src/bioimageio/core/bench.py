@@ -207,6 +207,18 @@ def main() -> None:
 
         return model
 
+    @st.cache_data(show_spinner=False)
+    def load_model_cover_cached(source: str) -> bytes | str | None:
+        model = load_model_cached(source)
+        if not model.covers:
+            return None
+
+        cover = model.covers[0]
+        content = cover.get_reader(progressbar=False).read()
+        return (
+            content.decode("utf-8-sig") if cover.suffix.lower() == ".svg" else content
+        )
+
     def create_compatible_sample(
         model: v0_5.ModelDescr,
         tensor: Tensor,
@@ -658,7 +670,7 @@ def main() -> None:
     if model_ids:
         for column, label in zip(
             st.columns([4, 4, 2, 1]),
-            ("Model ID, URL, or path", "Model name", "Blockwise", ""),
+            ("Model ID, URL, or path", "Model card", "Blockwise", ""),
         ):
             _ = column.markdown(f"**{label}**" if label else "")
     else:
@@ -668,7 +680,8 @@ def main() -> None:
         model_column, name_column, blockwise_column, delete_column = st.columns(
             [4, 4, 2, 1], vertical_alignment="top"
         )
-        name_slot = name_column.empty()
+        card = name_column.container(border=True)
+        name_slot = card.empty()
         source = model_column.text_input(
             "Model ID, URL, or path",
             key=f"bench_model_{row_id}",
@@ -702,7 +715,16 @@ def main() -> None:
             continue
 
         _ = name_slot.markdown(f"**{model.name}**")
-        _ = model_column.caption(f"Format {model.format_version}")
+        try:
+            cover = load_model_cover_cached(source)
+            if cover is not None:
+                _ = card.image(cover, width="stretch", alt=f"Cover for {model.name}")
+        except Exception:
+            _ = card.caption("Model cover could not be loaded.")
+        description = getattr(model, "description", "")
+        if description:
+            _ = card.markdown(description)
+        _ = card.caption(f"Format {model.format_version}")
         shape_mismatch = False
         for data_name, tensor in data_entries:
             try:
