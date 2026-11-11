@@ -2,10 +2,13 @@
 *.egg-info/
 *.pyc
 .DS_Store
+.agents
+.claude
 .coverage
 .env
 .idea/
 .tox/
+:memory:.ses
 Unet 2D Nuclei Broad_example/
 __pycache__/
 bioimageio_cache/
