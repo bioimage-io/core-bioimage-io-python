@@ -28,6 +28,7 @@ class DescriptionSerializer:
         if isinstance(rd, v0_4.ModelDescr):
             weights = rd.weights.pytorch_state_dict
             # v0.4 wraps this path in a string model, so spec packaging misses it.
+            # TODO: fix this in spec packaging, then remove this workaround and serialize only local files as intended.
             if (
                 weights is not None
                 and isinstance(weights.architecture, v0_4.CallableFromFile)
