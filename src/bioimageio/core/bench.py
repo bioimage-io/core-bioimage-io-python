@@ -127,7 +127,19 @@ def _with_trailing_empty_row(
     return [*populated, empty], next_id
 
 
-def _preview(array: NDArray[Any], *, dims: Sequence[str] | None = None) -> NDArray[Any]:
+def _preview(
+    array: NDArray[Any],
+    *,
+    dims: Sequence[str] | None = None,
+    indices: Mapping[str, int] | None = None,
+) -> NDArray[Any]:
+    if dims is not None and indices:
+        selection = tuple(
+            min(max(indices[dim], 0), size - 1) if dim in indices else slice(None)
+            for dim, size in zip(dims, array.shape)
+        )
+        array = array[selection]
+        dims = tuple(dim for dim in dims if dim not in indices)
     if dims is not None and "y" in dims and "x" in dims:
         display_dims = ["y", "x"]
         if "channel" in dims:
@@ -902,11 +914,59 @@ def main() -> None:
     _ = st.header("Predictions")
     for data_index, data_name in enumerate(data_names):
         _ = st.subheader(data_name)
-        columns = st.columns(len(models))
+        input_tensor = data_entries[data_index][1]
+        input_dims = tuple(str(dim) for dim in input_tensor.dims)
+        output_dims = {
+            (model_index, str(get_member_id(output))): tuple(
+                str(axis.id) for axis in output.axes
+            )
+            for model_index, (_, _, model, _) in enumerate(models)
+            for output in model.outputs
+        }
+        axis_sizes: dict[str, int] = {}
+        tensors = [(input_tensor.to_numpy(), input_dims)]
+        for model_index in range(len(models)):
+            result = results[model_index, data_index]
+            if not isinstance(result, Exception):
+                tensors.extend(
+                    (array, output_dims[model_index, name])
+                    for name, array in result.items()
+                )
+        for array, dims in tensors:
+            for dim, size in zip(dims, array.shape):
+                if dim not in ("y", "x", "channel") and size > 1:
+                    axis_sizes[dim] = max(axis_sizes.get(dim, 1), size)
+
+        indices: dict[str, int] = {}
+        for dim, size in axis_sizes.items():
+            key = f"bench_comparison_slice_{data_signature[data_index][0]}_{dim}"
+            st.session_state[key] = min(
+                max(cast(int, st.session_state.get(key, 0)), 0), size - 1
+            )
+            indices[dim] = st.slider(
+                f"{dim} slice",
+                min_value=0,
+                max_value=size - 1,
+                step=1,
+                key=key,
+                help=(
+                    "Shared by the input and outputs with this dimension. "
+                    "Shorter tensors use their last slice. Indices are relative to the ROI."
+                ),
+            )
+
+        columns = st.columns(len(models) + 1)
+        _ = columns[0].markdown("**Input**")
+        _ = columns[0].image(
+            _preview(tensors[0][0], dims=input_dims, indices=indices),
+            caption=f"Input · shape {input_tensor.shape} · {tensors[0][0].dtype}",
+            alt=f"Input for {data_name}",
+            width="stretch",
+        )
         for model_index, (
             column,
             (_row_id, source, _model, _blockwise),
-        ) in enumerate(zip(columns, models)):
+        ) in enumerate(zip(columns[1:], models)):
             _ = column.markdown(f"**{source}**")
             result = results[model_index, data_index]
             if isinstance(result, Exception):
@@ -915,7 +975,11 @@ def main() -> None:
 
             for output_name, array in result.items():
                 _ = column.image(
-                    _preview(array),
+                    _preview(
+                        array,
+                        dims=output_dims[model_index, output_name],
+                        indices=indices,
+                    ),
                     caption=f"{output_name} · shape {array.shape} · {array.dtype}",
                     alt=f"{output_name} prediction for {data_name}",
                     width="stretch",

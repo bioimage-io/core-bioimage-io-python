@@ -29,6 +29,21 @@ def test_preview_channel_first_rgb():
     np.testing.assert_allclose(preview, np.transpose(array, (1, 2, 0)) / array.max())
 
 
+def test_preview_shared_slice_indices():
+    array = np.arange(3 * 5 * 8).reshape(3, 5, 8) ** 2
+    expected = bench._preview(array[2], dims=("y", "x"))
+    np.testing.assert_allclose(
+        bench._preview(array, dims=("z", "y", "x"), indices={"z": 9, "t": 2}),
+        expected,
+    )
+    np.testing.assert_allclose(
+        bench._preview(
+            array.transpose(1, 2, 0), dims=("y", "x", "z"), indices={"z": 2}
+        ),
+        expected,
+    )
+
+
 @pytest.mark.parametrize(
     "dims", [("z", "y", "x"), ("t", "y", "x"), ("t", "z", "y", "x")]
 )
@@ -217,7 +232,10 @@ def test_dataset_uploads(monkeypatch: pytest.MonkeyPatch):
     assert len(app.session_state["bench_dataset_uploads_0"]) == 2
 
 
-def test_dataset_predictions(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+@pytest.mark.parametrize("depth", [1, 3])
+def test_dataset_predictions(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, depth: int
+):
     _ = pytest.importorskip("streamlit")
     from unittest.mock import MagicMock, Mock
 
@@ -234,8 +252,19 @@ def test_dataset_predictions(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
             v0_5.InputTensorDescr(
                 id=MemberId("input"),
                 axes=[
+                    v0_5.SpaceInputAxis(id=AxisId("z"), size=depth),
                     v0_5.SpaceInputAxis(id=AxisId("y"), size=4),
                     v0_5.SpaceInputAxis(id=AxisId("x"), size=5),
+                ],
+            )
+        ],
+        outputs=[
+            v0_5.OutputTensorDescr.model_construct(
+                id=MemberId("input"),
+                axes=[
+                    v0_5.SpaceOutputAxis(id=AxisId("z"), size=depth),
+                    v0_5.SpaceOutputAxis(id=AxisId("y"), size=4),
+                    v0_5.SpaceOutputAxis(id=AxisId("x"), size=5),
                 ],
             )
         ],
@@ -256,9 +285,17 @@ def test_dataset_predictions(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
         sys, "argv", ["bench", "--data", str(tmp_path), "--model", "identity-test"]
     )
     for index, name in enumerate(("a.npy", "b.npy")):
-        np.save(tmp_path / name, np.full((4, 5), index))
+        np.save(tmp_path / name, np.full((depth, 4, 5), index))
     app = AppTest.from_string("from bioimageio.core.bench import main\nmain()")
     _ = app.run(timeout=20)
+    assert not app.exception
+    for name in ("a.npy", "b.npy"):
+        sample_key = bench._sample_key(0, str((tmp_path / name).resolve()))
+        _ = (
+            app.text_input(key=f"bench_data_dims_{sample_key}")
+            .set_value("z, y, x")
+            .run()
+        )
     assert not app.exception
     assert not app.error
     _ = app.checkbox[1].check().run()
@@ -269,8 +306,20 @@ def test_dataset_predictions(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     assert "Dataset 1 · b.npy" in names
     for index, call in enumerate(pipeline.predict_without_blocking.call_args_list):
         np.testing.assert_array_equal(
-            call.args[0].members[MemberId("input")].to_numpy(), np.full((4, 5), index)
+            call.args[0].members[MemberId("input")].to_numpy(),
+            np.full((depth, 4, 5), index),
         )
+
+    assert sum(m.value == "**Input**" for m in app.markdown) == 2
+    comparison_sliders = [
+        s for s in app.slider if s.key.startswith("bench_comparison_slice_")
+    ]
+    assert len(comparison_sliders) == (2 if depth > 1 else 0)
+    if depth > 1:
+        _ = comparison_sliders[0].set_value(depth - 1).run()
+        assert not app.exception
+        assert pipeline.predict_without_blocking.call_count == 2
+        assert app.slider(key=comparison_sliders[1].key).value == 0
 
 
 def test_sync_roi_from_any_sample(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
