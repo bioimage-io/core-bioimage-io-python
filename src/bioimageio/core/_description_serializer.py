@@ -9,8 +9,7 @@ from bioimageio.spec import (
     load_description,
     save_bioimageio_package_to_stream,
 )
-from bioimageio.spec.common import FileDescr, RelativeFilePath, Sha256
-from bioimageio.spec.model import v0_4
+from bioimageio.spec.common import Sha256
 
 
 class DescriptionSerializer:
@@ -25,24 +24,6 @@ class DescriptionSerializer:
     @staticmethod
     def serialize(rd: ResourceDescr) -> bytes:
         stream = save_bioimageio_package_to_stream(rd, local_files_only=True)
-        if isinstance(rd, v0_4.ModelDescr):
-            weights = rd.weights.pytorch_state_dict
-            # v0.4 wraps this path in a string model, so spec packaging misses it.
-            # TODO: fix this in spec packaging, then remove this workaround and serialize only local files as intended.
-            if (
-                weights is not None
-                and isinstance(weights.architecture, v0_4.CallableFromFile)
-                and isinstance(weights.architecture.source_file, RelativeFilePath)
-            ):
-                architecture = weights.architecture.source_file
-                architecture_name = str(architecture)
-                with ZipFile(stream, mode="a") as package:
-                    if architecture_name not in package.namelist():
-                        source = FileDescr(
-                            source=architecture, sha256=weights.architecture_sha256
-                        )
-                        package.writestr(architecture_name, source.get_reader().read())
-
         _ = stream.seek(0)
         return stream.read()
 
