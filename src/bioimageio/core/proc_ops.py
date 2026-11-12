@@ -3,27 +3,35 @@ from __future__ import annotations
 import collections.abc
 import json
 from collections.abc import Callable, Collection, Mapping, Sequence
-from dataclasses import InitVar, dataclass, field
+from dataclasses import dataclass, field, fields
 from functools import partial
 from types import MappingProxyType
 from typing import (
+    Annotated,
     Any,
     Literal,
+    cast,
 )
 
 import numpy as np
 import scipy  # pyright: ignore[reportMissingTypeStubs]
 import xarray as xr
 from numpy.typing import NDArray
-from pydantic import TypeAdapter
-from typing_extensions import Self, TypeVar, assert_never
+from pydantic import BaseModel, ConfigDict, Discriminator, Tag, TypeAdapter
+from typing_extensions import Self, assert_never
 
 from bioimageio.spec.model import v0_4, v0_5
 from bioimageio.spec.model.v0_5 import (
     _convert_proc,  # pyright: ignore[reportPrivateUsage]
 )
 
-from ._op_base import BlockwiseOperator, Operator, SamplewiseOperator, SimpleOperator
+from ._op_base import (
+    BlockwiseOperator,
+    Operator,
+    SamplewiseOperator,
+    SimpleOperator,
+    get_relevant_preceding_ops,
+)
 from ._ops_cellpose import CellposeFlowDynamics
 from ._ops_stardist import StardistPostprocessing2D, StardistPostprocessing3D
 from ._utils.type_hints import cast_and_assert
@@ -34,6 +42,7 @@ from .sample import Sample
 from .stat_calculators import StatsCalculator
 from .stat_measures import (
     DatasetMean,
+    DatasetMeasureBase,
     DatasetQuantile,
     DatasetStd,
     MeanMeasure,
@@ -46,17 +55,6 @@ from .stat_measures import (
     StdMeasure,
 )
 from .tensor import Tensor
-
-MeasureT = TypeVar("MeasureT", bound=Measure)
-
-
-def _with_preceding_ops(
-    measure: MeasureT, preceding_ops: Sequence[Operator]
-) -> MeasureT:
-    relevant = tuple(
-        op for op in preceding_ops if measure.member_id in op.output_member_ids
-    )
-    return measure.model_copy(update={"preceding_ops": relevant})
 
 
 def _convert_axis_ids(
@@ -81,6 +79,10 @@ def _convert_axis_ids(
 class AddKnownDatasetStats(BlockwiseOperator):
     dataset_stats: Mapping[Measure, MeasureValue]
 
+    @property
+    def affects_statistics(self) -> bool:
+        return False
+
     def __post_init__(self):
         # keep only dataset measures
         object.__setattr__(
@@ -91,70 +93,67 @@ class AddKnownDatasetStats(BlockwiseOperator):
 
     def __call__(self, sample: Sample) -> None:  #  | SampleBlock
         sample.stat.update(self.dataset_stats)
+        sample.applied_ops += (self,)
 
 
-# @dataclass
-# class UpdateStats(Operator):
-#     """Calculates sample and/or dataset measures"""
+class _StatsCalculatorReference(BaseModel, frozen=True):
+    model_config = ConfigDict(extra="forbid")
 
-#     measures: Union[Sequence[Measure], Set[Measure], Mapping[Measure, MeasureValue]]
-#     """sample and dataset `measuers` to be calculated by this operator. Initial/fixed
-#     dataset measure values may be given, see `keep_updating_dataset_stats` for details.
-#     """
-#     keep_updating_dataset_stats: Optional[bool] = None
-#     """indicates if operator calls should keep updating dataset statistics or not
-
-#     default (None): if `measures` is a `Mapping` (i.e. initial measure values are
-#     given) no further updates to dataset statistics is conducted, otherwise (w.o.
-#     initial measure values) dataset statistics are updated by each processed sample.
-#     """
-#     _keep_updating_dataset_stats: bool = field(init=False)
-#     _stats_calculator: StatsCalculator = field(init=False)
-
-#     @property
-#     def required_measures(self) -> Collection[Measure]:
-#         return set()
-
-#     def __post_init__(self):
-#         self._stats_calculator = StatsCalculator(self.measures)
-#         if self.keep_updating_dataset_stats is None:
-#             self._keep_updating_dataset_stats = not isinstance(self.measures, collections.abc.Mapping)
-#         else:
-#             self._keep_updating_dataset_stats = self.keep_updating_dataset_stats
-
-#     def __call__(self, sample_block: SampleBlockWithOrigin> None:
-#         if self._keep_updating_dataset_stats:
-#             sample.stat.update(self._stats_calculator.update_and_get_all(sample))
-#         else:
-#             sample.stat.update(self._stats_calculator.skip_update_and_get_all(sample))
+    measures: tuple[Measure, ...]
+    dataset_fits_in_memory: bool
 
 
 @dataclass(frozen=True)
 class UpdateStats(SamplewiseOperator):
     """Calculates sample and/or dataset measures"""
 
-    stats_calculator: StatsCalculator
-    """`StatsCalculator` to be used by this operator."""
+    stats_calculator: StatsCalculator | _StatsCalculatorReference = field(
+        repr=False, compare=False
+    )
+    """Calculator, or a non-executable reference after deserialization."""
     keep_updating_initial_dataset_stats: bool = False
     """indicates if operator calls should keep updating initial dataset statistics or not;
     if the `stats_calculator` was not provided with any initial dataset statistics,
     these are always updated with every new sample.
     """
-    _keep_updating_dataset_stats: bool = field(init=False)
+    _keep_updating_dataset_stats: bool = field(init=False, compare=False, repr=False)
+    calculator_reference: _StatsCalculatorReference = field(init=False, repr=False)
+
+    @property
+    def affects_statistics(self) -> bool:
+        return False
 
     def __post_init__(self):
+        calculator = self.stats_calculator
+        reference = (
+            _StatsCalculatorReference(
+                measures=calculator.measures,
+                dataset_fits_in_memory=calculator.dataset_fits_in_memory,
+            )
+            if isinstance(calculator, StatsCalculator)
+            else calculator
+        )
+        object.__setattr__(self, "calculator_reference", reference)
         object.__setattr__(
             self,
             "_keep_updating_dataset_stats",
             self.keep_updating_initial_dataset_stats
-            or not self.stats_calculator.has_dataset_measures,
+            or (
+                isinstance(calculator, StatsCalculator)
+                and not calculator.has_dataset_measures
+            ),
         )
 
     def __call__(self, sample: Sample) -> None:
+        if not isinstance(self.stats_calculator, StatsCalculator):
+            raise RuntimeError(  # noqa: TRY004
+                "A deserialized UpdateStats is a reference and cannot run"
+            )
         if self._keep_updating_dataset_stats:
             sample.stat.update(self.stats_calculator.update_and_get_all(sample))
         else:
             sample.stat.update(self.stats_calculator.skip_update_and_get_all(sample))
+        sample.applied_ops += (self,)
 
 
 @dataclass(frozen=True)
@@ -237,18 +236,16 @@ class Clip(SimpleOperator):
                     f"expected min quantile < max quantile, but {self.min.q} >= {self.max.q}"
                 )
 
-    def get_required_measures(
-        self, preceding_ops: Sequence[Operator] = ()
-    ) -> Collection[Measure]:
+    def get_required_measures(self) -> Collection[Measure]:
         return {
-            _with_preceding_ops(arg, preceding_ops)
+            arg
             for arg in (self.min, self.max)
             if isinstance(arg, (SampleQuantile, DatasetQuantile))
         }
 
     def _apply(self, x: Tensor, stat: Stat) -> Tensor:
         if isinstance(self.min, (SampleQuantile, DatasetQuantile)):
-            min_value = stat[_with_preceding_ops(self.min, self.preceding_ops)]
+            min_value = stat[self.min]
             if isinstance(min_value, (int, float)):
                 # use clip for scalar value
                 min_clip_arg = min_value
@@ -265,7 +262,7 @@ class Clip(SimpleOperator):
             min_clip_arg = self.min
 
         if isinstance(self.max, (SampleQuantile, DatasetQuantile)):
-            max_value = stat[_with_preceding_ops(self.max, self.preceding_ops)]
+            max_value = stat[self.max]
             if isinstance(max_value, (int, float)):
                 # use clip for scalar value
                 max_clip_arg = max_value
@@ -313,7 +310,10 @@ class Clip(SimpleOperator):
 
     @classmethod
     def from_proc_descr(
-        cls, descr: v0_4.ClipDescr | v0_5.ClipDescr, member_id: MemberId
+        cls,
+        descr: v0_4.ClipDescr | v0_5.ClipDescr,
+        member_id: MemberId,
+        preceding_ops: Sequence[Operator] = (),
     ) -> Self:
         if isinstance(descr, v0_5.ClipDescr):
             dataset_mode, axes = _get_axes(descr.kwargs)
@@ -322,6 +322,8 @@ class Clip(SimpleOperator):
             else:
                 Quantile = partial(SampleQuantile, method="inverted_cdf")
 
+            relevant_ops = get_relevant_preceding_ops(member_id, preceding_ops)
+
             if descr.kwargs.min is not None:
                 min_arg = descr.kwargs.min
             elif descr.kwargs.min_percentile is not None:
@@ -329,6 +331,7 @@ class Clip(SimpleOperator):
                     q=descr.kwargs.min_percentile / 100,
                     axes=axes,
                     member_id=member_id,
+                    preceding_ops=relevant_ops,
                 )
             else:
                 min_arg = None
@@ -340,6 +343,7 @@ class Clip(SimpleOperator):
                     q=descr.kwargs.max_percentile / 100,
                     axes=axes,
                     member_id=member_id,
+                    preceding_ops=relevant_ops,
                 )
             else:
                 max_arg = None
@@ -380,37 +384,36 @@ class EnsureDtype(SimpleOperator):
 
 @dataclass(frozen=True)
 class ScaleLinear(SimpleOperator):
-    gain: float | tuple[float, ...] | xr.DataArray = 1.0
+    gain: float | tuple[float, ...] = 1.0
     """multiplicative factor"""
 
-    offset: float | tuple[float, ...] | xr.DataArray = 0.0
+    offset: float | tuple[float, ...] = 0.0
     """additive term"""
-    axis: AxisId | None = field(init=False)
+    axis: AxisId | None = None
+    """Axis for tuple-valued gain or offset."""
 
     def __post_init__(self):
-        if isinstance(self.gain, xr.DataArray):
-            assert isinstance(self.offset, xr.DataArray)
-            assert self.gain.dims == self.offset.dims and len(self.gain.dims) == 1
-            object.__setattr__(self, "axis", AxisId(str(self.gain.dims[0])))
-            object.__setattr__(self, "gain", tuple(map(float, self.gain.to_numpy())))
-            object.__setattr__(
-                self, "offset", tuple(map(float, self.offset.to_numpy()))
-            )
-        else:
-            assert isinstance(self.offset, (int, float))
-            object.__setattr__(self, "axis", None)
+        if not isinstance(self.gain, (int, float, tuple)) or not isinstance(
+            self.offset, (int, float, tuple)
+        ):
+            raise TypeError("gain and offset must be scalars or tuples")
+        if self.axis is None and (
+            isinstance(self.gain, tuple) or isinstance(self.offset, tuple)
+        ):
+            raise ValueError("tuple-valued gain or offset requires an axis")
 
     def _apply(self, x: Tensor, stat: Stat) -> Tensor:
-        if self.axis is None:
-            assert isinstance(self.gain, (int, float)) and isinstance(
-                self.offset, (int, float)
-            )
-            return x * self.gain + self.offset
-
-        assert isinstance(self.gain, tuple) and isinstance(self.offset, tuple)
-        return x * xr.DataArray(list(self.gain), dims=self.axis) + xr.DataArray(
-            list(self.offset), dims=self.axis
+        gain = (
+            xr.DataArray(list(self.gain), dims=self.axis)
+            if isinstance(self.gain, tuple)
+            else self.gain
         )
+        offset = (
+            xr.DataArray(list(self.offset), dims=self.axis)
+            if isinstance(self.offset, tuple)
+            else self.offset
+        )
+        return x * gain + offset
 
     def get_output_shape(
         self, input_shape: Mapping[AxisId, int]
@@ -419,11 +422,12 @@ class ScaleLinear(SimpleOperator):
 
     def get_descr(self):
         if self.axis is not None:
-            assert isinstance(self.gain, tuple) and isinstance(self.offset, tuple)
             kwargs = v0_5.ScaleLinearAlongAxisKwargs(
                 axis=self.axis,
-                gain=list(self.gain),
-                offset=list(self.offset),
+                gain=list(self.gain) if isinstance(self.gain, tuple) else self.gain,
+                offset=list(self.offset)
+                if isinstance(self.offset, tuple)
+                else self.offset,
             )
         else:
             assert isinstance(self.gain, (int, float)) and isinstance(
@@ -453,9 +457,17 @@ class ScaleLinear(SimpleOperator):
         else:
             assert_never(kwargs)
 
-        if axis:
-            gain = xr.DataArray(np.atleast_1d(kwargs.gain), dims=axis)
-            offset = xr.DataArray(np.atleast_1d(kwargs.offset), dims=axis)
+        if axis is not None:
+            gain = (
+                kwargs.gain
+                if isinstance(kwargs.gain, (float, int))
+                else tuple(kwargs.gain)
+            )
+            offset = (
+                kwargs.offset
+                if isinstance(kwargs.offset, (float, int))
+                else tuple(kwargs.offset)
+            )
         else:
             assert isinstance(kwargs.gain, (float, int)) or len(kwargs.gain) == 1, (
                 kwargs.gain
@@ -470,7 +482,9 @@ class ScaleLinear(SimpleOperator):
                 else kwargs.offset[0]
             )
 
-        return cls(input=member_id, output=member_id, gain=gain, offset=offset)
+        return cls(
+            input=member_id, output=member_id, gain=gain, offset=offset, axis=axis
+        )
 
 
 @dataclass(frozen=True)
@@ -478,18 +492,17 @@ class ScaleMeanVariance(SimpleOperator):
     axes: Sequence[AxisId] | None = None
     reference_tensor: MemberId | None = None
     eps: float = 1e-6
-    mean: SampleMean | DatasetMean = field(init=False)
-    std: SampleStd | DatasetStd = field(init=False)
-    ref_mean: SampleMean | DatasetMean = field(init=False)
-    ref_std: SampleStd | DatasetStd = field(init=False)
+    mean: MeanMeasure = field(init=False)
+    std: StdMeasure = field(init=False)
+    ref_mean: MeanMeasure = field(init=False)
+    ref_std: StdMeasure = field(init=False)
+    _mean: MeanMeasure | None = field(default=None, repr=False, compare=False)
+    _std: StdMeasure | None = field(default=None, repr=False, compare=False)
+    _ref_mean: MeanMeasure | None = field(default=None, repr=False, compare=False)
+    _ref_std: StdMeasure | None = field(default=None, repr=False, compare=False)
 
-    def get_required_measures(
-        self, preceding_ops: Sequence[Operator] = ()
-    ) -> Collection[Measure]:
-        return {
-            _with_preceding_ops(measure, preceding_ops)
-            for measure in (self.mean, self.std, self.ref_mean, self.ref_std)
-        }
+    def get_required_measures(self) -> Collection[Measure]:
+        return {self.mean, self.std, self.ref_mean, self.ref_std}
 
     def __post_init__(self):
         axes = None if self.axes is None else tuple(self.axes)
@@ -502,16 +515,55 @@ class ScaleMeanVariance(SimpleOperator):
             Std = DatasetStd
 
         object.__setattr__(self, "axes", axes)
-        object.__setattr__(self, "mean", Mean(member_id=self.input, axes=axes))
-        object.__setattr__(self, "std", Std(member_id=self.input, axes=axes))
-        object.__setattr__(self, "ref_mean", Mean(member_id=ref_tensor, axes=axes))
-        object.__setattr__(self, "ref_std", Std(member_id=ref_tensor, axes=axes))
+        object.__setattr__(
+            self,
+            "mean",
+            self._mean
+            if self._mean is not None
+            else Mean(member_id=self.input, axes=axes),
+        )
+        object.__setattr__(
+            self,
+            "std",
+            self._std
+            if self._std is not None
+            else Std(member_id=self.input, axes=axes),
+        )
+        object.__setattr__(
+            self,
+            "ref_mean",
+            self._ref_mean
+            if self._ref_mean is not None
+            else Mean(member_id=ref_tensor, axes=axes),
+        )
+        object.__setattr__(
+            self,
+            "ref_std",
+            self._ref_std
+            if self._ref_std is not None
+            else Std(member_id=ref_tensor, axes=axes),
+        )
+        if (
+            any(
+                m.axes != axes
+                for m in (self.mean, self.std, self.ref_mean, self.ref_std)
+            )
+            or any(m.member_id != self.input for m in (self.mean, self.std))
+            or any(m.member_id != ref_tensor for m in (self.ref_mean, self.ref_std))
+            or not isinstance(self.mean, Mean)
+            or not isinstance(self.std, Std)
+            or not isinstance(self.ref_mean, Mean)
+            or not isinstance(self.ref_std, Std)
+        ):
+            raise ValueError(
+                "measures must match the operator's members, axes and scope"
+            )
 
     def _apply(self, x: Tensor, stat: Stat) -> Tensor:
-        mean = stat[_with_preceding_ops(self.mean, self.preceding_ops)]
-        std = stat[_with_preceding_ops(self.std, self.preceding_ops)] + self.eps
-        ref_mean = stat[_with_preceding_ops(self.ref_mean, self.preceding_ops)]
-        ref_std = stat[_with_preceding_ops(self.ref_std, self.preceding_ops)] + self.eps
+        mean = stat[self.mean]
+        std = stat[self.std] + self.eps
+        ref_mean = stat[self.ref_mean]
+        ref_std = stat[self.ref_std] + self.eps
         return (x - mean) / std * ref_std + ref_mean
 
     def get_output_shape(
@@ -533,16 +585,28 @@ class ScaleMeanVariance(SimpleOperator):
         cls,
         descr: v0_4.ScaleMeanVarianceDescr | v0_5.ScaleMeanVarianceDescr,
         member_id: MemberId,
+        preceding_ops: Sequence[Operator] = (),
     ) -> Self:
         kwargs = descr.kwargs
         _, axes = _get_axes(descr.kwargs)
+        ref_tensor = MemberId(str(kwargs.reference_tensor))
+        if axes is None or AxisId("batch") not in axes:
+            Mean, Std = SampleMean, SampleStd
+        else:
+            Mean, Std = DatasetMean, DatasetStd
+        input_ops = get_relevant_preceding_ops(member_id, preceding_ops)
+        ref_ops = get_relevant_preceding_ops(ref_tensor, preceding_ops)
 
         return cls(
             input=member_id,
             output=member_id,
-            reference_tensor=MemberId(str(kwargs.reference_tensor)),
+            reference_tensor=ref_tensor,
             axes=axes,
             eps=kwargs.eps,
+            _mean=Mean(member_id=member_id, axes=axes, preceding_ops=input_ops),
+            _std=Std(member_id=member_id, axes=axes, preceding_ops=input_ops),
+            _ref_mean=Mean(member_id=ref_tensor, axes=axes, preceding_ops=ref_ops),
+            _ref_std=Std(member_id=ref_tensor, axes=axes, preceding_ops=ref_ops),
         )
 
 
@@ -569,8 +633,12 @@ def _get_axes(
 
 @dataclass(frozen=True)
 class ScaleRange(SimpleOperator):
-    lower_quantile: InitVar[SampleQuantile | DatasetQuantile | None] = None
-    upper_quantile: InitVar[SampleQuantile | DatasetQuantile | None] = None
+    _lower: SampleQuantile | DatasetQuantile | None = field(
+        default=None, repr=False, compare=False
+    )
+    _upper: SampleQuantile | DatasetQuantile | None = field(
+        default=None, repr=False, compare=False
+    )
     lower: SampleQuantile | DatasetQuantile = field(init=False)
     upper: SampleQuantile | DatasetQuantile = field(init=False)
 
@@ -578,35 +646,28 @@ class ScaleRange(SimpleOperator):
 
     def __post_init__(
         self,
-        lower_quantile: SampleQuantile | DatasetQuantile | None,
-        upper_quantile: SampleQuantile | DatasetQuantile | None,
     ):
-        if lower_quantile is None:
-            tid = self.input if upper_quantile is None else upper_quantile.member_id
-            object.__setattr__(self, "lower", DatasetQuantile(q=0.0, member_id=tid))
+        if self._lower is None:
+            m = self.input if self._upper is None else self._upper.member_id
+            object.__setattr__(self, "lower", DatasetQuantile(q=0.0, member_id=m))
         else:
-            object.__setattr__(self, "lower", lower_quantile)
+            object.__setattr__(self, "lower", self._lower)
 
-        if upper_quantile is None:
+        if self._upper is None:
             object.__setattr__(
                 self,
                 "upper",
                 DatasetQuantile(q=1.0, member_id=self.lower.member_id),
             )
         else:
-            object.__setattr__(self, "upper", upper_quantile)
+            object.__setattr__(self, "upper", self._upper)
 
         assert self.lower.member_id == self.upper.member_id
         assert self.lower.q < self.upper.q
         assert self.lower.axes == self.upper.axes
 
-    def get_required_measures(
-        self, preceding_ops: Sequence[Operator] = ()
-    ) -> Collection[Measure]:
-        return {
-            _with_preceding_ops(self.lower, preceding_ops),
-            _with_preceding_ops(self.upper, preceding_ops),
-        }
+    def get_required_measures(self) -> Collection[Measure]:
+        return {self.lower, self.upper}
 
     def get_output_shape(
         self, input_shape: Mapping[AxisId, int]
@@ -618,6 +679,7 @@ class ScaleRange(SimpleOperator):
         cls,
         descr: v0_4.ScaleRangeDescr | v0_5.ScaleRangeDescr,
         member_id: MemberId,
+        preceding_ops: Sequence[Operator] = (),
     ):
         kwargs = descr.kwargs
         ref_tensor = (
@@ -631,24 +693,27 @@ class ScaleRange(SimpleOperator):
         else:
             Quantile = partial(SampleQuantile, method="linear")
 
+        relevant_ops = get_relevant_preceding_ops(ref_tensor, preceding_ops)
         return cls(
             input=member_id,
             output=member_id,
-            lower_quantile=Quantile(
+            _lower=Quantile(
                 q=kwargs.min_percentile / 100,
                 axes=axes,
                 member_id=ref_tensor,
+                preceding_ops=relevant_ops,
             ),
-            upper_quantile=Quantile(
+            _upper=Quantile(
                 q=kwargs.max_percentile / 100,
                 axes=axes,
                 member_id=ref_tensor,
+                preceding_ops=relevant_ops,
             ),
         )
 
     def _apply(self, x: Tensor, stat: Stat) -> Tensor:
-        lower = stat[_with_preceding_ops(self.lower, self.preceding_ops)]
-        upper = stat[_with_preceding_ops(self.upper, self.preceding_ops)]
+        lower = stat[self.lower]
+        upper = stat[self.upper]
         return (x - lower) / (upper - lower + self.eps)
 
     def get_descr(self):
@@ -733,13 +798,8 @@ class ZeroMeanUnitVariance(SimpleOperator):
     def __post_init__(self):
         assert self.mean.axes == self.std.axes
 
-    def get_required_measures(
-        self, preceding_ops: Sequence[Operator] = ()
-    ) -> Collection[Measure]:
-        return {
-            _with_preceding_ops(self.mean, preceding_ops),
-            _with_preceding_ops(self.std, preceding_ops),
-        }
+    def get_required_measures(self) -> Collection[Measure]:
+        return {self.mean, self.std}
 
     def get_output_shape(
         self, input_shape: Mapping[AxisId, int]
@@ -751,9 +811,9 @@ class ZeroMeanUnitVariance(SimpleOperator):
         cls,
         descr: v0_4.ZeroMeanUnitVarianceDescr | v0_5.ZeroMeanUnitVarianceDescr,
         member_id: MemberId,
+        preceding_ops: Sequence[Operator] = (),
     ):
         dataset_mode, axes = _get_axes(descr.kwargs)
-
         if dataset_mode:
             Mean = DatasetMean
             Std = DatasetStd
@@ -761,16 +821,17 @@ class ZeroMeanUnitVariance(SimpleOperator):
             Mean = SampleMean
             Std = SampleStd
 
+        relevant_ops = get_relevant_preceding_ops(member_id, preceding_ops)
         return cls(
             input=member_id,
             output=member_id,
-            mean=Mean(axes=axes, member_id=member_id),
-            std=Std(axes=axes, member_id=member_id),
+            mean=Mean(axes=axes, member_id=member_id, preceding_ops=relevant_ops),
+            std=Std(axes=axes, member_id=member_id, preceding_ops=relevant_ops),
         )
 
     def _apply(self, x: Tensor, stat: Stat) -> Tensor:
-        mean = stat[_with_preceding_ops(self.mean, self.preceding_ops)]
-        std = stat[_with_preceding_ops(self.std, self.preceding_ops)]
+        mean = stat[self.mean]
+        std = stat[self.std]
         return (x - mean) / (std + self.eps)
 
     def get_descr(self):
@@ -783,24 +844,23 @@ class ZeroMeanUnitVariance(SimpleOperator):
 class FixedZeroMeanUnitVariance(SimpleOperator):
     """normalize to zero mean, unit variance with precomputed values."""
 
-    mean: float | tuple[float, ...] | xr.DataArray
-    std: float | tuple[float, ...] | xr.DataArray
+    mean: float | tuple[float, ...]
+    std: float | tuple[float, ...]
 
     eps: float = 1e-6
-    axis: AxisId | None = field(init=False)
+    axis: AxisId | None = None
+    """Axis for tuple-valued mean and std."""
 
     def __post_init__(self):
-        if isinstance(self.mean, xr.DataArray):
-            assert isinstance(self.std, xr.DataArray)
-            assert self.mean.dims == self.std.dims and len(self.mean.dims) == 1
-            object.__setattr__(self, "axis", AxisId(str(self.mean.dims[0])))
-            object.__setattr__(self, "mean", tuple(map(float, self.mean.to_numpy())))
-            object.__setattr__(self, "std", tuple(map(float, self.std.to_numpy())))
-        else:
-            assert isinstance(self.mean, (int, float)) and isinstance(
-                self.std, (int, float)
-            )
-            object.__setattr__(self, "axis", None)
+        if not isinstance(self.mean, (int, float, tuple)) or not isinstance(
+            self.std, (int, float, tuple)
+        ):
+            raise TypeError("mean and std must be scalars or tuples")
+        if self.axis is None:
+            if isinstance(self.mean, tuple) or isinstance(self.std, tuple):
+                raise ValueError("mean and std must be scalars without an axis")
+        elif not isinstance(self.mean, tuple) or not isinstance(self.std, tuple):
+            raise ValueError("mean and std must be tuples when an axis is specified")
 
     def get_output_shape(
         self, input_shape: Mapping[AxisId, int]
@@ -814,17 +874,22 @@ class FixedZeroMeanUnitVariance(SimpleOperator):
         member_id: MemberId,
     ) -> Self:
         if isinstance(descr.kwargs, v0_5.FixedZeroMeanUnitVarianceKwargs):
-            dims = None
+            mean, std, axis = descr.kwargs.mean, descr.kwargs.std, None
         elif isinstance(descr.kwargs, v0_5.FixedZeroMeanUnitVarianceAlongAxisKwargs):
-            dims = (AxisId(descr.kwargs.axis),)
+            mean, std, axis = (
+                tuple(descr.kwargs.mean),
+                tuple(descr.kwargs.std),
+                AxisId(descr.kwargs.axis),
+            )
         else:
             assert_never(descr.kwargs)
 
         return cls(
             input=member_id,
             output=member_id,
-            mean=xr.DataArray(descr.kwargs.mean, dims=dims),
-            std=xr.DataArray(descr.kwargs.std, dims=dims),
+            mean=mean,
+            std=std,
+            axis=axis,
         )
 
     def get_descr(self):
@@ -936,10 +1001,6 @@ ProcDescr = (
     | v0_5.PreprocessingDescr
     | v0_5.PostprocessingDescr
 )
-V05ProcDescr = v0_5.PreprocessingDescr | v0_5.PostprocessingDescr
-_V05_PROC_DESCR_ADAPTER: TypeAdapter[V05ProcDescr] = TypeAdapter(V05ProcDescr)
-
-
 Processing = (
     AddKnownDatasetStats
     | Binarize
@@ -969,7 +1030,12 @@ def get_proc(
     | MemberId,
     *,
     tensor_axes: str | None = None,
+    preceding_ops: Sequence[Operator] = (),
 ) -> Processing:
+    """Construct an operator from a processing description.
+
+    `tensor_axes` is only needed if `proc_descr` is a v0.4.ZeroMeanUnitVarianceDescr with mode "fixed".
+    """
     if isinstance(
         tensor_descr,
         (
@@ -990,7 +1056,7 @@ def get_proc(
     elif isinstance(proc_descr, v0_5.CellposeFlowDynamicsDescr):
         return CellposeFlowDynamics.from_proc_descr(proc_descr, member_id)
     elif isinstance(proc_descr, (v0_4.ClipDescr, v0_5.ClipDescr)):
-        return Clip.from_proc_descr(proc_descr, member_id)
+        return Clip.from_proc_descr(proc_descr, member_id, preceding_ops)
     elif isinstance(proc_descr, v0_5.CustomProcessingDescr):
         return CustomProcessing.from_proc_descr(proc_descr, member_id)
     elif isinstance(proc_descr, v0_5.EnsureDtypeDescr):
@@ -1002,9 +1068,9 @@ def get_proc(
     elif isinstance(
         proc_descr, (v0_4.ScaleMeanVarianceDescr, v0_5.ScaleMeanVarianceDescr)
     ):
-        return ScaleMeanVariance.from_proc_descr(proc_descr, member_id)
+        return ScaleMeanVariance.from_proc_descr(proc_descr, member_id, preceding_ops)
     elif isinstance(proc_descr, (v0_4.ScaleRangeDescr, v0_5.ScaleRangeDescr)):
-        return ScaleRange.from_proc_descr(proc_descr, member_id)
+        return ScaleRange.from_proc_descr(proc_descr, member_id, preceding_ops)
     elif isinstance(proc_descr, (v0_4.SigmoidDescr, v0_5.SigmoidDescr)):
         return Sigmoid.from_proc_descr(proc_descr, member_id)
     elif (
@@ -1032,31 +1098,119 @@ def get_proc(
         proc_descr,
         (v0_4.ZeroMeanUnitVarianceDescr, v0_5.ZeroMeanUnitVarianceDescr),
     ):
-        return ZeroMeanUnitVariance.from_proc_descr(proc_descr, member_id)
+        return ZeroMeanUnitVariance.from_proc_descr(
+            proc_descr, member_id, preceding_ops
+        )
     else:
         assert_never(proc_descr)
 
 
+def _processing_tag(value: object) -> str | None:
+    if isinstance(value, Mapping):
+        tag = cast(Mapping[str, object], value).get("type")
+        return tag if isinstance(tag, str) else None
+    return type(value).__name__
+
+
+SerializableProcessing = Annotated[
+    Annotated[Binarize, Tag("Binarize")]
+    | Annotated[Clip, Tag("Clip")]
+    | Annotated[CellposeFlowDynamics, Tag("CellposeFlowDynamics")]
+    | Annotated[EnsureDtype, Tag("EnsureDtype")]
+    | Annotated[FixedZeroMeanUnitVariance, Tag("FixedZeroMeanUnitVariance")]
+    | Annotated[ScaleLinear, Tag("ScaleLinear")]
+    | Annotated[ScaleMeanVariance, Tag("ScaleMeanVariance")]
+    | Annotated[ScaleRange, Tag("ScaleRange")]
+    | Annotated[Sigmoid, Tag("Sigmoid")]
+    | Annotated[StardistPostprocessing2D, Tag("StardistPostprocessing2D")]
+    | Annotated[StardistPostprocessing3D, Tag("StardistPostprocessing3D")]
+    | Annotated[Softmax, Tag("Softmax")]
+    | Annotated[ZeroMeanUnitVariance, Tag("ZeroMeanUnitVariance")],
+    Discriminator(_processing_tag),
+]
+_PROCESSING_ADAPTER: TypeAdapter[SerializableProcessing] = TypeAdapter(
+    SerializableProcessing
+)
+_SERIALIZABLE_PROCESSING_TYPES = (
+    Binarize,
+    Clip,
+    CellposeFlowDynamics,
+    EnsureDtype,
+    FixedZeroMeanUnitVariance,
+    ScaleLinear,
+    ScaleMeanVariance,
+    ScaleRange,
+    Sigmoid,
+    StardistPostprocessing2D,
+    StardistPostprocessing3D,
+    Softmax,
+    ZeroMeanUnitVariance,
+)
+
+
+class _SerializedUpdateStats(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    type: Literal["UpdateStats"]
+    stats_calculator: _StatsCalculatorReference
+    keep_updating_initial_dataset_stats: bool
+
+
 def serialize_processing(proc: Operator) -> dict[str, Any]:
-    if isinstance(proc, CustomProcessing):
-        raise TypeError("Custom processing cannot be serialized as part of statistics")
+    """Serialize an operator, omitting mutable statistics calculator state."""
+    if type(proc) is AddKnownDatasetStats:
+        from .io import serialize_stat
 
-    member_ids = tuple(proc.output_member_ids)
-    if len(member_ids) != 1:
-        raise ValueError(
-            f"Expected one output member for {type(proc).__name__}, got {member_ids}"
-        )
+        assert isinstance(proc, AddKnownDatasetStats)
+        return {
+            "type": "AddKnownDatasetStats",
+            "dataset_stats": serialize_stat(proc.dataset_stats),
+        }
+    if type(proc) is UpdateStats:
+        assert isinstance(proc, UpdateStats)
+        return _SerializedUpdateStats(
+            type="UpdateStats",
+            stats_calculator=proc.calculator_reference,
+            keep_updating_initial_dataset_stats=proc.keep_updating_initial_dataset_stats,
+        ).model_dump(mode="json")
+    if (
+        not isinstance(proc, _SERIALIZABLE_PROCESSING_TYPES)
+        or type(proc) not in _SERIALIZABLE_PROCESSING_TYPES
+    ):
+        raise TypeError(f"{type(proc).__name__} cannot be serialized")
 
-    descr = proc.get_descr()
     return {
-        "member_id": str(member_ids[0]),
-        "descr": descr.model_dump(mode="json"),
+        "type": type(proc).__name__,
+        **_PROCESSING_ADAPTER.dump_python(proc, mode="json", warnings="error"),
     }
 
 
-def deserialize_processing(data: Mapping[str, Any]) -> Processing:
-    descr = _V05_PROC_DESCR_ADAPTER.validate_python(data["descr"])
-    if isinstance(descr, v0_5.CustomProcessingDescr):
-        raise TypeError("Custom processing is not allowed in serialized statistics")
+def deserialize_processing(
+    data: Mapping[str, Any],
+) -> SerializableProcessing | AddKnownDatasetStats | UpdateStats:
+    """Restore a tagged operator, rejecting incomplete or unexpected fields."""
+    if data.get("type") == "AddKnownDatasetStats":
+        from .io import JsonValue, load_stat
 
-    return get_proc(descr, MemberId(data["member_id"]))
+        if set(data) != {"type", "dataset_stats"} or not isinstance(
+            data["dataset_stats"], list
+        ):
+            raise ValueError("Invalid serialized AddKnownDatasetStats fields")
+        stats = load_stat(cast(list[JsonValue], data["dataset_stats"]))
+        if any(not isinstance(measure, DatasetMeasureBase) for measure in stats):
+            raise ValueError("AddKnownDatasetStats requires dataset measures")
+        return AddKnownDatasetStats(stats)
+    if data.get("type") == "UpdateStats":
+        payload = _SerializedUpdateStats.model_validate(data)
+        return UpdateStats(
+            stats_calculator=payload.stats_calculator,
+            keep_updating_initial_dataset_stats=payload.keep_updating_initial_dataset_stats,
+        )
+    proc = _PROCESSING_ADAPTER.validate_python(data)
+    expected = {"type", *(f.name for f in fields(proc) if f.init)}
+    if set(data) != expected:
+        raise ValueError(
+            f"Invalid serialized {type(proc).__name__} fields: missing "
+            + f"{expected - set(data)}, unexpected {set(data) - expected}"
+        )
+    return proc

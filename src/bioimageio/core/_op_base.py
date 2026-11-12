@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-import copy
 from abc import ABC, abstractmethod
 from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from typing import Any
 
 from torch import TYPE_CHECKING
-from typing_extensions import Self
 
 from .axis import PerAxis
 from .common import MemberId
@@ -20,9 +18,10 @@ if TYPE_CHECKING:
 
 @dataclass(frozen=True, kw_only=True)
 class Operator(ABC):
-    """Base class for all operators."""
+    """Base class for all operators.
 
-    preceding_ops: tuple[Operator, ...] = ()
+    Implementations must record themselves in ``sample.applied_ops`` after success.
+    """
 
     @abstractmethod
     def __call__(self, sample: Sample) -> None: ...
@@ -31,20 +30,28 @@ class Operator(ABC):
     def output_member_ids(self) -> Collection[MemberId]:
         return ()
 
-    def get_required_measures(
-        self, preceding_ops: Sequence[Operator] = ()
-    ) -> Collection[Measure]:
-        return ()
+    @property
+    def affects_statistics(self) -> bool:
+        """Whether this operator may change statistics of its output tensors."""
+        return True
 
-    def bind(self, preceding_ops: Sequence[Operator]) -> Self:
-        bound = copy.copy(self)
-        object.__setattr__(bound, "preceding_ops", tuple(preceding_ops))
-        return bound
+    def get_required_measures(self) -> Collection[Measure]:
+        return ()
 
     def get_descr(self) -> Any:
         raise NotImplementedError(
             f"{type(self).__name__} has no processing description"
         )
+
+
+def get_relevant_preceding_ops(
+    member_id: MemberId, applied_ops: Sequence[Operator]
+) -> tuple[Operator, ...]:
+    return tuple(
+        op
+        for op in applied_ops
+        if op.affects_statistics and member_id in op.output_member_ids
+    )
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -87,6 +94,7 @@ class SimpleOperator(BlockwiseOperator):
         ), "overwriting existing output member with different shape"
 
         sample.members[self.output] = output_tensor
+        sample.applied_ops += (self,)
 
     @abstractmethod
     def _apply(self, x: Tensor, stat: Stat) -> Tensor: ...

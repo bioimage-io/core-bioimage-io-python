@@ -691,6 +691,7 @@ def transpose_sample_for_model(
         ),
         stat=sample.stat,
         id=sample.id,
+        applied_ops=sample.applied_ops,
     )
 
 

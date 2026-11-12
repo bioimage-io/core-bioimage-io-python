@@ -17,6 +17,7 @@ from ...axis import AxisId
 from ...common import MemberId, SampleId
 from ...io import JsonValue, load_stat, save_tensor, serialize_stat
 from ...sample import Sample
+from ...stat_measures import AppliedOps
 from ...tensor import MultiIndex, Tensor
 
 
@@ -47,6 +48,7 @@ class _SerializableSampleBlock(BaseModel, frozen=True):
     data: PerMemberAnno[_SerializableBlock | Path]
     serialized_stat: list[JsonValue]
     batch_indices: PerMemberAnno[dict[str, list[JsonValue]]] = {}
+    applied_ops: AppliedOps
 
 
 SerializedSampleBlock = dict[str, JsonValue]
@@ -64,6 +66,7 @@ class GradioSampleSerializer(SampleSerializer[SerializedSampleBlock]):
             id=sample_block.id,
             dims={m: t.dims for m, t in sample_block.members.items()},
             serialized_stat=serialize_stat(sample_block.stat),
+            applied_ops=sample_block.applied_ops,
             batch_indices={
                 m: {
                     str(name): index.get_level_values(i).tolist()
@@ -102,4 +105,5 @@ class GradioSampleSerializer(SampleSerializer[SerializedSampleBlock]):
             id=deserializable_sample.id,
             members=members,
             stat=load_stat(deserializable_sample.serialized_stat),
+            applied_ops=deserializable_sample.applied_ops,
         )

@@ -8,7 +8,6 @@ from typing import (
     Literal,
     Protocol,
     TypeAlias,
-    TypeVar,
     cast,
 )
 
@@ -16,6 +15,7 @@ import numpy as np
 from pydantic import (
     BaseModel,
     BeforeValidator,
+    ConfigDict,
     Discriminator,
     PlainSerializer,
 )
@@ -49,9 +49,9 @@ MeasureValue: TypeAlias = (
 )
 
 
-def _validate_preceding_ops(value: Any) -> tuple[Operator, ...]:
+def _validate_applied_ops(value: Any) -> tuple[Operator, ...]:
     if not isinstance(value, (list, tuple)):
-        raise TypeError("preceding_ops must be a sequence")
+        raise TypeError("applied_ops must be a sequence")
 
     values = cast(list[Any] | tuple[Any, ...], value)
     if all(isinstance(op, Operator) for op in values):
@@ -62,16 +62,16 @@ def _validate_preceding_ops(value: Any) -> tuple[Operator, ...]:
     return tuple(deserialize_processing(cast(Mapping[str, Any], op)) for op in values)
 
 
-def _serialize_preceding_ops(ops: tuple[Operator, ...]) -> list[dict[str, Any]]:
+def _serialize_applied_ops(ops: tuple[Operator, ...]) -> list[dict[str, Any]]:
     from .proc_ops import serialize_processing
 
     return [serialize_processing(op) for op in ops]
 
 
-PrecedingOps: TypeAlias = Annotated[
+AppliedOps: TypeAlias = Annotated[
     tuple[Operator, ...],
-    BeforeValidator(_validate_preceding_ops),
-    PlainSerializer(_serialize_preceding_ops),
+    BeforeValidator(_validate_applied_ops),
+    PlainSerializer(_serialize_applied_ops),
 ]
 
 
@@ -82,8 +82,10 @@ class SampleLike(Protocol):
 
 
 class MeasureBase(BaseModel, frozen=True):
+    model_config = ConfigDict(extra="forbid")
+
     member_id: MemberId
-    preceding_ops: PrecedingOps = ()
+    preceding_ops: AppliedOps = ()
 
 
 class SampleMeasureBase(MeasureBase, ABC, frozen=True):
@@ -219,7 +221,3 @@ MeanMeasure: TypeAlias = SampleMean | DatasetMean
 StdMeasure: TypeAlias = SampleStd | DatasetStd
 VarMeasure: TypeAlias = SampleVar | DatasetVar
 PercentileMeasure: TypeAlias = SampleQuantile | DatasetQuantile
-MeanMeasureT = TypeVar("MeanMeasureT", bound=MeanMeasure)
-StdMeasureT = TypeVar("StdMeasureT", bound=StdMeasure)
-VarMeasureT = TypeVar("VarMeasureT", bound=VarMeasure)
-PercentileMeasureT = TypeVar("PercentileMeasureT", bound=PercentileMeasure)
