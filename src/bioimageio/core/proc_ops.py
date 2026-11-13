@@ -91,6 +91,29 @@ class AddKnownDatasetStats(BlockwiseOperator):
             {k: v for k, v in self.dataset_stats.items() if k.scope == "dataset"},
         )
 
+    def __eq__(self, other: object) -> bool:
+        """Compare statistics by value, evaluating lazy tensors if necessary."""
+        if type(self) is not type(other) or not isinstance(other, AddKnownDatasetStats):
+            return NotImplemented
+        if self.dataset_stats.keys() != other.dataset_stats.keys():
+            return False
+        for measure, value in self.dataset_stats.items():
+            other_value = other.dataset_stats[measure]
+            if isinstance(value, Tensor):
+                if (
+                    not isinstance(other_value, Tensor)
+                    or value.dims != other_value.dims
+                    or not np.array_equal(
+                        value.to_numpy(), other_value.to_numpy(), equal_nan=True
+                    )
+                ):
+                    return False
+            elif isinstance(other_value, Tensor) or not (
+                value == other_value or (np.isnan(value) and np.isnan(other_value))
+            ):
+                return False
+        return True
+
     def __call__(self, sample: Sample) -> None:  #  | SampleBlock
         sample.stat.update(self.dataset_stats)
         sample.applied_ops += (self,)

@@ -89,7 +89,7 @@ from .io import load_stat, save_sample, save_stat
 from .proc_setup import get_required_dataset_measures
 from .remote_backends import create_remote_model_adapter
 from .sample import Sample
-from .stat_calculators import StatsCalculator
+from .stat_calculators import compute_dataset_measures
 from .stat_measures import Measure, MeasureValue, Stat
 from .weight_converters._add_weights import add_weights
 
@@ -296,16 +296,17 @@ def _get_stat(
 
         return stat
 
-    stats_calc = StatsCalculator(
-        req_dataset_meas, dataset_fits_in_memory=dataset_fits_in_memory
+    values = compute_dataset_measures(
+        req_dataset_meas,
+        tqdm(
+            dataset,
+            total=dataset_length,
+            desc="precomputing dataset stats",
+            unit="sample",
+        ),
+        dataset_fits_in_memory=dataset_fits_in_memory,
     )
-
-    for sample in tqdm(
-        dataset, total=dataset_length, desc="precomputing dataset stats", unit="sample"
-    ):
-        stats_calc.update(sample)
-
-    stat: dict[Measure, MeasureValue] = {k: v for k, v in stats_calc.finalize().items()}
+    stat: dict[Measure, MeasureValue] = {k: v for k, v in values.items()}
     save_stat(stat, stats_path)
     return stat
 
