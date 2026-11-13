@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable
-from dataclasses import FrozenInstanceError
+from dataclasses import FrozenInstanceError, replace
 from pathlib import Path
 from typing import Any, TypeGuard, TypeVar
 
@@ -18,6 +18,253 @@ from bioimageio.core.sample import Sample
 from bioimageio.core.stat_calculators import compute_measures
 from bioimageio.core.stat_measures import SampleMean, SampleQuantile, SampleStd
 from bioimageio.core.tensor import Tensor
+
+
+def test_sample_tracks_successful_operators_and_copies_history():
+    from bioimageio.core.proc_ops import AddKnownDatasetStats, Clip
+
+    mid = MemberId("input")
+    sample = Sample(
+        id=None,
+        members={mid: Tensor(np.asarray([[0.0, 2.0]]), dims=("batch", "x"))},
+        stat={},
+    )
+    clip = Clip(input=mid, output=mid, min=0.0, max=1.0)
+    stats = AddKnownDatasetStats({})
+    clip(sample)
+    stats(sample)
+    assert sample.applied_ops == (clip, stats)
+    for copied in (
+        sample.copy(),
+        sample.copy(deep=True),
+        sample.as_numpy(),
+        sample.as_dask(),
+        sample[{AxisId("x"): slice(None)}],
+        sample.pad({}, "symmetric"),
+    ):
+        assert copied.applied_ops == (clip, stats)
+
+    with pytest.raises(ValueError, match="Input"):
+        Clip(input=MemberId("missing"), output=mid, min=0.0)(sample)
+    assert sample.applied_ops == (clip, stats)
+
+
+def test_known_dataset_statistics_compare_by_value():
+    from bioimageio.core.proc_ops import AddKnownDatasetStats
+    from bioimageio.core.stat_measures import DatasetMean, DatasetStd
+
+    mid = MemberId("input")
+    mean, std = DatasetMean(member_id=mid), DatasetStd(member_id=mid)
+    values: NDArray[np.float64] = np.asarray([1.0, np.nan], dtype=np.float64)
+    same_values: NDArray[np.float64] = np.asarray([1.0, np.nan], dtype=np.float64)
+    op = AddKnownDatasetStats(
+        {mean: Tensor(values, dims=("x",)).as_dask(), std: float("nan")}
+    )
+    same = AddKnownDatasetStats(
+        {mean: Tensor(same_values, dims=("x",)), std: float("nan")}
+    )
+    different = AddKnownDatasetStats(
+        {mean: Tensor(np.asarray([2.0, np.nan]), dims=("x",)), std: float("nan")}
+    )
+    wrong_axis = AddKnownDatasetStats(
+        {mean: Tensor(values, dims=("y",)), std: float("nan")}
+    )
+    wrong_type = AddKnownDatasetStats({mean: 1.0, std: float("nan")})
+    missing = AddKnownDatasetStats({mean: Tensor(values, dims=("x",))})
+
+    assert op == same
+    assert op != different
+    assert op != wrong_axis
+    assert op != wrong_type
+    assert op != missing
+    assert op != object()
+
+
+def test_update_stats_records_success_but_not_failure():
+    from bioimageio.core.proc_ops import Clip, UpdateStats
+    from bioimageio.core.stat_calculators import StatsCalculator
+
+    mid = MemberId("input")
+    sample = Sample(
+        id=None,
+        members={mid: Tensor(np.asarray([0.0, 2.0]), dims=("x",))},
+        stat={},
+    )
+    clip = Clip(input=mid, output=mid, min=0.0, max=1.0)
+    clip(sample)
+    invalid = UpdateStats(StatsCalculator([SampleMean(member_id=mid)]))
+    with pytest.raises(ValueError, match="applied_ops"):
+        invalid(sample)
+    assert sample.applied_ops == (clip,)
+
+    mean = SampleMean(member_id=mid, preceding_ops=(clip,))
+    updater = UpdateStats(StatsCalculator([mean]))
+    updater(sample)
+    assert sample.applied_ops == (clip, updater)
+    assert mean in sample.stat
+
+
+@pytest.mark.parametrize("kind", ["clip", "scale_range", "normalize"])
+def test_processing_uses_explicit_measure_provenance(kind: str):
+    from bioimageio.core.proc_ops import (
+        Clip,
+        EnsureDtype,
+        ScaleRange,
+        ZeroMeanUnitVariance,
+    )
+
+    mid = MemberId("input")
+    prior = EnsureDtype(input=mid, output=mid, dtype="float32")
+    lower = SampleQuantile(member_id=mid, q=0.25, preceding_ops=(prior,))
+    upper = SampleQuantile(member_id=mid, q=0.75, preceding_ops=(prior,))
+    mean = SampleMean(member_id=mid, preceding_ops=(prior,))
+    std = SampleStd(member_id=mid, preceding_ops=(prior,))
+    if kind == "clip":
+        op = Clip(input=mid, output=mid, min=lower, max=upper)
+        expected_measures = (lower, upper)
+        expected = np.asarray([0.25, 0.75])
+    elif kind == "scale_range":
+        op = ScaleRange(input=mid, output=mid, _lower=lower, _upper=upper)
+        expected_measures = (lower, upper)
+        expected = (np.asarray([0.0, 2.0]) - 0.25) / (0.5 + op.eps)
+    else:
+        op = ZeroMeanUnitVariance(input=mid, output=mid, mean=mean, std=std)
+        expected_measures = (mean, std)
+        expected = (np.asarray([0.0, 2.0]) - 1.0) / (2.0 + op.eps)
+
+    required = op.get_required_measures()
+    assert all(
+        any(actual is expected for actual in required) for expected in expected_measures
+    )
+    sample = Sample(
+        id=None,
+        members={mid: Tensor(np.asarray([0.0, 2.0]), dims=("x",))},
+        stat={lower: 0.25, upper: 0.75, mean: 1.0, std: 2.0},
+    )
+    op(sample)
+    np.testing.assert_allclose(sample.members[mid].to_numpy(), expected)
+
+
+def test_scale_range_replace_preserves_quantile_inputs():
+    from bioimageio.core.proc_ops import ScaleRange
+
+    mid = MemberId("input")
+    default = ScaleRange(mid, mid)
+    assert replace(default, eps=0.01).lower == default.lower
+    assert replace(default, eps=0.01).upper == default.upper
+    lower = SampleQuantile(member_id=mid, q=0.25)
+    upper = SampleQuantile(member_id=mid, q=0.75)
+    explicit = ScaleRange(mid, mid, _lower=lower, _upper=upper)
+    updated = replace(explicit, eps=0.01)
+    assert updated.lower == lower
+    assert updated.upper == upper
+    explicit_defaults = replace(default, _lower=default.lower, _upper=default.upper)
+    assert default == explicit_defaults
+    assert hash(default) == hash(explicit_defaults)
+
+
+def test_scale_mean_variance_uses_explicit_measures_for_each_member():
+    from bioimageio.core.proc_ops import Clip, ScaleMeanVariance
+
+    mid, ref = MemberId("input"), MemberId("reference")
+    input_clip = Clip(input=mid, output=mid, min=0.0, max=1.0)
+    ref_clip = Clip(input=ref, output=ref, min=0.0, max=2.0)
+    op = ScaleMeanVariance(
+        input=mid,
+        output=mid,
+        reference_tensor=ref,
+        _mean=SampleMean(member_id=mid, preceding_ops=(input_clip,)),
+        _std=SampleStd(member_id=mid, preceding_ops=(input_clip,)),
+        _ref_mean=SampleMean(member_id=ref, preceding_ops=(ref_clip,)),
+        _ref_std=SampleStd(member_id=ref, preceding_ops=(ref_clip,)),
+    )
+    assert op.mean.preceding_ops == (input_clip,)
+    assert op.std.preceding_ops == (input_clip,)
+    assert op.ref_mean.preceding_ops == (ref_clip,)
+    assert op.ref_std.preceding_ops == (ref_clip,)
+    assert op.get_required_measures() == {op.mean, op.std, op.ref_mean, op.ref_std}
+
+    sample = Sample(
+        id=None,
+        members={mid: Tensor(np.asarray([1.0, 3.0]), dims=("x",))},
+        stat={op.mean: 1.0, op.std: 2.0, op.ref_mean: 4.0, op.ref_std: 3.0},
+    )
+    op(sample)
+    np.testing.assert_allclose(
+        sample.members[mid].to_numpy(),
+        (np.asarray([1.0, 3.0]) - 1.0) / (2.0 + op.eps) * (3.0 + op.eps) + 4.0,
+    )
+
+
+def test_scale_mean_variance_defaults_unspecified_measures():
+    from bioimageio.core.proc_ops import Clip, ScaleMeanVariance
+
+    mid, ref = MemberId("input"), MemberId("reference")
+    prior = Clip(input=mid, output=mid, min=0.0, max=1.0)
+    mean = SampleMean(member_id=mid, preceding_ops=(prior,))
+    op = ScaleMeanVariance(input=mid, output=mid, reference_tensor=ref, _mean=mean)
+
+    assert op.mean is mean
+    assert op.std == SampleStd(member_id=mid)
+    assert op.ref_mean == SampleMean(member_id=ref)
+    assert op.ref_std == SampleStd(member_id=ref)
+    assert replace(op, eps=0.01).mean is mean
+
+    default_op = ScaleMeanVariance(input=mid, output=mid, reference_tensor=ref)
+    explicit_default = replace(default_op, _mean=SampleMean(member_id=mid))
+    assert default_op == explicit_default
+    assert hash(default_op) == hash(explicit_default)
+
+
+def test_scale_mean_variance_rejects_mismatched_explicit_measures():
+    from bioimageio.core.proc_ops import ScaleMeanVariance
+    from bioimageio.core.stat_measures import DatasetStd
+
+    mid, ref = MemberId("input"), MemberId("reference")
+    with pytest.raises(ValueError, match="members, axes and scope"):
+        _ = ScaleMeanVariance(
+            input=mid, output=mid, reference_tensor=ref, _mean=SampleMean(member_id=ref)
+        )
+    with pytest.raises(ValueError, match="members, axes and scope"):
+        _ = ScaleMeanVariance(input=mid, output=mid, _std=DatasetStd(member_id=mid))
+    with pytest.raises(ValueError, match="members, axes and scope"):
+        _ = ScaleMeanVariance(
+            input=mid,
+            output=mid,
+            axes=(AxisId("x"),),
+            _mean=SampleMean(member_id=mid, axes=(AxisId("y"),)),
+        )
+
+
+def test_described_processing_constructs_measures_with_member_provenance():
+    from bioimageio.core.proc_ops import Clip, ScaleMeanVariance, ScaleRange, get_proc
+    from bioimageio.spec.model import v0_5
+
+    mid, ref = MemberId("input"), MemberId("reference")
+    input_clip = Clip(input=mid, output=mid, min=0.0, max=1.0)
+    ref_clip = Clip(input=ref, output=ref, min=0.0, max=2.0)
+    preceding = (input_clip, ref_clip)
+    axes = [v0_5.AxisId("x")]
+    scale = get_proc(
+        v0_5.ScaleMeanVarianceDescr(
+            kwargs=v0_5.ScaleMeanVarianceKwargs(reference_tensor=ref, axes=axes)
+        ),
+        mid,
+        preceding_ops=preceding,
+    )
+    assert isinstance(scale, ScaleMeanVariance)
+    assert scale.mean.preceding_ops == scale.std.preceding_ops == (input_clip,)
+    assert scale.ref_mean.preceding_ops == scale.ref_std.preceding_ops == (ref_clip,)
+
+    range_op = get_proc(
+        v0_5.ScaleRangeDescr(
+            kwargs=v0_5.ScaleRangeKwargs(reference_tensor=ref, axes=axes)
+        ),
+        mid,
+        preceding_ops=preceding,
+    )
+    assert isinstance(range_op, ScaleRange)
+    assert range_op.lower.preceding_ops == range_op.upper.preceding_ops == (ref_clip,)
 
 
 def test_v04_fixed_zmuv_is_immutable():
@@ -129,12 +376,12 @@ def tid():
 def test_scale_linear(tid: MemberId):
     from bioimageio.core.proc_ops import ScaleLinear
 
-    offset = xr.DataArray([1, 2, 42], dims=("channel",))
-    gain = xr.DataArray([1, 2, 3], dims=("channel",))
     data = xr.DataArray(np.arange(6).reshape((1, 2, 3)), dims=("x", "y", "channel"))
     sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
 
-    op = ScaleLinear(input=tid, output=tid, offset=offset, gain=gain)
+    op = ScaleLinear(
+        input=tid, output=tid, offset=(1, 2, 42), gain=(1, 2, 3), axis=AxisId("channel")
+    )
     op(sample)
 
     expected = xr.DataArray(
@@ -153,6 +400,55 @@ def test_scale_linear_no_channel(tid: MemberId):
 
     expected = xr.DataArray(np.array([[1, 3, 5], [7, 9, 11]]), dims=("x", "y"))
     xr.testing.assert_allclose(expected, sample.members[tid].data, rtol=1e-5, atol=1e-7)
+
+
+def test_scale_linear_description_with_scalar_and_axis_values(tid: MemberId):
+    from bioimageio.core.proc_ops import ScaleLinear
+    from bioimageio.spec.model import v0_5
+
+    descr = v0_5.ScaleLinearDescr(
+        kwargs=v0_5.ScaleLinearAlongAxisKwargs(
+            axis=v0_5.AxisId("channel"), gain=[2.0, 3.0], offset=1.0
+        )
+    )
+    op = ScaleLinear.from_proc_descr(descr, tid)
+    assert op.gain == (2.0, 3.0)
+    assert op.offset == (1.0, 1.0)
+    assert op.get_descr() == descr
+    op = replace(op, offset=1.0)
+    sample = Sample(
+        members={tid: Tensor(np.asarray([1.0, 2.0]), dims=("channel",))},
+        stat={},
+        id=None,
+    )
+    op(sample)
+    np.testing.assert_allclose(sample.members[tid].to_numpy(), [3.0, 7.0])
+
+
+@pytest.mark.parametrize("axis", [None, AxisId("channel")])
+def test_fixed_normalization_description_round_trip(tid: MemberId, axis: AxisId | None):
+    from bioimageio.core.proc_ops import FixedZeroMeanUnitVariance
+
+    op = FixedZeroMeanUnitVariance(
+        tid,
+        tid,
+        mean=1.0 if axis is None else (1.0, 2.0),
+        std=3.0 if axis is None else (3.0, 4.0),
+        axis=axis,
+    )
+    assert FixedZeroMeanUnitVariance.from_proc_descr(op.get_descr(), tid) == op
+
+
+@pytest.mark.parametrize("kind", ["scale", "normalize"])
+def test_processing_rejects_data_array_parameters(tid: MemberId, kind: str):
+    from bioimageio.core.proc_ops import FixedZeroMeanUnitVariance, ScaleLinear
+
+    value: Any = xr.DataArray([1.0, 2.0], dims=("channel",))
+    with pytest.raises(TypeError, match="scalars"):
+        if kind == "scale":
+            _ = ScaleLinear(tid, tid, gain=value, offset=value)
+        else:
+            _ = FixedZeroMeanUnitVariance(tid, tid, mean=value, std=value)
 
 
 T = TypeVar("T")
@@ -194,8 +490,9 @@ def test_zero_mean_unit_variance_fixed(tid: MemberId):
     op = FixedZeroMeanUnitVariance(
         tid,
         tid,
-        mean=xr.DataArray([3, 4, 5], dims=("channel",)),
-        std=xr.DataArray([2.44948974, 2.44948974, 2.44948974], dims=("channel",)),
+        mean=(3, 4, 5),
+        std=(2.44948974, 2.44948974, 2.44948974),
+        axis=AxisId("channel"),
     )
     data = xr.DataArray(np.arange(9).reshape((1, 3, 3)), dims=("batch", "channel", "x"))
     expected = xr.DataArray(

@@ -16,12 +16,22 @@ from xarray.testing import assert_allclose  # pyright: ignore[reportUnknownVaria
 from bioimageio.core import stat_calculators
 from bioimageio.core.axis import AxisId
 from bioimageio.core.common import MemberId
-from bioimageio.core.proc_ops import ScaleRange, UpdateStats
+from bioimageio.core.proc_ops import (
+    AddKnownDatasetStats,
+    Clip,
+    ScaleLinear,
+    ScaleRange,
+    UpdateStats,
+)
 from bioimageio.core.sample import Sample
 from bioimageio.core.stat_calculators import (
     CrickQuantilesCalculator,
+    InMemoryDatasetQuantilesCalculator,
+    MeanCalculator,
     MeanQuantilesCalculator,
     MeanVarStdCalculator,
+    NaiveSampleMeasureCalculator,
+    SampleQuantilesCalculator,
     StatsCalculator,
     compute_dataset_measures,
     compute_measures,
@@ -34,6 +44,7 @@ from bioimageio.core.stat_measures import (
     DatasetQuantile,
     DatasetStd,
     DatasetVar,
+    Measure,
     MeasureValue,
     SampleMean,
     SampleMeasure,
@@ -344,6 +355,378 @@ def test_mean_variance_std_share_one_calculator(dataset: bool):
         assert isinstance(selected[0], MeanVarStdCalculator)
 
 
+@pytest.mark.parametrize(
+    "measure",
+    [
+        SampleMean(member_id=_MEMBER),
+        SampleVar(member_id=_MEMBER),
+        SampleStd(member_id=_MEMBER),
+        SampleQuantile(member_id=_MEMBER, q=0.25),
+        DatasetMean(member_id=_MEMBER),
+        DatasetVar(member_id=_MEMBER),
+        DatasetStd(member_id=_MEMBER),
+        DatasetQuantile(member_id=_MEMBER, q=0.25),
+    ],
+)
+def test_measure_calculators_derive_preprocessing_provenance(
+    measure: Measure,
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setattr(
+        stat_calculators, "DatasetQuantilesCalculator", MeanQuantilesCalculator
+    )
+    clip = Clip(input=_MEMBER, output=_MEMBER, min=0.0, max=1.0)
+    measure = measure.model_copy(update={"preceding_ops": (clip,)})
+    data = np.arange(48, dtype="float64").reshape(1, 2, 4, 6)
+    sample = _sample(data, lazy=True)
+    sample_calculators, dataset_calculators = get_measure_calculators([measure])
+    with Callback(pretask=_no_execution):
+        values: dict[Measure, MeasureValue] = {}
+        for calc in sample_calculators:
+            values.update(calc.compute(sample).items())
+        for calc in dataset_calculators:
+            calc.update(sample)
+            values.update(calc.finalize().items())
+
+    raw_measure = measure.model_copy(update={"preceding_ops": ()})
+    assert raw_measure in values
+    assert all(not key.preceding_ops for key in values)
+
+    clip(sample)
+    sample_calculators, dataset_calculators = get_measure_calculators([measure])
+    with Callback(pretask=_no_execution):
+        values = {}
+        for calc in sample_calculators:
+            values.update(calc.compute(sample).items())
+        for calc in dataset_calculators:
+            calc.update(sample)
+            values.update(calc.finalize().items())
+
+    data = np.clip(data, 0.0, 1.0)
+    expected = (
+        np.quantile(data, 0.25)
+        if measure.name == "quantile"
+        else getattr(np, measure.name)(data)
+    )
+    actual = cast(NDArray[Any], _lazy_array(values[measure]).compute())
+    np.testing.assert_allclose(actual, expected)
+    assert all(key.preceding_ops == (clip,) for key in values)
+
+
+def test_measure_calculators_share_configurations_across_provenance():
+    clip = Clip(input=_MEMBER, output=_MEMBER, min=0.0, max=1.0)
+    raw_mean = SampleMean(member_id=_MEMBER)
+    clipped_std = SampleStd(member_id=_MEMBER, preceding_ops=(clip,))
+    raw_quantile = DatasetQuantile(member_id=_MEMBER, q=0.25)
+    clipped_quantile = DatasetQuantile(member_id=_MEMBER, q=0.75, preceding_ops=(clip,))
+
+    sample_calcs, dataset_calcs = get_measure_calculators(
+        [raw_mean, clipped_std, raw_quantile, clipped_quantile]
+    )
+    assert len(sample_calcs) == 1
+    assert len(dataset_calcs) == 1
+    sample = _sample(np.arange(48, dtype="float64").reshape(1, 2, 4, 6), lazy=True)
+    sample_values: dict[SampleMeasure, MeasureValue] = {}
+    for calc in sample_calcs:
+        sample_values.update(calc.compute(sample).items())
+    assert raw_mean in sample_values
+    assert SampleStd(member_id=_MEMBER) in sample_values
+    assert clipped_std not in sample_values
+    clip(sample)
+    sample_values = {}
+    for calc in sample_calcs:
+        sample_values.update(calc.compute(sample).items())
+    assert clipped_std in sample_values
+    assert raw_mean not in sample_values
+
+
+@pytest.mark.parametrize(
+    "backend",
+    [
+        MeanQuantilesCalculator,
+        CrickQuantilesCalculator,
+        InMemoryDatasetQuantilesCalculator,
+    ],
+)
+def test_dataset_quantile_backends_preserve_provenance(
+    backend: type[
+        MeanQuantilesCalculator
+        | CrickQuantilesCalculator
+        | InMemoryDatasetQuantilesCalculator
+    ],
+    monkeypatch: pytest.MonkeyPatch,
+):
+    if backend is CrickQuantilesCalculator:
+        _ = pytest.importorskip("crick")
+    elif backend is MeanQuantilesCalculator:
+        monkeypatch.setattr(stat_calculators, "DatasetQuantilesCalculator", backend)
+
+    clip = Clip(input=_MEMBER, output=_MEMBER, min=0.0, max=1.0)
+    measures = [
+        DatasetQuantile(member_id=_MEMBER, q=q, preceding_ops=(clip,))
+        for q in (0.25, 0.75)
+    ]
+    _, calculators = get_measure_calculators(
+        measures, datast_fits_in_memory=backend is InMemoryDatasetQuantilesCalculator
+    )
+    assert len(calculators) == 1
+    calc = calculators[0]
+    assert isinstance(
+        calc,
+        (
+            MeanQuantilesCalculator,
+            CrickQuantilesCalculator,
+            InMemoryDatasetQuantilesCalculator,
+        ),
+    )
+    sample = _sample(np.linspace(0.0, 1.0, 48).reshape(1, 2, 4, 6), lazy=True)
+    clip(sample)
+    with Callback(pretask=_no_execution):
+        calc.update(sample)
+        values = calc.finalize()
+
+    assert set(values) == set(measures)
+    lower, upper = (
+        float(cast(NDArray[Any], _lazy_array(values[measure]).compute()))
+        for measure in measures
+    )
+    assert lower < upper
+
+
+@pytest.mark.parametrize(
+    "kind", ["mean", "mean_var", "mean_quantile", "crick_quantile", "memory_quantile"]
+)
+def test_dataset_calculators_reject_mixed_sample_provenance(kind: str):
+    if kind == "mean":
+        calc = MeanCalculator(_MEMBER, axes=None)
+    elif kind == "mean_var":
+        calc = MeanVarStdCalculator(_MEMBER, axes=None)
+    elif kind == "mean_quantile":
+        calc = MeanQuantilesCalculator(_MEMBER, axes=None, qs=[0.5])
+    elif kind == "crick_quantile":
+        _ = pytest.importorskip("crick")
+        calc = CrickQuantilesCalculator(_MEMBER, axes=None, qs=[0.5])
+    else:
+        calc = InMemoryDatasetQuantilesCalculator(_MEMBER, axes=None, qs=[0.5])
+
+    clip = Clip(input=_MEMBER, output=_MEMBER, min=0.0, max=1.0)
+    other_clip = Clip(input=_MEMBER, output=_MEMBER, min=0.0, max=2.0)
+    missing = Sample(id=None, members={}, stat={}, applied_ops=(other_clip,))
+    with pytest.raises(KeyError):
+        calc.update(missing)
+    assert calc.finalize() == {}
+
+    first = _sample(np.full((1, 1, 2, 2), 3.0), lazy=True)
+    second = first.copy()
+    clip(first)
+    clip(second)
+    other_member = MemberId("other")
+    second.members[other_member] = second.members[_MEMBER]
+    ScaleLinear(input=other_member, output=other_member, gain=2.0)(second)
+    AddKnownDatasetStats({})(second)
+    calc.update(first)
+    calc.update(second)
+    before: dict[DatasetMeasure, MeasureValue] = {}
+    before.update(calc.finalize().items())
+    assert before
+    assert all(measure.preceding_ops == (clip,) for measure in before)
+
+    mismatched = _sample(np.full((1, 1, 2, 2), 3.0), lazy=True)
+    other_clip(mismatched)
+    with pytest.raises(ValueError, match="different applied_ops"):
+        calc.update(mismatched)
+    after: dict[DatasetMeasure, MeasureValue] = {}
+    after.update(calc.finalize().items())
+    assert after.keys() == before.keys()
+    for measure, value in after.items():
+        np.testing.assert_allclose(
+            cast(NDArray[Any], _lazy_array(value).compute()),
+            cast(NDArray[Any], _lazy_array(before[measure]).compute()),
+        )
+
+
+def test_sample_calculators_use_current_sample_history():
+    clip = Clip(input=_MEMBER, output=_MEMBER, min=0.0, max=1.0)
+    sample = _sample(np.full((1, 1, 2, 2), 3.0), lazy=True)
+    calculators = (
+        MeanCalculator(_MEMBER, axes=None),
+        MeanVarStdCalculator(_MEMBER, axes=None),
+        SampleQuantilesCalculator(_MEMBER, axes=None, qs=[0.5]),
+        NaiveSampleMeasureCalculator(
+            _MEMBER, SampleMean(member_id=_MEMBER, preceding_ops=(clip,))
+        ),
+    )
+    for calculator in calculators:
+        assert all(not measure.preceding_ops for measure in calculator.compute(sample))
+    clip(sample)
+    AddKnownDatasetStats({})(sample)
+    for calculator in calculators:
+        assert all(
+            measure.preceding_ops == (clip,) for measure in calculator.compute(sample)
+        )
+
+    mean_calc = MeanCalculator(_MEMBER, axes=None)
+    assert set(mean_calc.compute_and_update(sample)) == {
+        SampleMean(member_id=_MEMBER, preceding_ops=(clip,))
+    }
+    assert set(mean_calc.finalize()) == {
+        DatasetMean(member_id=_MEMBER, preceding_ops=(clip,))
+    }
+
+
+def test_stats_calculator_preserves_provenance_and_uses_processed_samples():
+    clip = Clip(input=_MEMBER, output=_MEMBER, min=0.0, max=1.0)
+    raw_mean = DatasetMean(member_id=_MEMBER)
+    clipped_mean = raw_mean.model_copy(update={"preceding_ops": (clip,)})
+    sample_mean = SampleMean(member_id=_MEMBER, preceding_ops=(clip,))
+    calc = StatsCalculator(
+        [clipped_mean, sample_mean],
+        {raw_mean: 7.0, clipped_mean: 8.0},
+    )
+    assert calc.finalize() == {raw_mean: 7.0, clipped_mean: 8.0}
+
+    raw = _sample(np.full((1, 1, 2, 2), 4.0), lazy=True)
+    processed = raw.copy()
+    clip(processed)
+    with Callback(pretask=_no_execution):
+        actual = calc.update_and_get_all(processed)
+
+    assert set(actual) == {raw_mean, clipped_mean, sample_mean}
+    assert actual[raw_mean] == 7.0
+    for measure in [clipped_mean, sample_mean]:
+        computed = cast(NDArray[Any], _lazy_array(actual[measure]).compute())
+        np.testing.assert_allclose(computed, 1.0)
+    np.testing.assert_allclose(processed.members[_MEMBER].to_numpy(), 1.0)
+
+    other = Clip(input=_MEMBER, output=_MEMBER, min=0.0, max=2.0)
+    other(raw)
+    with pytest.raises(ValueError, match="preceding_ops"):
+        StatsCalculator([clipped_mean]).update(raw)
+
+
+@pytest.mark.parametrize(
+    "method",
+    ["update", "update_and_get_all", "skip_update_and_get_all"],
+)
+def test_unbound_measures_reject_applied_ops(method: str):
+    clip = Clip(input=_MEMBER, output=_MEMBER, min=0.0, max=1.0)
+    mean = DatasetMean(member_id=_MEMBER)
+    calc = StatsCalculator([mean], {mean: 42.0})
+    sample = _sample(np.full((1, 1, 2, 2), 3.0), lazy=True)
+    clip(sample)
+
+    with pytest.raises(ValueError, match="preceding_ops"):
+        getattr(calc, method)(sample)
+
+    assert calc.sample_count == 0
+    assert calc.finalize() == {mean: 42.0}
+
+
+def test_partial_preprocessing_mismatch_is_rejected():
+    clip = Clip(input=_MEMBER, output=_MEMBER, min=0.0, max=1.0)
+    raw_mean = DatasetMean(member_id=_MEMBER)
+    clipped_mean = raw_mean.model_copy(update={"preceding_ops": (clip,)})
+    calc = StatsCalculator([raw_mean, clipped_mean])
+    sample = _sample(np.full((1, 1, 2, 2), 3.0), lazy=True)
+    clip(sample)
+
+    with pytest.raises(ValueError, match="preceding_ops"):
+        calc.update(sample)
+    assert calc.sample_count == 0
+    assert calc.finalize() == {}
+
+
+def test_applied_ops_are_checked_for_each_member():
+    other_member = MemberId("other")
+    clip = Clip(input=_MEMBER, output=_MEMBER, min=0.0, max=1.0)
+    clipped_mean = SampleMean(member_id=_MEMBER, preceding_ops=(clip,))
+    other_mean = SampleMean(member_id=other_member)
+    sample = _sample(np.full((1, 1, 2, 2), 3.0), lazy=True)
+    sample.members[other_member] = sample.members[_MEMBER]
+    clip(sample)
+
+    values = StatsCalculator([clipped_mean, other_mean]).update_and_get_all(sample)
+    for measure, expected in [(clipped_mean, 1.0), (other_mean, 3.0)]:
+        computed = cast(NDArray[Any], _lazy_array(values[measure]).compute())
+        np.testing.assert_allclose(computed, expected)
+
+
+def test_initial_stats_with_different_provenance_are_not_relabelled():
+    clip = Clip(input=_MEMBER, output=_MEMBER, min=0.0, max=1.0)
+    raw_mean = DatasetMean(member_id=_MEMBER)
+    clipped_mean = raw_mean.model_copy(update={"preceding_ops": (clip,)})
+    calc = StatsCalculator([clipped_mean], {raw_mean: 42.0})
+
+    assert not calc.has_dataset_measures
+    assert calc.finalize() == {raw_mean: 42.0}
+
+
+def test_update_stats_uses_initial_values_with_matching_provenance():
+    clip = Clip(input=_MEMBER, output=_MEMBER, min=0.0, max=1.0)
+    mean = DatasetMean(member_id=_MEMBER)
+    processed_mean = mean.model_copy(update={"preceding_ops": (clip,)})
+    calc = StatsCalculator([processed_mean], {processed_mean: 42.0})
+    op = UpdateStats(calc)
+    sample = _sample(np.full((1, 1, 2, 2), 3.0), lazy=True)
+
+    clip(sample)
+    op(sample)
+
+    assert sample.stat == {processed_mean: 42.0}
+    assert calc.sample_count == 0
+
+
+def test_stats_calculator_checks_each_sample_in_an_iterable():
+    clip = Clip(input=_MEMBER, output=_MEMBER, min=0.0, max=1.0)
+    measure = DatasetMean(member_id=_MEMBER, preceding_ops=(clip,))
+    first = _sample(np.full((1, 1, 2, 2), 3.0), lazy=True)
+    second = first.copy()
+    clip(first)
+
+    with pytest.raises(ValueError, match="preceding_ops"):
+        StatsCalculator([measure]).update(iter([first, second]))
+
+
+def test_compute_measures_reuses_already_applied_processing():
+    scale = ScaleLinear(input=_MEMBER, output=_MEMBER, gain=2.0, offset=0.0)
+    mean = DatasetMean(member_id=_MEMBER, preceding_ops=(scale,))
+    sample = _sample(np.full((1, 1, 2, 2), 3.0), lazy=True)
+    scale(sample)
+
+    value = compute_dataset_measures([mean], [sample])[mean]
+    np.testing.assert_allclose(cast(NDArray[Any], _lazy_array(value).compute()), 6.0)
+    assert sample.applied_ops == (scale,)
+
+
+def test_compute_measures_applies_only_missing_processing_and_rejects_mismatch():
+    first = ScaleLinear(input=_MEMBER, output=_MEMBER, gain=2.0, offset=0.0)
+    second = ScaleLinear(input=_MEMBER, output=_MEMBER, gain=3.0, offset=0.0)
+    measure = DatasetMean(member_id=_MEMBER, preceding_ops=(first, second))
+    sample = _sample(np.full((1, 1, 2, 2), 3.0), lazy=True)
+    first(sample)
+    value = compute_dataset_measures([measure], [sample])[measure]
+    np.testing.assert_allclose(cast(NDArray[Any], _lazy_array(value).compute()), 18.0)
+    assert sample.applied_ops == (first,)
+
+    mismatched = _sample(np.full((1, 1, 2, 2), 3.0), lazy=True)
+    second(mismatched)
+    with pytest.raises(ValueError, match="preceding_ops"):
+        _ = compute_dataset_measures([measure], [mismatched])
+    with pytest.raises(ValueError, match="preceding_ops"):
+        _ = compute_dataset_measures([DatasetMean(member_id=_MEMBER)], [mismatched])
+
+
+def test_update_stats_checks_history_even_with_initial_values():
+    clip = Clip(input=_MEMBER, output=_MEMBER, min=0.0, max=1.0)
+    mean = DatasetMean(member_id=_MEMBER, preceding_ops=(clip,))
+    updater = UpdateStats(StatsCalculator([mean], {mean: 42.0}))
+    sample = _sample(np.full((1, 1, 2, 2), 3.0), lazy=True)
+    with pytest.raises(ValueError, match="preceding_ops"):
+        updater(sample)
+    assert sample.applied_ops == ()
+    assert sample.stat == {}
+
+
 @pytest.mark.parametrize("scheduler", ["synchronous", "threads"])
 @pytest.mark.parametrize("delayed_blocks", [False, True], ids=["arrays", "inference"])
 def test_quantiles_are_shared_by_multiple_blocks(
@@ -383,8 +766,8 @@ def test_quantiles_are_shared_by_multiple_blocks(
         ScaleRange(
             input=_MEMBER,
             output=_MEMBER,
-            lower_quantile=lower_measure,
-            upper_quantile=upper_measure,
+            _lower=lower_measure,
+            _upper=upper_measure,
             eps=0,
         )(sample)
         lower = _lazy_array(sample.stat[lower_measure])

@@ -8,15 +8,22 @@ from typing import cast
 
 import numpy as np
 import pytest
+from pydantic import ValidationError
 
 from bioimageio.core.axis import AxisId
 from bioimageio.core.common import MemberId, SampleId
+from bioimageio.core.proc_ops import (
+    AddKnownDatasetStats,
+    Clip,
+    UpdateStats,
+)
 from bioimageio.core.remote_backends.gradio.serializer import (
     GradioSampleSerializer,
     SerializedSampleBlock,
 )
 from bioimageio.core.sample import Sample
-from bioimageio.core.stat_measures import SampleMean
+from bioimageio.core.stat_calculators import StatsCalculator
+from bioimageio.core.stat_measures import DatasetMean, SampleMean
 from bioimageio.core.tensor import Tensor
 
 
@@ -51,6 +58,7 @@ def make_sample(sample_id: SampleId, lazy: bool = False) -> Sample:
 
 def assert_same_sample(actual: Sample, expected: Sample):
     assert actual.id == expected.id
+    assert actual.applied_ops == expected.applied_ops
     assert actual.members.keys() == expected.members.keys()
     for member, tensor in expected.members.items():
         restored = actual.members[member]
@@ -93,14 +101,28 @@ def test_file_paths():
 def test_nested_block_round_trip():
     sample = make_sample("sample")
     _ = sample.members.pop(MemberId("mask"))
+    member = MemberId("raw")
+    clip = Clip(input=member, output=member, min=0.0, max=10.0)
+    clip(sample)
+    known_measure = DatasetMean(member_id=member, preceding_ops=(clip,))
+    AddKnownDatasetStats(
+        {known_measure: Tensor(np.arange(6, dtype=np.float32), dims=("x",))}
+    )(sample)
+    sample_measure = SampleMean(member_id=member, preceding_ops=(clip,))
+    UpdateStats(StatsCalculator([sample_measure]))(sample)
     serialized = GradioSampleSerializer.serialize_sample_with_fixed_blocking(
         sample,
         block_shapes={MemberId("raw"): {AxisId("y"): 2, AxisId("x"): 3}},
         halo={},
     )
     assert isinstance(serialized, list)
-    restored = GradioSampleSerializer.deserialize_sample(serialized)
+    restored = GradioSampleSerializer.deserialize_sample(
+        json.loads(json.dumps(serialized))
+    )
     assert_same_sample(restored, sample)
+    assert isinstance(restored.applied_ops[-1], UpdateStats)
+    with pytest.raises(RuntimeError, match="reference and cannot run"):
+        restored.applied_ops[-1](restored)
 
 
 def test_mismatched_members():
@@ -109,6 +131,13 @@ def test_mismatched_members():
     assert isinstance(dims, dict)
     _ = dims.pop("raw")
     with pytest.raises(ValueError, match="different members"):
+        _ = GradioSampleSerializer.deserialize_sample_block(payload)
+
+
+def test_missing_applied_ops():
+    payload = GradioSampleSerializer.serialize_sample_block(make_sample("sample"))
+    _ = payload.pop("applied_ops")
+    with pytest.raises(ValidationError, match="applied_ops"):
         _ = GradioSampleSerializer.deserialize_sample_block(payload)
 
 

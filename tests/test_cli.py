@@ -1,7 +1,5 @@
-import json
 import subprocess
 from collections.abc import Sequence
-from importlib.machinery import ModuleSpec
 from pathlib import Path
 from typing import Any
 
@@ -10,6 +8,41 @@ import pytest
 from pydantic import FilePath
 
 from bioimageio.spec import settings
+
+
+def test_get_stat_calculates_measures_after_preprocessing(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    from bioimageio.core import cli
+    from bioimageio.core.common import MemberId
+    from bioimageio.core.proc_ops import Clip
+    from bioimageio.core.sample import Sample
+    from bioimageio.core.stat_measures import DatasetMean, DatasetMeasure
+    from bioimageio.core.tensor import Tensor
+
+    member = MemberId("input")
+    clip = Clip(input=member, output=member, min=0.0, max=1.0)
+    measure = DatasetMean(member_id=member, preceding_ops=(clip,))
+
+    def required_measures(_: object) -> tuple[set[DatasetMeasure], set[DatasetMeasure]]:
+        return {measure}, set()
+
+    monkeypatch.setattr(cli, "get_required_dataset_measures", required_measures)
+    sample = Sample(
+        id=None,
+        members={member: Tensor(np.asarray([[0.0, 10.0]]), dims=("batch", "x"))},
+        stat={},
+    )
+    stat = cli._get_stat(  # pyright: ignore[reportPrivateUsage]
+        None,  # pyright: ignore[reportArgumentType]
+        [sample],
+        dataset_length=1,
+        stats_path=tmp_path / "stats.yaml",
+        dataset_fits_in_memory=False,
+    )
+    value = stat[measure]
+    assert isinstance(value, Tensor)
+    np.testing.assert_allclose(value.to_numpy(), 0.5)
 
 
 def run_subprocess(
@@ -29,7 +62,7 @@ def run_subprocess(
     "args",
     [
         ["--help"],
-        ["bench", "--help"],
+        # ["bench", "--help"],  # TODO re-enable when bech branch is merged
         ["add-weights", "unet2d_nuclei_broad_model", "tmp_path"],
         [
             "package",
@@ -76,75 +109,76 @@ def test_cli(
     assert ret.returncode == 0, ret.stdout
 
 
-def test_bench_cli_arguments(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
-):
-    from bioimageio.core import cli
+# TODO: re-enable when bech branch is merged
+# def test_bench_cli_arguments(
+#     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+# ):
+#     from bioimageio.core import cli
 
-    def find_streamlit(name: str) -> ModuleSpec:
-        assert name == "streamlit"
-        return ModuleSpec(name, loader=None)
+#     def find_streamlit(name: str) -> ModuleSpec:
+#         assert name == "streamlit"
+#         return ModuleSpec(name, loader=None)
 
-    monkeypatch.setattr(cli, "find_spec", find_streamlit)
-    command: list[str] = []
+#     monkeypatch.setattr(cli, "find_spec", find_streamlit)
+#     command: list[str] = []
 
-    def run_streamlit(
-        args: Sequence[str], *, check: bool
-    ) -> subprocess.CompletedProcess[str]:
-        command.extend(args)
-        assert not check
-        args_list = list(args)
-        state_path = Path(args_list[args_list.index("--state-path") + 1])
-        _ = state_path.write_text(
-            json.dumps(
-                {
-                    "server": "https://final.example.com",
-                    "data": ["final data.npy"],
-                    "model": ["final-model"],
-                }
-            ),
-            encoding="utf-8",
-        )
-        return subprocess.CompletedProcess(args, 0)
+#     def run_streamlit(
+#         args: Sequence[str], *, check: bool
+#     ) -> subprocess.CompletedProcess[str]:
+#         command.extend(args)
+#         assert not check
+#         args_list = list(args)
+#         state_path = Path(args_list[args_list.index("--state-path") + 1])
+#         _ = state_path.write_text(
+#             json.dumps(
+#                 {
+#                     "server": "https://final.example.com",
+#                     "data": ["final data.npy"],
+#                     "model": ["final-model"],
+#                 }
+#             ),
+#             encoding="utf-8",
+#         )
+#         return subprocess.CompletedProcess(args, 0)
 
-    monkeypatch.setattr(subprocess, "run", run_streamlit)
-    with pytest.raises(SystemExit) as exit_info:
-        cli.BenchCmd(
-            server="https://example.com",
-            data=["a.npy", "b.npy"],
-            model=["model-a", "model-b"],
-        ).cli_cmd()
+#     monkeypatch.setattr(subprocess, "run", run_streamlit)
+#     with pytest.raises(SystemExit) as exit_info:
+#         cli.BenchCmd(
+#             server="https://example.com",
+#             data=["a.npy", "b.npy"],
+#             model=["model-a", "model-b"],
+#         ).cli_cmd()
 
-    assert exit_info.value.code == 0
-    state_arg_index = command.index("--state-path")
-    assert command[state_arg_index - 1] == "--"
-    assert command[state_arg_index + 2 :] == [
-        "--server",
-        "https://example.com",
-        "--data",
-        "a.npy",
-        "--data",
-        "b.npy",
-        "--model",
-        "model-a",
-        "--model",
-        "model-b",
-    ]
-    assert (
-        "bioimageio bench --server https://final.example.com "
-        + "--data 'final data.npy' --model final-model"
-        in capsys.readouterr().out
-    )
+#     assert exit_info.value.code == 0
+#     state_arg_index = command.index("--state-path")
+#     assert command[state_arg_index - 1] == "--"
+#     assert command[state_arg_index + 2 :] == [
+#         "--server",
+#         "https://example.com",
+#         "--data",
+#         "a.npy",
+#         "--data",
+#         "b.npy",
+#         "--model",
+#         "model-a",
+#         "--model",
+#         "model-b",
+#     ]
+#     assert (
+#         "bioimageio bench --server https://final.example.com "
+#         + "--data 'final data.npy' --model final-model"
+#         in capsys.readouterr().out
+#     )
 
-    def interrupt_streamlit(
-        args: Sequence[str], *, check: bool
-    ) -> subprocess.CompletedProcess[str]:
-        del args, check
-        raise KeyboardInterrupt
+#     def interrupt_streamlit(
+#         args: Sequence[str], *, check: bool
+#     ) -> subprocess.CompletedProcess[str]:
+#         del args, check
+#         raise KeyboardInterrupt
 
-    monkeypatch.setattr(subprocess, "run", interrupt_streamlit)
-    cli.BenchCmd(model=["fallback-model"]).cli_cmd()
-    assert "bioimageio bench --model fallback-model" in capsys.readouterr().out
+#     monkeypatch.setattr(subprocess, "run", interrupt_streamlit)
+#     cli.BenchCmd(model=["fallback-model"]).cli_cmd()
+#     assert "bioimageio bench --model fallback-model" in capsys.readouterr().out
 
 
 def test_empty_cache(tmp_path: Path, unet2d_nuclei_broad_model: str):
