@@ -65,6 +65,7 @@ def _dataset_preceding_ops(
     sample: Sample,
     previous: tuple[Operator, ...] | None,
 ) -> tuple[Operator, ...]:
+    _ = sample.members[member_id]
     preceding_ops = get_relevant_preceding_ops(member_id, sample.applied_ops)
     if previous is not None and preceding_ops != previous:
         raise ValueError(
@@ -114,11 +115,12 @@ class MeanCalculator:
         }
 
     def _update(self, sample: Sample) -> Tensor:
-        self._preceding_ops = _dataset_preceding_ops(
+        preceding_ops = _dataset_preceding_ops(
             self._member_id, sample, self._preceding_ops
         )
         mean = self._compute_impl(sample)
         self._update_impl(sample.members[self._member_id], mean)
+        self._preceding_ops = preceding_ops
         return mean
 
     def _update_impl(self, tensor: Tensor, tensor_mean: Tensor):
@@ -206,7 +208,7 @@ class MeanVarStdCalculator:
         if self._axes is not None and BATCH_AXIS_ID not in self._axes:
             return
 
-        self._preceding_ops = _dataset_preceding_ops(
+        preceding_ops = _dataset_preceding_ops(
             self._member_id, sample, self._preceding_ops
         )
         tensor = sample.members[self._member_id].as_dask().astype("float64", copy=False)
@@ -231,6 +233,8 @@ class MeanVarStdCalculator:
             d = mean_b - mean_a
             self._m2 = m2_a + m2_b + d**2 * n_a * n_b / n
             assert self._m2.dtype == "float64"
+
+        self._preceding_ops = preceding_ops
 
     def finalize(
         self,
@@ -323,10 +327,11 @@ class InMemoryDatasetQuantilesCalculator:
         self._samples: list[Tensor] = []
 
     def update(self, sample: Sample):
-        self._preceding_ops = _dataset_preceding_ops(
+        preceding_ops = _dataset_preceding_ops(
             self._member_id, sample, self._preceding_ops
         )
         self._samples.append(sample.members[self._member_id].as_dask())
+        self._preceding_ops = preceding_ops
 
     def finalize(self) -> dict[DatasetQuantile, MeasureValue]:
         if not self._samples:
@@ -385,7 +390,7 @@ class MeanQuantilesCalculator:
         self._estimates: Tensor | None = None
 
     def update(self, sample: Sample):
-        self._preceding_ops = _dataset_preceding_ops(
+        preceding_ops = _dataset_preceding_ops(
             self._member_id, sample, self._preceding_ops
         )
         tensor = sample.members[self._member_id]
@@ -406,6 +411,7 @@ class MeanQuantilesCalculator:
             assert self._estimates.dtype == "float64"
 
         self._n += n
+        self._preceding_ops = preceding_ops
 
     def finalize(self) -> dict[DatasetQuantile, MeasureValue]:
         if self._estimates is None:
@@ -473,7 +479,7 @@ class CrickQuantilesCalculator:
         self._shape: tuple[int, ...] | None = None
 
     def update(self, part: Sample):
-        self._preceding_ops = _dataset_preceding_ops(
+        preceding_ops = _dataset_preceding_ops(
             self._member_id, part, self._preceding_ops
         )
         tensor = part.members[self._member_id].as_dask()
@@ -502,6 +508,7 @@ class CrickQuantilesCalculator:
         self._digest = delayed(_update_crick_digests, pure=True)(
             self._digest, deferred_data, shape
         )
+        self._preceding_ops = preceding_ops
 
     def finalize(self) -> dict[DatasetQuantile, MeasureValue]:
         if self._digest is None:
