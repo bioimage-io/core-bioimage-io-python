@@ -10,7 +10,7 @@ from typing import Literal
 import pytest
 from loguru import logger
 
-from bioimageio.core import Sample, Tensor, load_model
+from bioimageio.core import Sample, Stat, Tensor, load_model
 from bioimageio.core._description_serializer import DescriptionSerializer
 from bioimageio.core.axis import AxisId, AxisInfo, AxisSize, PerAxis
 from bioimageio.core.common import PerMember
@@ -55,9 +55,9 @@ def test_gradio_adapter():
 
     port = 7860
     if _is_port_in_use(port):
-        sock = socket.socket()
-        sock.bind(("", 0))
-        _host, port = sock.getsockname()
+        with socket.socket() as sock:
+            sock.bind(("", 0))
+            _host, port = sock.getsockname()
 
     server_process = Process(target=gradio_server_main, kwargs={"port": port})
     server_process.start()
@@ -267,12 +267,12 @@ def test_gradio_pipeline(
     unet2d_expand_output_shape: str,
     unet2d_multi_tensor: str,
 ):
+    from bioimageio.core.proc_setup import get_required_dataset_measures
+    from bioimageio.core.remote_backends.gradio import server
     from bioimageio.core.remote_backends.gradio.client import (
         GradioPredictionPipeline,
     )
-    from bioimageio.core.remote_backends.gradio.server import (
-        main as gradio_server_main,
-    )
+    from bioimageio.core.stat_calculators import compute_dataset_measures
 
     port = 7860
 
@@ -283,7 +283,7 @@ def test_gradio_pipeline(
                 _host, port = s.getsockname()
 
         server_process = multiprocessing.Process(
-            target=gradio_server_main, kwargs={"port": port}
+            target=server.main, kwargs={"port": port, "devices": ["cpu"]}
         )
         server_process.start()
     else:
@@ -315,6 +315,7 @@ def test_gradio_pipeline(
             model = load_model(
                 model_source, format_version="latest", perform_io_checks=False
             )
+            statistics_sample = get_test_input_sample(model)
             input_sample = get_test_input_sample(
                 model,
                 repetitions=[
@@ -330,10 +331,19 @@ def test_gradio_pipeline(
                 ],
             )
             expected_out = get_test_output_sample(model)
+            precomputed_statistics: Stat = {
+                **compute_dataset_measures(
+                    get_required_dataset_measures(model).pre, [statistics_sample]
+                )
+            }
             logger.debug(
                 "connecting prediction pipeline to {} for {}", server_url, model_source
             )
-            pipeline = GradioPredictionPipeline(model, server=server_url)
+            pipeline = GradioPredictionPipeline(
+                model,
+                server=server_url,
+                precomputed_statistics=precomputed_statistics,
+            )
             pipeline.load()
             server_status = pipeline.get_status()
             logger.info("Server status for model {}: {}", model_source, server_status)

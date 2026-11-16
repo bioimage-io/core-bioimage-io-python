@@ -182,8 +182,9 @@ def test_dataset_statistics_are_calculated_at_their_preprocessing_stage(
 
 def test_preceding_processing_uses_its_own_measures():
     tid = MemberId("input")
-    input_descr = v0_5.InputTensorDescr.model_construct(
+    input_descr = v0_5.InputTensorDescr(
         id=tid,
+        axes=[v0_5.BatchAxis(), v0_5.SpaceInputAxis(size=4)],
         preprocessing=[
             v0_5.ClipDescr(
                 kwargs=v0_5.ClipKwargs(

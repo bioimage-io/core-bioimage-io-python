@@ -118,7 +118,7 @@ def test_predict_with_blocking(skip_procs: bool, skip_halo: bool, prep: Prep):
     except NotImplementedError as e:
         pytest.skip(str(e))
 
-    if skip_procs and skip_halo:
+    if not skip_procs and skip_halo:
         _assert_equal_samples(out, prep.output_sample)
     else:
         _assert_valid_sample(out, prep.output_sample)
