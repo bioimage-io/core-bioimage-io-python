@@ -988,6 +988,11 @@ class ServerCmd(CmdBase):
     port: int | None = None
     """The port to start the server on. If not given, a free port will be used."""
 
+    devices: list[str] | None = Field(
+        None, validation_alias=AliasChoices("devices", "device")
+    )
+    """Devices to use for model inference. Defaults to automatic selection."""
+
     def cli_cmd(self) -> None:
         try:
             if self.backend == "gradio":
@@ -1000,7 +1005,7 @@ class ServerCmd(CmdBase):
                 + f" e.g. with `pip install bioimageio.core[{self.backend}-server]`."
             ) from e
 
-        local_server_url = main(port=self.port)
+        local_server_url = main(port=self.port, devices=self.devices)
         logger.info(
             "{} server shutdown at {}", self.backend.capitalize(), local_server_url
         )

@@ -10,6 +10,23 @@ from pydantic import FilePath
 from bioimageio.spec import settings
 
 
+def test_server_cli_devices(monkeypatch: pytest.MonkeyPatch):
+    from pydantic_settings import CliApp
+
+    from bioimageio.core.cli import ServerCmd
+    from bioimageio.core.remote_backends.gradio import server
+
+    calls: list[tuple[int | None, list[str] | None]] = []
+
+    def main(port: int | None = None, *, devices: list[str] | None = None) -> str:
+        calls.append((port, devices))
+        return "http://localhost:7861/"
+
+    monkeypatch.setattr(server, "main", main)
+    _ = CliApp.run(ServerCmd, cli_args=["--port", "7861", "--devices", "cpu"])
+    assert calls == [(7861, ["cpu"])]
+
+
 def test_get_stat_calculates_measures_after_preprocessing(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ):
