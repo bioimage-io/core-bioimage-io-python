@@ -8,6 +8,7 @@
 - dropped `is_volume` flag from `load_image()`
 - added support to load pytorch state dict weights from .safetensors file
 - TorchScript-to-ONNX conversion uses the legacy exporter to preserve dynamic shapes; weights are embedded.
+- Treat legacy `concatenable: true` axes as applicable, not reproducible.
 
 ### 0.11.0
 

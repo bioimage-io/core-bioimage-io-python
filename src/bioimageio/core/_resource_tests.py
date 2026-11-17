@@ -964,10 +964,6 @@ def evaluate_mismatched_elements(
     return mismatched_ppm, msg, error_msg
 
 
-def _is_reproducibly_concatenable(axis: v0_5.InputAxis) -> bool:
-    return axis.concatenable is True or axis.concatenable == "reproducible"
-
-
 def _test_recreate_test_outputs(
     model: v0_4.ModelDescr | v0_5.ModelDescr,
     weight_format: SupportedWeightsFormat,
@@ -991,7 +987,7 @@ def _test_recreate_test_outputs(
     if (
         (passed or not stop_early)
         and isinstance(model, v0_5.ModelDescr)
-        and any(_is_reproducibly_concatenable(a) for t in model.inputs for a in t.axes)
+        and any(a.concatenable == "reproducible" for t in model.inputs for a in t.axes)
     ):
         blockwise_passed = _test_recreate_test_outputs_blockwise(
             model,
@@ -1097,7 +1093,7 @@ def _test_recreate_test_outputs_impl(
                 a
                 for t in model.inputs
                 for a in t.axes
-                if _is_reproducibly_concatenable(a)
+                if a.concatenable == "reproducible"
             ]
             if (
                 concatenable_axes
@@ -1144,7 +1140,7 @@ def _test_recreate_test_outputs_impl(
                             // a.size.step
                             + 1,
                         )
-                        if _is_reproducibly_concatenable(a)
+                        if a.concatenable == "reproducible"
                         else a.size.get_n(test_input.members[t.id].tagged_shape[a.id])
                     )
                     for t in model.inputs
@@ -1153,7 +1149,7 @@ def _test_recreate_test_outputs_impl(
                 }
                 axes = {(t.id, a.id): a for t in model.inputs for a in t.axes}
                 for axis in axes.values():
-                    if _is_reproducibly_concatenable(axis):
+                    if axis.concatenable == "reproducible":
                         continue
 
                     seen: set[tuple[MemberId, AxisId]] = set()
@@ -1180,7 +1176,7 @@ def _test_recreate_test_outputs_impl(
                     )
                     for t in model.inputs
                     for a in t.axes
-                    if _is_reproducibly_concatenable(a)
+                    if a.concatenable == "reproducible"
                 }
                 if not any(size > block for size, block in concatenable_sizes.values()):
                     raise ValueError(

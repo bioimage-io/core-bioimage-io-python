@@ -119,7 +119,7 @@ def test_predict_with_blocking(skip_procs: bool, skip_halo: bool, prep: Prep):
         pytest.skip(str(e))
 
     has_nonreproducible_axes = isinstance(prep.model, v0_5.ModelDescr) and any(
-        axis.concatenable == "applicable"
+        axis.concatenable in (True, "applicable")
         for tensor in prep.model.inputs
         for axis in tensor.axes
     )

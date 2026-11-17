@@ -132,23 +132,98 @@ def test_mismatched_elements_detects_nan(nan_in_reference: bool):
 @pytest.mark.parametrize(
     "concatenable, corrupt_blocks, corrupt_expected, stop_early, halo, batch_size, too_small, reference_applicable, expected_statuses",
     [
-        (True, False, False, False, 0, None, False, False, ["passed", "passed"]),
-        (True, True, False, True, 0, None, False, False, ["passed", "failed"]),
-        (True, False, False, False, 2, None, False, False, ["passed", "passed"]),
-        (True, "edges", False, False, 2, None, False, False, ["passed", "passed"]),
-        (True, True, False, False, 2, None, False, False, ["passed", "failed"]),
-        (True, False, "edges", True, 2, None, False, False, ["failed"]),
+        (
+            "reproducible",
+            False,
+            False,
+            False,
+            0,
+            None,
+            False,
+            False,
+            ["passed", "passed"],
+        ),
+        (
+            "reproducible",
+            True,
+            False,
+            True,
+            0,
+            None,
+            False,
+            False,
+            ["passed", "failed"],
+        ),
+        (
+            "reproducible",
+            False,
+            False,
+            False,
+            2,
+            None,
+            False,
+            False,
+            ["passed", "passed"],
+        ),
+        (
+            "reproducible",
+            "edges",
+            False,
+            False,
+            2,
+            None,
+            False,
+            False,
+            ["passed", "passed"],
+        ),
+        (
+            "reproducible",
+            True,
+            False,
+            False,
+            2,
+            None,
+            False,
+            False,
+            ["passed", "failed"],
+        ),
+        ("reproducible", False, "edges", True, 2, None, False, False, ["failed"]),
         (False, False, False, False, 0, None, False, False, ["passed"]),
         (False, False, False, False, 0, 2, False, False, ["passed", "passed"]),
-        (True, False, True, True, 0, None, False, False, ["failed"]),
-        (True, False, False, False, 0, None, True, False, ["passed", "failed"]),
-        (True, False, False, False, 2, None, True, False, ["passed", "failed"]),
+        ("reproducible", False, True, True, 0, None, False, False, ["failed"]),
+        (
+            "reproducible",
+            False,
+            False,
+            False,
+            0,
+            None,
+            True,
+            False,
+            ["passed", "failed"],
+        ),
+        (
+            "reproducible",
+            False,
+            False,
+            False,
+            2,
+            None,
+            True,
+            False,
+            ["passed", "failed"],
+        ),
         (False, False, False, False, 0, 1, True, False, ["passed", "passed"]),
         (False, True, False, False, 0, 1, True, False, ["passed", "failed"]),
         ("applicable", False, False, False, 0, 1, True, False, ["passed", "passed"]),
         (False, False, False, False, 0, 1, True, True, ["passed", "passed"]),
-        (True, False, False, False, 0, 1, True, False, ["passed", "failed"]),
-        (True, False, False, False, 0, 2, True, False, ["passed", "passed"]),
+        ("reproducible", False, False, False, 0, 1, True, False, ["passed", "failed"]),
+        ("reproducible", False, False, False, 0, 2, True, False, ["passed", "passed"]),
+        (True, True, False, False, 0, None, False, False, ["passed"]),
+        (True, False, False, False, 0, None, True, False, ["passed"]),
+        (True, True, False, False, 0, 2, False, False, ["passed", "passed"]),
+        (True, False, False, False, 0, 1, True, False, ["passed", "passed"]),
+        (True, True, False, False, 0, 1, True, False, ["passed", "failed"]),
         ("applicable", True, False, False, 0, None, False, False, ["passed"]),
         ("applicable", True, False, False, 0, 2, False, False, ["passed", "passed"]),
         (
@@ -305,7 +380,7 @@ def test_recreate_outputs_blockwise(
                 tensor.tagged_shape[x] < shape[-2]
                 or (
                     batch_size == 1
-                    and concatenable in (False, "applicable")
+                    and concatenable in (False, True, "applicable")
                     and len(block_shapes) > 1
                 )
             ):
@@ -363,7 +438,7 @@ def test_recreate_outputs_blockwise(
         d.errors for d in model.validation_summary.details
     ]
     assert passed == all(status == "passed" for status in expected_statuses)
-    if too_small and batch_size != 2 and concatenable in (True, "reproducible"):
+    if too_small and batch_size != 2 and concatenable == "reproducible":
         assert block_shapes == [data.shape]
         assert (
             "larger than the minimal block shape"
@@ -375,7 +450,7 @@ def test_recreate_outputs_blockwise(
         )
         assert block_shapes == [data.shape, block_shape, block_shape]
     if (
-        concatenable in (True, "reproducible")
+        concatenable == "reproducible"
         and not corrupt_blocks
         and not corrupt_expected
         and not halo
