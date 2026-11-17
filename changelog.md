@@ -7,6 +7,7 @@
 - add experimental caching to disk for `predict()`
 - dropped `is_volume` flag from `load_image()`
 - added support to load pytorch state dict weights from .safetensors file
+- TorchScript-to-ONNX conversion uses the legacy exporter to preserve dynamic shapes; weights are embedded.
 
 ### 0.11.0
 

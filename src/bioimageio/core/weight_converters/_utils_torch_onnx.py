@@ -154,9 +154,15 @@ def export_to_onnx(
     )  # TODO: be more thorough about the device?
     devices = get_devices(devices)
     inputs_torch = tuple(t.to(devices[0]) for t in inputs_torch)
-    save_weights_externally = use_dynamo
+    # legacy TorchScript export until dynamo preserves dynamic interpolation.
+    dynamo = use_dynamo and parent != "torchscript"
+    save_weights_externally = dynamo
     with torch.no_grad():
-        outputs_original_torch = model(*inputs_torch)
+        outputs_original_torch = (
+            model.module()(*inputs_torch)
+            if isinstance(model, ExportedProgram)
+            else model(*inputs_torch)
+        )
         if isinstance(outputs_original_torch, torch.Tensor):
             outputs_original_torch = [outputs_original_torch]
 
@@ -164,12 +170,16 @@ def export_to_onnx(
             model,
             inputs_torch,
             str(output_path),
-            dynamo=use_dynamo,
+            dynamo=dynamo,
             external_data=save_weights_externally,
             input_names=[str(d.id) for d in model_descr.inputs],
             output_names=[str(d.id) for d in model_descr.outputs],
-            dynamic_axes=get_dynamic_axes(model_descr),
-            dynamic_shapes=get_dynamic_shapes(model_descr),
+            dynamic_axes=(
+                get_dynamic_axes(model_descr)
+                if dynamo
+                else _get_dynamic_axes_impl(model_descr)
+            ),
+            dynamic_shapes=get_dynamic_shapes(model_descr) if dynamo else None,
             verbose=verbose,
             opset_version=opset_version,
         )
@@ -191,5 +201,5 @@ def export_to_onnx(
         external_data=external_data_descr,
         parent=parent,
         opset_version=opset_version,
-        comment=f"Converted with bioimageio.core {__version__}, dynamo={use_dynamo}.",
+        comment=f"Converted with bioimageio.core {__version__}, dynamo={dynamo}.",
     )

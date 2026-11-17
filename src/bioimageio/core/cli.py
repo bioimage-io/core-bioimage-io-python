@@ -730,17 +730,22 @@ class PredictCmd(CmdBase, WithSource):
 
         def expand_outputs():
             if isinstance(self.outputs, str):
-                outputs = [
-                    tuple(
-                        Path(
-                            self.outputs.format(
-                                model_id=self.descr_id, output_id=t, sample_id=s
+                try:
+                    outputs = [
+                        tuple(
+                            Path(
+                                self.outputs.format(
+                                    model_id=self.descr_id, output_id=t, sample_id=s
+                                )
                             )
+                            for t in output_ids
                         )
-                        for t in output_ids
-                    )
-                    for s in sample_ids
-                ]
+                        for s in sample_ids
+                    ]
+                except Exception as e:
+                    raise ValueError(
+                        f"Failed to expand output path pattern '{self.outputs}' with model_id={self.descr_id}, output_id={output_ids}, sample_id={sample_ids}: {e}"
+                    ) from e
             else:
                 outputs = [
                     tuple(
