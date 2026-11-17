@@ -6,7 +6,7 @@ requires-python = ">=3.10"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [
-    "bioimageio.spec ==0.5.14.4",
+    "bioimageio.spec ==0.5.15.0",
     "dask[array]",
     "imagecodecs",
     "imageio>=2.10",

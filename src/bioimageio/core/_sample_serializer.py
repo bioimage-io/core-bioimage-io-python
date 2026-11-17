@@ -67,6 +67,8 @@ class SampleSerializer(ABC, Generic[SerializedSampleBlockType]):
                 raise ValueError("Sample blocks have different sample IDs")
             if sample.members.keys() != first.members.keys():
                 raise ValueError("Sample blocks have different members")
+            if sample.applied_ops != first.applied_ops:
+                raise ValueError("Sample blocks have different applied operators")
             if any(sample.members[m].dims != t.dims for m, t in first.members.items()):
                 raise ValueError("Sample blocks have different member dimensions")
 
@@ -92,7 +94,12 @@ class SampleSerializer(ABC, Generic[SerializedSampleBlockType]):
             )
             members[member].set_metadata(tensor.get_metadata())
 
-        return Sample(id=first.id, members=members, stat=first.stat)
+        return Sample(
+            id=first.id,
+            members=members,
+            stat=first.stat,
+            applied_ops=first.applied_ops,
+        )
 
     @classmethod
     def serialize_sample_blockwise(
@@ -150,6 +157,7 @@ class SampleSerializer(ABC, Generic[SerializedSampleBlockType]):
                 Sample(
                     id=sample.id,
                     stat=sample.stat,
+                    applied_ops=sample.applied_ops,
                     members={
                         m: cast(Block, b[loc]).outer_tensor for m, b in blocks.items()
                     },

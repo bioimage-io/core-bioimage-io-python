@@ -10,7 +10,9 @@ from bioimageio.core._sample_serializer import SampleSerializer
 from bioimageio.core._utils.type_hints import NestedList
 from bioimageio.core.axis import AxisId
 from bioimageio.core.common import MemberId
+from bioimageio.core.proc_ops import AddKnownDatasetStats, Clip
 from bioimageio.core.sample import Sample
+from bioimageio.core.stat_measures import DatasetMean
 from bioimageio.core.tensor import Tensor
 from bioimageio.spec.model import v0_5
 
@@ -47,9 +49,41 @@ def test_serialize_whole_sample():
     assert IdentitySerializer.deserialize_sample(serialized) is sample
 
 
+def test_block_history_detects_different_known_tensor_statistics():
+    member = MemberId("raw")
+    measure = DatasetMean(member_id=member)
+    first = make_sample()
+    second = first.copy()
+    first.applied_ops = (
+        AddKnownDatasetStats({measure: Tensor(np.asarray([1.0, 2.0]), dims=("x",))}),
+    )
+    second.applied_ops = (
+        AddKnownDatasetStats({measure: Tensor(np.asarray([1.0, 3.0]), dims=("x",))}),
+    )
+    with pytest.raises(ValueError, match="different applied operators"):
+        _ = IdentitySerializer.deserialize_sample([first, second])
+
+
+def test_block_history_accepts_matching_nan_statistics():
+    member = MemberId("raw")
+    measure = DatasetMean(member_id=member)
+    first = make_sample()
+    second = first.copy()
+    first.applied_ops = (
+        AddKnownDatasetStats({measure: Tensor(np.asarray([np.nan]), dims=("x",))}),
+    )
+    second.applied_ops = (
+        AddKnownDatasetStats({measure: Tensor(np.asarray([np.nan]), dims=("x",))}),
+    )
+    restored = IdentitySerializer.deserialize_sample([first, second])
+    assert restored.applied_ops == first.applied_ops
+
+
 @pytest.mark.parametrize("lazy", [False, True])
 def test_fixed_blocking_round_trip(lazy: bool):
     sample = make_sample(lazy)
+    clip = Clip(input=MemberId("raw"), output=MemberId("raw"), min=0.0, max=20.0)
+    clip(sample)
     for tensor in sample.members.values():
         tensor.name = "calibrated image"
         tensor.set_physical_scale({AxisId("y"): 0.25, AxisId("x"): 0.2})
@@ -66,6 +100,7 @@ def test_fixed_blocking_round_trip(lazy: bool):
         assert len(row) == 2
         for block in row:
             assert isinstance(block, Sample)
+            assert block.applied_ops == (clip,)
             assert block.shape == {
                 m: {AxisId("y"): 2, AxisId("x"): 3} for m in sample.members
             }
@@ -73,6 +108,7 @@ def test_fixed_blocking_round_trip(lazy: bool):
     restored = IdentitySerializer.deserialize_sample(serialized)
     assert restored.id == sample.id
     assert restored.stat is sample.stat
+    assert restored.applied_ops == (clip,)
     for m, tensor in sample.members.items():
         assert restored.members[m].name == tensor.name
         assert restored.members[m].dims == tensor.dims
@@ -157,7 +193,7 @@ def test_empty_grid(serialized: NestedList[Sample]):
         _ = IdentitySerializer.deserialize_sample(serialized)
 
 
-@pytest.mark.parametrize("mismatch", ["id", "members", "dimensions"])
+@pytest.mark.parametrize("mismatch", ["id", "members", "dimensions", "applied_ops"])
 def test_incompatible_blocks(mismatch: str):
     first = make_sample()
     second = make_sample()
@@ -165,6 +201,8 @@ def test_incompatible_blocks(mismatch: str):
         second.id = "another sample"
     elif mismatch == "members":
         _ = second.members.pop(MemberId("mask"))
+    elif mismatch == "applied_ops":
+        Clip(input=MemberId("raw"), output=MemberId("raw"), min=0.0)(second)
     else:
         second.members[MemberId("raw")] = Tensor(
             second.members[MemberId("raw")].to_numpy(),

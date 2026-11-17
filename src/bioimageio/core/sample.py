@@ -5,6 +5,7 @@ import copy
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from typing import (
+    TYPE_CHECKING,
     Literal,
 )
 
@@ -24,6 +25,9 @@ from .common import (
 )
 from .stat_measures import Stat
 from .tensor import Tensor
+
+if TYPE_CHECKING:
+    from ._op_base import Operator
 
 
 @dataclass
@@ -45,8 +49,14 @@ class Sample:
     stat: Stat
     """Sample and dataset statistics"""
 
-    # unstacked_dim_order: PerMember[Sequence[AxisId] | None] | None = None
-    # """The order of the fully unstacked tensor"""
+    applied_ops: tuple[Operator, ...] = ()
+    """Operators applied to this sample, in order.
+
+    Notes:
+      - Any direct modifications of member tensors or the sample's stats are not recorded here.
+      - Serialized statistics updaters retain their configuration but not calculator state;
+        restored updaters are references and cannot be called.
+    """
 
     def __getitem__(
         self,
@@ -76,6 +86,7 @@ class Sample:
             },
             stat=self.stat,
             id=self.id,
+            applied_ops=self.applied_ops,
         )
 
     def __postinit__(self):
@@ -97,6 +108,7 @@ class Sample:
                 for k, v in self.stat.items()
             },
             id=self.id,
+            applied_ops=self.applied_ops,
         )
 
     def as_dask(self) -> Self:
@@ -108,6 +120,7 @@ class Sample:
                 for k, v in self.stat.items()
             },
             id=self.id,
+            applied_ops=self.applied_ops,
         )
 
     def pad(
@@ -133,6 +146,7 @@ class Sample:
             },
             stat=self.stat,
             id=self.id,
+            applied_ops=self.applied_ops,
         )
 
     def unstack_batch_multi_index(
@@ -201,6 +215,7 @@ class Sample:
             members=members,
             stat=stat,
             id=self.id,
+            applied_ops=self.applied_ops,
         )
 
     def copy(self, deep: bool = False) -> Self:
@@ -218,4 +233,5 @@ class Sample:
             members=cp(self.members),
             stat=cp(self.stat),
             id=self.id,
+            applied_ops=self.applied_ops,
         )

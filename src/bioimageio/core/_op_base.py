@@ -1,46 +1,42 @@
 from __future__ import annotations
 
-import copy
 from abc import ABC, abstractmethod
 from collections.abc import Collection, Sequence
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Generic
+from typing import Any
 
-from typing_extensions import Self, TypeVar
+from torch import TYPE_CHECKING
 
 from .axis import PerAxis
 from .common import MemberId
+from .tensor import Tensor
 
 if TYPE_CHECKING:
     from .sample import Sample
     from .stat_measures import Measure, Stat
-    from .tensor import Tensor
-
-SampleT = TypeVar("SampleT", bound="Sample")
 
 
 @dataclass(frozen=True, kw_only=True)
-class Operator(ABC, Generic[SampleT]):
-    """Base class for all operators."""
+class Operator(ABC):
+    """Base class for all operators.
 
-    preceding_ops: tuple[Operator[Any], ...] = ()
+    Implementations must record themselves in ``sample.applied_ops`` after success.
+    """
 
     @abstractmethod
-    def __call__(self, sample: SampleT) -> None: ...
+    def __call__(self, sample: Sample) -> None: ...
 
     @property
     def output_member_ids(self) -> Collection[MemberId]:
         return ()
 
-    def get_required_measures(
-        self, preceding_ops: Sequence[Operator[Any]] = ()
-    ) -> Collection[Measure]:
-        return ()
+    @property
+    def affects_statistics(self) -> bool:
+        """Whether this operator may change statistics of its output tensors."""
+        return True
 
-    def bind(self, preceding_ops: Sequence[Operator[Any]]) -> Self:
-        bound = copy.copy(self)
-        object.__setattr__(bound, "preceding_ops", tuple(preceding_ops))
-        return bound
+    def get_required_measures(self) -> Collection[Measure]:
+        return ()
 
     def get_descr(self) -> Any:
         raise NotImplementedError(
@@ -48,13 +44,23 @@ class Operator(ABC, Generic[SampleT]):
         )
 
 
+def get_relevant_preceding_ops(
+    member_id: MemberId, applied_ops: Sequence[Operator]
+) -> tuple[Operator, ...]:
+    return tuple(
+        op
+        for op in applied_ops
+        if op.affects_statistics and member_id in op.output_member_ids
+    )
+
+
 @dataclass(frozen=True, kw_only=True)
-class SamplewiseOperator(Operator["Sample"]):
+class SamplewiseOperator(Operator):
     """Base class for operators that can only be applied to whole samples."""
 
 
 @dataclass(frozen=True, kw_only=True)
-class BlockwiseOperator(Operator["Sample"]):  # Union[Sample, SampleBlock]
+class BlockwiseOperator(Operator):
     """Base class for operators that can be applied to whole sample or blockwise."""
 
 
@@ -88,6 +94,7 @@ class SimpleOperator(BlockwiseOperator):
         ), "overwriting existing output member with different shape"
 
         sample.members[self.output] = output_tensor
+        sample.applied_ops += (self,)
 
     @abstractmethod
     def _apply(self, x: Tensor, stat: Stat) -> Tensor: ...

@@ -106,6 +106,7 @@ class _StardistPostprocessingBase(SamplewiseOperator, ABC, Generic[NdTuple, NdBo
         )
         instance_labels.set_physical_scale_unit(prob_dist.get_physical_scale_unit())
         sample.members[self.instance_labels_output_id] = instance_labels
+        sample.applied_ops += (self,)
 
     @abstractmethod
     def _impl(

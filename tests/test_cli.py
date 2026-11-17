@@ -12,6 +12,58 @@ from pydantic import FilePath
 from bioimageio.spec import settings
 
 
+def test_server_cli_devices(monkeypatch: pytest.MonkeyPatch):
+    from pydantic_settings import CliApp
+
+    from bioimageio.core.cli import ServerCmd
+    from bioimageio.core.remote_backends.gradio import server
+
+    calls: list[tuple[int | None, list[str] | None]] = []
+
+    def main(port: int | None = None, *, devices: list[str] | None = None) -> str:
+        calls.append((port, devices))
+        return "http://localhost:7861/"
+
+    monkeypatch.setattr(server, "main", main)
+    _ = CliApp.run(ServerCmd, cli_args=["--port", "7861", "--devices", "cpu"])
+    assert calls == [(7861, ["cpu"])]
+
+
+def test_get_stat_calculates_measures_after_preprocessing(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    from bioimageio.core import cli
+    from bioimageio.core.common import MemberId
+    from bioimageio.core.proc_ops import Clip
+    from bioimageio.core.sample import Sample
+    from bioimageio.core.stat_measures import DatasetMean, DatasetMeasure
+    from bioimageio.core.tensor import Tensor
+
+    member = MemberId("input")
+    clip = Clip(input=member, output=member, min=0.0, max=1.0)
+    measure = DatasetMean(member_id=member, preceding_ops=(clip,))
+
+    def required_measures(_: object) -> tuple[set[DatasetMeasure], set[DatasetMeasure]]:
+        return {measure}, set()
+
+    monkeypatch.setattr(cli, "get_required_dataset_measures", required_measures)
+    sample = Sample(
+        id=None,
+        members={member: Tensor(np.asarray([[0.0, 10.0]]), dims=("batch", "x"))},
+        stat={},
+    )
+    stat = cli._get_stat(  # pyright: ignore[reportPrivateUsage]
+        None,  # pyright: ignore[reportArgumentType]
+        [sample],
+        dataset_length=1,
+        stats_path=tmp_path / "stats.yaml",
+        dataset_fits_in_memory=False,
+    )
+    value = stat[measure]
+    assert isinstance(value, Tensor)
+    np.testing.assert_allclose(value.to_numpy(), 0.5)
+
+
 def run_subprocess(
     commands: Sequence[str], **kwargs: Any
 ) -> "subprocess.CompletedProcess[str]":
@@ -78,7 +130,9 @@ def test_cli(
 
 @pytest.mark.parametrize("port", [None, 8765])
 def test_bench_cli_arguments(
-    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], port: int | None
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    port: int | None,
 ):
     from bioimageio.core import cli
 

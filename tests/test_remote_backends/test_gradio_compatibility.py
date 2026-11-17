@@ -113,7 +113,56 @@ def test_cached_adapter_is_loaded(monkeypatch: pytest.MonkeyPatch):
     adapter = Mock()
     monkeypatch.setattr(server, "_get_model", Mock())
     monkeypatch.setattr(server, "create_model_adapter", Mock(return_value=adapter))
-    first = server._get_model_adapter("model", sha256="test-cached-adapter-is-loaded")
-    second = server._get_model_adapter("", sha256="test-cached-adapter-is-loaded")
+    first = server._get_model_adapter(
+        "model", sha256="test-cached-adapter-is-loaded", devices=None
+    )
+    second = server._get_model_adapter(
+        "", sha256="test-cached-adapter-is-loaded", devices=None
+    )
     assert first is second is adapter
     adapter.load.assert_called_once_with()
+
+
+def test_explicit_server_devices_select_separate_cached_adapters(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setattr(server, "_get_model", Mock())
+    automatic_adapter, cpu_adapter = Mock(), Mock()
+    create = Mock(side_effect=[automatic_adapter, cpu_adapter])
+    monkeypatch.setattr(server, "create_model_adapter", create)
+
+    automatic = server._get_model_adapter(
+        "model", sha256="test-device-cache", devices=None
+    )
+    cpu = server._get_model_adapter(
+        "model", sha256="test-device-cache", devices=["cpu"]
+    )
+    assert (
+        server._get_model_adapter("", sha256="test-device-cache", devices=["cpu"])
+        is cpu
+    )
+    assert automatic is automatic_adapter
+    assert cpu is cpu_adapter
+    assert [call.kwargs["devices"] for call in create.call_args_list] == [
+        None,
+        ("cpu",),
+    ]
+    automatic_adapter.load.assert_called_once_with()
+    cpu_adapter.load.assert_called_once_with()
+
+    test_model = Mock()
+    monkeypatch.setattr(bioimageio.core, "test_model", test_model)
+    _ = server.test_model("", sha256="test-device-cache", devices=["cpu"])
+    test_model.assert_called_once_with(cpu_adapter.model_descr, devices=["cpu"])
+
+
+def test_main_binds_devices_to_new_app(monkeypatch: pytest.MonkeyPatch):
+    launch = Mock(return_value=(None, "http://localhost:7861/", None))
+    app = Mock(launch=launch)
+    create_app = Mock(return_value=app)
+    monkeypatch.setattr(server, "_create_app", create_app)
+
+    devices = ["cpu"]
+    assert server.main(port=7861, devices=devices) == "http://localhost:7861/"
+    create_app.assert_called_once_with(devices=devices)
+    launch.assert_called_once()

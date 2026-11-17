@@ -73,6 +73,7 @@ class CellposeFlowDynamics(SamplewiseOperator):
         input_tensor = sample.members[self.labels_id]
         output_tensor = self._apply(input_tensor)
         sample.members[self.labels_id] = output_tensor
+        sample.applied_ops += (self,)
 
     def _apply(self, x: Tensor) -> Tensor:
         if x.dims[0] != AxisId("batch"):
