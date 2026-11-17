@@ -27,6 +27,7 @@ from bioimageio.spec.model.v0_5 import (
 
 from ._op_base import BlockwiseOperator, SamplewiseOperator, SimpleOperator
 from ._ops_cellpose import CellposeFlowDynamics
+from ._ops_microsam import MicroSamWatershed
 from ._ops_stardist import StardistPostprocessing2D as StardistPostprocessing2D
 from ._ops_stardist import StardistPostprocessing3D as StardistPostprocessing3D
 from .axis import AxisId
@@ -828,6 +829,7 @@ Processing = Union[
     CustomProcessing,
     EnsureDtype,
     FixedZeroMeanUnitVariance,
+    MicroSamWatershed,
     ScaleLinear,
     ScaleMeanVariance,
     ScaleRange,
@@ -863,6 +865,8 @@ def get_proc(
         return EnsureDtype.from_proc_descr(proc_descr, member_id)
     elif isinstance(proc_descr, v0_5.FixedZeroMeanUnitVarianceDescr):
         return FixedZeroMeanUnitVariance.from_proc_descr(proc_descr, member_id)
+    elif isinstance(proc_descr, v0_5.MicroSamWatershedDescr):
+        return MicroSamWatershed.from_proc_descr(proc_descr, member_id)
     elif isinstance(proc_descr, (v0_4.ScaleLinearDescr, v0_5.ScaleLinearDescr)):
         return ScaleLinear.from_proc_descr(proc_descr, member_id)
     elif isinstance(
