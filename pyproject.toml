@@ -62,7 +62,7 @@ bioio = [
     "bioio-ome-tiff",
     "bioio-ome-zarr",
 ]
-clearscale = ["clearscale", "zarr"]
+clearscale = ["clearscale", 'zarr>=3;python_version>="3.11"']
 dev = [
     "bioio",
     "bioio-bioformats",
@@ -98,7 +98,7 @@ dev = [
     "torchvision>=0.21",
     'gradio[mcp]',
     'gradio_client',
-    "zarr",
+    'zarr>=3;python_version>="3.11"', # zarr>=3 requires py>=3.11
 ]
 docs = [
     "griffe-pydantic",
