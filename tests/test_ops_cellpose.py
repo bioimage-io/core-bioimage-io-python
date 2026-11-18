@@ -115,8 +115,8 @@ def test_cellpose_export(tmp_path: Path):
                             Identifier("channel2"),
                         ]
                     ),
-                    SpaceInputAxis(id=AxisId("y"), size=256),
-                    SpaceInputAxis(id=AxisId("x"), size=256),
+                    SpaceInputAxis(id=AxisId("y"), size=256, concatenable=False),
+                    SpaceInputAxis(id=AxisId("x"), size=256, concatenable=False),
                 ],
                 test_tensor=FileDescr(source=tmp_path / "test_input.npy"),
                 sample_tensor=FileDescr(source=sample_input_path),
