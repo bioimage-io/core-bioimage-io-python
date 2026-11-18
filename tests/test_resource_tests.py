@@ -90,6 +90,21 @@ def test_failed_reproducibility(unet2d_nuclei_broad_model: str, tmp_path: str):
     assert summary.status == "valid-format"
 
 
+def test_reproducibility_rejects_nan_output():
+    from bioimageio.core._resource_tests import evaluate_mismatched_elements
+
+    actual = Tensor(np.full((2,), np.nan), dims=("x",))
+    expected = Tensor(np.ones((2,)), dims=("x",))
+
+    mismatched_ppm, msg, error_msg = evaluate_mismatched_elements(
+        actual, expected, rtol=1e-3, atol=1e-3, mismatched_tol=0, name="output"
+    )
+
+    assert error_msg is None
+    assert mismatched_ppm == 1_000_000
+    assert "2 of 2 elements disagree" in msg
+
+
 @pytest.mark.parametrize(
     "actual, expected, rtol, atol, ppm",
     [
