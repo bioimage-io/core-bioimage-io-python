@@ -102,7 +102,7 @@ def test_reproducibility_rejects_nan_output():
 
     assert error_msg is None
     assert mismatched_ppm == 1_000_000
-    assert "2 of 2 elements disagree" in msg
+    assert "2 of 2 elements (100.0%) disagree" in msg
 
 
 @pytest.mark.parametrize(

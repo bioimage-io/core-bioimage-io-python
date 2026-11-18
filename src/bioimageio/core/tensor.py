@@ -16,7 +16,7 @@ from typing import (
 
 import dask.array as da
 import numpy as np
-import pandas as pd
+import pandas as pd  # pyright: ignore[reportMissingTypeStubs]
 import xarray as xr
 from loguru import logger
 from numpy.typing import DTypeLike, NDArray
