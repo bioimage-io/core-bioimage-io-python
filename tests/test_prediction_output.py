@@ -49,6 +49,8 @@ def test_predict_preserves_tiff_resolution(
     if sys.version_info < (3, 12):
         pytest.skip("TIFF loading and saving requires Python >=3.12")
     tifffile = pytest.importorskip("tifffile")
+    if not hasattr(tifffile.TiffFile, "asxarray"):
+        pytest.skip("tifffile>=2026.5.2 (requires numpy>=2.1) is needed")
     input_id, output_id = v0_5.TensorId("input"), v0_5.TensorId("output")
     axes = [AxisId("y"), AxisId("x")]
     model = v0_5.ModelDescr.model_construct(
