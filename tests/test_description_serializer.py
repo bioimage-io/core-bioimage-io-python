@@ -1,6 +1,10 @@
+import hashlib
 from io import BytesIO
+from pathlib import Path
 from typing import Any
 from zipfile import ZipFile
+
+import pytest
 
 
 def test_description_serializer_roundtrip(unet2d_nuclei_broad_model: str):
@@ -66,3 +70,59 @@ def test_description_serializer_includes_v0_4_relative_architecture(
 
     with ZipFile(BytesIO(DescriptionSerializer.serialize(model))) as package:
         assert package.read(str(architecture)) == source.read()
+
+
+@pytest.mark.parametrize(
+    "architecture_path", ["unet2d.py", "nested/unet2d.py", "../unet2d.py"]
+)
+def test_description_serializer_roundtrip_local_v0_4_architecture(
+    unet2d_nuclei_broad_model_old: str, tmp_path: Path, architecture_path: str
+):
+    from bioimageio.core._description_serializer import DescriptionSerializer
+    from bioimageio.spec import ValidationContext, load_model_description
+    from bioimageio.spec.common import FileDescr
+    from bioimageio.spec.model import v0_4
+
+    model = load_model_description(
+        unet2d_nuclei_broad_model_old, perform_io_checks=False
+    )
+    assert isinstance(model, v0_4.ModelDescr)
+    weights = model.weights.pytorch_state_dict
+    assert weights is not None
+    root = tmp_path / "model"
+    root.mkdir()
+    path = root / architecture_path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    contents = b"class MyModel: pass\n"
+    path.write_bytes(contents)
+    with ValidationContext(root=root, perform_io_checks=False):
+        architecture = v0_4.CallableFromFile(f"{architecture_path}:MyModel")
+    weights = weights.model_copy(
+        update={
+            "architecture": architecture,
+            "architecture_sha256": hashlib.sha256(contents).hexdigest(),
+        }
+    )
+    model = model.model_copy(
+        update={
+            "weights": model.weights.model_copy(update={"pytorch_state_dict": weights})
+        }
+    )
+
+    if architecture_path.startswith("../"):
+        with pytest.raises(ValueError, match="Unsafe architecture path"):
+            DescriptionSerializer.serialize(model)
+        return
+
+    serialized = DescriptionSerializer.serialize(model)
+    with ZipFile(BytesIO(serialized)) as package:
+        assert package.namelist().count(architecture_path) == 1
+        assert package.read(architecture_path) == contents
+
+    restored = DescriptionSerializer.deserialize(serialized)
+    assert isinstance(restored, v0_4.ModelDescr)
+    restored_weights = restored.weights.pytorch_state_dict
+    assert restored_weights is not None
+    assert isinstance(restored_weights.architecture, v0_4.CallableFromFile)
+    reader = FileDescr(source=restored_weights.architecture.source_file).get_reader()
+    assert reader.read() == contents
