@@ -94,7 +94,7 @@ def test_description_serializer_roundtrip_local_v0_4_architecture(
     path = root / architecture_path
     path.parent.mkdir(parents=True, exist_ok=True)
     contents = b"class MyModel: pass\n"
-    path.write_bytes(contents)
+    _ = path.write_bytes(contents)
     with ValidationContext(root=root, perform_io_checks=False):
         architecture = v0_4.CallableFromFile(f"{architecture_path}:MyModel")
     weights = weights.model_copy(
@@ -111,7 +111,7 @@ def test_description_serializer_roundtrip_local_v0_4_architecture(
 
     if architecture_path.startswith("../"):
         with pytest.raises(ValueError, match="Unsafe architecture path"):
-            DescriptionSerializer.serialize(model)
+            _ = DescriptionSerializer.serialize(model)
         return
 
     serialized = DescriptionSerializer.serialize(model)
