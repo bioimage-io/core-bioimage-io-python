@@ -27,9 +27,10 @@ from bioimageio.spec.model import AnyModelDescr, v0_4
 from ._sample_serializer import SampleSerializer, SerializedSampleBlockType
 from ._utils.type_hints import NestedList, cast_and_assert
 from .axis import AxisId, PerAxis
-from .common import PerMember
+from .common import MemberId, PerMember
 from .digest_spec import (
     get_axes_infos,
+    get_block_transform,
     get_member_ids,
     get_unstacked_output_dim_orders_for_model,
 )
@@ -94,14 +95,35 @@ class ModelAdapter(ABC):
         input_shape: PerMember[PerAxis[int]],
     ) -> PerMember[PerAxis[int]]:
         if isinstance(self._model_descr, v0_4.ModelDescr):
-            raise NotImplementedError(
-                "v0_4.ModelDescr.get_output_shape is not implemented. Please update the model description to v0_5 or later."
-            )
+            output_shapes = {
+                MemberId(m): {
+                    AxisId(d): s if isinstance(s, int) else -1
+                    for d, s in s_per_a.items()
+                }
+                for m, s_per_a in self._model_descr.get_output_tensor_sizes(
+                    {
+                        v0_4.TensorName(m): {str(a)[0]: s for a, s in s_per_a.items()}
+                        for m, s_per_a in input_shape.items()
+                    }
+                ).items()
+            }
+        else:
+            output_shapes = self._model_descr.get_output_tensor_sizes(input_shape)
+            for member, axes in get_block_transform(self._model_descr).items():
+                if (channel_transform := axes.get(AxisId("channel"))) is not None:
+                    output_shapes[member][AxisId("channel")] = (
+                        channel_transform
+                        if isinstance(channel_transform, int)
+                        else channel_transform.compute(
+                            input_shape[channel_transform.member][
+                                channel_transform.axis
+                            ]
+                        )
+                    )
+
         return {
             m: {d: s if isinstance(s, int) else -1 for d, s in s_per_a.items()}
-            for m, s_per_a in self._model_descr.get_output_tensor_sizes(
-                input_shape
-            ).items()
+            for m, s_per_a in output_shapes.items()
         }
 
     @property
