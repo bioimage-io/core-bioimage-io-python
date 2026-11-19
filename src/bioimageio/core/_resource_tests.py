@@ -21,6 +21,7 @@ from typing import (
 )
 
 import numpy as np
+import xarray as xr
 from loguru import logger
 from numpy.typing import NDArray
 from typing_extensions import NotRequired, TypedDict, Unpack, assert_never
@@ -67,9 +68,14 @@ from bioimageio.spec.summary import (
 from . import __version__
 from ._prediction_pipeline import create_prediction_pipeline
 from ._settings import settings
-from .axis import AxisId, BatchSize
+from .axis import BATCH_AXIS_ID, AxisId, BatchSize
 from .common import MemberId, SupportedWeightsFormat
-from .digest_spec import get_member_id, get_test_input_sample, get_test_output_sample
+from .digest_spec import (
+    get_input_halo,
+    get_member_id,
+    get_test_input_sample,
+    get_test_output_sample,
+)
 from .io import save_tensor
 from .sample import Sample
 from .tensor import Tensor
@@ -968,7 +974,72 @@ def _test_recreate_test_outputs(
     verbose: bool,
     **deprecated: Unpack[DeprecatedKwargs],
 ) -> bool:
-    test_name = f"Reproduce test outputs from test inputs ({weight_format})"
+    passed = _test_recreate_test_outputs_impl(
+        model,
+        weight_format,
+        devices,
+        stop_early,
+        working_dir=working_dir,
+        verbose=verbose,
+        blockwise=False,
+        **deprecated,
+    )
+    if (
+        (passed or not stop_early)
+        and isinstance(model, v0_5.ModelDescr)
+        and any(a.concatenable == "reproducible" for t in model.inputs for a in t.axes)
+    ):
+        blockwise_passed = _test_recreate_test_outputs_blockwise(
+            model,
+            weight_format,
+            devices,
+            stop_early,
+            working_dir=working_dir,
+            verbose=verbose,
+            **deprecated,
+        )
+        passed = passed and blockwise_passed
+
+    return passed
+
+
+def _test_recreate_test_outputs_blockwise(
+    model: v0_5.ModelDescr,
+    weight_format: SupportedWeightsFormat,
+    devices: Sequence[str] | None,
+    stop_early: bool,
+    *,
+    working_dir: os.PathLike[str] | str | None,
+    verbose: bool,
+    **deprecated: Unpack[DeprecatedKwargs],
+) -> bool:
+    return _test_recreate_test_outputs_impl(
+        model,
+        weight_format,
+        devices,
+        stop_early,
+        working_dir=working_dir,
+        verbose=verbose,
+        blockwise=True,
+        **deprecated,
+    )
+
+
+def _test_recreate_test_outputs_impl(
+    model: v0_4.ModelDescr | v0_5.ModelDescr,
+    weight_format: SupportedWeightsFormat,
+    devices: Sequence[str] | None,
+    stop_early: bool,
+    *,
+    working_dir: os.PathLike[str] | str | None,
+    verbose: bool,
+    blockwise: bool,
+    **deprecated: Unpack[DeprecatedKwargs],
+) -> bool:
+    test_name = (
+        f"Reproduce test outputs from test inputs"
+        f"{' blockwise' if blockwise else ''} ({weight_format})"
+    )
     logger.debug("starting '{}'", test_name)
     error_entries: list[ErrorEntry] = []
     warning_entries: list[WarningEntry] = []
@@ -1017,6 +1088,36 @@ def _test_recreate_test_outputs(
         test_input = get_test_input_sample(model)
         expected_sample = get_test_output_sample(model)
 
+        if blockwise and isinstance(model, v0_5.ModelDescr):
+            concatenable_axes = [
+                a
+                for t in model.inputs
+                for a in t.axes
+                if a.concatenable == "reproducible"
+            ]
+            if (
+                concatenable_axes
+                and all(isinstance(a, v0_5.BatchAxis) for a in concatenable_axes)
+                and all(
+                    t.tagged_shape[BATCH_AXIS_ID] == 1
+                    for t in test_input.members.values()
+                    if BATCH_AXIS_ID in t.dims
+                )
+            ):
+                for sample in (test_input, expected_sample):
+                    sample.members = {
+                        m: Tensor.from_xarray(
+                            xr.concat([t.data, t.data], dim=BATCH_AXIS_ID)
+                        )
+                        if BATCH_AXIS_ID in t.dims
+                        else t
+                        for m, t in sample.members.items()
+                    }
+                add_warning_entry(
+                    "Duplicated test inputs along the singleton batch dimension for blockwise reproduction.",
+                    severity=INFO,
+                )
+
         with create_prediction_pipeline(
             bioimageio_model=model,
             devices=devices,
@@ -1025,13 +1126,84 @@ def _test_recreate_test_outputs(
         ) as prediction_pipeline:
             prediction_pipeline.apply_preprocessing(test_input)
             test_input_preprocessed = deepcopy(test_input)
-            results_not_postprocessed = prediction_pipeline.predict_without_blocking(
-                test_input,
-                skip_postprocessing=True,
-                skip_preprocessing=True,
-                skip_input_padding=True,
-                skip_output_cropping=True,
-            )
+            if blockwise:
+                assert isinstance(model, v0_5.ModelDescr)
+                input_halo = get_input_halo(model)
+                ns = {
+                    (t.id, a.id): (
+                        max(
+                            0,
+                            (
+                                sum(input_halo.get(t.id, {}).get(a.id, (0, 0)))
+                                - a.size.min
+                            )
+                            // a.size.step
+                            + 1,
+                        )
+                        if a.concatenable == "reproducible"
+                        else a.size.get_n(test_input.members[t.id].tagged_shape[a.id])
+                    )
+                    for t in model.inputs
+                    for a in t.axes
+                    if isinstance(a.size, v0_5.ParameterizedSize)
+                }
+                axes = {(t.id, a.id): a for t in model.inputs for a in t.axes}
+                for axis in axes.values():
+                    if axis.concatenable == "reproducible":
+                        continue
+
+                    seen: set[tuple[MemberId, AxisId]] = set()
+                    while isinstance(axis.size, v0_5.SizeReference):
+                        key = (axis.size.tensor_id, axis.size.axis_id)
+                        if key in seen:
+                            raise ValueError(
+                                f"Circular input axis size reference: {key}"
+                            )
+                        seen.add(key)
+                        axis = axes[key]
+                        if isinstance(axis.size, v0_5.ParameterizedSize):
+                            ns[key] = axis.size.get_n(
+                                test_input.members[key[0]].tagged_shape[key[1]]
+                            )
+
+                block_shapes = model.get_tensor_sizes(
+                    ns, batch_size=1, max_input_shape=test_input.shape
+                ).inputs
+                concatenable_sizes = {
+                    (t.id, a.id): (
+                        test_input.members[t.id].tagged_shape[a.id],
+                        block_shapes[t.id][a.id],
+                    )
+                    for t in model.inputs
+                    for a in t.axes
+                    if a.concatenable == "reproducible"
+                }
+                if not any(size > block for size, block in concatenable_sizes.values()):
+                    raise ValueError(
+                        "A test input must be larger than the minimal block shape "
+                        + "along at least one reproducibly concatenable axis to test blockwise "
+                        + "reproducibility. Input and block sizes: "
+                        + f"{concatenable_sizes}"
+                    )
+                results_not_postprocessed = prediction_pipeline.predict_with_blocking(
+                    test_input,
+                    ns=ns,
+                    batch_size=1,
+                    skip_postprocessing=True,
+                    skip_preprocessing=True,
+                    skip_input_padding=True,
+                    skip_output_cropping=True,
+                )
+            else:
+                results_not_postprocessed = (
+                    prediction_pipeline.predict_without_blocking(
+                        test_input,
+                        skip_postprocessing=True,
+                        skip_preprocessing=True,
+                        skip_input_padding=True,
+                        skip_output_cropping=True,
+                    )
+                )
             results_not_postprocessed.members = {
                 m: tensor.as_numpy()
                 for m, tensor in results_not_postprocessed.members.items()
@@ -1081,17 +1253,38 @@ def _test_recreate_test_outputs(
                         continue
 
                 try:
-                    output_paths = save_to_working_dir(f"actual_output_{m}", actual)
+                    output_prefix = (
+                        "actual_output_blockwise" if blockwise else "actual_output"
+                    )
+                    output_paths = save_to_working_dir(f"{output_prefix}_{m}", actual)
                     if m in results_not_postprocessed.members:
                         output_paths.extend(
                             save_to_working_dir(
-                                f"actual_output_{m}_not_postprocessed",
+                                f"{output_prefix}_{m}_not_postprocessed",
                                 results_not_postprocessed.members[m],
                             )
                         )
                 except Exception as e:
                     logger.error(f"Failed to save actual output tensor for '{m}': {e}")
                     output_paths = None
+
+                if blockwise:
+                    assert isinstance(model, v0_5.ModelDescr)
+                    output = next(o for o in model.outputs if o.id == m)
+                    halo = {
+                        a.id: a.halo
+                        for a in output.axes
+                        if isinstance(a, v0_5.WithHalo)
+                    }
+                    for axis, width in halo.items():
+                        if actual.tagged_shape[axis] <= 2 * width:
+                            raise ValueError(
+                                f"Output '{m}' is too small to compare after cropping "
+                                + f"halo {width} from axis '{axis}' "
+                                + f"(size {actual.tagged_shape[axis]})."
+                            )
+                    actual = actual.crop_halo(halo)
+                    expected = expected.crop_halo(halo)
 
                 rtol, atol, mismatched_tol = _get_tolerance(
                     model, wf=weight_format, m=m, **deprecated
@@ -1132,7 +1325,7 @@ def _test_recreate_test_outputs(
             warnings=warning_entries,
         )
     )
-    return bool(error_entries)
+    return not error_entries
 
 
 def _test_parametrized_inference(
@@ -1141,7 +1334,7 @@ def _test_parametrized_inference(
     devices: Sequence[str] | None,
     *,
     stop_early: bool,
-) -> None:
+) -> bool:
     if not any(
         isinstance(a.size, v0_5.ParameterizedSize)
         for ipt in model.inputs
@@ -1226,6 +1419,7 @@ def _test_parametrized_inference(
             }
             yield n, batch_size, resized_test_inputs, expected_output_shapes
 
+    passed = True
     try:
         test_input = get_test_input_sample(model)
 
@@ -1294,6 +1488,8 @@ def _test_parametrized_inference(
                         ),
                     )
                 )
+                if error is not None:
+                    passed = False
                 if stop_early and error is not None:
                     break
     except Exception as e:
@@ -1315,6 +1511,9 @@ def _test_parametrized_inference(
                 ],
             )
         )
+        passed = False
+
+    return passed
 
 
 def _test_expected_resource_type(rd: InvalidDescr | ResourceDescr, expected_type: str):

@@ -5,7 +5,6 @@ import socket
 import time
 from concurrent.futures import ThreadPoolExecutor
 from multiprocessing import Process
-from typing import Literal
 
 import pytest
 from loguru import logger
@@ -195,10 +194,7 @@ def test_gradio_pipeline_direct(with_blocking: bool):
         model_descr: AnyModelDescr,
         sample: Sample,
         *,
-        blocksize: int
-        | Literal["blockwise_as_serialized"]
-        | PerMember[PerAxis[int]]
-        | None = None,
+        blocksize: int | PerMember[PerAxis[int]] | None = None,
         skip_preprocessing: bool = False,
         skip_postprocessing: bool = False,
         skip_input_padding: bool = False,

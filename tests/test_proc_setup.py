@@ -5,6 +5,7 @@ import dask.array as da
 import numpy as np
 import pytest
 import xarray as xr
+from dask.callbacks import Callback
 from numpy.typing import NDArray
 
 from bioimageio.core._op_base import get_relevant_preceding_ops
@@ -103,6 +104,9 @@ def test_statistics_provenance_filters_only_explicitly_preserving_ops():
 def test_dataset_statistics_are_calculated_at_their_preprocessing_stage(
     monkeypatch: pytest.MonkeyPatch,
 ):
+    def fail_on_execution(key: object, *args: object) -> None:
+        pytest.fail(f"Preprocessing eagerly computed a Dask task: {key}")
+
     tid = MemberId("input")
     mean = DatasetMean(
         member_id=tid,
@@ -137,7 +141,13 @@ def test_dataset_statistics_are_calculated_at_their_preprocessing_stage(
         Sample(
             members={
                 tid: Tensor(
-                    np.asarray([[-10.0, 0.0, 10.0]], dtype=np.float32),
+                    cast_and_assert(
+                        da.Array,
+                        da.from_array(
+                            np.asarray([[-10.0, 0.0, 10.0]], dtype=np.float32),
+                            chunks="auto",
+                        ),
+                    ),
                     dims=("batch", "x"),
                 )
             },
@@ -147,7 +157,13 @@ def test_dataset_statistics_are_calculated_at_their_preprocessing_stage(
         Sample(
             members={
                 tid: Tensor(
-                    np.asarray([[0.0, 0.0, 0.0]], dtype=np.float32),
+                    cast_and_assert(
+                        da.Array,
+                        da.from_array(
+                            np.asarray([[0.0, 0.0, 0.0]], dtype=np.float32),
+                            chunks="auto",
+                        ),
+                    ),
                     dims=("batch", "x"),
                 )
             },
@@ -155,23 +171,24 @@ def test_dataset_statistics_are_calculated_at_their_preprocessing_stage(
             id=None,
         ),
     ]
-    pre, _ = setup_pre_and_postprocessing(
-        model=model,  # pyright: ignore[reportArgumentType]
-        dataset_for_initial_statistics=samples,
-    )
+    with Callback(pretask=fail_on_execution):
+        pre, _ = setup_pre_and_postprocessing(
+            model=model,  # pyright: ignore[reportArgumentType]
+            dataset_for_initial_statistics=samples,
+        )
 
-    assert isinstance(pre[0], UpdateStats)
-    assert isinstance(pre[1], Clip)
-    assert isinstance(pre[2], UpdateStats)
-    processed_samples: list[Sample] = []
-    for sample in samples:
-        sample = sample.copy()
-        for proc in pre:
-            proc(sample)
-        processed_samples.append(sample)
+        assert isinstance(pre[0], UpdateStats)
+        assert isinstance(pre[1], Clip)
+        assert isinstance(pre[2], UpdateStats)
+        processed_samples: list[Sample] = []
+        for sample in samples:
+            sample = sample.copy()
+            for proc in pre:
+                proc(sample)
+            processed_samples.append(sample)
 
-        assert mean.model_copy(update={"preceding_ops": (clip,)}) in sample.stat
-        assert std.model_copy(update={"preceding_ops": (clip,)}) in sample.stat
+            assert mean.model_copy(update={"preceding_ops": (clip,)}) in sample.stat
+            assert std.model_copy(update={"preceding_ops": (clip,)}) in sample.stat
 
     expected_scale = (25.0 / 3.0) ** 0.5 + normalization.eps
     np.testing.assert_allclose(

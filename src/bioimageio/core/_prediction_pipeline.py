@@ -634,32 +634,6 @@ class PredictionPipeline(_PredictionPipelineBase):
             for m, t in sample_members.items()
         }
 
-        def get_output_shape(
-            input_shape: PerMember[PerAxis[int]],
-        ) -> PerMember[PerAxis[int]]:
-            if isinstance(self._model_descr, v0_4.ModelDescr):
-                return {
-                    MemberId(m): {
-                        AxisId(d): s if isinstance(s, int) else -1
-                        for d, s in s_per_a.items()
-                    }
-                    for m, s_per_a in self._model_descr.get_output_tensor_sizes(
-                        {
-                            v0_4.TensorName(m): {
-                                str(a)[0]: s for a, s in s_per_a.items()
-                            }
-                            for m, s_per_a in input_shape.items()
-                        }
-                    ).items()
-                }
-            else:
-                return {
-                    m: {d: s if isinstance(s, int) else -1 for d, s in s_per_a.items()}
-                    for m, s_per_a in self._model_descr.get_output_tensor_sizes(
-                        input_shape
-                    ).items()
-                }
-
         return apply_blockwise(
             self._forward,
             sample_members,
@@ -669,7 +643,7 @@ class PredictionPipeline(_PredictionPipelineBase):
             pad_boundary="allow",
             input_halo=self._default_input_halo,
             output_halo=self._default_output_halo,
-            get_output_shape=get_output_shape,
+            get_output_shape=self._adapter.get_output_shape,
         )
 
     @property

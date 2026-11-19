@@ -83,11 +83,11 @@ class CellposeFlowDynamics(SamplewiseOperator):
 
         if x.dims[1] != AxisId("channel"):
             raise ValueError(
-                "Expected first axis to be 'channel' with 3 channels for cellpose flow dynamics."
+                "Expected axis 1 to be 'channel' with 3 channels for cellpose flow dynamics."
             )
         if x.shape[1] != 3:
             raise ValueError(
-                "Expected 3 stacked tensors along first 'channel' axis: flow_y, flow_x, cellprob for cellpose flow dynamics."
+                f"Expected 3 stacked tensors along 'channel' axis at {x.shape}[1] for flow_y, flow_x, cellprob for cellpose flow dynamics."
             )
 
         masks = [self._apply_impl(xx) for xx in x]

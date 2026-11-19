@@ -49,6 +49,8 @@ def test_predict_preserves_tiff_resolution(
     if sys.version_info < (3, 12):
         pytest.skip("TIFF loading and saving requires Python >=3.12")
     tifffile = pytest.importorskip("tifffile")
+    if not hasattr(tifffile.TiffFile, "asxarray"):
+        pytest.skip("tifffile>=2026.5.2 (requires numpy>=2.1) is needed")
     input_id, output_id = v0_5.TensorId("input"), v0_5.TensorId("output")
     axes = [AxisId("y"), AxisId("x")]
     model = v0_5.ModelDescr.model_construct(
@@ -180,7 +182,7 @@ def test_predict_preserves_tiff_resolution(
 
 @pytest.mark.parametrize("zarr_format", [2, 3])
 def test_predict_overwrites_zarr_with_different_shape(tmp_path: Path, zarr_format: int):
-    zarr = pytest.importorskip("zarr")
+    zarr = pytest.importorskip("zarr", minversion="3")
     _ = pytest.importorskip("clearscale")
     input_id, output_id = v0_5.TensorId("input"), v0_5.TensorId("output")
     axes = [AxisId("y"), AxisId("x")]

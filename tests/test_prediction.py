@@ -1,4 +1,4 @@
-from collections.abc import Mapping, Sequence
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Literal, NamedTuple
 
@@ -23,7 +23,7 @@ from bioimageio.core.digest_spec import (
     transpose_sample_for_model,
 )
 from bioimageio.spec import AnyModelDescr
-from bioimageio.spec.model import v0_4
+from bioimageio.spec.model import v0_4, v0_5
 
 
 def _assert_equal_samples(actual: Sample, expected: Sample) -> None:
@@ -118,34 +118,56 @@ def test_predict_with_blocking(skip_procs: bool, skip_halo: bool, prep: Prep):
     except NotImplementedError as e:
         pytest.skip(str(e))
 
-    if not skip_procs and skip_halo:
+    has_nonreproducible_axes = isinstance(prep.model, v0_5.ModelDescr) and any(
+        axis.concatenable in (True, "applicable")
+        for tensor in prep.model.inputs
+        for axis in tensor.axes
+    )
+    if not skip_procs and skip_halo and not has_nonreproducible_axes:
         _assert_equal_samples(out, prep.output_sample)
     else:
         _assert_valid_sample(out, prep.output_sample)
 
 
 def test_predict_with_fixed_blocking(prep: Prep):
-    if prep.model.name == "Fixed-shape":
-        pytest.skip("Fixed-shape model does not support blocking")
-
     block_along = list(prep.input_sample.members)
+    if not isinstance(prep.model, v0_5.ModelDescr) or not any(
+        axis.concatenable
+        for tensor in prep.model.inputs
+        for axis in tensor.axes
+        if not isinstance(axis, v0_5.BatchAxis)
+    ):
+        pytest.skip("Model has no concatenable non-batch input axes")
+
+    test_input_size = min(
+        prep.input_sample.members[m].tagged_shape[a]
+        for m in block_along
+        for a in (AxisId("x"), AxisId("y"))
+    )
+
+    max_output_halo = max(
+        (
+            getattr(axis, "halo", 0)
+            for output in prep.model.outputs
+            for axis in output.axes
+        ),
+        default=0,
+    )
+    block_size = max(
+        min(256, test_input_size // 2),
+        2 * max_output_halo + (16 if max_output_halo else 1),
+    )
+    assert block_size < test_input_size, (
+        "fixed-blocking test requires a block smaller than the test input"
+    )
+
     input_block_shape: dict[MemberId, Mapping[AxisId, int]] = {
         ba: {
-            "x": min(  # pyright: ignore[reportAssignmentType]
-                128, prep.input_sample.members[ba].tagged_shape[AxisId("x")]
-            ),
-            AxisId("y"): min(
-                128, prep.input_sample.members[ba].tagged_shape[AxisId("y")]
-            ),
+            "x": block_size,  # pyright: ignore[reportAssignmentType]
+            AxisId("y"): block_size,
         }
         for ba in block_along
     }
-    if isinstance(prep.model, v0_4.ModelDescr):
-        for ipt in prep.model.inputs:
-            if isinstance(ipt.shape, Sequence):
-                input_block_shape[MemberId(ipt.name)] = {
-                    AxisId(a): size for a, size in zip(ipt.axes, ipt.shape)
-                }
 
     if any(
         s <= input_block_shape[m].get(a, 1)

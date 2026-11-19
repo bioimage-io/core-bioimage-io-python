@@ -182,8 +182,11 @@ def test_save_sample(tmp_path: Path, suffix: str):
     from bioimageio.core.common import MemberId
     from bioimageio.core.io import load_tensor, save_sample
 
-    if suffix == ".zarr" and find_spec("clearscale") is None:
-        pytest.importorskip("bioio_ome_zarr")
+    if suffix == ".zarr":
+        if find_spec("clearscale") is None:
+            pytest.importorskip("bioio_ome_zarr")
+        else:
+            _ = pytest.importorskip("zarr", minversion="3")
 
     members = {
         MemberId("raw"): np.arange(30, dtype=np.uint8).reshape(5, 6),
@@ -248,6 +251,7 @@ def test_tensor_io(
 
     if io_lib == "clearscale":
         _ = pytest.importorskip("clearscale")
+        _ = pytest.importorskip("zarr", minversion="3")
 
         if name.find(".zarr") == -1:
             pytest.skip("clearscale only supports zarr")
@@ -289,7 +293,7 @@ def test_tensor_ome_zarr_metadata_roundtrip(
     internal_path: str,
     tmp_path: Path,
 ):
-    zarr = pytest.importorskip("zarr")
+    zarr = pytest.importorskip("zarr", minversion="3")
     _ = pytest.importorskip(
         "clearscale" if io_lib == "clearscale" else "bioio_ome_zarr"
     )

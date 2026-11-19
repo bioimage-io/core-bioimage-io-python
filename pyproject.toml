@@ -63,13 +63,14 @@ bioio = [
     "bioio-ome-tiff",
     "bioio-ome-zarr",
 ]
-# clearscale = ["clearscale", "zarr"]  # TODO: add clearscale extra deps once clearscale is available on pypi
+clearscale = ["clearscale", 'zarr>=3;python_version>="3.11"']
 dev = [
     "bioio",
     "bioio-bioformats",
     "bioio-imageio",
     "bioio-ome-tiff",
     'bioio-ome-zarr;python_version>="3.11" and python_version<"3.14"', # TODO: wait for bioio-ome-zarr to support py3.14
+    "clearscale",
     "cellpose<4.2",                                                    # for model testing
     "crick",
     "httpx",
@@ -96,11 +97,9 @@ dev = [
     "timm",                                                            # for model testing
     "torch>=1.6,<3",
     "torchvision>=0.21",
-    'eval-type-backport;python_version<"3.10"',                        # TODO: remove when py3.10 is lowest supported version
-    'gradio[mcp];python_version>="3.10"',
-    'gradio_client;python_version>="3.10"',
-    'onnx_ir!=0.1.14;python_version<"3.10"',                           # uses typing.Concatentate which requires py>=3.10
-    "zarr",
+    'gradio[mcp]',
+    'gradio_client',
+    'zarr>=3;python_version>="3.11"', # zarr>=3 requires py>=3.11
 ]
 docs = [
     "griffe-pydantic",

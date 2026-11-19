@@ -9,7 +9,8 @@ from bioimageio.spec import (
     load_description,
     save_bioimageio_package_to_stream,
 )
-from bioimageio.spec.common import Sha256
+from bioimageio.spec.common import FileDescr, RelativeFilePath, Sha256
+from bioimageio.spec.model import v0_4
 
 
 class DescriptionSerializer:
@@ -24,6 +25,28 @@ class DescriptionSerializer:
     @staticmethod
     def serialize(rd: ResourceDescr) -> bytes:
         stream = save_bioimageio_package_to_stream(rd, local_files_only=True)
+        if isinstance(rd, v0_4.ModelDescr):
+            weights = rd.weights.pytorch_state_dict
+            if weights is not None and isinstance(
+                weights.architecture, v0_4.CallableFromFile
+            ):
+                source = weights.architecture.source_file
+                if isinstance(source, RelativeFilePath):
+                    name = str(source)
+                    if "\\" in name or ":" in name or ".." in source.path.parts:
+                        raise ValueError(f"Unsafe architecture path: {name}")
+
+                    contents = (
+                        FileDescr(source=source, sha256=weights.architecture_sha256)
+                        .get_reader()
+                        .read()
+                    )
+                    with ZipFile(stream, "a") as package:
+                        if name in package.namelist():
+                            if package.read(name) != contents:
+                                raise ValueError(f"Conflicting package file: {name}")
+                        else:
+                            package.writestr(name, contents)
         _ = stream.seek(0)
         return stream.read()
 

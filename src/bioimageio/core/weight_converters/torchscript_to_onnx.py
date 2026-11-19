@@ -4,13 +4,11 @@ from collections.abc import Sequence
 from pathlib import Path
 
 import torch.jit
-from loguru import logger
-from torch._export.converter import TS2EPConverter
 
 from bioimageio.spec.model.v0_5 import ModelDescr, OnnxWeightsDescr
 
 from ..backends.pytorch_backend import get_devices
-from ._utils_torch_onnx import export_to_onnx, get_torch_sample_inputs
+from ._utils_torch_onnx import export_to_onnx
 
 
 def convert(
@@ -53,25 +51,12 @@ def convert(
     model.to(devices[0])
     model = model.eval()  # pyright: ignore[reportUnknownVariableType]
 
-    torch_sample_inputs = tuple(
-        t.to(device=devices[0]) for t in get_torch_sample_inputs(model_descr)
-    )
-    exported_program = TS2EPConverter(
-        model,  # pyright: ignore[reportUnknownArgumentType]
-        torch_sample_inputs,
-    ).convert()
-    exported_module = exported_program.module()
-
-    try:
-        exported_module = exported_module.eval()
-    except Exception as e:
-        logger.warning("Failed to set TS2EPConverter program to evaluation mode: {}", e)
-
     return export_to_onnx(
         model_descr,
-        exported_module,
+        model,  # pyright: ignore[reportUnknownArgumentType]
         output_path,
         verbose,
         opset_version,
         parent="torchscript",
+        devices=devices,
     )
