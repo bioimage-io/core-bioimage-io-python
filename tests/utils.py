@@ -17,6 +17,6 @@ class test_func(Protocol):
 
 
 expensive_test = pytest.mark.skipif(
-    os.getenv("RUN_EXPENSIVE_TESTS") != "true",
-    reason="Skipping expensive test (enable by RUN_EXPENSIVE_TESTS='true')",
+    os.getenv("RUN_EXPENSIVE_TESTS", "false").lower() not in ("1", "true"),
+    reason="Skipping expensive test (enable by RUN_EXPENSIVE_TESTS=1)",
 )
