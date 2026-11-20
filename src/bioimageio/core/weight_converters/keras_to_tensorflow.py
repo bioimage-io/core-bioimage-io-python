@@ -63,11 +63,12 @@ def convert(
     """
     tf_major_ver = int(tensorflow.__version__.split(".")[0])  # pyright: ignore[reportUnknownArgumentType]
 
-    if output_path.suffix != ".zip":
-        output_path = output_path.with_suffix("")
+    output_path = output_path.with_suffix("")
 
-    if output_path.exists():
-        raise ValueError(f"The ouptut directory at {output_path} must not exist.")
+    if output_path.exists() or output_path.with_suffix(".zip").exists():
+        raise ValueError(
+            f"The output directory or archive at {output_path} must not exist."
+        )
 
     if model_descr.weights.keras_hdf5 is None:
         raise ValueError("Missing Keras Hdf5 weights to convert from.")

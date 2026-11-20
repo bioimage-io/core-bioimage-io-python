@@ -170,3 +170,22 @@ def test_batch_multi_index_round_trip(lazy: bool):
     index = restored.members[MemberId("raw")].batch_multi_index
     assert index is not None
     assert index.equals(tensor.batch_multi_index)
+
+
+def test_empty_sample_round_trip():
+    sample = Sample(id=("empty", 0), members={}, stat={})
+    restored = GradioSampleSerializer.deserialize_sample(
+        json.loads(json.dumps(GradioSampleSerializer.serialize_sample(sample)))
+    )
+    assert_same_sample(restored, sample)
+
+
+def test_deserialization_rejects_pickled_numpy_objects(tmp_path: Path):
+    payload = GradioSampleSerializer.serialize_sample_block(make_sample("sample"))
+    path = tmp_path / "unsafe.npy"
+    np.save(path, np.array([{"value": 1}], dtype=object))
+    data = payload["data"]
+    assert isinstance(data, dict)
+    data["raw"] = str(path)
+    with pytest.raises(ValueError, match="allow_pickle=False"):
+        _ = GradioSampleSerializer.deserialize_sample_block(payload)
