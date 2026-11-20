@@ -257,9 +257,8 @@ def test_tensor_io(
             pytest.skip("clearscale only supports zarr")
     elif io_lib == "bioio" and name.endswith((".zarr", ".zarr/0")):
         pytest.importorskip("bioio_ome_zarr")
-    elif io_lib == "imageio":
-        if name.find(".zarr") != -1:
-            pytest.skip("imageio does not support zarr")
+    elif io_lib == "imageio" and name.find(".zarr") != -1:
+        pytest.skip("imageio does not support zarr")
 
     path = tmp_path / name
     c = "S" if name.endswith(".png") else "C"

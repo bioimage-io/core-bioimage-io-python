@@ -68,9 +68,8 @@ dev = [
     "bioio-bioformats",
     "bioio-imageio",
     "bioio-ome-tiff",
-    'bioio-ome-zarr;python_version>="3.11" and python_version<"3.14"', # TODO: wait for bioio-ome-zarr to support py3.14
-    "clearscale",
     "cellpose<4.2",                                                    # for model testing
+    "clearscale",
     "crick",
     "httpx",
     "jax",
@@ -79,9 +78,6 @@ dev = [
     "matplotlib",
     "monai",                                                           # for model testing
     "numpy",
-    'onnx;python_version<"3.15"',                                      # TODO: wait for onnx to support py3.15
-    'onnxruntime;python_version<"3.15"',                               # TODO: wait for onnxruntime to support py3.15
-    'onnxscript;python_version<"3.15"',                                # TODO: wait for onnxscript to support py3.15
     "packaging>=17.0",
     "pre-commit",
     "pyright==1.1.414",
@@ -89,15 +85,20 @@ dev = [
     "pytest-cov",
     "pytest-timeout",
     "python-dotenv",
-    'tifffile;python_version>="3.12"',                                 # we're using the new `tifffile.asxarray` which is only available in tifffile>=2026.5.2, which requires py>=3.12
+    "ruff>=0.17.6",
     "segment-anything",                                                # for model testing
     "stardist",
     "tensorflow",
     "timm",                                                            # for model testing
     "torch>=1.6,<3",
     "torchvision>=0.21",
+    'bioio-ome-zarr;python_version>="3.11" and python_version<"3.14"', # TODO: wait for bioio-ome-zarr to support py3.14
     'gradio[mcp]',
     'gradio_client',
+    'onnx;python_version<"3.15"',                                      # TODO: wait for onnx to support py3.15
+    'onnxruntime;python_version<"3.15"',                               # TODO: wait for onnxruntime to support py3.15
+    'onnxscript;python_version<"3.15"',                                # TODO: wait for onnxscript to support py3.15
+    'tifffile;python_version>="3.12"',                                 # we're using the new `tifffile.asxarray` which is only available in tifffile>=2026.5.2, which requires py>=3.12
     'zarr>=3;python_version>="3.11"',                                  # zarr>=3 requires py>=3.11
 ]
 docs = [
