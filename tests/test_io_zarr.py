@@ -1,5 +1,6 @@
+from inspect import signature
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from unittest.mock import Mock
 
 import numpy as np
@@ -32,8 +33,12 @@ def multiscale(*paths: str):
 @pytest.fixture
 def group(tmp_path: Path):
     group = zarr.open_group(str(tmp_path / "image.zarr"), mode="w")
-    _ = group.create_array("0", data=np.arange(12).reshape(3, 4))
-    _ = group.create_array("1", data=np.arange(4).reshape(2, 2))
+    if "zarr_format" in signature(cast(Any, zarr.open_group)).parameters:
+        create_array = group.create_array
+    else:
+        create_array = cast(Any, group).create_dataset
+    _ = create_array("0", data=np.arange(12).reshape(3, 4))
+    _ = create_array("1", data=np.arange(4).reshape(2, 2))
     return group
 
 
