@@ -1,12 +1,68 @@
 import subprocess
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, List, Sequence
+from typing import Any
 
 import numpy as np
 import pytest
 from pydantic import FilePath
 
 from bioimageio.spec import settings
+
+
+def test_server_cli_devices(monkeypatch: pytest.MonkeyPatch):
+    from pydantic_settings import CliApp
+
+    from bioimageio.core.cli import Bioimageio
+    from bioimageio.core.remote_backends.gradio import server
+
+    calls: list[tuple[int | None, list[str] | None]] = []
+
+    def main(port: int | None = None, *, devices: list[str] | None = None) -> str:
+        calls.append((port, devices))
+        return "http://localhost:7861/"
+
+    monkeypatch.setattr(server, "main", main)
+    monkeypatch.setattr(
+        "sys.argv", ["bioimageio", "server", "--port", "7861", "--devices", "cpu"]
+    )
+    _ = CliApp.run(Bioimageio)
+    assert calls == [(7861, ["cpu"])]
+
+
+def test_get_stat_calculates_measures_after_preprocessing(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+):
+    from bioimageio.core import cli
+    from bioimageio.core.common import MemberId
+    from bioimageio.core.proc_ops import Clip
+    from bioimageio.core.sample import Sample
+    from bioimageio.core.stat_measures import DatasetMean, DatasetMeasure
+    from bioimageio.core.tensor import Tensor
+
+    member = MemberId("input")
+    clip = Clip(input=member, output=member, min=0.0, max=1.0)
+    measure = DatasetMean(member_id=member, preceding_ops=(clip,))
+
+    def required_measures(_: object) -> tuple[set[DatasetMeasure], set[DatasetMeasure]]:
+        return {measure}, set()
+
+    monkeypatch.setattr(cli, "get_required_dataset_measures", required_measures)
+    sample = Sample(
+        id=None,
+        members={member: Tensor(np.asarray([[0.0, 10.0]]), dims=("batch", "x"))},
+        stat={},
+    )
+    stat = cli._get_stat(  # pyright: ignore[reportPrivateUsage]
+        None,  # pyright: ignore[reportArgumentType]
+        [sample],
+        dataset_length=1,
+        stats_path=tmp_path / "stats.yaml",
+        dataset_fits_in_memory=False,
+    )
+    value = stat[measure]
+    assert isinstance(value, Tensor)
+    np.testing.assert_allclose(value.to_numpy(), 0.5)
 
 
 def run_subprocess(
@@ -17,6 +73,7 @@ def run_subprocess(
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         encoding="utf-8",
+        check=False,
         **kwargs,
     )
 
@@ -25,6 +82,7 @@ def run_subprocess(
     "args",
     [
         ["--help"],
+        # ["bench", "--help"],  # TODO re-enable when bech branch is merged
         ["add-weights", "unet2d_nuclei_broad_model", "tmp_path"],
         [
             "package",
@@ -48,7 +106,7 @@ def run_subprocess(
     ],
 )
 def test_cli(
-    args: List[str],
+    args: list[str],
     unet2d_nuclei_broad_model: str,
     unet2d_nuclei_broad_model_old: str,
     tmp_path: Path,
@@ -69,6 +127,78 @@ def test_cli(
     ]
     ret = run_subprocess(["bioimageio", *resolved_args])
     assert ret.returncode == 0, ret.stdout
+
+
+# TODO: re-enable when bech branch is merged
+# def test_bench_cli_arguments(
+#     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+# ):
+#     from bioimageio.core import cli
+
+#     def find_streamlit(name: str) -> ModuleSpec:
+#         assert name == "streamlit"
+#         return ModuleSpec(name, loader=None)
+
+#     monkeypatch.setattr(cli, "find_spec", find_streamlit)
+#     command: list[str] = []
+
+#     def run_streamlit(
+#         args: Sequence[str], *, check: bool
+#     ) -> subprocess.CompletedProcess[str]:
+#         command.extend(args)
+#         assert not check
+#         args_list = list(args)
+#         state_path = Path(args_list[args_list.index("--state-path") + 1])
+#         _ = state_path.write_text(
+#             json.dumps(
+#                 {
+#                     "server": "https://final.example.com",
+#                     "data": ["final data.npy"],
+#                     "model": ["final-model"],
+#                 }
+#             ),
+#             encoding="utf-8",
+#         )
+#         return subprocess.CompletedProcess(args, 0)
+
+#     monkeypatch.setattr(subprocess, "run", run_streamlit)
+#     with pytest.raises(SystemExit) as exit_info:
+#         cli.BenchCmd(
+#             server="https://example.com",
+#             data=["a.npy", "b.npy"],
+#             model=["model-a", "model-b"],
+#         ).cli_cmd()
+
+#     assert exit_info.value.code == 0
+#     state_arg_index = command.index("--state-path")
+#     assert command[state_arg_index - 1] == "--"
+#     assert command[state_arg_index + 2 :] == [
+#         "--server",
+#         "https://example.com",
+#         "--data",
+#         "a.npy",
+#         "--data",
+#         "b.npy",
+#         "--model",
+#         "model-a",
+#         "--model",
+#         "model-b",
+#     ]
+#     assert (
+#         "bioimageio bench --server https://final.example.com "
+#         + "--data 'final data.npy' --model final-model"
+#         in capsys.readouterr().out
+#     )
+
+#     def interrupt_streamlit(
+#         args: Sequence[str], *, check: bool
+#     ) -> subprocess.CompletedProcess[str]:
+#         del args, check
+#         raise KeyboardInterrupt
+
+#     monkeypatch.setattr(subprocess, "run", interrupt_streamlit)
+#     cli.BenchCmd(model=["fallback-model"]).cli_cmd()
+#     assert "bioimageio bench --model fallback-model" in capsys.readouterr().out
 
 
 def test_empty_cache(tmp_path: Path, unet2d_nuclei_broad_model: str):
@@ -93,7 +223,7 @@ def test_empty_cache(tmp_path: Path, unet2d_nuclei_broad_model: str):
 
 
 @pytest.mark.parametrize("args", [["test", "stardist_wrong_shape"]])
-def test_cli_fails(args: List[str], stardist_wrong_shape: FilePath):
+def test_cli_fails(args: list[str], stardist_wrong_shape: FilePath):
     resolved_args = [
         str(stardist_wrong_shape) if arg == "stardist_wrong_shape" else arg
         for arg in args
@@ -156,8 +286,8 @@ def _test_cli_predict_multiple(
     out_folder = tmp_path / "outputs"
     out_folder.mkdir()
     out_file_pattern = "im-{sample_id}.npy"
-    inputs: List[str] = []
-    expected_outputs: List[Path] = []
+    inputs: list[str] = []
+    expected_outputs: list[Path] = []
     for i in range(n_images):
         input_path = in_folder / f"im-{i}.npy"
         im = np.random.randint(0, 255, size=shape).astype("uint8")

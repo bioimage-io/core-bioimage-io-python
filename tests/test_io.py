@@ -1,16 +1,138 @@
+import json
+import sys
+from importlib.util import find_spec
+from inspect import signature
 from pathlib import Path
-from typing import Tuple
+from typing import Any, Literal, cast
 
 import numpy as np
 import pytest
 
+from bioimageio.core.axis import AxisId
 
+
+@pytest.mark.parametrize("internal_path", ["", "group/image"])
+@pytest.mark.parametrize("automatic", [False, True])
+def test_tensor_io_h5py(tmp_path: Path, internal_path: str, automatic: bool):
+    h5py = pytest.importorskip("h5py")
+
+    from bioimageio.core import Tensor
+    from bioimageio.core.io import load_tensor, save_tensor
+
+    path = tmp_path / "nested" / "image.h5"
+    target = path / internal_path if internal_path else path
+    expected = Tensor.from_numpy(
+        np.arange(60, dtype=np.uint16).reshape(3, 4, 5), dims=("z", "y", "x")
+    )
+    expected.set_physical_scale({AxisId("z"): 2.5, AxisId("y"): 0.5, AxisId("x"): 0.25})
+    expected.set_physical_scale_unit(
+        {AxisId("z"): "micrometer", AxisId("y"): "micrometer"}
+    )
+    io_lib = None if automatic else "h5py"
+    save_tensor(target, expected, io_lib=io_lib)
+    with h5py.File(path, "a") as f:
+        f.create_dataset("unrelated", data=[42])
+    save_tensor(target, expected, io_lib=io_lib)
+
+    actual = load_tensor(target, io_lib=io_lib)
+    assert actual.dims == expected.dims
+    assert actual.dtype == expected.dtype
+    np.testing.assert_array_equal(actual.to_numpy(), expected.to_numpy())
+    assert actual.get_physical_scale() == expected.get_physical_scale()
+    assert actual.get_physical_scale_unit() == expected.get_physical_scale_unit()
+    with h5py.File(path, "r") as f:
+        np.testing.assert_array_equal(f["unrelated"][()], [42])
+        dataset = f[internal_path or "data"]
+        assert list(dataset.attrs["DIMENSION_LABELS"]) == ["z", "y", "x"]
+        assert list(dataset.attrs["axis_units"]) == ["micrometer", "micrometer", ""]
+        np.testing.assert_array_equal(dataset.attrs["axis_scale"], [2.5, 0.5, 0.25])
+        axis_tags = json.loads(dataset.attrs["axistags"])["axes"]
+        assert [axis["key"] for axis in axis_tags] == ["z", "y", "x"]
+        assert [axis["resolution"] for axis in axis_tags] == [2.5, 0.5, 0.25]
+
+
+def test_load_tensor_h5py_without_axes_metadata(tmp_path: Path):
+    h5py = pytest.importorskip("h5py")
+
+    from bioimageio.core.io import load_tensor
+
+    path = tmp_path / "image.h5"
+    expected = np.arange(20).reshape(4, 5)
+    with h5py.File(path, "w") as f:
+        f.create_dataset("raw", data=expected)
+
+    actual = load_tensor(path / "raw", axes=("x", "y"), io_lib="h5py")
+    assert actual.dims == ("x", "y")
+    np.testing.assert_array_equal(actual.to_numpy(), expected)
+
+
+@pytest.mark.parametrize("internal_path", ["", "group/image"])
+def test_load_tensor_h5py_calibration(tmp_path: Path, internal_path: str):
+    h5py = pytest.importorskip("h5py")
+    from bioimageio.core.io import load_tensor
+
+    path = tmp_path / "calibrated.h5"
+    expected = np.arange(60, dtype=np.uint16).reshape(3, 4, 5)
+    with h5py.File(path, "w") as f:
+        dataset = f.create_dataset(internal_path or "data", data=expected)
+        dataset.attrs["DIMENSION_LABELS"] = ["z", "y", "x"]
+        dataset.attrs["axis_scale"] = [2.5, 0.5, 0.25]
+        dataset.attrs["axis_units"] = ["micrometer", "micrometer", ""]
+
+    actual = load_tensor(path / internal_path if internal_path else path, io_lib="h5py")
+    assert actual.dims == ("z", "y", "x")
+    assert actual.dtype == "uint16"
+    assert actual.get_physical_scale() == {"z": 2.5, "y": 0.5, "x": 0.25}
+    assert actual.get_physical_scale_unit() == {
+        "z": "micrometer",
+        "y": "micrometer",
+        "x": "",
+    }
+    np.testing.assert_array_equal(actual.to_numpy(), expected)
+
+
+@pytest.mark.parametrize(
+    "problem, error, message",
+    [
+        ("empty", ValueError, "is empty"),
+        ("group", TypeError, "does not point to a dataset"),
+        ("axis_scale", ValueError, "one value per axis"),
+        ("axis_units", ValueError, "one value per axis"),
+    ],
+)
+def test_load_tensor_h5py_rejects_invalid_metadata(
+    tmp_path: Path, problem: str, error: type[Exception], message: str
+):
+    h5py = pytest.importorskip("h5py")
+    from bioimageio.core.io import load_tensor
+
+    path = tmp_path / "invalid.h5"
+    with h5py.File(path, "w") as f:
+        if problem == "group":
+            _ = f.create_group("raw")
+        elif problem != "empty":
+            dataset = f.create_dataset("raw", data=np.zeros((2, 3)))
+            dataset.attrs["DIMENSION_LABELS"] = ["y", "x"]
+            dataset.attrs[problem] = [0.5] if problem == "axis_scale" else ["um"]
+    source = path if problem == "empty" else path / "raw"
+    with pytest.raises(error, match=message):
+        _ = load_tensor(source, io_lib="h5py")
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 10),
+    reason="various bioio writer modules are only available for py>=3.10.",
+)
 @pytest.mark.parametrize(
     "name",
     [
-        "img.png",
-        "img.tiff",
         "img.npy",
+    ],
+)
+@pytest.mark.parametrize(
+    "io_lib",
+    [
+        "numpy",
     ],
 )
 @pytest.mark.parametrize(
@@ -23,14 +145,250 @@ import pytest
         (5, 3, 4),
     ],
 )
-def test_tensor_io(name: str, shape: Tuple[int, ...], tmp_path: Path):
+def test_tensor_io_numpy(
+    name: str,
+    io_lib: Literal["numpy"],
+    shape: tuple[int, ...],
+    tmp_path: Path,
+):
     from bioimageio.core import Tensor
     from bioimageio.core.io import load_tensor, save_tensor
 
     path = tmp_path / name
-    data = Tensor.from_numpy(
+    expected = Tensor.from_numpy(
         np.arange(np.prod(shape), dtype=np.uint8).reshape(shape), dims=None
     )
-    save_tensor(path, data)
-    actual = load_tensor(path)
-    assert actual == data
+    save_tensor(path, expected, io_lib=io_lib)
+    actual = load_tensor(path, io_lib=io_lib)
+    assert (actual == expected).to_numpy().all()
+
+
+@pytest.mark.parametrize(
+    "suffix",
+    [
+        ".png",
+        pytest.param(
+            ".tiff",
+            marks=pytest.mark.skipif(
+                sys.version_info < (3, 12),
+                reason="tifffile tensor loading and saving requires Python >=3.12.",
+            ),
+        ),
+        ".zarr",
+    ],
+)
+def test_save_sample(tmp_path: Path, suffix: str):
+    from bioimageio.core import Sample, Tensor
+    from bioimageio.core.common import MemberId
+    from bioimageio.core.io import load_tensor, save_sample
+
+    if suffix == ".zarr":
+        if find_spec("clearscale") is None:
+            pytest.importorskip("bioio_ome_zarr")
+        else:
+            _ = pytest.importorskip("zarr", minversion="3")
+
+    members = {
+        MemberId("raw"): np.arange(30, dtype=np.uint8).reshape(5, 6),
+        MemberId("mask"): np.ones((5, 6), dtype=np.uint8),
+    }
+    sample = Sample(
+        members={
+            m: Tensor.from_numpy(data, dims=("y", "x")) for m, data in members.items()
+        },
+        stat={},
+        id="sample",
+    )
+
+    _ = save_sample(tmp_path / f"{sample.id}_{{member_id}}{suffix}", sample)
+
+    for member_id, expected in members.items():
+        actual = load_tensor(tmp_path / f"sample_{member_id}{suffix}")
+        np.testing.assert_array_equal(actual, expected)
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        "img.png",
+        pytest.param(
+            "img.tiff",
+            marks=pytest.mark.skipif(
+                sys.version_info < (3, 12),
+                reason="tifffile tensor loading requires Python >=3.12.",
+            ),
+        ),
+        "img.zarr",
+        "img.zarr/0",
+        "img.zarr/s2",
+    ],
+)
+@pytest.mark.parametrize(
+    "io_lib",
+    [
+        "bioio",
+        "imageio",
+        "clearscale",
+    ],
+)
+@pytest.mark.parametrize(
+    "shape",
+    [
+        (6, 5),
+        (1, 6, 5),
+        (3, 6, 5),
+        (4, 5, 6),
+    ],
+)
+def test_tensor_io(
+    name: str,
+    io_lib: Literal["bioio", "imageio", "clearscale"],
+    shape: tuple[int, ...],
+    tmp_path: Path,
+):
+    from bioimageio.core import Tensor
+    from bioimageio.core.io import load_tensor, save_tensor
+
+    if io_lib == "clearscale":
+        _ = pytest.importorskip("clearscale")
+        _ = pytest.importorskip("zarr", minversion="3")
+
+        if name.find(".zarr") == -1:
+            pytest.skip("clearscale only supports zarr")
+    elif io_lib == "bioio" and name.endswith((".zarr", ".zarr/0")):
+        pytest.importorskip("bioio_ome_zarr")
+    elif io_lib == "imageio" and name.find(".zarr") != -1:
+        pytest.skip("imageio does not support zarr")
+
+    path = tmp_path / name
+    c = "S" if name.endswith(".png") else "C"
+    expected = Tensor.from_numpy(
+        np.arange(np.prod(shape), dtype=np.uint8).reshape(shape),
+        dims=f"{c}YX"[-len(shape) :],
+    )
+
+    def save():
+        save_tensor(path, expected, io_lib=io_lib)
+
+    if io_lib == "bioio" and name.endswith(".zarr/s2"):
+        with pytest.raises(
+            NotImplementedError,
+            match="Saving to an internal path that is not '0' is not implemented for zarr files with io_lib='bioio'.",
+        ):
+            save()
+    else:
+        save()
+
+        actual = load_tensor(path, io_lib=io_lib)
+        assert (actual == expected).to_numpy().all()
+
+
+@pytest.mark.parametrize("zarr_format", [2, 3])
+@pytest.mark.parametrize("io_lib", ["clearscale", "bioio"])
+@pytest.mark.parametrize("internal_path", ["", "0"])
+def test_tensor_ome_zarr_metadata_roundtrip(
+    zarr_format: int,
+    io_lib: Literal["clearscale", "bioio"],
+    internal_path: str,
+    tmp_path: Path,
+):
+    zarr = pytest.importorskip("zarr", minversion="3")
+    _ = pytest.importorskip(
+        "clearscale" if io_lib == "clearscale" else "bioio_ome_zarr"
+    )
+
+    from bioimageio.core import AxisId, Tensor
+    from bioimageio.core.io import load_tensor, save_tensor
+
+    expected = Tensor.from_numpy(
+        np.arange(3 * 4 * 5, dtype=np.uint16).reshape(3, 4, 5),
+        dims=("z", "y", "x"),
+    )
+    pixel_size = {AxisId("z"): 2.5, AxisId("y"): 0.5, AxisId("x"): 0.25}
+    units = {axis: "micrometer" for axis in pixel_size}
+    expected.set_physical_scale(pixel_size)
+    expected.set_physical_scale_unit(units)
+    store = tmp_path / "image.ome.zarr"
+    path = store / internal_path
+
+    with zarr.config.set({"default_zarr_format": zarr_format}):
+        save_tensor(path, expected, io_lib=io_lib)
+
+    group = zarr.open_group(store, mode="r")
+    assert group.metadata.zarr_format == zarr_format
+    metadata = group.attrs if zarr_format == 2 else group.attrs["ome"]
+    multiscale = metadata["multiscales"][0]
+    assert [axis["name"] for axis in multiscale["axes"]] == ["z", "y", "x"]
+    assert [axis["unit"] for axis in multiscale["axes"]] == ["micrometer"] * 3
+    dataset = multiscale["datasets"][0]
+    assert dataset["coordinateTransformations"] == [
+        {"type": "scale", "scale": list(pixel_size.values())}
+    ]
+    array = group[dataset["path"]]
+    assert array.metadata.zarr_format == zarr_format
+
+    actual = load_tensor(path, io_lib=io_lib)
+    assert actual.dims == expected.dims
+    assert actual.dtype == expected.dtype
+    np.testing.assert_array_equal(actual.to_numpy(), expected.to_numpy())
+    assert actual.get_physical_scale() == pytest.approx(pixel_size)
+    assert actual.get_physical_scale_unit() == units
+
+
+@pytest.mark.parametrize("io_lib", ["clearscale", "bioio"])
+@pytest.mark.parametrize("group_path", ["", "group"])
+@pytest.mark.parametrize("scale_key", ["", "s0", "0", "scalekeyvalue"])
+def test_load_zarr_from_group(
+    io_lib: Literal["clearscale", "bioio"],
+    group_path: str,
+    scale_key: str,
+    tmp_path: Path,
+):
+    if io_lib == "clearscale":
+        _ = pytest.importorskip("clearscale")
+    else:
+        pytest.importorskip("bioio_ome_zarr")
+
+    import zarr
+
+    from bioimageio.core.io import load_tensor
+
+    default_scale_key = "0"
+    storage_source = tmp_path / "image.ome.zarr"
+    group_source = storage_source / group_path if storage_source else storage_source
+    uses_zarr_format = "zarr_format" in signature(cast(Any, zarr.open_group)).parameters
+    if uses_zarr_format:
+        group = zarr.open_group(group_source, mode="w", zarr_format=2)
+    else:
+        group = zarr.open_group(group_source, mode="w")
+    expected = np.arange(2 * 3 * 4 * 5, dtype=np.uint16).reshape(2, 3, 4, 5)
+    if uses_zarr_format:
+        _ = group.create_array(scale_key or default_scale_key, data=expected)
+    else:
+        _dataset: Any = cast(Any, group).create_dataset(
+            scale_key or default_scale_key, data=expected
+        )
+    group.attrs["multiscales"] = [
+        {
+            "version": "0.4",
+            "axes": [
+                {"name": "c", "type": "channel"},
+                {"name": "z", "type": "space"},
+                {"name": "y", "type": "space"},
+                {"name": "x", "type": "space"},
+            ],
+            "datasets": [
+                {
+                    "path": scale_key or default_scale_key,
+                    "coordinateTransformations": [
+                        {"type": "scale", "scale": [1, 1, 1, 1]}
+                    ],
+                }
+            ],
+        }
+    ]
+    source = group_source / scale_key
+
+    tensor = load_tensor(source, io_lib=io_lib)
+    assert tensor.dims == ("channel", "z", "y", "x")
+    np.testing.assert_array_equal(tensor.to_numpy(), expected)

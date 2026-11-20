@@ -1,7 +1,8 @@
 """utils to test bioimageio.core"""
 
 import os
-from typing import Any, Protocol, Sequence
+from collections.abc import Sequence
+from typing import Any, Protocol
 
 import pytest
 
@@ -16,6 +17,6 @@ class test_func(Protocol):
 
 
 expensive_test = pytest.mark.skipif(
-    os.getenv("RUN_EXPENSIVE_TESTS") != "true",
-    reason="Skipping expensive test (enable by RUN_EXPENSIVE_TESTS='true')",
+    os.getenv("RUN_EXPENSIVE_TESTS", "false").lower() not in ("1", "true"),
+    reason="Skipping expensive test (enable by RUN_EXPENSIVE_TESTS=1)",
 )

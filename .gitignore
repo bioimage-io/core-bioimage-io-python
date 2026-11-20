@@ -2,10 +2,12 @@
 *.egg-info/
 *.pyc
 .DS_Store
+.claude/
 .coverage
 .env
 .idea/
 .tox/
+:memory:.ses
 Unet 2D Nuclei Broad_example/
 __pycache__/
 bioimageio_cache/
@@ -20,4 +22,6 @@ example/**/output/
 output.zip
 pkgs/
 site/
+# tests/logs/
 typings/pooch/
+worktrees/

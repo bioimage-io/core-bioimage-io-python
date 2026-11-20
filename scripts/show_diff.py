@@ -19,4 +19,6 @@ if __name__ == "__main__":
         latest = Path(tmp) / "latest.bioimageio.yaml"
         save_bioimageio_yaml_only(model_latest, file=latest)
 
-        _ = subprocess.run(f"git diff --no-index --ignore-all-space {as_is} {latest}")
+        _ = subprocess.run(
+            f"git diff --no-index --ignore-all-space {as_is} {latest}", check=True
+        )

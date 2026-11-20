@@ -1,21 +1,24 @@
 from dataclasses import dataclass
-from typing import Any, Collection
+from typing import Any, Literal, cast
 
 import numpy as np
 from numpy.typing import NDArray
-from typing_extensions import Literal, cast
 
-from bioimageio.spec.model.v0_5 import CellposeFlowDynamicsDescr
+from bioimageio.spec.model.v0_5 import (
+    CellposeFlowDynamicsDescr,
+    CellposeFlowDynamicsKwargs,
+)
 
 from ._op_base import SamplewiseOperator
 from .axis import AxisId, PerAxis
 from .common import MemberId
 from .sample import Sample
-from .stat_measures import Measure
 from .tensor import Tensor
 
+DEFAULT_LABELS_ID = MemberId("labels")
 
-@dataclass
+
+@dataclass(frozen=True)
 class CellposeFlowDynamics(SamplewiseOperator):
     """Cellpose flow-dynamics postprocessing operator.
 
@@ -29,7 +32,7 @@ class CellposeFlowDynamics(SamplewiseOperator):
     do_3D: bool = False
     min_size: int = 15
     """Minimum size of objects to keep, in pixels. Default is 15, which is the default in Cellpose. Set to 0 to disable filtering by size."""
-    labels_id: MemberId = MemberId("labels")
+    labels_id: MemberId = DEFAULT_LABELS_ID
     output_dtype: Literal["uint16", "uint32"] = "uint16"
 
     @classmethod
@@ -47,8 +50,19 @@ class CellposeFlowDynamics(SamplewiseOperator):
         )
 
     @property
-    def required_measures(self) -> Collection[Measure]:
-        return set()
+    def output_member_ids(self) -> tuple[MemberId, ...]:
+        return (self.labels_id,)
+
+    def get_descr(self):
+        return CellposeFlowDynamicsDescr(
+            kwargs=CellposeFlowDynamicsKwargs(
+                cellprob_threshold=self.cellprob_threshold,
+                flow_threshold=self.flow_threshold,
+                do_3D=self.do_3D,
+                min_size=self.min_size,
+                output_dtype=self.output_dtype,
+            )
+        )
 
     def get_output_shape(self, input_shape: PerAxis[int]) -> PerAxis[int]:
         output_shape = dict(input_shape)
@@ -59,6 +73,7 @@ class CellposeFlowDynamics(SamplewiseOperator):
         input_tensor = sample.members[self.labels_id]
         output_tensor = self._apply(input_tensor)
         sample.members[self.labels_id] = output_tensor
+        sample.applied_ops += (self,)
 
     def _apply(self, x: Tensor) -> Tensor:
         if x.dims[0] != AxisId("batch"):
@@ -68,15 +83,18 @@ class CellposeFlowDynamics(SamplewiseOperator):
 
         if x.dims[1] != AxisId("channel"):
             raise ValueError(
-                "Expected first axis to be 'channel' with 3 channels for cellpose flow dynamics."
+                "Expected axis 1 to be 'channel' with 3 channels for cellpose flow dynamics."
             )
         if x.shape[1] != 3:
             raise ValueError(
-                "Expected 3 stacked tensors along first 'channel' axis: flow_y, flow_x, cellprob for cellpose flow dynamics."
+                f"Expected 3 stacked tensors along 'channel' axis at {x.shape}[1] for flow_y, flow_x, cellprob for cellpose flow dynamics."
             )
 
         masks = [self._apply_impl(xx) for xx in x]
-        return Tensor.from_numpy(np.stack(masks, axis=0), dims=x.dims)
+        output = Tensor.from_numpy(np.stack(masks, axis=0), dims=x.dims)
+        output.set_physical_scale(x.get_physical_scale())
+        output.set_physical_scale_unit(x.get_physical_scale_unit())
+        return output
 
     def _apply_impl(self, x: Tensor) -> NDArray[Any]:
         """apply on a tensor without batch dimension"""

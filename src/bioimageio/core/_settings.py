@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import os
 import platform
-from typing import Literal, Optional
+import warnings
+from typing import Annotated, Literal
 
-from loguru import logger
 from pydantic import Field, field_validator
-from typing_extensions import Annotated
 
 from bioimageio.spec._internal._settings import Settings as SpecSettings
 
@@ -17,12 +18,12 @@ class Settings(SpecSettings):
     ] = "torch"
 
     pytorch_enable_mps_fallback: Annotated[
-        Optional[bool], Field(alias="PYTORCH_ENABLE_MPS_FALLBACK")
+        bool | None, Field(alias="PYTORCH_ENABLE_MPS_FALLBACK")
     ] = None
 
     @field_validator("pytorch_enable_mps_fallback", mode="after")
     @classmethod
-    def _set_default_mps_fallback(cls, value: Optional[bool]):
+    def _set_default_mps_fallback(cls, value: bool | None):
         # pytorch versions up to the 2.6 don't support all operations (esp 3d) on MPS
         # this env variable allows falling back to CPU for those networks instead of failing
         # see for current status https://github.com/pytorch/pytorch/issues/141287
@@ -31,7 +32,9 @@ class Settings(SpecSettings):
             and platform.system().lower() == "darwin"
             and platform.machine().lower() == "arm64"
         ):
-            logger.info("Set environment variable 'PYTORCH_ENABLE_MPS_FALLBACK=1'.")
+            warnings.warn(
+                "environment variable 'PYTORCH_ENABLE_MPS_FALLBACK' not set, setting 'PYTORCH_ENABLE_MPS_FALLBACK=1'."
+            )
             os.environ["PYTORCH_ENABLE_MPS_FALLBACK"] = "1"
             return True
 
@@ -45,7 +48,10 @@ class Settings(SpecSettings):
     )
     """URL to the bioimageio collection config"""
 
-    gradio_server: Optional[str] = None
+    processing_chunk_min_bytes: int = 104_857_600  # 100 MiB
+    """Minimum number of bytes to process in a single (dask) chunk when processing large tensors blockwise."""
+
+    gradio_server: str | None = None
     """URL or Hugging Face space name to connect to with the remote gradio model adapter or remote gradio prediction pipeline.
 
     Example: "bioimage-io/bioimage-io-gradio-server"
