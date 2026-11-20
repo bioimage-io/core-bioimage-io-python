@@ -13,7 +13,7 @@ from bioimageio.spec import settings
 def test_server_cli_devices(monkeypatch: pytest.MonkeyPatch):
     from pydantic_settings import CliApp
 
-    from bioimageio.core.cli import ServerCmd
+    from bioimageio.core.cli import Bioimageio
     from bioimageio.core.remote_backends.gradio import server
 
     calls: list[tuple[int | None, list[str] | None]] = []
@@ -23,7 +23,10 @@ def test_server_cli_devices(monkeypatch: pytest.MonkeyPatch):
         return "http://localhost:7861/"
 
     monkeypatch.setattr(server, "main", main)
-    _ = CliApp.run(ServerCmd, cli_args=["--port", "7861", "--devices", "cpu"])
+    monkeypatch.setattr(
+        "sys.argv", ["bioimageio", "server", "--port", "7861", "--devices", "cpu"]
+    )
+    _ = CliApp.run(Bioimageio)
     assert calls == [(7861, ["cpu"])]
 
 
