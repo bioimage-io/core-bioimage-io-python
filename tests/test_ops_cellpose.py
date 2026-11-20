@@ -46,7 +46,9 @@ def test_cellpose_export(tmp_path: Path):
         Path(__file__).parent / "../example/export_cellpose_model/sample_input.png"
     )
 
-    cellpose_original = cellpose.models.CellposeModel(gpu=False)
+    cellpose_original = cellpose.models.CellposeModel(
+        gpu=False, pretrained_model="cpsam"
+    )
 
     input_array = cast_and_assert(
         np.ndarray, np.asarray(imageio.imread(sample_input_path)).transpose(2, 0, 1)
