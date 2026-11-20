@@ -2130,7 +2130,13 @@
   </span>
 
 <a href="#bioimageio.core.axis.AxisLike" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">AxisLike</span> <span class="o">=</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><span title="bioimageio.core.axis._AxisLikePlain">_AxisLikePlain</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.axis.AxisDescrLike">AxisDescrLike</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.AnyAxis&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.AnyAxis">AnyAxis</a></span><span class="p">,</span> <span class="s1">'Axis'</span><span class="p">,</span> <span class="s1">'AxisInfo'</span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">AxisLike</span> <span class="o">=</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span>
+    <span class="n"><span title="bioimageio.core.axis._AxisLikePlain">_AxisLikePlain</span></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.axis.AxisDescrLike">AxisDescrLike</a></span><span class="p">,</span>
+    <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.AnyAxis&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.AnyAxis">AnyAxis</a></span><span class="p">,</span>
+    <span class="s2">"Axis"</span><span class="p">,</span>
+    <span class="s2">"AxisInfo"</span><span class="p">,</span>
+<span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2548,7 +2554,17 @@
   </span>
 
 <a href="#bioimageio.core.axis.Axis" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">Axis</span><span class="p">(</span><span class="n"><span title="bioimageio.core.axis.Axis(id)">id</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.axis.AxisId">AxisId</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.axis.Axis(type)">type</span></span><span class="p">:</span> <span class="n"><span title="typing.Literal">Literal</span></span><span class="p">[</span><span class="s1">'batch'</span><span class="p">,</span> <span class="s1">'channel'</span><span class="p">,</span> <span class="s1">'index'</span><span class="p">,</span> <span class="s1">'space'</span><span class="p">,</span> <span class="s1">'time'</span><span class="p">,</span> <span class="s1">'unknown'</span><span class="p">])</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">Axis</span><span class="p">(</span>
+    <span class="n"><span title="bioimageio.core.axis.Axis(id)">id</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.axis.AxisId">AxisId</a></span><span class="p">,</span>
+    <span class="n"><span title="bioimageio.core.axis.Axis(type)">type</span></span><span class="p">:</span> <span class="n"><span title="typing.Literal">Literal</span></span><span class="p">[</span>
+        <span class="s2">"batch"</span><span class="p">,</span>
+        <span class="s2">"channel"</span><span class="p">,</span>
+        <span class="s2">"index"</span><span class="p">,</span>
+        <span class="s2">"space"</span><span class="p">,</span>
+        <span class="s2">"time"</span><span class="p">,</span>
+        <span class="s2">"unknown"</span><span class="p">,</span>
+    <span class="p">],</span>
+<span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -2732,7 +2748,9 @@
   </span>
 
 <a href="#bioimageio.core.axis.Axis.type" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nb">type</span><span class="p">:</span> <span class="n"><span title="typing.Literal">Literal</span></span><span class="p">[</span><span class="s1">'batch'</span><span class="p">,</span> <span class="s1">'channel'</span><span class="p">,</span> <span class="s1">'index'</span><span class="p">,</span> <span class="s1">'space'</span><span class="p">,</span> <span class="s1">'time'</span><span class="p">,</span> <span class="s1">'unknown'</span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nb">type</span><span class="p">:</span> <span class="n"><span title="typing.Literal">Literal</span></span><span class="p">[</span>
+    <span class="s2">"batch"</span><span class="p">,</span> <span class="s2">"channel"</span><span class="p">,</span> <span class="s2">"index"</span><span class="p">,</span> <span class="s2">"space"</span><span class="p">,</span> <span class="s2">"time"</span><span class="p">,</span> <span class="s2">"unknown"</span>
+<span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3051,7 +3069,18 @@
   </span>
 
 <a href="#bioimageio.core.axis.AxisInfo" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">AxisInfo</span><span class="p">(</span><span class="n"><span title="bioimageio.core.axis.AxisInfo(id)">id</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.axis.AxisId">AxisId</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.axis.AxisInfo(type)">type</span></span><span class="p">:</span> <span class="n"><span title="typing.Literal">Literal</span></span><span class="p">[</span><span class="s1">'batch'</span><span class="p">,</span> <span class="s1">'channel'</span><span class="p">,</span> <span class="s1">'index'</span><span class="p">,</span> <span class="s1">'space'</span><span class="p">,</span> <span class="s1">'time'</span><span class="p">,</span> <span class="s1">'unknown'</span><span class="p">],</span> <span class="n"><span title="bioimageio.core.axis.AxisInfo(size)">size</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.axis.AxisSize">AxisSize</a></span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">AxisInfo</span><span class="p">(</span>
+    <span class="n"><span title="bioimageio.core.axis.AxisInfo(id)">id</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.axis.AxisId">AxisId</a></span><span class="p">,</span>
+    <span class="n"><span title="bioimageio.core.axis.AxisInfo(type)">type</span></span><span class="p">:</span> <span class="n"><span title="typing.Literal">Literal</span></span><span class="p">[</span>
+        <span class="s2">"batch"</span><span class="p">,</span>
+        <span class="s2">"channel"</span><span class="p">,</span>
+        <span class="s2">"index"</span><span class="p">,</span>
+        <span class="s2">"space"</span><span class="p">,</span>
+        <span class="s2">"time"</span><span class="p">,</span>
+        <span class="s2">"unknown"</span><span class="p">,</span>
+    <span class="p">],</span>
+    <span class="n"><span title="bioimageio.core.axis.AxisInfo(size)">size</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.axis.AxisSize">AxisSize</a></span><span class="p">,</span>
+<span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3304,7 +3333,9 @@
   </span>
 
 <a href="#bioimageio.core.axis.AxisInfo.type" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nb">type</span><span class="p">:</span> <span class="n"><span title="typing.Literal">Literal</span></span><span class="p">[</span><span class="s1">'batch'</span><span class="p">,</span> <span class="s1">'channel'</span><span class="p">,</span> <span class="s1">'index'</span><span class="p">,</span> <span class="s1">'space'</span><span class="p">,</span> <span class="s1">'time'</span><span class="p">,</span> <span class="s1">'unknown'</span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nb">type</span><span class="p">:</span> <span class="n"><span title="typing.Literal">Literal</span></span><span class="p">[</span>
+    <span class="s2">"batch"</span><span class="p">,</span> <span class="s2">"channel"</span><span class="p">,</span> <span class="s2">"index"</span><span class="p">,</span> <span class="s2">"space"</span><span class="p">,</span> <span class="s2">"time"</span><span class="p">,</span> <span class="s2">"unknown"</span>
+<span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3369,7 +3400,9 @@
   </span>
 
 <a href="#bioimageio.core.axis.AxisInfo.create" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">create</span><span class="p">(</span><span class="n"><span title="bioimageio.core.axis.AxisInfo.create(axis)">axis</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.axis.AxisLike">AxisLike</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.axis.AxisInfo.create(size)">size</span></span><span class="p">:</span> <span class="n"><span title="int">int</span></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.axis.AxisSize">AxisSize</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.axis.AxisInfo">AxisInfo</a></span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">create</span><span class="p">(</span>
+    <span class="n"><span title="bioimageio.core.axis.AxisInfo.create(axis)">axis</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.axis.AxisLike">AxisLike</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.axis.AxisInfo.create(size)">size</span></span><span class="p">:</span> <span class="n"><span title="int">int</span></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.axis.AxisSize">AxisSize</a></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.axis.AxisInfo">AxisInfo</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3474,7 +3507,11 @@
   </span>
 
 <a href="#bioimageio.core.axis.AxisSize" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">AxisSize</span><span class="p">(</span><span class="n"><span title="bioimageio.core.axis.AxisSize(min)">min</span></span><span class="p">:</span> <span class="n"><span title="int">int</span></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.axis.AxisSize(max)">max</span></span><span class="p">:</span> <span class="n"><span title="int">int</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n"><span title="bioimageio.core.axis.AxisSize(step)">step</span></span><span class="p">:</span> <span class="n"><span title="int">int</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">AxisSize</span><span class="p">(</span>
+    <span class="n"><span title="bioimageio.core.axis.AxisSize(min)">min</span></span><span class="p">:</span> <span class="n"><span title="int">int</span></span><span class="p">,</span>
+    <span class="n"><span title="bioimageio.core.axis.AxisSize(max)">max</span></span><span class="p">:</span> <span class="n"><span title="int">int</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n"><span title="bioimageio.core.axis.AxisSize(step)">step</span></span><span class="p">:</span> <span class="n"><span title="int">int</span></span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -3831,7 +3868,9 @@
 
 
 <a href="#bioimageio.core.axis.single_letter_dims_if_possible" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">single_letter_dims_if_possible</span><span class="p">(</span><span class="n"><span title="bioimageio.core.axis.single_letter_dims_if_possible(dims)">dims</span></span><span class="p">:</span> <span class="n"><span title="collections.abc.Sequence">Sequence</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.axis.AxisId">AxisId</a></span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n"><span title="tuple">tuple</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">single_letter_dims_if_possible</span><span class="p">(</span>
+    <span class="n"><span title="bioimageio.core.axis.single_letter_dims_if_possible(dims)">dims</span></span><span class="p">:</span> <span class="n"><span title="collections.abc.Sequence">Sequence</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.axis.AxisId">AxisId</a></span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="tuple">tuple</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">

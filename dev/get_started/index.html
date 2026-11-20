@@ -1004,13 +1004,13 @@ conda<span class="w"> </span>activate<span class="w"> </span>bioimageio-affable-
 <h2 id="test-modelenvironment">Test model+environment<a class="headerlink" href="#test-modelenvironment" title="Anchor link to this section for reference">¤</a></h2>
 <p>Test a bioimageio compatible model, e.g. "affable-shark" in an active Python environment:</p>
 <div class="language-ansi highlight"><pre><span></span><code>bioimageio test affable-shark
-<span class=" -Color -Color-Green">0:00:02.111373</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
+<span class=" -Color -Color-Green">0:00:03.263720</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
 <span class=" -Color -Color-Bold">['/opt/hostedtoolcache/Python/3.13.18/x64/bin/bioimageio',</span>
 <span class=" -Color -Color-Bold"> 'test',</span>
 <span class=" -Color -Color-Bold"> 'affable-shark']</span>
-<span class=" -Color -Color-Green">0:00:02.111928</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
+<span class=" -Color -Color-Green">0:00:03.264579</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
 <span class=" -Color -Color-Bold">{'test': {'source': 'affable-shark'}}</span>
-<span class=" -Color -Color-Green">0:00:02.112099</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
+<span class=" -Color -Color-Green">0:00:03.264813</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
 <span class=" -Color -Color-Bold">{'test': {'determinism': 'seed_only',</span>
 <span class=" -Color -Color-Bold">          'devices': None,</span>
 <span class=" -Color -Color-Bold">          'format_version': 'discover',</span>
@@ -1020,33 +1020,33 @@ conda<span class="w"> </span>activate<span class="w"> </span>bioimageio-affable-
 <span class=" -Color -Color-Bold">          'summary': ['display'],</span>
 <span class=" -Color -Color-Bold">          'weight_format': 'all',</span>
 <span class=" -Color -Color-Bold">          'working_dir': None}}</span>
-<span class=" -Color -Color-Green">0:00:03.781927</span> | <span class=" -Color -Color-Bold -Color-Bold-Yellow">WARNING </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold -Color-Bold-Yellow">BIOIMAGEIO_COLLECTION_HTTP_PATTERN: Failed to get bioimageio.yaml from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/bioimageio.yaml: Client error '404 Not Found' for url 'https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/bioimageio.yaml'</span>
+<span class=" -Color -Color-Green">0:00:04.937341</span> | <span class=" -Color -Color-Bold -Color-Bold-Yellow">WARNING </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold -Color-Bold-Yellow">BIOIMAGEIO_COLLECTION_HTTP_PATTERN: Failed to get bioimageio.yaml from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/bioimageio.yaml: Client error '404 Not Found' for url 'https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/bioimageio.yaml'</span>
 <span class=" -Color -Color-Bold -Color-Bold-Yellow">For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404</span>
-<span class=" -Color -Color-Green">0:00:04.910970</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold">loaded affable-shark from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml</span>
-<span class=" -Color -Color-Green">0:01:30.220112</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_prediction_pipeline</span> - <span class=" -Color -Color-Bold">Created prediction pipeline for 'NucleiSegmentationBoundaryModel' with PytorchModelAdapter adapter</span>
-<span class=" -Color -Color-Green">0:01:31.094157</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_model_adapter</span> - <span class=" -Color -Color-Bold">model adapter stats: forward calls: {'cpu': 1}, forward time: cpu: 0.41, forward time per call: cpu: 0.41</span>
-<span class=" -Color -Color-Green">0:01:31.319438</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_prediction_pipeline</span> - <span class=" -Color -Color-Bold">Created prediction pipeline for 'NucleiSegmentationBoundaryModel' with PytorchModelAdapter adapter</span>
-<span class=" -Color -Color-Green">0:01:31.831577</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">block</span> - <span class=" -Color -Color-Bold">Calculated chunk shape {'input0': {'batch': 2, 'channel': 1, 'y': 256, 'x': 256}} (512 KiB) for block shape {'input0': {'batch': 1, 'channel': 1, 'y': 256, 'x': 256}} and sample shape {'input0': {'batch': 2, 'channel': 1, 'y': 256, 'x': 256}}</span>
-<span class=" -Color -Color-Green">0:01:31.831696</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">block</span> - <span class=" -Color -Color-Bold">using blockwise_processing_mode='parallel' within each of the 2 input chunks</span>
-<span class=" -Color -Color-Green">0:01:32.654493</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_model_adapter</span> - <span class=" -Color -Color-Bold">model adapter stats: forward calls: {'cpu': 2}, forward time: cpu: 0.81, forward time per call: cpu: 0.4</span>
-<span class=" -Color -Color-Green">0:01:32.875180</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_resource_tests</span> - <span class=" -Color -Color-Bold">Testing inference with 'pytorch_state_dict' for 6 different inputs (B, N): {(1, 2), (2, 1), (1, 1), (2, 0), (2, 2), (1, 0)}</span>
-<span class=" -Color -Color-Green">0:01:32.876157</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_prediction_pipeline</span> - <span class=" -Color -Color-Bold">Created prediction pipeline for 'NucleiSegmentationBoundaryModel' with PytorchModelAdapter adapter</span>
-<span class=" -Color -Color-Green">0:01:33.149196</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_model_adapter</span> - <span class=" -Color -Color-Bold">model adapter stats: forward calls: {}, forward time: , forward time per call: </span>
-<span class=" -Color -Color-Green">0:01:33.353270</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_prediction_pipeline</span> - <span class=" -Color -Color-Bold">Created prediction pipeline for 'NucleiSegmentationBoundaryModel' with TorchscriptModelAdapter adapter</span>
+<span class=" -Color -Color-Green">0:00:06.151980</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold">loaded affable-shark from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml</span>
+<span class=" -Color -Color-Green">0:01:31.805381</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_prediction_pipeline</span> - <span class=" -Color -Color-Bold">Created prediction pipeline for 'NucleiSegmentationBoundaryModel' with PytorchModelAdapter adapter</span>
+<span class=" -Color -Color-Green">0:01:33.236213</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_model_adapter</span> - <span class=" -Color -Color-Bold">model adapter stats: forward calls: {'cpu': 1}, forward time: cpu: 0.78, forward time per call: cpu: 0.78</span>
+<span class=" -Color -Color-Green">0:01:33.676801</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_prediction_pipeline</span> - <span class=" -Color -Color-Bold">Created prediction pipeline for 'NucleiSegmentationBoundaryModel' with PytorchModelAdapter adapter</span>
+<span class=" -Color -Color-Green">0:01:34.485887</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">block</span> - <span class=" -Color -Color-Bold">Calculated chunk shape {'input0': {'batch': 2, 'channel': 1, 'y': 256, 'x': 256}} (512 KiB) for block shape {'input0': {'batch': 1, 'channel': 1, 'y': 256, 'x': 256}} and sample shape {'input0': {'batch': 2, 'channel': 1, 'y': 256, 'x': 256}}</span>
+<span class=" -Color -Color-Green">0:01:34.486075</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">block</span> - <span class=" -Color -Color-Bold">using blockwise_processing_mode='parallel' within each of the 2 input chunks</span>
+<span class=" -Color -Color-Green">0:01:36.181730</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_model_adapter</span> - <span class=" -Color -Color-Bold">model adapter stats: forward calls: {'cpu': 2}, forward time: cpu: 1.7, forward time per call: cpu: 0.84</span>
+<span class=" -Color -Color-Green">0:01:36.556721</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_resource_tests</span> - <span class=" -Color -Color-Bold">Testing inference with 'pytorch_state_dict' for 6 different inputs (B, N): {(1, 2), (2, 1), (1, 1), (2, 0), (2, 2), (1, 0)}</span>
+<span class=" -Color -Color-Green">0:01:36.558002</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_prediction_pipeline</span> - <span class=" -Color -Color-Bold">Created prediction pipeline for 'NucleiSegmentationBoundaryModel' with PytorchModelAdapter adapter</span>
+<span class=" -Color -Color-Green">0:01:36.946082</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_model_adapter</span> - <span class=" -Color -Color-Bold">model adapter stats: forward calls: {}, forward time: , forward time per call: </span>
+<span class=" -Color -Color-Green">0:01:37.349491</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_prediction_pipeline</span> - <span class=" -Color -Color-Bold">Created prediction pipeline for 'NucleiSegmentationBoundaryModel' with TorchscriptModelAdapter adapter</span>
 /opt/hostedtoolcache/Python/3.13.18/x64/lib/python3.13/site-packages/torch/jit/_serialization.py:176: FutureWarning: `torch.jit.load` is deprecated. Please switch to `torch.export`.
   warnings.warn(
-<span class=" -Color -Color-Green">0:01:34.012013</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_model_adapter</span> - <span class=" -Color -Color-Bold">model adapter stats: forward calls: {'cpu': 1}, forward time: cpu: 0.43, forward time per call: cpu: 0.43</span>
-<span class=" -Color -Color-Green">0:01:34.241897</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_prediction_pipeline</span> - <span class=" -Color -Color-Bold">Created prediction pipeline for 'NucleiSegmentationBoundaryModel' with TorchscriptModelAdapter adapter</span>
+<span class=" -Color -Color-Green">0:01:38.573557</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_model_adapter</span> - <span class=" -Color -Color-Bold">model adapter stats: forward calls: {'cpu': 1}, forward time: cpu: 0.9, forward time per call: cpu: 0.9</span>
+<span class=" -Color -Color-Green">0:01:38.964650</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_prediction_pipeline</span> - <span class=" -Color -Color-Bold">Created prediction pipeline for 'NucleiSegmentationBoundaryModel' with TorchscriptModelAdapter adapter</span>
 /opt/hostedtoolcache/Python/3.13.18/x64/lib/python3.13/site-packages/torch/jit/_serialization.py:176: FutureWarning: `torch.jit.load` is deprecated. Please switch to `torch.export`.
   warnings.warn(
-<span class=" -Color -Color-Green">0:01:34.754512</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">block</span> - <span class=" -Color -Color-Bold">Calculated chunk shape {'input0': {'batch': 2, 'channel': 1, 'y': 256, 'x': 256}} (512 KiB) for block shape {'input0': {'batch': 1, 'channel': 1, 'y': 256, 'x': 256}} and sample shape {'input0': {'batch': 2, 'channel': 1, 'y': 256, 'x': 256}}</span>
-<span class=" -Color -Color-Green">0:01:34.754637</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">block</span> - <span class=" -Color -Color-Bold">using blockwise_processing_mode='parallel' within each of the 2 input chunks</span>
-<span class=" -Color -Color-Green">0:01:35.508848</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_model_adapter</span> - <span class=" -Color -Color-Bold">model adapter stats: forward calls: {'cpu': 2}, forward time: cpu: 0.74, forward time per call: cpu: 0.37</span>
-<span class=" -Color -Color-Green">0:01:35.736557</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_resource_tests</span> - <span class=" -Color -Color-Bold">Testing inference with 'torchscript' for 6 different inputs (B, N): {(1, 2), (2, 1), (1, 1), (2, 0), (2, 2), (1, 0)}</span>
-<span class=" -Color -Color-Green">0:01:35.737515</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_prediction_pipeline</span> - <span class=" -Color -Color-Bold">Created prediction pipeline for 'NucleiSegmentationBoundaryModel' with TorchscriptModelAdapter adapter</span>
+<span class=" -Color -Color-Green">0:01:39.715058</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">block</span> - <span class=" -Color -Color-Bold">Calculated chunk shape {'input0': {'batch': 2, 'channel': 1, 'y': 256, 'x': 256}} (512 KiB) for block shape {'input0': {'batch': 1, 'channel': 1, 'y': 256, 'x': 256}} and sample shape {'input0': {'batch': 2, 'channel': 1, 'y': 256, 'x': 256}}</span>
+<span class=" -Color -Color-Green">0:01:39.715266</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">block</span> - <span class=" -Color -Color-Bold">using blockwise_processing_mode='parallel' within each of the 2 input chunks</span>
+<span class=" -Color -Color-Green">0:01:41.351585</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_model_adapter</span> - <span class=" -Color -Color-Bold">model adapter stats: forward calls: {'cpu': 2}, forward time: cpu: 1.6, forward time per call: cpu: 0.81</span>
+<span class=" -Color -Color-Green">0:01:41.738777</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_resource_tests</span> - <span class=" -Color -Color-Bold">Testing inference with 'torchscript' for 6 different inputs (B, N): {(1, 2), (2, 1), (1, 1), (2, 0), (2, 2), (1, 0)}</span>
+<span class=" -Color -Color-Green">0:01:41.740105</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_prediction_pipeline</span> - <span class=" -Color -Color-Bold">Created prediction pipeline for 'NucleiSegmentationBoundaryModel' with TorchscriptModelAdapter adapter</span>
 /opt/hostedtoolcache/Python/3.13.18/x64/lib/python3.13/site-packages/torch/jit/_serialization.py:176: FutureWarning: `torch.jit.load` is deprecated. Please switch to `torch.export`.
   warnings.warn(
-<span class=" -Color -Color-Green">0:01:36.004051</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_model_adapter</span> - <span class=" -Color -Color-Bold">model adapter stats: forward calls: {}, forward time: , forward time per call: </span>
+<span class=" -Color -Color-Green">0:01:42.130202</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_model_adapter</span> - <span class=" -Color -Color-Bold">model adapter stats: forward calls: {}, forward time: , forward time per call: </span>
 
 
  ✔️               bioimageio format validation                                               
@@ -1232,14 +1232,14 @@ options:
 </code></pre></div>
 <p>Create a local example and run prediction locally:</p>
 <div class="language-ansi highlight"><pre><span></span><code>bioimageio predict affable-shark --example
-<span class=" -Color -Color-Green">0:00:02.112123</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
+<span class=" -Color -Color-Green">0:00:03.305629</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
 <span class=" -Color -Color-Bold">['/opt/hostedtoolcache/Python/3.13.18/x64/bin/bioimageio',</span>
 <span class=" -Color -Color-Bold"> 'predict',</span>
 <span class=" -Color -Color-Bold"> 'affable-shark',</span>
 <span class=" -Color -Color-Bold"> '--example']</span>
-<span class=" -Color -Color-Green">0:00:02.112746</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
+<span class=" -Color -Color-Green">0:00:03.306576</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
 <span class=" -Color -Color-Bold">{'predict': {'example': True, 'source': 'affable-shark'}}</span>
-<span class=" -Color -Color-Green">0:00:02.112936</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
+<span class=" -Color -Color-Green">0:00:03.306853</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
 <span class=" -Color -Color-Bold">{'predict': {'blockwise': False,</span>
 <span class=" -Color -Color-Bold">             'dataset_fits_in_memory': False,</span>
 <span class=" -Color -Color-Bold">             'devices': None,</span>
@@ -1253,10 +1253,10 @@ options:
 <span class=" -Color -Color-Bold">             'source': 'affable-shark',</span>
 <span class=" -Color -Color-Bold">             'stats': 'precomputed_statistics.json',</span>
 <span class=" -Color -Color-Bold">             'weight_format': 'any'}}</span>
-<span class=" -Color -Color-Green">0:00:02.942472</span> | <span class=" -Color -Color-Bold -Color-Bold-Yellow">WARNING </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold -Color-Bold-Yellow">BIOIMAGEIO_COLLECTION_HTTP_PATTERN: Failed to get bioimageio.yaml from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/bioimageio.yaml: Client error '404 Not Found' for url 'https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/bioimageio.yaml'</span>
+<span class=" -Color -Color-Green">0:00:04.103334</span> | <span class=" -Color -Color-Bold -Color-Bold-Yellow">WARNING </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold -Color-Bold-Yellow">BIOIMAGEIO_COLLECTION_HTTP_PATTERN: Failed to get bioimageio.yaml from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/bioimageio.yaml: Client error '404 Not Found' for url 'https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/bioimageio.yaml'</span>
 <span class=" -Color -Color-Bold -Color-Bold-Yellow">For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404</span>
-<span class=" -Color -Color-Green">0:00:04.047031</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold">loaded affable-shark from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml</span>
-<span class=" -Color -Color-Green">0:00:02.115501</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
+<span class=" -Color -Color-Green">0:00:05.199310</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold">loaded affable-shark from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml</span>
+<span class=" -Color -Color-Green">0:00:03.251298</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
 <span class=" -Color -Color-Bold">['/opt/hostedtoolcache/Python/3.13.18/x64/bin/bioimageio',</span>
 <span class=" -Color -Color-Bold"> 'predict',</span>
 <span class=" -Color -Color-Bold"> '--preview',</span>
@@ -1266,7 +1266,7 @@ options:
 <span class=" -Color -Color-Bold"> '--inputs=[["affable-shark_example/input0/001.tif"]]',</span>
 <span class=" -Color -Color-Bold"> '--outputs=affable-shark_example/outputs/{output_id}/{sample_id}.tif',</span>
 <span class=" -Color -Color-Bold"> 'affable-shark']</span>
-<span class=" -Color -Color-Green">0:00:02.116404</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
+<span class=" -Color -Color-Green">0:00:03.252691</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
 <span class=" -Color -Color-Bold">{'predict': {'blockwise': 'False',</span>
 <span class=" -Color -Color-Bold">             'inputs': [['affable-shark_example/input0/001.tif']],</span>
 <span class=" -Color -Color-Bold">             'outputs': ['affable-shark_example/outputs/{output_id}/{sample_id}.tif'],</span>
@@ -1274,7 +1274,7 @@ options:
 <span class=" -Color -Color-Bold">             'preview': True,</span>
 <span class=" -Color -Color-Bold">             'source': 'affable-shark',</span>
 <span class=" -Color -Color-Bold">             'stats': 'affable-shark_example/precomputed_statistics.json'}}</span>
-<span class=" -Color -Color-Green">0:00:02.116653</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
+<span class=" -Color -Color-Green">0:00:03.253027</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
 <span class=" -Color -Color-Bold">{'predict': {'blockwise': False,</span>
 <span class=" -Color -Color-Bold">             'dataset_fits_in_memory': False,</span>
 <span class=" -Color -Color-Bold">             'devices': None,</span>
@@ -1288,16 +1288,16 @@ options:
 <span class=" -Color -Color-Bold">             'source': 'affable-shark',</span>
 <span class=" -Color -Color-Bold">             'stats': 'affable-shark_example/precomputed_statistics.json',</span>
 <span class=" -Color -Color-Bold">             'weight_format': 'any'}}</span>
-<span class=" -Color -Color-Green">0:00:02.987376</span> | <span class=" -Color -Color-Bold -Color-Bold-Yellow">WARNING </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold -Color-Bold-Yellow">BIOIMAGEIO_COLLECTION_HTTP_PATTERN: Failed to get bioimageio.yaml from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/bioimageio.yaml: Client error '404 Not Found' for url 'https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/bioimageio.yaml'</span>
+<span class=" -Color -Color-Green">0:00:04.199404</span> | <span class=" -Color -Color-Bold -Color-Bold-Yellow">WARNING </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold -Color-Bold-Yellow">BIOIMAGEIO_COLLECTION_HTTP_PATTERN: Failed to get bioimageio.yaml from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/bioimageio.yaml: Client error '404 Not Found' for url 'https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/bioimageio.yaml'</span>
 <span class=" -Color -Color-Bold -Color-Bold-Yellow">For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404</span>
-<span class=" -Color -Color-Green">0:00:03.864305</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold">loaded affable-shark from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml</span>
+<span class=" -Color -Color-Green">0:00:05.035775</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold">loaded affable-shark from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml</span>
 🛈 bioimageio prediction preview structure:
 {'{sample_id}': {'inputs': {'{input_id}': '&lt;input path&gt;'},
                  'outputs': {'{output_id}': '&lt;output path&gt;'}}}
 🔎 bioimageio prediction preview output:
 {'1': {'inputs': {'input0': PosixPath('affable-shark_example/input0/001.tif')},
        'outputs': {'output0': PosixPath('affable-shark_example/outputs/output0/1.tif')}}}
-<span class=" -Color -Color-Green">0:00:02.107196</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
+<span class=" -Color -Color-Green">0:00:03.283172</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">starting CLI with arguments:</span>
 <span class=" -Color -Color-Bold">['/opt/hostedtoolcache/Python/3.13.18/x64/bin/bioimageio',</span>
 <span class=" -Color -Color-Bold"> 'predict',</span>
 <span class=" -Color -Color-Bold"> '--overwrite',</span>
@@ -1306,14 +1306,14 @@ options:
 <span class=" -Color -Color-Bold"> '--inputs=[["affable-shark_example/input0/001.tif"]]',</span>
 <span class=" -Color -Color-Bold"> '--outputs=affable-shark_example/outputs/{output_id}/{sample_id}.tif',</span>
 <span class=" -Color -Color-Bold"> 'affable-shark']</span>
-<span class=" -Color -Color-Green">0:00:02.108065</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
+<span class=" -Color -Color-Green">0:00:03.284514</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">loaded CLI input:</span>
 <span class=" -Color -Color-Bold">{'predict': {'blockwise': 'False',</span>
 <span class=" -Color -Color-Bold">             'inputs': [['affable-shark_example/input0/001.tif']],</span>
 <span class=" -Color -Color-Bold">             'outputs': ['affable-shark_example/outputs/{output_id}/{sample_id}.tif'],</span>
 <span class=" -Color -Color-Bold">             'overwrite': True,</span>
 <span class=" -Color -Color-Bold">             'source': 'affable-shark',</span>
 <span class=" -Color -Color-Bold">             'stats': 'affable-shark_example/precomputed_statistics.json'}}</span>
-<span class=" -Color -Color-Green">0:00:02.108293</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
+<span class=" -Color -Color-Green">0:00:03.284873</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">cli</span> - <span class=" -Color -Color-Bold">executing CLI command:</span>
 <span class=" -Color -Color-Bold">{'predict': {'blockwise': False,</span>
 <span class=" -Color -Color-Bold">             'dataset_fits_in_memory': False,</span>
 <span class=" -Color -Color-Bold">             'devices': None,</span>
@@ -1327,17 +1327,17 @@ options:
 <span class=" -Color -Color-Bold">             'source': 'affable-shark',</span>
 <span class=" -Color -Color-Bold">             'stats': 'affable-shark_example/precomputed_statistics.json',</span>
 <span class=" -Color -Color-Bold">             'weight_format': 'any'}}</span>
-<span class=" -Color -Color-Green">0:00:03.020902</span> | <span class=" -Color -Color-Bold -Color-Bold-Yellow">WARNING </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold -Color-Bold-Yellow">BIOIMAGEIO_COLLECTION_HTTP_PATTERN: Failed to get bioimageio.yaml from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/bioimageio.yaml: Client error '404 Not Found' for url 'https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/bioimageio.yaml'</span>
+<span class=" -Color -Color-Green">0:00:04.435158</span> | <span class=" -Color -Color-Bold -Color-Bold-Yellow">WARNING </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold -Color-Bold-Yellow">BIOIMAGEIO_COLLECTION_HTTP_PATTERN: Failed to get bioimageio.yaml from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/bioimageio.yaml: Client error '404 Not Found' for url 'https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/bioimageio.yaml'</span>
 <span class=" -Color -Color-Bold -Color-Bold-Yellow">For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404</span>
-<span class=" -Color -Color-Green">0:00:03.812714</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold">loaded affable-shark from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml</span>
-<span class=" -Color -Color-Green">0:00:03.818821</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_prediction_pipeline</span> - <span class=" -Color -Color-Bold">Created prediction pipeline for 'NucleiSegmentationBoundaryModel' with PytorchModelAdapter adapter</span>
+<span class=" -Color -Color-Green">0:00:05.207675</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io_utils</span> - <span class=" -Color -Color-Bold">loaded affable-shark from https://hypha.aicell.io/bioimage-io/artifacts/affable-shark/files/rdf.yaml</span>
+<span class=" -Color -Color-Green">0:00:05.217169</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_prediction_pipeline</span> - <span class=" -Color -Color-Bold">Created prediction pipeline for 'NucleiSegmentationBoundaryModel' with PytorchModelAdapter adapter</span>
 
-predict with affable-shark:   0%|          | 0/1 [00:00&lt;?, ?sample/s]<span class=" -Color -Color-Green">0:00:04.047894</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io</span> - <span class=" -Color -Color-Bold">Loaded tensor Frozen({'batch': 1, 'channel': 1, 'y': 256, 'x': 256}) with tifffile</span>
-<span class=" -Color -Color-Green">0:00:04.195731</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io</span> - <span class=" -Color -Color-Bold">Saving tensor to affable-shark_example/outputs/output0/1.tif with tifffile</span>
+predict with affable-shark:   0%|          | 0/1 [00:00&lt;?, ?sample/s]<span class=" -Color -Color-Green">0:00:05.576847</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io</span> - <span class=" -Color -Color-Bold">Loaded tensor Frozen({'batch': 1, 'channel': 1, 'y': 256, 'x': 256}) with tifffile</span>
+<span class=" -Color -Color-Green">0:00:05.795399</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">io</span> - <span class=" -Color -Color-Bold">Saving tensor to affable-shark_example/outputs/output0/1.tif with tifffile</span>
 
-predict with affable-shark: 100%|██████████| 1/1 [00:00&lt;00:00,  1.53sample/s]
-predict with affable-shark: 100%|██████████| 1/1 [00:00&lt;00:00,  1.53sample/s]
-<span class=" -Color -Color-Green">0:00:04.693238</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_model_adapter</span> - <span class=" -Color -Color-Bold">model adapter stats: forward calls: {'cpu': 1}, forward time: cpu: 0.48, forward time per call: cpu: 0.48</span>
+predict with affable-shark: 100%|██████████| 1/1 [00:01&lt;00:00,  1.19s/sample]
+predict with affable-shark: 100%|██████████| 1/1 [00:01&lt;00:00,  1.19s/sample]
+<span class=" -Color -Color-Green">0:00:06.756297</span> | <span class=" -Color -Color-Bold">INFO    </span> | <span class=" -Color -Color-Cyan">_model_adapter</span> - <span class=" -Color -Color-Bold">model adapter stats: forward calls: {'cpu': 1}, forward time: cpu: 0.93, forward time per call: cpu: 0.93</span>
 🎉 Sucessfully ran example prediction!
 To predict the example input using the CLI example config file affable-shark_example/bioimageio-cli.yaml, execute `bioimageio predict` from affable-shark_example:
 $ cd affable-shark_example
