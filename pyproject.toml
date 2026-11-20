@@ -167,6 +167,7 @@ useLibraryCodeForTypes = true
 extraPaths = ["../spec-bioimage-io/src"] # co-develop with bioimageio.spec
 
 [tool.pytest.ini_options]
+consider_namespace_packages = true
 addopts = "--doctest-modules --failed-first --ignore dogfood --ignore src/bioimageio/core/backends --ignore src/bioimageio/core/weight_converters --ignore scripts/generate_api_doc_pages.py --timeout=3600 --timeout-method=thread"
 testpaths = ["src", "tests"]
 
