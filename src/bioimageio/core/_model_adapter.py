@@ -290,14 +290,14 @@ class LocalModelAdapter(ModelAdapter, ABC, Generic[DeviceType, ModelType]):
 
             input_arrays.append(a)
 
-        logger.debug(
+        logger.trace(
             "NN input shapes: {}",
             [a.shape if a is not None else None for a in input_arrays],
         )
 
         if self.computation_mode == "eager":
             output_arrays = self._forward_arrays(*input_arrays)
-            logger.debug(
+            logger.trace(
                 "NN output shapes: {}",
                 [a.shape if a is not None else None for a in output_arrays],
             )
