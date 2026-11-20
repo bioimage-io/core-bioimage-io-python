@@ -53,8 +53,8 @@ partners = [
     # "stardist",         # for model testing and stardist postprocessing  # TODO: add updated stardist to partners env
 ]
 stardist = ["stardist"] # for stardist postprocessing
-gradio-server = ['gradio[mcp];python_version>="3.10"']
-gradio-client = ['gradio_client;python_version>="3.10"']
+gradio-server = ['gradio[mcp]']
+gradio-client = ['gradio_client']
 bioio = [
     "bioio",
     "bioio-bioformats",
@@ -98,7 +98,7 @@ dev = [
     "torchvision>=0.21",
     'gradio[mcp]',
     'gradio_client',
-    'zarr>=3;python_version>="3.11"', # zarr>=3 requires py>=3.11
+    'zarr>=3;python_version>="3.11"',                                  # zarr>=3 requires py>=3.11
 ]
 docs = [
     "griffe-pydantic",
