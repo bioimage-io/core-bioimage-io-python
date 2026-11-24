@@ -46,8 +46,9 @@ def test_cellpose_export(tmp_path: Path):
         Path(__file__).parent / "../example/export_cellpose_model/sample_input.png"
     )
 
+    # Match the exported Transformer, which defaults to float32.
     cellpose_original = cellpose.models.CellposeModel(
-        gpu=False, pretrained_model="cpsam"
+        gpu=False, pretrained_model="cpsam", use_bfloat16=False
     )
 
     input_array = cast_and_assert(
