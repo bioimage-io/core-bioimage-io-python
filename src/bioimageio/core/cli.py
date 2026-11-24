@@ -459,9 +459,10 @@ class PredictCmd(CmdBase, WithSource):
     Alternatively a `bioimageio-cli.yaml` (or `bioimageio-cli.json`) file
     may provide the arguments, e.g.:
     ```yaml
-    inputs:
-    - [a_raw.tif, a_mask.tif]
-    - [b_raw.tif, b_mask.tif]
+    predict:
+        inputs:
+        - [a_raw.tif, a_mask.tif]
+        - [b_raw.tif, b_mask.tif]
     ```
 
     `.npy` and any file extension supported by imageio are supported.
