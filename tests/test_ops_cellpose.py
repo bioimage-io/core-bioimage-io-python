@@ -56,7 +56,7 @@ def test_cellpose_export(tmp_path: Path):
     )
     assert is_ndarray(input_array)
     print("input:", input_array.shape)
-    input_array = input_array[None, :, 256:512, 256:512]
+    input_array = input_array[None, :, 0:256, 256:512]
     print("input roi:", input_array.shape)
 
     # 16 pixel halo to roughly match the 0.1*256 (tile size) tile overlap used in cellpose
