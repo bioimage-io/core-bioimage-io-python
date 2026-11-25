@@ -2,11 +2,12 @@
 name = "bioimageio.core"
 description = "Python specific core utilities for bioimage.io resources (in particular DL models)."
 authors = [{ name = "Fynn Beuttenmüller", email = "thefynnbe@gmail.com" }]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 readme = "README.md"
 dynamic = ["version"]
 dependencies = [
-    "bioimageio.spec ==0.5.12.0",
+    "bioimageio.spec ==0.5.15.0",
+    "dask[array]",
     "imagecodecs",
     "imageio>=2.10",
     "loguru",
@@ -23,7 +24,6 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
@@ -40,11 +40,12 @@ Source = "https://github.com/bioimage-io/core-bioimage-io-python"
 
 [project.optional-dependencies]
 onnx = [
+    "onnx",
     "onnxruntime",
     "onnxscript",
     'onnx_ir!=0.1.14;python_version<"3.10"', # uses typing.Concatentate which requires py>=3.10
 ]
-pytorch = ["torch>=1.6,<3", "torchvision>=0.21", "keras>=3.0,<4"]
+pytorch = ["torch>=1.6,<3", "torchvision>=0.21", "keras>=3.0,<4", "safetensors"]
 tensorflow = ["tensorflow", "keras>=2.15,<4", "h5py"]
 partners = [
     # "biapy",          # pins core exactly
@@ -52,36 +53,53 @@ partners = [
     # "stardist",         # for model testing and stardist postprocessing  # TODO: add updated stardist to partners env
 ]
 stardist = ["stardist"] # for stardist postprocessing
-gradio-server = ['gradio[mcp];python_version>="3.10"']
-gradio-client = ['gradio_client;python_version>="3.10"']
+gradio-server = ['gradio[mcp]']
+gradio-client = ['gradio_client']
+bioio = [
+    "bioio",
+    "bioio-bioformats",
+    "bioio-imageio",
+    "bioio-ome-tiff",
+    "bioio-ome-zarr",
+]
+clearscale = ["clearscale", 'zarr>=3;python_version>="3.11"']
 dev = [
-    "cellpose<4.2",                          # for model testing
+    "bioio",
+    "bioio-bioformats",
+    "bioio-imageio",
+    "bioio-ome-tiff",
+    "cellpose<4.2",                                                    # for model testing
+    "clearscale",
     "crick",
-    'gradio[mcp];python_version>="3.10"',
-    'gradio_client;python_version>="3.10"',
     "httpx",
     "jax",
     "jupyter",
     "keras>=3.0,<4",
     "matplotlib",
-    "monai",                                 # for model testing
+    "monai",                                                           # for model testing
     "numpy",
-    "onnx",
-    "onnxruntime",
-    "onnxscript",
-    'onnx_ir!=0.1.14;python_version<"3.10"', # uses typing.Concatentate which requires py>=3.10
     "packaging>=17.0",
     "pre-commit",
-    "pyright==1.1.410",
-    "pytest-cov",
+    "pyright==1.1.414",
     "pytest",
+    "pytest-cov",
+    "pytest-timeout",
     "python-dotenv",
-    "segment-anything",                      # for model testing
+    "ruff>=0.17.6",
+    "segment-anything",                                                # for model testing
     "stardist",
     "tensorflow",
-    "timm",                                  # for model testing
+    "timm",                                                            # for model testing
     "torch>=1.6,<3",
     "torchvision>=0.21",
+    'bioio-ome-zarr;python_version>="3.11" and python_version<"3.14"', # TODO: wait for bioio-ome-zarr to support py3.14
+    'gradio[mcp]',
+    'gradio_client',
+    'onnx;python_version<"3.15"',                                      # TODO: wait for onnx to support py3.15
+    'onnxruntime;python_version<"3.15"',                               # TODO: wait for onnxruntime to support py3.15
+    'onnxscript;python_version<"3.15"',                                # TODO: wait for onnxscript to support py3.15
+    'tifffile;python_version>="3.12"',                                 # we're using the new `tifffile.asxarray` which is only available in tifffile>=2026.5.2, which requires py>=3.12
+    'zarr>=3;python_version>="3.11"',                                  # zarr>=3 requires py>=3.11
 ]
 docs = [
     "griffe-pydantic",
@@ -124,7 +142,7 @@ exclude = [
 ]
 include = ["src", "scripts", "tests"]
 pythonPlatform = "All"
-pythonVersion = "3.9"
+pythonVersion = "3.10"
 reportDuplicateImport = "error"
 reportImplicitStringConcatenation = "error"
 reportIncompatibleMethodOverride = true
@@ -149,7 +167,8 @@ useLibraryCodeForTypes = true
 extraPaths = ["../spec-bioimage-io/src"] # co-develop with bioimageio.spec
 
 [tool.pytest.ini_options]
-addopts = "--doctest-modules --failed-first --ignore dogfood --ignore src/bioimageio/core/backends --ignore src/bioimageio/core/weight_converters --ignore scripts/generate_api_doc_pages.py"
+consider_namespace_packages = true
+addopts = "--doctest-modules --failed-first --ignore dogfood --ignore src/bioimageio/core/backends --ignore src/bioimageio/core/weight_converters --ignore scripts/generate_api_doc_pages.py --timeout=3600 --timeout-method=thread"
 testpaths = ["src", "tests"]
 
 [tool.ruff]
@@ -163,6 +182,7 @@ exclude = [
 
 [tool.ruff.lint]
 extend-select = ["NPY201"]
+ignore = ["BLE001", "PLC0414"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["bioimageio"]
@@ -171,4 +191,5 @@ known-first-party = ["bioimageio"]
 exclude_also = ["if TYPE_CHECKING:", "assert_never\\("]
 
 [tool.coverage.run]
+branch = true
 patch = ["subprocess"]

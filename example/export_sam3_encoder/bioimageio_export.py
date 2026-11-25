@@ -27,6 +27,8 @@ def _enable_zip64_writes() -> None:
         return _orig_open(self, name, mode, pwd, force_zip64=force_zip64)
 
     zipfile.ZipFile.open = _open
+
+
 from bioimageio.spec.model.v0_5 import (
     ArchitectureFromFileDescr,
     AxisId,

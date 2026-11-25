@@ -1,13 +1,14 @@
 from pathlib import Path
 
-from bioimageio.core.utils._type_guards import is_list, is_ndarray
+from bioimageio.core._utils.type_guards import is_list, is_ndarray
+from bioimageio.core._utils.type_hints import cast_and_assert
 from tests.test_bioimageio_collection import expensive_test
 
 
 @expensive_test
 def test_cellpose_export(tmp_path: Path):
     """test case analog to the example in example/export_cellpose_model"""
-    import cellpose.models
+    import cellpose.models  # pyright: ignore[reportMissingTypeStubs]
     import imageio
     import numpy as np
 
@@ -45,12 +46,17 @@ def test_cellpose_export(tmp_path: Path):
         Path(__file__).parent / "../example/export_cellpose_model/sample_input.png"
     )
 
-    cellpose_original = cellpose.models.CellposeModel(gpu=False)
+    # Match the exported Transformer, which defaults to float32.
+    cellpose_original = cellpose.models.CellposeModel(
+        gpu=False, pretrained_model="cpsam", use_bfloat16=False
+    )
 
-    input_array = imageio.imread(sample_input_path).transpose(2, 0, 1)
+    input_array = cast_and_assert(
+        np.ndarray, np.asarray(imageio.imread(sample_input_path)).transpose(2, 0, 1)
+    )
     assert is_ndarray(input_array)
     print("input:", input_array.shape)
-    input_array = input_array[None, :, 256:512, 256:512]
+    input_array = input_array[None, :, 0:256, 256:512]
     print("input roi:", input_array.shape)
 
     # 16 pixel halo to roughly match the 0.1*256 (tile size) tile overlap used in cellpose
@@ -75,7 +81,9 @@ def test_cellpose_export(tmp_path: Path):
     )
 
     # run original cellpose model
-    mask, flows, _ = cellpose_original.eval(input_array.transpose(0, 2, 3, 1))  # pyright: ignore[reportUnknownVariableType]
+    mask, flows, _ = cellpose_original.eval(  # pyright: ignore[reportUnknownVariableType]
+        cast_and_assert(np.ndarray, input_array.transpose(0, 2, 3, 1))
+    )
     assert is_ndarray(mask)
     assert is_list(flows)
     print("mask shape:", mask.shape)
@@ -110,8 +118,8 @@ def test_cellpose_export(tmp_path: Path):
                             Identifier("channel2"),
                         ]
                     ),
-                    SpaceInputAxis(id=AxisId("y"), size=256),
-                    SpaceInputAxis(id=AxisId("x"), size=256),
+                    SpaceInputAxis(id=AxisId("y"), size=256, concatenable=False),
+                    SpaceInputAxis(id=AxisId("x"), size=256, concatenable=False),
                 ],
                 test_tensor=FileDescr(source=tmp_path / "test_input.npy"),
                 sample_tensor=FileDescr(source=sample_input_path),

@@ -10,7 +10,7 @@ def run(prompt: str):
 
 if __name__ == "__main__":
     repo_dir = Path(__file__).parent.parent.parent
-    cur_dir = Path().resolve()
+    cur_dir = Path.cwd()
     chdir(str(repo_dir))
     try:
         run("mamba env create --file core-bioimage-io/dev/env.yaml")

@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 import os
 import shutil
 import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, Union, no_type_check
+from typing import Any, no_type_check
 from zipfile import ZipFile
 
 import tensorflow
@@ -61,11 +63,12 @@ def convert(
     """
     tf_major_ver = int(tensorflow.__version__.split(".")[0])  # pyright: ignore[reportUnknownArgumentType]
 
-    if output_path.suffix != ".zip":
-        output_path = output_path.with_suffix("")
+    output_path = output_path.with_suffix("")
 
-    if output_path.exists():
-        raise ValueError(f"The ouptut directory at {output_path} must not exist.")
+    if output_path.exists() or output_path.with_suffix(".zip").exists():
+        raise ValueError(
+            f"The output directory or archive at {output_path} must not exist."
+        )
 
     if model_descr.weights.keras_hdf5 is None:
         raise ValueError("Missing Keras Hdf5 weights to convert from.")
@@ -81,7 +84,7 @@ def convert(
             )
 
     td_kwargs: dict[str, Any] = (
-        dict(ignore_cleanup_errors=True) if sys.version_info >= (3, 10) else {}
+        {"ignore_cleanup_errors": True} if sys.version_info >= (3, 10) else {}
     )
     with TemporaryDirectory(**td_kwargs) as temp_dir:
         local_weights = ensure_unzipped(
@@ -114,7 +117,7 @@ def convert(
 
 
 def _convert_tf2(
-    keras_weight_path: Union[Path, ZipPath], output_path: Path
+    keras_weight_path: Path | ZipPath, output_path: Path
 ) -> TensorflowSavedModelBundleWeightsDescr:
     model = keras.models.load_model(keras_weight_path)  # type: ignore
     model.export(output_path)  # type: ignore

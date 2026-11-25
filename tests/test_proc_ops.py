@@ -1,19 +1,371 @@
+from __future__ import annotations
+
+from collections.abc import Iterable
+from dataclasses import FrozenInstanceError, replace
 from pathlib import Path
-from typing import Any, Iterable, Optional, Tuple, Type, TypeVar
+from typing import Any, TypeGuard, TypeVar
 
 import numpy as np
 import pytest
 import scipy  # pyright: ignore[reportMissingTypeStubs]
 import xarray as xr
 from numpy.typing import NDArray
-from typing_extensions import TypeGuard
 
+from bioimageio.core._utils.type_hints import cast_and_assert
 from bioimageio.core.axis import AxisId
 from bioimageio.core.common import MemberId
 from bioimageio.core.sample import Sample
 from bioimageio.core.stat_calculators import compute_measures
 from bioimageio.core.stat_measures import SampleMean, SampleQuantile, SampleStd
 from bioimageio.core.tensor import Tensor
+
+
+def test_sample_tracks_successful_operators_and_copies_history():
+    from bioimageio.core.proc_ops import AddKnownDatasetStats, Clip
+
+    mid = MemberId("input")
+    sample = Sample(
+        id=None,
+        members={mid: Tensor(np.asarray([[0.0, 2.0]]), dims=("batch", "x"))},
+        stat={},
+    )
+    clip = Clip(input=mid, output=mid, min=0.0, max=1.0)
+    stats = AddKnownDatasetStats({})
+    clip(sample)
+    stats(sample)
+    assert sample.applied_ops == (clip, stats)
+    for copied in (
+        sample.copy(),
+        sample.copy(deep=True),
+        sample.as_numpy(),
+        sample.as_dask(),
+        sample[{AxisId("x"): slice(None)}],
+        sample.pad({}, "symmetric"),
+    ):
+        assert copied.applied_ops == (clip, stats)
+
+    with pytest.raises(ValueError, match="Input"):
+        Clip(input=MemberId("missing"), output=mid, min=0.0)(sample)
+    assert sample.applied_ops == (clip, stats)
+
+
+def test_known_dataset_statistics_compare_by_value():
+    from bioimageio.core.proc_ops import AddKnownDatasetStats
+    from bioimageio.core.stat_measures import DatasetMean, DatasetStd
+
+    mid = MemberId("input")
+    mean, std = DatasetMean(member_id=mid), DatasetStd(member_id=mid)
+    values: NDArray[np.float64] = np.asarray([1.0, np.nan], dtype=np.float64)
+    same_values: NDArray[np.float64] = np.asarray([1.0, np.nan], dtype=np.float64)
+    op = AddKnownDatasetStats(
+        {mean: Tensor(values, dims=("x",)).as_dask(), std: float("nan")}
+    )
+    same = AddKnownDatasetStats(
+        {mean: Tensor(same_values, dims=("x",)), std: float("nan")}
+    )
+    different = AddKnownDatasetStats(
+        {mean: Tensor(np.asarray([2.0, np.nan]), dims=("x",)), std: float("nan")}
+    )
+    wrong_axis = AddKnownDatasetStats(
+        {mean: Tensor(values, dims=("y",)), std: float("nan")}
+    )
+    wrong_type = AddKnownDatasetStats({mean: 1.0, std: float("nan")})
+    missing = AddKnownDatasetStats({mean: Tensor(values, dims=("x",))})
+
+    assert op == same
+    assert op != different
+    assert op != wrong_axis
+    assert op != wrong_type
+    assert op != missing
+    assert op != object()
+
+
+def test_update_stats_records_success_but_not_failure():
+    from bioimageio.core.proc_ops import Clip, UpdateStats
+    from bioimageio.core.stat_calculators import StatsCalculator
+
+    mid = MemberId("input")
+    sample = Sample(
+        id=None,
+        members={mid: Tensor(np.asarray([0.0, 2.0]), dims=("x",))},
+        stat={},
+    )
+    clip = Clip(input=mid, output=mid, min=0.0, max=1.0)
+    clip(sample)
+    invalid = UpdateStats(StatsCalculator([SampleMean(member_id=mid)]))
+    with pytest.raises(ValueError, match="applied_ops"):
+        invalid(sample)
+    assert sample.applied_ops == (clip,)
+
+    mean = SampleMean(member_id=mid, preceding_ops=(clip,))
+    updater = UpdateStats(StatsCalculator([mean]))
+    updater(sample)
+    assert sample.applied_ops == (clip, updater)
+    assert mean in sample.stat
+
+
+@pytest.mark.parametrize("kind", ["clip", "scale_range", "normalize"])
+def test_processing_uses_explicit_measure_provenance(kind: str):
+    from bioimageio.core.proc_ops import (
+        Clip,
+        EnsureDtype,
+        ScaleRange,
+        ZeroMeanUnitVariance,
+    )
+
+    mid = MemberId("input")
+    prior = EnsureDtype(input=mid, output=mid, dtype="float32")
+    lower = SampleQuantile(member_id=mid, q=0.25, preceding_ops=(prior,))
+    upper = SampleQuantile(member_id=mid, q=0.75, preceding_ops=(prior,))
+    mean = SampleMean(member_id=mid, preceding_ops=(prior,))
+    std = SampleStd(member_id=mid, preceding_ops=(prior,))
+    if kind == "clip":
+        op = Clip(input=mid, output=mid, min=lower, max=upper)
+        expected_measures = (lower, upper)
+        expected = np.asarray([0.25, 0.75])
+    elif kind == "scale_range":
+        op = ScaleRange(input=mid, output=mid, _lower=lower, _upper=upper)
+        expected_measures = (lower, upper)
+        expected = (np.asarray([0.0, 2.0]) - 0.25) / (0.5 + op.eps)
+    else:
+        op = ZeroMeanUnitVariance(input=mid, output=mid, mean=mean, std=std)
+        expected_measures = (mean, std)
+        expected = (np.asarray([0.0, 2.0]) - 1.0) / (2.0 + op.eps)
+
+    required = op.get_required_measures()
+    assert all(
+        any(actual is expected for actual in required) for expected in expected_measures
+    )
+    sample = Sample(
+        id=None,
+        members={mid: Tensor(np.asarray([0.0, 2.0]), dims=("x",))},
+        stat={lower: 0.25, upper: 0.75, mean: 1.0, std: 2.0},
+    )
+    op(sample)
+    np.testing.assert_allclose(sample.members[mid].to_numpy(), expected)
+
+
+def test_scale_range_replace_preserves_quantile_inputs():
+    from bioimageio.core.proc_ops import ScaleRange
+
+    mid = MemberId("input")
+    default = ScaleRange(mid, mid)
+    assert replace(default, eps=0.01).lower == default.lower
+    assert replace(default, eps=0.01).upper == default.upper
+    lower = SampleQuantile(member_id=mid, q=0.25)
+    upper = SampleQuantile(member_id=mid, q=0.75)
+    explicit = ScaleRange(mid, mid, _lower=lower, _upper=upper)
+    updated = replace(explicit, eps=0.01)
+    assert updated.lower == lower
+    assert updated.upper == upper
+    explicit_defaults = replace(default, _lower=default.lower, _upper=default.upper)
+    assert default == explicit_defaults
+    assert hash(default) == hash(explicit_defaults)
+
+
+def test_scale_mean_variance_uses_explicit_measures_for_each_member():
+    from bioimageio.core.proc_ops import Clip, ScaleMeanVariance
+
+    mid, ref = MemberId("input"), MemberId("reference")
+    input_clip = Clip(input=mid, output=mid, min=0.0, max=1.0)
+    ref_clip = Clip(input=ref, output=ref, min=0.0, max=2.0)
+    op = ScaleMeanVariance(
+        input=mid,
+        output=mid,
+        reference_tensor=ref,
+        _mean=SampleMean(member_id=mid, preceding_ops=(input_clip,)),
+        _std=SampleStd(member_id=mid, preceding_ops=(input_clip,)),
+        _ref_mean=SampleMean(member_id=ref, preceding_ops=(ref_clip,)),
+        _ref_std=SampleStd(member_id=ref, preceding_ops=(ref_clip,)),
+    )
+    assert op.mean.preceding_ops == (input_clip,)
+    assert op.std.preceding_ops == (input_clip,)
+    assert op.ref_mean.preceding_ops == (ref_clip,)
+    assert op.ref_std.preceding_ops == (ref_clip,)
+    assert op.get_required_measures() == {op.mean, op.std, op.ref_mean, op.ref_std}
+
+    sample = Sample(
+        id=None,
+        members={mid: Tensor(np.asarray([1.0, 3.0]), dims=("x",))},
+        stat={op.mean: 1.0, op.std: 2.0, op.ref_mean: 4.0, op.ref_std: 3.0},
+    )
+    op(sample)
+    np.testing.assert_allclose(
+        sample.members[mid].to_numpy(),
+        (np.asarray([1.0, 3.0]) - 1.0) / (2.0 + op.eps) * (3.0 + op.eps) + 4.0,
+    )
+
+
+def test_scale_mean_variance_defaults_unspecified_measures():
+    from bioimageio.core.proc_ops import Clip, ScaleMeanVariance
+
+    mid, ref = MemberId("input"), MemberId("reference")
+    prior = Clip(input=mid, output=mid, min=0.0, max=1.0)
+    mean = SampleMean(member_id=mid, preceding_ops=(prior,))
+    op = ScaleMeanVariance(input=mid, output=mid, reference_tensor=ref, _mean=mean)
+
+    assert op.mean is mean
+    assert op.std == SampleStd(member_id=mid)
+    assert op.ref_mean == SampleMean(member_id=ref)
+    assert op.ref_std == SampleStd(member_id=ref)
+    assert replace(op, eps=0.01).mean is mean
+
+    default_op = ScaleMeanVariance(input=mid, output=mid, reference_tensor=ref)
+    explicit_default = replace(default_op, _mean=SampleMean(member_id=mid))
+    assert default_op == explicit_default
+    assert hash(default_op) == hash(explicit_default)
+
+
+def test_scale_mean_variance_rejects_mismatched_explicit_measures():
+    from bioimageio.core.proc_ops import ScaleMeanVariance
+    from bioimageio.core.stat_measures import DatasetStd
+
+    mid, ref = MemberId("input"), MemberId("reference")
+    with pytest.raises(ValueError, match="members, axes and scope"):
+        _ = ScaleMeanVariance(
+            input=mid, output=mid, reference_tensor=ref, _mean=SampleMean(member_id=ref)
+        )
+    with pytest.raises(ValueError, match="members, axes and scope"):
+        _ = ScaleMeanVariance(input=mid, output=mid, _std=DatasetStd(member_id=mid))
+    with pytest.raises(ValueError, match="members, axes and scope"):
+        _ = ScaleMeanVariance(
+            input=mid,
+            output=mid,
+            axes=(AxisId("x"),),
+            _mean=SampleMean(member_id=mid, axes=(AxisId("y"),)),
+        )
+
+
+def test_described_processing_constructs_measures_with_member_provenance():
+    from bioimageio.core.proc_ops import Clip, ScaleMeanVariance, ScaleRange, get_proc
+    from bioimageio.spec.model import v0_5
+
+    mid, ref = MemberId("input"), MemberId("reference")
+    input_clip = Clip(input=mid, output=mid, min=0.0, max=1.0)
+    ref_clip = Clip(input=ref, output=ref, min=0.0, max=2.0)
+    preceding = (input_clip, ref_clip)
+    axes = [v0_5.AxisId("x")]
+    scale = get_proc(
+        v0_5.ScaleMeanVarianceDescr(
+            kwargs=v0_5.ScaleMeanVarianceKwargs(reference_tensor=ref, axes=axes)
+        ),
+        mid,
+        preceding_ops=preceding,
+    )
+    assert isinstance(scale, ScaleMeanVariance)
+    assert scale.mean.preceding_ops == scale.std.preceding_ops == (input_clip,)
+    assert scale.ref_mean.preceding_ops == scale.ref_std.preceding_ops == (ref_clip,)
+
+    range_op = get_proc(
+        v0_5.ScaleRangeDescr(
+            kwargs=v0_5.ScaleRangeKwargs(reference_tensor=ref, axes=axes)
+        ),
+        mid,
+        preceding_ops=preceding,
+    )
+    assert isinstance(range_op, ScaleRange)
+    assert range_op.lower.preceding_ops == range_op.upper.preceding_ops == (ref_clip,)
+
+
+def test_v04_fixed_zmuv_is_immutable():
+    from bioimageio.core.proc_ops import (
+        FixedZeroMeanUnitVariance,
+        get_proc,
+    )
+    from bioimageio.spec.model import v0_4
+
+    descr = v0_4.ZeroMeanUnitVarianceDescr(
+        name="zero_mean_unit_variance",
+        kwargs=v0_4.ZeroMeanUnitVarianceKwargs(
+            mode="fixed",
+            axes="yx",
+            mean=[1.0, 2.0],
+            std=[3.0, 4.0],
+        ),
+    )
+    proc = get_proc(descr, MemberId("input"), tensor_axes="bcyx")
+    assert isinstance(proc, FixedZeroMeanUnitVariance)
+    assert proc.axis == AxisId("channel")
+    assert proc.mean == (1.0, 2.0)
+    assert hash(proc)
+    with pytest.raises(FrozenInstanceError):
+        proc.eps = 1e-5  # pyright: ignore[reportAttributeAccessIssue]
+
+
+@pytest.mark.parametrize("activation", ["sigmoid", "softmax"])
+@pytest.mark.parametrize("lazy", [False, True])
+def test_activations_preserve_physical_metadata(activation: str, lazy: bool):
+    from bioimageio.core.proc_ops import Sigmoid, Softmax
+
+    tensor = Tensor(np.arange(12, dtype=np.float32).reshape(3, 4), dims="yx")
+    tensor.set_physical_scale({AxisId("y"): 0.25, AxisId("x"): 0.2})
+    tensor.set_physical_scale_unit({AxisId("y"): "um", AxisId("x"): "um"})
+    if lazy:
+        tensor = tensor.as_dask()
+    mid = MemberId("input")
+    sample = Sample(members={mid: tensor}, stat={}, id=None)
+    op = (
+        Sigmoid(mid, mid)
+        if activation == "sigmoid"
+        else Softmax(mid, mid, axis=AxisId("x"))
+    )
+    op(sample)
+    actual = sample.members[mid]
+    assert actual.get_physical_scale() == tensor.get_physical_scale()
+    assert actual.get_physical_scale_unit() == tensor.get_physical_scale_unit()
+    assert actual.dims == tensor.dims
+
+
+@pytest.mark.parametrize("postprocessing", ["cellpose", "stardist"])
+def test_instance_postprocessing_preserves_physical_metadata(
+    postprocessing: str, monkeypatch: pytest.MonkeyPatch
+):
+    from bioimageio.core._ops_cellpose import CellposeFlowDynamics
+    from bioimageio.core._ops_stardist import StardistPostprocessing2D
+
+    mid = MemberId("prediction")
+    tensor = Tensor(np.zeros((1, 3, 2, 4), dtype=np.float32), dims="bcyx")
+    tensor.set_physical_scale({AxisId("y"): 0.6, AxisId("x"): 0.9})
+    tensor.set_physical_scale_unit({AxisId("y"): "um", AxisId("x"): "um"})
+    sample = Sample(members={mid: tensor}, stat={}, id=None)
+    if postprocessing == "cellpose":
+
+        def cellpose_labels(
+            self: CellposeFlowDynamics, x: Tensor
+        ) -> NDArray[np.uint16]:
+            return np.zeros((1, *x.shape[1:]), dtype=np.uint16)
+
+        monkeypatch.setattr(CellposeFlowDynamics, "_apply_impl", cellpose_labels)
+        op = CellposeFlowDynamics(labels_id=mid)
+        op(sample)
+        expected = {AxisId("y"): 0.6, AxisId("x"): 0.9}
+    else:
+
+        def stardist_labels(
+            self: StardistPostprocessing2D,
+            prob: NDArray[Any],
+            dist: NDArray[Any],
+            spatial_shape: tuple[int, int],
+        ) -> NDArray[np.int32]:
+            return np.zeros(spatial_shape, dtype=np.int32)
+
+        monkeypatch.setattr(StardistPostprocessing2D, "_impl", stardist_labels)
+        stardist = StardistPostprocessing2D(
+            prob_dist_input_id=mid,
+            instance_labels_output_id=mid,
+            grid=(2, 3),
+            prob_threshold=0.5,
+            nms_threshold=0.4,
+            b=0,
+            n_rays=2,
+        )
+        stardist(sample)
+        expected = {AxisId("y"): 0.3, AxisId("x"): 0.3}
+    actual = sample.members[mid]
+    assert {a: actual.get_physical_scale()[a] for a in expected} == pytest.approx(
+        expected
+    )
+    assert actual.get_physical_scale_unit() == tensor.get_physical_scale_unit()
 
 
 @pytest.fixture(scope="module")
@@ -24,12 +376,12 @@ def tid():
 def test_scale_linear(tid: MemberId):
     from bioimageio.core.proc_ops import ScaleLinear
 
-    offset = xr.DataArray([1, 2, 42], dims=("channel",))
-    gain = xr.DataArray([1, 2, 3], dims=("channel",))
     data = xr.DataArray(np.arange(6).reshape((1, 2, 3)), dims=("x", "y", "channel"))
     sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
 
-    op = ScaleLinear(input=tid, output=tid, offset=offset, gain=gain)
+    op = ScaleLinear(
+        input=tid, output=tid, offset=(1, 2, 42), gain=(1, 2, 3), axis=AxisId("channel")
+    )
     op(sample)
 
     expected = xr.DataArray(
@@ -50,10 +402,59 @@ def test_scale_linear_no_channel(tid: MemberId):
     xr.testing.assert_allclose(expected, sample.members[tid].data, rtol=1e-5, atol=1e-7)
 
 
+def test_scale_linear_description_with_scalar_and_axis_values(tid: MemberId):
+    from bioimageio.core.proc_ops import ScaleLinear
+    from bioimageio.spec.model import v0_5
+
+    descr = v0_5.ScaleLinearDescr(
+        kwargs=v0_5.ScaleLinearAlongAxisKwargs(
+            axis=v0_5.AxisId("channel"), gain=[2.0, 3.0], offset=1.0
+        )
+    )
+    op = ScaleLinear.from_proc_descr(descr, tid)
+    assert op.gain == (2.0, 3.0)
+    assert op.offset == (1.0, 1.0)
+    assert op.get_descr() == descr
+    op = replace(op, offset=1.0)
+    sample = Sample(
+        members={tid: Tensor(np.asarray([1.0, 2.0]), dims=("channel",))},
+        stat={},
+        id=None,
+    )
+    op(sample)
+    np.testing.assert_allclose(sample.members[tid].to_numpy(), [3.0, 7.0])
+
+
+@pytest.mark.parametrize("axis", [None, AxisId("channel")])
+def test_fixed_normalization_description_round_trip(tid: MemberId, axis: AxisId | None):
+    from bioimageio.core.proc_ops import FixedZeroMeanUnitVariance
+
+    op = FixedZeroMeanUnitVariance(
+        tid,
+        tid,
+        mean=1.0 if axis is None else (1.0, 2.0),
+        std=3.0 if axis is None else (3.0, 4.0),
+        axis=axis,
+    )
+    assert FixedZeroMeanUnitVariance.from_proc_descr(op.get_descr(), tid) == op
+
+
+@pytest.mark.parametrize("kind", ["scale", "normalize"])
+def test_processing_rejects_data_array_parameters(tid: MemberId, kind: str):
+    from bioimageio.core.proc_ops import FixedZeroMeanUnitVariance, ScaleLinear
+
+    value: Any = xr.DataArray([1.0, 2.0], dims=("channel",))
+    with pytest.raises(TypeError, match="scalars"):
+        if kind == "scale":
+            _ = ScaleLinear(tid, tid, gain=value, offset=value)
+        else:
+            _ = FixedZeroMeanUnitVariance(tid, tid, mean=value, std=value)
+
+
 T = TypeVar("T")
 
 
-def is_iterable(val: Iterable[T], inner: Type[T]) -> TypeGuard[Iterable[T]]:
+def is_iterable(val: Iterable[T], inner: type[T]) -> TypeGuard[Iterable[T]]:
     """Determines whether all objects in the list are strings"""
     return all(isinstance(x, inner) for x in val)
 
@@ -66,7 +467,7 @@ def test_zero_mean_unit_variance(tid: MemberId):
     m = SampleMean(member_id=tid)
     std = SampleStd(member_id=tid)
     op = ZeroMeanUnitVariance(tid, tid, m, std)
-    req = op.required_measures
+    req = op.get_required_measures()
     sample.stat = compute_measures(req, [sample])
     op(sample)
 
@@ -89,8 +490,9 @@ def test_zero_mean_unit_variance_fixed(tid: MemberId):
     op = FixedZeroMeanUnitVariance(
         tid,
         tid,
-        mean=xr.DataArray([3, 4, 5], dims=("channel",)),
-        std=xr.DataArray([2.44948974, 2.44948974, 2.44948974], dims=("channel",)),
+        mean=(3, 4, 5),
+        std=(2.44948974, 2.44948974, 2.44948974),
+        axis=AxisId("channel"),
     )
     data = xr.DataArray(np.arange(9).reshape((1, 3, 3)), dims=("batch", "channel", "x"))
     expected = xr.DataArray(
@@ -113,7 +515,7 @@ def test_zero_mean_unit_variance_fixed(tid: MemberId):
 def test_zero_mean_unit_variance_fixed2(tid: MemberId):
     from bioimageio.core.proc_ops import FixedZeroMeanUnitVariance
 
-    np_data = np.arange(9).reshape(3, 3)
+    np_data = np.arange(9).reshape(3, 3).astype("float32")
     mean = float(np_data.mean())
     std = float(np_data.mean())
     eps = 1.0e-7
@@ -138,10 +540,15 @@ def test_zero_mean_unit_across_axes(tid: MemberId):
         SampleStd(member_id=tid, axes=(AxisId("x"), AxisId("y"))),
     )
     sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
-    sample.stat = compute_measures(op.required_measures, [sample])
+    sample.stat = compute_measures(op.get_required_measures(), [sample])
 
     expected = xr.concat(
-        [(data[i : i + 1] - data[i].mean()) / data[i].std() for i in range(2)],
+        [
+            cast_and_assert(
+                xr.DataArray, (data[i : i + 1] - data[i].mean()) / data[i].std()
+            )
+            for i in range(2)
+        ],
         dim="channel",
     )
     op(sample)
@@ -203,7 +610,7 @@ def test_clip_percentiles():
         descr,
         member_id=MemberId("data"),
     )
-    assert op.required_measures == {
+    assert op.get_required_measures() == {
         SampleQuantile(
             member_id=MemberId("data"),
             scope="sample",
@@ -226,7 +633,7 @@ def test_clip_percentiles():
     sample = Sample(
         members={MemberId("data"): Tensor.from_xarray(data)}, stat={}, id=None
     )
-    sample.stat = compute_measures(op.required_measures, [sample])
+    sample.stat = compute_measures(op.get_required_measures(), [sample])
 
     expected = xr.DataArray(
         np.array([[1, 1, 2, 3, 3], [6, 6, 7, 8, 8], [11, 11, 12, 13, 13]]),
@@ -253,7 +660,7 @@ def test_combination_of_op_steps_with_dims_specified(tid: MemberId):
             axes=(AxisId("x"), AxisId("y")),
         ),
     )
-    sample.stat = compute_measures(op.required_measures, [sample])
+    sample.stat = compute_measures(op.get_required_measures(), [sample])
 
     expected = xr.DataArray(
         np.array(
@@ -286,7 +693,7 @@ def test_combination_of_op_steps_with_dims_specified(tid: MemberId):
         tuple(map(AxisId, "x")),
     ],
 )
-def test_scale_mean_variance(tid: MemberId, axes: Optional[Tuple[AxisId, ...]]):
+def test_scale_mean_variance(tid: MemberId, axes: tuple[AxisId, ...] | None):
     from bioimageio.core.proc_ops import ScaleMeanVariance
 
     shape = (3, 32, 46)
@@ -304,7 +711,7 @@ def test_scale_mean_variance(tid: MemberId, axes: Optional[Tuple[AxisId, ...]]):
         stat={},
         id=None,
     )
-    sample.stat = compute_measures(op.required_measures, [sample])
+    sample.stat = compute_measures(op.get_required_measures(), [sample])
     op(sample)
     xr.testing.assert_allclose(ref_data, sample.members[tid].data, rtol=1e-5, atol=1e-7)
 
@@ -313,7 +720,7 @@ def test_scale_mean_variance(tid: MemberId, axes: Optional[Tuple[AxisId, ...]]):
     "axes_str",
     [None, "cy", "y", "yx"],
 )
-def test_scale_mean_variance_per_channel(tid: MemberId, axes_str: Optional[str]):
+def test_scale_mean_variance_per_channel(tid: MemberId, axes_str: str | None):
     from bioimageio.core.proc_ops import ScaleMeanVariance
 
     axes = None if axes_str is None else tuple(map(AxisId, axes_str))
@@ -336,7 +743,7 @@ def test_scale_mean_variance_per_channel(tid: MemberId, axes_str: Optional[str])
         stat={},
         id=None,
     )
-    sample.stat = compute_measures(op.required_measures, [sample])
+    sample.stat = compute_measures(op.get_required_measures(), [sample])
     op(sample)
 
     if axes is not None and AxisId("channel") not in axes:
@@ -359,16 +766,18 @@ def test_scale_range(tid: MemberId):
     np_data = np.arange(9).reshape(3, 3).astype("float32")
     data = xr.DataArray(np_data, dims=("x", "y"))
     sample = Sample(members={tid: Tensor.from_xarray(data)}, stat={}, id=None)
-    sample.stat = compute_measures(op.required_measures, [sample])
+    sample.stat = compute_measures(op.get_required_measures(), [sample])
 
     eps = 1.0e-6
     mi, ma = np_data.min(), np_data.max()
-    exp_data = (np_data - mi) / (ma - mi + eps)
-    expected = xr.DataArray(exp_data, dims=("x", "y"))
+    expected = (np_data - mi) / (ma - mi + eps)
 
     op(sample)
-    # NOTE xarray.testing.assert_allclose compares irrelavant properties here and fails although the result is correct
-    np.testing.assert_allclose(expected, sample.members[tid].data, rtol=1e-5, atol=1e-7)
+    assert sample.members[tid].dims == ("x", "y")
+    assert sample.members[tid].shape == (3, 3)
+    np.testing.assert_allclose(
+        expected, sample.members[tid].to_numpy(), rtol=1e-5, atol=1e-7
+    )
 
 
 def test_scale_range_axes(tid: MemberId):
@@ -397,17 +806,18 @@ def test_scale_range_axes(tid: MemberId):
     np.testing.assert_allclose(p_low_expected.squeeze(), p_low_direct)
     np.testing.assert_allclose(p_up_expected.squeeze(), p_up_direct)
 
-    sample.stat = compute_measures(op.required_measures, [sample])
+    sample.stat = compute_measures(op.get_required_measures(), [sample])
 
     np.testing.assert_allclose(p_low_expected.squeeze(), sample.stat[lower_quantile])
     np.testing.assert_allclose(p_up_expected.squeeze(), sample.stat[upper_quantile])
 
-    exp_data = (np_data - p_low_expected) / (p_up_expected - p_low_expected + eps)
-    expected = xr.DataArray(exp_data, dims=("channel", "x", "y"))
+    expected = (np_data - p_low_expected) / (p_up_expected - p_low_expected + eps)
 
     op(sample)
-    # NOTE xarray.testing.assert_allclose compares irrelavant properties here and fails although the result is correct
-    np.testing.assert_allclose(expected, sample.members[tid].data, rtol=1e-5, atol=1e-7)
+    assert sample.members[tid].dims == ("channel", "x", "y")
+    np.testing.assert_allclose(
+        expected, sample.members[tid].to_numpy(), rtol=1e-5, atol=1e-7
+    )
 
 
 def test_sigmoid(tid: MemberId):
@@ -524,7 +934,7 @@ def test_softmax_from_spec_descr(tid: MemberId, tmp_path: Path):
     # Output must be a valid probability distribution (sums to 1 over channel axis)
     out_data = sample.members[tid].data
     assert out_data is not None
-    channel_sums = out_data.sum(dim="channel")
+    channel_sums = cast_and_assert(xr.DataArray, out_data.sum(dim="channel"))
     xr.testing.assert_allclose(
         channel_sums, xr.ones_like(channel_sums), atol=1e-6, rtol=0
     )
@@ -545,6 +955,10 @@ def test_custom_postprocessing_callable_class(tid: MemberId) -> None:
     data = xr.DataArray(np.ones((2, 3), dtype=np.float32), dims=("y", "x"))
     out_id = MemberId("out")
     sample = Sample(members={out_id: Tensor.from_xarray(data)}, stat={}, id=None)
+    scale = {AxisId("y"): 0.25, AxisId("x"): 0.2}
+    unit = {AxisId("y"): "um", AxisId("x"): "um"}
+    sample.members[out_id].set_physical_scale(scale)
+    sample.members[out_id].set_physical_scale_unit(unit)
 
     op = CustomProcessing(
         input=out_id,
@@ -553,6 +967,8 @@ def test_custom_postprocessing_callable_class(tid: MemberId) -> None:
         kwargs={"scale": 3.0},
     )
     op(sample)
+    assert sample.members[out_id].get_physical_scale() == scale
+    assert sample.members[out_id].get_physical_scale_unit() == unit
 
     expected = xr.DataArray(np.full((2, 3), 3.0, dtype=np.float32), dims=("y", "x"))
     xr.testing.assert_allclose(
@@ -574,6 +990,10 @@ def test_custom_postprocessing_factory_function(tid: MemberId) -> None:
     data = xr.DataArray(np_data, dims=("y", "x"))
     out_id = MemberId("out2")
     sample = Sample(members={out_id: Tensor.from_xarray(data)}, stat={}, id=None)
+    scale = {AxisId("y"): 0.25, AxisId("x"): 0.2}
+    unit = {AxisId("y"): "um", AxisId("x"): "um"}
+    sample.members[out_id].set_physical_scale(scale)
+    sample.members[out_id].set_physical_scale_unit(unit)
 
     op = CustomProcessing(
         input=out_id,
@@ -582,6 +1002,8 @@ def test_custom_postprocessing_factory_function(tid: MemberId) -> None:
         kwargs={"threshold": 0.5},
     )
     op(sample)
+    assert sample.members[out_id].get_physical_scale() == scale
+    assert sample.members[out_id].get_physical_scale_unit() == unit
 
     expected = xr.DataArray(np.array([[0, 1], [0, 1]], dtype=np.uint8), dims=("y", "x"))
     xr.testing.assert_equal(expected, sample.members[out_id].data)
