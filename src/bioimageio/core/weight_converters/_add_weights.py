@@ -1,5 +1,6 @@
+from __future__ import annotations
+
 import traceback
-from typing import Optional, Union
 
 from loguru import logger
 from pydantic import DirectoryPath
@@ -18,11 +19,11 @@ def add_weights(
     model_descr: ModelDescr,
     *,
     output_path: DirectoryPath,
-    source_format: Optional[WeightsFormat] = None,
-    target_format: Optional[WeightsFormat] = None,
+    source_format: WeightsFormat | None = None,
+    target_format: WeightsFormat | None = None,
     verbose: bool = False,
     allow_tracing: bool = True,
-) -> Union[ModelDescr, InvalidDescr]:
+) -> ModelDescr | InvalidDescr:
     """Convert model weights to other formats and add them to the model description
 
     Args:

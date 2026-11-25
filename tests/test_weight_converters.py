@@ -72,7 +72,7 @@ def test_torchscript_to_onnx(unet2d_nuclei_broad_model, tmp_path):
     assert isinstance(ret_val, v0_5.OnnxWeightsDescr)
     assert ret_val.opset_version == opset_version
     assert ret_val.source == out_path
-    assert ret_val.external_data.source.exists()
+    assert ret_val.external_data is None
 
     model_descr.weights.onnx = ret_val
     summary = test_model(model_descr, weight_format="onnx")
@@ -93,7 +93,7 @@ def test_keras_to_tensorflow(any_keras_model: Path, tmp_path: Path):
 
     expected_names = {"saved_model.pb", "variables/variables.index"}
     with zipfile.ZipFile(out_path, "r") as f:
-        names = set([name for name in f.namelist()])
+        names = {name for name in f.namelist()}
     assert len(expected_names - names) == 0
 
     model_descr.weights.keras = ret_val

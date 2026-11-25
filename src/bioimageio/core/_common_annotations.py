@@ -1,12 +1,12 @@
 from __future__ import annotations
 
+from collections.abc import Hashable, Mapping
 from types import MappingProxyType
 from typing import (
     Annotated,
     Any,
-    Hashable,
-    Mapping,
     TypeVar,
+    get_args,
 )
 
 import pydantic
@@ -18,7 +18,6 @@ from pydantic_core.core_schema import (
     no_info_plain_validator_function,
     plain_serializer_function_ser_schema,
 )
-from typing_extensions import get_args
 
 from .common import PerMember
 

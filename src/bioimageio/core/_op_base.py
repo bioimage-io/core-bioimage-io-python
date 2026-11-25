@@ -1,84 +1,100 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass
-from typing import Collection, Generic, Union
+from typing import Any
 
-from typing_extensions import TypeVar, assert_never
+from torch import TYPE_CHECKING
 
-from ._restore_batch_multi_index import restore_batch_multi_index
 from .axis import PerAxis
-from .block import Block
 from .common import MemberId
-from .sample import Sample, SampleBlock, SampleBlockWithOrigin
-from .stat_measures import (
-    Measure,
-    Stat,
-)
 from .tensor import Tensor
 
-SampleT = TypeVar("SampleT", bound=Union[Sample, SampleBlock, SampleBlockWithOrigin])
+if TYPE_CHECKING:
+    from .sample import Sample
+    from .stat_measures import Measure, Stat
 
 
-@dataclass
-class Operator(Generic[SampleT], ABC):
-    """Base class for all operators."""
+@dataclass(frozen=True, kw_only=True)
+class Operator(ABC):
+    """Base class for all operators.
+
+    Implementations must record themselves in ``sample.applied_ops`` after success.
+    """
 
     @abstractmethod
-    def __call__(self, sample: SampleT) -> None: ...
+    def __call__(self, sample: Sample) -> None: ...
 
     @property
-    @abstractmethod
-    def required_measures(self) -> Collection[Measure]: ...
+    def output_member_ids(self) -> Collection[MemberId]:
+        return ()
+
+    @property
+    def affects_statistics(self) -> bool:
+        """Whether this operator may change statistics of its output tensors."""
+        return True
+
+    def get_required_measures(self) -> Collection[Measure]:
+        return ()
+
+    def get_descr(self) -> Any:
+        raise NotImplementedError(
+            f"{type(self).__name__} has no processing description"
+        )
 
 
-@dataclass
-class SamplewiseOperator(Operator[Sample]):
+def get_relevant_preceding_ops(
+    member_id: MemberId, applied_ops: Sequence[Operator]
+) -> tuple[Operator, ...]:
+    return tuple(
+        op
+        for op in applied_ops
+        if op.affects_statistics and member_id in op.output_member_ids
+    )
+
+
+@dataclass(frozen=True, kw_only=True)
+class SamplewiseOperator(Operator):
     """Base class for operators that can only be applied to whole samples."""
 
 
-@dataclass
-class BlockwiseOperator(Operator[Union[Sample, SampleBlock]]):
+@dataclass(frozen=True, kw_only=True)
+class BlockwiseOperator(Operator):
     """Base class for operators that can be applied to whole sample or blockwise."""
 
 
-@dataclass
+@dataclass(frozen=True)
 class SimpleOperator(BlockwiseOperator):
     """Convenience base class for blockwise operators with a single input and single output."""
 
     input: MemberId
     output: MemberId
 
+    @property
+    def output_member_ids(self) -> Collection[MemberId]:
+        return (self.output,)
+
     @abstractmethod
     def get_output_shape(self, input_shape: PerAxis[int]) -> PerAxis[int]: ...
 
-    def __call__(self, sample: Union[Sample, SampleBlock]) -> None:
+    def __call__(self, sample: Sample) -> None:  # | SampleBlock
         if self.input not in sample.members:
-            return  # TODO: raise?
+            raise ValueError(
+                f"Input {self.input} not found in sample members: {list(sample.members)}"
+            )
 
         input_tensor = sample.members[self.input]
         output_tensor = self._apply(input_tensor, sample.stat)
-        output_tensor = restore_batch_multi_index(
-            {self.input: input_tensor}, {self.output: output_tensor}
-        )[self.output]
-        assert output_tensor is not None
-        if self.output in sample.members:
-            assert (
-                sample.members[self.output].tagged_shape == output_tensor.tagged_shape
-            )
+        if (multi_index := input_tensor.batch_multi_index) is not None:
+            output_tensor = output_tensor.assign_batch_multi_index(multi_index)
 
-        if isinstance(sample, Sample):
-            sample.members[self.output] = output_tensor
-        elif isinstance(sample, SampleBlock):
-            b = sample.blocks[self.input]
-            sample.blocks[self.output] = Block(
-                sample_shape=self.get_output_shape(sample.sample_shape[self.input]),
-                data=output_tensor,
-                inner_slice=b.inner_slice,
-                halo=b.halo,
-                block_index=b.block_index,
-                blocks_in_sample=b.blocks_in_sample,
-            )
-        else:
-            assert_never(sample)
+        assert self.output not in sample.members or (
+            sample.members[self.output].tagged_shape == output_tensor.tagged_shape
+        ), "overwriting existing output member with different shape"
+
+        sample.members[self.output] = output_tensor
+        sample.applied_ops += (self,)
 
     @abstractmethod
     def _apply(self, x: Tensor, stat: Stat) -> Tensor: ...

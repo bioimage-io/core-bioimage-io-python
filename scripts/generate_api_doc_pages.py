@@ -70,8 +70,7 @@ for path in sorted(src.rglob("*.py")):
     with mkdocs_gen_files.open(full_doc_path, "w") as fd:
         # Reconstruct the full identifier from the original module_path
         ident = ".".join(module_path.parts)
-        if ident.endswith(".__init__"):
-            ident = ident[:-9]  # Remove .__init__
+        ident = ident.removesuffix(".__init__")  # Remove .__init__
         fd.write(f"::: {ident}")
         print(f"Written {full_doc_path}")
 

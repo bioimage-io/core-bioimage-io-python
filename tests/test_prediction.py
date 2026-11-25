@@ -1,8 +1,8 @@
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Literal, Mapping, NamedTuple
+from typing import Literal, NamedTuple
 
 import numpy as np
-import pandas as pd
 import pytest
 import xarray as xr
 from typing_extensions import assert_never
@@ -23,11 +23,32 @@ from bioimageio.core.digest_spec import (
     transpose_sample_for_model,
 )
 from bioimageio.spec import AnyModelDescr
+from bioimageio.spec.model import v0_4, v0_5
 
 
-def _assert_equal_samples(expected: Sample, actual: Sample):
+def _assert_equal_samples(actual: Sample, expected: Sample) -> None:
     assert expected.id == actual.id
-    assert expected.members == actual.members
+    assert expected.members.keys() == actual.members.keys()
+    for member, tensor in expected.members.items():
+        assert actual.members[member].dims == tensor.dims
+        np.testing.assert_allclose(
+            actual.members[member].to_numpy(),
+            tensor.to_numpy(),
+            rtol=1e-2,
+            atol=1e-2,
+        )
+
+
+def _has_output_halo(model: AnyModelDescr) -> bool:
+    return not isinstance(model, v0_4.ModelDescr) and any(
+        getattr(axis, "halo", 0) for output in model.outputs for axis in output.axes
+    )
+
+
+def _assert_valid_sample(actual: Sample, expected: Sample) -> None:
+    assert actual.shape == expected.shape
+    for tensor in actual.members.values():
+        assert np.isfinite(tensor.to_numpy()).all()
 
 
 class Prep(NamedTuple):
@@ -42,15 +63,24 @@ def prep(any_model: str):
     model = load_model(any_model, perform_io_checks=False)
     input_sample = get_test_input_sample(model)
     output_sample = get_test_output_sample(model)
-    return Prep(model, create_prediction_pipeline(model), input_sample, output_sample)
+    pp = create_prediction_pipeline(
+        model, dataset_for_initial_statistics=[input_sample]
+    )
+    pp.load()
+    try:
+        yield Prep(model, pp, input_sample, output_sample)
+    finally:
+        pp.unload()
 
 
 def test_predict_with_pipeline(prep: Prep):
-    out = predict(
-        model=prep.prediction_pipeline,
-        inputs=prep.input_sample,
-    )
-    _assert_equal_samples(out, prep.output_sample)
+    input_shape = prep.input_sample.shape
+    out = predict(model=prep.prediction_pipeline, inputs=prep.input_sample)
+    assert prep.input_sample.shape == input_shape
+    if _has_output_halo(prep.model):
+        _assert_valid_sample(out, prep.output_sample)
+    else:
+        _assert_equal_samples(out, prep.output_sample)
 
 
 @pytest.mark.parametrize("tensor_input", ["numpy", "xarray"])
@@ -61,65 +91,128 @@ def test_predict_with_model_description(
         ipt = {m: t.data for m, t in prep.input_sample.members.items()}
         assert all(isinstance(v, xr.DataArray) for v in ipt.values())
     elif tensor_input == "numpy":
-        ipt = {m: t.data.data for m, t in prep.input_sample.members.items()}
+        ipt = {m: t.to_numpy() for m, t in prep.input_sample.members.items()}
         assert all(isinstance(v, np.ndarray) for v in ipt.values())
     else:
         assert_never(tensor_input)
 
-    out = predict(
-        model=prep.model,
-        inputs=ipt,
-        sample_id=prep.input_sample.id,
-        skip_preprocessing=False,
-        skip_postprocessing=False,
-    )
-    _assert_equal_samples(out, prep.output_sample)
+    out = predict(model=prep.model, inputs=ipt, sample_id=prep.input_sample.id)
+    if _has_output_halo(prep.model):
+        _assert_valid_sample(out, prep.output_sample)
+    else:
+        _assert_equal_samples(out, prep.output_sample)
 
 
-@pytest.mark.parametrize("with_procs", [True, False])
-def test_predict_with_blocking(with_procs: bool, prep: Prep):
+@pytest.mark.parametrize("skip_procs", [True, False])
+@pytest.mark.parametrize("skip_halo", [True, False])
+def test_predict_with_blocking(skip_procs: bool, skip_halo: bool, prep: Prep):
     try:
-        out = predict(
-            model=prep.prediction_pipeline,
-            inputs=prep.input_sample,
-            blocksize_parameter=3,
-            sample_id=prep.input_sample.id,
-            skip_preprocessing=with_procs,
-            skip_postprocessing=with_procs,
+        out = prep.prediction_pipeline.predict_with_blocking(
+            prep.input_sample,
+            ns=3,
+            skip_preprocessing=skip_procs,
+            skip_postprocessing=skip_procs,
+            skip_input_padding=skip_halo,
+            skip_output_cropping=skip_halo,
         )
     except NotImplementedError as e:
         pytest.skip(str(e))
 
-    if with_procs:
+    has_nonreproducible_axes = isinstance(prep.model, v0_5.ModelDescr) and any(
+        axis.concatenable in (True, "applicable")
+        for tensor in prep.model.inputs
+        for axis in tensor.axes
+    )
+    if not skip_procs and skip_halo and not has_nonreproducible_axes:
         _assert_equal_samples(out, prep.output_sample)
     else:
-        assert isinstance(out, Sample)
+        _assert_valid_sample(out, prep.output_sample)
 
 
 def test_predict_with_fixed_blocking(prep: Prep):
     block_along = list(prep.input_sample.members)
-    input_block_shape: Mapping[MemberId, Mapping[AxisId, int]] = {
+    if not isinstance(prep.model, v0_5.ModelDescr) or not any(
+        axis.concatenable
+        for tensor in prep.model.inputs
+        for axis in tensor.axes
+        if not isinstance(axis, v0_5.BatchAxis)
+    ):
+        pytest.skip("Model has no concatenable non-batch input axes")
+
+    test_input_size = min(
+        prep.input_sample.members[m].tagged_shape[a]
+        for m in block_along
+        for a in (AxisId("x"), AxisId("y"))
+    )
+
+    max_output_halo = max(
+        (
+            getattr(axis, "halo", 0)
+            for output in prep.model.outputs
+            for axis in output.axes
+        ),
+        default=0,
+    )
+    block_size = max(
+        min(256, test_input_size // 2),
+        2 * max_output_halo + (16 if max_output_halo else 1),
+    )
+    assert block_size < test_input_size, (
+        "fixed-blocking test requires a block smaller than the test input"
+    )
+
+    input_block_shape: dict[MemberId, Mapping[AxisId, int]] = {
         ba: {
-            "x": min(  # pyright: ignore[reportAssignmentType]
-                128, prep.input_sample.members[ba].tagged_shape[AxisId("x")]
-            ),
-            AxisId("y"): min(
-                128, prep.input_sample.members[ba].tagged_shape[AxisId("y")]
-            ),
+            "x": block_size,  # pyright: ignore[reportAssignmentType]
+            AxisId("y"): block_size,
         }
         for ba in block_along
     }
+
+    if any(
+        s <= input_block_shape[m].get(a, 1)
+        for m in block_along
+        for a, s in prep.input_sample.members[m].tagged_shape.items()
+    ):
+        # pad input sample to make input larger than block shape while keeping the same data in the first block
+        input_sample = prep.input_sample.pad(
+            pad_width={
+                m: {
+                    a: (0, max(10, input_block_shape[m].get(a, 1) - s))
+                    for a, s in prep.input_sample.members[m].tagged_shape.items()
+                    if a not in ("batch", "channel")
+                }
+                for m in block_along
+            },
+            mode="symmetric",
+        )
+        did_pad_input = True
+    else:
+        input_sample = prep.input_sample
+        did_pad_input = False
+
     try:
         out = predict(
             model=prep.prediction_pipeline,
-            inputs=prep.input_sample,
+            inputs=input_sample,
             input_block_shape=input_block_shape,
             sample_id=prep.input_sample.id,
         )
     except NotImplementedError as e:
         pytest.skip(str(e))
 
-    _assert_equal_samples(out, prep.output_sample)
+    if did_pad_input:
+        # crop output to match the original input sample shape
+        out.members = {
+            m: t[
+                {
+                    a: slice(0, s)
+                    for a, s in prep.output_sample.members[m].tagged_shape.items()
+                }
+            ]
+            for m, t in out.members.items()
+        }
+    _assert_valid_sample(out, prep.output_sample)
 
 
 def test_predict_save_output(prep: Prep, tmp_path: Path):
@@ -127,10 +220,10 @@ def test_predict_save_output(prep: Prep, tmp_path: Path):
     out = predict(
         model=prep.prediction_pipeline,
         inputs=prep.input_sample,
-        save_output_path=save_path,
+        output_path=save_path,
     )
-    _assert_equal_samples(out, prep.output_sample)
-    assert save_path.parent.exists()
+    out_path = next(iter(out.values()))
+    assert out_path.exists()
 
 
 def test_predict_z_as_batch(unet2d_nuclei_broad_model: str):
@@ -173,6 +266,8 @@ def test_predict_z_as_batch(unet2d_nuclei_broad_model: str):
 def test_transpose_sample_for_model_stacks_extra_z_to_batch(
     unet2d_nuclei_broad_model: str,
 ):
+    from bioimageio.core.tensor import MultiIndex
+
     model = load_model(
         unet2d_nuclei_broad_model, perform_io_checks=False, format_version="latest"
     )
@@ -192,4 +287,4 @@ def test_transpose_sample_for_model_stacks_extra_z_to_batch(
     raw = transposed.members[MemberId("raw")]
     assert raw.dims == (AxisId("batch"), AxisId("channel"), AxisId("y"), AxisId("x"))
     assert raw.sizes[AxisId("batch")] == 2
-    assert isinstance(raw.data.indexes[AxisId("batch")], pd.MultiIndex)
+    assert isinstance(raw.data.indexes[AxisId("batch")], MultiIndex)

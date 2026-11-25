@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal
 
 import pytest
 
@@ -38,7 +40,7 @@ def test_validate_format(model: AnyModelDescr):
 )
 def test_test(
     weight_format: Literal["all", "pytorch_state_dict"],
-    devices: Optional[str],
+    devices: str | None,
     model: AnyModelDescr,
 ):
     assert command_tst(model, weight_format=weight_format, devices=devices) == 0

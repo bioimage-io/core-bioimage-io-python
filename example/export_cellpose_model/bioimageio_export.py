@@ -72,6 +72,7 @@ def sha256sum(path: Path) -> str:
             h.update(chunk)
     return h.hexdigest()
 
+
 if __name__ == "__main__":
     logger.enable("bioimageio")
 
@@ -192,5 +193,10 @@ if __name__ == "__main__":
         descr, output_path=Path("output/cpsam_bioimageio.zip")
     )
 
-    summary = test_model(descr, working_dir=Path("output/export_test"), absolute_tolerance=1e-3, relative_tolerance=1e-3)
+    summary = test_model(
+        descr,
+        working_dir=Path("output/export_test"),
+        absolute_tolerance=1e-3,
+        relative_tolerance=1e-3,
+    )
     summary.display()

@@ -1,3 +1,15 @@
+### 0.12.0
+
+- bump spec to 0.5.15.0
+- lazy prediction (via dask graph)
+- support loading zarr images
+- add option to compute (percentile) dataset statistics in-memory
+- add experimental caching to disk for `predict()`
+- dropped `is_volume` flag from `load_image()`
+- added support to load pytorch state dict weights from .safetensors file
+- TorchScript-to-ONNX conversion uses the legacy exporter to preserve dynamic shapes; weights are embedded.
+- Treat legacy `concatenable: true` axes as applicable, not reproducible.
+
 ### 0.11.0
 
 - bump spec to 0.5.12.0
@@ -67,7 +79,8 @@
 ### 0.9.4
 
 - bump bioimageio.spec library version to 0.5.5.6
-- Replace `conda activate <env name>` with `conda run -n <env name> python --version` when checking if a conda environment exists
+- Replace `conda activate <env name>` with `conda run -n <env name> python --version`
+  when checking if a conda environment exists
   (This is closer to the actual `conda run` command we need and avoids requests by conda to rerun `conda init` (in CI).)
 - remove upper xarray pin (use ops from xarray.computation.ops, fallback to xarray.core.ops for older xarray versions)
 

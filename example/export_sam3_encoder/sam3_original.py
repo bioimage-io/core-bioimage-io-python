@@ -23,7 +23,6 @@ from pathlib import Path
 import imageio.v3 as imageio
 import numpy as np
 import torch
-
 from sam3_encoder_bioimageio import Sam3EncoderBioImageIO
 
 # SAM 3 was trained at 1008x1008 (patch size 14 -> 72x72 feature grid).
@@ -53,8 +52,12 @@ def resize_to_square(img: np.ndarray, size: int) -> np.ndarray:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--checkpoint", default=DEFAULT_CKPT, help="SAM 3 .pt checkpoint")
-    parser.add_argument("--image", default="sample_input.png", help="input RGB image")
+    _ = parser.add_argument(
+        "--checkpoint", default=DEFAULT_CKPT, help="SAM 3 .pt checkpoint"
+    )
+    _ = parser.add_argument(
+        "--image", default="sample_input.png", help="input RGB image"
+    )
     args = parser.parse_args()
 
     os.chdir(Path(__file__).parent)

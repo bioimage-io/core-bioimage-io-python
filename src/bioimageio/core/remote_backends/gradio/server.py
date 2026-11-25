@@ -1,23 +1,21 @@
-from itertools import chain
-from typing import (
-    Any,
-    Dict,
-    Iterable,
-    Literal,
-    Optional,
-    Union,
-)
+from __future__ import annotations
+
+import json
+from collections.abc import Sequence
+from typing import Any, Literal
 
 import gradio as gr
 from loguru import logger
+from pydantic import TypeAdapter
 
 import bioimageio.core
-from bioimageio.core import AxisId, Stat
-from bioimageio.core.axis import PerAxis
+from bioimageio.core import Stat
+from bioimageio.core._description_serializer import DescriptionSerializer
+from bioimageio.core._utils.type_hints import NestedList
+from bioimageio.core.axis import AxisSize, PerAxis
 from bioimageio.core.backends import create_model_adapter
 from bioimageio.core.common import PerMember
 from bioimageio.core.remote_backends.gradio.serializer import (
-    DescriptionSerializer,
     GradioSampleSerializer,
     SerializedSampleBlock,
 )
@@ -38,37 +36,30 @@ except ImportError:
 
 logger.enable("bioimageio")
 
-app = gr.Server()
 
-
-@app.api(name="predict")  # pyright: ignore[reportUntypedFunctionDecorator]
-@spaces.GPU
 def predict(
     model: str,
     sha256: str,
-    input_sample: Iterable[SerializedSampleBlock],
-    blocksize: Optional[
-        Union[int, Literal["blockwise_as_serialized"], PerMember[PerAxis[int]]]
-    ] = None,
+    input_sample: NestedList[SerializedSampleBlock],
+    blocksize: int | PerMember[PerAxis[int | AxisSize]] | None = None,
     skip_preprocessing: bool = False,
     skip_postprocessing: bool = False,
     skip_input_padding: bool = False,
     skip_output_cropping: bool = False,
-    batch_size: Optional[int] = None,
-) -> Iterable[SerializedSampleBlock]:
+    batch_size: int | None = None,
+    *,
+    devices: Sequence[str] | None = None,
+) -> NestedList[SerializedSampleBlock]:
     """Run prediction on a sample
 
     Args:
-        input_sample: Input sample as a sequence of serialized sample blocks.
-             Use bioimageio.core.backends.gradio_backend.GradioModelAdapter.serialize_sample to create this from a Sample object.
+        input_sample: Serialized sample or nested block grid created with GradioSampleSerializer.
         model: A model source: URL, nickname or base64 encoded model package (if len(model) > 2083).
         sha256: Sha256 hash of the model's bioimageio.yaml file at the model source or of the encoded model package.
         blocksize:
             - None (default): run non-blockwise, full-sample prediction.
             - integer: run blockwise prediction with a block size derived from the model and this blocksize parameter.
-            - "blockwise_as_serialized": run blockwise prediction with the same blocking as the serialized input sample.
-              (Non-blockwise pre- and postprocessing steps will be ignored.)
-            - PerMember[PerAxis[int]]: run blockwise prediction with a fixed block shape given for each sample member.
+            - PerMember[PerAxis[int | AxisSize]]: run blockwise prediction with a fixed block shape given for each sample member.
         skip_preprocessing: If True, skip preprocessing steps defined in the model.
         skip_postprocessing: If True, skip postprocessing steps defined in the model.
         skip_input_padding: If True, skip input padding for non-blockwise prediction.
@@ -78,117 +69,88 @@ def predict(
         batch_size: Optional batch size only applicable to predicting input samples with batch dimension.
     """
 
+    logger.info(
+        "Received prediction request for model {}",
+        model[:10] + "..." if len(model) > 10 else model,
+    )
+
     def setup(stat: Stat):
-        model_adapter = _get_model_adapter(model, sha256=sha256)
+        model_adapter = _get_model_adapter(model, sha256=sha256, devices=devices)
         return bioimageio.core.create_prediction_pipeline(
-            model_adapter.model_descr, fixed_dataset_statistics=stat
+            model_adapter.model_descr,
+            model_adapter=model_adapter,
+            fixed_dataset_statistics=stat,
         )
 
-    if blocksize == "blockwise_as_serialized":
-        sample_block_iterator = iter(input_sample)
-        deserialized_input_block = GradioSampleSerializer.deserialize_sample_block(
-            next(sample_block_iterator)
+    sample = GradioSampleSerializer.deserialize_sample(input_sample)
+    pp = setup(sample.stat)
+    kwargs = {
+        "skip_preprocessing": skip_preprocessing,
+        "skip_postprocessing": skip_postprocessing,
+        "skip_input_padding": skip_input_padding,
+        "skip_output_cropping": skip_output_cropping,
+    }
+    if isinstance(blocksize, int):
+        output = pp.predict_with_blocking(
+            sample, ns=blocksize, batch_size=batch_size, **kwargs
         )
-        pp = setup(deserialized_input_block.stat)
-        for block in chain(
-            [deserialized_input_block],
-            (
-                GradioSampleSerializer.deserialize_sample_block(b)
-                for b in sample_block_iterator
-            ),
-        ):
-            output_block = pp.predict_sample_block(
-                block,
-                skip_preprocessing=skip_preprocessing,
-                skip_postprocessing=skip_postprocessing,
-            )
-            yield GradioSampleSerializer.serialize_sample_block(output_block)
+    elif isinstance(blocksize, dict):
+        block_shape = TypeAdapter(PerMember[PerAxis[int | AxisSize]]).validate_python(
+            blocksize
+        )
+        output = pp.predict_with_fixed_blocking(sample, block_shape, **kwargs)
     else:
-        deserialized_input_sample = GradioSampleSerializer.deserialize_sample(
-            input_sample
-        )
-        pp = setup(deserialized_input_sample.stat)
-
-        output_sample = None
-        if isinstance(blocksize, int):
-            try:
-                if pp.has_non_blockwise_postprocessing and not skip_postprocessing:
-                    output_sample = pp.predict_sample_with_blocking(
-                        deserialized_input_sample,
-                        skip_preprocessing=skip_preprocessing,
-                        skip_postprocessing=skip_postprocessing,
-                        ns=blocksize,
-                        batch_size=batch_size,
-                    )
-                else:
-                    for output in pp.predict_sample_with_blocking_yield_intermediates(
-                        deserialized_input_sample,
-                        skip_preprocessing=skip_preprocessing,
-                        skip_postprocessing=skip_postprocessing,
-                        ns=blocksize,
-                        batch_size=batch_size,
-                    )[1]:
-                        # with purely blockwise postprocesssing or with postprocessing skipped,
-                        # predicted blocks are part of the final result, so we yield them immediately.
-                        yield GradioSampleSerializer.serialize_sample_block(
-                            output.last_block
-                        )
-
-                    return
-
-            except Exception as e:
-                logger.warning(
-                    "Falling back to full-sample prediction for model {}: {}",
-                    pp.model_descr.id or pp.model_descr.name,
-                    e,
-                )
-        if output_sample is None:
-            output_sample = pp.predict_sample_without_blocking(
-                deserialized_input_sample,
-                skip_preprocessing=skip_preprocessing,
-                skip_postprocessing=skip_postprocessing,
-                skip_input_padding=skip_input_padding,
-                skip_output_cropping=skip_output_cropping,
-            )
-
-        if all(
-            axes.get(AxisId("batch"), 1) > 1 for axes in output_sample.shape.values()
-        ):
-            # yield batches
-            yield from GradioSampleSerializer.serialize_sample_with_fixed_blocking(
-                output_sample,
-                block_shapes={
-                    m: {AxisId("batch"): batch_size or 1} for m in output_sample.shape
-                },
-                halo={},
-            )
-        else:
-            yield from GradioSampleSerializer.serialize_sample(output_sample)
+        output = pp.predict_without_blocking(sample, **kwargs)
+    return GradioSampleSerializer.serialize_sample(output)
 
 
-@app.api(name="load_model")  # pyright: ignore[reportUntypedFunctionDecorator]
 def load_model(
     model: str,
     sha256: str,
+    *,
+    devices: Sequence[str] | None = None,
 ) -> dict[Literal["message"], str]:
     """Load a model into the server's model cache. This can be used to pre-load a model before running predictions to avoid the overhead of loading the model during the first prediction request."""
-    _ = _get_model_adapter(model, sha256=sha256)
+    _ = _get_model_adapter(model, sha256=sha256, devices=devices)
     return {"message": "Model loaded successfully"}
 
 
-@app.api(name="test_model")  # pyright: ignore[reportUntypedFunctionDecorator]
+def get_status() -> dict[Literal["message"], str]:
+    """Check the status of the server."""
+    logger.info("Received status request")
+    return {"message": "alive"}
+
+
 def test_model(
     model: str,
     sha256: str,
+    *,
+    devices: Sequence[str] | None = None,
 ) -> str:
     """Run the bioimageio model test and return the validation summary. Returns None if testing failed."""
-    model_adapter = _get_model_adapter(model, sha256=sha256)
-    summary = bioimageio.core.test_model(model_adapter.model_descr)
+    model_adapter = _get_model_adapter(model, sha256=sha256, devices=devices)
+    summary = bioimageio.core.test_model(
+        model_adapter.model_descr,
+        devices=None if devices is None else list(devices),
+    )
     return summary.model_dump_json()
 
 
-def _cache_key(kwargs: Dict[str, Any]) -> str:
-    return kwargs["sha256"]
+def _cache_key(kwargs: dict[str, Any]) -> str:
+    return json.dumps([kwargs["sha256"], kwargs["devices"]])
+
+
+def _get_model_adapter(
+    model: str,
+    *,
+    sha256: str,
+    devices: Sequence[str] | None,
+):
+    return _get_cached_model_adapter(
+        model,
+        sha256=sha256,
+        devices=None if devices is None else tuple(devices),
+    )
 
 
 @gr.cache(  # pyright: ignore[reportUntypedFunctionDecorator]
@@ -197,10 +159,11 @@ def _cache_key(kwargs: Dict[str, Any]) -> str:
     max_memory=bioimageio.core.settings.gradio_server_model_cache_max_memory,
     per_session=False,
 )
-def _get_model_adapter(
+def _get_cached_model_adapter(
     model: str,
     *,
     sha256: str,
+    devices: tuple[str, ...] | None,
 ):
     """Get a model adapter for the given model
 
@@ -212,7 +175,9 @@ def _get_model_adapter(
         raise ValueError("Model source cannot be empty")
 
     model_descr = _get_model(model, sha256=sha256)
-    return create_model_adapter(model_description=model_descr)
+    adapter = create_model_adapter(model_description=model_descr, devices=devices)
+    adapter.load()
+    return adapter
 
 
 def _get_model(
@@ -231,16 +196,78 @@ def _get_model(
         return load_model_description(model, sha256=Sha256(sha256) if sha256 else None)
 
 
-@app.get("/")
 def root():
     return {
         "message": f"Running bioimageio.core {bioimageio.core.__version__} gradio server."
     }
 
 
-def main(port: Optional[int] = None) -> str:
+def _create_app(*, devices: Sequence[str] | None = None) -> gr.Server:
+    server_devices = None if devices is None else tuple(devices)
+    app = gr.Server(version="0.1")
+
+    @app.api(name="predict")  # pyright: ignore[reportUntypedFunctionDecorator]
+    @spaces.GPU
+    def predict_api(
+        model: str,
+        sha256: str,
+        input_sample: NestedList[SerializedSampleBlock],
+        blocksize: int | PerMember[PerAxis[int | AxisSize]] | None = None,
+        skip_preprocessing: bool = False,
+        skip_postprocessing: bool = False,
+        skip_input_padding: bool = False,
+        skip_output_cropping: bool = False,
+        batch_size: int | None = None,
+    ) -> NestedList[SerializedSampleBlock]:
+        return predict(
+            model,
+            sha256,
+            input_sample,
+            blocksize,
+            skip_preprocessing,
+            skip_postprocessing,
+            skip_input_padding,
+            skip_output_cropping,
+            batch_size,
+            devices=server_devices,
+        )
+
+    @app.api(name="load_model")  # pyright: ignore[reportUntypedFunctionDecorator]
+    def load_model_api(model: str, sha256: str) -> dict[Literal["message"], str]:
+        return load_model(model, sha256, devices=server_devices)
+
+    @app.api(name="get_status")  # pyright: ignore[reportUntypedFunctionDecorator]
+    def get_status_api() -> dict[Literal["message"], str]:
+        return get_status()
+
+    @app.api(name="test_model")  # pyright: ignore[reportUntypedFunctionDecorator]
+    def test_model_api(model: str, sha256: str) -> str:
+        return test_model(model, sha256, devices=server_devices)
+
+    @app.get("/")
+    def root_api():
+        return root()
+
+    return app
+
+
+app = _create_app()
+
+
+def main(port: int | None = None, *, devices: Sequence[str] | None = None) -> str:
+    """Start the server using the specified devices, or automatic selection by default."""
+    logger.info(
+        "Starting bioimageio.core gradio server on port {} with devices {}",
+        port,
+        devices,
+    )
+    app = _create_app(devices=devices)
     _app, local_url, _share_url = app.launch(
-        mcp_server=True, show_error=True, server_port=port
+        debug=True,
+        mcp_server=True,
+        server_name="0.0.0.0",
+        server_port=port,
+        show_error=True,
     )
     return local_url
 
