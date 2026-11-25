@@ -5360,8 +5360,7 @@ In that case, it will be called later, when the model is rebuilt automatically o
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/cli.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">962</span>
-<span class="normal">963</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">963</span>
 <span class="normal">964</span>
 <span class="normal">965</span>
 <span class="normal">966</span>
@@ -5375,7 +5374,8 @@ In that case, it will be called later, when the model is rebuilt automatically o
 <span class="normal">974</span>
 <span class="normal">975</span>
 <span class="normal">976</span>
-<span class="normal">977</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="normal">977</span>
+<span class="normal">978</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="n">model_descr</span> <span class="o">=</span> <span class="n">ensure_description_is_model</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">descr</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_descr</span><span class="p">,</span> <span class="n">v0_4</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
@@ -17074,12 +17074,12 @@ See the <a class="autorefs autorefs-external" href="https://docs.pydantic.dev/la
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/cli.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1102</span>
-<span class="normal">1103</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1103</span>
 <span class="normal">1104</span>
 <span class="normal">1105</span>
 <span class="normal">1106</span>
-<span class="normal">1107</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">1107</span>
+<span class="normal">1108</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="n">logger</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
         <span class="s2">"executing CLI command:</span><span class="se">\n</span><span class="si">{}</span><span class="s2">"</span><span class="p">,</span>
         <span class="n">pformat</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_dump</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">}),</span>
@@ -17118,8 +17118,7 @@ See the <a class="autorefs autorefs-external" href="https://docs.pydantic.dev/la
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/cli.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1070</span>
-<span class="normal">1071</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1071</span>
 <span class="normal">1072</span>
 <span class="normal">1073</span>
 <span class="normal">1074</span>
@@ -17139,7 +17138,8 @@ See the <a class="autorefs autorefs-external" href="https://docs.pydantic.dev/la
 <span class="normal">1088</span>
 <span class="normal">1089</span>
 <span class="normal">1090</span>
-<span class="normal">1091</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">1091</span>
+<span class="normal">1092</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">settings_customise_sources</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="n">settings_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">BaseSettings</span><span class="p">],</span>
@@ -27319,8 +27319,8 @@ In that case, it will be called later, when the model is rebuilt automatically o
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/cli.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">983</span>
-<span class="normal">984</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">984</span>
+<span class="normal">985</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="n">empty_cache</span><span class="p">()</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -40666,9 +40666,10 @@ for a model expecting a 'raw' and a 'mask' input tensor:
 (Note that JSON double quotes need to be escaped.)</p>
 <p>Alternatively a <code>bioimageio-cli.yaml</code> (or <code>bioimageio-cli.json</code>) file
 may provide the arguments, e.g.:
-<div class="language-yaml highlight"><pre><span></span><code><span class="nt">inputs</span><span class="p">:</span>
-<span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">a_raw.tif</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">a_mask.tif</span><span class="p p-Indicator">]</span>
-<span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">b_raw.tif</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">b_mask.tif</span><span class="p p-Indicator">]</span>
+<div class="language-yaml highlight"><pre><span></span><code><span class="nt">predict</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">inputs</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">a_raw.tif</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">a_mask.tif</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">b_raw.tif</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">b_mask.tif</span><span class="p p-Indicator">]</span>
 </code></pre></div></p>
 <p><code>.npy</code> and any file extension supported by imageio are supported.
  Aavailable formats are listed at
@@ -42436,8 +42437,7 @@ In that case, it will be called later, when the model is rebuilt automatically o
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/cli.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">913</span>
-<span class="normal">914</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">914</span>
 <span class="normal">915</span>
 <span class="normal">916</span>
 <span class="normal">917</span>
@@ -42455,7 +42455,8 @@ In that case, it will be called later, when the model is rebuilt automatically o
 <span class="normal">929</span>
 <span class="normal">930</span>
 <span class="normal">931</span>
-<span class="normal">932</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="normal">932</span>
+<span class="normal">933</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="k">for</span> <span class="p">(</span><span class="n">out_sample</span><span class="p">,</span> <span class="n">out_path</span><span class="p">),</span> <span class="p">(</span><span class="n">out_sample_blockwise</span><span class="p">,</span> <span class="n">_</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_yield_predictions</span><span class="p">(</span><span class="kc">False</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_yield_predictions</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blockwise</span><span class="p">)</span>
     <span class="p">):</span>
@@ -48436,9 +48437,10 @@ for a model expecting a 'raw' and a 'mask' input tensor:
 (Note that JSON double quotes need to be escaped.)</p>
 <p>Alternatively a <code>bioimageio-cli.yaml</code> (or <code>bioimageio-cli.json</code>) file
 may provide the arguments, e.g.:
-<div class="language-yaml highlight"><pre><span></span><code><span class="nt">inputs</span><span class="p">:</span>
-<span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">a_raw.tif</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">a_mask.tif</span><span class="p p-Indicator">]</span>
-<span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">b_raw.tif</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">b_mask.tif</span><span class="p p-Indicator">]</span>
+<div class="language-yaml highlight"><pre><span></span><code><span class="nt">predict</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">inputs</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">a_raw.tif</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">a_mask.tif</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">b_raw.tif</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">b_mask.tif</span><span class="p p-Indicator">]</span>
 </code></pre></div></p>
 <p><code>.npy</code> and any file extension supported by imageio are supported.
  Aavailable formats are listed at
@@ -50206,8 +50208,7 @@ In that case, it will be called later, when the model is rebuilt automatically o
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/cli.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">655</span>
-<span class="normal">656</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">656</span>
 <span class="normal">657</span>
 <span class="normal">658</span>
 <span class="normal">659</span>
@@ -50216,7 +50217,8 @@ In that case, it will be called later, when the model is rebuilt automatically o
 <span class="normal">662</span>
 <span class="normal">663</span>
 <span class="normal">664</span>
-<span class="normal">665</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="normal">665</span>
+<span class="normal">666</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">for</span> <span class="n">out_sample</span><span class="p">,</span> <span class="n">out_path</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_yield_predictions</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">blockwise</span><span class="p">):</span>
             <span class="n">_</span> <span class="o">=</span> <span class="n">save_sample</span><span class="p">(</span><span class="n">out_path</span><span class="p">,</span> <span class="n">out_sample</span><span class="p">)</span>
@@ -57417,8 +57419,7 @@ In that case, it will be called later, when the model is rebuilt automatically o
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/cli.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1001</span>
-<span class="normal">1002</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1002</span>
 <span class="normal">1003</span>
 <span class="normal">1004</span>
 <span class="normal">1005</span>
@@ -57432,7 +57433,8 @@ In that case, it will be called later, when the model is rebuilt automatically o
 <span class="normal">1013</span>
 <span class="normal">1014</span>
 <span class="normal">1015</span>
-<span class="normal">1016</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">1016</span>
+<span class="normal">1017</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">cli_cmd</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">backend</span> <span class="o">==</span> <span class="s2">"gradio"</span><span class="p">:</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">.remote_backends.gradio.server</span><span class="w"> </span><span class="kn">import</span> <span class="n">main</span>
