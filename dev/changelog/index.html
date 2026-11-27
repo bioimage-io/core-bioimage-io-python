@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../images/favicon.ico">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.8.2">
     
     
       
@@ -33,10 +33,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -488,10 +488,6 @@
       
         
       
-        
-      
-        
-      
     
     
     
@@ -657,6 +653,18 @@
 
   <h1>Changelog</h1>
 
+<h3 id="0120">0.12.0<a class="headerlink" href="#0120" title="Anchor link to this section for reference">¤</a></h3>
+<ul>
+<li>bump spec to 0.5.15.0</li>
+<li>lazy prediction (via dask graph)</li>
+<li>support loading zarr images</li>
+<li>add option to compute (percentile) dataset statistics in-memory</li>
+<li>add experimental caching to disk for <code>predict()</code></li>
+<li>dropped <code>is_volume</code> flag from <code>load_image()</code></li>
+<li>added support to load pytorch state dict weights from .safetensors file</li>
+<li>TorchScript-to-ONNX conversion uses the legacy exporter to preserve dynamic shapes; weights are embedded.</li>
+<li>Treat legacy <code>concatenable: true</code> axes as applicable, not reproducible.</li>
+</ul>
 <h3 id="0110">0.11.0<a class="headerlink" href="#0110" title="Anchor link to this section for reference">¤</a></h3>
 <ul>
 <li>bump spec to 0.5.12.0</li>
@@ -726,7 +734,8 @@
 <h3 id="094">0.9.4<a class="headerlink" href="#094" title="Anchor link to this section for reference">¤</a></h3>
 <ul>
 <li>bump bioimageio.spec library version to 0.5.5.6</li>
-<li>Replace <code>conda activate &lt;env name&gt;</code> with <code>conda run -n &lt;env name&gt; python --version</code> when checking if a conda environment exists
+<li>Replace <code>conda activate &lt;env name&gt;</code> with <code>conda run -n &lt;env name&gt; python --version</code>
+  when checking if a conda environment exists
   (This is closer to the actual <code>conda run</code> command we need and avoids requests by conda to rerun <code>conda init</code> (in CI).)</li>
 <li>remove upper xarray pin (use ops from xarray.computation.ops, fallback to xarray.core.ops for older xarray versions)</li>
 </ul>
@@ -955,10 +964,10 @@ It works by simply trying option <code>--summary</code> (new option name) and <c
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.expand", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.prune", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.expand", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.prune", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
         <script src="../assets/_markdown_exec_pyodide.js"></script>
       

@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="../../../../../../images/favicon.ico">
-      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-ProperDocs 1.6.7, mkdocs-material-9.8.2">
     
     
       
@@ -29,10 +29,10 @@
       
     
     
-      <link rel="stylesheet" href="../../../../../../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../../../../../../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../../../../../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../../../../../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -487,10 +487,6 @@
       
         
       
-        
-      
-        
-      
     
     
     
@@ -629,17 +625,6 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        <code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;DescriptionSerializer
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -721,14 +706,6 @@
       </thead>
       <tbody>
           <tr class="doc-section-item">
-            <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer">DescriptionSerializer</a></code></td>
-            <td>
-              <div class="doc-md-description">
-                <p>Description serializer intended for client/server communication, NOT for sharing resource descriptions.</p>
-              </div>
-            </td>
-          </tr>
-          <tr class="doc-section-item">
             <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer">GradioSampleSerializer</a></code></td>
             <td>
               <div class="doc-md-description">
@@ -790,7 +767,7 @@
   </span>
 
 <a href="#bioimageio.core.remote_backends.gradio.serializer.SerializedSampleBlock" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">SerializedSampleBlock</span> <span class="o">=</span> <span class="n"><span title="typing.Dict">Dict</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../../../io/#bioimageio.core.io.JsonValue">JsonValue</a></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">SerializedSampleBlock</span> <span class="o">=</span> <span class="n"><span title="dict">dict</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../../../io/#bioimageio.core.io.JsonValue">JsonValue</a></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -815,6 +792,16 @@
 
         <b class="doc doc-backlink-type">Subclassed by:</b>
           <ul class="doc doc-backlink-list">
+      <li class="doc doc-backlink">
+            <span class="doc doc-backlink-crumb">
+      <a href="../client/#bioimageio.core.remote_backends.gradio.client"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;client</a>
+  </span>
+
+            <span class="doc doc-backlink-crumb last">
+      <a href="../client/#bioimageio.core.remote_backends.gradio.client.GradioModelAdapter"><code class="doc-symbol doc-symbol-toc doc-symbol-class"></code>&nbsp;GradioModelAdapter</a>
+  </span>
+
+      </li>
       <li class="doc doc-backlink">
             <span class="doc doc-backlink-crumb">
       <a href="#bioimageio.core.remote_backends.gradio.serializer"><code class="doc-symbol doc-symbol-toc doc-symbol-module"></code>&nbsp;serializer</a>
@@ -848,366 +835,6 @@
 </div>
 
 
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-class"></code>            <span class="doc doc-object-name doc-class-name">DescriptionSerializer</span>
-
-
-<a href="#bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer" class="headerlink" title="Anchor link to this section for reference">¤</a></h2>
-
-
-    <div class="doc doc-contents ">
-
-
-
-        <p>Description serializer intended for client/server communication, NOT for sharing resource descriptions.</p>
-<p>This serializer only includes local files to keep the serialized package small.</p>
-
-          
-
-
-
-
-
-
-
-
-
-
-
-<p><span class="doc-section-title">Methods:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-            <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer.deserialize">deserialize</a></code></td>
-              <td>
-                <div class="doc-md-description">
-                  
-                </div>
-              </td>
-            </tr>
-            <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer.deserialize_from_string">deserialize_from_string</a></code></td>
-              <td>
-                <div class="doc-md-description">
-                  
-                </div>
-              </td>
-            </tr>
-            <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer.serialize">serialize</a></code></td>
-              <td>
-                <div class="doc-md-description">
-                  
-                </div>
-              </td>
-            </tr>
-            <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer.serialize_to_string">serialize_to_string</a></code></td>
-              <td>
-                <div class="doc-md-description">
-                  
-                </div>
-              </td>
-            </tr>
-            <tr class="doc-section-item">
-              <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer.serialize_to_string_and_hash">serialize_to_string_and_hash</a></code></td>
-              <td>
-                <div class="doc-md-description">
-                  
-                </div>
-              </td>
-            </tr>
-      </tbody>
-    </table>
-
-
-
-
-<p><span class="doc-section-title">Attributes:</span></p>
-    <table>
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>Description</th>
-        </tr>
-      </thead>
-      <tbody>
-          <tr class="doc-section-item">
-            <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer.STRING_ENCODING">STRING_ENCODING</a></code></td>
-            <td>
-            </td>
-            <td>
-              <div class="doc-md-description">
-                
-              </div>
-            </td>
-          </tr>
-      </tbody>
-    </table>
-
-
-
-
-<div class="doc doc-children">
-
-
-
-
-
-
-
-<div class="doc doc-object doc-attribute">
-
-
-
-<h3 id="bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer.STRING_ENCODING" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-attribute"></code>            <span class="doc doc-object-name doc-attribute-name">STRING_ENCODING</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
-      <small class="doc doc-label doc-label-instance-attribute"><code>instance-attribute</code></small>
-  </span>
-
-<a href="#bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer.STRING_ENCODING" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="n">STRING_ENCODING</span> <span class="o">=</span> <span class="s1">'ascii'</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-          
-    </div>
-
-</div>
-
-
-
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer.deserialize" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">deserialize</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
-  </span>
-
-<a href="#bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer.deserialize" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">deserialize</span><span class="p">(</span><span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer.deserialize(serialized)">serialized</span></span><span class="p">:</span> <span class="n"><span title="bytes">bytes</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.ResourceDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/#bioimageio.spec.ResourceDescr">ResourceDescr</a></span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-          
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>src/bioimageio/core/_description_serializer.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">51</span>
-<span class="normal">52</span>
-<span class="normal">53</span>
-<span class="normal">54</span>
-<span class="normal">55</span>
-<span class="normal">56</span>
-<span class="normal">57</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">deserialize</span><span class="p">(</span><span class="n">serialized</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResourceDescr</span><span class="p">:</span>
-    <span class="n">descr</span> <span class="o">=</span> <span class="n">load_description</span><span class="p">(</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">serialized</span><span class="p">)),</span> <span class="n">perform_io_checks</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">descr</span><span class="p">,</span> <span class="n">InvalidDescr</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"invalid serialized model package: </span><span class="si">{</span><span class="n">descr</span><span class="o">.</span><span class="n">get_reason</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">descr</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer.deserialize_from_string" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">deserialize_from_string</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
-  </span>
-
-<a href="#bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer.deserialize_from_string" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">deserialize_from_string</span><span class="p">(</span><span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer.deserialize_from_string(serialized)">serialized</span></span><span class="p">:</span> <span class="n"><span title="str">str</span></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.ResourceDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/#bioimageio.spec.ResourceDescr">ResourceDescr</a></span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-          
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>src/bioimageio/core/_description_serializer.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">46</span>
-<span class="normal">47</span>
-<span class="normal">48</span>
-<span class="normal">49</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">deserialize_from_string</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">serialized</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResourceDescr</span><span class="p">:</span>
-    <span class="n">package_bytes</span> <span class="o">=</span> <span class="n">base64</span><span class="o">.</span><span class="n">b64decode</span><span class="p">(</span><span class="n">serialized</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">STRING_ENCODING</span><span class="p">))</span>
-    <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">deserialize</span><span class="p">(</span><span class="n">package_bytes</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer.serialize" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">serialize</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
-  </span>
-
-<a href="#bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer.serialize" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">serialize</span><span class="p">(</span><span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer.serialize(rd)">rd</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.ResourceDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/#bioimageio.spec.ResourceDescr">ResourceDescr</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="bytes">bytes</span></span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-          
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>src/bioimageio/core/_description_serializer.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">24</span>
-<span class="normal">25</span>
-<span class="normal">26</span>
-<span class="normal">27</span>
-<span class="normal">28</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">serialize</span><span class="p">(</span><span class="n">rd</span><span class="p">:</span> <span class="n">ResourceDescr</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
-    <span class="n">stream</span> <span class="o">=</span> <span class="n">save_bioimageio_package_to_stream</span><span class="p">(</span><span class="n">rd</span><span class="p">,</span> <span class="n">local_files_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">_</span> <span class="o">=</span> <span class="n">stream</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">stream</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer.serialize_to_string" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">serialize_to_string</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
-  </span>
-
-<a href="#bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer.serialize_to_string" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">serialize_to_string</span><span class="p">(</span><span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer.serialize_to_string(rd)">rd</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.ResourceDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/#bioimageio.spec.ResourceDescr">ResourceDescr</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="str">str</span></span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-          
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>src/bioimageio/core/_description_serializer.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">30</span>
-<span class="normal">31</span>
-<span class="normal">32</span>
-<span class="normal">33</span>
-<span class="normal">34</span>
-<span class="normal">35</span>
-<span class="normal">36</span>
-<span class="normal">37</span>
-<span class="normal">38</span>
-<span class="normal">39</span>
-<span class="normal">40</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">serialize_to_string</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">rd</span><span class="p">:</span> <span class="n">ResourceDescr</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="n">package_bytes</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="n">rd</span><span class="p">)</span>
-
-    <span class="n">safe_bytes</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_get_safe_bytes</span><span class="p">(</span><span class="n">package_bytes</span><span class="p">)</span>
-    <span class="n">serialized_str</span> <span class="o">=</span> <span class="n">safe_bytes</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">STRING_ENCODING</span><span class="p">)</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">serialized_str</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">2083</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-            <span class="s2">"Serialized model description should be longer than 2083 characters to not be treated as a URL on the server side."</span>
-        <span class="p">)</span>
-    <span class="k">return</span> <span class="n">serialized_str</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-<div class="doc doc-object doc-function">
-
-
-<h3 id="bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer.serialize_to_string_and_hash" class="doc doc-heading">
-<code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">serialize_to_string_and_hash</span>
-
-
-  <span class="doc doc-labels">
-      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
-  </span>
-
-<a href="#bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer.serialize_to_string_and_hash" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">serialize_to_string_and_hash</span><span class="p">(</span><span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.DescriptionSerializer.serialize_to_string_and_hash(rd)">rd</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.ResourceDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/#bioimageio.spec.ResourceDescr">ResourceDescr</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.Tuple">Tuple</span></span><span class="p">[</span><span class="n"><span title="str">str</span></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.common.Sha256&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/common/#bioimageio.spec.common.Sha256">Sha256</a></span><span class="p">]</span>
-</code></pre></div>
-
-    <div class="doc doc-contents ">
-
-          
-
-            <details class="mkdocstrings-source">
-              <summary>Source code in <code>src/bioimageio/core/_description_serializer.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">59</span>
-<span class="normal">60</span>
-<span class="normal">61</span>
-<span class="normal">62</span>
-<span class="normal">63</span>
-<span class="normal">64</span>
-<span class="normal">65</span>
-<span class="normal">66</span>
-<span class="normal">67</span>
-<span class="normal">68</span>
-<span class="normal">69</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">serialize_to_string_and_hash</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">rd</span><span class="p">:</span> <span class="n">ResourceDescr</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Sha256</span><span class="p">]:</span>
-    <span class="n">package_bytes</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">serialize</span><span class="p">(</span><span class="n">rd</span><span class="p">)</span>
-    <span class="n">safe_bytes</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_get_safe_bytes</span><span class="p">(</span><span class="n">package_bytes</span><span class="p">)</span>
-    <span class="n">serialized_str</span> <span class="o">=</span> <span class="n">safe_bytes</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">STRING_ENCODING</span><span class="p">)</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">serialized_str</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">2083</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-            <span class="s2">"Serialized model description should be longer than 2083 characters to not be treated as a URL on the server side."</span>
-        <span class="p">)</span>
-    <span class="n">sha256</span> <span class="o">=</span> <span class="n">Sha256</span><span class="p">(</span><span class="n">hashlib</span><span class="o">.</span><span class="n">sha256</span><span class="p">(</span><span class="n">package_bytes</span><span class="p">)</span><span class="o">.</span><span class="n">hexdigest</span><span class="p">())</span>
-    <span class="k">return</span> <span class="n">serialized_str</span><span class="p">,</span> <span class="n">sha256</span>
-</code></pre></div></td></tr></table></div>
-            </details>
-    </div>
-
-</div>
-
-
-
-  </div>
-
-    </div>
-
-</div>
 
 <div class="doc doc-object doc-class">
 
@@ -1278,7 +905,7 @@
               <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.deserialize_sample">deserialize_sample</a></code></td>
               <td>
                 <div class="doc-md-description">
-                  
+                  <p>Assemble a nested block grid; blocks must already be cropped to avoid overlap.</p>
                 </div>
               </td>
             </tr>
@@ -1286,7 +913,7 @@
               <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.deserialize_sample_block">deserialize_sample_block</a></code></td>
               <td>
                 <div class="doc-md-description">
-                  <p>Deserialize a sample block into a new sample or merge it into <code>output_sample</code> if provided.</p>
+                  <p>Deserialize one block into a sample.</p>
                 </div>
               </td>
             </tr>
@@ -1294,7 +921,7 @@
               <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample">serialize_sample</a></code></td>
               <td>
                 <div class="doc-md-description">
-                  <p>Serialize a sample as a single block</p>
+                  <p>Serialize a sample as a single block.</p>
                 </div>
               </td>
             </tr>
@@ -1310,7 +937,7 @@
               <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample_blockwise">serialize_sample_blockwise</a></code></td>
               <td>
                 <div class="doc-md-description">
-                  <p>Split a sample into blocks according to the model's input specifications and <code>blocksize_parameter</code> and serialize each block.</p>
+                  <p>Serialize a non-overlapping grid with model-derived maximum block sizes.</p>
                 </div>
               </td>
             </tr>
@@ -1318,7 +945,7 @@
               <td><code><a class="autorefs autorefs-internal" href="#bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample_with_fixed_blocking">serialize_sample_with_fixed_blocking</a></code></td>
               <td>
                 <div class="doc-md-description">
-                  
+                  <p>Serialize an aligned block grid, retaining each block's halo and overlap.</p>
                 </div>
               </td>
             </tr>
@@ -1353,31 +980,151 @@
   </span>
 
 <a href="#bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.deserialize_sample" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">deserialize_sample</span><span class="p">(</span><span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.deserialize_sample(serialized)">serialized</span></span><span class="p">:</span> <span class="n"><span title="typing.Iterable">Iterable</span></span><span class="p">[</span><span class="n"><span title="bioimageio.core._sample_serializer.SerializedSampleBlockType">SerializedSampleBlockType</span></span><span class="p">],</span> <span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.deserialize_sample(fill_value)">fill_value</span></span><span class="p">:</span> <span class="n"><span title="float">float</span></span> <span class="o">=</span> <span class="n"><span title="float">float</span></span><span class="p">(</span><span class="s1">'nan'</span><span class="p">))</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="../../../sample/#bioimageio.core.sample.Sample">Sample</a></span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">deserialize_sample</span><span class="p">(</span>
+    <span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.deserialize_sample(serialized)">serialized</span></span><span class="p">:</span> <span class="n"><span title="bioimageio.core._utils.type_hints.NestedList">NestedList</span></span><span class="p">[</span><span class="n"><span title="bioimageio.core._sample_serializer.SerializedSampleBlockType">SerializedSampleBlockType</span></span><span class="p">],</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="../../../sample/#bioimageio.core.sample.Sample">Sample</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
+
+        <p>Assemble a nested block grid; blocks must already be cropped to avoid overlap.</p>
 
           
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/_sample_serializer.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">29</span>
-<span class="normal">30</span>
-<span class="normal">31</span>
-<span class="normal">32</span>
-<span class="normal">33</span>
-<span class="normal">34</span>
-<span class="normal">35</span>
-<span class="normal">36</span>
-<span class="normal">37</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">deserialize_sample</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
-    <span class="n">serialized</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">SerializedSampleBlockType</span><span class="p">],</span>
-    <span class="n">fill_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"nan"</span><span class="p">),</span>
+    <span class="n">serialized</span><span class="p">:</span> <span class="n">NestedList</span><span class="p">[</span><span class="n">SerializedSampleBlockType</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sample</span><span class="p">:</span>
-    <span class="k">return</span> <span class="n">Sample</span><span class="o">.</span><span class="n">from_blocks</span><span class="p">(</span>
-        <span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">deserialize_sample_block</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">serialized</span><span class="p">),</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">fill_value</span>
+<span class="w">    </span><span class="sd">"""Assemble a nested block grid; blocks must already be cropped to avoid overlap."""</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">serialized</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">deserialize_sample_block</span><span class="p">(</span><span class="n">serialized</span><span class="p">)</span>
+
+    <span class="n">leaves</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Sample</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">deserialize</span><span class="p">(</span>
+        <span class="n">grid</span><span class="p">:</span> <span class="n">NestedList</span><span class="p">[</span><span class="n">SerializedSampleBlockType</span><span class="p">],</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NestedList</span><span class="p">[</span><span class="n">Sample</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">grid</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Serialized sample contains an empty block grid"</span><span class="p">)</span>
+            <span class="k">return</span> <span class="p">[</span>
+                <span class="n">deserialize</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">cast</span><span class="p">(</span><span class="nb">list</span><span class="p">[</span><span class="n">NestedList</span><span class="p">[</span><span class="n">SerializedSampleBlockType</span><span class="p">]],</span> <span class="n">grid</span><span class="p">)</span>
+            <span class="p">]</span>
+
+        <span class="n">sample</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">deserialize_sample_block</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span>
+        <span class="n">leaves</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sample</span>
+
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">deserialize</span><span class="p">(</span><span class="n">cast</span><span class="p">(</span><span class="n">NestedList</span><span class="p">[</span><span class="n">SerializedSampleBlockType</span><span class="p">],</span> <span class="n">serialized</span><span class="p">))</span>
+    <span class="n">first</span> <span class="o">=</span> <span class="n">leaves</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">leaves</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
+        <span class="k">if</span> <span class="n">sample</span><span class="o">.</span><span class="n">id</span> <span class="o">!=</span> <span class="n">first</span><span class="o">.</span><span class="n">id</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Sample blocks have different sample IDs"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">sample</span><span class="o">.</span><span class="n">members</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">!=</span> <span class="n">first</span><span class="o">.</span><span class="n">members</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Sample blocks have different members"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">sample</span><span class="o">.</span><span class="n">applied_ops</span> <span class="o">!=</span> <span class="n">first</span><span class="o">.</span><span class="n">applied_ops</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Sample blocks have different applied operators"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">members</span><span class="p">[</span><span class="n">m</span><span class="p">]</span><span class="o">.</span><span class="n">dims</span> <span class="o">!=</span> <span class="n">t</span><span class="o">.</span><span class="n">dims</span> <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">first</span><span class="o">.</span><span class="n">members</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Sample blocks have different member dimensions"</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">select_arrays</span><span class="p">(</span>
+        <span class="n">grid</span><span class="p">:</span> <span class="n">NestedList</span><span class="p">[</span><span class="n">Sample</span><span class="p">],</span> <span class="n">member</span><span class="p">:</span> <span class="n">MemberId</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NestedList</span><span class="p">[</span><span class="n">Array</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">grid</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">select_arrays</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">member</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">grid</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">grid</span><span class="o">.</span><span class="n">members</span><span class="p">[</span><span class="n">member</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span>
+
+    <span class="n">members</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">MemberId</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">member</span><span class="p">,</span> <span class="n">tensor</span> <span class="ow">in</span> <span class="n">first</span><span class="o">.</span><span class="n">members</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">block_impl</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span>
+            <span class="n">Callable</span><span class="p">[[</span><span class="n">NestedList</span><span class="p">[</span><span class="n">Array</span><span class="p">]],</span> <span class="n">Array</span><span class="p">],</span>
+            <span class="n">da</span><span class="o">.</span><span class="n">block</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">members</span><span class="p">[</span><span class="n">member</span><span class="p">]</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">da</span><span class="o">.</span><span class="n">Array</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">leaves</span>
+            <span class="p">)</span>
+            <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">block</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">members</span><span class="p">[</span><span class="n">member</span><span class="p">]</span> <span class="o">=</span> <span class="n">Tensor</span><span class="p">(</span>
+            <span class="n">block_impl</span><span class="p">(</span><span class="n">select_arrays</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">member</span><span class="p">)),</span> <span class="n">tensor</span><span class="o">.</span><span class="n">dims</span>
+        <span class="p">)</span>
+        <span class="n">members</span><span class="p">[</span><span class="n">member</span><span class="p">]</span><span class="o">.</span><span class="n">set_metadata</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">get_metadata</span><span class="p">())</span>
+
+    <span class="k">return</span> <span class="n">Sample</span><span class="p">(</span>
+        <span class="nb">id</span><span class="o">=</span><span class="n">first</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="n">members</span><span class="o">=</span><span class="n">members</span><span class="p">,</span>
+        <span class="n">stat</span><span class="o">=</span><span class="n">first</span><span class="o">.</span><span class="n">stat</span><span class="p">,</span>
+        <span class="n">applied_ops</span><span class="o">=</span><span class="n">first</span><span class="o">.</span><span class="n">applied_ops</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -1397,47 +1144,73 @@
   </span>
 
 <a href="#bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.deserialize_sample_block" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">deserialize_sample_block</span><span class="p">(</span><span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.deserialize_sample_block(serialized)">serialized</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.remote_backends.gradio.serializer.SerializedSampleBlock">SerializedSampleBlock</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="../../../sample/#bioimageio.core.sample.SampleBlock">SampleBlock</a></span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">deserialize_sample_block</span><span class="p">(</span>
+    <span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.deserialize_sample_block(serialized)">serialized</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.remote_backends.gradio.serializer.SerializedSampleBlock">SerializedSampleBlock</a></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="../../../sample/#bioimageio.core.sample.Sample">Sample</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Deserialize a sample block into a new sample or merge it into <code>output_sample</code> if provided.</p>
+        <p>Deserialize one block into a sample.</p>
 
           
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/remote_backends/gradio/serializer.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">57</span>
-<span class="normal">58</span>
-<span class="normal">59</span>
-<span class="normal">60</span>
-<span class="normal">61</span>
-<span class="normal">62</span>
-<span class="normal">63</span>
-<span class="normal">64</span>
-<span class="normal">65</span>
-<span class="normal">66</span>
-<span class="normal">67</span>
-<span class="normal">68</span>
-<span class="normal">69</span>
-<span class="normal">70</span>
-<span class="normal">71</span>
-<span class="normal">72</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">deserialize_sample_block</span><span class="p">(</span><span class="n">serialized</span><span class="p">:</span> <span class="n">SerializedSampleBlock</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SampleBlock</span><span class="p">:</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">deserialize_sample_block</span><span class="p">(</span><span class="n">serialized</span><span class="p">:</span> <span class="n">SerializedSampleBlock</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sample</span><span class="p">:</span>
     <span class="n">deserializable_sample</span> <span class="o">=</span> <span class="n">_SerializableSampleBlock</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">serialized</span><span class="p">)</span>
-    <span class="n">sample_meta</span> <span class="o">=</span> <span class="n">deserializable_sample</span><span class="o">.</span><span class="n">meta</span>
+    <span class="k">if</span> <span class="n">deserializable_sample</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">!=</span> <span class="n">deserializable_sample</span><span class="o">.</span><span class="n">dims</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">"Serialized sample data and dimensions have different members"</span>
+        <span class="p">)</span>
+
     <span class="n">members</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="n">k</span><span class="p">:</span> <span class="n">Tensor</span><span class="o">.</span><span class="n">from_numpy</span><span class="p">(</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">v</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">Path</span><span class="p">)</span> <span class="k">else</span> <span class="n">v</span><span class="o">.</span><span class="n">path</span><span class="p">),</span>
-            <span class="n">dims</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">sample_meta</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">k</span><span class="p">]),</span>
+        <span class="n">k</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">v</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">Path</span><span class="p">)</span> <span class="k">else</span> <span class="n">v</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="n">allow_pickle</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+            <span class="n">dims</span><span class="o">=</span><span class="n">deserializable_sample</span><span class="o">.</span><span class="n">dims</span><span class="p">[</span><span class="n">k</span><span class="p">],</span>
         <span class="p">)</span>
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">deserializable_sample</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
     <span class="p">}</span>
-    <span class="k">return</span> <span class="n">SampleBlock</span><span class="o">.</span><span class="n">from_meta</span><span class="p">(</span>
-        <span class="n">sample_meta</span><span class="p">,</span>
-        <span class="n">data</span><span class="o">=</span><span class="n">members</span><span class="p">,</span>
+    <span class="k">for</span> <span class="n">member</span><span class="p">,</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">deserializable_sample</span><span class="o">.</span><span class="n">batch_indices</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">members</span><span class="p">[</span><span class="n">member</span><span class="p">]</span> <span class="o">=</span> <span class="n">members</span><span class="p">[</span><span class="n">member</span><span class="p">]</span><span class="o">.</span><span class="n">assign_batch_multi_index</span><span class="p">(</span>
+            <span class="n">cast_and_assert</span><span class="p">(</span>
+                <span class="n">MultiIndex</span><span class="p">,</span>
+                <span class="n">MultiIndex</span><span class="o">.</span><span class="n">from_arrays</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">index</span><span class="o">.</span><span class="n">values</span><span class="p">()),</span> <span class="n">names</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">index</span><span class="p">)),</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+    <span class="k">return</span> <span class="n">Sample</span><span class="p">(</span>
+        <span class="nb">id</span><span class="o">=</span><span class="n">deserializable_sample</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="n">members</span><span class="o">=</span><span class="n">members</span><span class="p">,</span>
         <span class="n">stat</span><span class="o">=</span><span class="n">load_stat</span><span class="p">(</span><span class="n">deserializable_sample</span><span class="o">.</span><span class="n">serialized_stat</span><span class="p">),</span>
+        <span class="n">applied_ops</span><span class="o">=</span><span class="n">deserializable_sample</span><span class="o">.</span><span class="n">applied_ops</span><span class="p">,</span>
     <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
@@ -1457,30 +1230,34 @@
   </span>
 
 <a href="#bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">serialize_sample</span><span class="p">(</span><span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample(sample)">sample</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../../../sample/#bioimageio.core.sample.Sample">Sample</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.Tuple">Tuple</span></span><span class="p">[</span><span class="n"><span title="bioimageio.core._sample_serializer.SerializedSampleBlockType">SerializedSampleBlockType</span></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">serialize_sample</span><span class="p">(</span>
+    <span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample(sample)">sample</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../../../sample/#bioimageio.core.sample.Sample">Sample</a></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="bioimageio.core._utils.type_hints.NestedList">NestedList</span></span><span class="p">[</span><span class="n"><span title="bioimageio.core._sample_serializer.SerializedSampleBlockType">SerializedSampleBlockType</span></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Serialize a sample as a single block</p>
+        <p>Serialize a sample as a single block.</p>
 
           
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/_sample_serializer.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">21</span>
-<span class="normal">22</span>
-<span class="normal">23</span>
-<span class="normal">24</span>
-<span class="normal">25</span>
-<span class="normal">26</span>
-<span class="normal">27</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">serialize_sample</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="n">sample</span><span class="p">:</span> <span class="n">Sample</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">SerializedSampleBlockType</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Serialize a sample as a single block"""</span>
-    <span class="k">return</span> <span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">serialize_sample_block</span><span class="p">(</span><span class="n">sample</span><span class="o">.</span><span class="n">as_single_block</span><span class="p">()),)</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NestedList</span><span class="p">[</span><span class="n">SerializedSampleBlockType</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Serialize a sample as a single block."""</span>
+
+    <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">serialize_sample_block</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -1499,7 +1276,9 @@
   </span>
 
 <a href="#bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample_block" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">serialize_sample_block</span><span class="p">(</span><span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample_block(sample_block)">sample_block</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../../../sample/#bioimageio.core.sample.SampleBlock">SampleBlock</a></span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.remote_backends.gradio.serializer.SerializedSampleBlock">SerializedSampleBlock</a></span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">serialize_sample_block</span><span class="p">(</span>
+    <span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample_block(sample_block)">sample_block</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../../../sample/#bioimageio.core.sample.Sample">Sample</a></span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><a class="autorefs autorefs-internal" href="#bioimageio.core.remote_backends.gradio.serializer.SerializedSampleBlock">SerializedSampleBlock</a></span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
@@ -1508,28 +1287,48 @@
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/remote_backends/gradio/serializer.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">43</span>
-<span class="normal">44</span>
-<span class="normal">45</span>
-<span class="normal">46</span>
-<span class="normal">47</span>
-<span class="normal">48</span>
-<span class="normal">49</span>
-<span class="normal">50</span>
-<span class="normal">51</span>
-<span class="normal">52</span>
-<span class="normal">53</span>
-<span class="normal">54</span>
-<span class="normal">55</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
-<span class="k">def</span><span class="w"> </span><span class="nf">serialize_sample_block</span><span class="p">(</span><span class="n">sample_block</span><span class="p">:</span> <span class="n">SampleBlock</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SerializedSampleBlock</span><span class="p">:</span>
-    <span class="n">handled_members</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="n">MemberId</span><span class="p">,</span> <span class="n">_SerializableBlock</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span>
+<span class="normal">72</span>
+<span class="normal">73</span>
+<span class="normal">74</span>
+<span class="normal">75</span>
+<span class="normal">76</span>
+<span class="normal">77</span>
+<span class="normal">78</span>
+<span class="normal">79</span>
+<span class="normal">80</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">serialize_sample_block</span><span class="p">(</span><span class="n">sample_block</span><span class="p">:</span> <span class="n">Sample</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SerializedSampleBlock</span><span class="p">:</span>
+    <span class="n">handled_members</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">MemberId</span><span class="p">,</span> <span class="n">_SerializableBlock</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">sample_block</span><span class="o">.</span><span class="n">members</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">handled_members</span><span class="p">[</span><span class="n">m</span><span class="p">]</span> <span class="o">=</span> <span class="n">_SerializableBlock</span><span class="o">.</span><span class="n">from_tensor</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 
     <span class="n">serializable</span> <span class="o">=</span> <span class="n">_SerializableSampleBlock</span><span class="p">(</span>
         <span class="n">data</span><span class="o">=</span><span class="n">handled_members</span><span class="p">,</span>
-        <span class="n">meta</span><span class="o">=</span><span class="n">sample_block</span><span class="o">.</span><span class="n">get_meta</span><span class="p">(),</span>
+        <span class="nb">id</span><span class="o">=</span><span class="n">sample_block</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+        <span class="n">dims</span><span class="o">=</span><span class="p">{</span><span class="n">m</span><span class="p">:</span> <span class="n">t</span><span class="o">.</span><span class="n">dims</span> <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">sample_block</span><span class="o">.</span><span class="n">members</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>
         <span class="n">serialized_stat</span><span class="o">=</span><span class="n">serialize_stat</span><span class="p">(</span><span class="n">sample_block</span><span class="o">.</span><span class="n">stat</span><span class="p">),</span>
+        <span class="n">applied_ops</span><span class="o">=</span><span class="n">sample_block</span><span class="o">.</span><span class="n">applied_ops</span><span class="p">,</span>
+        <span class="n">batch_indices</span><span class="o">=</span><span class="p">{</span>
+            <span class="n">m</span><span class="p">:</span> <span class="p">{</span>
+                <span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">):</span> <span class="n">index</span><span class="o">.</span><span class="n">get_level_values</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">index</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
+            <span class="p">}</span>
+            <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">tensor</span> <span class="ow">in</span> <span class="n">sample_block</span><span class="o">.</span><span class="n">members</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">index</span> <span class="o">:=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">batch_multi_index</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="p">},</span>
     <span class="p">)</span>
     <span class="n">serialized</span> <span class="o">=</span> <span class="n">serializable</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s2">"json"</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">serialized</span>
@@ -1546,53 +1345,78 @@
 <code class="doc-symbol doc-symbol-heading doc-symbol-method"></code>            <span class="doc doc-object-name doc-function-name">serialize_sample_blockwise</span>
 
 
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
+  </span>
+
 <a href="#bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample_blockwise" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">serialize_sample_blockwise</span><span class="p">(</span><span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample_blockwise(sample)">sample</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../../../sample/#bioimageio.core.sample.Sample">Sample</a></span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample_blockwise(model)">model</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ModelDescr">ModelDescr</a></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample_blockwise(blocksize_parameter)">blocksize_parameter</span></span><span class="p">:</span> <span class="n"><span title="int">int</span></span><span class="p">,</span> <span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample_blockwise(batch_size)">batch_size</span></span><span class="p">:</span> <span class="n"><span title="int">int</span></span> <span class="o">=</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.Iterable">Iterable</span></span><span class="p">[</span><span class="n"><span title="bioimageio.core._sample_serializer.SerializedSampleBlockType">SerializedSampleBlockType</span></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">serialize_sample_blockwise</span><span class="p">(</span>
+    <span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample_blockwise(sample)">sample</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../../../sample/#bioimageio.core.sample.Sample">Sample</a></span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample_blockwise(model)">model</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5">v0_5</a></span><span class="o">.</span><span class="n"><a class="autorefs autorefs-external" title="&lt;code&gt;bioimageio.spec.model.v0_5.ModelDescr&lt;/code&gt;" href="https://bioimage-io.github.io/spec-bioimage-io/v0.5.12.0/api/bioimageio/spec/model/v0_5/#bioimageio.spec.model.v0_5.ModelDescr">ModelDescr</a></span><span class="p">,</span>
+    <span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample_blockwise(blocksize_parameter)">blocksize_parameter</span></span><span class="p">:</span> <span class="n"><span title="int">int</span></span><span class="p">,</span>
+    <span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample_blockwise(batch_size)">batch_size</span></span><span class="p">:</span> <span class="n"><span title="int">int</span></span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="bioimageio.core._utils.type_hints.NestedList">NestedList</span></span><span class="p">[</span><span class="n"><span title="bioimageio.core._sample_serializer.SerializedSampleBlockType">SerializedSampleBlockType</span></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
 
-        <p>Split a sample into blocks according to the model's input specifications and <code>blocksize_parameter</code> and serialize each block.</p>
+        <p>Serialize a non-overlapping grid with model-derived maximum block sizes.</p>
+<p>Edge blocks may be smaller so deserialization reconstructs the original sample.</p>
 
           
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/_sample_serializer.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">39</span>
-<span class="normal">40</span>
-<span class="normal">41</span>
-<span class="normal">42</span>
-<span class="normal">43</span>
-<span class="normal">44</span>
-<span class="normal">45</span>
-<span class="normal">46</span>
-<span class="normal">47</span>
-<span class="normal">48</span>
-<span class="normal">49</span>
-<span class="normal">50</span>
-<span class="normal">51</span>
-<span class="normal">52</span>
-<span class="normal">53</span>
-<span class="normal">54</span>
-<span class="normal">55</span>
-<span class="normal">56</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">serialize_sample_blockwise</span><span class="p">(</span>
-    <span class="bp">self</span><span class="p">,</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">serialize_sample_blockwise</span><span class="p">(</span>
+    <span class="bp">cls</span><span class="p">,</span>
     <span class="n">sample</span><span class="p">:</span> <span class="n">Sample</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">model</span><span class="p">:</span> <span class="n">v0_5</span><span class="o">.</span><span class="n">ModelDescr</span><span class="p">,</span>
     <span class="n">blocksize_parameter</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
     <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">SerializedSampleBlockType</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">"""Split a sample into blocks according to the model's input specifications and `blocksize_parameter` and serialize each block."""</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NestedList</span><span class="p">[</span><span class="n">SerializedSampleBlockType</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Serialize a non-overlapping grid with model-derived maximum block sizes.</span>
 
-    <span class="n">_n_blocks</span><span class="p">,</span> <span class="n">blocks</span> <span class="o">=</span> <span class="n">split_sample_into_blocks_for_model</span><span class="p">(</span>
+<span class="sd">    Edge blocks may be smaller so deserialization reconstructs the original sample.</span>
+<span class="sd">    """</span>
+
+    <span class="n">block_shape</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_tensor_sizes</span><span class="p">(</span>
+        <span class="n">blocksize_parameter</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">sample</span><span class="o">.</span><span class="n">shape</span>
+    <span class="p">)</span><span class="o">.</span><span class="n">inputs</span>
+    <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">serialize_sample_with_fixed_blocking</span><span class="p">(</span>
         <span class="n">sample</span><span class="p">,</span>
-        <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span>
-        <span class="n">blocksize_parameter</span><span class="o">=</span><span class="n">blocksize_parameter</span><span class="p">,</span>
-        <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+        <span class="n">block_shapes</span><span class="o">=</span><span class="p">{</span>
+            <span class="n">m</span><span class="p">:</span> <span class="p">{</span><span class="n">a</span><span class="p">:</span> <span class="n">AxisSize</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="n">size</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">size</span> <span class="ow">in</span> <span class="n">shape</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+            <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">shape</span> <span class="ow">in</span> <span class="n">block_shape</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+        <span class="p">},</span>
+        <span class="n">halo</span><span class="o">=</span><span class="p">{},</span>
     <span class="p">)</span>
-    <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="n">blocks</span><span class="p">:</span>
-        <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">serialize_sample_block</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -1611,48 +1435,98 @@
   </span>
 
 <a href="#bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample_with_fixed_blocking" class="headerlink" title="Anchor link to this section for reference">¤</a></h3>
-<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">serialize_sample_with_fixed_blocking</span><span class="p">(</span><span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample_with_fixed_blocking(sample)">sample</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../../../sample/#bioimageio.core.sample.Sample">Sample</a></span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample_with_fixed_blocking(block_shapes)">block_shapes</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../../../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../../../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><span title="int">int</span></span><span class="p">]],</span> <span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample_with_fixed_blocking(halo)">halo</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../../../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../../../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../../../common/#bioimageio.core.common.HaloLike">HaloLike</a></span><span class="p">]],</span> <span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample_with_fixed_blocking(pad_mode)">pad_mode</span></span><span class="p">:</span> <span class="n"><span title="typing.Union">Union</span></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../../../common/#bioimageio.core.common.PadMode">PadMode</a></span><span class="p">,</span> <span class="n"><a class="autorefs autorefs-internal" href="../../../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../../../common/#bioimageio.core.common.PadMode">PadMode</a></span><span class="p">]]</span> <span class="o">=</span> <span class="s1">'symmetric'</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="typing.Iterable">Iterable</span></span><span class="p">[</span><span class="n"><span title="bioimageio.core._sample_serializer.SerializedSampleBlockType">SerializedSampleBlockType</span></span><span class="p">]</span>
+<div class="language-python doc-signature highlight"><pre><span></span><code><span class="nf">serialize_sample_with_fixed_blocking</span><span class="p">(</span>
+    <span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample_with_fixed_blocking(sample)">sample</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../../../sample/#bioimageio.core.sample.Sample">Sample</a></span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample_with_fixed_blocking(block_shapes)">block_shapes</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../../../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../../../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><span title="int">int</span></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" href="../../../axis/#bioimageio.core.axis.AxisSize">AxisSize</a></span><span class="p">]],</span>
+    <span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample_with_fixed_blocking(halo)">halo</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../../../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../../../axis/#bioimageio.core.axis.PerAxis">PerAxis</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../../../common/#bioimageio.core.common.HaloLike">HaloLike</a></span><span class="p">]],</span>
+    <span class="n"><span title="bioimageio.core.remote_backends.gradio.serializer.GradioSampleSerializer.serialize_sample_with_fixed_blocking(pad_mode)">pad_mode</span></span><span class="p">:</span> <span class="n"><a class="autorefs autorefs-internal" href="../../../common/#bioimageio.core.common.PadMode">PadMode</a></span> <span class="o">|</span> <span class="n"><a class="autorefs autorefs-internal" href="../../../common/#bioimageio.core.common.PerMember">PerMember</a></span><span class="p">[</span><span class="n"><a class="autorefs autorefs-internal" href="../../../common/#bioimageio.core.common.PadMode">PadMode</a></span><span class="p">]</span> <span class="o">=</span> <span class="s2">"symmetric"</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n"><span title="bioimageio.core._utils.type_hints.NestedList">NestedList</span></span><span class="p">[</span><span class="n"><span title="bioimageio.core._sample_serializer.SerializedSampleBlockType">SerializedSampleBlockType</span></span><span class="p">]</span>
 </code></pre></div>
 
     <div class="doc doc-contents ">
+
+        <p>Serialize an aligned block grid, retaining each block's halo and overlap.</p>
 
           
 
             <details class="mkdocstrings-source">
               <summary>Source code in <code>src/bioimageio/core/_sample_serializer.py</code></summary>
-              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">58</span>
-<span class="normal">59</span>
-<span class="normal">60</span>
-<span class="normal">61</span>
-<span class="normal">62</span>
-<span class="normal">63</span>
-<span class="normal">64</span>
-<span class="normal">65</span>
-<span class="normal">66</span>
-<span class="normal">67</span>
-<span class="normal">68</span>
-<span class="normal">69</span>
-<span class="normal">70</span>
-<span class="normal">71</span>
-<span class="normal">72</span>
-<span class="normal">73</span>
-<span class="normal">74</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+              <div class="language-python highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">serialize_sample_with_fixed_blocking</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="n">sample</span><span class="p">:</span> <span class="n">Sample</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">block_shapes</span><span class="p">:</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">PerAxis</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span>
+    <span class="n">block_shapes</span><span class="p">:</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">PerAxis</span><span class="p">[</span><span class="nb">int</span> <span class="o">|</span> <span class="n">AxisSize</span><span class="p">]],</span>
     <span class="n">halo</span><span class="p">:</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">PerAxis</span><span class="p">[</span><span class="n">HaloLike</span><span class="p">]],</span>
-    <span class="n">pad_mode</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">PadMode</span><span class="p">,</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">PadMode</span><span class="p">]]</span> <span class="o">=</span> <span class="s2">"symmetric"</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">SerializedSampleBlockType</span><span class="p">]:</span>
+    <span class="n">pad_mode</span><span class="p">:</span> <span class="n">PadMode</span> <span class="o">|</span> <span class="n">PerMember</span><span class="p">[</span><span class="n">PadMode</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"symmetric"</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NestedList</span><span class="p">[</span><span class="n">SerializedSampleBlockType</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">"""Serialize an aligned block grid, retaining each block's halo and overlap."""</span>
 
-    <span class="n">_n_blocks</span><span class="p">,</span> <span class="n">input_blocks</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">split_into_blocks</span><span class="p">(</span>
-        <span class="n">block_shapes</span><span class="o">=</span><span class="n">block_shapes</span><span class="p">,</span>
+    <span class="n">blocks</span> <span class="o">=</span> <span class="n">split_multiple_tensors_into_blocks</span><span class="p">(</span>
+        <span class="n">sample</span><span class="o">.</span><span class="n">members</span><span class="p">,</span>
+        <span class="n">block_shape</span><span class="o">=</span><span class="n">block_shapes</span><span class="p">,</span>
         <span class="n">halo</span><span class="o">=</span><span class="n">halo</span><span class="p">,</span>
         <span class="n">pad_mode</span><span class="o">=</span><span class="n">pad_mode</span><span class="p">,</span>
     <span class="p">)</span>
-    <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="n">input_blocks</span><span class="p">:</span>
-        <span class="k">yield</span> <span class="bp">cls</span><span class="o">.</span><span class="n">serialize_sample_block</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
+    <span class="n">grid_shape</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">blocks</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span><span class="o">.</span><span class="n">shape</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">size</span> <span class="ow">in</span> <span class="n">grid_shape</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Sample has no blocks"</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">serialize_grid</span><span class="p">(</span>
+        <span class="n">loc</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span> <span class="o">=</span> <span class="p">(),</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">NestedList</span><span class="p">[</span><span class="n">SerializedSampleBlockType</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">loc</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">grid_shape</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">serialize_grid</span><span class="p">((</span><span class="o">*</span><span class="n">loc</span><span class="p">,</span> <span class="n">i</span><span class="p">))</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">grid_shape</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">loc</span><span class="p">)])]</span>
+        <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">serialize_sample_block</span><span class="p">(</span>
+            <span class="n">Sample</span><span class="p">(</span>
+                <span class="nb">id</span><span class="o">=</span><span class="n">sample</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+                <span class="n">stat</span><span class="o">=</span><span class="n">sample</span><span class="o">.</span><span class="n">stat</span><span class="p">,</span>
+                <span class="n">applied_ops</span><span class="o">=</span><span class="n">sample</span><span class="o">.</span><span class="n">applied_ops</span><span class="p">,</span>
+                <span class="n">members</span><span class="o">=</span><span class="p">{</span>
+                    <span class="n">m</span><span class="p">:</span> <span class="n">cast</span><span class="p">(</span><span class="n">Block</span><span class="p">,</span> <span class="n">b</span><span class="p">[</span><span class="n">loc</span><span class="p">])</span><span class="o">.</span><span class="n">outer_tensor</span> <span class="k">for</span> <span class="n">m</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">blocks</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+                <span class="p">},</span>
+            <span class="p">)</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">serialize_grid</span><span class="p">()</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -1752,10 +1626,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../../../../../..", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.expand", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.prune", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../../../../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../../../../..", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.code.select", "content.footnote.tooltips", "content.tabs.link", "content.tooltips", "header.autohide", "navigation.expand", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.instant.prefetch", "navigation.instant.preview", "navigation.instant.progress", "navigation.path", "navigation.prune", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../../../../../../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"alias": true, "provider": "mike"}}</script>
     
     
-      <script src="../../../../../../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../../../../../../assets/javascripts/bundle.a5f9d56c.min.js"></script>
       
         <script src="../../../../../../assets/_markdown_exec_pyodide.js"></script>
       
